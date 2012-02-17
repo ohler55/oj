@@ -1,0 +1,8 @@
+ox-*.gem
+.DS_Store
+\#*\#
+.\#*
+*~
+*.o
+Makefile
+*.bundle

@@ -1,0 +1,11 @@
+;; -*- mode: outline; outline-regexp: " *[-\+]"; indent-tabs-mode: nil -*-
+
+^c^d hide subtree
+^c^s show subtree
+
+- json object format
+
+- yajl-ruby is fastest out there
+
+
+- write parser with callbacks
