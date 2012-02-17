@@ -20,26 +20,33 @@ files = opts.parse(ARGV)
   'null',
   '[true, false, null]',
   '[true, [true, false], null]',
+  '"string"',
+  '["foo", true]',
+  '12345',
+  '12345.6789',
+  '12345.6789e-30',
 ].each do |s|
   x = Oj.load(s)
   puts ">>> #{x}(#{x.class})"
 end
 
-iter = 1000000
+iter = 100000
 s = %{
-[ true, [false, [true, null], null, [true, false], null]]
+[ true, [false, [12345, null], 3.967, ["something", false], null]]
 }
 
 start = Time.now
 iter.times do
   Oj.load(s)
 end
-dt = Time.now - start
-puts "#{iter} Oj.load()s in #{dt} seconds or #{iter/dt} loads/second"
+oj_dt = Time.now - start
+puts "%d Oj.load()s in %0.3f seconds or %0.1f loads/msec" % [iter, oj_dt, iter/oj_dt/1000.0]
 
 start = Time.now
 iter.times do
   Yajl::Parser.parse(s)
 end
-dt = Time.now - start
-puts "#{iter} Yajl::Parser.parse()s in #{dt} seconds or #{iter/dt} parses/second"
+yajl_dt = Time.now - start
+puts "%d Yajl::Parser.parse()s in %0.3f seconds or %0.1f parsed/msec" % [iter, yajl_dt, iter/yajl_dt/1000.0]
+
+puts "Oj is %0.1f times faster than YAJL" % [yajl_dt / oj_dt]
