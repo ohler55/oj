@@ -67,21 +67,27 @@ typedef enum {
 } YesNo;
 
 typedef enum {
-    ObjMode  = 'o',
-    GenMode  = 'g',
-    NoMode   = 0
-} LoadMode;
+    ObjectMode  = 'o',
+    SimpleMode  = 's',
+    NoMode      = 0
+} Mode;
+
+typedef enum {
+    StrictEffort    = 's',
+    TolerantEffort  = 't',
+    LazyEffort      = 'z',
+    NoEffort        = 0,
+} Effort;
 
 typedef struct _Options {
     char        encoding[64];   // encoding, stored in the option to avoid GC invalidation in default values
     int         indent;         // indention for dump, default 2
-    int         trace;          // trace level
     char        circular;       // YesNo
-    char        mode;           // LoadMode
+    char        mode;           // Mode
     char        effort;         // Effort
 } *Options;
 
-extern VALUE    parse(char *json, int trace);
+extern VALUE    parse(char *json, Options options);
 extern char*	write_obj_to_str(VALUE obj, Options copts);
 
 extern void     _raise_error(const char *msg, const char *xml, const char *current, const char* file, int line);

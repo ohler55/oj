@@ -44,7 +44,7 @@ typedef struct _ParseInfo {
 #else
     void	*encoding;
 #endif
-    int		trace;
+    Options	options;
 } *ParseInfo;
 
 static VALUE	read_next(ParseInfo pi);
@@ -106,21 +106,18 @@ next_white(ParseInfo pi) {
 }
 
 VALUE
-parse(char *json, int trace) {
+parse(char *json, Options options) {
     VALUE		obj;
     struct _ParseInfo	pi;
 
     if (0 == json) {
 	raise_error("Invalid arg, xml string can not be null", json, 0);
     }
-    if (trace) {
-	printf("Parsing JSON:\n%s\n", json);
-    }
     /* initialize parse info */
     pi.str = json;
     pi.s = json;
     pi.encoding = 0;
-    pi.trace = trace;
+    pi.options = options;
     if (Qundef == (obj = read_next(&pi))) {
 	raise_error("no object read", pi.str, pi.s);
     }
@@ -186,6 +183,11 @@ read_obj(ParseInfo pi) {
     VALUE	val = Qundef;
     
     pi->s++;
+    next_non_white(pi);
+    if ('}' == *pi->s) {
+	pi->s++;
+	return rb_hash_new();
+    }
     while (1) {
 	next_non_white(pi);
 	if ('"' != *pi->s || Qundef == (key = read_str(pi))) {
@@ -223,6 +225,11 @@ read_array(ParseInfo pi) {
     VALUE	e;
 
     pi->s++;
+    next_non_white(pi);
+    if (']' == *pi->s) {
+	pi->s++;
+	return a;
+    }
     while (1) {
 	if (Qundef == (e = read_next(pi))) {
 	    raise_error("unexpected character", pi->str, pi->s);

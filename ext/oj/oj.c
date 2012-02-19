@@ -36,25 +36,211 @@
 #include "ruby.h"
 #include "oj.h"
 
+typedef struct _YesNoOpt {
+    VALUE       sym;
+    char        *attr;
+} *YesNoOpt;
+
 struct _Options  default_options = {
-    { '\0' },           // encoding
-    2,                  // indent
-    0,                  // trace
-    No,                 // circular
-    NoMode,             // mode
-//    StrictEffort,       // effort
+    { '\0' },		// encoding
+    2,			// indent
+    No,			// circular
+    NoMode,		// mode
+    TolerantEffort,	// effort
 };
 
 void Init_oj();
 
 VALUE    Oj = Qnil;
 
+VALUE   circular_sym;
+VALUE   effort_sym;
+VALUE   encoding_sym;
+VALUE   indent_sym;
+VALUE   lazy_sym;
+VALUE   mode_sym;
+VALUE   object_sym;
+VALUE   simple_sym;
+VALUE   strict_sym;
+VALUE   tolerant_sym;
+
+
+/* call-seq: default_options() => Hash
+ *
+ * Returns the default load and dump options as a Hash. The options are
+ * - indent: [Fixnum] number of spaces to indent each element in an XML document
+ * - encoding: [String] character encoding for the JSON file
+ * - circular: [true|false|nil] support circular references while dumping
+ * - mode: [:object|:simple|nil] load method to use for JSON
+ * - effort: [:strict|:tolerant|:lazy_define] set the tolerance level for loading
+ * @return [Hash] all current option settings.
+ */
+static VALUE
+get_def_opts(VALUE self) {
+    VALUE       opts = rb_hash_new();
+    int         elen = (int)strlen(default_options.encoding);
+
+    rb_hash_aset(opts, encoding_sym, (0 == elen) ? Qnil : rb_str_new(default_options.encoding, elen));
+    rb_hash_aset(opts, indent_sym, INT2FIX(default_options.indent));
+    rb_hash_aset(opts, circular_sym, (Yes == default_options.circular) ? Qtrue : ((No == default_options.circular) ? Qfalse : Qnil));
+    switch (default_options.mode) {
+    case ObjectMode:	rb_hash_aset(opts, mode_sym, object_sym);	break;
+    case SimpleMode:	rb_hash_aset(opts, mode_sym, simple_sym);	break;
+    case NoMode:
+    default:            rb_hash_aset(opts, mode_sym, Qnil);             break;
+    }
+    switch (default_options.effort) {
+    case StrictEffort:		rb_hash_aset(opts, effort_sym, strict_sym);	break;
+    case TolerantEffort:	rb_hash_aset(opts, effort_sym, tolerant_sym);	break;
+    case LazyEffort:		rb_hash_aset(opts, effort_sym, lazy_sym);	break;
+    case NoEffort:
+    default:			rb_hash_aset(opts, effort_sym, Qnil);		break;
+    }
+    return opts;
+}
+
+/* call-seq: default_options=(opts)
+ *
+ * Sets the default options for load and dump.
+ * @param [Hash] opts options to change
+ * @param [Fixnum] :indent number of spaces to indent each element in an XML document
+ * @param [String] :encoding character encoding for the JSON file
+ * @param [true|false|nil] :circular support circular references while dumping
+ * @param [:object|:simple|nil] :mode load method to use for JSON
+ * @param [:strict|:tolerant|:lazy] :effort set the tolerance level for loading
+ * @return [nil]
+ */
+static VALUE
+set_def_opts(VALUE self, VALUE opts) {
+    struct _YesNoOpt    ynos[] = {
+        { circular_sym, &default_options.circular },
+        { Qnil, 0 }
+    };
+    YesNoOpt    o;
+    VALUE       v;
+    
+    Check_Type(opts, T_HASH);
+
+    v = rb_hash_aref(opts, encoding_sym);
+    if (Qnil == v) {
+        *default_options.encoding = '\0';
+    } else {
+        Check_Type(v, T_STRING);
+        strncpy(default_options.encoding, StringValuePtr(v), sizeof(default_options.encoding) - 1);
+    }
+
+    v = rb_hash_aref(opts, indent_sym);
+    if (Qnil != v) {
+        Check_Type(v, T_FIXNUM);
+        default_options.indent = FIX2INT(v);
+    }
+
+    v = rb_hash_aref(opts, mode_sym);
+    if (Qnil == v) {
+        default_options.mode = NoMode;
+    } else if (object_sym == v) {
+        default_options.mode = ObjectMode;
+    } else if (simple_sym == v) {
+        default_options.mode = SimpleMode;
+    } else {
+        rb_raise(rb_eArgError, ":mode must be :object, :simple, or nil.\n");
+    }
+
+    v = rb_hash_aref(opts, effort_sym);
+    if (Qnil == v) {
+        default_options.effort = NoEffort;
+    } else if (strict_sym == v) {
+        default_options.effort = StrictEffort;
+    } else if (tolerant_sym == v) {
+        default_options.effort = TolerantEffort;
+    } else if (lazy_sym == v) {
+        default_options.effort = LazyEffort;
+    } else {
+        rb_raise(rb_eArgError, ":effort must be :strict, :tolerant, :lazy, or nil.\n");
+    }
+    for (o = ynos; 0 != o->attr; o++) {
+        v = rb_hash_lookup(opts, o->sym);
+        if (Qnil == v) {
+            *o->attr = NotSet;
+        } else if (Qtrue == v) {
+            *o->attr = Yes;
+        } else if (Qfalse == v) {
+            *o->attr = No;
+        } else {
+            rb_raise(rb_eArgError, "%s must be true, false, or nil.\n", StringValuePtr(o->sym));
+        }
+    }
+    return Qnil;
+}
+
+static void
+parse_options(VALUE ropts, Options copts) {
+    struct _YesNoOpt    ynos[] = {
+        { circular_sym, &copts->circular },
+        { Qnil, 0 }
+    };
+    YesNoOpt    o;
+    
+    if (rb_cHash == rb_obj_class(ropts)) {
+        VALUE   v;
+        
+        if (Qnil != (v = rb_hash_lookup(ropts, indent_sym))) {
+            if (rb_cFixnum != rb_obj_class(v)) {
+                rb_raise(rb_eArgError, ":indent must be a Fixnum.\n");
+            }
+            copts->indent = NUM2INT(v);
+        }
+        if (Qnil != (v = rb_hash_lookup(ropts, encoding_sym))) {
+            if (rb_cString != rb_obj_class(v)) {
+                rb_raise(rb_eArgError, ":encoding must be a String.\n");
+            }
+            strncpy(copts->encoding, StringValuePtr(v), sizeof(copts->encoding) - 1);
+        }
+        if (Qnil != (v = rb_hash_lookup(ropts, mode_sym))) {
+            if (object_sym == v) {
+                copts->mode = ObjectMode;
+            } else if (simple_sym == v) {
+                copts->mode = SimpleMode;
+            } else {
+                rb_raise(rb_eArgError, ":mode must be :object or :simple.\n");
+            }
+        }
+        if (Qnil != (v = rb_hash_lookup(ropts, effort_sym))) {
+            if (lazy_sym == v) {
+                copts->effort = LazyEffort;
+            } else if (tolerant_sym == v) {
+                copts->effort = TolerantEffort;
+            } else if (strict_sym == v) {
+                copts->effort = StrictEffort;
+            } else {
+                rb_raise(rb_eArgError, ":effort must be :strict, :tolerant, or :lazy.\n");
+            }
+        }
+        for (o = ynos; 0 != o->attr; o++) {
+            if (Qnil != (v = rb_hash_lookup(ropts, o->sym))) {
+                VALUE       c = rb_obj_class(v);
+
+                if (rb_cTrueClass == c) {
+                    *o->attr = Yes;
+                } else if (rb_cFalseClass == c) {
+                    *o->attr = No;
+                } else {
+                    rb_raise(rb_eArgError, "%s must be true or false.\n", StringValuePtr(o->sym));
+                }
+            }
+        }
+    }
+ }
+
 static VALUE
 load(char *json, int argc, VALUE *argv, VALUE self) {
-    VALUE	obj;
+    VALUE		obj;
+    struct _Options	options = default_options;
 
-    // TBD other options like obj mode
-    obj = parse(json, 0);
+    if (1 == argc) {
+	parse_options(*argv, &options);
+    }
+    obj = parse(json, &options);
     free(json);
 
     return obj;
@@ -73,7 +259,7 @@ load_str(int argc, VALUE *argv, VALUE self) {
     char        *json;
     
     Check_Type(*argv, T_STRING);
-    // the xml string gets modified so make a copy of it
+    // the json string gets modified so make a copy of it
     json = strdup(StringValuePtr(*argv));
 
     return load(json, argc - 1, argv + 1, self);
@@ -115,7 +301,7 @@ dump(int argc, VALUE *argv, VALUE self) {
     VALUE               rstr;
     
     if (2 == argc) {
-        //parse_dump_options(argv[1], &copts);
+        parse_options(argv[1], &copts);
     }
     if (0 == (json = write_obj_to_str(*argv, &copts))) {
         rb_raise(rb_eNoMemError, "Not enough memory.\n");
@@ -132,12 +318,28 @@ dump(int argc, VALUE *argv, VALUE self) {
 }
 
 void Init_oj() {
+    VALUE       keep = Qnil;
 
     Oj = rb_define_module("Oj");
+    keep = rb_cv_get(Oj, "@@keep"); // needed to stop GC from deleting and reusing VALUEs
+
+    rb_define_module_function(Oj, "default_options", get_def_opts, 0);
+    rb_define_module_function(Oj, "default_options=", set_def_opts, 1);
 
     rb_define_module_function(Oj, "load", load_str, -1);
     rb_define_module_function(Oj, "load_file", load_file, -1);
     rb_define_module_function(Oj, "dump", dump, -1);
+
+    circular_sym = ID2SYM(rb_intern("circular"));	rb_ary_push(keep, circular_sym);
+    effort_sym = ID2SYM(rb_intern("effort"));		rb_ary_push(keep, effort_sym);
+    encoding_sym = ID2SYM(rb_intern("encoding"));	rb_ary_push(keep, encoding_sym);
+    indent_sym = ID2SYM(rb_intern("indent"));		rb_ary_push(keep, indent_sym);
+    lazy_sym = ID2SYM(rb_intern("lazy"));		rb_ary_push(keep, lazy_sym);
+    mode_sym = ID2SYM(rb_intern("mode"));		rb_ary_push(keep, mode_sym);
+    object_sym = ID2SYM(rb_intern("object"));		rb_ary_push(keep, object_sym);
+    simple_sym = ID2SYM(rb_intern("simple"));		rb_ary_push(keep, simple_sym);
+    strict_sym = ID2SYM(rb_intern("strict"));		rb_ary_push(keep, strict_sym);
+    tolerant_sym = ID2SYM(rb_intern("tolerant"));	rb_ary_push(keep, tolerant_sym);
 }
 
 void

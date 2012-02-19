@@ -129,8 +129,8 @@ json_friendly_size(const u_char *str, int len) {
 
 inline static void
 fill_indent(Out out, int cnt) {
-    cnt *= out->indent;
-    if (0 <= cnt) {
+    if (0 < cnt && 0 < out->indent) {
+	cnt *= out->indent;
         *out->cur++ = '\n';
         for (; 0 < cnt; cnt--) {
             *out->cur++ = ' ';
@@ -452,7 +452,6 @@ dump_obj_to_json(VALUE obj, Options copts, Out out) {
         ox_cache8_new(&out->circ_cache);
 	}*/
     out->indent = copts->indent;
-    out->indent = 2; // TBD
     dump_val(obj, 0, out);
     
 /*    if (Yes == copts->circular) {

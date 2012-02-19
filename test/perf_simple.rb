@@ -15,22 +15,6 @@ opts = OptionParser.new
 opts.on("-h", "--help", "Show this display")                { puts opts; Process.exit!(0) }
 files = opts.parse(ARGV)
 
-[ 'true',
-  'false',
-  'null',
-  '[true, false, null]',
-  '[true, [true, false], null]',
-  '"string"',
-  '["foo", true]',
-  '12345',
-  '12345.6789',
-  '12345.6789e-30',
-  '{ "x":-33}',
-].each do |s|
-  x = Oj.load(s)
-  puts ">>> #{x}(#{x.class})"
-end
-
 iter = 100000
 s = %{
 { "class": "Foo::Bar",
@@ -38,6 +22,10 @@ s = %{
   "attr2": { "one": 1 }
 }
 }
+
+Oj.default_options = { :indent => 0 }
+
+puts
 
 start = Time.now
 iter.times do
@@ -53,11 +41,11 @@ end
 yajl_dt = Time.now - start
 puts "%d Yajl::Parser.parse()s in %0.3f seconds or %0.1f parses/msec" % [iter, yajl_dt, iter/yajl_dt/1000.0]
 
-puts "Oj is %0.1f times faster than YAJL" % [yajl_dt / oj_dt]
+puts "Oj is %0.1f times faster than YAJL at parsing." % [yajl_dt / oj_dt]
 
+puts
 
 obj = Oj.load(s)
-
 start = Time.now
 iter.times do
   Oj.dump(obj)
@@ -72,5 +60,6 @@ end
 yajl_dt = Time.now - start
 puts "%d Yajl::Encoder.encode()s in %0.3f seconds or %0.1f encodes/msec" % [iter, yajl_dt, iter/yajl_dt/1000.0]
 
-puts "Oj is %0.1f times faster than YAJL" % [yajl_dt / oj_dt]
+puts "Oj is %0.1f times faster than YAJL at dumping." % [yajl_dt / oj_dt]
 
+puts
