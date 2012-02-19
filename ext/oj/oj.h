@@ -43,7 +43,6 @@ extern "C" {
 // HAVE_RUBY_ENCODING_H defined for Ruby 1.9
 #include "ruby/encoding.h"
 #endif
-#include "cache.h"
 
 #ifdef JRUBY
 #define NO_RSTRUCT 1
@@ -61,75 +60,30 @@ extern "C" {
 
 #define raise_error(msg, xml, current) _raise_error(msg, xml, current, __FILE__, __LINE__)
 
-#define MAX_TEXT_LEN    4096
-#define MAX_DEPTH       1024
+typedef enum {
+    Yes    = 'y',
+    No     = 'n',
+    NotSet = 0
+} YesNo;
 
 typedef enum {
-    NoCode         = 0,
-    ArrayCode      = 'a',
-    String64Code   = 'b', // base64 encoded String
-    ClassCode      = 'c',
-    Symbol64Code   = 'd', // base64 encoded Symbol
-    FloatCode      = 'f',
-    RegexpCode     = 'g',
-    HashCode       = 'h',
-    FixnumCode     = 'i',
-    BignumCode     = 'j',
-    KeyCode        = 'k', // indicates the value is a hash key, kind of a hack
-    RationalCode   = 'l',
-    SymbolCode     = 'm',
-    FalseClassCode = 'n',
-    ObjectCode     = 'o',
-    RefCode        = 'p',
-    RangeCode      = 'r',
-    StringCode     = 's',
-    TimeCode       = 't',
-    StructCode     = 'u',
-    ComplexCode    = 'v',
-    RawCode        = 'x',
-    TrueClassCode  = 'y',
-    NilClassCode   = 'z',
-} Type;
+    ObjMode  = 'o',
+    GenMode  = 'g',
+    NoMode   = 0
+} LoadMode;
 
-typedef struct _Helper {
-    ID          var;    /* Object var ID */
-    VALUE       obj;    /* object created or Qundef if not appropriate */
-    Type	type;
-} *Helper;
+typedef struct _Options {
+    char        encoding[64];   // encoding, stored in the option to avoid GC invalidation in default values
+    int         indent;         // indention for dump, default 2
+    int         trace;          // trace level
+    char        circular;       // YesNo
+    char        mode;           // LoadMode
+    char        effort;         // Effort
+} *Options;
 
-typedef struct _PInfo   *PInfo;
+extern VALUE    parse(char *json, int trace);
+extern char*	write_obj_to_str(VALUE obj, Options copts);
 
-typedef struct _ParseCallbacks {
-    void        (*add_obj)(PInfo pi);
-    void        (*end_obj)(PInfo pi);
-    void        (*add_array)(PInfo pi);
-    void        (*end_array)(PInfo pi);
-    void        (*add_key)(PInfo pi, char *text);
-    void        (*add_str)(PInfo pi, char *text);
-    void        (*add_int)(PInfo pi, int64_t val);
-    void        (*add_dub)(PInfo pi, double val);
-    void        (*add_nil)(PInfo pi);
-    void        (*add_true)(PInfo pi);
-    void        (*add_false)(PInfo pi);
-} *ParseCallbacks;
-
-/* parse information structure */
-struct _PInfo {
-    struct _Helper      helpers[MAX_DEPTH];
-    Helper              h;              /* current helper or 0 if not set */
-    char	        *str;		/* buffer being read from */
-    char	        *s;		/* current position in buffer */
-    ParseCallbacks      pcb;
-    VALUE		obj;
-#ifdef HAVE_RUBY_ENCODING_H
-    rb_encoding         *encoding;
-#else
-    void		*encoding;
-#endif
-    int                 trace;
-};
-
-extern VALUE    parse(char *json, ParseCallbacks pcb, char **endp, int trace);
 extern void     _raise_error(const char *msg, const char *xml, const char *current, const char* file, int line);
 
 

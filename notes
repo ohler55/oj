@@ -7,5 +7,13 @@
 
 - yajl-ruby is fastest out there
 
+- load
+ - options
+  - encoding
+  - object or raw/simple
 
-- write parser with callbacks
+- dump
+ - options
+  - indent
+  - object or simple (needed for Hash)
+  - call sjon on objects, skip, or raise

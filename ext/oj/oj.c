@@ -36,18 +36,25 @@
 #include "ruby.h"
 #include "oj.h"
 
+struct _Options  default_options = {
+    { '\0' },           // encoding
+    2,                  // indent
+    0,                  // trace
+    No,                 // circular
+    NoMode,             // mode
+//    StrictEffort,       // effort
+};
+
 void Init_oj();
 
 VALUE    Oj = Qnil;
 
-extern ParseCallbacks   oj_gen_callbacks;
-
-
 static VALUE
 load(char *json, int argc, VALUE *argv, VALUE self) {
     VALUE	obj;
-    
-    obj = parse(json, oj_gen_callbacks, 0, 0);
+
+    // TBD other options like obj mode
+    obj = parse(json, 0);
     free(json);
 
     return obj;
@@ -101,12 +108,36 @@ load_file(int argc, VALUE *argv, VALUE self) {
     return load(json, argc - 1, argv + 1, self);
 }
 
+static VALUE
+dump(int argc, VALUE *argv, VALUE self) {
+    char                *json;
+    struct _Options     copts = default_options;
+    VALUE               rstr;
+    
+    if (2 == argc) {
+        //parse_dump_options(argv[1], &copts);
+    }
+    if (0 == (json = write_obj_to_str(*argv, &copts))) {
+        rb_raise(rb_eNoMemError, "Not enough memory.\n");
+    }
+    rstr = rb_str_new2(json);
+#ifdef ENCODING_INLINE_MAX
+    if ('\0' != *copts.encoding) {
+        rb_enc_associate(rstr, rb_enc_find(copts.encoding));
+    }
+#endif
+    free(json);
+
+    return rstr;
+}
+
 void Init_oj() {
 
     Oj = rb_define_module("Oj");
 
     rb_define_module_function(Oj, "load", load_str, -1);
     rb_define_module_function(Oj, "load_file", load_file, -1);
+    rb_define_module_function(Oj, "dump", dump, -1);
 }
 
 void
