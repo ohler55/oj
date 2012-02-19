@@ -10,14 +10,10 @@ Gem::Specification.new do |s|
   s.email = "peter@ohler.com"
   s.homepage = "https://github.com/ohler55/oj"
   s.summary = "A fast JSON parser and serializer."
-  s.description = %{A fast JSON parser and object serializer that uses only standard C lib.
-            
-Optimized JSON (Oj), as the name implies was written to provide speed optimized
-JSON handling. It was designed to be an alternative to Yajl and other Ruby
-JSON parsers and as an alternative to Marshal for Object serialization. }
+  s.description = %{The fastest JSON parser and object serializer. }
 
 #  s.files = Dir["{lib,ext,test}/**/*.{rb,h,c}"] + ['LICENSE', 'README.md']
-  s.files = Dir["{lib,ext}/**/*.{rb,h,c}"] + ['LICENSE', 'README.md']
+  s.files = Dir["{lib,ext,test}/**/*.{rb,h,c}"] + ['LICENSE', 'README.md']
 
   s.extensions = ["ext/oj/extconf.rb"]
   # s.executables = []

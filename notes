@@ -6,17 +6,10 @@
 - yajl-ruby is fastest out there until now
 
 - next
- - document
- - tests
- - add options
-  - indent
-  - mode (object or simple)
-  - effort (strict, tolerant, lazy)
+ - implement effort
+ - sax
 
 - load
- - options
-  - encoding
-  - object or raw/simple
  - todo
   - bignum
 

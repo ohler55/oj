@@ -13,7 +13,7 @@ class Juice < ::Test::Unit::TestCase
     opts = Oj.default_options()
     assert_equal(opts, {
                    :encoding=>nil,
-                   :indent=>2,
+                   :indent=>0,
                    :circular=>false,
                    :mode=>nil,
                    :effort=>:tolerant})
@@ -22,16 +22,16 @@ class Juice < ::Test::Unit::TestCase
   def test_set_options
     orig = {
       :encoding=>nil,
-      :indent=>2,
+      :indent=>0,
       :circular=>false,
       :mode=>nil,
-      :effort=>:strict}
+      :effort=>:tolerant}
     o2 = {
       :encoding=>"UTF-8",
       :indent=>4,
       :circular=>true,
       :mode=>:object,
-      :effort=>:tolerant }
+      :effort=>:strict }
     o3 = { :indent => 4 }
     Oj.default_options = o2
     opts = Oj.default_options()
@@ -86,9 +86,13 @@ class Juice < ::Test::Unit::TestCase
     dump_and_load({ 'true' => true, 'false' => false}, false)
     dump_and_load({ 'true' => true, 'array' => [], 'hash' => { }}, false)
   end
+  
+  def test_encode
+    Oj.default_options = { :encoding => 'UTF-8' }
+    dump_and_load("ぴーたー", false)
+    Oj.default_options = { :encoding => nil }
+  end
 
-  
-  
   def dump_and_load(obj, trace=false)
     json = Oj.dump(obj, :indent => 2)
     puts json if trace

@@ -116,7 +116,7 @@ parse(char *json, Options options) {
     /* initialize parse info */
     pi.str = json;
     pi.s = json;
-    pi.encoding = 0;
+    pi.encoding = ('\0' == *options->encoding) ? 0 : rb_enc_find(options->encoding);
     pi.options = options;
     if (Qundef == (obj = read_next(&pi))) {
 	raise_error("no object read", pi.str, pi.s);
@@ -298,14 +298,17 @@ read_num(ParseInfo pi) {
 	    e = e * 10 + (*pi->s - '0');
 	}
     }
-    if (neg) {
-	n = -n;
-    }
     if (0 == e && 0 == a && 1 == div) {
+	if (neg) {
+	    n = -n;
+	}
 	return LONG2NUM(n);
     } else {
 	double	d = (double)n + (double)a / (double)div;
 
+	if (neg) {
+	    d = -d;
+	}
 	if (0 != e) {
 	    if (eneg) {
 		e = -e;

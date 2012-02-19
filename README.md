@@ -18,7 +18,9 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 0.5
+### Release 0.5.2
+
+- Release 0.5.2 fixes encoding and float encoding.
 
 This is the first release sith a version of 0.5 indicating it is only half
 done. Basic load() and dump() is supported for Hash, Array, NilClass,

@@ -158,7 +158,7 @@ grow(Out out, size_t len) {
 
 inline static void
 dump_hex(u_char c, Out out) {
-    u_char	d = c & 0xF0;
+    u_char	d = (c >> 4) & 0x0F;
 
     if (9 < d) {
 	*out->cur++ = (d - 10) + 'a';

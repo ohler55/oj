@@ -41,14 +41,6 @@ typedef struct _YesNoOpt {
     char        *attr;
 } *YesNoOpt;
 
-struct _Options  default_options = {
-    { '\0' },		// encoding
-    2,			// indent
-    No,			// circular
-    NoMode,		// mode
-    TolerantEffort,	// effort
-};
-
 void Init_oj();
 
 VALUE    Oj = Qnil;
@@ -64,6 +56,13 @@ VALUE   simple_sym;
 VALUE   strict_sym;
 VALUE   tolerant_sym;
 
+static struct _Options  default_options = {
+    { '\0' },		// encoding
+    0,			// indent
+    No,			// circular
+    NoMode,		// mode
+    TolerantEffort,	// effort
+};
 
 /* call-seq: default_options() => Hash
  *
@@ -106,8 +105,13 @@ get_def_opts(VALUE self) {
  * @param [Fixnum] :indent number of spaces to indent each element in an XML document
  * @param [String] :encoding character encoding for the JSON file
  * @param [true|false|nil] :circular support circular references while dumping
- * @param [:object|:simple|nil] :mode load method to use for JSON
- * @param [:strict|:tolerant|:lazy] :effort set the tolerance level for loading
+ * @param [:object|:simple|nil] :mode load and dump methods to use for JSON
+ * @param [:strict|:tolerant|:lazy] :effort set the tolerance level for
+ *        loading. :strict raises an exception when a non-supported Object is
+ *        encountered. :tolerant attempts to extract variable values from an
+ *        Object using to_json() then it walks the Object's variables. The
+ *        :lazy mode ignores non-supported Objects and replaces them with a
+ *        null.
  * @return [nil]
  */
 static VALUE
@@ -121,8 +125,10 @@ set_def_opts(VALUE self, VALUE opts) {
     
     Check_Type(opts, T_HASH);
 
-    v = rb_hash_aref(opts, encoding_sym);
-    if (Qnil == v) {
+    v = rb_hash_lookup2(opts, encoding_sym, Qundef);
+    if (Qundef == v) {
+	// no change
+    } else if (Qnil == v) {
         *default_options.encoding = '\0';
     } else {
         Check_Type(v, T_STRING);
@@ -135,8 +141,10 @@ set_def_opts(VALUE self, VALUE opts) {
         default_options.indent = FIX2INT(v);
     }
 
-    v = rb_hash_aref(opts, mode_sym);
-    if (Qnil == v) {
+    v = rb_hash_lookup2(opts, mode_sym, Qundef);
+    if (Qundef == v) {
+	// no change
+    } else if (Qnil == v) {
         default_options.mode = NoMode;
     } else if (object_sym == v) {
         default_options.mode = ObjectMode;
@@ -146,8 +154,10 @@ set_def_opts(VALUE self, VALUE opts) {
         rb_raise(rb_eArgError, ":mode must be :object, :simple, or nil.\n");
     }
 
-    v = rb_hash_aref(opts, effort_sym);
-    if (Qnil == v) {
+    v = rb_hash_lookup2(opts, effort_sym, Qundef);
+    if (Qundef == v) {
+	// no change
+    } else if (Qnil == v) {
         default_options.effort = NoEffort;
     } else if (strict_sym == v) {
         default_options.effort = StrictEffort;
@@ -159,8 +169,10 @@ set_def_opts(VALUE self, VALUE opts) {
         rb_raise(rb_eArgError, ":effort must be :strict, :tolerant, :lazy, or nil.\n");
     }
     for (o = ynos; 0 != o->attr; o++) {
-        v = rb_hash_lookup(opts, o->sym);
-        if (Qnil == v) {
+        v = rb_hash_lookup2(opts, o->sym, Qundef);
+	if (Qundef == v) {
+	    // no change
+	} else if (Qnil == v) {
             *o->attr = NotSet;
         } else if (Qtrue == v) {
             *o->attr = Yes;
@@ -246,13 +258,13 @@ load(char *json, int argc, VALUE *argv, VALUE self) {
     return obj;
 }
 
-/* call-seq: load(xml, options) => Hash, Array, String, Fixnum, Float, true, false, or nil
+/* call-seq: load(json, options) => Hash, Array, String, Fixnum, Float, true, false, or nil
  *
  * Parses a JSON document String into a Hash, Array, String, Fixnum, Float,
- * true, false, or nil Raises an exception if the JSON is * malformed or the
+ * true, false, or nil. Raises an exception if the JSON is malformed or the
  * classes specified are not valid.
  * @param [String] json JSON String
- * @param [Hash] options load options
+ * @param [Hash] options load options (same as default_options)
  */
 static VALUE
 load_str(int argc, VALUE *argv, VALUE self) {
@@ -294,6 +306,12 @@ load_file(int argc, VALUE *argv, VALUE self) {
     return load(json, argc - 1, argv + 1, self);
 }
 
+/* call-seq: dump(obj, options) => json-string
+ *
+ * Dumps an Object (obj) to a string.
+ * @param [Object] obj Object to serialize as an JSON document String
+ * @param [Hash] options same as default_options
+ */
 static VALUE
 dump(int argc, VALUE *argv, VALUE self) {
     char                *json;
@@ -340,6 +358,7 @@ void Init_oj() {
     simple_sym = ID2SYM(rb_intern("simple"));		rb_ary_push(keep, simple_sym);
     strict_sym = ID2SYM(rb_intern("strict"));		rb_ary_push(keep, strict_sym);
     tolerant_sym = ID2SYM(rb_intern("tolerant"));	rb_ary_push(keep, tolerant_sym);
+    default_options.effort = TolerantEffort;
 }
 
 void
