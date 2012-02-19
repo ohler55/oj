@@ -274,13 +274,12 @@ dump_cstr(const char *str, int cnt, Out out) {
 	}
 	*out->cur++ = '"';
     } else {
-	// TBD maybe use ruby to generate string
 	size += 2;
 	if (out->end - out->cur <= (long)size) {
 	    grow(out, size);
 	}
 	*out->cur++ = '"';
-	for (; '\0' != *str; str++) {
+	for (; 0 < cnt; cnt--, str++) {
 	    switch (json_friendly_chars[(u_char)*str]) {
 	    case 'o':
 		*out->cur++ = *str;
@@ -294,7 +293,6 @@ dump_cstr(const char *str, int cnt, Out out) {
 		case '\f':	*out->cur++ = 'f';	break;
 		case '\r':	*out->cur++ = 'r';	break;
 		default:	*out->cur++ = *str;	break;
-		break;
 		}
 		break;
 	    case 'u':
@@ -312,8 +310,7 @@ dump_cstr(const char *str, int cnt, Out out) {
 		}
 		break;
 	    default:
-		// TBD raise
-		break;
+		break; // ignore, should never happen if the table is correct
 	    }
 	}
 	*out->cur++ = '"';
@@ -406,7 +403,6 @@ dump_hash(VALUE obj, int depth, Out out) {
 	fill_indent(out, depth);
 	*out->cur++ = '}';
     }
-    // TBD
     *out->cur = '\0';
 }
 
@@ -418,13 +414,22 @@ dump_val(VALUE obj, int depth, Out out) {
     case T_FALSE:	dump_false(out);		break;
     case T_FIXNUM:	dump_fixnum(obj, out);		break;
     case T_FLOAT:	dump_float(obj, out);		break;
-	// BIGNUM
+    case T_BIGNUM:	break; // TBD
     case T_STRING:	dump_str(obj, out);		break;
     case T_SYMBOL:	dump_sym(obj, out);		break;
     case T_ARRAY:	dump_array(obj, depth, out);	break;
     case T_HASH:	dump_hash(obj, depth, out);	break;
+    case T_OBJECT:
+    case T_REGEXP:
+    case T_CLASS:
+    case T_DATA: // for Time
+	// TBD
+	rb_raise(rb_eNotImpError, "Failed to dump '%s' Object (%02x)\n",
+		 rb_class2name(rb_obj_class(obj)), rb_type(obj));
+	break;
     default:
-	// TBD raise, call json, or leave as nil, or get all variables
+	rb_raise(rb_eNotImpError, "Failed to dump '%s' Object (%02x)\n",
+		 rb_class2name(rb_obj_class(obj)), rb_type(obj));
 	break;
     }
 }

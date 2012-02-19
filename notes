@@ -3,17 +3,45 @@
 ^c^d hide subtree
 ^c^s show subtree
 
-- json object format
+- yajl-ruby is fastest out there until now
 
-- yajl-ruby is fastest out there
+- next
+ - document
+ - add options
+  - indent
+  - mode (object or simple)
+  - effort (strict, tolerant, lazy)
 
 - load
  - options
   - encoding
   - object or raw/simple
+ - todo
+  - bignum
 
 - dump
  - options
   - indent
   - object or simple (needed for Hash)
   - call sjon on objects, skip, or raise
+   - strict - raise
+   - lazy / nil
+   - tolerant / best effort
+    - use to_hash if respond_to
+    - use to_json if respond_to
+    - walk attributes
+
+ - todo
+  - multibyte group encoding
+  - bignum
+  - object and other types of object dumping
+
+
+- use stream and a sax like parser and writer
+
+- serialize/deserialize any object
+ - add class as first key in an object hash or make class and vars keys only (id for circular later)
+
+- support circular object encoding
+
+ 
