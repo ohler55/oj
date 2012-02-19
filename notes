@@ -7,6 +7,7 @@
 
 - next
  - document
+ - tests
  - add options
   - indent
   - mode (object or simple)
