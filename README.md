@@ -12,7 +12,7 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="build_status">Build Status</a>
 
-[![Build Status](http://travis-ci.org/ohler55/oj.png)](http://travis-ci.org/ohler55/oj)
+[![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
 ## <a name="links">Links of Interest</a>
 
