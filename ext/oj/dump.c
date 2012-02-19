@@ -35,6 +35,11 @@
 #include <string.h>
 
 #include "ruby.h"
+#ifdef HAVE_RUBY_ENCODING_H
+#include "ruby/st.h"
+#else
+#include "st.h"
+#endif
 #include "oj.h"
 
 typedef unsigned long   ulong;
