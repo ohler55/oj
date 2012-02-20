@@ -343,7 +343,7 @@ dump_class(VALUE obj, Out out) {
 
     switch (out->opts->effort) {
     case StrictEffort:
-        rb_raise(rb_eEncodingError, "Failed to dump class %s to JSON.\n", rb_class2name(obj));
+        rb_raise(rb_eTypeError, "Failed to dump class %s to JSON.\n", rb_class2name(obj));
 	break;
     case LazyEffort:
 	dump_nil(out);
@@ -435,12 +435,12 @@ dump_hash(VALUE obj, int depth, Out out) {
 static void
 dump_object(VALUE obj, int depth, Out out) {
     if (ObjectMode == out->opts->mode) {
-	rb_raise(rb_eEncodingError, "Not implemented yet.\n");
+	rb_raise(rb_eTypeError, "Not implemented yet.\n");
 	// TBD
     } else {
 	switch (out->opts->effort) {
 	case StrictEffort:
-	    rb_raise(rb_eEncodingError, "Failed to dump %s Object to JSON in strict mode.\n", rb_class2name(obj));
+	    rb_raise(rb_eTypeError, "Failed to dump %s Object to JSON in strict mode.\n", rb_class2name(obj));
 	    break;
 	case LazyEffort:
 	    dump_nil(out);
