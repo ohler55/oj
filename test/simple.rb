@@ -62,7 +62,7 @@ class Juice < ::Test::Unit::TestCase
   def test_float
     dump_and_load(0.0, false)
     dump_and_load(12345.6789, false)
-    dump_and_load(-54321.012, true)
+    dump_and_load(-54321.012, false)
     dump_and_load(2.48e16, false)
   end
 

@@ -12,7 +12,6 @@ Gem::Specification.new do |s|
   s.summary = "A fast JSON parser and serializer."
   s.description = %{The fastest JSON parser and object serializer. }
 
-#  s.files = Dir["{lib,ext,test}/**/*.{rb,h,c}"] + ['LICENSE', 'README.md']
   s.files = Dir["{lib,ext,test}/**/*.{rb,h,c}"] + ['LICENSE', 'README.md']
 
   s.extensions = ["ext/oj/extconf.rb"]

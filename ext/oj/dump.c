@@ -84,6 +84,7 @@ static void	dump_cstr(const char *str, int cnt, Out out);
 static void	dump_hex(u_char c, Out out);
 static void	dump_str(VALUE obj, Out out);
 static void	dump_sym(VALUE obj, Out out);
+static void	dump_class(VALUE obj, Out out);
 static void	dump_array(VALUE obj, int depth, Out out);
 static void	dump_hash(VALUE obj, int depth, Out out);
 
@@ -336,6 +337,13 @@ dump_sym(VALUE obj, Out out) {
 }
 
 static void
+dump_class(VALUE obj, Out out) {
+    const char	*s = rb_class2name(obj);
+
+    dump_cstr(s, (int)strlen(s), out);
+}
+
+static void
 dump_array(VALUE a, int depth, Out out) {
     VALUE       *np = RARRAY_PTR(a);
     size_t      size = 2;
@@ -424,9 +432,9 @@ dump_val(VALUE obj, int depth, Out out) {
     case T_SYMBOL:	dump_sym(obj, out);		break;
     case T_ARRAY:	dump_array(obj, depth, out);	break;
     case T_HASH:	dump_hash(obj, depth, out);	break;
+    case T_CLASS:	dump_class(obj, out);		break;
     case T_OBJECT:
     case T_REGEXP:
-    case T_CLASS:
     case T_DATA: // for Time
 	// TBD
 	rb_raise(rb_eNotImpError, "Failed to dump '%s' Object (%02x)\n",
