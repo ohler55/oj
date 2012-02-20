@@ -87,6 +87,7 @@ static void	dump_sym(VALUE obj, Out out);
 static void	dump_class(VALUE obj, Out out);
 static void	dump_array(VALUE obj, int depth, Out out);
 static void	dump_hash(VALUE obj, int depth, Out out);
+static void	dump_object(VALUE obj, int depth, Out out);
 
 static void     grow(Out out, size_t len);
 static int      is_json_friendly(const u_char *str, int len);
@@ -338,9 +339,21 @@ dump_sym(VALUE obj, Out out) {
 
 static void
 dump_class(VALUE obj, Out out) {
-    const char	*s = rb_class2name(obj);
+    const char	*s;
 
-    dump_cstr(s, (int)strlen(s), out);
+    switch (out->opts->effort) {
+    case StrictEffort:
+        rb_raise(rb_eEncodingError, "Failed to dump class %s to JSON.\n", rb_class2name(obj));
+	break;
+    case LazyEffort:
+	dump_nil(out);
+	break;
+    case TolerantEffort:
+    default:
+	s = rb_class2name(obj);
+	dump_cstr(s, (int)strlen(s), out);
+	break;
+    }
 }
 
 static void
@@ -420,6 +433,29 @@ dump_hash(VALUE obj, int depth, Out out) {
 }
 
 static void
+dump_object(VALUE obj, int depth, Out out) {
+    if (ObjectMode == out->opts->mode) {
+	rb_raise(rb_eEncodingError, "Not implemented yet.\n");
+	// TBD
+    } else {
+	switch (out->opts->effort) {
+	case StrictEffort:
+	    rb_raise(rb_eEncodingError, "Failed to dump %s Object to JSON in strict mode.\n", rb_class2name(obj));
+	    break;
+	case LazyEffort:
+	    dump_nil(out);
+	    break;
+	case TolerantEffort:
+	default:
+	    // TBD check for to_json() to get Hash
+	    // if not to_json() then walk variables
+	    break;
+	}
+    }
+    *out->cur = '\0';
+}
+
+static void
 dump_val(VALUE obj, int depth, Out out) {
     switch (rb_type(obj)) {
     case T_NIL:		dump_nil(out);			break;
@@ -433,9 +469,9 @@ dump_val(VALUE obj, int depth, Out out) {
     case T_ARRAY:	dump_array(obj, depth, out);	break;
     case T_HASH:	dump_hash(obj, depth, out);	break;
     case T_CLASS:	dump_class(obj, out);		break;
-    case T_OBJECT:
-    case T_REGEXP:
+    case T_OBJECT:	dump_object(obj, depth, out);	break;
     case T_DATA: // for Time
+    case T_REGEXP:
 	// TBD
 	rb_raise(rb_eNotImpError, "Failed to dump '%s' Object (%02x)\n",
 		 rb_class2name(rb_obj_class(obj)), rb_type(obj));

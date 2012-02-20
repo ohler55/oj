@@ -73,6 +73,18 @@ class Juice < ::Test::Unit::TestCase
     dump_and_load("a\u0041", false)
   end
 
+  def test_class
+    begin
+      json = Oj.dump(self.class, :effort => :strict)
+    rescue Exception => e
+      assert(true)
+    end
+    json = Oj.dump(self.class, :effort => :tolerant)
+    assert_equal('"Juice"', json)
+    json = Oj.dump(self.class, :effort => :lazy)
+    assert_equal('null', json)
+  end
+
   def test_array
     dump_and_load([], false)
     dump_and_load([true, false], false)
