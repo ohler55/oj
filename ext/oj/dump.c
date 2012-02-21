@@ -504,7 +504,7 @@ dump_obj_to_json(VALUE obj, Options copts, Out out) {
 }
 
 char*
-write_obj_to_str(VALUE obj, Options copts) {
+oj_write_obj_to_str(VALUE obj, Options copts) {
     struct _Out out;
 
     dump_obj_to_json(obj, copts, &out);
@@ -513,7 +513,7 @@ write_obj_to_str(VALUE obj, Options copts) {
 }
 
 void
-write_obj_to_file(VALUE obj, const char *path, Options copts) {
+oj_write_obj_to_file(VALUE obj, const char *path, Options copts) {
     struct _Out out;
     size_t      size;
     FILE        *f;    

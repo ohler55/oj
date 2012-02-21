@@ -106,7 +106,7 @@ next_white(ParseInfo pi) {
 }
 
 VALUE
-parse(char *json, Options options) {
+oj_parse(char *json, Options options) {
     VALUE		obj;
     struct _ParseInfo	pi;
 

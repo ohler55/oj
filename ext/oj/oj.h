@@ -58,7 +58,7 @@ extern "C" {
 #define NO_RSTRUCT 1
 #endif
 
-#define raise_error(msg, xml, current) _raise_error(msg, xml, current, __FILE__, __LINE__)
+#define raise_error(msg, xml, current) _oj_raise_error(msg, xml, current, __FILE__, __LINE__)
 
 typedef enum {
     Yes    = 'y',
@@ -87,10 +87,11 @@ typedef struct _Options {
     char        effort;         // Effort
 } *Options;
 
-extern VALUE    parse(char *json, Options options);
-extern char*	write_obj_to_str(VALUE obj, Options copts);
+extern VALUE	oj_parse(char *json, Options options);
+extern char*	oj_write_obj_to_str(VALUE obj, Options copts);
+extern void	oj_write_obj_to_file(VALUE obj, const char *path, Options copts);
 
-extern void     _raise_error(const char *msg, const char *xml, const char *current, const char* file, int line);
+extern void	_oj_raise_error(const char *msg, const char *xml, const char *current, const char* file, int line);
 
 
 extern VALUE    Oj;

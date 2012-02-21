@@ -252,7 +252,7 @@ load(char *json, int argc, VALUE *argv, VALUE self) {
     if (1 == argc) {
 	parse_options(*argv, &options);
     }
-    obj = parse(json, &options);
+    obj = oj_parse(json, &options);
     free(json);
 
     return obj;
@@ -321,7 +321,7 @@ dump(int argc, VALUE *argv, VALUE self) {
     if (2 == argc) {
         parse_options(argv[1], &copts);
     }
-    if (0 == (json = write_obj_to_str(*argv, &copts))) {
+    if (0 == (json = oj_write_obj_to_str(*argv, &copts))) {
         rb_raise(rb_eNoMemError, "Not enough memory.\n");
     }
     rstr = rb_str_new2(json);
@@ -362,7 +362,7 @@ void Init_oj() {
 }
 
 void
-_raise_error(const char *msg, const char *xml, const char *current, const char* file, int line) {
+_oj_raise_error(const char *msg, const char *xml, const char *current, const char* file, int line) {
     int         xline = 1;
     int         col = 1;
 
