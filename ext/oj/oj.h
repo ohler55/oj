@@ -93,8 +93,11 @@ extern void	oj_write_obj_to_file(VALUE obj, const char *path, Options copts);
 
 extern void	_oj_raise_error(const char *msg, const char *xml, const char *current, const char* file, int line);
 
-
 extern VALUE    Oj;
+
+extern ID	oj_to_json_id;
+extern ID	oj_instance_variables_id;
+
 
 #if defined(__cplusplus)
 #if 0

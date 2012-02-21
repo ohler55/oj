@@ -14,21 +14,19 @@
   - bignum
 
 - dump
+ - bignum
+ - multibyte group encoding
+ - object and other types of object dumping
+
+- dump
  - options
-  - indent
   - object or simple (needed for Hash)
   - call sjon on objects, skip, or raise
    - strict - raise
    - lazy / nil
    - tolerant / best effort
-    - use to_hash if respond_to
     - use to_json if respond_to
     - walk attributes
-
- - todo
-  - multibyte group encoding
-  - bignum
-  - object and other types of object dumping
 
 
 - use stream and a sax like parser and writer

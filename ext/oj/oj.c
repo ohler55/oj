@@ -45,6 +45,9 @@ void Init_oj();
 
 VALUE    Oj = Qnil;
 
+ID	oj_to_json_id;
+ID	oj_instance_variables_id;
+
 static VALUE	circular_sym;
 static VALUE	effort_sym;
 static VALUE	encoding_sym;
@@ -348,6 +351,9 @@ void Init_oj() {
     rb_define_module_function(Oj, "load_file", load_file, -1);
     rb_define_module_function(Oj, "dump", dump, -1);
 
+    oj_to_json_id = rb_intern("to_json");
+    oj_instance_variables_id = rb_intern("instance_variables");
+    
     circular_sym = ID2SYM(rb_intern("circular"));	rb_ary_push(keep, circular_sym);
     effort_sym = ID2SYM(rb_intern("effort"));		rb_ary_push(keep, effort_sym);
     encoding_sym = ID2SYM(rb_intern("encoding"));	rb_ary_push(keep, encoding_sym);

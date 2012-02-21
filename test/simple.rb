@@ -7,6 +7,26 @@ $: << File.join(File.dirname(__FILE__), "../ext")
 require 'test/unit'
 require 'oj'
 
+class Jeez
+  def initialize(x, y)
+    @x = x
+    @y = y
+  end
+  
+  def to_json()
+    { 'x' => @x, 'y' => @y }
+  end
+  
+end # Jeez
+
+class Jazz
+  def initialize(x, y)
+    @x = x
+    @y = y
+  end
+  
+end # Jazz
+
 class Juice < ::Test::Unit::TestCase
 
   def test_get_options
@@ -103,6 +123,34 @@ class Juice < ::Test::Unit::TestCase
     Oj.default_options = { :encoding => 'UTF-8' }
     dump_and_load("ぴーたー", false)
     Oj.default_options = { :encoding => nil }
+  end
+
+  def test_json_object
+    begin
+      json = Oj.dump(Jeez.new(true, 58), :effort => :strict)
+    rescue Exception => e
+      assert(true)
+    end
+    json = Oj.dump(Jeez.new(true, 58), :effort => :tolerant, :indent => 2)
+    assert_equal(%{{
+  "x":true,
+  "y":58}}, json)
+    json = Oj.dump(Jeez.new(true, 58), :effort => :lazy)
+    assert_equal('null', json)
+  end
+
+  def test_object
+    begin
+      json = Oj.dump(Jazz.new(true, 58), :effort => :strict)
+    rescue Exception => e
+      assert(true)
+    end
+    json = Oj.dump(Jazz.new(true, 58), :effort => :tolerant, :indent => 2)
+    assert_equal(%{{
+  "x":true,
+  "y":58}}, json)
+    json = Oj.dump(Jazz.new(true, 58), :effort => :lazy)
+    assert_equal('null', json)
   end
 
   def dump_and_load(obj, trace=false)

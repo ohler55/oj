@@ -88,6 +88,7 @@ static void	dump_class(VALUE obj, Out out);
 static void	dump_array(VALUE obj, int depth, Out out);
 static void	dump_hash(VALUE obj, int depth, Out out);
 static void	dump_object(VALUE obj, int depth, Out out);
+static void	dump_obj_attrs(VALUE obj, int with_class, int depth, Out out);
 
 static void     grow(Out out, size_t len);
 static int      is_json_friendly(const u_char *str, int len);
@@ -414,6 +415,9 @@ static void
 dump_hash(VALUE obj, int depth, Out out) {
     int	cnt = (int)RHASH_SIZE(obj);
 
+    if (out->end - out->cur <= 2) {
+	grow(out, 2);
+    }
     *out->cur++ = '{';
     if (0 == cnt) {
 	*out->cur++ = '}';
@@ -435,23 +439,70 @@ dump_hash(VALUE obj, int depth, Out out) {
 static void
 dump_object(VALUE obj, int depth, Out out) {
     if (ObjectMode == out->opts->mode) {
-	rb_raise(rb_eTypeError, "Not implemented yet.\n");
-	// TBD
+	dump_obj_attrs(obj, 1, depth, out);
     } else {
 	switch (out->opts->effort) {
 	case StrictEffort:
-	    rb_raise(rb_eTypeError, "Failed to dump %s Object to JSON in strict mode.\n", rb_class2name(obj));
+	    rb_raise(rb_eTypeError, "Failed to dump %s Object to JSON in strict mode.\n", rb_class2name(rb_obj_class(obj)));
 	    break;
 	case LazyEffort:
 	    dump_nil(out);
 	    break;
 	case TolerantEffort:
 	default:
-	    // TBD check for to_json() to get Hash
-	    // if not to_json() then walk variables
+	    if (rb_respond_to(obj, oj_to_json_id)) {
+		dump_hash(rb_funcall(obj, oj_to_json_id, 0), depth, out);
+	    } else {
+		dump_obj_attrs(obj, 0, depth, out);
+	    }
 	    break;
 	}
     }
+    *out->cur = '\0';
+}
+
+static void
+dump_obj_attrs(VALUE obj, int with_class, int depth, Out out) {
+    size_t	size;
+
+    if (out->end - out->cur <= 2) {
+	grow(out, 2);
+    }
+    *out->cur++ = '{';
+    if (with_class) {
+	const char	*class_name = rb_class2name(rb_obj_class(obj));
+	int		clen = (int)strlen(class_name);
+	int		d2 = depth + 1;
+	
+	size = d2 * out->indent + strlen(class_name) + 13;
+	if (out->end - out->cur <= (long)size) {
+	    grow(out, 2);
+	}
+	fill_indent(out, d2);
+	dump_cstr("class", 5, out);
+	*out->cur++ = ':';
+	dump_cstr(class_name, clen, out);
+    }
+    {
+	int	cnt;
+// use encoding as the indicator for Ruby 1.8.7 or 1.9.x
+#ifdef HAVE_RUBY_ENCODING_H
+	cnt = (int)rb_ivar_count(obj);
+#else
+	VALUE	vars = rb_funcall2(obj, rb_intern(oj_instance_variables_id), 0, 0);
+	cnt = (int)RARRAY_LEN(vars);
+#endif
+	if (with_class) {
+	    *out->cur++ = ',';
+	}
+	out->depth = depth + 1;
+#ifdef HAVE_RUBY_ENCODING_H
+#else
+#endif
+	// TBD attributes
+	out->depth = depth;
+    }
+    *out->cur++ = '}';
     *out->cur = '\0';
 }
 
