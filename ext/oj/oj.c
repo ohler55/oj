@@ -45,16 +45,16 @@ void Init_oj();
 
 VALUE    Oj = Qnil;
 
-VALUE   circular_sym;
-VALUE   effort_sym;
-VALUE   encoding_sym;
-VALUE   indent_sym;
-VALUE   lazy_sym;
-VALUE   mode_sym;
-VALUE   object_sym;
-VALUE   simple_sym;
-VALUE   strict_sym;
-VALUE   tolerant_sym;
+static VALUE	circular_sym;
+static VALUE	effort_sym;
+static VALUE	encoding_sym;
+static VALUE	indent_sym;
+static VALUE	lazy_sym;
+static VALUE	mode_sym;
+static VALUE	object_sym;
+static VALUE	simple_sym;
+static VALUE	strict_sym;
+static VALUE	tolerant_sym;
 
 static struct _Options  default_options = {
     { '\0' },		// encoding
