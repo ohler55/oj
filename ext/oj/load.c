@@ -265,7 +265,11 @@ read_str(ParseInfo pi) {
     return s;
 }
 
+#ifdef RUBINIUS
+#define NUM_MAX 0x07FFFFFF
+#else
 #define NUM_MAX (FIXNUM_MAX >> 8)
+#endif
 
 static VALUE
 read_num(ParseInfo pi) {
