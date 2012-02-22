@@ -45,26 +45,26 @@ void Init_oj();
 
 VALUE    Oj = Qnil;
 
-ID	oj_to_json_id;
 ID	oj_instance_variables_id;
+ID	oj_to_hash_id;
+ID	oj_to_json_id;
+ID	oj_tv_sec_id;
+ID	oj_tv_usec_id;
 
 static VALUE	circular_sym;
-static VALUE	effort_sym;
+static VALUE	compat_sym;
 static VALUE	encoding_sym;
 static VALUE	indent_sym;
-static VALUE	lazy_sym;
 static VALUE	mode_sym;
+static VALUE	null_sym;
 static VALUE	object_sym;
-static VALUE	simple_sym;
 static VALUE	strict_sym;
-static VALUE	tolerant_sym;
 
 static struct _Options  default_options = {
     { '\0' },		// encoding
     0,			// indent
     No,			// circular
-    NoMode,		// mode
-    TolerantEffort,	// effort
+    ObjectMode,		// mode
 };
 
 /* call-seq: default_options() => Hash
@@ -73,8 +73,7 @@ static struct _Options  default_options = {
  * - indent: [Fixnum] number of spaces to indent each element in an XML document
  * - encoding: [String] character encoding for the JSON file
  * - circular: [true|false|nil] support circular references while dumping
- * - mode: [:object|:simple|nil] load method to use for JSON
- * - effort: [:strict|:tolerant|:lazy_define] set the tolerance level for loading
+ * - mode: [:object|:strict|:compat|:null] load and dump modes to use for JSON
  * @return [Hash] all current option settings.
  */
 static VALUE
@@ -86,17 +85,11 @@ get_def_opts(VALUE self) {
     rb_hash_aset(opts, indent_sym, INT2FIX(default_options.indent));
     rb_hash_aset(opts, circular_sym, (Yes == default_options.circular) ? Qtrue : ((No == default_options.circular) ? Qfalse : Qnil));
     switch (default_options.mode) {
-    case ObjectMode:	rb_hash_aset(opts, mode_sym, object_sym);	break;
-    case SimpleMode:	rb_hash_aset(opts, mode_sym, simple_sym);	break;
-    case NoMode:
-    default:            rb_hash_aset(opts, mode_sym, Qnil);             break;
-    }
-    switch (default_options.effort) {
-    case StrictEffort:		rb_hash_aset(opts, effort_sym, strict_sym);	break;
-    case TolerantEffort:	rb_hash_aset(opts, effort_sym, tolerant_sym);	break;
-    case LazyEffort:		rb_hash_aset(opts, effort_sym, lazy_sym);	break;
-    case NoEffort:
-    default:			rb_hash_aset(opts, effort_sym, Qnil);		break;
+    case StrictMode:	rb_hash_aset(opts, mode_sym, strict_sym);	break;
+    case CompatMode:	rb_hash_aset(opts, mode_sym, compat_sym);	break;
+    case NullMode:	rb_hash_aset(opts, mode_sym, null_sym);		break;
+    case ObjectMode:
+    default:            rb_hash_aset(opts, mode_sym, object_sym);	break;
     }
     return opts;
 }
@@ -108,14 +101,14 @@ get_def_opts(VALUE self) {
  * @param [Fixnum] :indent number of spaces to indent each element in an XML document
  * @param [String] :encoding character encoding for the JSON file
  * @param [true|false|nil] :circular support circular references while dumping
- * @param [:object|:simple|nil] :mode load and dump methods to use for JSON
- * @param [:strict|:tolerant|:lazy] :effort set the tolerance level for
- *        loading. :strict raises an exception when a non-supported Object is
- *        encountered. :tolerant attempts to extract variable values from an
- *        Object using to_json() then it walks the Object's variables. The
- *        :lazy mode ignores non-supported Objects and replaces them with a
- *        null.
- * @return [nil]
+ * @parsm [:object|:strict|:compat|:null] load and dump mode to use for JSON
+ *        :strict raises an exception when a non-supported Object is
+ *        encountered. :compat attempts to extract variable values from an
+ *        Object using to_json() or to_hash() then it walks the Object's
+ *        variables if neither is found. The :object mode ignores to_hash()
+ *        and to_json() methods and encodes variables using code internal to
+ *        the Oj gem. The :null mode ignores non-supported Objects and
+ *        replaces them with a null.  @return [nil]
  */
 static VALUE
 set_def_opts(VALUE self, VALUE opts) {
@@ -145,32 +138,20 @@ set_def_opts(VALUE self, VALUE opts) {
     }
 
     v = rb_hash_lookup2(opts, mode_sym, Qundef);
-    if (Qundef == v) {
-	// no change
-    } else if (Qnil == v) {
-        default_options.mode = NoMode;
+    if (Qundef == v || Qnil == v) {
+	// ignore
     } else if (object_sym == v) {
         default_options.mode = ObjectMode;
-    } else if (simple_sym == v) {
-        default_options.mode = SimpleMode;
+    } else if (strict_sym == v) {
+        default_options.mode = StrictMode;
+    } else if (compat_sym == v) {
+        default_options.mode = CompatMode;
+    } else if (null_sym == v) {
+        default_options.mode = NullMode;
     } else {
-        rb_raise(rb_eArgError, ":mode must be :object, :simple, or nil.\n");
+        rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, or :null.\n");
     }
 
-    v = rb_hash_lookup2(opts, effort_sym, Qundef);
-    if (Qundef == v) {
-	// no change
-    } else if (Qnil == v) {
-        default_options.effort = NoEffort;
-    } else if (strict_sym == v) {
-        default_options.effort = StrictEffort;
-    } else if (tolerant_sym == v) {
-        default_options.effort = TolerantEffort;
-    } else if (lazy_sym == v) {
-        default_options.effort = LazyEffort;
-    } else {
-        rb_raise(rb_eArgError, ":effort must be :strict, :tolerant, :lazy, or nil.\n");
-    }
     for (o = ynos; 0 != o->attr; o++) {
         v = rb_hash_lookup2(opts, o->sym, Qundef);
 	if (Qundef == v) {
@@ -214,21 +195,14 @@ parse_options(VALUE ropts, Options copts) {
         if (Qnil != (v = rb_hash_lookup(ropts, mode_sym))) {
             if (object_sym == v) {
                 copts->mode = ObjectMode;
-            } else if (simple_sym == v) {
-                copts->mode = SimpleMode;
-            } else {
-                rb_raise(rb_eArgError, ":mode must be :object or :simple.\n");
-            }
-        }
-        if (Qnil != (v = rb_hash_lookup(ropts, effort_sym))) {
-            if (lazy_sym == v) {
-                copts->effort = LazyEffort;
-            } else if (tolerant_sym == v) {
-                copts->effort = TolerantEffort;
             } else if (strict_sym == v) {
-                copts->effort = StrictEffort;
+                copts->mode = StrictMode;
+            } else if (compat_sym == v) {
+                copts->mode = CompatMode;
+            } else if (null_sym == v) {
+                copts->mode = NullMode;
             } else {
-                rb_raise(rb_eArgError, ":effort must be :strict, :tolerant, or :lazy.\n");
+                rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, or :null.\n");
             }
         }
         for (o = ynos; 0 != o->attr; o++) {
@@ -351,20 +325,22 @@ void Init_oj() {
     rb_define_module_function(Oj, "load_file", load_file, -1);
     rb_define_module_function(Oj, "dump", dump, -1);
 
-    oj_to_json_id = rb_intern("to_json");
     oj_instance_variables_id = rb_intern("instance_variables");
+    oj_to_hash_id = rb_intern("to_hash");
+    oj_to_json_id = rb_intern("to_json");
+    oj_tv_sec_id = rb_intern("tv_sec");
+    oj_tv_usec_id = rb_intern("tv_usec");
     
     circular_sym = ID2SYM(rb_intern("circular"));	rb_ary_push(keep, circular_sym);
-    effort_sym = ID2SYM(rb_intern("effort"));		rb_ary_push(keep, effort_sym);
+    compat_sym = ID2SYM(rb_intern("compat"));		rb_ary_push(keep, compat_sym);
     encoding_sym = ID2SYM(rb_intern("encoding"));	rb_ary_push(keep, encoding_sym);
     indent_sym = ID2SYM(rb_intern("indent"));		rb_ary_push(keep, indent_sym);
-    lazy_sym = ID2SYM(rb_intern("lazy"));		rb_ary_push(keep, lazy_sym);
     mode_sym = ID2SYM(rb_intern("mode"));		rb_ary_push(keep, mode_sym);
+    null_sym = ID2SYM(rb_intern("null"));		rb_ary_push(keep, null_sym);
     object_sym = ID2SYM(rb_intern("object"));		rb_ary_push(keep, object_sym);
-    simple_sym = ID2SYM(rb_intern("simple"));		rb_ary_push(keep, simple_sym);
     strict_sym = ID2SYM(rb_intern("strict"));		rb_ary_push(keep, strict_sym);
-    tolerant_sym = ID2SYM(rb_intern("tolerant"));	rb_ary_push(keep, tolerant_sym);
-    default_options.effort = TolerantEffort;
+
+    default_options.mode = ObjectMode;
 }
 
 void

@@ -67,24 +67,17 @@ typedef enum {
 } YesNo;
 
 typedef enum {
+    StrictMode  = 's',
     ObjectMode  = 'o',
-    SimpleMode  = 's',
-    NoMode      = 0
+    NullMode    = 'n',
+    CompatMode  = 'c'
 } Mode;
-
-typedef enum {
-    StrictEffort    = 's',
-    TolerantEffort  = 't',
-    LazyEffort      = 'z',
-    NoEffort        = 0,
-} Effort;
 
 typedef struct _Options {
     char        encoding[64];   // encoding, stored in the option to avoid GC invalidation in default values
     int         indent;         // indention for dump, default 2
     char        circular;       // YesNo
     char        mode;           // Mode
-    char        effort;         // Effort
 } *Options;
 
 extern VALUE	oj_parse(char *json, Options options);
@@ -95,9 +88,11 @@ extern void	_oj_raise_error(const char *msg, const char *xml, const char *curren
 
 extern VALUE    Oj;
 
-extern ID	oj_to_json_id;
 extern ID	oj_instance_variables_id;
-
+extern ID	oj_to_hash_id;
+extern ID	oj_to_json_id;
+extern ID	oj_tv_sec_id;
+extern ID	oj_tv_usec_id;
 
 #if defined(__cplusplus)
 #if 0

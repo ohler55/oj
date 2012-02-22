@@ -14,7 +14,7 @@ class Jeez
   end
   
   def to_json()
-    { 'x' => @x, 'y' => @y }
+    %{{"x":#{@x},"y":#{@y}}}
   end
   
 end # Jeez
@@ -23,6 +23,9 @@ class Jazz
   def initialize(x, y)
     @x = x
     @y = y
+  end
+  def to_hash()
+    { 'x' => @x, 'y' => @y }
   end
   
 end # Jazz
@@ -35,8 +38,7 @@ class Juice < ::Test::Unit::TestCase
                    :encoding=>nil,
                    :indent=>0,
                    :circular=>false,
-                   :mode=>nil,
-                   :effort=>:tolerant})
+                   :mode=>:object})
   end
 
   def test_set_options
@@ -44,14 +46,12 @@ class Juice < ::Test::Unit::TestCase
       :encoding=>nil,
       :indent=>0,
       :circular=>false,
-      :mode=>nil,
-      :effort=>:tolerant}
+      :mode=>:object}
     o2 = {
       :encoding=>"UTF-8",
       :indent=>4,
       :circular=>true,
-      :mode=>:object,
-      :effort=>:strict }
+      :mode=>:compat}
     o3 = { :indent => 4 }
     Oj.default_options = o2
     opts = Oj.default_options()
@@ -95,13 +95,13 @@ class Juice < ::Test::Unit::TestCase
 
   def test_class
     begin
-      json = Oj.dump(self.class, :effort => :strict)
+      json = Oj.dump(self.class, :mode => :strict)
     rescue Exception => e
       assert(true)
     end
-    json = Oj.dump(self.class, :effort => :tolerant)
-    assert_equal('"Juice"', json)
-    json = Oj.dump(self.class, :effort => :lazy)
+    json = Oj.dump(self.class, :mode => :object)
+    assert_equal('{"*":"Class","-":"Juice"}', json)
+    json = Oj.dump(self.class, :mode => :null)
     assert_equal('null', json)
   end
 
@@ -125,38 +125,64 @@ class Juice < ::Test::Unit::TestCase
     Oj.default_options = { :encoding => nil }
   end
 
-  def test_json_object
+  def test_time
+    t = Time.new(2012, 1, 5, 23, 58, 7)
     begin
-      json = Oj.dump(Jeez.new(true, 58), :effort => :strict)
+      json = Oj.dump(t, :mode => :strict)
     rescue Exception => e
       assert(true)
     end
-    json = Oj.dump(Jeez.new(true, 58), :effort => :tolerant, :indent => 2)
+    json = Oj.dump(t, :mode => :compat)
+    assert_equal(%{{"*":"Time","-":1325775487.000000}}, json)
+    json = Oj.dump(t, :mode => :null)
+    assert_equal('null', json)
+  end
+
+  def test_json_object
+    begin
+      json = Oj.dump(Jeez.new(true, 58), :mode => :strict)
+    rescue Exception => e
+      assert(true)
+    end
+    json = Oj.dump(Jeez.new(true, 58), :mode => :compat, :indent => 2)
+    assert_equal(%{{"x":true,"y":58}}, json)
+    json = Oj.dump(Jeez.new(true, 58), :mode => :null)
+    assert_equal('null', json)
+  end
+
+  def test_hash_object
+    begin
+      json = Oj.dump(Jazz.new(true, 58), :mode => :strict)
+    rescue Exception => e
+      assert(true)
+    end
+    json = Oj.dump(Jazz.new(true, 58), :mode => :compat, :indent => 2)
     assert_equal(%{{
   "x":true,
   "y":58}}, json)
-    json = Oj.dump(Jeez.new(true, 58), :effort => :lazy)
+    json = Oj.dump(Jazz.new(true, 58), :mode => :null)
     assert_equal('null', json)
   end
 
   def test_object
     begin
-      json = Oj.dump(Jazz.new(true, 58), :effort => :strict)
+      json = Oj.dump(Jazz.new(true, 58), :mode => :strict)
     rescue Exception => e
       assert(true)
     end
-    json = Oj.dump(Jazz.new(true, 58), :effort => :tolerant, :indent => 2)
+    json = Oj.dump(Jazz.new(true, 58), :mode => :object, :indent => 2)
     assert_equal(%{{
+  "*":"Jazz",
   "x":true,
   "y":58}}, json)
-    json = Oj.dump(Jazz.new(true, 58), :effort => :lazy)
+    json = Oj.dump(Jazz.new(true, 58), :mode => :null)
     assert_equal('null', json)
   end
 
   def dump_and_load(obj, trace=false)
     json = Oj.dump(obj, :indent => 2)
     puts json if trace
-    loaded = Oj.load(json, :mode => :simple);
+    loaded = Oj.load(json);
     assert_equal(obj, loaded)
     loaded
   end
