@@ -116,7 +116,11 @@ oj_parse(char *json, Options options) {
     /* initialize parse info */
     pi.str = json;
     pi.s = json;
+#ifdef HAVE_RUBY_ENCODING_H
     pi.encoding = ('\0' == *options->encoding) ? 0 : rb_enc_find(options->encoding);
+#else
+    pi.encoding = 0;
+#endif
     pi.options = options;
     if (Qundef == (obj = read_next(&pi))) {
 	raise_error("no object read", pi.str, pi.s);
