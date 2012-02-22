@@ -79,6 +79,10 @@ class Juice < ::Test::Unit::TestCase
     dump_and_load(1, false)
   end
 
+  def test_bignum
+    dump_and_load(12345678901234567890123456789, true)
+  end
+
   def test_float
     dump_and_load(0.0, false)
     dump_and_load(12345.6789, false)
@@ -177,6 +181,20 @@ class Juice < ::Test::Unit::TestCase
   "y":58}}, json)
     json = Oj.dump(Jazz.new(true, 58), :mode => :null)
     assert_equal('null', json)
+  end
+
+  def test_exception
+    err = nil
+    begin
+      raise StandardError.new('A Message')
+    rescue Exception => e
+      err = e
+    end
+    json = Oj.dump(err, :mode => :object, :indent => 2)
+    e2 = Oj.load(json, :mode => :strict)
+    assert_equal(err.class.to_s, e2['*'])
+    assert_equal(err.message, e2['mesg'])
+    assert_equal(err.backtrace, e2['bt'])
   end
 
   def dump_and_load(obj, trace=false)

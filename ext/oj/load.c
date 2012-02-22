@@ -261,14 +261,18 @@ read_str(ParseInfo pi) {
     return s;
 }
 
+#define NUM_MAX (FIXNUM_MAX >> 8)
+
 static VALUE
 read_num(ParseInfo pi) {
+    char	*start = pi->s;
     int64_t	n = 0;
     long	a = 0;
     long	div = 1;
     long	e = 0;
     int		neg = 0;
     int		eneg = 0;
+    int		big = 0;
 
     if ('-' == *pi->s) {
 	pi->s++;
@@ -278,6 +282,19 @@ read_num(ParseInfo pi) {
     }
     for (; '0' <= *pi->s && *pi->s <= '9'; pi->s++) {
 	n = n * 10 + (*pi->s - '0');
+	if (NUM_MAX <= n) {
+	    big = 1;
+	}
+    }
+    if (big) {
+	char	c = *pi->s;
+	VALUE	num;
+	
+	*pi->s = '\0';
+	num = rb_cstr_to_inum(start, 10, 0);
+	*pi->s = c;
+
+	return num;
     }
     if ('.' == *pi->s) {
 	pi->s++;

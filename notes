@@ -5,37 +5,17 @@
 
 
 - next
- - make sure dump buffers are not exceeded
- - test dump Exception
  - implement load mode
  - stream
   - load
   - dump
 
 - load
- - todo
-  - bignum
 
 - dump
- - bignum
  - multibyte group encoding
  - object and other types of object dumping
 
-- dump
- - options
-  - object or simple (needed for Hash)
-  - call sjon on objects, skip, or raise
-   - strict - raise
-   - lazy / nil
-   - tolerant / best effort
-    - use to_json if respond_to
-    - walk attributes
-
-
-- write a stream parser and writer
-
-- serialize/deserialize any object
- - add class as first key in an object hash or make class and vars keys only (id for circular later)
 
 - support circular object encoding
 

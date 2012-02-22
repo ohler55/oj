@@ -79,6 +79,7 @@ static void	dump_nil(Out out);
 static void	dump_true(Out out);
 static void	dump_false(Out out);
 static void	dump_fixnum(VALUE obj, Out out);
+static void	dump_bignum(VALUE obj, Out out);
 static void	dump_float(VALUE obj, Out out);
 static void	dump_cstr(const char *str, int cnt, Out out);
 static void	dump_hex(u_char c, Out out);
@@ -251,6 +252,19 @@ dump_fixnum(VALUE obj, Out out) {
     for (; '\0' != *b; b++) {
         *out->cur++ = *b;
     }
+    *out->cur = '\0';
+}
+
+static void
+dump_bignum(VALUE obj, Out out) {
+    VALUE	rs = rb_big2str(obj, 10);
+    int		cnt = (int)RSTRING_LEN(rs);
+
+    if (out->end - out->cur <= (long)cnt) {
+        grow(out, cnt);
+    }
+    memcpy(out->cur, StringValuePtr(rs), cnt);
+    out->cur += cnt;
     *out->cur = '\0';
 }
 
@@ -550,8 +564,13 @@ dump_attr_cb(ID key, VALUE value, Out out) {
     if (out->end - out->cur <= (long)size) {
 	grow(out, size);
     }
+    if ('@' == *attr) {
+	attr++;
+    } else {
+	// TBD handle unusual exception mesg data
+    }
     fill_indent(out, depth);
-    dump_cstr(attr + 1, (int)strlen(attr) - 1, out);
+    dump_cstr(attr, (int)strlen(attr) - 1, out);
     *out->cur++ = ':';
     dump_val(value, depth, out);
     out->depth = depth;
@@ -614,7 +633,12 @@ dump_obj_attrs(VALUE obj, int with_class, int depth, Out out) {
 	    vid = rb_to_id(*np);
 	    fill_indent(out, d2);
 	    attr = rb_id2name(vid);
-	    dump_cstr(attr + 1, (int)strlen(attr) - 1, out);
+	    if ('@' == *attr) {
+		attr++;
+	    } else {
+		// TBD handle unusual exception mesg data
+	    }
+	    dump_cstr(attr, (int)strlen(attr) - 1, out);
 	    *out->cur++ = ':';
 	    dump_val(rb_ivar_get(obj, vid), d2, out);
 	    if (out->end - out->cur <= 2) {
@@ -639,7 +663,7 @@ dump_val(VALUE obj, int depth, Out out) {
     case T_FALSE:	dump_false(out);		break;
     case T_FIXNUM:	dump_fixnum(obj, out);		break;
     case T_FLOAT:	dump_float(obj, out);		break;
-    case T_BIGNUM:	break; // TBD
+    case T_BIGNUM:	dump_bignum(obj, out);		break;
     case T_STRING:	dump_str(obj, out);		break;
     case T_SYMBOL:	dump_sym(obj, out);		break;
     case T_ARRAY:	dump_array(obj, depth, out);	break;

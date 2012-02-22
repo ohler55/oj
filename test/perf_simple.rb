@@ -47,29 +47,44 @@ end
 $indent = 2
 $iter = 10000
 $with_object = true
+$with_bignum = true
+$with_nums = true
 
 opts = OptionParser.new
 opts.on("-c", "--count [Int]", Integer, "iterations")       { |i| $iter = i }
 opts.on("-i", "--indent [Int]", Integer, "indentation")     { |i| $indent = i }
 opts.on("-o", "without objects")                            { $with_object = false }
+opts.on("-b", "without bignum")                             { $with_bignum = false }
+opts.on("-n", "without numbers")                            { $with_nums = false }
 opts.on("-h", "--help", "Show this display")                { puts opts; Process.exit!(0) }
 files = opts.parse(ARGV)
 
-obj = {
-  'a' => 'Alpha',
-  'b' => true,
-  'c' => 12345,
-  'd' => [ true, [false, [12345, nil], 3.967, ['something', false], nil]],
-  'e' => { 'one' => 1, 'two' => 2 },
-  'f' => nil
+if $with_nums
+  obj = {
+    'a' => 'Alpha',
+    'b' => true,
+    'c' => 12345,
+    'd' => [ true, [false, [12345, nil], 3.967, ['something', false], nil]],
+    'e' => { 'one' => 1, 'two' => 2 },
+    'f' => nil,
   }
-obj['g'] = Jazz.new() if $with_object
+  obj['g'] = Jazz.new() if $with_object
+  obj['h'] = 12345678901234567890123456789 if $with_bignum
+else
+  obj = {
+    'a' => 'Alpha',
+    'b' => true,
+    'c' => '12345',
+    'd' => [ true, [false, ['12345', nil], '3.967', ['something', false], nil]],
+    'e' => { 'one' => '1', 'two' => '2' },
+    'f' => nil,
+  }
+end
 
 Oj.default_options = { :indent => $indent, :mode => :object }
 
 s = Oj.dump(obj)
 
-mp = MessagePack.pack(obj)
 xml = Ox.dump(obj, :indent => $indent)
 
 puts
@@ -136,6 +151,7 @@ rescue Exception => e
 end
 
 begin
+  mp = MessagePack.pack(obj)
   start = Time.now
   $iter.times do
     MessagePack.unpack(mp)
@@ -148,7 +164,7 @@ begin
   parse_results[:msgpack] = dt
   puts "%d MessagePack.unpack()s in %0.3f seconds or %0.1f packs/msec" % [$iter, dt, $iter/dt/1000.0]
 rescue Exception => e
-  puts "JSON::Pure failed: #{e.class}: #{e.message}"
+  puts "MessagePack failed: #{e.class}: #{e.message}"
 end
 
 start = Time.now
@@ -162,6 +178,10 @@ puts "%d Ox.load()s in %0.3f seconds or %0.1f loads/msec" % [$iter, dt, $iter/dt
 puts "Parser results:"
 puts "gem       seconds  parses/msec  X faster than #{base_name} (higher is better)"
 parse_results.each do |name,dt|
+  if 0.0 == dt
+    puts "#{name} failed to generate JSON"
+    next
+  end
   puts "%-7s  %6.3f    %5.1f        %4.1f" % [name, dt, $iter/dt/1000.0, base_dt/dt]
 end
 
@@ -229,17 +249,22 @@ rescue Exception => e
   puts "JSON::Pure failed: #{e.class}: #{e.message}"
 end
 
-start = Time.now
-$iter.times do
-  MessagePack.pack(obj)
+begin
+  start = Time.now
+  $iter.times do
+    MessagePack.pack(obj)
+  end
+  dt = Time.now - start
+  if base_dt < dt
+    base_dt = dt
+    base_name = 'MessagePack'
+  end
+  parse_results[:msgpack] = dt
+  puts "%d Msgpack()s in %0.3f seconds or %0.1f unpacks/msec" % [$iter, dt, $iter/dt/1000.0]
+rescue Exception => e
+  parse_results[:msgpack] = 0.0
+  puts "MessagePack failed: #{e.class}: #{e.message}"
 end
-dt = Time.now - start
-if base_dt < dt
-  base_dt = dt
-  base_name = 'MessagePack'
-end
-parse_results[:msgpack] = dt
-puts "%d Msgpack()s in %0.3f seconds or %0.1f unpacks/msec" % [$iter, dt, $iter/dt/1000.0]
 
 start = Time.now
 $iter.times do
