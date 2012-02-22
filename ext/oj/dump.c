@@ -34,13 +34,12 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "ruby.h"
-#ifdef HAVE_RUBY_ENCODING_H
+#include "oj.h"
+#if IVAR_HELPERS
 #include "ruby/st.h"
 #else
 #include "st.h"
 #endif
-#include "oj.h"
 
 typedef unsigned long   ulong;
 
@@ -606,7 +605,7 @@ dump_obj_attrs(VALUE obj, int with_class, int depth, Out out) {
     {
 	int	cnt;
 // use encoding as the indicator for Ruby 1.8.7 or 1.9.x
-#ifdef HAVE_RUBY_ENCODING_H
+#if IVAR_HELPERS
 	cnt = (int)rb_ivar_count(obj);
 #else
 	VALUE		vars = rb_funcall2(obj, oj_instance_variables_id, 0, 0);
@@ -621,7 +620,7 @@ dump_obj_attrs(VALUE obj, int with_class, int depth, Out out) {
 	    *out->cur++ = ',';
 	}
 	out->depth = depth + 1;
-#ifdef HAVE_RUBY_ENCODING_H
+#if IVAR_HELPERS
 	rb_ivar_foreach(obj, dump_attr_cb, (VALUE)out);
 	out->cur--; // backup to overwrite last comma
 #else

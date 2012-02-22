@@ -41,6 +41,7 @@ extern "C" {
 #include "ruby.h"
 #ifdef HAVE_RUBY_ENCODING_H
 // HAVE_RUBY_ENCODING_H defined for Ruby 1.9
+#define IVAR_HELPERS 1
 #include "ruby/encoding.h"
 #endif
 
@@ -56,6 +57,7 @@ extern "C" {
 #undef T_RATIONAL
 #undef T_COMPLEX
 #define NO_RSTRUCT 1
+#define IVAR_HELPERS 0
 #endif
 
 #define raise_error(msg, xml, current) _oj_raise_error(msg, xml, current, __FILE__, __LINE__)
