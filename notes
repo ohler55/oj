@@ -5,6 +5,8 @@
 
 
 - next
+ - use hex lookup
+ - handle hash with non-string keys
  - implement load mode
  - stream
   - load
