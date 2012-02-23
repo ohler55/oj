@@ -5,9 +5,10 @@
 
 
 - next
- - use hex lookup
- - handle hash with non-string keys
  - implement load mode
+  - objects
+  - hash
+  
  - stream
   - load
   - dump

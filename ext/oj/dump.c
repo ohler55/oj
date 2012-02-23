@@ -70,6 +70,7 @@ typedef struct _Out {
     int                 depth; // used by dumpHash
     Options             opts;
     VALUE		obj;
+    uint32_t		hash_cnt;
 } *Out;
 
 static void     dump_obj_to_json(VALUE obj, Options copts, Out out);
@@ -96,6 +97,8 @@ static void     grow(Out out, size_t len);
 static int      is_json_friendly(const u_char *str, int len);
 static int	json_friendly_size(const u_char *str, int len);
 
+
+static const char	hex_chars[17] = "0123456789abcdef";
 
 static char     json_friendly_chars[256] = "\
 uuuuuuuuxxxuxxuuuuuuuuuuuuuuuuuu\
@@ -165,17 +168,9 @@ inline static void
 dump_hex(u_char c, Out out) {
     u_char	d = (c >> 4) & 0x0F;
 
-    if (9 < d) {
-	*out->cur++ = (d - 10) + 'a';
-    } else {
-	*out->cur++ = d + '0';
-    }
+    *out->cur++ = hex_chars[d];
     d = c & 0x0F;
-    if (9 < d) {
-	*out->cur++ = (d - 10) + 'a';
-    } else {
-	*out->cur++ = d + '0';
-    }
+    *out->cur++ = hex_chars[d];
 }
 
 static void
@@ -424,15 +419,58 @@ dump_array(VALUE a, int depth, Out out) {
 static int
 hash_cb(VALUE key, VALUE value, Out out) {
     int		depth = out->depth;
-    size_t	size = depth * out->indent + 1;
+    long	size = depth * out->indent + 1;
 
-    if (out->end - out->cur <= (long)size) {
+    if (out->end - out->cur <= size) {
 	grow(out, size);
     }
     fill_indent(out, depth);
-    dump_str(key, out);
-    *out->cur++ = ':';
-    dump_val(value, depth, out);
+    // TBD if key is a string else dump with unique key for and entry array
+    if (rb_type(key) == T_STRING) {
+	dump_str(key, out);
+	*out->cur++ = ':';
+	dump_val(value, depth, out);
+    } else if (CompatMode != out->opts->mode && ObjectMode != out->opts->mode) {
+	rb_raise(rb_eTypeError, "Failed to dump %s Object, a Hash key, to JSON in strict mode.\n", rb_class2name(key));
+    } else {
+	int	d2 = depth + 1;
+	long	s2 = size + out->indent + 1;
+	int	i;
+	int	started = 0;
+	u_char	b;
+
+	if (out->end - out->cur <= s2 + 14) {
+	    grow(out, s2 + 14);
+	}
+	*out->cur++ = '"';
+	*out->cur++ = '#';
+	out->hash_cnt++;
+	for (i = 28; 0 <= i; i -= 4) {
+	    b = (u_char)((out->hash_cnt >> i) & 0x0000000F);
+	    if ('\0' != b) {
+		started = 1;
+	    }
+	    if (started) {
+		*out->cur++ = hex_chars[b];
+	    }
+	}
+	*out->cur++ = '"';
+	*out->cur++ = ':';
+	*out->cur++ = '[';
+	fill_indent(out, d2);
+	dump_val(key, d2, out);
+	if (out->end - out->cur <= (long)s2) {
+	    grow(out, s2);
+	}
+	*out->cur++ = ',';
+	fill_indent(out, d2);
+	dump_val(value, d2, out);
+	if (out->end - out->cur <= (long)size) {
+	    grow(out, size);
+	}
+	fill_indent(out, depth);
+	*out->cur++ = ']';
+    }
     out->depth = depth;
     *out->cur++ = ',';
     
@@ -691,6 +729,7 @@ dump_obj_to_json(VALUE obj, Options copts, Out out) {
 //    out->circ_cnt = 0;
     out->opts = copts;
     out->obj = obj;
+    out->hash_cnt = 0;
 /*    if (Yes == copts->circular) {
         ox_cache8_new(&out->circ_cache);
 	}*/

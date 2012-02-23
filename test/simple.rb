@@ -80,7 +80,7 @@ class Juice < ::Test::Unit::TestCase
   end
 
   def test_bignum
-    dump_and_load(12345678901234567890123456789, true)
+    dump_and_load(12345678901234567890123456789, false)
   end
 
   def test_float
@@ -121,6 +121,18 @@ class Juice < ::Test::Unit::TestCase
     dump_and_load({}, false)
     dump_and_load({ 'true' => true, 'false' => false}, false)
     dump_and_load({ 'true' => true, 'array' => [], 'hash' => { }}, false)
+  end
+  
+  def test_non_str_hash
+    json = Oj.dump({ 1 => true, 0 => false}, :mode => :compat)
+    h = Oj.load(json, :mode => :strict)
+    assert_equal({"#1" => [1, true], "#2" => [0, false]}, h)
+  end
+  
+  def test_mixed_hash
+    json = Oj.dump({ 1 => true, 0 => false, 'nil' => nil}, :mode => :compat)
+    h = Oj.load(json, :mode => :strict)
+    assert_equal({"#1" => [1, true], "#2" => [0, false], 'nil' => nil}, h)
   end
   
   def test_encode
