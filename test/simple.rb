@@ -20,6 +20,8 @@ class Jeez
 end # Jeez
 
 class Jazz
+  attr_reader :x, :y
+
   def initialize(x, y)
     @x = x
     @y = y
@@ -124,15 +126,19 @@ class Juice < ::Test::Unit::TestCase
   end
   
   def test_non_str_hash
-    json = Oj.dump({ 1 => true, 0 => false}, :mode => :compat)
+    json = Oj.dump({ 1 => true, 0 => false }, :mode => :compat)
     h = Oj.load(json, :mode => :strict)
     assert_equal({"#1" => [1, true], "#2" => [0, false]}, h)
+    h = Oj.load(json, :mode => :compat)
+    assert_equal({ 1 => true, 0 => false }, h)
   end
   
   def test_mixed_hash
-    json = Oj.dump({ 1 => true, 0 => false, 'nil' => nil}, :mode => :compat)
+    json = Oj.dump({ 1 => true, 0 => false, 'nil' => nil }, :mode => :compat)
     h = Oj.load(json, :mode => :strict)
     assert_equal({"#1" => [1, true], "#2" => [0, false], 'nil' => nil}, h)
+    h = Oj.load(json, :mode => :object)
+    assert_equal({ 1 => true, 0 => false, 'nil' => nil }, h)
   end
   
   def test_encode
@@ -167,17 +173,25 @@ class Juice < ::Test::Unit::TestCase
   end
 
   def test_hash_object
+    obj = Jazz.new(true, 58)
     begin
-      json = Oj.dump(Jazz.new(true, 58), :mode => :strict)
+      json = Oj.dump(obj, :mode => :strict)
     rescue Exception => e
       assert(true)
     end
-    json = Oj.dump(Jazz.new(true, 58), :mode => :compat, :indent => 2)
+    json = Oj.dump(obj, :mode => :compat, :indent => 2)
     assert_equal(%{{
   "x":true,
   "y":58}}, json)
-    json = Oj.dump(Jazz.new(true, 58), :mode => :null)
+    json = Oj.dump(obj, :mode => :null)
     assert_equal('null', json)
+    json = Oj.dump(obj, :mode => :object, :indent => 2)
+    assert_equal(%{{
+  "*":"Jazz",
+  "x":true,
+  "y":58}}, json)
+    obj2 = Oj.load(json, :mode => :object)
+    puts "*** x: #{obj2.x},  y: #{obj2.y}"
   end
 
   def test_object

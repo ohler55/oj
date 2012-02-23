@@ -47,6 +47,7 @@ typedef struct _ParseInfo {
     Options	options;
 } *ParseInfo;
 
+static VALUE	classname2class(const char *name, ParseInfo pi);
 static VALUE	read_next(ParseInfo pi);
 static VALUE	read_obj(ParseInfo pi);
 static VALUE	read_array(ParseInfo pi);
@@ -103,6 +104,85 @@ next_white(ParseInfo pi) {
 	    break;
 	}
     }
+}
+
+inline static VALUE
+resolve_classname(VALUE mod, const char *class_name, int create) {
+    VALUE       clas;
+    ID          ci = rb_intern(class_name);
+
+    if (rb_const_defined_at(mod, ci) || !create) {
+	clas = rb_const_get_at(mod, ci);
+    } else {
+	//clas = rb_define_class_under(mod, class_name, oj_bag_clas);
+	clas = rb_const_get_at(mod, ci); // TBD temp
+    }
+    return clas;
+}
+
+inline static VALUE
+classname2obj(const char *name, ParseInfo pi) {
+    VALUE   clas = classname2class(name, pi);
+    
+    if (Qundef == clas) {
+        return Qnil;
+    } else {
+        return rb_obj_alloc(clas);
+    }
+}
+
+static VALUE
+classname2class(const char *name, ParseInfo pi) {
+    VALUE       clas;
+    int		create = 0; // TBD from options
+            
+#if 0
+    VALUE       *slot;
+    if (Qundef == (clas = oj_cache_get(oj_class_cache, name, &slot))) {
+        char            class_name[1024];
+        char            *s;
+        const char      *n = name;
+
+        clas = rb_cObject;
+        for (s = class_name; '\0' != *n; n++) {
+            if (':' == *n) {
+                *s = '\0';
+                n++;
+                if (Qundef == (clas = resolve_classname(clas, class_name, pi->effort))) {
+                    return Qundef;
+                }
+                s = class_name;
+            } else {
+                *s++ = *n;
+            }
+        }
+        *s = '\0';
+        if (Qundef != (clas = resolve_classname(clas, class_name, pi->effort))) {
+            *slot = clas;
+        }
+    }
+#else
+    char            class_name[1024];
+    char            *s;
+    const char      *n = name;
+
+    clas = rb_cObject;
+    for (s = class_name; '\0' != *n; n++) {
+	if (':' == *n) {
+	    *s = '\0';
+	    n++;
+	    if (Qundef == (clas = resolve_classname(clas, class_name, create))) {
+		return Qundef;
+	    }
+	    s = class_name;
+	} else {
+	    *s++ = *n;
+	}
+    }
+    *s = '\0';
+    clas = resolve_classname(clas, class_name, create);
+#endif
+    return clas;
 }
 
 VALUE
@@ -185,6 +265,8 @@ read_obj(ParseInfo pi) {
     VALUE	obj = Qundef;
     VALUE	key = Qundef;
     VALUE	val = Qundef;
+    const char	*ks;
+    int		obj_type = T_NONE;
     
     pi->s++;
     next_non_white(pi);
@@ -194,6 +276,7 @@ read_obj(ParseInfo pi) {
     }
     while (1) {
 	next_non_white(pi);
+	ks = 0;
 	if ('"' != *pi->s || Qundef == (key = read_str(pi))) {
 	    raise_error("unexpected character", pi->str, pi->s);
 	}
@@ -206,10 +289,41 @@ read_obj(ParseInfo pi) {
 	if (Qundef == (val = read_next(pi))) {
 	    raise_error("unexpected character", pi->str, pi->s);
 	}
+	if (ObjectMode == pi->options->mode || CompatMode == pi->options->mode) {
+	    ks = StringValuePtr(key);
+	    if ('*' == *ks && T_STRING == rb_type(val)) {
+		if (Qundef == obj) {
+		    const char	*classname = StringValuePtr(val);
+
+		    obj = classname2obj(classname, pi);
+		    obj_type = T_OBJECT;
+		}
+	    } else if ('#' == *ks &&
+		       (T_NONE == obj_type || T_HASH == obj_type) &&
+		       rb_type(val) == T_ARRAY && 2 == RARRAY_LEN(val)) {
+		VALUE	*np = RARRAY_PTR(val);
+
+		key = *np;
+		val = *(np + 1);
+	    } else if ('~' == *ks) {
+		// TBD id for circular references
+	    }
+	}
 	if (Qundef == obj) {
 	    obj = rb_hash_new();
+	    obj_type = T_HASH;
 	}
-	rb_hash_aset(obj, key, val);
+	if (T_OBJECT == obj_type) {
+	    char	attr[256];
+
+	    // TBD use cache for this
+	    *attr = '@';
+	    strncpy(attr + 1, ks, sizeof(attr) - 2);
+	    attr[sizeof(attr) - 1] = '\0';
+	    rb_ivar_set(obj, rb_intern(attr), val);
+	} else {
+	    rb_hash_aset(obj, key, val);
+	}
 	next_non_white(pi);
 	if ('}' == *pi->s) {
 	    pi->s++;
