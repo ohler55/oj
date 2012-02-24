@@ -60,6 +60,9 @@ static VALUE	null_sym;
 static VALUE	object_sym;
 static VALUE	strict_sym;
 
+Cache   oj_class_cache = 0;
+Cache   oj_attr_cache = 0;
+
 static struct _Options  default_options = {
     { '\0' },		// encoding
     0,			// indent
@@ -312,6 +315,29 @@ dump(int argc, VALUE *argv, VALUE self) {
     return rstr;
 }
 
+
+/* call-seq: to_file(file_path, obj, options)
+ *
+ * Dumps an Object to the specified file.
+ * @param [String] file_path file path to write the JSON document to
+ * @param [Object] obj Object to serialize as an JSON document String
+ * @param [Hash] options formating options
+ * @param [Fixnum] :indent format expected
+ * @param [true|false] :circular allow circular references, default: false
+ */
+static VALUE
+to_file(int argc, VALUE *argv, VALUE self) {
+    struct _Options     copts = default_options;
+    
+    if (3 == argc) {
+        parse_options(argv[2], &copts);
+    }
+    Check_Type(*argv, T_STRING);
+    oj_write_obj_to_file(argv[1], StringValuePtr(*argv), &copts);
+
+    return Qnil;
+}
+
 void Init_oj() {
     VALUE       keep = Qnil;
 
@@ -324,6 +350,7 @@ void Init_oj() {
     rb_define_module_function(Oj, "load", load_str, -1);
     rb_define_module_function(Oj, "load_file", load_file, -1);
     rb_define_module_function(Oj, "dump", dump, -1);
+    rb_define_module_function(Oj, "to_file", to_file, -1);
 
     oj_instance_variables_id = rb_intern("instance_variables");
     oj_to_hash_id = rb_intern("to_hash");
@@ -341,6 +368,9 @@ void Init_oj() {
     strict_sym = ID2SYM(rb_intern("strict"));		rb_ary_push(keep, strict_sym);
 
     default_options.mode = ObjectMode;
+
+    oj_cache_new(&oj_class_cache);
+    oj_cache_new(&oj_attr_cache);
 }
 
 void

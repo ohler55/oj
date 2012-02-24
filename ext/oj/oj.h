@@ -45,6 +45,8 @@ extern "C" {
 #include "ruby/encoding.h"
 #endif
 
+#include "cache.h"
+
 #ifdef JRUBY
 #define NO_RSTRUCT 1
 #endif
@@ -95,6 +97,9 @@ extern ID	oj_to_hash_id;
 extern ID	oj_to_json_id;
 extern ID	oj_tv_sec_id;
 extern ID	oj_tv_usec_id;
+
+extern Cache    oj_class_cache;
+extern Cache    oj_attr_cache;
 
 #if defined(__cplusplus)
 #if 0
