@@ -739,14 +739,14 @@ dump_obj_attrs(VALUE obj, int with_class, int depth, Out out) {
 	    attr = rb_id2name(vid);
 	    if ('@' == *attr) {
 		attr++;
-		dump_cstr(attr, strlen(attr), out);
+		dump_cstr(attr, strlen(attr), 0, out);
 	    } else {
 		char	buf[32];
 
 		*buf = '~';
 		strncpy(buf + 1, attr, sizeof(buf) - 2);
 		buf[sizeof(buf) - 1] = '\0';
-		dump_cstr(buf, strlen(attr) + 1, out);
+		dump_cstr(buf, strlen(attr) + 1, 0, out);
 	    }
 	    *out->cur++ = ':';
 	    dump_val(rb_ivar_get(obj, vid), d2, out);
