@@ -92,9 +92,14 @@ extern void	_oj_raise_error(const char *msg, const char *xml, const char *curren
 
 extern VALUE    Oj;
 
+extern VALUE	oj_time_class;
+
+extern ID	oj_at_id;
 extern ID	oj_instance_variables_id;
 extern ID	oj_to_hash_id;
 extern ID	oj_to_json_id;
+extern ID	oj_to_sym_id;
+extern ID	oj_tv_nsec_id;
 extern ID	oj_tv_sec_id;
 extern ID	oj_tv_usec_id;
 

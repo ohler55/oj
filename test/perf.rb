@@ -9,6 +9,15 @@ class Perf
     @items << Item.new(title, op, &blk)
   end
 
+  def before(title, &blk)
+    @items.each do |i|
+      if title == i.title
+        i.set_before(&blk)
+        break
+      end
+    end
+  end
+  
   def run(iter)
     base = Item.new(nil, nil) { }
     base.run(iter, 0.0)
@@ -73,10 +82,16 @@ class Perf
       @duration = nil
       @rate = nil
       @error = nil
+      @before = nil
+    end
+
+    def set_before(&blk)
+      @before = blk
     end
 
     def run(iter, base)
       begin
+        @before.call unless @before.nil?
         start = Time.now
         iter.times { @blk.call }
         @duration = Time.now - start - base

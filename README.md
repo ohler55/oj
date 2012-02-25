@@ -16,19 +16,19 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="links">Links of Interest</a>
 
+*Fast XML parser and marshaller on RubyGems*: https://rubygems.org/gems/ox
+
+*Fast XML parser and marshaller on GitHub*: https://rubygems.org/gems/ox
+
 ## <a name="release">Release Notes</a>
 
-### Release 0.6.0
+### Release 0.7.0
 
-- supports arbitrary Object dumping/serialization
+- changed the object JSON format
 
-- to_hash() method called if the Object responds to to_hash and the result is converted to JSON
+- serialized Ruby Objects can now be deserialized
 
-- to_json() method called if the Object responds to to_json
-
-- almost any Object can be dumped, including Exceptions (not including Thread, Mutex and Objects that only make sense within a process)
-
-- default options have been added
+- improved performance testing
 
 ## <a name="description">Description</a>
 

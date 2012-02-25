@@ -36,6 +36,10 @@
 #include "ruby.h"
 #include "oj.h"
 
+enum {
+    TIME_HINT = 0x0100,
+};
+
 typedef struct _ParseInfo {
     char	*str;		/* buffer being read from */
     char	*s;		/* current position in buffer */
@@ -48,11 +52,12 @@ typedef struct _ParseInfo {
 } *ParseInfo;
 
 static VALUE	classname2class(const char *name, ParseInfo pi);
-static VALUE	read_next(ParseInfo pi);
+static VALUE	read_next(ParseInfo pi, int hint);
 static VALUE	read_obj(ParseInfo pi);
 static VALUE	read_array(ParseInfo pi);
-static VALUE	read_str(ParseInfo pi);
+static VALUE	read_str(ParseInfo pi, int hint);
 static VALUE	read_num(ParseInfo pi);
+static VALUE	read_time(ParseInfo pi);
 static VALUE	read_true(ParseInfo pi);
 static VALUE	read_false(ParseInfo pi);
 static VALUE	read_nil(ParseInfo pi);
@@ -136,8 +141,9 @@ classname2class(const char *name, ParseInfo pi) {
     VALUE       clas;
     int		create = 0; // TBD from options
             
-#if 0
+#if 1
     VALUE       *slot;
+
     if (Qundef == (clas = oj_cache_get(oj_class_cache, name, &slot))) {
         char            class_name[1024];
         char            *s;
@@ -148,7 +154,7 @@ classname2class(const char *name, ParseInfo pi) {
             if (':' == *n) {
                 *s = '\0';
                 n++;
-                if (Qundef == (clas = resolve_classname(clas, class_name, pi->effort))) {
+                if (Qundef == (clas = resolve_classname(clas, class_name, create))) {
                     return Qundef;
                 }
                 s = class_name;
@@ -157,7 +163,7 @@ classname2class(const char *name, ParseInfo pi) {
             }
         }
         *s = '\0';
-        if (Qundef != (clas = resolve_classname(clas, class_name, pi->effort))) {
+        if (Qundef != (clas = resolve_classname(clas, class_name, create))) {
             *slot = clas;
         }
     }
@@ -202,7 +208,7 @@ oj_parse(char *json, Options options) {
     pi.encoding = 0;
 #endif
     pi.options = options;
-    if (Qundef == (obj = read_next(&pi))) {
+    if (Qundef == (obj = read_next(&pi, 0))) {
 	raise_error("no object read", pi.str, pi.s);
     }
     next_non_white(&pi);	// skip white space
@@ -213,7 +219,7 @@ oj_parse(char *json, Options options) {
 }
 
 static VALUE
-read_next(ParseInfo pi) {
+read_next(ParseInfo pi, int hint) {
     VALUE	obj;
 
     next_non_white(pi);	// skip white space
@@ -225,7 +231,7 @@ read_next(ParseInfo pi) {
 	obj = read_array(pi);
 	break;
     case '"':
-	obj = read_str(pi);
+	obj = read_str(pi, hint);
 	break;
     case '+':
     case '-':
@@ -239,7 +245,11 @@ read_next(ParseInfo pi) {
     case '7':
     case '8':
     case '9':
-	obj = read_num(pi);
+	if (TIME_HINT == hint) {
+	    obj = read_time(pi);
+	} else {
+	    obj = read_num(pi);
+	}
     break;
     case 't':
 	obj = read_true(pi);
@@ -277,7 +287,9 @@ read_obj(ParseInfo pi) {
     while (1) {
 	next_non_white(pi);
 	ks = 0;
-	if ('"' != *pi->s || Qundef == (key = read_str(pi))) {
+	key = Qundef;
+	val = Qundef;
+	if ('"' != *pi->s || Qundef == (key = read_str(pi, 0))) {
 	    raise_error("unexpected character", pi->str, pi->s);
 	}
 	next_non_white(pi);
@@ -286,43 +298,79 @@ read_obj(ParseInfo pi) {
 	} else {
 	    raise_error("invalid format, expected :", pi->str, pi->s);
 	}
-	if (Qundef == (val = read_next(pi))) {
-	    raise_error("unexpected character", pi->str, pi->s);
-	}
-	if (ObjectMode == pi->options->mode || CompatMode == pi->options->mode) {
+	if (T_STRING == rb_type(key)) {
 	    ks = StringValuePtr(key);
-	    if ('*' == *ks && T_STRING == rb_type(val)) {
-		if (Qundef == obj) {
-		    const char	*classname = StringValuePtr(val);
-
-		    obj = classname2obj(classname, pi);
+	} else {
+	    ks = 0;
+	}
+	if (0 != ks && Qundef == obj && ObjectMode == pi->options->mode) {
+	    if ('^' == *ks && '\0' == ks[2]) { // special directions
+		switch (ks[1]) {
+		case 't': // Time
+		    obj = read_next(pi, TIME_HINT); // raises if can not convert to Time
+		    key = Qundef;
+		    break;
+		case 'c': // Class
+		    obj = read_next(pi, T_CLASS);
+		    key = Qundef;
+		    break;
+		case 's': // Symbol
+		    obj = read_next(pi, T_SYMBOL);
+		    key = Qundef;
+		    break;
+		case 'o': // Object
+		    obj = read_next(pi, T_OBJECT);
 		    obj_type = T_OBJECT;
+		    key = Qundef;
+		    break;
+		case 'i': // Id for circular reference
+		    // TBD
+		default:
+		    // handle later
+		    break;
 		}
-	    } else if ('#' == *ks &&
-		       (T_NONE == obj_type || T_HASH == obj_type) &&
-		       rb_type(val) == T_ARRAY && 2 == RARRAY_LEN(val)) {
+	    }
+	}
+	if (Qundef != key) {
+	    if (Qundef == val && Qundef == (val = read_next(pi, 0))) {
+		raise_error("unexpected character", pi->str, pi->s);
+	    }
+	    if (ObjectMode == pi->options->mode &&
+		0 != ks && '^' == *ks && '#' == ks[1] &&
+		(T_NONE == obj_type || T_HASH == obj_type) &&
+		rb_type(val) == T_ARRAY && 2 == RARRAY_LEN(val)) {  // Hash entry
 		VALUE	*np = RARRAY_PTR(val);
 
 		key = *np;
 		val = *(np + 1);
-	    } else if ('~' == *ks) {
-		// TBD id for circular references
 	    }
-	}
-	if (Qundef == obj) {
-	    obj = rb_hash_new();
-	    obj_type = T_HASH;
-	}
-	if (T_OBJECT == obj_type) {
-	    char	attr[256];
+	    if (Qundef == obj) {
+		obj = rb_hash_new();
+		obj_type = T_HASH;
+	    }
+	    if (T_OBJECT == obj_type) {
+		VALUE       *slot;
+		ID          var_id;
 
-	    // TBD use cache for this
-	    *attr = '@';
-	    strncpy(attr + 1, ks, sizeof(attr) - 2);
-	    attr[sizeof(attr) - 1] = '\0';
-	    rb_ivar_set(obj, rb_intern(attr), val);
-	} else {
-	    rb_hash_aset(obj, key, val);
+		if (Qundef == (var_id = oj_cache_get(oj_attr_cache, ks, &slot))) {
+		    char	attr[1024];
+
+		    if ('~' == *ks) {
+			strncpy(attr, ks + 1, sizeof(attr) - 1);
+		    } else {
+			*attr = '@';
+			strncpy(attr + 1, ks, sizeof(attr) - 2);
+		    }
+		    attr[sizeof(attr) - 1] = '\0';
+		    var_id = rb_intern(attr);
+		    *slot = var_id;
+		}
+		rb_ivar_set(obj, var_id, val);
+	    } else if (T_HASH == obj_type) {
+		rb_hash_aset(obj, key, val);
+	    } else {
+		raise_error("invalid Object format, too many Hash entries.", pi->str, pi->s);
+	    }
 	}
 	next_non_white(pi);
 	if ('}' == *pi->s) {
@@ -331,6 +379,7 @@ read_obj(ParseInfo pi) {
 	} else if (',' == *pi->s) {
 	    pi->s++;
 	} else {
+	    //printf("*** '%s'\n", pi->s);
 	    raise_error("invalid format, expected , or } while in an object", pi->str, pi->s);
 	}
     }
@@ -349,7 +398,7 @@ read_array(ParseInfo pi) {
 	return a;
     }
     while (1) {
-	if (Qundef == (e = read_next(pi))) {
+	if (Qundef == (e = read_next(pi, 0))) {
 	    raise_error("unexpected character", pi->str, pi->s);
 	}
         rb_ary_push(a, e);
@@ -367,16 +416,75 @@ read_array(ParseInfo pi) {
 }
 
 static VALUE
-read_str(ParseInfo pi) {
+read_str(ParseInfo pi, int hint) {
     char	*text = read_quoted_value(pi);
-    VALUE	s = rb_str_new2(text);
+    VALUE	obj;
 
-#ifdef HAVE_RUBY_ENCODING_H
-    if (0 != pi->encoding) {
-        rb_enc_associate(s, pi->encoding);
+    if (ObjectMode != pi->options->mode) {
+	hint = T_STRING;
     }
+    switch (hint) {
+    case T_CLASS:
+	obj = classname2class(text, pi);
+	break;
+    case T_OBJECT:
+	obj = classname2obj(text, pi);
+	break;
+    case T_STRING:
+	obj = rb_str_new2(text);
+#ifdef HAVE_RUBY_ENCODING_H
+	if (0 != pi->encoding) {
+	    rb_enc_associate(obj, pi->encoding);
+	}
 #endif
-    return s;
+	break;
+    case T_SYMBOL:
+#ifdef HAVE_RUBY_ENCODING_H
+	if (0 != pi->encoding) {
+	    obj = rb_str_new2(text);
+	    rb_enc_associate(obj, pi->encoding);
+	    obj = rb_funcall(obj, oj_to_sym_id, 0);
+	} else {
+	    obj = ID2SYM(rb_intern(text));
+	}
+#else
+	obj = ID2SYM(rb_intern(text));
+#endif
+	break;
+    case 0:
+    default:
+	if (':' == *text) {
+	    if (':' == text[1]) { // escaped :, it s string
+		obj = rb_str_new2(text + 1);
+#ifdef HAVE_RUBY_ENCODING_H
+		if (0 != pi->encoding) {
+		    rb_enc_associate(obj, pi->encoding);
+		}
+#endif
+	    } else { // Symbol
+#ifdef HAVE_RUBY_ENCODING_H
+		if (0 != pi->encoding) {
+		    obj = rb_str_new2(text + 1);
+		    rb_enc_associate(obj, pi->encoding);
+		    obj = rb_funcall(obj, oj_to_sym_id, 0);
+		} else {
+		    obj = ID2SYM(rb_intern(text + 1));
+		}
+#else
+		obj = ID2SYM(rb_intern(text + 1));
+#endif
+	    }
+	} else {
+	    obj = rb_str_new2(text);
+#ifdef HAVE_RUBY_ENCODING_H
+	    if (0 != pi->encoding) {
+		rb_enc_associate(obj, pi->encoding);
+	    }
+#endif
+	}
+	break;
+    }
+    return obj;
 }
 
 #ifdef RUBINIUS
@@ -456,6 +564,27 @@ read_num(ParseInfo pi) {
 	}
 	return DBL2NUM(d);
     }
+}
+
+static VALUE
+read_time(ParseInfo pi) {
+    VALUE       args[2];
+    long        v = 0;
+    long        v2 = 0;
+
+    for (; '0' <= *pi->s && *pi->s <= '9'; pi->s++) {
+	v = v * 10 + (*pi->s - '0');
+    }
+    if ('.' == *pi->s) {
+	pi->s++;
+	for (; '0' <= *pi->s && *pi->s <= '9'; pi->s++) {
+	    v2 = v2 * 10 + (*pi->s - '0');
+	}
+    }
+    args[0] = LONG2NUM(v);
+    args[1] = LONG2NUM(v2);
+
+    return rb_funcall2(oj_time_class, oj_at_id, 2, args);
 }
 
 static VALUE

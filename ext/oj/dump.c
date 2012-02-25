@@ -69,11 +69,11 @@ typedef struct _Out {
     int                 indent;
     int                 depth; // used by dumpHash
     Options             opts;
-    VALUE		obj;
     uint32_t		hash_cnt;
 } *Out;
 
 static void     dump_obj_to_json(VALUE obj, Options copts, Out out);
+static void	raise_strict(VALUE obj);
 static void	dump_val(VALUE obj, int depth, Out out);
 static void	dump_nil(Out out);
 static void	dump_true(Out out);
@@ -81,21 +81,28 @@ static void	dump_false(Out out);
 static void	dump_fixnum(VALUE obj, Out out);
 static void	dump_bignum(VALUE obj, Out out);
 static void	dump_float(VALUE obj, Out out);
-static void	dump_cstr(const char *str, int cnt, Out out);
+static void	dump_cstr(const char *str, size_t cnt, int is_sym, Out out);
 static void	dump_hex(u_char c, Out out);
 static void	dump_str(VALUE obj, Out out);
-static void	dump_sym(VALUE obj, Out out);
-static void	dump_class(VALUE obj, Out out);
+static void	dump_sym_comp(VALUE obj, Out out);
+static void	dump_sym_obj(VALUE obj, Out out);
+static void	dump_class_comp(VALUE obj, Out out);
+static void	dump_class_obj(VALUE obj, Out out);
 static void	dump_array(VALUE obj, int depth, Out out);
-static void	dump_hash(VALUE obj, int depth, Out out);
-static void	dump_data(VALUE obj, Out out);
-static void	dump_object(VALUE obj, int depth, Out out);
+static int	hash_cb_strict(VALUE key, VALUE value, Out out);
+static int	hash_cb_object(VALUE key, VALUE value, Out out);
+static void	dump_hash(VALUE obj, int depth, int mode, Out out);
+static void	dump_time(VALUE obj, Out out);
+static void	dump_data_comp(VALUE obj, Out out);
+static void	dump_data_obj(VALUE obj, Out out);
+static void	dump_obj_comp(VALUE obj, int depth, Out out);
+static void	dump_obj_obj(VALUE obj, int depth, Out out);
 static int	dump_attr_cb(ID key, VALUE value, Out out);
 static void	dump_obj_attrs(VALUE obj, int with_class, int depth, Out out);
 
 static void     grow(Out out, size_t len);
-static int      is_json_friendly(const u_char *str, int len);
-static int	json_friendly_size(const u_char *str, int len);
+static int      is_json_friendly(const u_char *str, size_t len);
+static size_t	json_friendly_size(const u_char *str, size_t len);
 
 
 static const char	hex_chars[17] = "0123456789abcdef";
@@ -111,7 +118,7 @@ uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu\
 uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu";
 
 inline static int
-is_json_friendly(const u_char *str, int len) {
+is_json_friendly(const u_char *str, size_t len) {
     for (; 0 < len; str++, len--) {
         if ('o' != json_friendly_chars[*str]) {
             return 0;
@@ -120,8 +127,8 @@ is_json_friendly(const u_char *str, int len) {
     return 1;
 }
 
-inline static int
-json_friendly_size(const u_char *str, int len) {
+inline static size_t
+json_friendly_size(const u_char *str, size_t len) {
     int		cnt = 0;
     
     for (; 0 < len; str++, len--) {
@@ -278,15 +285,18 @@ dump_float(VALUE obj, Out out) {
 }
 
 static void
-dump_cstr(const char *str, int cnt, Out out) {
-    int	size = json_friendly_size((u_char*)str, cnt);
+dump_cstr(const char *str, size_t cnt, int is_sym, Out out) {
+    size_t	size = json_friendly_size((u_char*)str, cnt);
     
     if (cnt == size) {
-	cnt += 2;
+	cnt += 2 + is_sym;
 	if (out->end - out->cur <= (long)cnt) {
 	    grow(out, cnt);
 	}
 	*out->cur++ = '"';
+	if (is_sym) {
+	    *out->cur++ = ':';
+	}
 	for (; '\0' != *str; str++) {
 	    *out->cur++ = *str;
 	}
@@ -297,6 +307,9 @@ dump_cstr(const char *str, int cnt, Out out) {
 	    grow(out, size);
 	}
 	*out->cur++ = '"';
+	if (is_sym) {
+	    *out->cur++ = ':';
+	}
 	for (; 0 < cnt; cnt--, str++) {
 	    switch (json_friendly_chars[(u_char)*str]) {
 	    case 'o':
@@ -338,46 +351,63 @@ dump_cstr(const char *str, int cnt, Out out) {
 
 static void
 dump_str(VALUE obj, Out out) {
-    dump_cstr(StringValuePtr(obj), (int)RSTRING_LEN(obj), out);
+    dump_cstr(StringValuePtr(obj), RSTRING_LEN(obj), 0, out);
 }
 
 static void
-dump_sym(VALUE obj, Out out) {
+dump_sym_comp(VALUE obj, Out out) {
     const char	*sym = rb_id2name(SYM2ID(obj));
     
-    dump_cstr(sym, (int)strlen(sym), out);
+    dump_cstr(sym, strlen(sym), 0, out);
 }
 
 static void
-dump_class(VALUE obj, Out out) {
-    switch (out->opts->mode) {
-    case StrictMode:
-        rb_raise(rb_eTypeError, "Failed to dump class %s to JSON.\n", rb_class2name(obj));
-	break;
-    case NullMode:
-	dump_nil(out);
-	break;
-    case ObjectMode:
-    case CompatMode:
-    default:
-	{
-	    const char	*s = rb_class2name(obj);
-	    size_t	len = strlen(s);
-	    size_t	size = len + 20;
-
-	    if (out->end - out->cur <= (long)size) {
-		grow(out, size);
-	    }
-	    memcpy(out->cur, "{\"*\":\"Class\",\"-\":\"", 18);
-	    out->cur += 18;
-	    memcpy(out->cur, s, len);
-	    out->cur += len;
-	    *out->cur++ = '"';
-	    *out->cur++ = '}';
-	    *out->cur = '\0';
-	    break;
+dump_sym_obj(VALUE obj, Out out) {
+    const char	*sym = rb_id2name(SYM2ID(obj));
+    size_t	len = strlen(sym);
+    
+    if (':' == *sym) {
+	if (out->end - out->cur <= 6) {
+	    grow(out, 6);
 	}
+	*out->cur++ = '{';
+	*out->cur++ = '"';
+	*out->cur++ = '^';
+	*out->cur++ = 's';
+	*out->cur++ = '"';
+	*out->cur++ = ':';
+	dump_cstr(sym, len, 0, out);
+	*out->cur++ = '}';
+	*out->cur = '\0';
+    } else {
+	dump_cstr(sym, len, 1, out);
     }
+}
+
+static void
+dump_class_comp(VALUE obj, Out out) {
+    const char	*s = rb_class2name(obj);
+
+    dump_cstr(s, strlen(s), 0, out);
+}
+
+static void
+dump_class_obj(VALUE obj, Out out) {
+    const char	*s = rb_class2name(obj);
+    size_t	len = strlen(s);
+
+    if (out->end - out->cur <= 6) {
+	grow(out, 6);
+    }
+    *out->cur++ = '{';
+    *out->cur++ = '"';
+    *out->cur++ = '^';
+    *out->cur++ = 'c';
+    *out->cur++ = '"';
+    *out->cur++ = ':';
+    dump_cstr(s, len, 0, out);
+    *out->cur++ = '}';
+    *out->cur = '\0';
 }
 
 static void
@@ -417,7 +447,29 @@ dump_array(VALUE a, int depth, Out out) {
 }
 
 static int
-hash_cb(VALUE key, VALUE value, Out out) {
+hash_cb_strict(VALUE key, VALUE value, Out out) {
+    int		depth = out->depth;
+    long	size = depth * out->indent + 1;
+
+    if (out->end - out->cur <= size) {
+	grow(out, size);
+    }
+    fill_indent(out, depth);
+    if (rb_type(key) == T_STRING) {
+	dump_str(key, out);
+	*out->cur++ = ':';
+	dump_val(value, depth, out);
+    } else {
+	rb_raise(rb_eTypeError, "In :strict mode all Hash keys must be Strings.");
+    }
+    out->depth = depth;
+    *out->cur++ = ',';
+
+    return ST_CONTINUE;
+}
+
+static int
+hash_cb_object(VALUE key, VALUE value, Out out) {
     int		depth = out->depth;
     long	size = depth * out->indent + 1;
 
@@ -430,8 +482,10 @@ hash_cb(VALUE key, VALUE value, Out out) {
 	dump_str(key, out);
 	*out->cur++ = ':';
 	dump_val(value, depth, out);
-    } else if (CompatMode != out->opts->mode && ObjectMode != out->opts->mode) {
-	rb_raise(rb_eTypeError, "Failed to dump %s Object, a Hash key, to JSON in strict mode.\n", rb_class2name(key));
+    } else if (rb_type(key) == T_SYMBOL) {
+	dump_sym_obj(key, out);
+	*out->cur++ = ':';
+	dump_val(value, depth, out);
     } else {
 	int	d2 = depth + 1;
 	long	s2 = size + out->indent + 1;
@@ -439,10 +493,11 @@ hash_cb(VALUE key, VALUE value, Out out) {
 	int	started = 0;
 	u_char	b;
 
-	if (out->end - out->cur <= s2 + 14) {
-	    grow(out, s2 + 14);
+	if (out->end - out->cur <= s2 + 15) {
+	    grow(out, s2 + 15);
 	}
 	*out->cur++ = '"';
+	*out->cur++ = '^';
 	*out->cur++ = '#';
 	out->hash_cnt++;
 	for (i = 28; 0 <= i; i -= 4) {
@@ -478,7 +533,7 @@ hash_cb(VALUE key, VALUE value, Out out) {
 }
 
 static void
-dump_hash(VALUE obj, int depth, Out out) {
+dump_hash(VALUE obj, int depth, int mode, Out out) {
     int	cnt = (int)RHASH_SIZE(obj);
 
     if (out->end - out->cur <= 2) {
@@ -491,8 +546,14 @@ dump_hash(VALUE obj, int depth, Out out) {
 	size_t	size = depth * out->indent + 2;
 
 	out->depth = depth + 1;
-	rb_hash_foreach(obj, hash_cb, (VALUE)out);
-	out->cur--; // backup to overwrite last comma
+	if (ObjectMode == mode) {
+	    rb_hash_foreach(obj, hash_cb_object, (VALUE)out);
+	} else {
+	    rb_hash_foreach(obj, hash_cb_strict, (VALUE)out);
+	}
+	if (',' == *(out->cur - 1)) {
+	    out->cur--; // backup to overwrite last comma
+	}
 	if (out->end - out->cur <= (long)size) {
 	    grow(out, size);
 	}
@@ -503,93 +564,93 @@ dump_hash(VALUE obj, int depth, Out out) {
 }
 
 static void
-dump_data(VALUE obj, Out out) {
+dump_time(VALUE obj, Out out) {
+    char        buf[64];
+    char        *b = buf + sizeof(buf) - 1;
+    time_t      sec = NUM2LONG(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+    long        usec = NUM2LONG(rb_funcall2(obj, oj_tv_usec_id, 0, 0));
+    char        *dot = b - 7;
+    long        size;
+
+    *b-- = '\0';
+    for (; dot < b; b--, usec /= 10) {
+	*b = '0' + (usec % 10);
+    }
+    *b-- = '.';
+    for (; 0 < sec; b--, sec /= 10) {
+	*b = '0' + (sec % 10);
+    }
+    b++;
+    size = sizeof(buf) - (b - buf) - 1;
+    if (out->end - out->cur <= size) {
+	grow(out, size);
+    }
+    memcpy(out->cur, b, size);
+    out->cur += size;
+    *out->cur = '\0';
+}
+
+static void
+dump_data_comp(VALUE obj, Out out) {
     VALUE   clas = rb_obj_class(obj);
 
-    switch (out->opts->mode) {
-    case StrictMode:
-	rb_raise(rb_eTypeError, "Failed to dump %s Object to JSON in strict mode.\n", rb_class2name(clas));
-	break;
-    case NullMode:
+    if (rb_cTime == clas) {
+	dump_time(obj, out);
+    } else {
 	dump_nil(out);
-	break;
-    case ObjectMode:
-    case CompatMode:
-    default:
-	if (rb_cTime == clas) {
-	    char        buf[64];
-	    char        *b = buf + sizeof(buf) - 1;
-	    time_t      sec = NUM2LONG(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
-	    long        usec = NUM2LONG(rb_funcall2(obj, oj_tv_usec_id, 0, 0));
-	    char        *dot = b - 7;
-	    long        size;
-
-	    *b-- = '\0';
-	    for (; dot < b; b--, usec /= 10) {
-		*b = '0' + (usec % 10);
-	    }
-	    *b-- = '.';
-	    for (; 0 < sec; b--, sec /= 10) {
-		*b = '0' + (sec % 10);
-	    }
-	    b++;
-	    size = sizeof(buf) - (b - buf) - 1;
-	    if (out->end - out->cur <= size + 20) {
-		grow(out, size + 20);
-	    }
-	    memcpy(out->cur, "{\"*\":\"Time\",\"-\":", 16);
-	    out->cur += 16;
-	    memcpy(out->cur, b, size);
-	    out->cur += size;
-	    *out->cur++ = '}';
-	    *out->cur = '\0';
-	} else {
-	    dump_nil(out);
-	}
     }
 }
 
 static void
-dump_object(VALUE obj, int depth, Out out) {
-    if (ObjectMode == out->opts->mode) {
-	dump_obj_attrs(obj, 1, depth, out);
-    } else {
-	switch (out->opts->mode) {
-	case StrictMode:
-	    rb_raise(rb_eTypeError, "Failed to dump %s Object to JSON in strict mode.\n", rb_class2name(rb_obj_class(obj)));
-	    break;
-	case NullMode:
-	    dump_nil(out);
-	    break;
-	case ObjectMode:
-	    dump_obj_attrs(obj, 0, depth, out);
-	    break;
-	case CompatMode:
-	default:
-	    if (rb_respond_to(obj, oj_to_hash_id)) {
-	        VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
- 
-		if (T_HASH != rb_type(h)) {
-		    rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
-		}
-		dump_hash(h, depth, out);
-	    } else if (rb_respond_to(obj, oj_to_json_id)) {
-	        VALUE		rs = rb_funcall(obj, oj_to_json_id, 0);
-		const char	*s = StringValuePtr(rs);
-		int		len = (int)RSTRING_LEN(rs);
+dump_data_obj(VALUE obj, Out out) {
+    VALUE   clas = rb_obj_class(obj);
 
-		if (out->end - out->cur <= len) {
-		    grow(out, len);
-		}
-		memcpy(out->cur, s, len);
-		out->cur += len;
-	    } else {
-		dump_obj_attrs(obj, 0, depth, out);
-	    }
-	    break;
+    if (rb_cTime == clas) {
+	if (out->end - out->cur <= 6) {
+	    grow(out, 6);
 	}
+	*out->cur++ = '{';
+	*out->cur++ = '"';
+	*out->cur++ = '^';
+	*out->cur++ = 't';
+	*out->cur++ = '"';
+	*out->cur++ = ':';
+	dump_time(obj, out);
+	*out->cur++ = '}';
+	*out->cur = '\0';
+    } else {
+	dump_nil(out);
+    }
+}
+
+static void
+dump_obj_comp(VALUE obj, int depth, Out out) {
+    if (rb_respond_to(obj, oj_to_hash_id)) {
+	VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
+ 
+	if (T_HASH != rb_type(h)) {
+	    rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
+	}
+	dump_hash(h, depth, out->opts->mode, out);
+    } else if (rb_respond_to(obj, oj_to_json_id)) {
+	VALUE		rs = rb_funcall(obj, oj_to_json_id, 0);
+	const char	*s = StringValuePtr(rs);
+	int		len = (int)RSTRING_LEN(rs);
+
+	if (out->end - out->cur <= len) {
+	    grow(out, len);
+	}
+	memcpy(out->cur, s, len);
+	out->cur += len;
+    } else {
+	dump_obj_attrs(obj, 0, depth, out);
     }
     *out->cur = '\0';
+}
+
+inline static void
+dump_obj_obj(VALUE obj, int depth, Out out) {
+    dump_obj_attrs(obj, 1, depth, out);
 }
 
 static int
@@ -601,13 +662,18 @@ dump_attr_cb(ID key, VALUE value, Out out) {
     if (out->end - out->cur <= (long)size) {
 	grow(out, size);
     }
+    fill_indent(out, depth);
     if ('@' == *attr) {
 	attr++;
+	dump_cstr(attr, strlen(attr), 0, out);
     } else {
-	// TBD handle unusual exception mesg data
+	char	buf[32];
+
+	*buf = '~';
+	strncpy(buf + 1, attr, sizeof(buf) - 2);
+	buf[sizeof(buf) - 1] = '\0';
+	dump_cstr(buf, strlen(buf), 0, out);
     }
-    fill_indent(out, depth);
-    dump_cstr(attr, (int)strlen(attr) - 1, out);
     *out->cur++ = ':';
     dump_val(value, depth, out);
     out->depth = depth;
@@ -628,17 +694,18 @@ dump_obj_attrs(VALUE obj, int with_class, int depth, Out out) {
     if (with_class) {
 	const char	*class_name = rb_class2name(rb_obj_class(obj));
 	int		clen = (int)strlen(class_name);
-	
-	size = d2 * out->indent + clen + 9;
+
+	size = d2 * out->indent + clen + 10;
 	if (out->end - out->cur <= (long)size) {
 	    grow(out, size);
 	}
 	fill_indent(out, d2);
 	*out->cur++ = '"';
-	*out->cur++ = '*';
+	*out->cur++ = '^';
+	*out->cur++ = 'o';
 	*out->cur++ = '"';
 	*out->cur++ = ':';
-	dump_cstr(class_name, clen, out);
+	dump_cstr(class_name, clen, 0, out);
     }
     {
 	int	cnt;
@@ -672,10 +739,15 @@ dump_obj_attrs(VALUE obj, int with_class, int depth, Out out) {
 	    attr = rb_id2name(vid);
 	    if ('@' == *attr) {
 		attr++;
+		dump_cstr(attr, strlen(attr), out);
 	    } else {
-		// TBD handle unusual exception mesg data
+		char	buf[32];
+
+		*buf = '~';
+		strncpy(buf + 1, attr, sizeof(buf) - 2);
+		buf[sizeof(buf) - 1] = '\0';
+		dump_cstr(buf, strlen(attr) + 1, out);
 	    }
-	    dump_cstr(attr, (int)strlen(attr) - 1, out);
 	    *out->cur++ = ':';
 	    dump_val(rb_ivar_get(obj, vid), d2, out);
 	    if (out->end - out->cur <= 2) {
@@ -693,6 +765,11 @@ dump_obj_attrs(VALUE obj, int with_class, int depth, Out out) {
 }
 
 static void
+raise_strict(VALUE obj) {
+    rb_raise(rb_eTypeError, "Failed to dump %s Object to JSON in strict mode.\n", rb_class2name(rb_obj_class(obj)));
+}
+
+static void
 dump_val(VALUE obj, int depth, Out out) {
     switch (rb_type(obj)) {
     case T_NIL:		dump_nil(out);			break;
@@ -702,12 +779,44 @@ dump_val(VALUE obj, int depth, Out out) {
     case T_FLOAT:	dump_float(obj, out);		break;
     case T_BIGNUM:	dump_bignum(obj, out);		break;
     case T_STRING:	dump_str(obj, out);		break;
-    case T_SYMBOL:	dump_sym(obj, out);		break;
+    case T_SYMBOL:
+	switch (out->opts->mode) {
+	case StrictMode:	raise_strict(obj);		break;
+	case NullMode:		dump_nil(out);			break;
+	case CompatMode:	dump_sym_comp(obj, out);	break;
+	case ObjectMode:
+	default:		dump_sym_obj(obj, out);		break;
+	}
+	break;
     case T_ARRAY:	dump_array(obj, depth, out);	break;
-    case T_HASH:	dump_hash(obj, depth, out);	break;
-    case T_CLASS:	dump_class(obj, out);		break;
-    case T_OBJECT:	dump_object(obj, depth, out);	break;
-    case T_DATA:	dump_data(obj, out);		break;
+    case T_HASH:	dump_hash(obj, depth, out->opts->mode, out);	break;
+    case T_CLASS:
+	switch (out->opts->mode) {
+	case StrictMode:	raise_strict(obj);		break;
+	case NullMode:		dump_nil(out);			break;
+	case CompatMode:	dump_class_comp(obj, out);	break;
+	case ObjectMode:
+	default:		dump_class_obj(obj, out);	break;
+	}
+	break;
+    case T_OBJECT:
+	switch (out->opts->mode) {
+	case StrictMode:	raise_strict(obj);		break;
+	case NullMode:		dump_nil(out);			break;
+	case CompatMode:	dump_obj_comp(obj, depth, out);	break;
+	case ObjectMode:
+	default:		dump_obj_obj(obj, depth, out);	break;
+	}
+	break;
+    case T_DATA:
+	switch (out->opts->mode) {
+	case StrictMode:	raise_strict(obj);		break;
+	case NullMode:		dump_nil(out);			break;
+	case CompatMode:	dump_data_comp(obj, out);	break;
+	case ObjectMode:
+	default:		dump_data_obj(obj, out);	break;
+	}
+	break;
     case T_REGEXP:
 	// TBD
 	rb_raise(rb_eNotImpError, "Failed to dump '%s' Object (%02x)\n",
@@ -728,7 +837,6 @@ dump_obj_to_json(VALUE obj, Options copts, Out out) {
 //    out->circ_cache = 0;
 //    out->circ_cnt = 0;
     out->opts = copts;
-    out->obj = obj;
     out->hash_cnt = 0;
 /*    if (Yes == copts->circular) {
         ox_cache8_new(&out->circ_cache);

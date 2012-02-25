@@ -45,11 +45,16 @@ void Init_oj();
 
 VALUE    Oj = Qnil;
 
+ID	oj_at_id;
 ID	oj_instance_variables_id;
 ID	oj_to_hash_id;
 ID	oj_to_json_id;
+ID	oj_to_sym_id;
+ID	oj_tv_nsec_id;
 ID	oj_tv_sec_id;
 ID	oj_tv_usec_id;
+
+VALUE	oj_time_class;
 
 static VALUE	circular_sym;
 static VALUE	compat_sym;
@@ -352,12 +357,17 @@ void Init_oj() {
     rb_define_module_function(Oj, "dump", dump, -1);
     rb_define_module_function(Oj, "to_file", to_file, -1);
 
+    oj_at_id = rb_intern("at");
     oj_instance_variables_id = rb_intern("instance_variables");
     oj_to_hash_id = rb_intern("to_hash");
     oj_to_json_id = rb_intern("to_json");
+    oj_to_sym_id = rb_intern("to_sym");
+    oj_tv_nsec_id = rb_intern("tv_nsec");
     oj_tv_sec_id = rb_intern("tv_sec");
     oj_tv_usec_id = rb_intern("tv_usec");
     
+    oj_time_class = rb_const_get(rb_cObject, rb_intern("Time"));
+
     circular_sym = ID2SYM(rb_intern("circular"));	rb_ary_push(keep, circular_sym);
     compat_sym = ID2SYM(rb_intern("compat"));		rb_ary_push(keep, compat_sym);
     encoding_sym = ID2SYM(rb_intern("encoding"));	rb_ary_push(keep, encoding_sym);
