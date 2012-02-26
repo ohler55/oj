@@ -39,19 +39,23 @@ time faster than Yajl for parsing and 3 or more times faster writing JSON.
 
 Oj has several dump or serialization modes which control how Objects are
 converted to JSON. These modes are set with the :effort option in either the
-dafault options or as one of the options to the dump() method. The :strict
-mode will only allow the 7 basic JSON types to be serialized. Any other Object
-will raise and Exception. In the :lazy mode any Object that is not one of the
-JSON types is replaced by a JSON null. In :interal mode any Object will be
-dumped as a JSON Object with keys that match the Ruby Object's variable names
-without the '@' character. This is the highest performance mode. The :internal
-mode is not found in other JSON gems. The last mode, the :tolerant mode is the
-most tolerant. It will serialize any Object but will check to see if the
-Object implements a to_hash() or to_json() method. If either exists that
-method is used for serializing the Object. The to_hash() is more flexible and
-produces more consistent output so it has a preference over the to_json()
-method. If neither the to_json() or to_hash() methods exist then the Oj
-internal Object variable encoding is used.
+default options or as one of the options to the dump() method.
+
+- :strict mode will only allow the 7 basic JSON types to be serialized. Any other Object
+will raise and Exception. 
+
+- :null mode replaces any Object that is not one of the JSON types is replaced by a JSON null.
+
+- :object mode will dump any Object as a JSON Object with keys that match the
+Ruby Object's variable names without the '@' character. This is the highest
+performance mode.
+
+- :compat mode is is the compatible with other systems. It will serialize any
+Object but will check to see if the Object implements a to_hash() or to_json()
+method. If either exists that method is used for serializing the Object. The
+to_hash() is more flexible and produces more consistent output so it has a
+preference over the to_json() method. If neither the to_json() or to_hash()
+methods exist then the Oj internal Object variable encoding is used.
 
 Coming soon: As an Object marshaller with support for circular references.
 
@@ -63,17 +67,16 @@ Oj is compatible with Ruby 1.8.7, 1.9.2, 1.9.3, JRuby, and RBX.
 
 The following table shows the difference is speeds between several
 serialization packages. The tests had to be scaled back due to limitation of
-some of the gems. I finally gave up trying to get JSON to serialize without
-errors with Ruby 1.9.3. It had internal errors on anything other than a simple
-JSON structure. The errors encountered were:
+some of the gems. I finally gave up trying to get JSON Pure to serialize
+without errors with Ruby 1.9.3. It had internal errors on anything other than
+a simple JSON structure. The errors encountered were:
 
 - MessagePack fails to convert Bignum to JSON
 
-- JSON Pure and Ext fails to serialize any numbers or Objects with the to_json() method
+- JSON Pure fails to serialize any numbers or Objects with the to_json() method
 
-Options were added to the test/perf_simple.rb test to run the test without
-Object encoding and without Bignums. There is also an option for shallow JSON
-so that JSON Pure and Ext can be compared.
+Options were added to the test/perf_strict.rb test to run the test without
+Object encoding and without Bignums.
 
 None of the packages except Oj were able to serialize Ruby Objects that did
 not have a to_json() method or were of the 7 native JSON types.

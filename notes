@@ -6,9 +6,19 @@
 
 - next
  - complete all types for dump and load in :object mode
+    case T_STRUCT: // for Range
+    case T_COMPLEX:
+    case T_RATIONAL:
+    case T_REGEXP:
 
  - document format
-   
+  - ^? for different types
+   - ^s Symbol
+   - ^o Object
+   - ^c Class
+   - ^t Time
+  - ~ special attr without @ as in Exception mesg and bt
+  - ^# for hash entry
 
 
  - stream

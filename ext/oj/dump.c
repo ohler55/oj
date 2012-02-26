@@ -817,6 +817,13 @@ dump_val(VALUE obj, int depth, Out out) {
 	default:		dump_data_obj(obj, out);	break;
 	}
 	break;
+    case T_STRUCT: // for Range
+#if (defined T_COMPLEX && defined RCOMPLEX)
+    case T_COMPLEX:
+#endif
+#if (defined T_RATIONAL && defined RRATIONAL)
+    case T_RATIONAL:
+#endif
     case T_REGEXP:
 	// TBD
 	rb_raise(rb_eNotImpError, "Failed to dump '%s' Object (%02x)\n",
