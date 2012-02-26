@@ -89,68 +89,125 @@ The results:
 
 with Object and Bignum encoding:
 
-    100000 Oj.load()s in 1.456 seconds or 68.7 loads/msec
-    100000 Yajl::Parser.parse()s in 2.681 seconds or 37.3 parses/msec
-    100000 JSON::Ext::Parser parse()s in 2.804 seconds or 35.7 parses/msec
-    100000 JSON::Pure::Parser parse()s in 27.494 seconds or 3.6 parses/msec
-    MessagePack failed: RangeError: bignum too big to convert into `unsigned long long'
-    100000 Ox.load()s in 3.165 seconds or 31.6 loads/msec
-    Parser results:
-    gem       seconds  parses/msec  X faster than JSON::Pure (higher is better)
-    oj        1.456     68.7        18.9
-    yajl      2.681     37.3        10.3
-    msgpack failed to generate JSON
-    pure     27.494      3.6         1.0
-    ext       2.804     35.7         9.8
-    ox        3.165     31.6         8.7
+    MessagePack failed to pack! RangeError: bignum too big to convert into `unsigned long long'.
+    Skipping.
+    --------------------------------------------------------------------------------
+    Load/Parse Performance
+    Oj.load 100000 times in 1.384 seconds or 72230.276 load/sec.
+    Yajl.parse 100000 times in 2.475 seconds or 40401.331 parse/sec.
+    JSON::Ext.parse 100000 times in 2.562 seconds or 39037.263 parse/sec.
+    JSON::Pure.parse 100000 times in 20.914 seconds or 4781.518 parse/sec.
+    Ox.load 100000 times in 1.517 seconds or 65923.576 load/sec.
     
-    100000 Oj.dump()s in 0.484 seconds or 206.7 dumps/msec
-    100000 Yajl::Encoder.encode()s in 2.167 seconds or 46.2 encodes/msec
-    JSON::Ext failed: TypeError: wrong argument type JSON::Pure::Generator::State (expected Data)
-    JSON::Pure failed: TypeError: wrong argument type JSON::Pure::Generator::State (expected Data)
-    MessagePack failed: RangeError: bignum too big to convert into `unsigned long long'
-    100000 Ox.dump()s in 0.554 seconds or 180.4 dumps/msec
-    Parser results:
-    gem       seconds  dumps/msec  X faster than Yajl (higher is better)
-    oj        0.484    206.7        4.5
-    yajl      2.167     46.2        1.0
-    msgpack failed to generate JSON
-    pure failed to generate JSON
-    ext failed to generate JSON
-    ox        0.554    180.4        3.9
+    Summary:
+        System  time (secs)  rate (ops/sec)
+    ----------  -----------  --------------
+            Oj       1.384       72230.276
+            Ox       1.517       65923.576
+          Yajl       2.475       40401.331
+     JSON::Ext       2.562       39037.263
+    JSON::Pure      20.914        4781.518
+    
+    Comparison Matrix
+    (performance factor, 2.0 row is means twice as fast as column)
+                        Oj          Ox        Yajl   JSON::Ext  JSON::Pure
+    ----------  ----------  ----------  ----------  ----------  ----------
+            Oj        1.00        1.10        1.79        1.85       15.11
+            Ox        0.91        1.00        1.63        1.69       13.79
+          Yajl        0.56        0.61        1.00        1.03        8.45
+     JSON::Ext        0.54        0.59        0.97        1.00        8.16
+    JSON::Pure        0.07        0.07        0.12        0.12        1.00
+    
+    
+    --------------------------------------------------------------------------------
+    Dump/Encode/Generate Performance
+    Oj.dump 100000 times in 0.819 seconds or 122096.842 dump/sec.
+    Yajl.encode 100000 times in 2.221 seconds or 45014.913 encode/sec.
+    JSON::Ext.generate 100000 times in 5.082 seconds or 19678.462 generate/sec.
+    ***** JSON::Pure.generate failed! TypeError: wrong argument type JSON::Pure::Generator::State (expected Data)
+    Ox.dump 100000 times in 0.532 seconds or 188014.455 dump/sec.
+    
+    Summary:
+       System  time (secs)  rate (ops/sec)
+    ---------  -----------  --------------
+           Ox       0.532      188014.455
+           Oj       0.819      122096.842
+         Yajl       2.221       45014.913
+    JSON::Ext       5.082       19678.462
+    
+    Comparison Matrix
+    (performance factor, 2.0 row is means twice as fast as column)
+                      Ox         Oj       Yajl  JSON::Ext
+    ---------  ---------  ---------  ---------  ---------
+           Ox       1.00       1.54       4.18       9.55
+           Oj       0.65       1.00       2.71       6.20
+         Yajl       0.24       0.37       1.00       2.29
+    JSON::Ext       0.10       0.16       0.44       1.00
 
 without Objects or numbers (for JSON Pure) JSON:
 
-    100000 Oj.load()s in 0.739 seconds or 135.3 loads/msec
-    100000 Yajl::Parser.parse()s in 1.421 seconds or 70.4 parses/msec
-    100000 JSON::Ext::Parser parse()s in 1.512 seconds or 66.2 parses/msec
-    100000 JSON::Pure::Parser parse()s in 16.953 seconds or 5.9 parses/msec
-    100000 MessagePack.unpack()s in 0.635 seconds or 157.6 packs/msec
-    100000 Ox.load()s in 0.971 seconds or 103.0 loads/msec
-    Parser results:
-    gem       seconds  parses/msec  X faster than JSON::Pure (higher is better)
-    oj        0.739    135.3        22.9
-    yajl      1.421     70.4        11.9
-    msgpack   0.635    157.6        26.7
-    pure     16.953      5.9         1.0
-    ext       1.512     66.2        11.2
-    ox        0.971    103.0        17.5
+    --------------------------------------------------------------------------------
+    Load/Parse Performance
+    Oj.load 100000 times in 0.737 seconds or 135683.185 load/sec.
+    Yajl.parse 100000 times in 1.352 seconds or 73978.778 parse/sec.
+    JSON::Ext.parse 100000 times in 1.433 seconds or 69780.554 parse/sec.
+    JSON::Pure.parse 100000 times in 12.974 seconds or 7707.624 parse/sec.
+    Ox.load 100000 times in 0.904 seconds or 110596.591 load/sec.
+    MessagePack.unpack 100000 times in 0.644 seconds or 155281.191 unpack/sec.
     
-    100000 Oj.dump()s in 0.174 seconds or 575.1 dumps/msec
-    100000 Yajl::Encoder.encode()s in 0.729 seconds or 137.2 encodes/msec
-    100000 JSON::Ext generate()s in 7.171 seconds or 13.9 generates/msec
-    100000 JSON::Pure generate()s in 7.219 seconds or 13.9 generates/msec
-    100000 Msgpack()s in 0.299 seconds or 334.8 unpacks/msec
-    100000 Ox.dump()s in 0.210 seconds or 475.8 dumps/msec
-    Parser results:
-    gem       seconds  dumps/msec  X faster than JSON::Pure (higher is better)
-    oj        0.174    575.1       41.5
-    yajl      0.729    137.2        9.9
-    msgpack   0.299    334.8       24.2
-    pure      7.219     13.9        1.0
-    ext       1.512     66.2        4.8
-    ox        0.210    475.8       34.3
-
+    Summary:
+         System  time (secs)  rate (ops/sec)
+    -----------  -----------  --------------
+    MessagePack       0.644      155281.191
+             Oj       0.737      135683.185
+             Ox       0.904      110596.591
+           Yajl       1.352       73978.778
+      JSON::Ext       1.433       69780.554
+     JSON::Pure      12.974        7707.624
+    
+    Comparison Matrix
+    (performance factor, 2.0 row is means twice as fast as column)
+                 MessagePack           Oj           Ox         Yajl    JSON::Ext   JSON::Pure
+    -----------  -----------  -----------  -----------  -----------  -----------  -----------
+    MessagePack         1.00         1.14         1.40         2.10         2.23        20.15
+             Oj         0.87         1.00         1.23         1.83         1.94        17.60
+             Ox         0.71         0.82         1.00         1.49         1.58        14.35
+           Yajl         0.48         0.55         0.67         1.00         1.06         9.60
+      JSON::Ext         0.45         0.51         0.63         0.94         1.00         9.05
+     JSON::Pure         0.05         0.06         0.07         0.10         0.11         1.00
+    
+    
+    --------------------------------------------------------------------------------
+    Dump/Encode/Generate Performance
+    Oj.dump 100000 times in 0.161 seconds or 620058.906 dump/sec.
+    Yajl.encode 100000 times in 0.765 seconds or 130637.498 encode/sec.
+    JSON::Ext.generate 100000 times in 3.306 seconds or 30250.212 generate/sec.
+    JSON::Pure.generate 100000 times in 7.067 seconds or 14150.026 generate/sec.
+    Ox.dump 100000 times in 0.178 seconds or 561312.123 dump/sec.
+    MessagePack.pack 100000 times in 0.306 seconds or 326301.535 pack/sec.
+    
+    Summary:
+         System  time (secs)  rate (ops/sec)
+    -----------  -----------  --------------
+             Oj       0.161      620058.906
+             Ox       0.178      561312.123
+    MessagePack       0.306      326301.535
+           Yajl       0.765      130637.498
+      JSON::Ext       3.306       30250.212
+     JSON::Pure       7.067       14150.026
+    
+    Comparison Matrix
+    (performance factor, 2.0 row is means twice as fast as column)
+                          Oj           Ox  MessagePack         Yajl    JSON::Ext   JSON::Pure
+    -----------  -----------  -----------  -----------  -----------  -----------  -----------
+             Oj         1.00         1.10         1.90         4.75        20.50        43.82
+             Ox         0.91         1.00         1.72         4.30        18.56        39.67
+    MessagePack         0.53         0.58         1.00         2.50        10.79        23.06
+           Yajl         0.21         0.23         0.40         1.00         4.32         9.23
+      JSON::Ext         0.05         0.05         0.09         0.23         1.00         2.14
+     JSON::Pure         0.02         0.03         0.04         0.11         0.47         1.00
+    
+    
 ### Simple JSON Writing and Parsing:
 
     require 'oj'
