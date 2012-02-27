@@ -78,10 +78,11 @@ typedef enum {
 } Mode;
 
 typedef struct _Options {
-    char        encoding[64];   // encoding, stored in the option to avoid GC invalidation in default values
-    int         indent;         // indention for dump, default 2
-    char        circular;       // YesNo
-    char        mode;           // Mode
+    char        encoding[64];	// encoding, stored in the option to avoid GC invalidation in default values
+    int         indent;		// indention for dump, default 2
+    char        circular;	// YesNo
+    char        auto_define;	// YesNo
+    char        mode;		// Mode
 } *Options;
 
 extern VALUE	oj_parse(char *json, Options options);
@@ -92,6 +93,7 @@ extern void	_oj_raise_error(const char *msg, const char *xml, const char *curren
 
 extern VALUE    Oj;
 
+extern VALUE	oj_bag_class;
 extern VALUE	oj_time_class;
 
 extern ID	oj_at_id;

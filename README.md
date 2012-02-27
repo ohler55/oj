@@ -22,13 +22,9 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 0.7.0
+### Release 0.8.0
 
-- changed the object JSON format
-
-- serialized Ruby Objects can now be deserialized
-
-- improved performance testing
+- Auto creation of data classes when unmarshalling Objects if the Class is not defined
 
 ## <a name="description">Description</a>
 
@@ -57,11 +53,13 @@ to_hash() is more flexible and produces more consistent output so it has a
 preference over the to_json() method. If neither the to_json() or to_hash()
 methods exist then the Oj internal Object variable encoding is used.
 
-Coming soon: As an Object marshaller with support for circular references.
-
-Coming soon: A JSON stream parser.
-
 Oj is compatible with Ruby 1.8.7, 1.9.2, 1.9.3, JRuby, and RBX.
+
+## <a name="plans">Planned Releases</a>
+
+- Release 0.9: Support for circular references.
+
+- Release 1.0: A JSON stream parser.
 
 ## <a name="compare">Comparisons</a>
 
@@ -80,6 +78,9 @@ Object encoding and without Bignums.
 
 None of the packages except Oj were able to serialize Ruby Objects that did
 not have a to_json() method or were of the 7 native JSON types.
+
+A perf_obj.rb file was added for comparing different Object marshalling
+packages.
 
 It is also worth noting that although Oj is slightly behind MessagePack for
 parsing, Oj serialization is much faster than MessagePack even though Oj uses

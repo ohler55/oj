@@ -50,6 +50,7 @@ class Juice < ::Test::Unit::TestCase
                    :encoding=>nil,
                    :indent=>0,
                    :circular=>false,
+                   :auto_define=>true,
                    :mode=>:object})
   end
 
@@ -58,11 +59,13 @@ class Juice < ::Test::Unit::TestCase
       :encoding=>nil,
       :indent=>0,
       :circular=>false,
+      :auto_define=>true,
       :mode=>:object}
     o2 = {
       :encoding=>"UTF-8",
       :indent=>4,
       :circular=>true,
+      :auto_define=>false,
       :mode=>:compat}
     o3 = { :indent => 4 }
     Oj.default_options = o2
@@ -346,6 +349,17 @@ class Juice < ::Test::Unit::TestCase
     assert_equal(err.backtrace, e2['~bt'])
     e2 = Oj.load(json, :mode => :object)
     assert_equal(e, e2);
+  end
+
+  def test_bag
+    json = %{{
+  "^o":"Jem",
+  "x":true,
+  "y":58 }}
+    obj = Oj.load(json, :mode => :object)
+    assert_equal('Jem', obj.class.name)
+    assert_equal(true, obj.x)
+    assert_equal(58, obj.y)
   end
 
   def dump_and_load(obj, trace=false)

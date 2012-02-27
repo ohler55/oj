@@ -54,8 +54,10 @@ ID	oj_tv_nsec_id;
 ID	oj_tv_sec_id;
 ID	oj_tv_usec_id;
 
+VALUE	oj_bag_class;
 VALUE	oj_time_class;
 
+static VALUE	auto_define_sym;
 static VALUE	circular_sym;
 static VALUE	compat_sym;
 static VALUE	encoding_sym;
@@ -72,6 +74,7 @@ static struct _Options  default_options = {
     { '\0' },		// encoding
     0,			// indent
     No,			// circular
+    Yes,		// auto_define
     ObjectMode,		// mode
 };
 
@@ -81,6 +84,7 @@ static struct _Options  default_options = {
  * - indent: [Fixnum] number of spaces to indent each element in an XML document
  * - encoding: [String] character encoding for the JSON file
  * - circular: [true|false|nil] support circular references while dumping
+ * - auto_define: [true|false|nil] automatically define classes if they do not exist
  * - mode: [:object|:strict|:compat|:null] load and dump modes to use for JSON
  * @return [Hash] all current option settings.
  */
@@ -92,6 +96,7 @@ get_def_opts(VALUE self) {
     rb_hash_aset(opts, encoding_sym, (0 == elen) ? Qnil : rb_str_new(default_options.encoding, elen));
     rb_hash_aset(opts, indent_sym, INT2FIX(default_options.indent));
     rb_hash_aset(opts, circular_sym, (Yes == default_options.circular) ? Qtrue : ((No == default_options.circular) ? Qfalse : Qnil));
+    rb_hash_aset(opts, auto_define_sym, (Yes == default_options.auto_define) ? Qtrue : ((No == default_options.auto_define) ? Qfalse : Qnil));
     switch (default_options.mode) {
     case StrictMode:	rb_hash_aset(opts, mode_sym, strict_sym);	break;
     case CompatMode:	rb_hash_aset(opts, mode_sym, compat_sym);	break;
@@ -109,7 +114,8 @@ get_def_opts(VALUE self) {
  * @param [Fixnum] :indent number of spaces to indent each element in an XML document
  * @param [String] :encoding character encoding for the JSON file
  * @param [true|false|nil] :circular support circular references while dumping
- * @parsm [:object|:strict|:compat|:null] load and dump mode to use for JSON
+ * @param [true|false|nil] :auto_define automatically define classes if they do not exist
+ * @param [:object|:strict|:compat|:null] load and dump mode to use for JSON
  *        :strict raises an exception when a non-supported Object is
  *        encountered. :compat attempts to extract variable values from an
  *        Object using to_json() or to_hash() then it walks the Object's
@@ -122,6 +128,7 @@ static VALUE
 set_def_opts(VALUE self, VALUE opts) {
     struct _YesNoOpt    ynos[] = {
         { circular_sym, &default_options.circular },
+        { auto_define_sym, &default_options.auto_define },
         { Qnil, 0 }
     };
     YesNoOpt    o;
@@ -366,8 +373,10 @@ void Init_oj() {
     oj_tv_sec_id = rb_intern("tv_sec");
     oj_tv_usec_id = rb_intern("tv_usec");
     
+    oj_bag_class = rb_const_get_at(Oj, rb_intern("Bag"));
     oj_time_class = rb_const_get(rb_cObject, rb_intern("Time"));
 
+    auto_define_sym = ID2SYM(rb_intern("auto_define"));	rb_ary_push(keep, auto_define_sym);
     circular_sym = ID2SYM(rb_intern("circular"));	rb_ary_push(keep, circular_sym);
     compat_sym = ID2SYM(rb_intern("compat"));		rb_ary_push(keep, compat_sym);
     encoding_sym = ID2SYM(rb_intern("encoding"));	rb_ary_push(keep, encoding_sym);

@@ -31,6 +31,7 @@ module Oj
   @@keep = []
 end
 
-#require 'ox/version'
+require 'oj/version'
+require 'oj/bag'
 
 require 'oj/oj' # C extension

@@ -112,15 +112,14 @@ next_white(ParseInfo pi) {
 }
 
 inline static VALUE
-resolve_classname(VALUE mod, const char *class_name, int create) {
+resolve_classname(VALUE mod, const char *class_name, int auto_define) {
     VALUE       clas;
     ID          ci = rb_intern(class_name);
 
-    if (rb_const_defined_at(mod, ci) || !create) {
+    if (rb_const_defined_at(mod, ci) || !auto_define) {
 	clas = rb_const_get_at(mod, ci);
     } else {
-	//clas = rb_define_class_under(mod, class_name, oj_bag_clas);
-	clas = rb_const_get_at(mod, ci); // TBD temp
+	clas = rb_define_class_under(mod, class_name, oj_bag_class);
     }
     return clas;
 }
@@ -139,10 +138,8 @@ classname2obj(const char *name, ParseInfo pi) {
 static VALUE
 classname2class(const char *name, ParseInfo pi) {
     VALUE       clas;
-    int		create = 0; // TBD from options
-            
-#if 1
     VALUE       *slot;
+    int		auto_define = (Yes == pi->options->auto_define);
 
     if (Qundef == (clas = oj_cache_get(oj_class_cache, name, &slot))) {
         char            class_name[1024];
@@ -154,7 +151,10 @@ classname2class(const char *name, ParseInfo pi) {
             if (':' == *n) {
                 *s = '\0';
                 n++;
-                if (Qundef == (clas = resolve_classname(clas, class_name, create))) {
+		if (':' != *n) {
+                    raise_error("Invalid classname, expected another ':'", pi->str, pi->s);
+		}
+                if (Qundef == (clas = resolve_classname(clas, class_name, auto_define))) {
                     return Qundef;
                 }
                 s = class_name;
@@ -163,31 +163,10 @@ classname2class(const char *name, ParseInfo pi) {
             }
         }
         *s = '\0';
-        if (Qundef != (clas = resolve_classname(clas, class_name, create))) {
+        if (Qundef != (clas = resolve_classname(clas, class_name, auto_define))) {
             *slot = clas;
         }
     }
-#else
-    char            class_name[1024];
-    char            *s;
-    const char      *n = name;
-
-    clas = rb_cObject;
-    for (s = class_name; '\0' != *n; n++) {
-	if (':' == *n) {
-	    *s = '\0';
-	    n++;
-	    if (Qundef == (clas = resolve_classname(clas, class_name, create))) {
-		return Qundef;
-	    }
-	    s = class_name;
-	} else {
-	    *s++ = *n;
-	}
-    }
-    *s = '\0';
-    clas = resolve_classname(clas, class_name, create);
-#endif
     return clas;
 }
 
