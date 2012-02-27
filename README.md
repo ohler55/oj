@@ -228,3 +228,50 @@ without Objects or numbers (for JSON Pure) JSON:
     h2 = Oj.parse(json)
     puts "Same? #{h == h2}"
     # true
+
+### Object JSON format:
+
+In :object mode Oj generates JSON that follows conventions which allow Class
+and other information such as Object IDs for circular reference detection. The
+formating follows the following rules.
+
+1. JSON native types, true, false, nil, String, Hash, Array, and Number are
+encoded normally.
+
+2. If a Hash uses Symbols as keys those keys appear as Strings with a leading
+':' character.
+
+3. The '^' character denotes a special key value when in a JSON Object sequence.
+
+4. If a String begins with a ':' character such as ':abc' it is encoded as {"^s":":abc"}.
+
+5. If a Symbol begins with a ':' character such as :":abc" is is encoded as {"^m":":abc"}.
+
+6. A "^c" JSON Object key indicates the value should be converted to a Ruby
+class. The sequence {"^c":"Oj::Bag"} is read as the Oj::Bag class.
+
+7. A "^t" JSON Object key indicates the value should be converted to a Ruby
+Time. The sequence {"^t":1325775487.000000} is read as Jan 5, 2012 at
+23:58:07.
+
+8. A "^o" JSON Object key indicates the value should be converted to a Ruby
+Object. The first entry in the JSON Object must be a class with the "^o"
+key. After that each entry is treated as a variable of the Object where the
+key is the variable name without the preceeding '@'. An example is
+{"^o":"Oj::Bag","x":58,"y":"marbles"}.
+
+9. When encoding an Object, if the variable name does not begin with an '@'
+character then the name preceeded by a '~' character. This occurs in the
+Exception class. An example is {"^o":"StandardError","~mesg":"A
+Message","~bt":[".\/tests.rb:345:in `test_exception'"]}
+
+10. If a Hash entry has a key that is not a String or Symbol then the entry is
+encoded with a key of the form "^#n" where n is a hex number. The value that
+is an Array where the first element is the key in the Hash and the second is
+the value. An example is {"^#3":[2,5]}.
+
+11. A "^i" JSON entry in either an Object or Array is the ID of the Ruby
+Object being encoded. It is used when the :circular flag is set. It can appear
+in either a JSON Object or in a JSON Array. If alone it represented a link to
+the original Hash or JSON. If an added attribute it is the ID of the original
+Object or Array. Examples are TBD.

@@ -83,7 +83,8 @@ static void	dump_bignum(VALUE obj, Out out);
 static void	dump_float(VALUE obj, Out out);
 static void	dump_cstr(const char *str, size_t cnt, int is_sym, Out out);
 static void	dump_hex(u_char c, Out out);
-static void	dump_str(VALUE obj, Out out);
+static void	dump_str_comp(VALUE obj, Out out);
+static void	dump_str_obj(VALUE obj, Out out);
 static void	dump_sym_comp(VALUE obj, Out out);
 static void	dump_sym_obj(VALUE obj, Out out);
 static void	dump_class_comp(VALUE obj, Out out);
@@ -350,8 +351,31 @@ dump_cstr(const char *str, size_t cnt, int is_sym, Out out) {
 }
 
 static void
-dump_str(VALUE obj, Out out) {
+dump_str_comp(VALUE obj, Out out) {
     dump_cstr(StringValuePtr(obj), RSTRING_LEN(obj), 0, out);
+}
+
+static void
+dump_str_obj(VALUE obj, Out out) {
+    const char	*s = StringValuePtr(obj);
+    size_t	len = RSTRING_LEN(obj);
+    
+    if (':' == *s) {
+	if (out->end - out->cur <= 6) {
+	    grow(out, 6);
+	}
+	*out->cur++ = '{';
+	*out->cur++ = '"';
+	*out->cur++ = '^';
+	*out->cur++ = 's';
+	*out->cur++ = '"';
+	*out->cur++ = ':';
+	dump_cstr(s, len, 0, out);
+	*out->cur++ = '}';
+	*out->cur = '\0';
+    } else {
+	dump_cstr(s, len, 0, out);
+    }
 }
 
 static void
@@ -373,7 +397,7 @@ dump_sym_obj(VALUE obj, Out out) {
 	*out->cur++ = '{';
 	*out->cur++ = '"';
 	*out->cur++ = '^';
-	*out->cur++ = 's';
+	*out->cur++ = 'm';
 	*out->cur++ = '"';
 	*out->cur++ = ':';
 	dump_cstr(sym, len, 0, out);
@@ -456,7 +480,7 @@ hash_cb_strict(VALUE key, VALUE value, Out out) {
     }
     fill_indent(out, depth);
     if (rb_type(key) == T_STRING) {
-	dump_str(key, out);
+	dump_str_comp(key, out);
 	*out->cur++ = ':';
 	dump_val(value, depth, out);
     } else {
@@ -479,7 +503,7 @@ hash_cb_object(VALUE key, VALUE value, Out out) {
     fill_indent(out, depth);
     // TBD if key is a string else dump with unique key for and entry array
     if (rb_type(key) == T_STRING) {
-	dump_str(key, out);
+	dump_str_obj(key, out);
 	*out->cur++ = ':';
 	dump_val(value, depth, out);
     } else if (rb_type(key) == T_SYMBOL) {
@@ -778,7 +802,15 @@ dump_val(VALUE obj, int depth, Out out) {
     case T_FIXNUM:	dump_fixnum(obj, out);		break;
     case T_FLOAT:	dump_float(obj, out);		break;
     case T_BIGNUM:	dump_bignum(obj, out);		break;
-    case T_STRING:	dump_str(obj, out);		break;
+    case T_STRING:
+	switch (out->opts->mode) {
+	case StrictMode:
+	case NullMode:
+	case CompatMode:	dump_str_comp(obj, out);	break;
+	case ObjectMode:
+	default:		dump_str_obj(obj, out);		break;
+	}
+	break;
     case T_SYMBOL:
 	switch (out->opts->mode) {
 	case StrictMode:	raise_strict(obj);		break;

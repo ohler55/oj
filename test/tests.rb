@@ -112,6 +112,11 @@ class Juice < ::Test::Unit::TestCase
     dump_and_load("a\u0041", false)
   end
 
+  def test_string_object
+    dump_and_load('abc', false)
+    dump_and_load(':abc', false)
+  end
+
   def test_encode
     Oj.default_options = { :encoding => 'UTF-8' }
     dump_and_load("ぴーたー", false)

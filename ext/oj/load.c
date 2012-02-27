@@ -293,7 +293,11 @@ read_obj(ParseInfo pi) {
 		    obj = read_next(pi, T_CLASS);
 		    key = Qundef;
 		    break;
-		case 's': // Symbol
+		case 's': // String
+		    obj = read_next(pi, T_STRING);
+		    key = Qundef;
+		    break;
+		case 'm': // Symbol
 		    obj = read_next(pi, T_SYMBOL);
 		    key = Qundef;
 		    break;
