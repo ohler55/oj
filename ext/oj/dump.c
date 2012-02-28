@@ -98,6 +98,8 @@ static void	dump_data_comp(VALUE obj, Out out);
 static void	dump_data_obj(VALUE obj, Out out);
 static void	dump_obj_comp(VALUE obj, int depth, Out out);
 static void	dump_obj_obj(VALUE obj, int depth, Out out);
+static void	dump_struct_comp(VALUE obj, int depth, Out out);
+static void	dump_struct_obj(VALUE obj, int depth, Out out);
 static int	dump_attr_cb(ID key, VALUE value, Out out);
 static void	dump_obj_attrs(VALUE obj, int with_class, int depth, Out out);
 
@@ -152,6 +154,19 @@ fill_indent(Out out, int cnt) {
             *out->cur++ = ' ';
         }
     }
+}
+
+inline static const char*
+ulong2str(uint32_t num, char *end) {
+    char        *b;
+
+    *end-- = '\0';
+    for (b = end; 0 < num || b == end; num /= 10, b--) {
+        *b = (num % 10) + '0';
+    }
+    b++;
+
+    return b;
 }
 
 static void
@@ -789,6 +804,73 @@ dump_obj_attrs(VALUE obj, int with_class, int depth, Out out) {
 }
 
 static void
+dump_struct_comp(VALUE obj, int depth, Out out) {
+    if (rb_respond_to(obj, oj_to_hash_id)) {
+	VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
+ 
+	if (T_HASH != rb_type(h)) {
+	    rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
+	}
+	dump_hash(h, depth, out->opts->mode, out);
+    } else if (rb_respond_to(obj, oj_to_json_id)) {
+	VALUE		rs = rb_funcall(obj, oj_to_json_id, 0);
+	const char	*s = StringValuePtr(rs);
+	int		len = (int)RSTRING_LEN(rs);
+
+	if (out->end - out->cur <= len) {
+	    grow(out, len);
+	}
+	memcpy(out->cur, s, len);
+	out->cur += len;
+    } else {
+	dump_struct_obj(obj, depth, out);
+    }
+}
+
+static void
+dump_struct_obj(VALUE obj, int depth, Out out) {
+    VALUE	clas = rb_obj_class(obj);
+    const char	*class_name = rb_class2name(clas);
+    VALUE	*vp;
+    int		i;
+    int		d2 = depth + 1;
+    int		d3 = d2 + 1;
+    size_t	len = strlen(class_name);
+    size_t	size = d2 * out->indent + d3 * out->indent + 10 + len;
+            
+    if (out->end - out->cur <= (long)size) {
+	grow(out, size);
+    }
+    *out->cur++ = '{';
+    fill_indent(out, d2);
+    *out->cur++ = '"';
+    *out->cur++ = '^';
+    *out->cur++ = 'u';
+    *out->cur++ = '"';
+    *out->cur++ = ':';
+    *out->cur++ = '[';
+    fill_indent(out, d3);
+    *out->cur++ = '"';
+    memcpy(out->cur, class_name, len);
+    out->cur += len;
+    *out->cur++ = '"';
+    *out->cur++ = ',';
+    size = d3 * out->indent + 2;
+    for (i = (int)RSTRUCT_LEN(obj), vp = RSTRUCT_PTR(obj); 0 < i; i--, vp++) {
+	if (out->end - out->cur <= (long)size) {
+	    grow(out, size);
+	}
+	fill_indent(out, d3);
+	dump_val(*vp, d3, out);
+	*out->cur++ = ',';
+    }
+    out->cur--;
+    *out->cur++ = ']';
+    *out->cur++ = '}';
+    *out->cur = '\0';
+}
+
+static void
 raise_strict(VALUE obj) {
     rb_raise(rb_eTypeError, "Failed to dump %s Object to JSON in strict mode.\n", rb_class2name(rb_obj_class(obj)));
 }
@@ -850,6 +932,14 @@ dump_val(VALUE obj, int depth, Out out) {
 	}
 	break;
     case T_STRUCT: // for Range
+	switch (out->opts->mode) {
+	case StrictMode:	raise_strict(obj);		break;
+	case NullMode:		dump_nil(out);			break;
+	case CompatMode:	dump_struct_comp(obj, depth, out);	break;
+	case ObjectMode:
+	default:		dump_struct_obj(obj, depth, out);	break;
+	}
+	break;
 #if (defined T_COMPLEX && defined RCOMPLEX)
     case T_COMPLEX:
 #endif

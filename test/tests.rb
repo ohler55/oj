@@ -42,6 +42,12 @@ class Jazz < Jam
   end
 end # Jazz
 
+class Range
+  def to_hash()
+    { 'begin' => self.begin, 'end' => self.end, 'exclude_end' => self.exclude_end? }
+  end
+end # Range
+
 class Juice < ::Test::Unit::TestCase
 
   def test_get_options
@@ -339,6 +345,7 @@ class Juice < ::Test::Unit::TestCase
     assert_equal(obj, obj2)
   end
 
+  # Exception
   def test_exception
     err = nil
     begin
@@ -356,6 +363,34 @@ class Juice < ::Test::Unit::TestCase
     assert_equal(e, e2);
   end
 
+  # Range
+  def test_range_strict
+    begin
+      json = Oj.dump(1..7, :mode => :strict)
+    rescue Exception => e
+      assert(true)
+    end
+  end
+  def test_range_null
+    json = Oj.dump(1..7, :mode => :null)
+    assert_equal('null', json)
+  end
+  def test_range_compat
+    json = Oj.dump(1..7, :mode => :compat)
+    assert_equal(%{{"begin":1,"end":7,"exclude_end":false}}, json)
+    json = Oj.dump(1...7, :mode => :compat)
+    assert_equal(%{{"begin":1,"end":7,"exclude_end":true}}, json)
+  end    
+  def test_range_object
+    Oj.default_options = { :mode => :object }
+    json = Oj.dump(1..7, :mode => :object, :indent => 0)
+    assert_equal(%{{"^u":["Range",1,7,false]}}, json)
+    dump_and_load(1..7, true)
+    dump_and_load(1..1, true)
+    dump_and_load(1...7, true)
+  end
+
+  # autodefine Oj::Bag
   def test_bag
     json = %{{
   "^o":"Jem",

@@ -54,7 +54,7 @@ typedef struct _ParseInfo {
 static VALUE	classname2class(const char *name, ParseInfo pi);
 static VALUE	read_next(ParseInfo pi, int hint);
 static VALUE	read_obj(ParseInfo pi);
-static VALUE	read_array(ParseInfo pi);
+static VALUE	read_array(ParseInfo pi, int hint);
 static VALUE	read_str(ParseInfo pi, int hint);
 static VALUE	read_num(ParseInfo pi);
 static VALUE	read_time(ParseInfo pi);
@@ -207,7 +207,7 @@ read_next(ParseInfo pi, int hint) {
 	obj = read_obj(pi);
 	break;
     case '[':
-	obj = read_array(pi);
+	obj = read_array(pi, hint);
 	break;
     case '"':
 	obj = read_str(pi, hint);
@@ -306,6 +306,11 @@ read_obj(ParseInfo pi) {
 		    obj_type = T_OBJECT;
 		    key = Qundef;
 		    break;
+		case 'u': // Struct
+		    obj = read_next(pi, T_STRUCT);
+		    obj_type = T_STRUCT;
+		    key = Qundef;
+		    break;
 		case 'i': // Id for circular reference
 		    // TBD
 		default:
@@ -370,10 +375,11 @@ read_obj(ParseInfo pi) {
 }
 
 static VALUE
-read_array(ParseInfo pi) {
+read_array(ParseInfo pi, int hint) {
     VALUE	a = rb_ary_new();
     VALUE	e;
 
+    // TBD postpone creation of array if hint is T_STRUCT, then load for struct
     pi->s++;
     next_non_white(pi);
     if (']' == *pi->s) {

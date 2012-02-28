@@ -260,17 +260,23 @@ key. After that each entry is treated as a variable of the Object where the
 key is the variable name without the preceeding '@'. An example is
 {"^o":"Oj::Bag","x":58,"y":"marbles"}.
 
-9. When encoding an Object, if the variable name does not begin with an '@'
+9. A "^u" JSON Object key indicates the value should be converted to a Ruby
+Struct. The first entry in the JSON Object must be a class with the "^u"
+key. After that each entry is is given a numeric position in the struct and
+that is used as the key in the JSON Object. An example is
+{"^u":["Range",1,7,false]}.
+
+10. When encoding an Object, if the variable name does not begin with an '@'
 character then the name preceeded by a '~' character. This occurs in the
 Exception class. An example is {"^o":"StandardError","~mesg":"A
 Message","~bt":[".\/tests.rb:345:in `test_exception'"]}
 
-10. If a Hash entry has a key that is not a String or Symbol then the entry is
+11. If a Hash entry has a key that is not a String or Symbol then the entry is
 encoded with a key of the form "^#n" where n is a hex number. The value that
 is an Array where the first element is the key in the Hash and the second is
 the value. An example is {"^#3":[2,5]}.
 
-11. A "^i" JSON entry in either an Object or Array is the ID of the Ruby
+12. A "^i" JSON entry in either an Object or Array is the ID of the Ruby
 Object being encoded. It is used when the :circular flag is set. It can appear
 in either a JSON Object or in a JSON Array. If alone it represented a link to
 the original Hash or JSON. If an added attribute it is the ID of the original
