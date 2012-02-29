@@ -21,20 +21,21 @@ class Jazz
     @number = 58
     @string = "A string"
     @array = [true, false, nil]
-    @hash = { 'one' => 1, 'two' => 2 }
+    @hash = { 'one' => 1, 'two' => 3 }
   end
   def to_json(*) # Yajl and JSON have different signatures
     %{
-    { "boolean":#{@boolean},
-      "number":#{@number},
-      "string":#{@string},
-      "array":#{@array},
-      "hash":#{@hash},
-    }
-}
+{ "json_class":"Jazz",
+  "boolean":#{@boolean},
+  "number":#{@number},
+  "string":"#{@string}",
+  "array":#{@array},
+  "hash":#{@hash},
+}}
   end
   def to_hash()
-    { 'boolean' => @boolean,
+    { 'json_class' => "Jazz",
+      'boolean' => @boolean,
       'number' => @number,
       'string' => @string,
       'array' => @array,
@@ -44,8 +45,18 @@ class Jazz
   def to_msgpack(out)
     out << MessagePack.pack(to_hash())
   end
+  def self.json_create(h)
+    j = self.new()
+    j.instance_variable_set(:@boolean, h['boolean'])
+    j.instance_variable_set(:@number, h['number'])
+    j.instance_variable_set(:@string, h['string'])
+    j.instance_variable_set(:@array, h['array'])
+    j.instance_variable_set(:@hash, h['hash'])
+    j
+  end
 end
 
+$verbose = false
 $indent = 0
 $iter = 100000
 $with_object = true
@@ -87,6 +98,7 @@ Oj.default_options = { :indent => $indent, :mode => :compat }
 Ox.default_options = { :indent => $indent, :mode => :object }
 
 $json = Oj.dump($obj)
+$obj_json = Oj.dump($obj, :mode => :object)
 $xml = Ox.dump($obj, :indent => $indent)
 begin
   $msgpack = MessagePack.pack($obj)
@@ -95,10 +107,21 @@ rescue Exception => e
   $msgpack = nil
 end
 
+if $verbose
+  puts "json:\n#{$json}\n"
+  puts "object json:\n#{$obj_json}\n"
+  puts "Oj loaded object:\n#{Oj.load($json)}\n"
+  puts "Yajl loaded object:\n#{Yajl::Parser.parse($json)}\n"
+  puts "JSON loaded object:\n#{JSON::Ext::Parser.new($json).parse}\n"
+end
+
 puts '-' * 80
 puts "Load/Parse Performance"
 perf = Perf.new()
 perf.add('Oj', 'load') { Oj.load($json) }
+perf.before('Oj') { Oj.default_options = { :mode => :compat} }
+perf.add('Oj:object', 'load') { Oj.load($obj_json) }
+perf.before('Oj:object') { Oj.default_options = { :mode => :object} }
 perf.add('Yajl', 'parse') { Yajl::Parser.parse($json) }
 perf.add('JSON::Ext', 'parse') { JSON::Ext::Parser.new($json).parse }
 perf.add('JSON::Pure', 'parse') { JSON::Pure::Parser.new($json).parse }
@@ -111,6 +134,9 @@ puts '-' * 80
 puts "Dump/Encode/Generate Performance"
 perf = Perf.new()
 perf.add('Oj', 'dump') { Oj.dump($obj) }
+perf.before('Oj') { Oj.default_options = { :mode => :compat} }
+perf.add('Oj:object', 'dump') { Oj.dump($obj) }
+perf.before('Oj:object') { Oj.default_options = { :mode => :object} }
 perf.add('Yajl', 'encode') { Yajl::Encoder.encode($obj) }
 if 0 == $indent
   perf.add('JSON::Ext', 'generate') { JSON.generate($obj) }

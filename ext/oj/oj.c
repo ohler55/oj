@@ -55,6 +55,7 @@ ID	oj_tv_sec_id;
 ID	oj_tv_usec_id;
 
 VALUE	oj_bag_class;
+VALUE	oj_struct_class;
 VALUE	oj_time_class;
 
 static VALUE	auto_define_sym;
@@ -374,6 +375,7 @@ void Init_oj() {
     oj_tv_usec_id = rb_intern("tv_usec");
     
     oj_bag_class = rb_const_get_at(Oj, rb_intern("Bag"));
+    oj_struct_class = rb_const_get(rb_cObject, rb_intern("Struct"));
     oj_time_class = rb_const_get(rb_cObject, rb_intern("Time"));
 
     auto_define_sym = ID2SYM(rb_intern("auto_define"));	rb_ary_push(keep, auto_define_sym);

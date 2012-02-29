@@ -28,9 +28,12 @@ class Jeez < Jam
   end
   
   def to_json()
-    %{{"x":#{@x},"y":#{@y}}}
+    %{{"json_class":"#{self.class}","x":#{@x},"y":#{@y}}}
   end
-  
+
+  def self.json_create(h)
+    self.new(h['x'], h['y'])
+  end
 end # Jeez
 
 class Jazz < Jam
@@ -38,7 +41,10 @@ class Jazz < Jam
     super
   end
   def to_hash()
-    { 'x' => @x, 'y' => @y }
+    { 'json_class' => self.class.to_s, 'x' => @x, 'y' => @y }
+  end
+  def self.json_create(h)
+    self.new(h['x'], h['y'])
   end
 end # Jazz
 
@@ -268,7 +274,7 @@ class Juice < ::Test::Unit::TestCase
   def test_json_object_compat
     obj = Jeez.new(true, 58)
     json = Oj.dump(obj, :mode => :compat, :indent => 2)
-    assert_equal(%{{"x":true,"y":58}}, json)
+    assert_equal(%{{"json_class":"Jeez","x":true,"y":58}}, json)
   end
   def test_json_object_object
     obj = Jeez.new(true, 58)
@@ -299,6 +305,7 @@ class Juice < ::Test::Unit::TestCase
     obj = Jazz.new(true, 58)
     json = Oj.dump(obj, :mode => :compat, :indent => 2)
     assert_equal(%{{
+  "json_class":"Jazz",
   "x":true,
   "y":58}}, json)
   end
@@ -385,9 +392,9 @@ class Juice < ::Test::Unit::TestCase
     Oj.default_options = { :mode => :object }
     json = Oj.dump(1..7, :mode => :object, :indent => 0)
     assert_equal(%{{"^u":["Range",1,7,false]}}, json)
-    dump_and_load(1..7, true)
-    dump_and_load(1..1, true)
-    dump_and_load(1...7, true)
+    dump_and_load(1..7, false)
+    dump_and_load(1..1, false)
+    dump_and_load(1...7, false)
   end
 
   # autodefine Oj::Bag

@@ -170,6 +170,21 @@ classname2class(const char *name, ParseInfo pi) {
     return clas;
 }
 
+#ifndef NO_RSTRUCT
+inline static VALUE
+structname2obj(const char *name) {
+    VALUE       ost;
+
+    ost = rb_const_get(oj_struct_class, rb_intern(name));
+// use encoding as the indicator for Ruby 1.8.7 or 1.9.x
+#ifdef HAVE_RUBY_ENCODING_H
+    return rb_struct_alloc_noinit(ost);
+#else
+    return rb_struct_new(ost);
+#endif
+}
+#endif
+
 VALUE
 oj_parse(char *json, Options options) {
     VALUE		obj;
@@ -376,21 +391,47 @@ read_obj(ParseInfo pi) {
 
 static VALUE
 read_array(ParseInfo pi, int hint) {
-    VALUE	a = rb_ary_new();
+    VALUE	a = Qundef;
     VALUE	e;
+    int		type = T_NONE;
+    int		cnt;
+    long	slen = 0;
 
-    // TBD postpone creation of array if hint is T_STRUCT, then load for struct
     pi->s++;
     next_non_white(pi);
     if (']' == *pi->s) {
 	pi->s++;
-	return a;
+	return rb_ary_new();
     }
-    while (1) {
+    for (cnt = -1; 1; cnt++) {
 	if (Qundef == (e = read_next(pi, 0))) {
 	    raise_error("unexpected character", pi->str, pi->s);
 	}
-        rb_ary_push(a, e);
+#ifndef NO_RSTRUCT
+	if (Qundef == a && T_STRUCT == hint && T_STRING == rb_type(e)) {
+	    a = structname2obj(StringValuePtr(e));
+	    type = T_STRUCT;
+	    slen = RSTRUCT_LEN(a);
+	}
+#endif
+	if (Qundef == a) {
+	    a = rb_ary_new();
+	    type = T_ARRAY;
+	}
+	if (T_STRUCT == type) {
+#ifdef NO_RSTRUCT
+	    raise_error("Ruby structs not supported with this verion of Ruby", pi->str, pi->s);
+#else
+	    if (0 <= cnt) {
+		if (slen <= cnt) {
+		    raise_error("Too many elements for Struct", pi->str, pi->s);
+		}
+		RSTRUCT_PTR(a)[cnt] = e;
+	    }
+#endif
+	} else {
+	    a = rb_ary_push(a, e);
+	}
 	next_non_white(pi);	// skip white space
 	if (',' == *pi->s) {
 	    pi->s++;

@@ -5,12 +5,18 @@
 
 
 - next
+ - :object mode
+  - if not one of the normal types, check for other to_json and to_hash
+  - on load if there is a json_class but not a ^o then check for json_create
+   - to_json and to_hash should use json_class
+
+ - support json_create()
+  - use this to allow users to support additional classes like Complex, Rational, or Regexp
+  - JSON.create_id = '^o' can be used for compatibility
+  - also look for json_class in compat mode
+
  - circular reference
- - complete all types for dump and load in :object mode
-    case T_STRUCT: // for Range
-    case T_COMPLEX:
-    case T_RATIONAL:
-    case T_REGEXP:
+
 
  - stream
   - load

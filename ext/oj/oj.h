@@ -94,6 +94,7 @@ extern void	_oj_raise_error(const char *msg, const char *xml, const char *curren
 extern VALUE    Oj;
 
 extern VALUE	oj_bag_class;
+extern VALUE	oj_struct_class;
 extern VALUE	oj_time_class;
 
 extern ID	oj_at_id;
