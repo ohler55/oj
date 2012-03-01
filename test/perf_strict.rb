@@ -20,8 +20,6 @@ class Jazz
     @boolean = true
     @number = 58
     @string = "A string"
-    @array = [true, false, nil]
-    @hash = { 'one' => 1, 'two' => 3 }
   end
   def to_json(*) # Yajl and JSON have different signatures
     %{
@@ -29,8 +27,6 @@ class Jazz
   "boolean":#{@boolean},
   "number":#{@number},
   "string":"#{@string}",
-  "array":#{@array},
-  "hash":#{@hash},
 }}
   end
   def to_hash()
@@ -38,10 +34,10 @@ class Jazz
       'boolean' => @boolean,
       'number' => @number,
       'string' => @string,
-      'array' => @array,
-      'hash' => @hash,
     }
   end
+  alias as_json to_hash
+
   def to_msgpack(out)
     out << MessagePack.pack(to_hash())
   end
@@ -50,8 +46,6 @@ class Jazz
     j.instance_variable_set(:@boolean, h['boolean'])
     j.instance_variable_set(:@number, h['number'])
     j.instance_variable_set(:@string, h['string'])
-    j.instance_variable_set(:@array, h['array'])
-    j.instance_variable_set(:@hash, h['hash'])
     j
   end
 end
@@ -92,6 +86,7 @@ else
     'e' => { 'one' => '1', 'two' => '2' },
     'f' => nil,
   }
+  $obj['g'] = Jazz.new() if $with_object
 end
 
 Oj.default_options = { :indent => $indent, :mode => :compat }
@@ -118,10 +113,10 @@ end
 puts '-' * 80
 puts "Load/Parse Performance"
 perf = Perf.new()
-perf.add('Oj', 'load') { Oj.load($json) }
-perf.before('Oj') { Oj.default_options = { :mode => :compat} }
-perf.add('Oj:object', 'load') { Oj.load($obj_json) }
-perf.before('Oj:object') { Oj.default_options = { :mode => :object} }
+perf.add('Oj:compat', 'load') { Oj.load($json) }
+perf.before('Oj:compat') { Oj.default_options = { :mode => :compat} }
+perf.add('Oj', 'load') { Oj.load($obj_json) }
+perf.before('Oj') { Oj.default_options = { :mode => :object} }
 perf.add('Yajl', 'parse') { Yajl::Parser.parse($json) }
 perf.add('JSON::Ext', 'parse') { JSON::Ext::Parser.new($json).parse }
 perf.add('JSON::Pure', 'parse') { JSON::Pure::Parser.new($json).parse }
@@ -133,10 +128,10 @@ puts
 puts '-' * 80
 puts "Dump/Encode/Generate Performance"
 perf = Perf.new()
+perf.add('Oj:compat', 'dump') { Oj.dump($obj) }
+perf.before('Oj:compat') { Oj.default_options = { :mode => :compat} }
 perf.add('Oj', 'dump') { Oj.dump($obj) }
-perf.before('Oj') { Oj.default_options = { :mode => :compat} }
-perf.add('Oj:object', 'dump') { Oj.dump($obj) }
-perf.before('Oj:object') { Oj.default_options = { :mode => :object} }
+perf.before('Oj') { Oj.default_options = { :mode => :object} }
 perf.add('Yajl', 'encode') { Yajl::Encoder.encode($obj) }
 if 0 == $indent
   perf.add('JSON::Ext', 'generate') { JSON.generate($obj) }
