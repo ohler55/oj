@@ -58,6 +58,7 @@ $with_bignum = true
 $with_nums = true
 
 opts = OptionParser.new
+opts.on("-v", "verbose")                                    { $verbose = true }
 opts.on("-c", "--count [Int]", Integer, "iterations")       { |i| $iter = i }
 opts.on("-i", "--indent [Int]", Integer, "indentation")     { |i| $indent = i }
 opts.on("-o", "without objects")                            { $with_object = false }
@@ -109,6 +110,8 @@ if $verbose
   puts "Yajl loaded object:\n#{Yajl::Parser.parse($json)}\n"
   puts "JSON loaded object:\n#{JSON::Ext::Parser.new($json).parse}\n"
 end
+
+# TBD verify that dump/load work and return the same object, not error if not and do not run the test for that one
 
 puts '-' * 80
 puts "Load/Parse Performance"
