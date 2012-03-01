@@ -272,9 +272,11 @@ class Juice < ::Test::Unit::TestCase
     assert_equal('null', json)
   end
   def test_json_object_compat
+    Oj.default_options = { :mode => :compat }
     obj = Jeez.new(true, 58)
-    json = Oj.dump(obj, :mode => :compat, :indent => 2)
+    json = Oj.dump(obj, :indent => 2)
     assert_equal(%{{"json_class":"Jeez","x":true,"y":58}}, json)
+    dump_and_load(obj, false)
   end
   def test_json_object_object
     obj = Jeez.new(true, 58)

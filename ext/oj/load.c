@@ -271,6 +271,7 @@ read_obj(ParseInfo pi) {
     VALUE	val = Qundef;
     const char	*ks;
     int		obj_type = T_NONE;
+    const char	*json_class_name = 0;
     
     pi->s++;
     next_non_white(pi);
@@ -371,6 +372,12 @@ read_obj(ParseInfo pi) {
 		rb_ivar_set(obj, var_id, val);
 	    } else if (T_HASH == obj_type) {
 		rb_hash_aset(obj, key, val);
+		if ((CompatMode == pi->options->mode || ObjectMode == pi->options->mode) &&
+		    0 == json_class_name &&
+		    0 != ks && 'j' == *ks && 0 == strcmp("json_class", ks) &&
+		    T_STRING == rb_type(val)) {
+		    json_class_name = StringValuePtr(val);
+		}
 	    } else {
 		raise_error("invalid Object format, too many Hash entries.", pi->str, pi->s);
 	    }
@@ -385,6 +392,13 @@ read_obj(ParseInfo pi) {
 	    //printf("*** '%s'\n", pi->s);
 	    raise_error("invalid format, expected , or } while in an object", pi->str, pi->s);
 	}
+    }
+    if (0 != json_class_name) {
+	VALUE	clas = classname2class(json_class_name, pi);
+	VALUE	args[1];
+
+	*args = obj;
+	obj = rb_funcall2(clas, oj_json_create_id, 1, args);
     }
     return obj;
 }

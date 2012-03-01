@@ -5,8 +5,10 @@
 
 
 - next
+ - test
  - :object mode
   - if not one of the normal types, check for other to_json and to_hash
+   - add as_json as well
   - on load if there is a json_class but not a ^o then check for json_create
    - to_json and to_hash should use json_class
 

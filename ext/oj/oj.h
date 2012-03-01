@@ -97,8 +97,10 @@ extern VALUE	oj_bag_class;
 extern VALUE	oj_struct_class;
 extern VALUE	oj_time_class;
 
+extern ID	oj_as_json_id;
 extern ID	oj_at_id;
 extern ID	oj_instance_variables_id;
+extern ID	oj_json_create_id;
 extern ID	oj_to_hash_id;
 extern ID	oj_to_json_id;
 extern ID	oj_to_sym_id;

@@ -45,8 +45,10 @@ void Init_oj();
 
 VALUE    Oj = Qnil;
 
+ID	oj_as_json_id;
 ID	oj_at_id;
 ID	oj_instance_variables_id;
+ID	oj_json_create_id;
 ID	oj_to_hash_id;
 ID	oj_to_json_id;
 ID	oj_to_sym_id;
@@ -365,8 +367,10 @@ void Init_oj() {
     rb_define_module_function(Oj, "dump", dump, -1);
     rb_define_module_function(Oj, "to_file", to_file, -1);
 
+    oj_as_json_id = rb_intern("as_json");
     oj_at_id = rb_intern("at");
     oj_instance_variables_id = rb_intern("instance_variables");
+    oj_json_create_id = rb_intern("json_create");
     oj_to_hash_id = rb_intern("to_hash");
     oj_to_json_id = rb_intern("to_json");
     oj_to_sym_id = rb_intern("to_sym");
