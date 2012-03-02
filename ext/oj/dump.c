@@ -699,16 +699,44 @@ dump_obj_comp(VALUE obj, int depth, Out out) {
     *out->cur = '\0';
 }
 
-inline static void
-dump_obj_obj(VALUE obj, int depth, Out out) {
+// returns 0 if not using circular references, -1 if not further writing is
+// needed (duplicate), and a positive value if the object was added to the cache.
+static long
+check_circular(VALUE obj, Out out) {
     slot_t	id = 0;
+    slot_t	*slot;
 
     if (Yes == out->opts->circular) {
-	out->circ_cnt++;
-	id = out->circ_cnt;
+	if (0 == (id = oj_cache8_get(out->circ_cache, obj, &slot))) {
+	    out->circ_cnt++;
+	    id = out->circ_cnt;
+	    *slot = id;
+	} else {
+	    if (out->end - out->cur <= 18) {
+		grow(out, 18);
+	    }
+	    *out->cur++ = '{';
+	    *out->cur++ = '"';
+	    *out->cur++ = '^';
+	    *out->cur++ = 'i';
+	    *out->cur++ = '"';
+	    *out->cur++ = ':';
+	    dump_ulong(id, out);
+	    *out->cur++ = '}';
+
+	    return -1;
+	}
     }
-    // TBD check circular and get/set id
-    dump_obj_attrs(obj, 1, id, depth, out);
+    return (long)id;
+}
+
+inline static void
+dump_obj_obj(VALUE obj, int depth, Out out) {
+    long	id = check_circular(obj, out);
+
+    if (0 <= id) {
+	dump_obj_attrs(obj, 1, id, depth, out);
+    }
 }
 
 static int

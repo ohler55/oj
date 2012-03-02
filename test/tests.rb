@@ -8,7 +8,7 @@ require 'test/unit'
 require 'oj'
 
 class Jam
-  attr_reader :x, :y
+  attr_accessor :x, :y
 
   def initialize(x, y)
     @x = x
@@ -411,19 +411,19 @@ class Juice < ::Test::Unit::TestCase
     assert_equal(58, obj.y)
   end
 
-
   # Circular
   def test_circular_object
-    obj = Jam.new(true, 58)
+    obj = Jam.new(nil, 58)
+    obj.x = obj
     json = Oj.dump(obj, :mode => :object, :indent => 2, :circular => true)
     puts json
     assert_equal(%{{
   "^o":"Jam",
   "^i":1,
-  "x":true,
+  "x":{"^i":1},
   "y":58}}, json)
-#    obj2 = Oj.load(json, :mode => :object)
-#    assert_equal(obj, obj2)
+    obj2 = Oj.load(json, :mode => :object, :circular => true)
+    assert_equal(obj2.x.__id__, obj2.__id__)
   end
 
 

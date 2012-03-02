@@ -191,6 +191,7 @@ static void
 parse_options(VALUE ropts, Options copts) {
     struct _YesNoOpt    ynos[] = {
         { circular_sym, &copts->circular },
+        { auto_define_sym, &copts->auto_define },
         { Qnil, 0 }
     };
     YesNoOpt    o;
