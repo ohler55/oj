@@ -16,24 +16,36 @@ require 'oj'
 require 'ox'
 
 class Jazz
+  attr_accessor :boolean, :number, :string
+
   def initialize()
     @boolean = true
     @number = 58
     @string = "A string"
   end
+
+  def eql?(o)
+    (self.class == o.class &&
+     boolean == o.boolean &&
+     number == o.number &&
+     string == o.string)
+  end
+  alias == eql?
+
   def to_json(*) # Yajl and JSON have different signatures
     %{
 { "json_class":"Jazz",
   "boolean":#{@boolean},
   "number":#{@number},
-  "string":"#{@string}",
+  "string":"#{@string}"
 }}
   end
+
   def to_hash()
     { 'json_class' => "Jazz",
       'boolean' => @boolean,
       'number' => @number,
-      'string' => @string,
+      'string' => @string
     }
   end
   alias as_json to_hash
@@ -41,6 +53,7 @@ class Jazz
   def to_msgpack(out)
     out << MessagePack.pack(to_hash())
   end
+
   def self.json_create(h)
     j = self.new()
     j.instance_variable_set(:@boolean, h['boolean'])
@@ -76,7 +89,6 @@ if $with_nums
     'e' => { 'one' => 1, 'two' => 2 },
     'f' => nil,
   }
-  $obj['g'] = Jazz.new() if $with_object
   $obj['h'] = 12345678901234567890123456789 if $with_bignum
 else
   $obj = {
@@ -87,8 +99,8 @@ else
     'e' => { 'one' => '1', 'two' => '2' },
     'f' => nil,
   }
-  $obj['g'] = Jazz.new() if $with_object
 end
+$obj['g'] = Jazz.new() if $with_object
 
 Oj.default_options = { :indent => $indent, :mode => :compat }
 Ox.default_options = { :indent => $indent, :mode => :object }
@@ -96,10 +108,29 @@ Ox.default_options = { :indent => $indent, :mode => :object }
 $json = Oj.dump($obj)
 $obj_json = Oj.dump($obj, :mode => :object)
 $xml = Ox.dump($obj, :indent => $indent)
+$failed = {} # key is same as String used in tests later
+
+def capture_error(tag, orig, load_key, dump_key, &blk)
+  begin
+    obj = blk.call(orig)
+    raise "#{tag} #{dump_key} and #{load_key} did not return the same object as the original." unless orig == obj
+  rescue Exception => e
+    $failed[tag] = "#{e.class}: #{e.message}"
+  end
+end
+
+# Verify that all packages dump and load correctly and return the same Object as the original.
+capture_error('Oj:compat', $obj, 'load', 'dump') { |o| Oj.load(Oj.dump(o)) }
+capture_error('Oj', $obj, 'load', 'dump') { |o| Oj.load(Oj.dump(o, :mode => :compat), :mode => :compat) }
+capture_error('Ox', $obj, 'load', 'dump') { |o| Ox.load(Ox.dump(o, :mode => :object), :mode => :object) }
+capture_error('MessagePack', $obj, 'unpack', 'pack') { |o| MessagePack.unpack(MessagePack.pack($obj)) }
+capture_error('Yajl', $obj, 'encode', 'parse') { |o| Yajl::Parser.parse(Yajl::Encoder.encode(o)) }
+capture_error('JSON::Ext', $obj, 'generate', 'parse') { |o| JSON.generator = JSON::Ext::Generator; JSON::Ext::Parser.new(JSON.generate(o)).parse }
+capture_error('JSON::Pure', $obj, 'generate', 'parse') { |o| JSON.generator = JSON::Pure::Generator; JSON::Pure::Parser.new(JSON.generate(o)).parse }
+
 begin
   $msgpack = MessagePack.pack($obj)
 rescue Exception => e
-  puts "MessagePack failed to pack! #{e.class}: #{e.message}.\nSkipping."
   $msgpack = nil
 end
 
@@ -111,45 +142,60 @@ if $verbose
   puts "JSON loaded object:\n#{JSON::Ext::Parser.new($json).parse}\n"
 end
 
-# TBD verify that dump/load work and return the same object, not error if not and do not run the test for that one
-
 puts '-' * 80
 puts "Load/Parse Performance"
 perf = Perf.new()
-perf.add('Oj:compat', 'load') { Oj.load($json) }
-perf.before('Oj:compat') { Oj.default_options = { :mode => :compat} }
-perf.add('Oj', 'load') { Oj.load($obj_json) }
-perf.before('Oj') { Oj.default_options = { :mode => :object} }
-perf.add('Yajl', 'parse') { Yajl::Parser.parse($json) }
-perf.add('JSON::Ext', 'parse') { JSON::Ext::Parser.new($json).parse }
-perf.add('JSON::Pure', 'parse') { JSON::Pure::Parser.new($json).parse }
-perf.add('Ox', 'load') { Ox.load($xml) }
-perf.add('MessagePack', 'unpack') { MessagePack.unpack($msgpack) } unless $msgpack.nil?
+unless $failed.has_key?('Oj:compat')
+  perf.add('Oj:compat', 'load') { Oj.load($json) }
+  perf.before('Oj:compat') { Oj.default_options = { :mode => :compat} }
+end
+unless $failed.has_key?('Oj')
+  perf.add('Oj', 'load') { Oj.load($obj_json) }
+  perf.before('Oj') { Oj.default_options = { :mode => :object} }
+end
+perf.add('Yajl', 'parse') { Yajl::Parser.parse($json) } unless $failed.has_key?('Yajl')
+perf.add('JSON::Ext', 'parse') { JSON::Ext::Parser.new($json).parse } unless $failed.has_key?('JSON::Ext')
+perf.add('JSON::Pure', 'parse') { JSON::Pure::Parser.new($json).parse } unless $failed.has_key?('JSON::Ext')
+perf.add('Ox', 'load') { Ox.load($xml) } unless $failed.has_key?('Ox')
+perf.add('MessagePack', 'unpack') { MessagePack.unpack($msgpack) } unless $failed.has_key?('MessagePack')
 perf.run($iter)
 
 puts
 puts '-' * 80
 puts "Dump/Encode/Generate Performance"
 perf = Perf.new()
-perf.add('Oj:compat', 'dump') { Oj.dump($obj) }
-perf.before('Oj:compat') { Oj.default_options = { :mode => :compat} }
-perf.add('Oj', 'dump') { Oj.dump($obj) }
-perf.before('Oj') { Oj.default_options = { :mode => :object} }
-perf.add('Yajl', 'encode') { Yajl::Encoder.encode($obj) }
-if 0 == $indent
-  perf.add('JSON::Ext', 'generate') { JSON.generate($obj) }
-else
-  perf.add('JSON::Ext', 'generate') { JSON.pretty_generate($obj) }
+unless $failed.has_key?('Oj:compat')
+  perf.add('Oj:compat', 'dump') { Oj.dump($obj) }
+  perf.before('Oj:compat') { Oj.default_options = { :mode => :compat} }
 end
-perf.before('JSON::Ext') { JSON.generator = JSON::Ext::Generator }
-if 0 == $indent
-  perf.add('JSON::Pure', 'generate') { JSON.generate($obj) }
-else
-  perf.add('JSON::Pure', 'generate') { JSON.pretty_generate($obj) }
+unless $failed.has_key?('Oj')
+  perf.add('Oj', 'dump') { Oj.dump($obj) }
+  perf.before('Oj') { Oj.default_options = { :mode => :object} }
 end
-perf.before('JSON::Pure') { JSON.generator = JSON::Pure::Generator }
-perf.add('Ox', 'dump') { Ox.dump($obj) }
-perf.add('MessagePack', 'pack') { MessagePack.pack($obj) } unless $msgpack.nil?
+perf.add('Yajl', 'encode') { Yajl::Encoder.encode($obj) } unless $failed.has_key?('Yajl')
+unless $failed.has_key?('JSON::Ext')
+  if 0 == $indent
+    perf.add('JSON::Ext', 'generate') { JSON.generate($obj) }
+  else
+    perf.add('JSON::Ext', 'generate') { JSON.pretty_generate($obj) }
+  end
+  perf.before('JSON::Ext') { JSON.generator = JSON::Ext::Generator }
+end
+unless $failed.has_key?('JSON::Pure')
+  if 0 == $indent
+    perf.add('JSON::Pure', 'generate') { JSON.generate($obj) }
+  else
+    perf.add('JSON::Pure', 'generate') { JSON.pretty_generate($obj) }
+  end
+  perf.before('JSON::Pure') { JSON.generator = JSON::Pure::Generator }
+end
+perf.add('Ox', 'dump') { Ox.dump($obj) } unless $failed.has_key?('Ox')
+perf.add('MessagePack', 'pack') { MessagePack.pack($obj) } unless $failed.has_key?('MessagePack')
 perf.run($iter)
 
 puts
+
+unless $failed.empty?
+  puts "The following packages were not included for the reason listed"
+  $failed.each { |tag,msg| puts "***** #{tag}: #{msg}" }
+end

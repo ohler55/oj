@@ -5,19 +5,13 @@
 
 
 - next
- - test
- - :object mode
-  - if not one of the normal types, check for other to_json and to_hash
-   - add as_json as well
-  - on load if there is a json_class but not a ^o then check for json_create
-   - to_json and to_hash should use json_class
-
- - support json_create()
-  - use this to allow users to support additional classes like Complex, Rational, or Regexp
-  - JSON.create_id = '^o' can be used for compatibility
-  - also look for json_class in compat mode
 
  - circular reference
+  - where to put id
+   - wrapper - others do not understand it
+   - inside
+    - no problem on Object
+    - Hash and Array have conflicts unless escaped (could do as is done for others in hash)
 
 
  - stream

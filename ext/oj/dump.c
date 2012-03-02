@@ -41,35 +41,20 @@
 #include "st.h"
 #endif
 
+#include "cache8.h"
+
 typedef unsigned long   ulong;
 
-typedef struct _Str {
-    const char  *str;
-    size_t      len;
-} *Str;
-
-typedef struct _Element {
-    struct _Str         clas;
-    struct _Str         attr;
-    unsigned long       id;
-    int                 indent; // < 0 indicates no \n
-    int                 closed;
-    char                type;
-} *Element;
-
 typedef struct _Out {
-    void                (*w_start)(struct _Out *out, Element e);
-    void                (*w_end)(struct _Out *out, Element e);
-    void                (*w_time)(struct _Out *out, VALUE obj);
-    char                *buf;
-    char                *end;
-    char                *cur;
-//    Cache8              circ_cache;
-//    unsigned long       circ_cnt;
-    int                 indent;
-    int                 depth; // used by dumpHash
-    Options             opts;
-    uint32_t		hash_cnt;
+    char	*buf;
+    char	*end;
+    char	*cur;
+    Cache8	circ_cache;
+    slot_t	circ_cnt;
+    int		indent;
+    int		depth; // used by dump_hash
+    Options	opts;
+    uint32_t	hash_cnt;
 } *Out;
 
 static void     dump_obj_to_json(VALUE obj, Options copts, Out out);
@@ -101,7 +86,7 @@ static void	dump_obj_obj(VALUE obj, int depth, Out out);
 static void	dump_struct_comp(VALUE obj, int depth, Out out);
 static void	dump_struct_obj(VALUE obj, int depth, Out out);
 static int	dump_attr_cb(ID key, VALUE value, Out out);
-static void	dump_obj_attrs(VALUE obj, int with_class, int depth, Out out);
+static void	dump_obj_attrs(VALUE obj, int with_class, slot_t id, int depth, Out out);
 
 static void     grow(Out out, size_t len);
 static int      is_json_friendly(const u_char *str, size_t len);
@@ -167,6 +152,26 @@ ulong2str(uint32_t num, char *end) {
     b++;
 
     return b;
+}
+
+inline static void
+dump_ulong(unsigned long num, Out out) {
+    char        buf[32];
+    char        *b = buf + sizeof(buf) - 1;
+
+    *b-- = '\0';
+    if (0 < num) {
+        for (; 0 < num; num /= 10, b--) {
+            *b = (num % 10) + '0';
+        }
+	b++;
+    } else {
+        *b = '0';
+    }
+    for (; '\0' != *b; b++) {
+        *out->cur++ = *b;
+    }
+    *out->cur = '\0';
 }
 
 static void
@@ -689,14 +694,21 @@ dump_obj_comp(VALUE obj, int depth, Out out) {
 	memcpy(out->cur, s, len);
 	out->cur += len;
     } else {
-	dump_obj_attrs(obj, 0, depth, out);
+	dump_obj_attrs(obj, 0, 0, depth, out);
     }
     *out->cur = '\0';
 }
 
 inline static void
 dump_obj_obj(VALUE obj, int depth, Out out) {
-    dump_obj_attrs(obj, 1, depth, out);
+    slot_t	id = 0;
+
+    if (Yes == out->opts->circular) {
+	out->circ_cnt++;
+	id = out->circ_cnt;
+    }
+    // TBD check circular and get/set id
+    dump_obj_attrs(obj, 1, id, depth, out);
 }
 
 static int
@@ -729,7 +741,7 @@ dump_attr_cb(ID key, VALUE value, Out out) {
 }
 
 static void
-dump_obj_attrs(VALUE obj, int with_class, int depth, Out out) {
+dump_obj_attrs(VALUE obj, int with_class, slot_t id, int depth, Out out) {
     size_t	size;
     int		d2 = depth + 1;
 
@@ -752,6 +764,20 @@ dump_obj_attrs(VALUE obj, int with_class, int depth, Out out) {
 	*out->cur++ = '"';
 	*out->cur++ = ':';
 	dump_cstr(class_name, clen, 0, out);
+    }
+    if (0 < id) {
+	size = d2 * out->indent + 16;
+	if (out->end - out->cur <= (long)size) {
+	    grow(out, size);
+	}
+	*out->cur++ = ',';
+	fill_indent(out, d2);
+	*out->cur++ = '"';
+	*out->cur++ = '^';
+	*out->cur++ = 'i';
+	*out->cur++ = '"';
+	*out->cur++ = ':';
+	dump_ulong(id, out);
     }
     {
 	int	cnt;
@@ -974,19 +1000,17 @@ dump_obj_to_json(VALUE obj, Options copts, Out out) {
     out->buf = (char*)malloc(65336);
     out->end = out->buf + 65325; // 1 less than end plus extra for possible errors
     out->cur = out->buf;
-//    out->circ_cache = 0;
-//    out->circ_cnt = 0;
+    out->circ_cnt = 0;
     out->opts = copts;
     out->hash_cnt = 0;
-/*    if (Yes == copts->circular) {
-        ox_cache8_new(&out->circ_cache);
-	}*/
+    if (Yes == copts->circular) {
+        oj_cache8_new(&out->circ_cache);
+    }
     out->indent = copts->indent;
     dump_val(obj, 0, out);
-    
-/*    if (Yes == copts->circular) {
-        ox_cache8_delete(out->circ_cache);
-	}*/
+    if (Yes == copts->circular) {
+        oj_cache8_delete(out->circ_cache);
+    }
 }
 
 char*

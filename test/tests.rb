@@ -322,7 +322,7 @@ class Juice < ::Test::Unit::TestCase
     assert_equal(obj, obj2)
   end
 
-# Object without to_json() or to_hash()
+  # Object without to_json() or to_hash()
   def test_object_strict
     obj = Jam.new(true, 58)
     begin
@@ -410,6 +410,22 @@ class Juice < ::Test::Unit::TestCase
     assert_equal(true, obj.x)
     assert_equal(58, obj.y)
   end
+
+
+  # Circular
+  def test_circular_object
+    obj = Jam.new(true, 58)
+    json = Oj.dump(obj, :mode => :object, :indent => 2, :circular => true)
+    puts json
+    assert_equal(%{{
+  "^o":"Jam",
+  "^i":1,
+  "x":true,
+  "y":58}}, json)
+#    obj2 = Oj.load(json, :mode => :object)
+#    assert_equal(obj, obj2)
+  end
+
 
   def dump_and_load(obj, trace=false)
     json = Oj.dump(obj, :indent => 2)

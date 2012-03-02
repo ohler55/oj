@@ -280,4 +280,4 @@ the value. An example is {"^#3":[2,5]}.
 Object being encoded. It is used when the :circular flag is set. It can appear
 in either a JSON Object or in a JSON Array. If alone it represented a link to
 the original Hash or JSON. If an added attribute it is the ID of the original
-Object or Array. Examples are TBD.
+Object or Array. An example is {"^o":"Oj::Bag","^i":1,"x":3,"me":{"^i":1}}.
