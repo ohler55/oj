@@ -416,16 +416,58 @@ class Juice < ::Test::Unit::TestCase
     obj = Jam.new(nil, 58)
     obj.x = obj
     json = Oj.dump(obj, :mode => :object, :indent => 2, :circular => true)
-    puts json
     assert_equal(%{{
   "^o":"Jam",
   "^i":1,
-  "x":{"^i":1},
+  "x":{"^r":1},
   "y":58}}, json)
     obj2 = Oj.load(json, :mode => :object, :circular => true)
     assert_equal(obj2.x.__id__, obj2.__id__)
   end
 
+  def test_circular_hash
+    h = { 'a' => 7 }
+    h['b'] = h
+    json = Oj.dump(h, :mode => :object, :indent => 2, :circular => true)
+    assert_equal(%{{
+  "^i":1,
+  "a":7,
+  "b":{"^r":1}}}, json)
+    h2 = Oj.load(json, :mode => :object, :circular => true)
+    assert_equal(h['b'].__id__, h.__id__)
+  end
+
+  def xtest_circular_array
+    a = [7]
+    a << a
+    json = Oj.dump(a, :mode => :object, :indent => 2, :circular => true)
+    puts json
+    assert_equal(%{[
+  "^i1",
+  7,
+  {"^r":1}]}, json)
+    h2 = Oj.load(json, :mode => :object, :circular => true)
+    assert_equal(h['b'].__id__, h.__id__)
+  end
+
+  def test_circular
+    h = { 'a' => 7 }
+    obj = Jam.new(h, 58)
+    obj.x['b'] = obj
+    json = Oj.dump(obj, :mode => :object, :indent => 2, :circular => true)
+    assert_equal(%{{
+  "^o":"Jam",
+  "^i":1,
+  "x":{
+    "^i":2,
+    "a":7,
+    "b":{"^r":1}
+  },
+  "y":58}}, json)
+    obj2 = Oj.load(json, :mode => :object, :circular => true)
+    assert_equal(obj.x.__id__, h.__id__)
+    assert_equal(h['b'].__id__, obj.__id__)
+  end
 
   def dump_and_load(obj, trace=false)
     json = Oj.dump(obj, :indent => 2)

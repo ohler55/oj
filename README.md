@@ -278,6 +278,14 @@ the value. An example is {"^#3":[2,5]}.
 
 12. A "^i" JSON entry in either an Object or Array is the ID of the Ruby
 Object being encoded. It is used when the :circular flag is set. It can appear
-in either a JSON Object or in a JSON Array. If alone it represented a link to
-the original Hash or JSON. If an added attribute it is the ID of the original
-Object or Array. An example is {"^o":"Oj::Bag","^i":1,"x":3,"me":{"^i":1}}.
+in either a JSON Object or in a JSON Array. In an Object the "^i" key has a
+corresponding reference Fixnum. In an array the sequence will include an
+embedded reference number. An example is
+{"^o":"Oj::Bag","^i":1,"x":["^i2":2,true],"me":{"^r":1}}.
+
+13. A "^r" JSON entry in an Object is a references to a Object or Array that
+already appears in the JSON String. It must match up with a previous "^i"
+ID. An example is {"^o":"Oj::Bag","^i":1,"x":3,"me":{"^r":1}}.
+
+14. If an Array element is a String and starts with "^i" then it is encoded as
+an String Object. An example is [{"^s":"^i37"},3].

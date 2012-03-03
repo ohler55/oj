@@ -201,6 +201,37 @@ dump_hex(u_char c, Out out) {
     *out->cur++ = hex_chars[d];
 }
 
+// returns 0 if not using circular references, -1 if not further writing is
+// needed (duplicate), and a positive value if the object was added to the cache.
+static long
+check_circular(VALUE obj, Out out) {
+    slot_t	id = 0;
+    slot_t	*slot;
+
+    if (ObjectMode == out->opts->mode && Yes == out->opts->circular) {
+	if (0 == (id = oj_cache8_get(out->circ_cache, obj, &slot))) {
+	    out->circ_cnt++;
+	    id = out->circ_cnt;
+	    *slot = id;
+	} else {
+	    if (out->end - out->cur <= 18) {
+		grow(out, 18);
+	    }
+	    *out->cur++ = '{';
+	    *out->cur++ = '"';
+	    *out->cur++ = '^';
+	    *out->cur++ = 'r';
+	    *out->cur++ = '"';
+	    *out->cur++ = ':';
+	    dump_ulong(id, out);
+	    *out->cur++ = '}';
+
+	    return -1;
+	}
+    }
+    return (long)id;
+}
+
 static void
 dump_nil(Out out) {
     size_t      size = 4;
@@ -578,17 +609,35 @@ hash_cb_object(VALUE key, VALUE value, Out out) {
 
 static void
 dump_hash(VALUE obj, int depth, int mode, Out out) {
-    int	cnt = (int)RHASH_SIZE(obj);
+    int		cnt = (int)RHASH_SIZE(obj);
+    size_t	size = depth * out->indent + 2;
 
     if (out->end - out->cur <= 2) {
 	grow(out, 2);
     }
-    *out->cur++ = '{';
     if (0 == cnt) {
+	*out->cur++ = '{';
 	*out->cur++ = '}';
     } else {
-	size_t	size = depth * out->indent + 2;
+	long	id = check_circular(obj, out);
 
+	if (0 > id) {
+	    return;
+	}
+	*out->cur++ = '{';
+	if (0 < id) {
+	    if (out->end - out->cur <= (long)size + 16) {
+		grow(out, size + 16);
+	    }
+	    fill_indent(out, depth + 1);
+	    *out->cur++ = '"';
+	    *out->cur++ = '^';
+	    *out->cur++ = 'i';
+	    *out->cur++ = '"';
+	    *out->cur++ = ':';
+	    dump_ulong(id, out);
+	    *out->cur++ = ',';
+	}
 	out->depth = depth + 1;
 	if (ObjectMode == mode) {
 	    rb_hash_foreach(obj, hash_cb_object, (VALUE)out);
@@ -697,37 +746,6 @@ dump_obj_comp(VALUE obj, int depth, Out out) {
 	dump_obj_attrs(obj, 0, 0, depth, out);
     }
     *out->cur = '\0';
-}
-
-// returns 0 if not using circular references, -1 if not further writing is
-// needed (duplicate), and a positive value if the object was added to the cache.
-static long
-check_circular(VALUE obj, Out out) {
-    slot_t	id = 0;
-    slot_t	*slot;
-
-    if (Yes == out->opts->circular) {
-	if (0 == (id = oj_cache8_get(out->circ_cache, obj, &slot))) {
-	    out->circ_cnt++;
-	    id = out->circ_cnt;
-	    *slot = id;
-	} else {
-	    if (out->end - out->cur <= 18) {
-		grow(out, 18);
-	    }
-	    *out->cur++ = '{';
-	    *out->cur++ = '"';
-	    *out->cur++ = '^';
-	    *out->cur++ = 'i';
-	    *out->cur++ = '"';
-	    *out->cur++ = ':';
-	    dump_ulong(id, out);
-	    *out->cur++ = '}';
-
-	    return -1;
-	}
-    }
-    return (long)id;
 }
 
 inline static void

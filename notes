@@ -7,11 +7,11 @@
 - next
 
  - circular reference
-  - where to put id
-   - wrapper - others do not understand it
-   - inside
-    - no problem on Object
-    - Hash and Array have conflicts unless escaped (could do as is done for others in hash)
+  - test
+   - array
+    - ^in for reference to current array
+    - ^r for reference
+   - perf
 
 
  - stream

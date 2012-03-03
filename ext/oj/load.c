@@ -376,11 +376,14 @@ read_obj(ParseInfo pi) {
 		    obj_type = T_STRUCT;
 		    key = Qundef;
 		    break;
-		case 'i': // Id for circular reference
+		case 'r': // Id for circular reference
 		    val = read_next(pi, T_FIXNUM);
 		    if (T_FIXNUM == rb_type(val)) {
 			obj_type = T_FIXNUM;
 			obj = circ_array_get(pi->circ_array, NUM2ULONG(val));
+			if (Qundef == obj || Qnil == obj) {
+			    raise_error("Failed to find referenced object", pi->str, pi->s);
+			}
 			key = Qundef;
 		    }
 		    break;
@@ -393,6 +396,10 @@ read_obj(ParseInfo pi) {
 	if (Qundef != key) {
 	    if (Qundef == val && Qundef == (val = read_next(pi, 0))) {
 		raise_error("unexpected character", pi->str, pi->s);
+	    }
+	    if (Qundef == obj) {
+		obj = rb_hash_new();
+		obj_type = T_HASH;
 	    }
 	    if (ObjectMode == pi->options->mode && 0 != ks && '^' == *ks) {
 		int	val_type = rb_type(val);
@@ -410,10 +417,6 @@ read_obj(ParseInfo pi) {
 		}
 	    }
 	    if (Qundef != key) {
-		if (Qundef == obj) {
-		    obj = rb_hash_new();
-		    obj_type = T_HASH;
-		}
 		if (T_OBJECT == obj_type) {
 		    VALUE       *slot;
 		    ID          var_id;
