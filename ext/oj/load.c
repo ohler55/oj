@@ -490,6 +490,7 @@ read_array(ParseInfo pi, int hint) {
     int		type = T_NONE;
     int		cnt = 0;
     long	slen = 0;
+    int		escaped;
 
     pi->s++;
     next_non_white(pi);
@@ -498,6 +499,8 @@ read_array(ParseInfo pi, int hint) {
 	return rb_ary_new();
     }
     while (1) {
+	next_non_white(pi);
+	escaped = ('"' == *pi->s && '\\' == pi->s[1]);
 	if (Qundef == (e = read_next(pi, 0))) {
 	    raise_error("unexpected character", pi->str, pi->s);
 	}
@@ -520,7 +523,7 @@ read_array(ParseInfo pi, int hint) {
 		circ_array_set(pi->circ_array, a, read_ulong(s + 2, pi));
 		e = Qundef;
 	    }
-	    // TBD if begins with \^ then redo e one char shorter
+	    // TBD if begins with \^ then redo e one char shorter, note escaped value
 	}
 	if (Qundef != e) {
 	    if (T_STRUCT == type) {
@@ -537,7 +540,7 @@ read_array(ParseInfo pi, int hint) {
 	    }
 	    cnt++;
 	}
-	next_non_white(pi);	// skip white space
+	next_non_white(pi);
 	if (',' == *pi->s) {
 	    pi->s++;
 	} else if (']' == *pi->s) {

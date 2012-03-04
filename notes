@@ -11,7 +11,15 @@
   - handle array element with "^i222" that is not an id
   - handle value that is "^r222" that is not a reference
 
-  - compare
+  - use escaped to put ^ in strings instead of {"^s":"^foo"}
+   - \u005e
+  - use escaped to put : in strings instead of {"^s":":foo"}
+   - \u003a
+
+  - try simple array for dump
+   - might be faster for small numbers of circular references which is the common case
+
+  - compare circular
    - yajl - core dumps ruby
    - json fails
    - msgpack fails
