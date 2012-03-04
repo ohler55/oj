@@ -198,6 +198,20 @@ structname2obj(const char *name) {
 }
 #endif
 
+inline static unsigned long
+read_ulong(const char *s, ParseInfo pi) {
+    unsigned long	n = 0;
+
+    for (; '\0' != *s; s++) {
+	if ('0' <= *s && *s <= '9') {
+	    n = n * 10 + (*s - '0');
+	} else {
+	    raise_error("Not a valid ID number", pi->str, pi->s);
+	}
+    }
+    return n;
+}
+
 static CircArray
 circ_array_new() {
     CircArray   ca;
@@ -222,7 +236,7 @@ circ_array_free(CircArray ca) {
 
 static void
 circ_array_set(CircArray ca, VALUE obj, unsigned long id) {
-    if (0 < id) {
+    if (0 < id && 0 != ca) {
         unsigned long   i;
 
         if (ca->size < id) {
@@ -255,7 +269,7 @@ static VALUE
 circ_array_get(CircArray ca, unsigned long id) {
     VALUE       obj = Qnil;
 
-    if (id <= ca->cnt) {
+    if (id <= ca->cnt && 0 != ca) {
         obj = ca->objs[id - 1];
     }
     return obj;
@@ -474,7 +488,7 @@ read_array(ParseInfo pi, int hint) {
     VALUE	a = Qundef;
     VALUE	e;
     int		type = T_NONE;
-    int		cnt;
+    int		cnt = 0;
     long	slen = 0;
 
     pi->s++;
@@ -483,7 +497,7 @@ read_array(ParseInfo pi, int hint) {
 	pi->s++;
 	return rb_ary_new();
     }
-    for (cnt = -1; 1; cnt++) {
+    while (1) {
 	if (Qundef == (e = read_next(pi, 0))) {
 	    raise_error("unexpected character", pi->str, pi->s);
 	}
@@ -492,25 +506,36 @@ read_array(ParseInfo pi, int hint) {
 	    a = structname2obj(StringValuePtr(e));
 	    type = T_STRUCT;
 	    slen = RSTRUCT_LEN(a);
+	    e = Qundef;
 	}
 #endif
 	if (Qundef == a) {
 	    a = rb_ary_new();
 	    type = T_ARRAY;
 	}
-	if (T_STRUCT == type) {
+	if (T_STRING == rb_type(e)) {
+	    const char	*s = StringValuePtr(e);
+
+	    if ('^' == *s && 'i' == s[1]) {
+		circ_array_set(pi->circ_array, a, read_ulong(s + 2, pi));
+		e = Qundef;
+	    }
+	    // TBD if begins with \^ then redo e one char shorter
+	}
+	if (Qundef != e) {
+	    if (T_STRUCT == type) {
 #ifdef NO_RSTRUCT
-	    raise_error("Ruby structs not supported with this verion of Ruby", pi->str, pi->s);
+		raise_error("Ruby structs not supported with this version of Ruby", pi->str, pi->s);
 #else
-	    if (0 <= cnt) {
 		if (slen <= cnt) {
 		    raise_error("Too many elements for Struct", pi->str, pi->s);
 		}
 		RSTRUCT_PTR(a)[cnt] = e;
-	    }
 #endif
-	} else {
-	    a = rb_ary_push(a, e);
+	    } else {
+		a = rb_ary_push(a, e);
+	    }
+	    cnt++;
 	}
 	next_non_white(pi);	// skip white space
 	if (',' == *pi->s) {

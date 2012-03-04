@@ -281,7 +281,7 @@ Object being encoded. It is used when the :circular flag is set. It can appear
 in either a JSON Object or in a JSON Array. In an Object the "^i" key has a
 corresponding reference Fixnum. In an array the sequence will include an
 embedded reference number. An example is
-{"^o":"Oj::Bag","^i":1,"x":["^i2":2,true],"me":{"^r":1}}.
+{"^o":"Oj::Bag","^i":1,"x":["^i2",true],"me":{"^r":1}}.
 
 13. A "^r" JSON entry in an Object is a references to a Object or Array that
 already appears in the JSON String. It must match up with a previous "^i"

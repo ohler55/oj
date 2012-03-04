@@ -437,7 +437,7 @@ class Juice < ::Test::Unit::TestCase
     assert_equal(h['b'].__id__, h.__id__)
   end
 
-  def xtest_circular_array
+  def test_circular_array
     a = [7]
     a << a
     json = Oj.dump(a, :mode => :object, :indent => 2, :circular => true)
@@ -446,8 +446,8 @@ class Juice < ::Test::Unit::TestCase
   "^i1",
   7,
   {"^r":1}]}, json)
-    h2 = Oj.load(json, :mode => :object, :circular => true)
-    assert_equal(h['b'].__id__, h.__id__)
+    a2 = Oj.load(json, :mode => :object, :circular => true)
+    assert_equal(a[1].__id__, a.__id__)
   end
 
   def test_circular
