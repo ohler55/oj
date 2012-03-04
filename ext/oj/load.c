@@ -40,9 +40,17 @@ enum {
     TIME_HINT = 0x0100,
 };
 
+typedef struct _CircArray {
+    VALUE               obj_array[1024];
+    VALUE               *objs;
+    unsigned long       size; // allocated size or initial array size
+    unsigned long       cnt;
+} *CircArray;
+
 typedef struct _ParseInfo {
     char	*str;		/* buffer being read from */
     char	*s;		/* current position in buffer */
+    CircArray	circ_array;
 #ifdef HAVE_RUBY_ENCODING_H
     rb_encoding	*encoding;
 #else
@@ -50,6 +58,11 @@ typedef struct _ParseInfo {
 #endif
     Options	options;
 } *ParseInfo;
+
+static CircArray	circ_array_new(void);
+static void		circ_array_free(CircArray ca);
+static void		circ_array_set(CircArray ca, VALUE obj, unsigned long id);
+static VALUE		circ_array_get(CircArray ca, unsigned long id);
 
 static VALUE	classname2class(const char *name, ParseInfo pi);
 static VALUE	read_next(ParseInfo pi, int hint);
@@ -185,29 +198,79 @@ structname2obj(const char *name) {
 }
 #endif
 
-VALUE
-oj_parse(char *json, Options options) {
-    VALUE		obj;
-    struct _ParseInfo	pi;
+inline static unsigned long
+read_ulong(const char *s, ParseInfo pi) {
+    unsigned long	n = 0;
 
-    if (0 == json) {
-	raise_error("Invalid arg, xml string can not be null", json, 0);
+    for (; '\0' != *s; s++) {
+	if ('0' <= *s && *s <= '9') {
+	    n = n * 10 + (*s - '0');
+	} else {
+	    raise_error("Not a valid ID number", pi->str, pi->s);
+	}
     }
-    /* initialize parse info */
-    pi.str = json;
-    pi.s = json;
-#ifdef HAVE_RUBY_ENCODING_H
-    pi.encoding = ('\0' == *options->encoding) ? 0 : rb_enc_find(options->encoding);
-#else
-    pi.encoding = 0;
-#endif
-    pi.options = options;
-    if (Qundef == (obj = read_next(&pi, 0))) {
-	raise_error("no object read", pi.str, pi.s);
+    return n;
+}
+
+static CircArray
+circ_array_new() {
+    CircArray   ca;
+    
+    if (0 == (ca = (CircArray)malloc(sizeof(struct _CircArray)))) {
+        rb_raise(rb_eNoMemError, "not enough memory\n");
     }
-    next_non_white(&pi);	// skip white space
-    if ('\0' != *pi.s) {
-	raise_error("invalid format, extra characters", pi.str, pi.s);
+    ca->objs = ca->obj_array;
+    ca->size = sizeof(ca->obj_array) / sizeof(VALUE);
+    ca->cnt = 0;
+    
+    return ca;
+}
+
+static void
+circ_array_free(CircArray ca) {
+    if (ca->objs != ca->obj_array) {
+        free(ca->objs);
+    }
+    free(ca);
+}
+
+static void
+circ_array_set(CircArray ca, VALUE obj, unsigned long id) {
+    if (0 < id && 0 != ca) {
+        unsigned long   i;
+
+        if (ca->size < id) {
+            unsigned long       cnt = id + 512;
+
+            if (ca->objs == ca->obj_array) {
+                if (0 == (ca->objs = (VALUE*)malloc(sizeof(VALUE) * cnt))) {
+                    rb_raise(rb_eNoMemError, "not enough memory\n");
+                }
+                memcpy(ca->objs, ca->obj_array, sizeof(VALUE) * ca->cnt);
+            } else { 
+                if (0 == (ca->objs = (VALUE*)realloc(ca->objs, sizeof(VALUE) * cnt))) {
+                    rb_raise(rb_eNoMemError, "not enough memory\n");
+                }
+            }
+            ca->size = cnt;
+        }
+        id--;
+        for (i = ca->cnt; i < id; i++) {
+            ca->objs[i] = Qnil;
+        }
+        ca->objs[id] = obj;
+        if (ca->cnt <= id) {
+            ca->cnt = id + 1;
+        }
+    }
+}
+
+static VALUE
+circ_array_get(CircArray ca, unsigned long id) {
+    VALUE       obj = Qnil;
+
+    if (id <= ca->cnt && 0 != ca) {
+        obj = ca->objs[id - 1];
     }
     return obj;
 }
@@ -327,8 +390,17 @@ read_obj(ParseInfo pi) {
 		    obj_type = T_STRUCT;
 		    key = Qundef;
 		    break;
-		case 'i': // Id for circular reference
-		    // TBD
+		case 'r': // Id for circular reference
+		    val = read_next(pi, T_FIXNUM);
+		    if (T_FIXNUM == rb_type(val)) {
+			obj_type = T_FIXNUM;
+			obj = circ_array_get(pi->circ_array, NUM2ULONG(val));
+			if (Qundef == obj || Qnil == obj) {
+			    raise_error("Failed to find referenced object", pi->str, pi->s);
+			}
+			key = Qundef;
+		    }
+		    break;
 		default:
 		    // handle later
 		    break;
@@ -339,47 +411,55 @@ read_obj(ParseInfo pi) {
 	    if (Qundef == val && Qundef == (val = read_next(pi, 0))) {
 		raise_error("unexpected character", pi->str, pi->s);
 	    }
-	    if (ObjectMode == pi->options->mode &&
-		0 != ks && '^' == *ks && '#' == ks[1] &&
-		(T_NONE == obj_type || T_HASH == obj_type) &&
-		rb_type(val) == T_ARRAY && 2 == RARRAY_LEN(val)) {  // Hash entry
-		VALUE	*np = RARRAY_PTR(val);
-
-		key = *np;
-		val = *(np + 1);
-	    }
 	    if (Qundef == obj) {
 		obj = rb_hash_new();
 		obj_type = T_HASH;
 	    }
-	    if (T_OBJECT == obj_type) {
-		VALUE       *slot;
-		ID          var_id;
+	    if (ObjectMode == pi->options->mode && 0 != ks && '^' == *ks) {
+		int	val_type = rb_type(val);
 
-		if (Qundef == (var_id = oj_cache_get(oj_attr_cache, ks, &slot))) {
-		    char	attr[1024];
+		if ('i' == ks[1] && '\0' == ks[2] && T_FIXNUM == val_type) {
+		    circ_array_set(pi->circ_array, obj, NUM2ULONG(val));
+		    key = Qundef;
+		} else if ('#' == ks[1] &&
+		    (T_NONE == obj_type || T_HASH == obj_type) &&
+		    T_ARRAY == val_type && 2 == RARRAY_LEN(val)) {  // Hash entry
+		    VALUE	*np = RARRAY_PTR(val);
 
-		    if ('~' == *ks) {
-			strncpy(attr, ks + 1, sizeof(attr) - 1);
-		    } else {
-			*attr = '@';
-			strncpy(attr + 1, ks, sizeof(attr) - 2);
+		    key = *np;
+		    val = *(np + 1);
+		}
+	    }
+	    if (Qundef != key) {
+		if (T_OBJECT == obj_type) {
+		    VALUE       *slot;
+		    ID          var_id;
+
+		    if (Qundef == (var_id = oj_cache_get(oj_attr_cache, ks, &slot))) {
+			char	attr[1024];
+
+			if ('~' == *ks) {
+			    strncpy(attr, ks + 1, sizeof(attr) - 1);
+			} else {
+			    *attr = '@';
+			    strncpy(attr + 1, ks, sizeof(attr) - 2);
+			}
+			attr[sizeof(attr) - 1] = '\0';
+			var_id = rb_intern(attr);
+			*slot = var_id;
 		    }
-		    attr[sizeof(attr) - 1] = '\0';
-		    var_id = rb_intern(attr);
-		    *slot = var_id;
+		    rb_ivar_set(obj, var_id, val);
+		} else if (T_HASH == obj_type) {
+		    rb_hash_aset(obj, key, val);
+		    if ((CompatMode == pi->options->mode || ObjectMode == pi->options->mode) &&
+			0 == json_class_name &&
+			0 != ks && 'j' == *ks && 0 == strcmp("json_class", ks) &&
+			T_STRING == rb_type(val)) {
+			json_class_name = StringValuePtr(val);
+		    }
+		} else {
+		    raise_error("invalid Object format, too many Hash entries.", pi->str, pi->s);
 		}
-		rb_ivar_set(obj, var_id, val);
-	    } else if (T_HASH == obj_type) {
-		rb_hash_aset(obj, key, val);
-		if ((CompatMode == pi->options->mode || ObjectMode == pi->options->mode) &&
-		    0 == json_class_name &&
-		    0 != ks && 'j' == *ks && 0 == strcmp("json_class", ks) &&
-		    T_STRING == rb_type(val)) {
-		    json_class_name = StringValuePtr(val);
-		}
-	    } else {
-		raise_error("invalid Object format, too many Hash entries.", pi->str, pi->s);
 	    }
 	}
 	next_non_white(pi);
@@ -408,7 +488,7 @@ read_array(ParseInfo pi, int hint) {
     VALUE	a = Qundef;
     VALUE	e;
     int		type = T_NONE;
-    int		cnt;
+    int		cnt = 0;
     long	slen = 0;
 
     pi->s++;
@@ -417,7 +497,7 @@ read_array(ParseInfo pi, int hint) {
 	pi->s++;
 	return rb_ary_new();
     }
-    for (cnt = -1; 1; cnt++) {
+    while (1) {
 	if (Qundef == (e = read_next(pi, 0))) {
 	    raise_error("unexpected character", pi->str, pi->s);
 	}
@@ -426,25 +506,36 @@ read_array(ParseInfo pi, int hint) {
 	    a = structname2obj(StringValuePtr(e));
 	    type = T_STRUCT;
 	    slen = RSTRUCT_LEN(a);
+	    e = Qundef;
 	}
 #endif
 	if (Qundef == a) {
 	    a = rb_ary_new();
 	    type = T_ARRAY;
 	}
-	if (T_STRUCT == type) {
+	if (T_STRING == rb_type(e)) {
+	    const char	*s = StringValuePtr(e);
+
+	    if ('^' == *s && 'i' == s[1]) {
+		circ_array_set(pi->circ_array, a, read_ulong(s + 2, pi));
+		e = Qundef;
+	    }
+	    // TBD if begins with \^ then redo e one char shorter
+	}
+	if (Qundef != e) {
+	    if (T_STRUCT == type) {
 #ifdef NO_RSTRUCT
-	    raise_error("Ruby structs not supported with this verion of Ruby", pi->str, pi->s);
+		raise_error("Ruby structs not supported with this version of Ruby", pi->str, pi->s);
 #else
-	    if (0 <= cnt) {
 		if (slen <= cnt) {
 		    raise_error("Too many elements for Struct", pi->str, pi->s);
 		}
 		RSTRUCT_PTR(a)[cnt] = e;
-	    }
 #endif
-	} else {
-	    a = rb_ary_push(a, e);
+	    } else {
+		a = rb_ary_push(a, e);
+	    }
+	    cnt++;
 	}
 	next_non_white(pi);	// skip white space
 	if (',' == *pi->s) {
@@ -745,4 +836,39 @@ read_quoted_value(ParseInfo pi) {
     pi->s = h + 1;
 
     return value;
+}
+
+VALUE
+oj_parse(char *json, Options options) {
+    VALUE		obj;
+    struct _ParseInfo	pi;
+
+    if (0 == json) {
+	raise_error("Invalid arg, xml string can not be null", json, 0);
+    }
+    /* initialize parse info */
+    pi.str = json;
+    pi.s = json;
+    pi.circ_array = 0;
+    if (Yes == options->circular) {
+	pi.circ_array = circ_array_new();
+    }
+#ifdef HAVE_RUBY_ENCODING_H
+    pi.encoding = ('\0' == *options->encoding) ? 0 : rb_enc_find(options->encoding);
+#else
+    pi.encoding = 0;
+#endif
+    pi.options = options;
+    obj = read_next(&pi, 0);
+    if (Yes == options->circular) {
+	circ_array_free(pi.circ_array);
+    }
+    if (Qundef == obj) {
+	raise_error("no object read", pi.str, pi.s);
+    }
+    next_non_white(&pi);	// skip white space
+    if ('\0' != *pi.s) {
+	raise_error("invalid format, extra characters", pi.str, pi.s);
+    }
+    return obj;
 }

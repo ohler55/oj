@@ -5,19 +5,26 @@
 
 
 - next
- - test
- - :object mode
-  - if not one of the normal types, check for other to_json and to_hash
-   - add as_json as well
-  - on load if there is a json_class but not a ^o then check for json_create
-   - to_json and to_hash should use json_class
-
- - support json_create()
-  - use this to allow users to support additional classes like Complex, Rational, or Regexp
-  - JSON.create_id = '^o' can be used for compatibility
-  - also look for json_class in compat mode
 
  - circular reference
+  - change ref to ^r1234
+  - handle array element with "^i222" that is not an id
+  - handle value that is "^r222" that is not a reference
+
+  - compare
+   - yajl - core dumps ruby
+   - json fails
+   - msgpack fails
+
+
+- format
+ - escape ^ when reading and convert immediately to alternate sequences
+ - ^t12345.67890 for time value instead of hash?
+  - number is more natural for comatibility
+ - ^r12345 for references
+ - \: for symbol or reverse vs string
+ - ^i123 for array id
+
 
 
  - stream

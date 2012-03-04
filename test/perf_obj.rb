@@ -63,8 +63,8 @@ end
 if files.empty?
   $obj = do_sample ? sample_doc(2) : files('..')
   $mars = Marshal.dump($obj)
-  $xml = Ox.dump($obj, :indent => $indent, circular: $circular)
-  $json = Oj.dump($obj, :indent => $indent, circular: $circular)
+  $xml = Ox.dump($obj, :indent => $indent, :circular => $circular)
+  $json = Oj.dump($obj, :indent => $indent, :circular => $circular)
   File.open('sample.xml', 'w') { |f| f.write($xml) }
   File.open('sample.json', 'w') { |f| f.write($json) }
   File.open('sample.marshal', 'w') { |f| f.write($mars) }
@@ -79,7 +79,7 @@ else
   end
 end
 
-Oj.default_options = { :mode => :object, :indent => $indent }
+Oj.default_options = { :mode => :object, :indent => $indent, :circular => $circular }
 
 if do_load
   puts '-' * 80
