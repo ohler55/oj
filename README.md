@@ -22,9 +22,9 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 0.8.0
+### Release 0.9.0
 
-- Auto creation of data classes when unmarshalling Objects if the Class is not defined
+- Added support for circular references.
 
 ## <a name="description">Description</a>
 
@@ -57,8 +57,6 @@ Oj is compatible with Ruby 1.8.7, 1.9.2, 1.9.3, JRuby, and RBX.
 
 ## <a name="plans">Planned Releases</a>
 
-- Release 0.9: Support for circular references.
-
 - Release 1.0: A JSON stream parser.
 
 ## <a name="compare">Comparisons</a>
@@ -86,7 +84,18 @@ It is also worth noting that although Oj is slightly behind MessagePack for
 parsing, Oj serialization is much faster than MessagePack even though Oj uses
 human readable JSON vs the binary MessagePack format.
 
-The results:
+UOj supports circular references when in :object mode and when the :circular
+flag is true. None of the other gems tested supported circular
+references. They failed in the following manners when the input included
+circular references.
+
+ - Yajl core dumps Ruby
+
+ - JSON fails and raises an Exception
+
+ - MessagePack fails and raises an Exception
+
+The benchmark results are:
 
 with Object and Bignum encoding:
 
@@ -238,54 +247,81 @@ formating follows the following rules.
 1. JSON native types, true, false, nil, String, Hash, Array, and Number are
 encoded normally.
 
-2. If a Hash uses Symbols as keys those keys appear as Strings with a leading
-':' character.
+2. A Symbol is encoded as a JSON string with a preceeding `:` character.
 
-3. The '^' character denotes a special key value when in a JSON Object sequence.
+3. The `^` character denotes a special key value when in a JSON Object sequence.
 
-4. If a String begins with a ':' character such as ':abc' it is encoded as {"^s":":abc"}.
+4. A Ruby String that starts with `:` or the sequence `^i` or `^r` are encoded by
+excaping the first character so that it appears as `\u005e` or `\u003a` instead of
+`:` or `^`.
 
-5. If a Symbol begins with a ':' character such as :":abc" is is encoded as {"^m":":abc"}.
+5. A `"^c"` JSON Object key indicates the value should be converted to a Ruby
+class. The sequence `{"^c":"Oj::Bag"}` is read as the Oj::Bag class.
 
-6. A "^c" JSON Object key indicates the value should be converted to a Ruby
-class. The sequence {"^c":"Oj::Bag"} is read as the Oj::Bag class.
+6. A `"^t"` JSON Object key indicates the value should be converted to a Ruby
+Time. The sequence `{"^t":1325775487.000000}` is read as Jan 5, 2012 at 23:58:07.
 
-7. A "^t" JSON Object key indicates the value should be converted to a Ruby
-Time. The sequence {"^t":1325775487.000000} is read as Jan 5, 2012 at
-23:58:07.
-
-8. A "^o" JSON Object key indicates the value should be converted to a Ruby
-Object. The first entry in the JSON Object must be a class with the "^o"
+87. A `"^o"` JSON Object key indicates the value should be converted to a Ruby
+Object. The first entry in the JSON Object must be a class with the `"^o"`
 key. After that each entry is treated as a variable of the Object where the
-key is the variable name without the preceeding '@'. An example is
-{"^o":"Oj::Bag","x":58,"y":"marbles"}.
+key is the variable name without the preceeding `@`. An example is
+`{"^o":"Oj::Bag","x":58,"y":"marbles"}`.
 
-9. A "^u" JSON Object key indicates the value should be converted to a Ruby
-Struct. The first entry in the JSON Object must be a class with the "^u"
+8. A `"^u"` JSON Object key indicates the value should be converted to a Ruby
+Struct. The first entry in the JSON Object must be a class with the `"^u"`
 key. After that each entry is is given a numeric position in the struct and
-that is used as the key in the JSON Object. An example is
-{"^u":["Range",1,7,false]}.
+that is used as the key in the JSON Object. An example is `{"^u":["Range",1,7,false]}`.
 
-10. When encoding an Object, if the variable name does not begin with an '@'
-character then the name preceeded by a '~' character. This occurs in the
-Exception class. An example is {"^o":"StandardError","~mesg":"A
-Message","~bt":[".\/tests.rb:345:in `test_exception'"]}
+9. When encoding an Object, if the variable name does not begin with an `@`
+character then the name preceeded by a `~` character. This occurs in the
+Exception class. An example is `{"^o":"StandardError","~mesg":"A Message","~bt":[".\/tests.rb:345:in `test_exception'"]}`.
 
-11. If a Hash entry has a key that is not a String or Symbol then the entry is
-encoded with a key of the form "^#n" where n is a hex number. The value that
+10. If a Hash entry has a key that is not a String or Symbol then the entry is
+encoded with a key of the form `"^#n"` where n is a hex number. The value that
 is an Array where the first element is the key in the Hash and the second is
-the value. An example is {"^#3":[2,5]}.
+the value. An example is `{"^#3":[2,5]}`.
 
-12. A "^i" JSON entry in either an Object or Array is the ID of the Ruby
+11. A `"^i"` JSON entry in either an Object or Array is the ID of the Ruby
 Object being encoded. It is used when the :circular flag is set. It can appear
-in either a JSON Object or in a JSON Array. In an Object the "^i" key has a
+in either a JSON Object or in a JSON Array. In an Object the `"^i"` key has a
 corresponding reference Fixnum. In an array the sequence will include an
 embedded reference number. An example is
-{"^o":"Oj::Bag","^i":1,"x":["^i2",true],"me":"^r1"}.
+`{"^o":"Oj::Bag","^i":1,"x":["^i2",true],"me":"^r1"}`.
 
-13. A "^r" JSON entry in an Object is a references to a Object or Array that
-already appears in the JSON String. It must match up with a previous "^i"
-ID. An example is {"^o":"Oj::Bag","^i":1,"x":3,"me":"^r1"}.
+12. A `"^r"` JSON entry in an Object is a references to a Object or Array that
+already appears in the JSON String. It must match up with a previous `"^i"`
+ID. An example is `{"^o":"Oj::Bag","^i":1,"x":3,"me":"^r1"}`.
 
-14. If an Array element is a String and starts with "^i" then the first character, the ^ is encoded as a hext character.
-An example is ["\u005ei37"},3].
+13. If an Array element is a String and starts with `"^i"` then the first
+character, the `^` is encoded as a hex character sequence. An example is
+`["\u005ei37",3]`.
+
+### License:
+
+    Copyright (c) 2012, Peter Ohler
+    All rights reserved.
+    
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
+    
+     - Redistributions of source code must retain the above copyright notice, this
+       list of conditions and the following disclaimer.
+    
+     - Redistributions in binary form must reproduce the above copyright notice,
+       this list of conditions and the following disclaimer in the documentation
+       and/or other materials provided with the distribution.
+    
+     - Neither the name of Peter Ohler nor the names of its contributors may be
+       used to endorse or promote products derived from this software without
+       specific prior written permission.
+    
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+    FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+    DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+    SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.

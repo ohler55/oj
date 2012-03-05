@@ -390,6 +390,7 @@ read_obj(ParseInfo pi) {
 		    obj_type = T_STRUCT;
 		    key = Qundef;
 		    break;
+		    /*
 		case 'r': // Id for circular reference
 		    val = read_next(pi, T_FIXNUM);
 		    if (T_FIXNUM == rb_type(val)) {
@@ -401,6 +402,7 @@ read_obj(ParseInfo pi) {
 			key = Qundef;
 		    }
 		    break;
+		    */
 		default:
 		    // handle later
 		    break;
@@ -490,7 +492,7 @@ read_array(ParseInfo pi, int hint) {
     int		type = T_NONE;
     int		cnt = 0;
     long	slen = 0;
-    int		escaped;
+    int		a_str;
 
     pi->s++;
     next_non_white(pi);
@@ -500,7 +502,7 @@ read_array(ParseInfo pi, int hint) {
     }
     while (1) {
 	next_non_white(pi);
-	escaped = ('"' == *pi->s && '\\' == pi->s[1]);
+	a_str = ('"' == *pi->s);
 	if (Qundef == (e = read_next(pi, 0))) {
 	    raise_error("unexpected character", pi->str, pi->s);
 	}
@@ -516,14 +518,9 @@ read_array(ParseInfo pi, int hint) {
 	    a = rb_ary_new();
 	    type = T_ARRAY;
 	}
-	if (T_STRING == rb_type(e)) {
-	    const char	*s = StringValuePtr(e);
-
-	    if ('^' == *s && 'i' == s[1]) {
-		circ_array_set(pi->circ_array, a, read_ulong(s + 2, pi));
-		e = Qundef;
-	    }
-	    // TBD if begins with \^ then redo e one char shorter, note escaped value
+	if (a_str && T_FIXNUM == rb_type(e)) {
+	    circ_array_set(pi->circ_array, a, NUM2ULONG(e));
+	    e = Qundef;
 	}
 	if (Qundef != e) {
 	    if (T_STRUCT == type) {
@@ -555,9 +552,12 @@ read_array(ParseInfo pi, int hint) {
 
 static VALUE
 read_str(ParseInfo pi, int hint) {
-    char	*text = read_quoted_value(pi);
+    char	*text;
     VALUE	obj;
+    int		escaped;
 
+    escaped = ('\\' == pi->s[1]);
+    text = read_quoted_value(pi);
     if (ObjectMode != pi->options->mode) {
 	hint = T_STRING;
     }
@@ -591,28 +591,29 @@ read_str(ParseInfo pi, int hint) {
 	break;
     case 0:
     default:
-	if (':' == *text) {
-	    if (':' == text[1]) { // escaped :, it s string
+	obj = Qundef;
+	if (':' == *text && !escaped) { // Symbol
+#ifdef HAVE_RUBY_ENCODING_H
+	    if (0 != pi->encoding) {
 		obj = rb_str_new2(text + 1);
-#ifdef HAVE_RUBY_ENCODING_H
-		if (0 != pi->encoding) {
-		    rb_enc_associate(obj, pi->encoding);
-		}
-#endif
-	    } else { // Symbol
-#ifdef HAVE_RUBY_ENCODING_H
-		if (0 != pi->encoding) {
-		    obj = rb_str_new2(text + 1);
-		    rb_enc_associate(obj, pi->encoding);
-		    obj = rb_funcall(obj, oj_to_sym_id, 0);
-		} else {
-		    obj = ID2SYM(rb_intern(text + 1));
-		}
-#else
+		rb_enc_associate(obj, pi->encoding);
+		obj = rb_funcall(obj, oj_to_sym_id, 0);
+	    } else {
 		obj = ID2SYM(rb_intern(text + 1));
-#endif
 	    }
-	} else {
+#else
+	    obj = ID2SYM(rb_intern(text + 1));
+#endif
+	} else if (ObjectMode == pi->options->mode && '^' == *text && '\0' != text[2]) {
+	    char	c1 = text[1];
+
+	    if ('r' == c1) {
+		obj = circ_array_get(pi->circ_array, read_ulong(text + 2, pi));
+	    } else if ('i' == c1) {
+		obj = ULONG2NUM(read_ulong(text + 2, pi));
+	    }
+	}
+	if (Qundef == obj) {
 	    obj = rb_str_new2(text);
 #ifdef HAVE_RUBY_ENCODING_H
 	    if (0 != pi->encoding) {
@@ -799,7 +800,6 @@ read_quoted_value(ParseInfo pi) {
     h++;	// skip quote character
     t++;
     value = h;
-    // TBD can whole string be read in and then eval-ed by ruby of there is a special character
     for (; '"' != *h; h++, t++) {
 	if ('\0' == *h) {
 	    pi->s = h;
@@ -816,7 +816,6 @@ read_quoted_value(ParseInfo pi) {
 	    case '/':	*t = '/';	break;
 	    case '\\':	*t = '\\';	break;
 	    case 'u':
-		// TBD if first character is 00 then skip it
 		h++;
 		*t = read_hex(pi, h);
 		h += 2;
@@ -869,7 +868,7 @@ oj_parse(char *json, Options options) {
     if (Qundef == obj) {
 	raise_error("no object read", pi.str, pi.s);
     }
-    next_non_white(&pi);	// skip white space
+    next_non_white(&pi);
     if ('\0' != *pi.s) {
 	raise_error("invalid format, extra characters", pi.str, pi.s);
     }

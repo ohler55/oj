@@ -66,7 +66,7 @@ static void	dump_false(Out out);
 static void	dump_fixnum(VALUE obj, Out out);
 static void	dump_bignum(VALUE obj, Out out);
 static void	dump_float(VALUE obj, Out out);
-static void	dump_cstr(const char *str, size_t cnt, int is_sym, Out out);
+static void	dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out);
 static void	dump_hex(u_char c, Out out);
 static void	dump_str_comp(VALUE obj, Out out);
 static void	dump_str_obj(VALUE obj, Out out);
@@ -217,14 +217,11 @@ check_circular(VALUE obj, Out out) {
 	    if (out->end - out->cur <= 18) {
 		grow(out, 18);
 	    }
-	    *out->cur++ = '{';
 	    *out->cur++ = '"';
 	    *out->cur++ = '^';
 	    *out->cur++ = 'r';
-	    *out->cur++ = '"';
-	    *out->cur++ = ':';
 	    dump_ulong(id, out);
-	    *out->cur++ = '}';
+	    *out->cur++ = '"';
 
 	    return -1;
 	}
@@ -337,15 +334,25 @@ dump_float(VALUE obj, Out out) {
 }
 
 static void
-dump_cstr(const char *str, size_t cnt, int is_sym, Out out) {
+dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out) {
     size_t	size = json_friendly_size((u_char*)str, cnt);
     
+    if (out->end - out->cur <= (long)size + 10) { // extra 10 for escaped first char, quotes, and sym
+	grow(out, size + 10);
+    }
+    *out->cur++ = '"';
+    if (escape1) {
+	*out->cur++ = '\\';
+	*out->cur++ = 'u';
+	*out->cur++ = '0';
+	*out->cur++ = '0';
+	dump_hex((u_char)*str, out);
+	cnt--;
+	size--;
+	str++;
+	is_sym = 0; // just to make sure
+    }
     if (cnt == size) {
-	cnt += 2 + is_sym;
-	if (out->end - out->cur <= (long)cnt) {
-	    grow(out, cnt);
-	}
-	*out->cur++ = '"';
 	if (is_sym) {
 	    *out->cur++ = ':';
 	}
@@ -354,11 +361,6 @@ dump_cstr(const char *str, size_t cnt, int is_sym, Out out) {
 	}
 	*out->cur++ = '"';
     } else {
-	size += 2;
-	if (out->end - out->cur <= (long)size) {
-	    grow(out, size);
-	}
-	*out->cur++ = '"';
 	if (is_sym) {
 	    *out->cur++ = ':';
 	}
@@ -403,37 +405,23 @@ dump_cstr(const char *str, size_t cnt, int is_sym, Out out) {
 
 static void
 dump_str_comp(VALUE obj, Out out) {
-    dump_cstr(StringValuePtr(obj), RSTRING_LEN(obj), 0, out);
+    dump_cstr(StringValuePtr(obj), RSTRING_LEN(obj), 0, 0, out);
 }
 
 static void
 dump_str_obj(VALUE obj, Out out) {
     const char	*s = StringValuePtr(obj);
     size_t	len = RSTRING_LEN(obj);
-    
-    if (':' == *s) {
-	if (out->end - out->cur <= 6) {
-	    grow(out, 6);
-	}
-	*out->cur++ = '{';
-	*out->cur++ = '"';
-	*out->cur++ = '^';
-	*out->cur++ = 's';
-	*out->cur++ = '"';
-	*out->cur++ = ':';
-	dump_cstr(s, len, 0, out);
-	*out->cur++ = '}';
-	*out->cur = '\0';
-    } else {
-	dump_cstr(s, len, 0, out);
-    }
+    char	s1 = s[1];
+
+    dump_cstr(s, len, 0, (':' == *s || ('^' == *s && ('r' == s1 || 'i' == s1))), out);
 }
 
 static void
 dump_sym_comp(VALUE obj, Out out) {
     const char	*sym = rb_id2name(SYM2ID(obj));
     
-    dump_cstr(sym, strlen(sym), 0, out);
+    dump_cstr(sym, strlen(sym), 0, 0, out);
 }
 
 static void
@@ -441,29 +429,14 @@ dump_sym_obj(VALUE obj, Out out) {
     const char	*sym = rb_id2name(SYM2ID(obj));
     size_t	len = strlen(sym);
     
-    if (':' == *sym) {
-	if (out->end - out->cur <= 6) {
-	    grow(out, 6);
-	}
-	*out->cur++ = '{';
-	*out->cur++ = '"';
-	*out->cur++ = '^';
-	*out->cur++ = 'm';
-	*out->cur++ = '"';
-	*out->cur++ = ':';
-	dump_cstr(sym, len, 0, out);
-	*out->cur++ = '}';
-	*out->cur = '\0';
-    } else {
-	dump_cstr(sym, len, 1, out);
-    }
+    dump_cstr(sym, len, 1, 0, out);
 }
 
 static void
 dump_class_comp(VALUE obj, Out out) {
     const char	*s = rb_class2name(obj);
 
-    dump_cstr(s, strlen(s), 0, out);
+    dump_cstr(s, strlen(s), 0, 0, out);
 }
 
 static void
@@ -480,7 +453,7 @@ dump_class_obj(VALUE obj, Out out) {
     *out->cur++ = 'c';
     *out->cur++ = '"';
     *out->cur++ = ':';
-    dump_cstr(s, len, 0, out);
+    dump_cstr(s, len, 0, 0, out);
     *out->cur++ = '}';
     *out->cur = '\0';
 }
@@ -496,7 +469,6 @@ dump_array(VALUE a, int depth, Out out) {
     if (id < 0) {
 	return;
     }
-    // TBD check circular
     np = RARRAY_PTR(a);
     cnt = (int)RARRAY_LEN(a);
     *out->cur++ = '[';
@@ -530,7 +502,6 @@ dump_array(VALUE a, int depth, Out out) {
 	    fill_indent(out, d2);
 	    dump_val(*np, d2, out);
 	    if (1 < cnt) {
-		// TBD check size?
 		*out->cur++ = ',';
 	    }
 	}
@@ -575,7 +546,6 @@ hash_cb_object(VALUE key, VALUE value, Out out) {
 	grow(out, size);
     }
     fill_indent(out, depth);
-    // TBD if key is a string else dump with unique key for and entry array
     if (rb_type(key) == T_STRING) {
 	dump_str_obj(key, out);
 	*out->cur++ = ':';
@@ -792,14 +762,14 @@ dump_attr_cb(ID key, VALUE value, Out out) {
     fill_indent(out, depth);
     if ('@' == *attr) {
 	attr++;
-	dump_cstr(attr, strlen(attr), 0, out);
+	dump_cstr(attr, strlen(attr), 0, 0, out);
     } else {
 	char	buf[32];
 
 	*buf = '~';
 	strncpy(buf + 1, attr, sizeof(buf) - 2);
 	buf[sizeof(buf) - 1] = '\0';
-	dump_cstr(buf, strlen(buf), 0, out);
+	dump_cstr(buf, strlen(buf), 0, 0, out);
     }
     *out->cur++ = ':';
     dump_val(value, depth, out);
@@ -832,7 +802,7 @@ dump_obj_attrs(VALUE obj, int with_class, slot_t id, int depth, Out out) {
 	*out->cur++ = 'o';
 	*out->cur++ = '"';
 	*out->cur++ = ':';
-	dump_cstr(class_name, clen, 0, out);
+	dump_cstr(class_name, clen, 0, 0, out);
     }
     if (0 < id) {
 	size = d2 * out->indent + 16;
@@ -880,14 +850,14 @@ dump_obj_attrs(VALUE obj, int with_class, slot_t id, int depth, Out out) {
 	    attr = rb_id2name(vid);
 	    if ('@' == *attr) {
 		attr++;
-		dump_cstr(attr, strlen(attr), 0, out);
+		dump_cstr(attr, strlen(attr), 0, 0, out);
 	    } else {
 		char	buf[32];
 
 		*buf = '~';
 		strncpy(buf + 1, attr, sizeof(buf) - 2);
 		buf[sizeof(buf) - 1] = '\0';
-		dump_cstr(buf, strlen(attr) + 1, 0, out);
+		dump_cstr(buf, strlen(attr) + 1, 0, 0, out);
 	    }
 	    *out->cur++ = ':';
 	    dump_val(rb_ivar_get(obj, vid), d2, out);

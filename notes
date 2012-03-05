@@ -5,46 +5,37 @@
 
 
 - next
-
- - circular reference
-  - change ref to ^r1234
-  - handle array element with "^i222" that is not an id
-  - handle value that is "^r222" that is not a reference
-
-  - use escaped to put ^ in strings instead of {"^s":"^foo"}
-   - \u005e
-  - use escaped to put : in strings instead of {"^s":":foo"}
-   - \u003a
-
-  - try simple array for dump
-   - might be faster for small numbers of circular references which is the common case
-
-  - compare circular
-   - yajl - core dumps ruby
-   - json fails
-   - msgpack fails
-
-
-- format
- - escape ^ when reading and convert immediately to alternate sequences
- - ^t12345.67890 for time value instead of hash?
-  - number is more natural for comatibility
- - ^r12345 for references
- - \: for symbol or reverse vs string
- - ^i123 for array id
-
-
+ - update performance tests on README
+ - release 0.9.0
+ - remove circular branch
 
  - stream
   - load
-  - dump
+   - callback parser
+    - object_start
+    - object_end
+    - array_start
+    - array_end
+    - value - just primitive or one for each type
+    - key
 
-- load
+   - default callbacks use straight C and create Hash or Object according to mode
+    - callback object
+    - check respond_to? for each method at start
+    - methods to indicate that defaults should be used instead of ignored
+     - use_default_hash_callback?
+     - use_default_array_callback?
+     - use_default_key_callback?
+     - use_default_value_callback?
+    - or maybe
+     - hash_callback? returns nil, :default, :my_hash_callback
+      - default is to check hash_start and hash_end and no nothing if they do not exist
+      - 
+
+  - dump
+   - support stream as arg
+   - always dump to stream/file if possible (check performance)
 
 - dump
  - multibyte group encoding
  - object and other types of object dumping
-
-
-- support circular object encoding
-

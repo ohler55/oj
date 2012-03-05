@@ -419,7 +419,7 @@ class Juice < ::Test::Unit::TestCase
     assert_equal(%{{
   "^o":"Jam",
   "^i":1,
-  "x":{"^r":1},
+  "x":"^r1",
   "y":58}}, json)
     obj2 = Oj.load(json, :mode => :object, :circular => true)
     assert_equal(obj2.x.__id__, obj2.__id__)
@@ -432,7 +432,7 @@ class Juice < ::Test::Unit::TestCase
     assert_equal(%{{
   "^i":1,
   "a":7,
-  "b":{"^r":1}}}, json)
+  "b":"^r1"}}, json)
     h2 = Oj.load(json, :mode => :object, :circular => true)
     assert_equal(h['b'].__id__, h.__id__)
   end
@@ -441,13 +441,12 @@ class Juice < ::Test::Unit::TestCase
     a = [7]
     a << a
     json = Oj.dump(a, :mode => :object, :indent => 2, :circular => true)
-    puts json
     assert_equal(%{[
   "^i1",
   7,
-  {"^r":1}]}, json)
+  "^r1"]}, json)
     a2 = Oj.load(json, :mode => :object, :circular => true)
-    assert_equal(a[1].__id__, a.__id__)
+    assert_equal(a2[1].__id__, a2.__id__)
   end
 
   def test_circular
@@ -461,7 +460,7 @@ class Juice < ::Test::Unit::TestCase
   "x":{
     "^i":2,
     "a":7,
-    "b":{"^r":1}
+    "b":"^r1"
   },
   "y":58}}, json)
     obj2 = Oj.load(json, :mode => :object, :circular => true)
