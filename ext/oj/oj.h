@@ -91,9 +91,12 @@ extern void	oj_write_obj_to_file(VALUE obj, const char *path, Options copts);
 
 extern void	_oj_raise_error(const char *msg, const char *xml, const char *current, const char* file, int line);
 
+extern void	oj_init_fast(void);
+
 extern VALUE    Oj;
 
 extern VALUE	oj_bag_class;
+extern VALUE	oj_fast_class;
 extern VALUE	oj_struct_class;
 extern VALUE	oj_time_class;
 

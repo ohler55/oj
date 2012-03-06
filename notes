@@ -39,3 +39,74 @@
 - dump
  - multibyte group encoding
  - object and other types of object dumping
+
+Ruby
+
+- build C structs for parts
+ - linked lists (maybe hash later)
+ - types
+  - hash linked list of others
+  - array
+  - key_value
+  - value (all basic types)
+- keep one top node work walking tree
+- parse by walking and getting all as strings except keep track of types
+ - as asked for, convert, create ruby obj, cache, return
+ - need some way to tell when memory can be released
+  - ALLOC_N, xfree, Data_Wrap_Struct
+
+
+module Foo
+  class Fast
+
+    # String paths are used to identify one or more elements of a JSON. The
+    # paths used are similar to XPath but simple JSONPaths can also be used as
+    # long as they start with an @ or a $. The Fast native path format will be
+    # more efficient in this class.
+    #
+    #   /: separator
+    #   / - top
+    #   . - current
+    #   .. parent
+    #   // recursive decent
+    #   * all branches
+    #   | or
+    #   [] range like with 
+    def initialize(json)
+      # parse
+    end
+
+    def where?()
+    end
+
+    # use xpath like syntax, not jsonpath, json does not deal with moving up
+    def type(path=nil)
+      # no wildcard in this func
+    end
+
+    # no wildcard in this func
+    def value_at(path=nil, default=nil)
+    end
+
+    def locate(path=nil, &blk)
+    end
+
+    def move(path)
+    end
+
+    def home()
+    end
+
+    # just the immediate children
+    def each_branch(&blk)
+    end
+
+    # depth first scan of all leaves
+    def each_leaf(&blk)
+    end
+
+    def jsonpath_to_path(jp)
+    end
+
+  end # Fast
+end # Foo
