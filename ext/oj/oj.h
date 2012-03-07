@@ -100,6 +100,8 @@ extern VALUE	oj_fast_class;
 extern VALUE	oj_struct_class;
 extern VALUE	oj_time_class;
 
+extern VALUE	oj_slash_string;
+
 extern ID	oj_as_json_id;
 extern ID	oj_at_id;
 extern ID	oj_instance_variables_id;

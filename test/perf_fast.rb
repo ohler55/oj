@@ -62,7 +62,7 @@ end
 puts '-' * 80
 puts "Load/Parse Performance"
 perf = Perf.new()
-perf.add('Oj:fast', 'load') { Oj::Fast.new($json) } unless $failed.has_key?('Oj:fast')
+perf.add('Oj:fast', 'load') { Oj::Fast.open($json) {|f| } } unless $failed.has_key?('Oj:fast')
 perf.add('Yajl', 'parse') { Yajl::Parser.parse($json) } unless $failed.has_key?('Yajl')
 perf.add('JSON::Ext', 'parse') { JSON::Ext::Parser.new($json).parse } unless $failed.has_key?('JSON::Ext')
 perf.run($iter)

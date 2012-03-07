@@ -60,6 +60,8 @@ VALUE	oj_bag_class;
 VALUE	oj_struct_class;
 VALUE	oj_time_class;
 
+VALUE	oj_slash_string;
+
 static VALUE	auto_define_sym;
 static VALUE	circular_sym;
 static VALUE	compat_sym;
@@ -392,6 +394,8 @@ void Init_oj() {
     null_sym = ID2SYM(rb_intern("null"));		rb_ary_push(keep, null_sym);
     object_sym = ID2SYM(rb_intern("object"));		rb_ary_push(keep, object_sym);
     strict_sym = ID2SYM(rb_intern("strict"));		rb_ary_push(keep, strict_sym);
+
+    oj_slash_string = rb_str_new2("/");			rb_ary_push(keep, oj_slash_string);
 
     default_options.mode = ObjectMode;
 
