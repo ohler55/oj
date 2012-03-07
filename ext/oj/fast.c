@@ -45,7 +45,7 @@ typedef struct _Leaf {
 	const char	*key;      // hash key
 	size_t		index;     // array index
     };
-    const char		*str;      // pointer to location in json string
+    char		*str;      // pointer to location in json string
     struct _Leaf	*elements; // array and hash elements
     int			type;
     VALUE		value;
@@ -76,9 +76,14 @@ typedef struct _ParseInfo {
     Fast	fast;
 } *ParseInfo;
 
-static void	leaf_init(Leaf leaf, const char *str, int type);
-static Leaf	leaf_new(Fast fast, const char *str, int type);
+static void	leaf_init(Leaf leaf, char *str, int type);
+static Leaf	leaf_new(Fast fast, char *str, int type);
 static void	leaf_append_element(Leaf parent, Leaf element);
+static VALUE	leaf_value(Leaf leaf);
+static void	leaf_fixnum_value(Leaf leaf);
+static void	leaf_float_value(Leaf leaf);
+static void	leaf_array_value(Leaf leaf);
+static void	leaf_hash_value(Leaf leaf);
 
 static Leaf	read_next(ParseInfo pi);
 static Leaf	read_obj(ParseInfo pi);
@@ -91,7 +96,8 @@ static Leaf	read_nil(ParseInfo pi);
 static void	next_non_white(ParseInfo pi);
 static char*	read_quoted_value(ParseInfo pi);
 
-static void	fast_free(void *ptr);
+static void	fast_init(Fast f);
+static void	fast_free(Fast f);
 static VALUE	fast_where(VALUE self);
 static VALUE	fast_home(VALUE self);
 static VALUE	fast_type(int argc, VALUE *argv, VALUE self);
@@ -152,7 +158,7 @@ next_white(ParseInfo pi) {
 }
 
 inline static void
-leaf_init(Leaf leaf, const char *str, int type) {
+leaf_init(Leaf leaf, char *str, int type) {
     leaf->next = 0;
     leaf->key = 0;
     leaf->str = str;
@@ -162,7 +168,7 @@ leaf_init(Leaf leaf, const char *str, int type) {
 }
 
 static Leaf
-leaf_new(Fast fast, const char *str, int type) {
+leaf_new(Fast fast, char *str, int type) {
     Leaf	leaf;
 
     if (0 == fast->batches || BATCH_SIZE == fast->batches->next_avail) {
@@ -186,8 +192,195 @@ leaf_append_element(Leaf parent, Leaf element) {
 	element->next = element;
     } else {
 	element->next = parent->elements->next;
+	parent->elements->next = element;
 	parent->elements = element;
     }
+}
+
+static VALUE
+leaf_value(Leaf leaf) {
+    if (Qundef == leaf->value) {
+	switch (leaf->type) {
+	case T_NIL:
+	    leaf->value = Qnil;
+	    break;
+	case T_TRUE:
+	    leaf->value = Qtrue;
+	    break;
+	case T_FALSE:
+	    leaf->value = Qfalse;
+	    break;
+	case T_FIXNUM:
+	    leaf_fixnum_value(leaf);
+	    break;
+	case T_FLOAT:
+	    leaf_float_value(leaf);
+	    break;
+	case T_STRING:
+	    leaf->value = rb_str_new2(leaf->str);
+#ifdef HAVE_RUBY_ENCODING_H
+	    /*	    if (0 != pi->encoding) {
+		rb_enc_associate(leaf->value, pi->encoding);
+		}*/
+#endif
+	    break;
+	case T_ARRAY:
+	    leaf_array_value(leaf);
+	    break;
+	case T_HASH:
+	    leaf_hash_value(leaf);
+	    break;
+	default:
+	    // TBD raise
+	    break;
+	}
+	// TBD
+    }
+    return leaf->value;
+}
+
+#ifdef RUBINIUS
+#define NUM_MAX 0x07FFFFFF
+#else
+#define NUM_MAX (FIXNUM_MAX >> 8)
+#endif
+
+
+static void
+leaf_fixnum_value(Leaf leaf) {
+    char	*s = leaf->str;
+    int64_t	n = 0;
+    int		neg = 0;
+    int		big = 0;
+
+    if ('-' == *s) {
+	s++;
+	neg = 1;
+    } else if ('+' == *s) {
+	s++;
+    }
+    for (; '0' <= *s && *s <= '9'; s++) {
+	n = n * 10 + (*s - '0');
+	if (NUM_MAX <= n) {
+	    big = 1;
+	}
+    }
+    if (big) {
+	char	c = *s;
+	
+	*s = '\0';
+	leaf->value = rb_cstr_to_inum(leaf->str, 10, 0);
+	*s = c;
+    } else {
+	if (neg) {
+	    n = -n;
+	}
+	leaf->value = LONG2NUM(n);
+    }
+}
+
+#if 1
+static void
+leaf_float_value(Leaf leaf) {
+    leaf->value = DBL2NUM(rb_cstr_to_dbl(leaf->str, 1));
+}
+#else
+static void
+leaf_float_value(Leaf leaf) {
+    char	*s = leaf->str;
+    int64_t	n = 0;
+    long	a = 0;
+    long	div = 1;
+    long	e = 0;
+    int		neg = 0;
+    int		eneg = 0;
+    int		big = 0;
+
+    if ('-' == *s) {
+	s++;
+	neg = 1;
+    } else if ('+' == *s) {
+	s++;
+    }
+    for (; '0' <= *s && *s <= '9'; s++) {
+	n = n * 10 + (*s - '0');
+	if (NUM_MAX <= n) {
+	    big = 1;
+	}
+    }
+    if (big) {
+	char	c = *s;
+	
+	*s = '\0';
+	leaf->value = rb_cstr_to_inum(leaf->str, 10, 0);
+	*s = c;
+    } else {
+	double	d;
+
+	if ('.' == *s) {
+	    s++;
+	    for (; '0' <= *s && *s <= '9'; s++) {
+		a = a * 10 + (*s - '0');
+		div *= 10;
+	    }
+	}
+	if ('e' == *s || 'E' == *s) {
+	    s++;
+	    if ('-' == *s) {
+		s++;
+		eneg = 1;
+	    } else if ('+' == *s) {
+		s++;
+	    }
+	    for (; '0' <= *s && *s <= '9'; s++) {
+		e = e * 10 + (*s - '0');
+	    }
+	}
+	d = (double)n + (double)a / (double)div;
+	if (neg) {
+	    d = -d;
+	}
+	if (0 != e) {
+	    if (eneg) {
+		e = -e;
+	    }
+	    d *= pow(10.0, e);
+	}
+	leaf->value = DBL2NUM(d);
+    }
+}
+#endif
+
+static void
+leaf_array_value(Leaf leaf) {
+    VALUE	a = rb_ary_new();
+
+    if (0 != leaf->elements) {
+	Leaf	first = leaf->elements->next;
+	Leaf	e = first;
+
+	do {
+	    rb_ary_push(a, leaf_value(e));
+	    e = e->next;
+	} while (e != first);
+    }
+    leaf->value = a;
+}
+
+static void
+leaf_hash_value(Leaf leaf) {
+    VALUE	h = rb_hash_new();
+
+    if (0 != leaf->elements) {
+	Leaf	first = leaf->elements->next;
+	Leaf	e = first;
+
+	do {
+	    rb_hash_aset(h, rb_str_new2(e->key), leaf_value(e));
+	    e = e->next;
+	} while (e != first);
+    }
+    leaf->value = h;
 }
 
 static Leaf
@@ -262,7 +455,7 @@ read_obj(ParseInfo pi) {
 	    raise_error("invalid format, expected :", pi->str, pi->s);
 	}
 	if (0 == (val = read_next(pi))) {
-	    printf("*** '%s'\n", pi->s);
+	    //printf("*** '%s'\n", pi->s);
 	    raise_error("unexpected character", pi->str, pi->s);
 	}
 	end = pi->s;
@@ -271,6 +464,7 @@ read_obj(ParseInfo pi) {
 	next_non_white(pi);
 	if ('}' == *pi->s) {
 	    pi->s++;
+	    *end = '\0';
 	    break;
 	} else if (',' == *pi->s) {
 	    pi->s++;
@@ -309,6 +503,7 @@ read_array(ParseInfo pi) {
 	    pi->s++;
 	} else if (']' == *pi->s) {
 	    pi->s++;
+	    *end = '\0';
 	    break;
 	} else {
 	    raise_error("invalid format, expected , or ] while in an array", pi->str, pi->s);
@@ -325,6 +520,7 @@ read_str(ParseInfo pi) {
 
 static Leaf
 read_num(ParseInfo pi) {
+    char	*start = pi->s;
     int		type = T_FIXNUM;
 
     if ('-' == *pi->s) {
@@ -347,7 +543,7 @@ read_num(ParseInfo pi) {
 	for (; '0' <= *pi->s && *pi->s <= '9'; pi->s++) {
 	}
     }
-    return leaf_new(pi->fast, pi->s, type);
+    return leaf_new(pi->fast, start, type);
 }
 
 static Leaf
@@ -470,20 +666,28 @@ read_quoted_value(ParseInfo pi) {
     return value;
 }
 
+inline static void
+fast_init(Fast f) {
+    f->batches = 0;
+    f->where = f->where_array;
+    f->where_len = 0;
+    *f->where = 0;
+    f->doc = 0;
+}
+
 static void
-fast_free(void *ptr) {
-    if (0 != ptr) {
-	Fast	fast = (Fast)ptr;
+fast_free(Fast f) {
+    if (0 != f) {
 	Batch	b;
 
-	while (0 != (b = fast->batches)) {
-	    fast->batches = fast->batches->next;
+	while (0 != (b = f->batches)) {
+	    f->batches = f->batches->next;
 	    xfree(b);
 	}
-	if (fast->where_array != fast->where) {
-	    free(fast->where);
+	if (f->where_array != f->where) {
+	    free(f->where);
 	}
-	xfree(fast);
+	xfree(f);
     }
 }
 
@@ -497,7 +701,7 @@ fast_open(VALUE clas, VALUE str) {
     Check_Type(str, T_STRING);
     len = RSTRING_LEN(str);
     pi.str = ALLOC_N(char, len);
-    memcpy(pi.str, StringValuePtr(str), len);
+    memcpy(pi.str, StringValuePtr(str), len + 1);
     pi.s = pi.str;
     pi.encoding = 0;
 #ifdef HAVE_RUBY_ENCODING_H
@@ -571,7 +775,24 @@ fast_type(int argc, VALUE *argv, VALUE self) {
 
 static VALUE
 fast_value_at(int argc, VALUE *argv, VALUE self) {
-    return Qnil;
+    Fast	f = DATA_PTR(self);
+    VALUE	val = Qnil;
+    const char	*path = 0;
+
+    if (1 <= argc) {
+	Check_Type(*argv, T_STRING);
+	path = StringValuePtr(*argv);
+	if (2 == argc) {
+	    val = argv[1];
+	}
+    }
+    if (0 != f->doc) {
+	Leaf	leaf = f->doc;
+
+	// TBD use path
+	val = leaf_value(leaf);
+    }
+    return val;
 }
 
 static VALUE

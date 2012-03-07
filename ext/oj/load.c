@@ -533,7 +533,7 @@ read_array(ParseInfo pi, int hint) {
 		RSTRUCT_PTR(a)[cnt] = e;
 #endif
 	    } else {
-		a = rb_ary_push(a, e);
+		rb_ary_push(a, e);
 	    }
 	    cnt++;
 	}
