@@ -682,12 +682,12 @@ fast_free(Fast f) {
 
 	while (0 != (b = f->batches)) {
 	    f->batches = f->batches->next;
-	    xfree(b);
+	    //xfree(b);
 	}
 	if (f->where_array != f->where) {
 	    free(f->where);
 	}
-	xfree(f);
+	//xfree(f);
     }
 }
 
@@ -697,7 +697,13 @@ fast_open(VALUE clas, VALUE str) {
     VALUE		result = Qnil;
     VALUE		fobj;
     size_t		len;
+    struct _Fast	fast;
+    struct _Batch	batch;
 
+    // TBD temp
+    batch.next = 0;
+    batch.next_avail = 0;
+    
     Check_Type(str, T_STRING);
     len = RSTRING_LEN(str);
     pi.str = ALLOC_N(char, len);
@@ -710,9 +716,10 @@ fast_open(VALUE clas, VALUE str) {
     pi.encoding = 0;
 #endif
     fobj = rb_obj_alloc(clas);
-    pi.fast = ALLOC(struct _Fast);
+    pi.fast = &fast;
     DATA_PTR(fobj) = pi.fast;
     pi.fast->batches = 0;
+    pi.fast->batches = &batch;
     pi.fast->where = pi.fast->where_array;
     pi.fast->where_len = 0;
     *pi.fast->where = 0;
