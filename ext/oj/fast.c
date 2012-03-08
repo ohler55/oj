@@ -36,7 +36,6 @@
 #include "ruby.h"
 #include "oj.h"
 
-#define BATCH_SIZE	32
 #define INIT_PATH_DEPTH	32
 
 typedef struct _Leaf {
@@ -51,6 +50,9 @@ typedef struct _Leaf {
     VALUE		value;
 } *Leaf;
 
+//#define BATCH_SIZE	(4096 / sizeof(struct _Leaf) - 1)
+#define BATCH_SIZE	80
+
 typedef struct _Batch {
     struct _Batch	*next;
     int			next_avail;
@@ -58,32 +60,33 @@ typedef struct _Batch {
 } *Batch;
 
 typedef struct _Fast {
-    Batch	batches;
-    Leaf	doc;
-    Leaf	where_array[INIT_PATH_DEPTH];
-    Leaf	*where;
-    size_t	where_len; // length of allocated if longer than where_array
+    Leaf		doc;
+    Leaf		where_array[INIT_PATH_DEPTH];
+    Leaf		*where;
+    size_t		where_len; // length of allocated if longer than where_array
+#ifdef HAVE_RUBY_ENCODING_H
+    rb_encoding		*encoding;
+#else
+    void		*encoding;
+#endif
+    Batch		batches;
+    struct _Batch	batch0;
 } *Fast;
 
 typedef struct _ParseInfo {
     char	*str;		/* buffer being read from */
     char	*s;		/* current position in buffer */
-#ifdef HAVE_RUBY_ENCODING_H
-    rb_encoding	*encoding;
-#else
-    void	*encoding;
-#endif
     Fast	fast;
 } *ParseInfo;
 
 static void	leaf_init(Leaf leaf, char *str, int type);
 static Leaf	leaf_new(Fast fast, char *str, int type);
 static void	leaf_append_element(Leaf parent, Leaf element);
-static VALUE	leaf_value(Leaf leaf);
+static VALUE	leaf_value(Fast fast, Leaf leaf);
 static void	leaf_fixnum_value(Leaf leaf);
 static void	leaf_float_value(Leaf leaf);
-static void	leaf_array_value(Leaf leaf);
-static void	leaf_hash_value(Leaf leaf);
+static void	leaf_array_value(Fast fast, Leaf leaf);
+static void	leaf_hash_value(Fast fast, Leaf leaf);
 
 static Leaf	read_next(ParseInfo pi);
 static Leaf	read_obj(ParseInfo pi);
@@ -105,9 +108,9 @@ static VALUE	fast_value_at(int argc, VALUE *argv, VALUE self);
 static VALUE	fast_locate(int argc, VALUE *argv, VALUE self);
 static VALUE	fast_move(int argc, VALUE *argv, VALUE self);
 static VALUE	fast_each_branch(int argc, VALUE *argv, VALUE self);
+static void	each_leaf(Fast f, Leaf leaf, VALUE *args);
 static VALUE	fast_each_leaf(int argc, VALUE *argv, VALUE self);
-static VALUE	fast_jsonpath_to_path(int argc, VALUE *argv, VALUE self);
-static VALUE	fast_inspect(VALUE self);
+static VALUE	fast_dump(VALUE self);
 
 VALUE	oj_fast_class = 0;
 
@@ -198,7 +201,7 @@ leaf_append_element(Leaf parent, Leaf element) {
 }
 
 static VALUE
-leaf_value(Leaf leaf) {
+leaf_value(Fast fast, Leaf leaf) {
     if (Qundef == leaf->value) {
 	switch (leaf->type) {
 	case T_NIL:
@@ -219,16 +222,16 @@ leaf_value(Leaf leaf) {
 	case T_STRING:
 	    leaf->value = rb_str_new2(leaf->str);
 #ifdef HAVE_RUBY_ENCODING_H
-	    /*	    if (0 != pi->encoding) {
-		rb_enc_associate(leaf->value, pi->encoding);
-		}*/
+	    if (0 != fast->encoding) {
+		rb_enc_associate(leaf->value, fast->encoding);
+	    }
 #endif
 	    break;
 	case T_ARRAY:
-	    leaf_array_value(leaf);
+	    leaf_array_value(fast, leaf);
 	    break;
 	case T_HASH:
-	    leaf_hash_value(leaf);
+	    leaf_hash_value(fast, leaf);
 	    break;
 	default:
 	    // TBD raise
@@ -352,7 +355,7 @@ leaf_float_value(Leaf leaf) {
 #endif
 
 static void
-leaf_array_value(Leaf leaf) {
+leaf_array_value(Fast fast, Leaf leaf) {
     VALUE	a = rb_ary_new();
 
     if (0 != leaf->elements) {
@@ -360,7 +363,7 @@ leaf_array_value(Leaf leaf) {
 	Leaf	e = first;
 
 	do {
-	    rb_ary_push(a, leaf_value(e));
+	    rb_ary_push(a, leaf_value(fast, e));
 	    e = e->next;
 	} while (e != first);
     }
@@ -368,15 +371,22 @@ leaf_array_value(Leaf leaf) {
 }
 
 static void
-leaf_hash_value(Leaf leaf) {
+leaf_hash_value(Fast fast, Leaf leaf) {
     VALUE	h = rb_hash_new();
 
     if (0 != leaf->elements) {
 	Leaf	first = leaf->elements->next;
 	Leaf	e = first;
+	VALUE	key;
 
 	do {
-	    rb_hash_aset(h, rb_str_new2(e->key), leaf_value(e));
+	    key = rb_str_new2(e->key);
+#ifdef HAVE_RUBY_ENCODING_H
+	    if (0 != fast->encoding) {
+		rb_enc_associate(key, fast->encoding);
+	    }
+#endif
+	    rb_hash_aset(h, key, leaf_value(fast, e));
 	    e = e->next;
 	} while (e != first);
     }
@@ -668,11 +678,13 @@ read_quoted_value(ParseInfo pi) {
 
 inline static void
 fast_init(Fast f) {
-    f->batches = 0;
     f->where = f->where_array;
     f->where_len = 0;
     *f->where = 0;
     f->doc = 0;
+    f->batches = &f->batch0;
+    f->batch0.next = 0;
+    f->batch0.next_avail = 0;
 }
 
 static void
@@ -682,7 +694,9 @@ fast_free(Fast f) {
 
 	while (0 != (b = f->batches)) {
 	    f->batches = f->batches->next;
-	    //xfree(b);
+	    if (&f->batch0 != b) {
+		xfree(b);
+	    }
 	}
 	if (f->where_array != f->where) {
 	    free(f->where);
@@ -698,38 +712,30 @@ fast_open(VALUE clas, VALUE str) {
     VALUE		fobj;
     size_t		len;
     struct _Fast	fast;
-    struct _Batch	batch;
 
-    // TBD temp
-    batch.next = 0;
-    batch.next_avail = 0;
-    
     Check_Type(str, T_STRING);
+    if (!rb_block_given_p()) {
+	rb_raise(rb_eArgError, "Block or Proc is required.");
+    }
     len = RSTRING_LEN(str);
-    pi.str = ALLOC_N(char, len);
+    pi.str = ALLOCA_N(char, len + 1);
+    //pi.str = ALLOC_N(char, len + 1);
     memcpy(pi.str, StringValuePtr(str), len + 1);
     pi.s = pi.str;
-    pi.encoding = 0;
-#ifdef HAVE_RUBY_ENCODING_H
-    //    pi.encoding = ('\0' == *options->encoding) ? 0 : rb_enc_find(options->encoding);
-#else
-    pi.encoding = 0;
-#endif
     fobj = rb_obj_alloc(clas);
+    fast_init(&fast);
+#ifdef HAVE_RUBY_ENCODING_H
+    fast.encoding = ('\0' == *oj_default_options.encoding) ? 0 : rb_enc_find(oj_default_options.encoding);
+#else
+    fast.encoding = 0;
+#endif
     pi.fast = &fast;
     DATA_PTR(fobj) = pi.fast;
-    pi.fast->batches = 0;
-    pi.fast->batches = &batch;
-    pi.fast->where = pi.fast->where_array;
-    pi.fast->where_len = 0;
-    *pi.fast->where = 0;
-    pi.fast->doc = read_next(&pi);
-    if (rb_block_given_p()) {
-	result = rb_yield(fobj);
-    }
+    pi.fast->doc = read_next(&pi); // parse
+    result = rb_yield(fobj); // caller processing
     DATA_PTR(fobj) = 0;
     fast_free(pi.fast);
-    xfree(pi.str);
+    //xfree(pi.str);
     
     return result;
 }
@@ -797,39 +803,70 @@ fast_value_at(int argc, VALUE *argv, VALUE self) {
 	Leaf	leaf = f->doc;
 
 	// TBD use path
-	val = leaf_value(leaf);
+	val = leaf_value(f, leaf);
     }
     return val;
 }
 
 static VALUE
 fast_locate(int argc, VALUE *argv, VALUE self) {
+    // TBD
     return Qnil;
 }
 
 static VALUE
 fast_move(int argc, VALUE *argv, VALUE self) {
+    // TBD
     return Qnil;
 }
 
 static VALUE
 fast_each_branch(int argc, VALUE *argv, VALUE self) {
+    // TBD
     return Qnil;
+}
+
+static void
+each_leaf(Fast f, Leaf leaf, VALUE *args) {
+    if (T_ARRAY == leaf->type || T_HASH == leaf->type) {
+	if (0 != leaf->elements) {
+	    Leaf	first = leaf->elements->next;
+	    Leaf	e = first;
+
+	    do {
+		each_leaf(f, e, args);
+		e = e->next;
+	    } while (e != first);
+	}
+    } else {
+	args[1] = leaf_value(f, leaf);
+	rb_yield_values2(2, args);
+    }
 }
 
 static VALUE
 fast_each_leaf(int argc, VALUE *argv, VALUE self) {
+    if (rb_block_given_p()) {
+	Fast	f = DATA_PTR(self);
+	VALUE	args[2];
+
+	args[0] = self;
+	args[1] = Qnil;
+	each_leaf(f, f->doc, args);
+    }
     return Qnil;
 }
 
+// TBD improve later to be more direct for higher performance
 static VALUE
-fast_jsonpath_to_path(int argc, VALUE *argv, VALUE self) {
-    return Qnil;
-}
-
-static VALUE
-fast_inspect(VALUE self) {
-    return Qnil;
+fast_dump(VALUE self) {
+    Fast	f = DATA_PTR(self);
+    VALUE	obj = leaf_value(f, f->doc);
+    const char	*json;
+    
+    json = oj_write_obj_to_str(obj, &oj_default_options);
+    
+    return rb_str_new2(json);
 }
 
 void
@@ -845,6 +882,5 @@ oj_init_fast() {
     rb_define_method(oj_fast_class, "move", fast_move, -1);
     rb_define_method(oj_fast_class, "each_branch", fast_each_branch, -1);
     rb_define_method(oj_fast_class, "each_leaf", fast_each_leaf, -1);
-    rb_define_method(oj_fast_class, "jsonpath_to_path", fast_jsonpath_to_path, -1);
-    rb_define_method(oj_fast_class, "inspect", fast_inspect, 0);
+    rb_define_method(oj_fast_class, "dump", fast_dump, 0);
 }

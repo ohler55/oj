@@ -42,7 +42,7 @@
 
 
 - fast
- - how about a test that does not do GC, keep objects from being finalized
+ - implement dump, useful for debug
 
  - build C structs for parts
   - linked lists (maybe hash later)
