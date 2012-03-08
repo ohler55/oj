@@ -114,19 +114,6 @@ static VALUE	fast_dump(VALUE self);
 
 VALUE	oj_fast_class = 0;
 
-/* This XML parser is a single pass, destructive, callback parser. It is a
- * single pass parse since it only make one pass over the characters in the
- * XML document string. It is destructive because it re-uses the content of
- * the string for values in the callback and places \0 characters at various
- * places to mark the end of tokens and strings. It is a callback parser like
- * a SAX parser because it uses callback when document elements are
- * encountered.
- *
- * Parsing is very tolerant. Lack of headers and even mispelled element
- * endings are passed over without raising an error. A best attempt is made in
- * all cases to parse the string.
- */
-
 inline static void
 next_non_white(ParseInfo pi) {
     for (; 1; pi->s++) {
@@ -234,10 +221,9 @@ leaf_value(Fast fast, Leaf leaf) {
 	    leaf_hash_value(fast, leaf);
 	    break;
 	default:
-	    // TBD raise
+	    rb_raise(rb_eTypeError, "Unexpected type %02x.", leaf->type);
 	    break;
 	}
-	// TBD
     }
     return leaf->value;
 }
