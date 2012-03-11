@@ -96,4 +96,62 @@ class FastTest < ::Test::Unit::TestCase
     end
   end
 
+  # move() and where?()
+  def test_move_hash
+    json = %{{"one":{"two":false}}}
+    Oj::Fast.open(json) do |f|
+      f.move('/one')
+      assert_equal('/one', f.where?)
+      f.move('/one/two')
+      assert_equal('/one/two', f.where?)
+    end
+  end
+
+  def test_move_array
+    json = %{[1,[2,true]]}
+    Oj::Fast.open(json) do |f|
+      f.move('/1')
+      assert_equal('/1', f.where?)
+      f.move('/2/1')
+      assert_equal('/2/1', f.where?)
+    end
+  end
+
+  def test_move
+    json = %{{
+  "array": [
+    {
+      "num"   : 3,
+      "string": "message",
+      "hash"  : {
+        "h2"  : {
+          "a" : [ 1, 2, 3 ]
+        }
+      }
+    }
+  ],
+  "boolean" : true
+}}
+    Oj::Fast.open(json) do |f|
+      [ '/',
+        '/array',
+        '/boolean',
+        '/array/1/hash/h2/a/3',
+      ].each do |p|
+        f.move(p)
+        assert_equal(p, f.where?)
+      end
+      begin
+        f.move('/array/x')
+      rescue Exception => e
+        assert_equal('/', f.where?)
+        assert(true)
+      end
+    end
+  end
+
+  # TBD relative paths
+
+  # 
+
 end # FastTest

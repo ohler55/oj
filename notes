@@ -42,6 +42,17 @@
 
 
 - fast
+ - perf on where? and value_at
+  - value_at -> fetch
+   - compare to x.fetch('abc', {}).fetch()
+    - pick correct lookup
+  - [path] fetch(path, nil)
+
+ - example
+  - contacts
+   - pull apart input file with multiple contacts and write individual files
+   - phone book get only name and phone
+
  - implement dump, useful for debug
 
  - build C structs for parts

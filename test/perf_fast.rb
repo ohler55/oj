@@ -15,14 +15,16 @@ require 'oj'
 $verbose = false
 $indent = 0
 $iter = 100000
-$with_get = false
+$gets = 0
+$fetch = 0
 
 opts = OptionParser.new
-opts.on("-v", "verbose")                                    { $verbose = true }
-opts.on("-c", "--count [Int]", Integer, "iterations")       { |i| $iter = i }
-opts.on("-i", "--indent [Int]", Integer, "indentation")     { |i| $indent = i }
-opts.on("-g", "with get all")                               { $with_get = true }
-opts.on("-h", "--help", "Show this display")                { puts opts; Process.exit!(0) }
+opts.on("-v", "verbose")                                           { $verbose = true }
+opts.on("-c", "--count [Int]", Integer, "iterations")              { |i| $iter = i }
+opts.on("-i", "--indent [Int]", Integer, "indentation")            { |i| $indent = i }
+opts.on("-g", "--gets [Int]", Integer, "number of gets")           { |i| $gets = i }
+opts.on("-f", "--fetches [Int]", Integer, "number of fetch calls") { |i| $fetch = i }
+opts.on("-h", "--help", "Show this display")                       { puts opts; Process.exit!(0) }
 files = opts.parse(ARGV)
 
 # This just navigates to each leaf of the JSON structure.
@@ -64,7 +66,7 @@ def capture_error(tag, orig, load_key, dump_key, &blk)
 end
 
 # Verify that all packages dump and load correctly and return the same Object as the original.
-capture_error('Oj:fast', $obj, 'load', 'dump') { |o| Oj::Fast.open(Oj.dump(o, :mode => :strict)) { |f| f.value_at() } }
+capture_error('Oj:fast', $obj, 'load', 'dump') { |o| Oj::Fast.open(Oj.dump(o, :mode => :strict)) { |f| f.fetch() } }
 capture_error('Yajl', $obj, 'encode', 'parse') { |o| Yajl::Parser.parse(Yajl::Encoder.encode(o)) }
 capture_error('JSON::Ext', $obj, 'generate', 'parse') { |o| JSON.generator = JSON::Ext::Generator; JSON::Ext::Parser.new(JSON.generate(o)).parse }
 
@@ -81,16 +83,41 @@ perf.add('JSON::Ext', 'parse') { JSON::Ext::Parser.new($json).parse } unless $fa
 perf.run($iter)
 puts
 
-if $with_get
+if 0 < $gets
   puts '-' * 80
-  puts "Parse and get all Performance"
+  puts "Parse and get all values Performance"
   perf = Perf.new()
-  perf.add('Oj:fast', 'parse') { Oj::Fast.open($json) {|f| f.each_leaf() {} } } unless $failed.has_key?('Oj:fast')
-  perf.add('Yajl', 'parse') { dig(Yajl::Parser.parse($json)) {} } unless $failed.has_key?('Yajl')
-  perf.add('JSON::Ext', 'parse') { dig(JSON::Ext::Parser.new($json).parse) {} } unless $failed.has_key?('JSON::Ext')
+  perf.add('Oj:fast', 'parse') { Oj::Fast.open($json) {|f| $gets.times { f.each_value() {} } } } unless $failed.has_key?('Oj:fast')
+  perf.add('Yajl', 'parse') { $gets.times { dig(Yajl::Parser.parse($json)) {} } } unless $failed.has_key?('Yajl')
+  perf.add('JSON::Ext', 'parse') { $gets.times { dig(JSON::Ext::Parser.new($json).parse) {} } } unless $failed.has_key?('JSON::Ext')
   perf.run($iter)
   puts
 end
+
+if 0 < $fetch
+  puts '-' * 80
+  puts "fetch nested Performance"
+  json_hash = Oj.load($json, :mode => :strict)
+  Oj::Fast.open($json) do |fast|
+    #puts "*** C fetch: #{fast.fetch('/d/2/4/1')}"
+    #puts "*** Ruby fetch: #{json_hash.fetch('d', []).fetch(1, []).fetch(3, []).fetch(0, nil)}"
+    perf = Perf.new()
+    perf.add('C', 'fetch') { $fetch.times { fast.fetch('/d/2/4/1'); fast.fetch('/h/a/b/c/d/e/f/g'); fast.fetch('/i/1/1/1/1/1/1/1') } }
+    # version that fails gracefully
+    perf.add('Ruby', 'fetch') do
+      $fetch.times do
+        json_hash.fetch('d', []).fetch(1, []).fetch(3, []).fetch(0, nil)
+        json_hash.fetch('h', {}).fetch('a', {}).fetch('b', {}).fetch('c', {}).fetch('d', {}).fetch('e', {}).fetch('f', {}).fetch('g', {})
+        json_hash.fetch('i', []).fetch(0, []).fetch(0, []).fetch(0, []).fetch(0, []).fetch(0, []).fetch(0, []).fetch(0, nil)
+      end
+    end
+    # version that raises if the path is incorrect
+#    perf.add('Ruby', 'fetch') { $fetch.times { json_hash['d'][1][3][1] } }
+    perf.run($iter)
+  end
+  puts
+end
+
 unless $failed.empty?
   puts "The following packages were not included for the reason listed"
   $failed.each { |tag,msg| puts "***** #{tag}: #{msg}" }

@@ -40,10 +40,8 @@
 
 typedef struct _Leaf {
     struct _Leaf	*next;
-    union {
-	const char	*key;      // hash key
-	size_t		index;     // array index
-    };
+    const char		*key;      // hash key
+    int			index;     // array index
     char		*str;      // pointer to location in json string
     struct _Leaf	*elements; // array and hash elements
     int			type;
@@ -61,15 +59,17 @@ typedef struct _Batch {
 
 typedef struct _Fast {
     Leaf		doc;
-    Leaf		where_array[INIT_PATH_DEPTH];
-    Leaf		*where;
-    size_t		where_len; // length of allocated if longer than where_array
+    Leaf		*where_path; // points to head of path
+    Leaf		*where;      // points to current location
+    size_t		where_len;   // length of allocated if longer than where_array
 #ifdef HAVE_RUBY_ENCODING_H
     rb_encoding		*encoding;
 #else
     void		*encoding;
 #endif
+    VALUE		self;
     Batch		batches;
+    Leaf		where_array[INIT_PATH_DEPTH]; // initial storage for where
     struct _Batch	batch0;
 } *Fast;
 
@@ -101,15 +101,18 @@ static char*	read_quoted_value(ParseInfo pi);
 
 static void	fast_init(Fast f);
 static void	fast_free(Fast f);
+static VALUE	protect_open_proc(VALUE x);
+static VALUE	fast_open(VALUE clas, VALUE str);
 static VALUE	fast_where(VALUE self);
+static VALUE	fast_local_key(VALUE self);
 static VALUE	fast_home(VALUE self);
 static VALUE	fast_type(int argc, VALUE *argv, VALUE self);
-static VALUE	fast_value_at(int argc, VALUE *argv, VALUE self);
-static VALUE	fast_locate(int argc, VALUE *argv, VALUE self);
-static VALUE	fast_move(int argc, VALUE *argv, VALUE self);
+static VALUE	fast_fetch(int argc, VALUE *argv, VALUE self);
+static VALUE	fast_each_leaf(VALUE self, VALUE str);
+static VALUE	fast_move(VALUE self, VALUE str);
 static VALUE	fast_each_branch(int argc, VALUE *argv, VALUE self);
-static void	each_leaf(Fast f, Leaf leaf, VALUE *args);
-static VALUE	fast_each_leaf(int argc, VALUE *argv, VALUE self);
+static void	each_value(Fast f, Leaf leaf, VALUE *args);
+static VALUE	fast_each_value(int argc, VALUE *argv, VALUE self);
 static VALUE	fast_dump(VALUE self);
 
 VALUE	oj_fast_class = 0;
@@ -147,10 +150,32 @@ next_white(ParseInfo pi) {
     }
 }
 
+
+inline static char*
+ulong_fill(char *s, size_t num) {
+    char	buf[32];
+    char        *b = buf + sizeof(buf) - 1;
+
+    *b-- = '\0';
+    for (; 0 < num; num /= 10, b--) {
+        *b = (num % 10) + '0';
+    }
+    b++;
+    if ('\0' == *b) {
+	b--;
+	*b = '0';
+    }
+    for (; '\0' != *b; b++, s++) {
+	*s = *b;
+    }
+    return s;
+}
+
 inline static void
 leaf_init(Leaf leaf, char *str, int type) {
     leaf->next = 0;
     leaf->key = 0;
+    leaf->index = -1;
     leaf->str = str;
     leaf->elements = 0;
     leaf->type = type;
@@ -478,7 +503,7 @@ read_array(ParseInfo pi) {
     Leaf	a = leaf_new(pi->fast, pi->s, T_ARRAY);
     Leaf	e;
     char	*end;
-    size_t	cnt = 0;
+    int		cnt = 0;
 
     pi->s++;
     next_non_white(pi);
@@ -664,10 +689,17 @@ read_quoted_value(ParseInfo pi) {
 
 inline static void
 fast_init(Fast f) {
-    f->where = f->where_array;
+    f->where_path = f->where_array;
+    f->where = f->where_path;
     f->where_len = 0;
     *f->where = 0;
     f->doc = 0;
+    f->self = Qundef;
+#ifdef HAVE_RUBY_ENCODING_H
+    f->encoding = ('\0' == *oj_default_options.encoding) ? 0 : rb_enc_find(oj_default_options.encoding);
+#else
+    f->encoding = 0;
+#endif
     f->batches = &f->batch0;
     f->batch0.next = 0;
     f->batch0.next_avail = 0;
@@ -684,20 +716,30 @@ fast_free(Fast f) {
 		xfree(b);
 	    }
 	}
-	if (f->where_array != f->where) {
-	    free(f->where);
+	if (f->where_array != f->where_path) {
+	    free(f->where_path);
 	}
 	//xfree(f);
     }
 }
 
 static VALUE
+protect_open_proc(VALUE x) {
+    ParseInfo	pi = (ParseInfo)x;
+
+    pi->fast->doc = read_next(pi); // parse
+    *pi->fast->where = pi->fast->doc;
+    pi->fast->where = pi->fast->where_path;
+    return rb_yield(pi->fast->self); // caller processing
+}
+
+static VALUE
 fast_open(VALUE clas, VALUE str) {
     struct _ParseInfo	pi;
     VALUE		result = Qnil;
-    VALUE		fobj;
     size_t		len;
     struct _Fast	fast;
+    int			ex = 0;
 
     Check_Type(str, T_STRING);
     if (!rb_block_given_p()) {
@@ -708,21 +750,17 @@ fast_open(VALUE clas, VALUE str) {
     //pi.str = ALLOC_N(char, len + 1);
     memcpy(pi.str, StringValuePtr(str), len + 1);
     pi.s = pi.str;
-    fobj = rb_obj_alloc(clas);
     fast_init(&fast);
-#ifdef HAVE_RUBY_ENCODING_H
-    fast.encoding = ('\0' == *oj_default_options.encoding) ? 0 : rb_enc_find(oj_default_options.encoding);
-#else
-    fast.encoding = 0;
-#endif
     pi.fast = &fast;
-    DATA_PTR(fobj) = pi.fast;
-    pi.fast->doc = read_next(&pi); // parse
-    result = rb_yield(fobj); // caller processing
-    DATA_PTR(fobj) = 0;
+    fast.self = rb_obj_alloc(clas);
+    DATA_PTR(fast.self) = pi.fast;
+    result = rb_protect(protect_open_proc, (VALUE)&pi, &ex);
+    DATA_PTR(fast.self) = 0;
     fast_free(pi.fast);
     //xfree(pi.str);
-    
+    if (0 != ex) {
+	rb_jump_tag(ex);
+    }
     return result;
 }
 
@@ -730,21 +768,119 @@ static VALUE
 fast_where(VALUE self) {
     Fast	f = DATA_PTR(self);
 
-    if (0 == *f->where) {
+    if (0 == *f->where_path || f->where == f->where_path) {
 	return oj_slash_string;
     } else {
-	// TBD build path from where
+	Leaf	*lp;
+	Leaf	leaf;
+	size_t	size = 3; // leading / and terminating \0
+	char	*path;
+	char	*p;
+
+	for (lp = f->where_path; lp <= f->where; lp++) {
+	    leaf = *lp;
+	    if (0 != leaf->key) {
+		size += strlen((*lp)->key) + 1;
+	    } else if (0 <= leaf->index) {
+		size += ((*lp)->index < 100) ? 3 : 11;
+	    }
+	}
+	path = ALLOCA_N(char, size);
+	p = path;
+	for (lp = f->where_path; lp <= f->where; lp++) {
+	    leaf = *lp;
+	    if (0 != leaf->key) {
+		p = stpcpy(p, (*lp)->key);
+	    } else if (0 <= leaf->index) {
+		p = ulong_fill(p, (*lp)->index + 1);
+	    }
+	    *p++ = '/';
+	}
+	*--p = '\0';
+	return rb_str_new2(path);
     }
-    return Qnil;
+}
+
+static VALUE
+fast_local_key(VALUE self) {
+    Fast	f = DATA_PTR(self);
+    Leaf	leaf = *f->where;
+    VALUE	key = Qnil;
+
+    if (0 != leaf->key) {
+	key = rb_str_new2(leaf->key);
+#ifdef HAVE_RUBY_ENCODING_H
+	if (0 != f->encoding) {
+	    rb_enc_associate(key, f->encoding);
+	}
+#endif
+    } else if (0 <= leaf->index) {
+	key = LONG2NUM(leaf->index);
+    }
+    return key;
 }
 
 static VALUE
 fast_home(VALUE self) {
     Fast	f = DATA_PTR(self);
 
-    *f->where = 0;
+    *f->where_path = f->doc;
+    f->where = f->where_path;
 
     return oj_slash_string;
+}
+
+static Leaf
+get_leaf(Leaf leaf, const char *path) {
+    if ('\0' != *path) {
+	if ('.' == *path && '.' == *(path + 1)) {
+	    // TBD go up
+	} else if (0 != leaf->elements) {
+	    Leaf	first = leaf->elements->next;
+	    Leaf	e = first;
+	    int		type = leaf->type;
+
+	    leaf = 0;
+	    if (T_ARRAY == type) {
+		int	cnt = 0;
+
+		for (; '0' <= *path && *path <= '9'; path++) {
+		    cnt = cnt * 10 + (*path - '0');
+		}
+		if ('/' == *path) {
+		    path++;
+		}
+		do {
+		    if (1 >= cnt) {
+			leaf = get_leaf(e, path);
+			break;
+		    }
+		    cnt--;
+		    e = e->next;
+		} while (e != first);
+	    } else if (T_HASH == type) {
+		const char	*key = path;
+		const char	*slash = strchr(path, '/');
+		int		klen;
+
+		if (0 == slash) {
+		    klen = (int)strlen(key);
+		    path += klen;
+		} else {
+		    klen = (int)(slash - key);
+		    path += klen + 1;
+		}
+		do {
+		    if (0 == strncmp(key, e->key, klen) && '\0' == e->key[klen]) {
+			leaf = get_leaf(e, path);
+			break;
+		    }
+		    e = e->next;
+		} while (e != first);
+	    }
+	}
+    }
+    return leaf;
 }
 
 static VALUE
@@ -773,7 +909,7 @@ fast_type(int argc, VALUE *argv, VALUE self) {
 }
 
 static VALUE
-fast_value_at(int argc, VALUE *argv, VALUE self) {
+fast_fetch(int argc, VALUE *argv, VALUE self) {
     Fast	f = DATA_PTR(self);
     VALUE	val = Qnil;
     const char	*path = 0;
@@ -786,23 +922,112 @@ fast_value_at(int argc, VALUE *argv, VALUE self) {
 	}
     }
     if (0 != f->doc) {
-	Leaf	leaf = f->doc;
+	Leaf	leaf = *f->where;
 
-	// TBD use path
-	val = leaf_value(f, leaf);
+	if (0 != path) {
+	    if ('/' == *path) {
+		leaf = f->doc;
+		path++;
+	    }
+	    leaf = get_leaf(leaf, path);
+	}
+	if (0 != leaf) {
+	    val = leaf_value(f, leaf);
+	}
     }
     return val;
 }
 
 static VALUE
-fast_locate(int argc, VALUE *argv, VALUE self) {
-    // TBD
+fast_each_leaf(VALUE self, VALUE str) {
+    //Fast	f = DATA_PTR(self);
+
     return Qnil;
 }
 
+static int
+move_step(Fast f, const char *path, int loc) {
+    // TBD need to grow path if necessary
+    if ('\0' == *path) {
+	loc = 0;
+    } else {
+	Leaf	leaf = *f->where;
+
+	if (0 == f->where || 0 == (leaf = *f->where)) {
+	    printf("*** Internal error at %s\n", path);
+	    return loc;
+	}
+	if ('.' == *path && '.' == *(path + 1)) {
+	    // TBD go up
+	} else if (0 != leaf->elements) {
+	    Leaf	first = leaf->elements->next;
+	    Leaf	e = first;
+
+	    if (T_ARRAY == leaf->type) {
+		int	cnt = 0;
+
+		for (; '0' <= *path && *path <= '9'; path++) {
+		    cnt = cnt * 10 + (*path - '0');
+		}
+		if ('/' == *path) {
+		    path++;
+		} else if ('\0' != *path) {
+		    return loc;
+		}
+		do {
+		    if (1 >= cnt) {
+			f->where++;
+			*f->where = e;
+			loc = move_step(f, path, loc + 1);
+			// TBD backout change to where if loc is not 0
+			break;
+		    }
+		    cnt--;
+		    e = e->next;
+		} while (e != first);
+	    } else if (T_HASH == leaf->type) {
+		const char	*key = path;
+		const char	*slash = strchr(path, '/');
+		int		klen;
+
+		if (0 == slash) {
+		    klen = (int)strlen(key);
+		    path += klen;
+		} else {
+		    klen = (int)(slash - key);
+		    path += klen + 1;
+		}
+		do {
+		    if (0 == strncmp(key, e->key, klen) && '\0' == e->key[klen]) {
+			f->where++;
+			*f->where = e;
+			loc = move_step(f, path, loc + 1);
+			// TBD backout change to where if loc is not 0
+			break;
+		    }
+		    e = e->next;
+		} while (e != first);
+	    }
+	}
+    }
+    return loc;
+}
+
 static VALUE
-fast_move(int argc, VALUE *argv, VALUE self) {
-    // TBD
+fast_move(VALUE self, VALUE str) {
+    Fast	f = DATA_PTR(self);
+    const char	*path;
+    int		loc;
+
+    Check_Type(str, T_STRING);
+    path = StringValuePtr(str);
+    if ('/' == *path) {
+	f->where = f->where_path;
+	path++;
+    }
+    if (0 != (loc = move_step(f, path, 1))) {
+	rb_raise(rb_eArgError, "Failed to locate element %d of the path %s.", loc, path);
+    }
     return Qnil;
 }
 
@@ -813,14 +1038,14 @@ fast_each_branch(int argc, VALUE *argv, VALUE self) {
 }
 
 static void
-each_leaf(Fast f, Leaf leaf, VALUE *args) {
+each_value(Fast f, Leaf leaf, VALUE *args) {
     if (T_ARRAY == leaf->type || T_HASH == leaf->type) {
 	if (0 != leaf->elements) {
 	    Leaf	first = leaf->elements->next;
 	    Leaf	e = first;
 
 	    do {
-		each_leaf(f, e, args);
+		each_value(f, e, args);
 		e = e->next;
 	    } while (e != first);
 	}
@@ -831,14 +1056,14 @@ each_leaf(Fast f, Leaf leaf, VALUE *args) {
 }
 
 static VALUE
-fast_each_leaf(int argc, VALUE *argv, VALUE self) {
+fast_each_value(int argc, VALUE *argv, VALUE self) {
     if (rb_block_given_p()) {
 	Fast	f = DATA_PTR(self);
 	VALUE	args[2];
 
 	args[0] = self;
 	args[1] = Qnil;
-	each_leaf(f, f->doc, args);
+	each_value(f, f->doc, args);
     }
     return Qnil;
 }
@@ -861,12 +1086,13 @@ oj_init_fast() {
     rb_define_singleton_method(oj_fast_class, "open", fast_open, 1);
     rb_define_singleton_method(oj_fast_class, "parse", fast_open, 1);
     rb_define_method(oj_fast_class, "where?", fast_where, 0);
+    rb_define_method(oj_fast_class, "local_key", fast_local_key, 0);
     rb_define_method(oj_fast_class, "home", fast_home, 0);
     rb_define_method(oj_fast_class, "type", fast_type, -1);
-    rb_define_method(oj_fast_class, "value_at", fast_value_at, -1);
-    rb_define_method(oj_fast_class, "locate", fast_locate, -1);
-    rb_define_method(oj_fast_class, "move", fast_move, -1);
+    rb_define_method(oj_fast_class, "fetch", fast_fetch, -1);
+    rb_define_method(oj_fast_class, "each_leaf", fast_each_leaf, 1);
+    rb_define_method(oj_fast_class, "move", fast_move, 1);
     rb_define_method(oj_fast_class, "each_branch", fast_each_branch, -1);
-    rb_define_method(oj_fast_class, "each_leaf", fast_each_leaf, -1);
+    rb_define_method(oj_fast_class, "each_value", fast_each_value, -1);
     rb_define_method(oj_fast_class, "dump", fast_dump, 0);
 }
