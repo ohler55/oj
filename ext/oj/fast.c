@@ -39,7 +39,7 @@
 #define MAX_STACK	64
 
 // TBD combine key and index
-// TBD combine elements and str
+// TBD combine elements and str and value
 // TBD add leaf_type and shorten size of type to 1 or two bytes
 typedef struct _Leaf {
     struct _Leaf	*next;
@@ -187,7 +187,7 @@ leaf_init(Leaf leaf, char *str, int type) {
     leaf->value = Qundef;
 }
 
-static Leaf
+inline static Leaf
 leaf_new(Doc doc, char *str, int type) {
     Leaf	leaf;
 
@@ -205,7 +205,7 @@ leaf_new(Doc doc, char *str, int type) {
     return leaf;
 }
 
-static void
+inline static void
 leaf_append_element(Leaf parent, Leaf element) {
     if (0 == parent->elements) {
 	parent->elements = element;
