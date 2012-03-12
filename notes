@@ -42,6 +42,14 @@
 
 
 - fast
+
+- get_leaf
+ - start at top and follow where_path to where, then start get
+  - need current position and last position (leaf)
+  - loc is 0 till found then it becomes 1
+  - return indicator of moving back up from child call
+   - negate loc?
+
  - perf on where? and value_at
   - value_at -> fetch
    - compare to x.fetch('abc', {}).fetch()

@@ -66,7 +66,7 @@ def capture_error(tag, orig, load_key, dump_key, &blk)
 end
 
 # Verify that all packages dump and load correctly and return the same Object as the original.
-capture_error('Oj:fast', $obj, 'load', 'dump') { |o| Oj::Fast.open(Oj.dump(o, :mode => :strict)) { |f| f.fetch() } }
+capture_error('Oj::Doc', $obj, 'load', 'dump') { |o| Oj::Doc.open(Oj.dump(o, :mode => :strict)) { |f| f.fetch() } }
 capture_error('Yajl', $obj, 'encode', 'parse') { |o| Yajl::Parser.parse(Yajl::Encoder.encode(o)) }
 capture_error('JSON::Ext', $obj, 'generate', 'parse') { |o| JSON.generator = JSON::Ext::Generator; JSON::Ext::Parser.new(JSON.generate(o)).parse }
 
@@ -77,7 +77,7 @@ end
 puts '-' * 80
 puts "Parse Performance"
 perf = Perf.new()
-perf.add('Oj:fast', 'parse') { Oj::Fast.open($json) {|f| } } unless $failed.has_key?('Oj:fast')
+perf.add('Oj::Doc', 'parse') { Oj::Doc.open($json) {|f| } } unless $failed.has_key?('Oj::Doc')
 perf.add('Yajl', 'parse') { Yajl::Parser.parse($json) } unless $failed.has_key?('Yajl')
 perf.add('JSON::Ext', 'parse') { JSON::Ext::Parser.new($json).parse } unless $failed.has_key?('JSON::Ext')
 perf.run($iter)
@@ -87,7 +87,7 @@ if 0 < $gets
   puts '-' * 80
   puts "Parse and get all values Performance"
   perf = Perf.new()
-  perf.add('Oj:fast', 'parse') { Oj::Fast.open($json) {|f| $gets.times { f.each_value() {} } } } unless $failed.has_key?('Oj:fast')
+  perf.add('Oj::Doc', 'parse') { Oj::Doc.open($json) {|f| $gets.times { f.each_value() {} } } } unless $failed.has_key?('Oj::Doc')
   perf.add('Yajl', 'parse') { $gets.times { dig(Yajl::Parser.parse($json)) {} } } unless $failed.has_key?('Yajl')
   perf.add('JSON::Ext', 'parse') { $gets.times { dig(JSON::Ext::Parser.new($json).parse) {} } } unless $failed.has_key?('JSON::Ext')
   perf.run($iter)
@@ -98,7 +98,7 @@ if 0 < $fetch
   puts '-' * 80
   puts "fetch nested Performance"
   json_hash = Oj.load($json, :mode => :strict)
-  Oj::Fast.open($json) do |fast|
+  Oj::Doc.open($json) do |fast|
     #puts "*** C fetch: #{fast.fetch('/d/2/4/1')}"
     #puts "*** Ruby fetch: #{json_hash.fetch('d', []).fetch(1, []).fetch(3, []).fetch(0, nil)}"
     perf = Perf.new()

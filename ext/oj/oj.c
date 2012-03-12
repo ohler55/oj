@@ -402,7 +402,7 @@ void Init_oj() {
     oj_cache_new(&oj_class_cache);
     oj_cache_new(&oj_attr_cache);
 
-    oj_init_fast();
+    oj_init_doc();
 }
 
 void
