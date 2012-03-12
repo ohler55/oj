@@ -36,12 +36,15 @@
 #include "ruby.h"
 #include "oj.h"
 
-#define INIT_PATH_DEPTH	32
+#define MAX_STACK	64
 
+// TBD combine key and index
+// TBD combine elements and str
+// TBD add leaf_type and shorten size of type to 1 or two bytes
 typedef struct _Leaf {
     struct _Leaf	*next;
     const char		*key;      // hash key
-    int			index;     // array index
+    size_t		index;     // array index, 0 is not set
     char		*str;      // pointer to location in json string
     struct _Leaf	*elements; // array and hash elements
     int			type;
@@ -59,9 +62,8 @@ typedef struct _Batch {
 
 typedef struct _Doc {
     Leaf		data;
-    Leaf		*where_path; // points to head of path
     Leaf		*where;      // points to current location
-    size_t		where_len;   // length of allocated if longer than where_array
+    Leaf		where_path[MAX_STACK]; // points to head of path
 #ifdef HAVE_RUBY_ENCODING_H
     rb_encoding		*encoding;
 #else
@@ -69,7 +71,8 @@ typedef struct _Doc {
 #endif
     VALUE		self;
     Batch		batches;
-    Leaf		where_array[INIT_PATH_DEPTH]; // initial storage for where
+    //Leaf		where_array[MAX_STACK];
+    //size_t		where_len;   // length of allocated if longer than where_array
     struct _Batch	batch0;
 } *Doc;
 
@@ -106,13 +109,14 @@ static VALUE	doc_open(VALUE clas, VALUE str);
 static VALUE	doc_where(VALUE self);
 static VALUE	doc_local_key(VALUE self);
 static VALUE	doc_home(VALUE self);
-static Leaf	get_leaf(Leaf leaf, const char *path);
+static Leaf	get_doc_leaf(Doc doc, const char *path);
+static Leaf	get_leaf(Leaf *stack, Leaf *lp, const char *path);
 static VALUE	doc_type(int argc, VALUE *argv, VALUE self);
 static VALUE	doc_fetch(int argc, VALUE *argv, VALUE self);
-static VALUE	doc_each_leaf(VALUE self, VALUE str);
+static VALUE	doc_each_leaf(int argc, VALUE *argv, VALUE self);
 static VALUE	doc_move(VALUE self, VALUE str);
 static VALUE	doc_each_branch(int argc, VALUE *argv, VALUE self);
-static void	each_value(Doc doc, Leaf leaf, VALUE *args);
+static void	each_value(Doc doc, Leaf leaf);
 static VALUE	doc_each_value(int argc, VALUE *argv, VALUE self);
 static VALUE	doc_dump(VALUE self);
 
@@ -176,7 +180,7 @@ inline static void
 leaf_init(Leaf leaf, char *str, int type) {
     leaf->next = 0;
     leaf->key = 0;
-    leaf->index = -1;
+    leaf->index = 0;
     leaf->str = str;
     leaf->elements = 0;
     leaf->type = type;
@@ -517,7 +521,8 @@ read_array(ParseInfo pi) {
 	if (0 == (e = read_next(pi))) {
 	    raise_error("unexpected character", pi->str, pi->s);
 	}
-	e->index = cnt++;
+	cnt++;
+	e->index = cnt;
 	leaf_append_element(a, e);
 	end = pi->s;
 	next_non_white(pi);
@@ -690,9 +695,9 @@ read_quoted_value(ParseInfo pi) {
 
 inline static void
 doc_init(Doc doc) {
-    doc->where_path = doc->where_array;
+    //doc->where_path = doc->where_array;
+    //doc->where_len = 0;
     doc->where = doc->where_path;
-    doc->where_len = 0;
     *doc->where = 0;
     doc->data = 0;
     doc->self = Qundef;
@@ -717,9 +722,11 @@ doc_free(Doc doc) {
 		xfree(b);
 	    }
 	}
+	/*
 	if (doc->where_array != doc->where_path) {
 	    free(doc->where_path);
 	}
+	*/
 	//xfree(f);
     }
 }
@@ -782,7 +789,7 @@ doc_where(VALUE self) {
 	    leaf = *lp;
 	    if (0 != leaf->key) {
 		size += strlen((*lp)->key) + 1;
-	    } else if (0 <= leaf->index) {
+	    } else if (0 < leaf->index) {
 		size += ((*lp)->index < 100) ? 3 : 11;
 	    }
 	}
@@ -792,8 +799,8 @@ doc_where(VALUE self) {
 	    leaf = *lp;
 	    if (0 != leaf->key) {
 		p = stpcpy(p, (*lp)->key);
-	    } else if (0 <= leaf->index) {
-		p = ulong_fill(p, (*lp)->index + 1);
+	    } else if (0 < leaf->index) {
+		p = ulong_fill(p, (*lp)->index);
 	    }
 	    *p++ = '/';
 	}
@@ -815,7 +822,7 @@ doc_local_key(VALUE self) {
 	    rb_enc_associate(key, doc->encoding);
 	}
 #endif
-    } else if (0 <= leaf->index) {
+    } else if (0 < leaf->index) {
 	key = LONG2NUM(leaf->index);
     }
     return key;
@@ -832,16 +839,49 @@ doc_home(VALUE self) {
 }
 
 static Leaf
-get_leaf(Leaf leaf, const char *path) {
+get_doc_leaf(Doc doc, const char *path) {
+    Leaf	leaf = *doc->where;
+
+    if (0 != doc->data && 0 != path) {
+	Leaf	stack[MAX_STACK];
+	Leaf	*lp;
+
+	if ('/' == *path) {
+	    path++;
+	    *stack = doc->data;
+	    lp = stack;
+	} else {
+	    size_t	cnt = doc->where - doc->where_path;
+
+	    memcpy(stack, doc->where_path, sizeof(Leaf) * cnt);
+	    lp = stack + cnt;
+	}
+	return get_leaf(stack, lp, path);
+    }
+    return leaf;
+}
+
+static Leaf
+get_leaf(Leaf *stack, Leaf *lp, const char *path) {
+    Leaf	leaf = *lp;
+
     if ('\0' != *path) {
 	if ('.' == *path && '.' == *(path + 1)) {
-	    
-	    //return ;
+	    path += 2;
+	    if ('/' == *path) {
+		path++;
+	    }
+	    if (stack < lp) {
+		leaf = get_leaf(stack, lp - 1, path);
+	    } else {
+		return 0;
+	    }
 	} else if (0 != leaf->elements) {
 	    Leaf	first = leaf->elements->next;
 	    Leaf	e = first;
 	    int		type = leaf->type;
 
+	    // TBD fail if stack too deep
 	    leaf = 0;
 	    if (T_ARRAY == type) {
 		int	cnt = 0;
@@ -854,7 +894,9 @@ get_leaf(Leaf leaf, const char *path) {
 		}
 		do {
 		    if (1 >= cnt) {
-			leaf = get_leaf(e, path);
+			lp++;
+			*lp = e;
+			leaf = get_leaf(stack, lp, path);
 			break;
 		    }
 		    cnt--;
@@ -874,7 +916,9 @@ get_leaf(Leaf leaf, const char *path) {
 		}
 		do {
 		    if (0 == strncmp(key, e->key, klen) && '\0' == e->key[klen]) {
-			leaf = get_leaf(e, path);
+			lp++;
+			*lp = e;
+			leaf = get_leaf(stack, lp, path);
 			break;
 		    }
 		    e = e->next;
@@ -888,6 +932,7 @@ get_leaf(Leaf leaf, const char *path) {
 static VALUE
 doc_type(int argc, VALUE *argv, VALUE self) {
     Doc		doc = DATA_PTR(self);
+    Leaf	leaf;
     const char	*path = 0;
     VALUE	type = Qnil;
 
@@ -895,28 +940,17 @@ doc_type(int argc, VALUE *argv, VALUE self) {
 	Check_Type(*argv, T_STRING);
 	path = StringValuePtr(*argv);
     }
-    if (0 != doc->data) {
-	Leaf	leaf = *doc->where;
-
-	if (0 != path) {
-	    if ('/' == *path) {
-		leaf = doc->data;
-		path++;
-	    }
-	    leaf = get_leaf(leaf, path);
-	}
-	if (0 != leaf) {
-	    switch (leaf->type) {
-	    case T_NIL:	type = rb_cNilClass;	break;
-	    case T_TRUE:	type = rb_cTrueClass;	break;
-	    case T_FALSE:	type = rb_cFalseClass;	break;
-	    case T_STRING:	type = rb_cString;	break;
-	    case T_FIXNUM:	type = rb_cFixnum;	break;
-	    case T_FLOAT:	type = rb_cFloat;	break;
-	    case T_ARRAY:	type = rb_cArray;	break;
-	    case T_HASH:	type = rb_cHash;	break;
-	    default:				break;
-	    }
+    if (0 != (leaf = get_doc_leaf(doc, path))) {
+	switch (leaf->type) {
+	case T_NIL:	type = rb_cNilClass;	break;
+	case T_TRUE:	type = rb_cTrueClass;	break;
+	case T_FALSE:	type = rb_cFalseClass;	break;
+	case T_STRING:	type = rb_cString;	break;
+	case T_FIXNUM:	type = rb_cFixnum;	break;
+	case T_FLOAT:	type = rb_cFloat;	break;
+	case T_ARRAY:	type = rb_cArray;	break;
+	case T_HASH:	type = rb_cHash;	break;
+	default:				break;
 	}
     }
     return type;
@@ -925,6 +959,7 @@ doc_type(int argc, VALUE *argv, VALUE self) {
 static VALUE
 doc_fetch(int argc, VALUE *argv, VALUE self) {
     Doc		doc = DATA_PTR(self);
+    Leaf	leaf;
     VALUE	val = Qnil;
     const char	*path = 0;
 
@@ -935,25 +970,14 @@ doc_fetch(int argc, VALUE *argv, VALUE self) {
 	    val = argv[1];
 	}
     }
-    if (0 != doc->data) {
-	Leaf	leaf = *doc->where;
-
-	if (0 != path) {
-	    if ('/' == *path) {
-		leaf = doc->data;
-		path++;
-	    }
-	    leaf = get_leaf(leaf, path);
-	}
-	if (0 != leaf) {
-	    val = leaf_value(doc, leaf);
-	}
+    if (0 != (leaf = get_doc_leaf(doc, path))) {
+	val = leaf_value(doc, leaf);
     }
     return val;
 }
 
 static VALUE
-doc_each_leaf(VALUE self, VALUE str) {
+doc_each_leaf(int argc, VALUE *argv, VALUE self) {
     //Doc	f = DATA_PTR(self);
 
     return Qnil;
@@ -961,7 +985,7 @@ doc_each_leaf(VALUE self, VALUE str) {
 
 static int
 move_step(Doc doc, const char *path, int loc) {
-    // TBD need to grow path if necessary
+    // TBD raise if too deep
     if ('\0' == *path) {
 	loc = 0;
     } else {
@@ -1068,42 +1092,83 @@ doc_move(VALUE self, VALUE str) {
 
 static VALUE
 doc_each_branch(int argc, VALUE *argv, VALUE self) {
-    // TBD
+    if (rb_block_given_p()) {
+	Leaf		save_path[MAX_STACK];
+	Doc		doc = DATA_PTR(self);
+	const char	*path = 0;
+	size_t		wlen;
+
+	wlen = doc->where - doc->where_path;
+	memcpy(save_path, doc->where_path, sizeof(Leaf) * wlen);
+	if (1 <= argc) {
+	    Check_Type(*argv, T_STRING);
+	    path = StringValuePtr(*argv);
+	    if ('/' == *path) {
+		doc->where = doc->where_path;
+		path++;
+	    }
+	    if (0 != move_step(doc, path, 1)) {
+		memcpy(doc->where_path, save_path, sizeof(Leaf) * wlen);
+		return Qnil;
+	    }
+	}
+	if (0 != (*doc->where)->elements) {
+	    Leaf	first = (*doc->where)->elements->next;
+	    Leaf	e = first;
+	    VALUE	args[1];
+
+	    *args = self;
+	    doc->where++;
+	    do {
+		*doc->where = e;
+		rb_yield_values2(1, args);
+		e = e->next;
+	    } while (e != first);
+	}
+	memcpy(doc->where_path, save_path, sizeof(Leaf) * wlen);
+    }
     return Qnil;
 }
 
 static void
-each_value(Doc doc, Leaf leaf, VALUE *args) {
+each_value(Doc doc, Leaf leaf) {
     if (T_ARRAY == leaf->type || T_HASH == leaf->type) {
 	if (0 != leaf->elements) {
 	    Leaf	first = leaf->elements->next;
 	    Leaf	e = first;
 
 	    do {
-		each_value(doc, e, args);
+		each_value(doc, e);
 		e = e->next;
 	    } while (e != first);
 	}
     } else {
-	args[1] = leaf_value(doc, leaf);
-	rb_yield_values2(2, args);
+	VALUE	args[1];
+
+	*args = leaf_value(doc, leaf);
+	rb_yield_values2(1, args);
     }
 }
 
 static VALUE
 doc_each_value(int argc, VALUE *argv, VALUE self) {
     if (rb_block_given_p()) {
-	Doc	doc = DATA_PTR(self);
-	VALUE	args[2];
+	Doc		doc = DATA_PTR(self);
+	const char	*path = 0;
+	Leaf		leaf;
 
-	args[0] = self;
-	args[1] = Qnil;
-	each_value(doc, doc->data, args);
+	if (1 <= argc) {
+	    Check_Type(*argv, T_STRING);
+	    path = StringValuePtr(*argv);
+	}
+	if (0 != (leaf = get_doc_leaf(doc, path))) {
+	    each_value(doc, leaf);
+	}
     }
     return Qnil;
 }
 
-// TBD improve later to be more direct for higher performance
+// TBD improve later to be more direct for higher performance, also make relative
 static VALUE
 doc_dump(VALUE self) {
     Doc		doc = DATA_PTR(self);
@@ -1125,7 +1190,7 @@ oj_init_doc() {
     rb_define_method(oj_doc_class, "home", doc_home, 0);
     rb_define_method(oj_doc_class, "type", doc_type, -1);
     rb_define_method(oj_doc_class, "fetch", doc_fetch, -1);
-    rb_define_method(oj_doc_class, "each_leaf", doc_each_leaf, 1);
+    rb_define_method(oj_doc_class, "each_leaf", doc_each_leaf, -1);
     rb_define_method(oj_doc_class, "move", doc_move, 1);
     rb_define_method(oj_doc_class, "each_branch", doc_each_branch, -1);
     rb_define_method(oj_doc_class, "each_value", doc_each_value, -1);
