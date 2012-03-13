@@ -39,3 +39,49 @@
 - dump
  - multibyte group encoding
  - object and other types of object dumping
+
+
+- fast
+ - dump
+  - support path
+  - native
+ - each_leaf
+  - same as each branch but deeper
+ - make sure stack is not exceeded
+ - performance tweak
+  - make Leaf smaller  
+
+ - example
+  - contacts
+   - pull apart input file with multiple contacts and write individual files
+   - phone book get only name and phone
+
+ - implement dump, useful for debug
+
+ - build C structs for parts
+  - linked lists (maybe hash later)
+  - types
+   - hash linked list of others
+   - array
+   - key_value
+   - value (all basic types)
+ - keep one top node work walking tree
+ - parse by walking and getting all as strings except keep track of types
+  - as asked for, convert, create ruby obj, cache, return
+  - need some way to tell when memory can be released
+   - ALLOC_N, xfree, Data_Wrap_Struct
+ 
+ 
+    # String paths are used to identify one or more elements of a JSON. The
+    # paths used are similar to XPath but simple JSONPaths can also be used as
+    # long as they start with an @ or a $. The Fast native path format will be
+    # more efficient in this class.
+    #
+    #   /: separator
+    #   / - top
+    #   . - current
+    #   .. parent
+    #   // recursive decent
+    #   * all branches
+    #   | or
+    #   [] range like with 

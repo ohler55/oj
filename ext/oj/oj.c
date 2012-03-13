@@ -1,5 +1,6 @@
 /* oj.c
- * Copyright (c) 2011, Peter Ohler
+ * Copyright (c) 2012, Peter Ohler
+ *
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -60,6 +61,8 @@ VALUE	oj_bag_class;
 VALUE	oj_struct_class;
 VALUE	oj_time_class;
 
+VALUE	oj_slash_string;
+
 static VALUE	auto_define_sym;
 static VALUE	circular_sym;
 static VALUE	compat_sym;
@@ -73,7 +76,7 @@ static VALUE	strict_sym;
 Cache   oj_class_cache = 0;
 Cache   oj_attr_cache = 0;
 
-static struct _Options  default_options = {
+struct _Options	oj_default_options = {
     { '\0' },		// encoding
     0,			// indent
     No,			// circular
@@ -94,13 +97,13 @@ static struct _Options  default_options = {
 static VALUE
 get_def_opts(VALUE self) {
     VALUE       opts = rb_hash_new();
-    int         elen = (int)strlen(default_options.encoding);
+    int         elen = (int)strlen(oj_default_options.encoding);
 
-    rb_hash_aset(opts, encoding_sym, (0 == elen) ? Qnil : rb_str_new(default_options.encoding, elen));
-    rb_hash_aset(opts, indent_sym, INT2FIX(default_options.indent));
-    rb_hash_aset(opts, circular_sym, (Yes == default_options.circular) ? Qtrue : ((No == default_options.circular) ? Qfalse : Qnil));
-    rb_hash_aset(opts, auto_define_sym, (Yes == default_options.auto_define) ? Qtrue : ((No == default_options.auto_define) ? Qfalse : Qnil));
-    switch (default_options.mode) {
+    rb_hash_aset(opts, encoding_sym, (0 == elen) ? Qnil : rb_str_new(oj_default_options.encoding, elen));
+    rb_hash_aset(opts, indent_sym, INT2FIX(oj_default_options.indent));
+    rb_hash_aset(opts, circular_sym, (Yes == oj_default_options.circular) ? Qtrue : ((No == oj_default_options.circular) ? Qfalse : Qnil));
+    rb_hash_aset(opts, auto_define_sym, (Yes == oj_default_options.auto_define) ? Qtrue : ((No == oj_default_options.auto_define) ? Qfalse : Qnil));
+    switch (oj_default_options.mode) {
     case StrictMode:	rb_hash_aset(opts, mode_sym, strict_sym);	break;
     case CompatMode:	rb_hash_aset(opts, mode_sym, compat_sym);	break;
     case NullMode:	rb_hash_aset(opts, mode_sym, null_sym);		break;
@@ -130,8 +133,8 @@ get_def_opts(VALUE self) {
 static VALUE
 set_def_opts(VALUE self, VALUE opts) {
     struct _YesNoOpt    ynos[] = {
-        { circular_sym, &default_options.circular },
-        { auto_define_sym, &default_options.auto_define },
+        { circular_sym, &oj_default_options.circular },
+        { auto_define_sym, &oj_default_options.auto_define },
         { Qnil, 0 }
     };
     YesNoOpt    o;
@@ -143,29 +146,29 @@ set_def_opts(VALUE self, VALUE opts) {
     if (Qundef == v) {
 	// no change
     } else if (Qnil == v) {
-        *default_options.encoding = '\0';
+        *oj_default_options.encoding = '\0';
     } else {
         Check_Type(v, T_STRING);
-        strncpy(default_options.encoding, StringValuePtr(v), sizeof(default_options.encoding) - 1);
+        strncpy(oj_default_options.encoding, StringValuePtr(v), sizeof(oj_default_options.encoding) - 1);
     }
 
     v = rb_hash_aref(opts, indent_sym);
     if (Qnil != v) {
         Check_Type(v, T_FIXNUM);
-        default_options.indent = FIX2INT(v);
+        oj_default_options.indent = FIX2INT(v);
     }
 
     v = rb_hash_lookup2(opts, mode_sym, Qundef);
     if (Qundef == v || Qnil == v) {
 	// ignore
     } else if (object_sym == v) {
-        default_options.mode = ObjectMode;
+        oj_default_options.mode = ObjectMode;
     } else if (strict_sym == v) {
-        default_options.mode = StrictMode;
+        oj_default_options.mode = StrictMode;
     } else if (compat_sym == v) {
-        default_options.mode = CompatMode;
+        oj_default_options.mode = CompatMode;
     } else if (null_sym == v) {
-        default_options.mode = NullMode;
+        oj_default_options.mode = NullMode;
     } else {
         rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, or :null.\n");
     }
@@ -243,7 +246,7 @@ parse_options(VALUE ropts, Options copts) {
 static VALUE
 load(char *json, int argc, VALUE *argv, VALUE self) {
     VALUE		obj;
-    struct _Options	options = default_options;
+    struct _Options	options = oj_default_options;
 
     if (1 == argc) {
 	parse_options(*argv, &options);
@@ -311,7 +314,7 @@ load_file(int argc, VALUE *argv, VALUE self) {
 static VALUE
 dump(int argc, VALUE *argv, VALUE self) {
     char                *json;
-    struct _Options     copts = default_options;
+    struct _Options     copts = oj_default_options;
     VALUE               rstr;
     
     if (2 == argc) {
@@ -343,7 +346,7 @@ dump(int argc, VALUE *argv, VALUE self) {
  */
 static VALUE
 to_file(int argc, VALUE *argv, VALUE self) {
-    struct _Options     copts = default_options;
+    struct _Options     copts = oj_default_options;
     
     if (3 == argc) {
         parse_options(argv[2], &copts);
@@ -393,10 +396,14 @@ void Init_oj() {
     object_sym = ID2SYM(rb_intern("object"));		rb_ary_push(keep, object_sym);
     strict_sym = ID2SYM(rb_intern("strict"));		rb_ary_push(keep, strict_sym);
 
-    default_options.mode = ObjectMode;
+    oj_slash_string = rb_str_new2("/");			rb_ary_push(keep, oj_slash_string);
+
+    oj_default_options.mode = ObjectMode;
 
     oj_cache_new(&oj_class_cache);
     oj_cache_new(&oj_attr_cache);
+
+    oj_init_doc();
 }
 
 void

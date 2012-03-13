@@ -82,14 +82,17 @@ files = opts.parse(ARGV)
 
 if $with_nums
   $obj = {
-    'a' => 'Alpha',
-    'b' => true,
-    'c' => 12345,
-    'd' => [ true, [false, [12345, nil], 3.967, ['something', false], nil]],
-    'e' => { 'one' => 1, 'two' => 2 },
-    'f' => nil,
+    'a' => 'Alpha', # string
+    'b' => true,    # boolean
+    'c' => 12345,   # number
+    'd' => [ true, [false, [12345, nil], 3.967, ['something', false], nil]], # mix it up array
+    'e' => { 'one' => 1, 'two' => 2 }, # hash
+    'f' => nil,     # nil
+    #'g' => 12345678901234567890123456789, # big number
+    'h' => { 'a' => { 'b' => { 'c' => { 'd' => {'e' => { 'f' => { 'g' => nil }}}}}}}, # deep hash, not that deep
+    'i' => [[[[[[[nil]]]]]]]  # deep array, again, not that deep
   }
-  $obj['h'] = 12345678901234567890123456789 if $with_bignum
+  $obj['g'] = 12345678901234567890123456789 if $with_bignum
 else
   $obj = {
     'a' => 'Alpha',
@@ -98,9 +101,11 @@ else
     'd' => [ true, [false, ['12345', nil], '3.967', ['something', false], nil]],
     'e' => { 'one' => '1', 'two' => '2' },
     'f' => nil,
+    'h' => { 'a' => { 'b' => { 'c' => { 'd' => {'e' => { 'f' => { 'g' => nil }}}}}}}, # deep hash, not that deep
+    'i' => [[[[[[[nil]]]]]]]  # deep array, again, not that deep
   }
 end
-$obj['g'] = Jazz.new() if $with_object
+$obj['j'] = Jazz.new() if $with_object
 
 Oj.default_options = { :indent => $indent, :mode => :compat }
 Ox.default_options = { :indent => $indent, :mode => :object }
