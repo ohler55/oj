@@ -1,5 +1,6 @@
 /* oj.c
- * Copyright (c) 2011, Peter Ohler
+ * Copyright (c) 2012, Peter Ohler
+ *
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without

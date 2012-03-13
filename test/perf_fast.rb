@@ -16,15 +16,15 @@ $verbose = false
 $indent = 0
 $iter = 100000
 $gets = 0
-$fetch = 0
+$fetch = false
 
 opts = OptionParser.new
-opts.on("-v", "verbose")                                           { $verbose = true }
-opts.on("-c", "--count [Int]", Integer, "iterations")              { |i| $iter = i }
-opts.on("-i", "--indent [Int]", Integer, "indentation")            { |i| $indent = i }
-opts.on("-g", "--gets [Int]", Integer, "number of gets")           { |i| $gets = i }
-opts.on("-f", "--fetches [Int]", Integer, "number of fetch calls") { |i| $fetch = i }
-opts.on("-h", "--help", "Show this display")                       { puts opts; Process.exit!(0) }
+opts.on("-v", "verbose")                                  { $verbose = true }
+opts.on("-c", "--count [Int]", Integer, "iterations")     { |i| $iter = i }
+opts.on("-i", "--indent [Int]", Integer, "indentation")   { |i| $indent = i }
+opts.on("-g", "--gets [Int]", Integer, "number of gets")  { |i| $gets = i }
+opts.on("-f", "fetch")                                    { $fetch = true }
+opts.on("-h", "--help", "Show this display")              { puts opts; Process.exit!(0) }
 files = opts.parse(ARGV)
 
 # This just navigates to each leaf of the JSON structure.
@@ -43,7 +43,7 @@ $obj = {
   'a' => 'Alpha', # string
   'b' => true,    # boolean
   'c' => 12345,   # number
-  'd' => [ true, [false, [12345, nil], 3.967, ['something', false], nil]], # mix it up array
+  'd' => [ true, [false, {'12345' => 12345, 'nil' => nil}, 3.967, { 'x' => 'something', 'y' => false, 'z' => true}, nil]], # mix it up array
   'e' => { 'one' => 1, 'two' => 2 }, # hash
   'f' => nil,     # nil
   'g' => 12345678901234567890123456789, # big number
@@ -81,7 +81,6 @@ perf.add('Oj::Doc', 'parse') { Oj::Doc.open($json) {|f| } } unless $failed.has_k
 perf.add('Yajl', 'parse') { Yajl::Parser.parse($json) } unless $failed.has_key?('Yajl')
 perf.add('JSON::Ext', 'parse') { JSON::Ext::Parser.new($json).parse } unless $failed.has_key?('JSON::Ext')
 perf.run($iter)
-puts
 
 if 0 < $gets
   puts '-' * 80
@@ -91,31 +90,27 @@ if 0 < $gets
   perf.add('Yajl', 'parse') { $gets.times { dig(Yajl::Parser.parse($json)) {} } } unless $failed.has_key?('Yajl')
   perf.add('JSON::Ext', 'parse') { $gets.times { dig(JSON::Ext::Parser.new($json).parse) {} } } unless $failed.has_key?('JSON::Ext')
   perf.run($iter)
-  puts
 end
 
-if 0 < $fetch
+if $fetch
   puts '-' * 80
   puts "fetch nested Performance"
   json_hash = Oj.load($json, :mode => :strict)
   Oj::Doc.open($json) do |fast|
-    #puts "*** C fetch: #{fast.fetch('/d/2/4/1')}"
-    #puts "*** Ruby fetch: #{json_hash.fetch('d', []).fetch(1, []).fetch(3, []).fetch(0, nil)}"
+    #puts "*** C fetch: #{fast.fetch('/d/2/4/y')}"
+    #puts "*** Ruby fetch: #{json_hash.fetch('d', []).fetch(1, []).fetch(3, []).fetch('x', nil)}"
     perf = Perf.new()
-    perf.add('C', 'fetch') { $fetch.times { fast.fetch('/d/2/4/1'); fast.fetch('/h/a/b/c/d/e/f/g'); fast.fetch('/i/1/1/1/1/1/1/1') } }
+    perf.add('Oj::Doc', 'fetch') { fast.fetch('/d/2/4/x'); fast.fetch('/h/a/b/c/d/e/f/g'); fast.fetch('/i/1/1/1/1/1/1/1') }
     # version that fails gracefully
     perf.add('Ruby', 'fetch') do
-      $fetch.times do
-        json_hash.fetch('d', []).fetch(1, []).fetch(3, []).fetch(0, nil)
-        json_hash.fetch('h', {}).fetch('a', {}).fetch('b', {}).fetch('c', {}).fetch('d', {}).fetch('e', {}).fetch('f', {}).fetch('g', {})
-        json_hash.fetch('i', []).fetch(0, []).fetch(0, []).fetch(0, []).fetch(0, []).fetch(0, []).fetch(0, []).fetch(0, nil)
-      end
+      json_hash.fetch('d', []).fetch(1, []).fetch(3, []).fetch('x', nil)
+      json_hash.fetch('h', {}).fetch('a', {}).fetch('b', {}).fetch('c', {}).fetch('d', {}).fetch('e', {}).fetch('f', {}).fetch('g', {})
+      json_hash.fetch('i', []).fetch(0, []).fetch(0, []).fetch(0, []).fetch(0, []).fetch(0, []).fetch(0, []).fetch(0, nil)
     end
     # version that raises if the path is incorrect
 #    perf.add('Ruby', 'fetch') { $fetch.times { json_hash['d'][1][3][1] } }
     perf.run($iter)
   end
-  puts
 end
 
 unless $failed.empty?

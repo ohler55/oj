@@ -16,15 +16,17 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="links">Links of Interest</a>
 
+[Need for Speed](http://www.ohler.com/software/thoughts/Blog/Entries/2012/3/13_Need_for_Speed.html) for an overview of how Oj::Doc was designed.
+
 *Fast XML parser and marshaller on RubyGems*: https://rubygems.org/gems/ox
 
 *Fast XML parser and marshaller on GitHub*: https://rubygems.org/gems/ox
 
 ## <a name="release">Release Notes</a>
 
-### Release 0.9.0
+### Release 1.0.0
 
-- Added support for circular references.
+ - The screaming fast Oj::Doc parser added.
 
 ## <a name="description">Description</a>
 
@@ -57,15 +59,100 @@ Oj is compatible with Ruby 1.8.7, 1.9.2, 1.9.3, JRuby, and RBX.
 
 ## <a name="plans">Planned Releases</a>
 
-- Release 1.0: A JSON stream parser.
+- Release 1.0.1: Optimize the Oj::Doc dump() method to be native.
+
+- Release 1.1: A JSON stream parser. Pushed out for the Oj::Doc parser.
 
 ## <a name="compare">Comparisons</a>
 
+### Fast Oj::Doc parser comparisons
+
+The fast Oj::Doc parser is compared to the Yajl and JSON::Pure parsers with
+strict JSON documents. No object conversions are included, just simple JSON.
+
+Since the Oj::Doc deviation from the conventional parsers comparisons of not
+only parsing but data access is also included. These tests use the
+perf_fast.rb test file. The first benchmark is for just parsing. The second is
+for doing a get on every leaf value in the JSON data structure. The third
+fetchs a value from a specific spot in the document. With Yajl and JSON this
+is done with a set of calls to fetch() for each level in the document. For
+Oj::Doc a single fetch with a path is used.
+
+The benchmark results are:
+
+    > perf_fast.rb -g 1 -f
+    --------------------------------------------------------------------------------
+    Parse Performance
+    Oj::Doc.parse 100000 times in 0.164 seconds or 609893.696 parse/sec.
+    Yajl.parse 100000 times in 3.168 seconds or 31569.902 parse/sec.
+    JSON::Ext.parse 100000 times in 3.282 seconds or 30464.826 parse/sec.
+    
+    Summary:
+       System  time (secs)  rate (ops/sec)
+    ---------  -----------  --------------
+      Oj::Doc       0.164      609893.696
+         Yajl       3.168       31569.902
+    JSON::Ext       3.282       30464.826
+    
+    Comparison Matrix
+    (performance factor, 2.0 row is means twice as fast as column)
+                 Oj::Doc       Yajl  JSON::Ext
+    ---------  ---------  ---------  ---------
+      Oj::Doc       1.00      19.32      20.02
+         Yajl       0.05       1.00       1.04
+    JSON::Ext       0.05       0.96       1.00
+    
+    --------------------------------------------------------------------------------
+    Parse and get all values Performance
+    Oj::Doc.parse 100000 times in 0.417 seconds or 240054.540 parse/sec.
+    Yajl.parse 100000 times in 5.159 seconds or 19384.191 parse/sec.
+    JSON::Ext.parse 100000 times in 5.269 seconds or 18978.638 parse/sec.
+    
+    Summary:
+       System  time (secs)  rate (ops/sec)
+    ---------  -----------  --------------
+      Oj::Doc       0.417      240054.540
+         Yajl       5.159       19384.191
+    JSON::Ext       5.269       18978.638
+    
+    Comparison Matrix
+    (performance factor, 2.0 row is means twice as fast as column)
+                 Oj::Doc       Yajl  JSON::Ext
+    ---------  ---------  ---------  ---------
+      Oj::Doc       1.00      12.38      12.65
+         Yajl       0.08       1.00       1.02
+    JSON::Ext       0.08       0.98       1.00
+    
+    --------------------------------------------------------------------------------
+    fetch nested Performance
+    Oj::Doc.fetch 100000 times in 0.094 seconds or 1059995.760 fetch/sec.
+    Ruby.fetch 100000 times in 0.503 seconds or 198851.434 fetch/sec.
+    
+    Summary:
+     System  time (secs)  rate (ops/sec)
+    -------  -----------  --------------
+    Oj::Doc       0.094     1059995.760
+       Ruby       0.503      198851.434
+    
+    Comparison Matrix
+    (performance factor, 2.0 row is means twice as fast as column)
+             Oj::Doc     Ruby
+    -------  -------  -------
+    Oj::Doc     1.00     5.33
+       Ruby     0.19     1.00
+
+What the results mean are that for getting just a few values from a JSON
+document Oj::Doc is 20 times faster than any other parser and for accessing
+all values it is still over 12 times faster than any other Ruby JSON parser.
+
+### Conventional Oj parser comparisons
+
 The following table shows the difference is speeds between several
-serialization packages. The tests had to be scaled back due to limitation of
-some of the gems. I finally gave up trying to get JSON Pure to serialize
-without errors with Ruby 1.9.3. It had internal errors on anything other than
-a simple JSON structure. The errors encountered were:
+serialization packages compared to the more conventional Oj parser. The tests
+had to be scaled back due to limitation of some of the gems. I finally gave up
+trying to get JSON Pure to serialize without errors with Ruby 1.9.3. It had
+internal errors on anything other than a simple JSON structure. The errors
+encountered were:
 
 - MessagePack fails to convert Bignum to JSON
 
@@ -84,7 +171,7 @@ It is also worth noting that although Oj is slightly behind MessagePack for
 parsing, Oj serialization is much faster than MessagePack even though Oj uses
 human readable JSON vs the binary MessagePack format.
 
-UOj supports circular references when in :object mode and when the :circular
+Oj supports circular references when in :object mode and when the :circular
 flag is true. None of the other gems tested supported circular
 references. They failed in the following manners when the input included
 circular references.

@@ -269,32 +269,63 @@ class DocTest < ::Test::Unit::TestCase
     end
   end
 
-  def test_each_branch_move
+  def test_each_child_move
     Oj::Doc.open($json1) do |doc|
       locations = []
       doc.move('/array/1/hash/h2/a')
-      doc.each_branch() { |d| locations << d.where? }
+      doc.each_child() { |d| locations << d.where? }
       assert_equal(['/array/1/hash/h2/a/1', '/array/1/hash/h2/a/2', '/array/1/hash/h2/a/3'], locations)
       locations = []
       doc.move('/array/1')
-      doc.each_branch() { |d| locations << d.where? }
+      doc.each_child() { |d| locations << d.where? }
       assert_equal(['/array/1/num', '/array/1/string', '/array/1/hash'], locations)
     end
   end
 
-  def test_each_branch_path
+  def test_each_child_path
     Oj::Doc.open($json1) do |doc|
       locations = []
-      doc.each_branch('/array/1/hash/h2/a') { |d| locations << d.where? }
+      doc.each_child('/array/1/hash/h2/a') { |d| locations << d.where? }
       assert_equal(['/array/1/hash/h2/a/1', '/array/1/hash/h2/a/2', '/array/1/hash/h2/a/3'], locations)
       locations = []
-      doc.each_branch('/array/1') { |d| locations << d.where? }
+      doc.each_child('/array/1') { |d| locations << d.where? }
       assert_equal(['/array/1/num', '/array/1/string', '/array/1/hash'], locations)
     end
   end
 
-  # TBD
-  # each_leaf
-  # dump
+  def test_size
+    Oj::Doc.open('[1,2,3]') do |doc|
+      assert_equal(4, doc.size)
+    end
+    Oj::Doc.open('{"a":[1,2,3]}') do |doc|
+      assert_equal(5, doc.size)
+    end
+  end
+
+  def test_open_file
+    filename = 'open_file_test.json'
+    File.open(filename, 'w') { |f| f.write('{"a":[1,2,3]}') }
+    Oj::Doc.open_file(filename) do |doc|
+      assert_equal(5, doc.size)
+    end
+  end
+
+  def test_dump
+    Oj::Doc.open('[1,[2,3]]') do |doc|
+      assert_equal('[1,[2,3]]', doc.dump())
+    end
+    Oj::Doc.open('[1,[2,3]]') do |doc|
+      assert_equal('[2,3]', doc.dump('/2'))
+    end
+  end
+
+  def test_each_leaf
+    results = Oj::Doc.open('[1,[2,3]]') do |doc|
+      h = {}
+      doc.each_leaf() { |d| h[d.where?] = d.fetch() }
+      h
+    end
+    assert_equal({'/1' => 1, '/2/1' => 2, '/2/2' => 3}, results)
+  end
 
 end # DocTest

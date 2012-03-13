@@ -32,27 +32,37 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <errno.h>
 
 #include "ruby.h"
 #include "oj.h"
 
-#define MAX_STACK	64
+#define MAX_STACK	100
 
-// TBD combine key and index
-// TBD combine elements and str and value
-// TBD add leaf_type and shorten size of type to 1 or two bytes
+enum {
+    STR_VAL  = 0x00,
+    COL_VAL  = 0x01,
+    RUBY_VAL = 0x02
+};
+    
 typedef struct _Leaf {
     struct _Leaf	*next;
-    const char		*key;      // hash key
-    size_t		index;     // array index, 0 is not set
-    char		*str;      // pointer to location in json string
-    struct _Leaf	*elements; // array and hash elements
-    int			type;
-    VALUE		value;
+    union {
+	const char	*key;      // hash key
+	size_t		index;     // array index, 0 is not set
+    };
+    union {
+	char		*str;      // pointer to location in json string
+	struct _Leaf	*elements; // array and hash elements
+	VALUE		value;
+    };
+    uint8_t		type;
+    uint8_t		parent_type;
+    uint8_t		value_type;
 } *Leaf;
 
 //#define BATCH_SIZE	(4096 / sizeof(struct _Leaf) - 1)
-#define BATCH_SIZE	80
+#define BATCH_SIZE	100
 
 typedef struct _Batch {
     struct _Batch	*next;
@@ -69,6 +79,7 @@ typedef struct _Doc {
 #else
     void		*encoding;
 #endif
+    unsigned long	size;        // number of leaves/branches in the doc
     VALUE		self;
     Batch		batches;
     //Leaf		where_array[MAX_STACK];
@@ -82,14 +93,14 @@ typedef struct _ParseInfo {
     Doc		doc;
 } *ParseInfo;
 
-static void	leaf_init(Leaf leaf, char *str, int type);
-static Leaf	leaf_new(Doc doc, char *str, int type);
+static void	leaf_init(Leaf leaf, int type);
+static Leaf	leaf_new(Doc doc, int type);
 static void	leaf_append_element(Leaf parent, Leaf element);
 static VALUE	leaf_value(Doc doc, Leaf leaf);
 static void	leaf_fixnum_value(Leaf leaf);
 static void	leaf_float_value(Leaf leaf);
-static void	leaf_array_value(Doc doc, Leaf leaf);
-static void	leaf_hash_value(Doc doc, Leaf leaf);
+static VALUE	leaf_array_value(Doc doc, Leaf leaf);
+static VALUE	leaf_hash_value(Doc doc, Leaf leaf);
 
 static Leaf	read_next(ParseInfo pi);
 static Leaf	read_obj(ParseInfo pi);
@@ -102,23 +113,29 @@ static Leaf	read_nil(ParseInfo pi);
 static void	next_non_white(ParseInfo pi);
 static char*	read_quoted_value(ParseInfo pi);
 
+static VALUE	protect_open_proc(VALUE x);
+static VALUE	parse_json(VALUE clas, char *json);
+static void	each_leaf(Doc doc, VALUE self);
+static int	move_step(Doc doc, const char *path, int loc);
+static Leaf	get_doc_leaf(Doc doc, const char *path);
+static Leaf	get_leaf(Leaf *stack, Leaf *lp, const char *path);
+static void	each_value(Doc doc, Leaf leaf);
+
 static void	doc_init(Doc doc);
 static void	doc_free(Doc doc);
-static VALUE	protect_open_proc(VALUE x);
 static VALUE	doc_open(VALUE clas, VALUE str);
+static VALUE	doc_open_file(VALUE clas, VALUE filename);
 static VALUE	doc_where(VALUE self);
 static VALUE	doc_local_key(VALUE self);
 static VALUE	doc_home(VALUE self);
-static Leaf	get_doc_leaf(Doc doc, const char *path);
-static Leaf	get_leaf(Leaf *stack, Leaf *lp, const char *path);
 static VALUE	doc_type(int argc, VALUE *argv, VALUE self);
 static VALUE	doc_fetch(int argc, VALUE *argv, VALUE self);
 static VALUE	doc_each_leaf(int argc, VALUE *argv, VALUE self);
 static VALUE	doc_move(VALUE self, VALUE str);
-static VALUE	doc_each_branch(int argc, VALUE *argv, VALUE self);
-static void	each_value(Doc doc, Leaf leaf);
+static VALUE	doc_each_child(int argc, VALUE *argv, VALUE self);
 static VALUE	doc_each_value(int argc, VALUE *argv, VALUE self);
-static VALUE	doc_dump(VALUE self);
+static VALUE	doc_dump(int argc, VALUE *argv, VALUE self);
+static VALUE	doc_size(VALUE self);
 
 VALUE	oj_doc_class = 0;
 
@@ -155,7 +172,6 @@ next_white(ParseInfo pi) {
     }
 }
 
-
 inline static char*
 ulong_fill(char *s, size_t num) {
     char	buf[32];
@@ -177,18 +193,39 @@ ulong_fill(char *s, size_t num) {
 }
 
 inline static void
-leaf_init(Leaf leaf, char *str, int type) {
+leaf_init(Leaf leaf, int type) {
     leaf->next = 0;
-    leaf->key = 0;
-    leaf->index = 0;
-    leaf->str = str;
-    leaf->elements = 0;
     leaf->type = type;
-    leaf->value = Qundef;
+    leaf->parent_type = T_NONE;
+    switch (type) {
+    case T_ARRAY:
+    case T_HASH:
+	leaf->elements = 0;
+	leaf->value_type = COL_VAL;
+	break;
+    case T_NIL:
+	leaf->value = Qnil;
+	leaf->value_type = RUBY_VAL;
+	break;
+    case T_TRUE:
+	leaf->value = Qtrue;
+	leaf->value_type = RUBY_VAL;
+	break;
+    case T_FALSE:
+	leaf->value = Qfalse;
+	leaf->value_type = RUBY_VAL;
+	break;
+    case T_FIXNUM:
+    case T_FLOAT:
+    case T_STRING:
+    default:
+	leaf->value_type = STR_VAL;
+	break;
+    }
 }
 
 inline static Leaf
-leaf_new(Doc doc, char *str, int type) {
+leaf_new(Doc doc, int type) {
     Leaf	leaf;
 
     if (0 == doc->batches || BATCH_SIZE == doc->batches->next_avail) {
@@ -200,7 +237,7 @@ leaf_new(Doc doc, char *str, int type) {
     }
     leaf = &doc->batches->leaves[doc->batches->next_avail];
     doc->batches->next_avail++;
-    leaf_init(leaf, str, type);
+    leaf_init(leaf, type);
 
     return leaf;
 }
@@ -219,7 +256,7 @@ leaf_append_element(Leaf parent, Leaf element) {
 
 static VALUE
 leaf_value(Doc doc, Leaf leaf) {
-    if (Qundef == leaf->value) {
+    if (RUBY_VAL != leaf->value_type) {
 	switch (leaf->type) {
 	case T_NIL:
 	    leaf->value = Qnil;
@@ -243,12 +280,13 @@ leaf_value(Doc doc, Leaf leaf) {
 		rb_enc_associate(leaf->value, doc->encoding);
 	    }
 #endif
+	    leaf->value_type = RUBY_VAL;
 	    break;
 	case T_ARRAY:
-	    leaf_array_value(doc, leaf);
+	    return leaf_array_value(doc, leaf);
 	    break;
 	case T_HASH:
-	    leaf_hash_value(doc, leaf);
+	    return leaf_hash_value(doc, leaf);
 	    break;
 	default:
 	    rb_raise(rb_eTypeError, "Unexpected type %02x.", leaf->type);
@@ -271,7 +309,7 @@ leaf_fixnum_value(Leaf leaf) {
     int64_t	n = 0;
     int		neg = 0;
     int		big = 0;
-
+    
     if ('-' == *s) {
 	s++;
 	neg = 1;
@@ -296,12 +334,14 @@ leaf_fixnum_value(Leaf leaf) {
 	}
 	leaf->value = LONG2NUM(n);
     }
+    leaf->value_type = RUBY_VAL;
 }
 
 #if 1
 static void
 leaf_float_value(Leaf leaf) {
     leaf->value = DBL2NUM(rb_cstr_to_dbl(leaf->str, 1));
+    leaf->value_type = RUBY_VAL;
 }
 #else
 static void
@@ -367,10 +407,11 @@ leaf_float_value(Leaf leaf) {
 	}
 	leaf->value = DBL2NUM(d);
     }
+    leaf->value_type = RUBY_VAL;
 }
 #endif
 
-static void
+static VALUE
 leaf_array_value(Doc doc, Leaf leaf) {
     VALUE	a = rb_ary_new();
 
@@ -383,10 +424,10 @@ leaf_array_value(Doc doc, Leaf leaf) {
 	    e = e->next;
 	} while (e != first);
     }
-    leaf->value = a;
+    return a;
 }
 
-static void
+static VALUE
 leaf_hash_value(Doc doc, Leaf leaf) {
     VALUE	h = rb_hash_new();
 
@@ -406,7 +447,7 @@ leaf_hash_value(Doc doc, Leaf leaf) {
 	    e = e->next;
 	} while (e != first);
     }
-    leaf->value = h;
+    return h;
 }
 
 static Leaf
@@ -451,12 +492,14 @@ read_next(ParseInfo pi) {
     default:
 	break; // returns 0
     }
+    pi->doc->size++;
+
     return leaf;
 }
 
 static Leaf
 read_obj(ParseInfo pi) {
-    Leaf	h = leaf_new(pi->doc, pi->s, T_HASH);
+    Leaf	h = leaf_new(pi->doc, T_HASH);
     char	*end;
     const char	*key = 0;
     Leaf	val = 0;
@@ -486,6 +529,7 @@ read_obj(ParseInfo pi) {
 	}
 	end = pi->s;
 	val->key = key;
+	val->parent_type = T_HASH;
 	leaf_append_element(h, val);
 	next_non_white(pi);
 	if ('}' == *pi->s) {
@@ -505,7 +549,7 @@ read_obj(ParseInfo pi) {
 
 static Leaf
 read_array(ParseInfo pi) {
-    Leaf	a = leaf_new(pi->doc, pi->s, T_ARRAY);
+    Leaf	a = leaf_new(pi->doc, T_ARRAY);
     Leaf	e;
     char	*end;
     int		cnt = 0;
@@ -523,6 +567,7 @@ read_array(ParseInfo pi) {
 	}
 	cnt++;
 	e->index = cnt;
+	e->parent_type = T_ARRAY;
 	leaf_append_element(a, e);
 	end = pi->s;
 	next_non_white(pi);
@@ -542,13 +587,18 @@ read_array(ParseInfo pi) {
 
 static Leaf
 read_str(ParseInfo pi) {
-    return leaf_new(pi->doc, read_quoted_value(pi), T_STRING);
+    Leaf	leaf = leaf_new(pi->doc, T_STRING);
+
+    leaf->str = read_quoted_value(pi);
+
+    return leaf;
 }
 
 static Leaf
 read_num(ParseInfo pi) {
     char	*start = pi->s;
     int		type = T_FIXNUM;
+    Leaf	leaf = leaf_new(pi->doc, type);
 
     if ('-' == *pi->s) {
 	pi->s++;
@@ -570,12 +620,15 @@ read_num(ParseInfo pi) {
 	for (; '0' <= *pi->s && *pi->s <= '9'; pi->s++) {
 	}
     }
-    return leaf_new(pi->doc, start, type);
+    leaf = leaf_new(pi->doc, type);
+    leaf->str = start;
+
+    return leaf;
 }
 
 static Leaf
 read_true(ParseInfo pi) {
-    Leaf	leaf = leaf_new(pi->doc, pi->s, T_TRUE);
+    Leaf	leaf = leaf_new(pi->doc, T_TRUE);
 
     pi->s++;
     if ('r' != *pi->s || 'u' != *(pi->s + 1) || 'e' != *(pi->s + 2)) {
@@ -588,7 +641,7 @@ read_true(ParseInfo pi) {
 
 static Leaf
 read_false(ParseInfo pi) {
-    Leaf	leaf = leaf_new(pi->doc, pi->s, T_FALSE);
+    Leaf	leaf = leaf_new(pi->doc, T_FALSE);
 
     pi->s++;
     if ('a' != *pi->s || 'l' != *(pi->s + 1) || 's' != *(pi->s + 2) || 'e' != *(pi->s + 3)) {
@@ -601,7 +654,7 @@ read_false(ParseInfo pi) {
 
 static Leaf
 read_nil(ParseInfo pi) {
-    Leaf	leaf = leaf_new(pi->doc, pi->s, T_NIL);
+    Leaf	leaf = leaf_new(pi->doc, T_NIL);
 
     pi->s++;
     if ('u' != *pi->s || 'l' != *(pi->s + 1) || 'l' != *(pi->s + 2)) {
@@ -693,6 +746,7 @@ read_quoted_value(ParseInfo pi) {
     return value;
 }
 
+// doc support functions
 inline static void
 doc_init(Doc doc) {
     //doc->where_path = doc->where_array;
@@ -706,6 +760,7 @@ doc_init(Doc doc) {
 #else
     doc->encoding = 0;
 #endif
+    doc->size = 0;
     doc->batches = &doc->batch0;
     doc->batch0.next = 0;
     doc->batch0.next_avail = 0;
@@ -742,21 +797,16 @@ protect_open_proc(VALUE x) {
 }
 
 static VALUE
-doc_open(VALUE clas, VALUE str) {
+parse_json(VALUE clas, char *json) {
     struct _ParseInfo	pi;
     VALUE		result = Qnil;
-    size_t		len;
-    struct _Doc	doc;
+    struct _Doc		doc;
     int			ex = 0;
 
-    Check_Type(str, T_STRING);
     if (!rb_block_given_p()) {
 	rb_raise(rb_eArgError, "Block or Proc is required.");
     }
-    len = RSTRING_LEN(str);
-    pi.str = ALLOCA_N(char, len + 1);
-    //pi.str = ALLOC_N(char, len + 1);
-    memcpy(pi.str, StringValuePtr(str), len + 1);
+    pi.str = json;
     pi.s = pi.str;
     doc_init(&doc);
     pi.doc = &doc;
@@ -770,72 +820,6 @@ doc_open(VALUE clas, VALUE str) {
 	rb_jump_tag(ex);
     }
     return result;
-}
-
-static VALUE
-doc_where(VALUE self) {
-    Doc	doc = DATA_PTR(self);
-
-    if (0 == *doc->where_path || doc->where == doc->where_path) {
-	return oj_slash_string;
-    } else {
-	Leaf	*lp;
-	Leaf	leaf;
-	size_t	size = 3; // leading / and terminating \0
-	char	*path;
-	char	*p;
-
-	for (lp = doc->where_path; lp <= doc->where; lp++) {
-	    leaf = *lp;
-	    if (0 != leaf->key) {
-		size += strlen((*lp)->key) + 1;
-	    } else if (0 < leaf->index) {
-		size += ((*lp)->index < 100) ? 3 : 11;
-	    }
-	}
-	path = ALLOCA_N(char, size);
-	p = path;
-	for (lp = doc->where_path; lp <= doc->where; lp++) {
-	    leaf = *lp;
-	    if (0 != leaf->key) {
-		p = stpcpy(p, (*lp)->key);
-	    } else if (0 < leaf->index) {
-		p = ulong_fill(p, (*lp)->index);
-	    }
-	    *p++ = '/';
-	}
-	*--p = '\0';
-	return rb_str_new2(path);
-    }
-}
-
-static VALUE
-doc_local_key(VALUE self) {
-    Doc		doc = DATA_PTR(self);
-    Leaf	leaf = *doc->where;
-    VALUE	key = Qnil;
-
-    if (0 != leaf->key) {
-	key = rb_str_new2(leaf->key);
-#ifdef HAVE_RUBY_ENCODING_H
-	if (0 != doc->encoding) {
-	    rb_enc_associate(key, doc->encoding);
-	}
-#endif
-    } else if (0 < leaf->index) {
-	key = LONG2NUM(leaf->index);
-    }
-    return key;
-}
-
-static VALUE
-doc_home(VALUE self) {
-    Doc	doc = DATA_PTR(self);
-
-    *doc->where_path = doc->data;
-    doc->where = doc->where_path;
-
-    return oj_slash_string;
 }
 
 static Leaf
@@ -876,7 +860,7 @@ get_leaf(Leaf *stack, Leaf *lp, const char *path) {
 	    } else {
 		return 0;
 	    }
-	} else if (0 != leaf->elements) {
+	} else if (COL_VAL == leaf->value_type && 0 != leaf->elements) {
 	    Leaf	first = leaf->elements->next;
 	    Leaf	e = first;
 	    int		type = leaf->type;
@@ -929,58 +913,23 @@ get_leaf(Leaf *stack, Leaf *lp, const char *path) {
     return leaf;
 }
 
-static VALUE
-doc_type(int argc, VALUE *argv, VALUE self) {
-    Doc		doc = DATA_PTR(self);
-    Leaf	leaf;
-    const char	*path = 0;
-    VALUE	type = Qnil;
+static void
+each_leaf(Doc doc, VALUE self) {
+    if (COL_VAL == (*doc->where)->value_type) {
+	if (0 != (*doc->where)->elements) {
+	    Leaf	first = (*doc->where)->elements->next;
+	    Leaf	e = first;
 
-    if (1 <= argc) {
-	Check_Type(*argv, T_STRING);
-	path = StringValuePtr(*argv);
-    }
-    if (0 != (leaf = get_doc_leaf(doc, path))) {
-	switch (leaf->type) {
-	case T_NIL:	type = rb_cNilClass;	break;
-	case T_TRUE:	type = rb_cTrueClass;	break;
-	case T_FALSE:	type = rb_cFalseClass;	break;
-	case T_STRING:	type = rb_cString;	break;
-	case T_FIXNUM:	type = rb_cFixnum;	break;
-	case T_FLOAT:	type = rb_cFloat;	break;
-	case T_ARRAY:	type = rb_cArray;	break;
-	case T_HASH:	type = rb_cHash;	break;
-	default:				break;
+	    doc->where++;
+	    do {
+		*doc->where = e;
+		each_leaf(doc, self);
+		e = e->next;
+	    } while (e != first);
 	}
+    } else {
+	rb_yield(self);
     }
-    return type;
-}
-
-static VALUE
-doc_fetch(int argc, VALUE *argv, VALUE self) {
-    Doc		doc = DATA_PTR(self);
-    Leaf	leaf;
-    VALUE	val = Qnil;
-    const char	*path = 0;
-
-    if (1 <= argc) {
-	Check_Type(*argv, T_STRING);
-	path = StringValuePtr(*argv);
-	if (2 == argc) {
-	    val = argv[1];
-	}
-    }
-    if (0 != (leaf = get_doc_leaf(doc, path))) {
-	val = leaf_value(doc, leaf);
-    }
-    return val;
-}
-
-static VALUE
-doc_each_leaf(int argc, VALUE *argv, VALUE self) {
-    //Doc	f = DATA_PTR(self);
-
-    return Qnil;
 }
 
 static int
@@ -1012,7 +961,7 @@ move_step(Doc doc, const char *path, int loc) {
 		*doc->where = init;
 		doc->where++;
 	    }
-	} else if (0 != leaf->elements) {
+	} else if (COL_VAL == leaf->value_type && 0 != leaf->elements) {
 	    Leaf	first = leaf->elements->next;
 	    Leaf	e = first;
 
@@ -1072,26 +1021,267 @@ move_step(Doc doc, const char *path, int loc) {
     return loc;
 }
 
-static VALUE
-doc_move(VALUE self, VALUE str) {
-    Doc		doc = DATA_PTR(self);
-    const char	*path;
-    int		loc;
+static void
+each_value(Doc doc, Leaf leaf) {
+    if (COL_VAL == leaf->value_type) {
+	if (0 != leaf->elements) {
+	    Leaf	first = leaf->elements->next;
+	    Leaf	e = first;
 
-    Check_Type(str, T_STRING);
-    path = StringValuePtr(str);
-    if ('/' == *path) {
-	doc->where = doc->where_path;
-	path++;
+	    do {
+		each_value(doc, e);
+		e = e->next;
+	    } while (e != first);
+	}
+    } else {
+	VALUE	args[1];
+
+	*args = leaf_value(doc, leaf);
+	rb_yield_values2(1, args);
     }
-    if (0 != (loc = move_step(doc, path, 1))) {
-	rb_raise(rb_eArgError, "Failed to locate element %d of the path %s.", loc, path);
-    }
-    return Qnil;
 }
 
+// doc functions
+
+/* call-seq: open(json) { |doc| ... } => Object
+ *
+ * Parses a JSON document String and then yields to the provided block with an
+ * instance of the Oj::Doc as the single yield parameter.
+ *
+ * @param [String] json JSON document string
+ * @yieldparam [Oj::Doc] doc parsed JSON document
+ * @yieldreturn [Object] returns the result of the yield as the result of the method call
+ * @example
+ *   Oj::Doc.open('[1,2,3]') { |doc| doc.size() }  #=> 4
+ */
 static VALUE
-doc_each_branch(int argc, VALUE *argv, VALUE self) {
+doc_open(VALUE clas, VALUE str) {
+    char	*json;
+    size_t	len;
+
+    Check_Type(str, T_STRING);
+    len = RSTRING_LEN(str) + 1;
+    json = ALLOCA_N(char, len);
+    memcpy(json, StringValuePtr(str), len);
+
+    return parse_json(clas, json);
+}
+
+/* call-seq: open_file(filename) { |doc| ... } => Object
+ *
+ * Parses a JSON document from a file and then yields to the provided block
+ * with an instance of the Oj::Doc as the single yield parameter.
+ *
+ * @param [String] filename name of file that contains a JSON document
+ * @yieldparam [Oj::Doc] doc parsed JSON document
+ * @yieldreturn [Object] returns the result of the yield as the result of the method call
+ * @example
+ *   File.open('array.json', 'w') { |f| f.write('[1,2,3]') }
+ *   Oj::Doc.open_file(filename) { |doc| doc.size() }  #=> 4
+ */
+static VALUE
+doc_open_file(VALUE clas, VALUE filename) {
+    char	*path;
+    char	*json;
+    FILE	*f;
+    size_t	len;
+
+    Check_Type(filename, T_STRING);
+    path = StringValuePtr(filename);
+    if (0 == (f = fopen(path, "r"))) {
+        rb_raise(rb_eIOError, "%s\n", strerror(errno));
+    }
+    fseek(f, 0, SEEK_END);
+    len = ftell(f);
+    json = ALLOCA_N(char, len + 1);
+    fseek(f, 0, SEEK_SET);
+    if (len != fread(json, 1, len, f)) {
+        fclose(f);
+        rb_raise(rb_eLoadError, "Failed to read %ld bytes from %s.\n", len, path);
+    }
+    fclose(f);
+    json[len] = '\0';
+
+    return parse_json(clas, json);
+}
+
+/* Document-method: parse
+ * @see Oj::Doc.open
+ */
+
+/* call-seq: where?() => String
+ *
+ * Returns a String that describes the absolute path to the current location
+ * in the JSON document.
+ */
+static VALUE
+doc_where(VALUE self) {
+    Doc	doc = DATA_PTR(self);
+
+    if (0 == *doc->where_path || doc->where == doc->where_path) {
+	return oj_slash_string;
+    } else {
+	Leaf	*lp;
+	Leaf	leaf;
+	size_t	size = 3; // leading / and terminating \0
+	char	*path;
+	char	*p;
+
+	for (lp = doc->where_path; lp <= doc->where; lp++) {
+	    leaf = *lp;
+	    if (T_HASH == leaf->parent_type) {
+		size += strlen((*lp)->key) + 1;
+	    } else if (T_ARRAY == leaf->parent_type) {
+		size += ((*lp)->index < 100) ? 3 : 11;
+	    }
+	}
+	path = ALLOCA_N(char, size);
+	p = path;
+	for (lp = doc->where_path; lp <= doc->where; lp++) {
+	    leaf = *lp;
+	    if (T_HASH == leaf->parent_type) {
+		p = stpcpy(p, (*lp)->key);
+	    } else if (T_ARRAY == leaf->parent_type) {
+		p = ulong_fill(p, (*lp)->index);
+	    }
+	    *p++ = '/';
+	}
+	*--p = '\0';
+	return rb_str_new2(path);
+    }
+}
+
+/* call-seq: local_key() => String, Fixnum, nil
+ *
+ * Returns the final key to the current location.
+ * @example
+ *   Oj::Doc.open('[1,2,3]') { |doc| doc.move('/2'); doc.local_key() }      #=> 2
+ *   Oj::Doc.open('{"one":3}') { |doc| doc.move('/one'); doc.local_key() }  #=> "one"
+ *   Oj::Doc.open('[1,2,3]') { |doc| doc.local_key() }                      #=> nil
+ */
+static VALUE
+doc_local_key(VALUE self) {
+    Doc		doc = DATA_PTR(self);
+    Leaf	leaf = *doc->where;
+    VALUE	key = Qnil;
+
+    if (T_HASH == leaf->parent_type) {
+	key = rb_str_new2(leaf->key);
+#ifdef HAVE_RUBY_ENCODING_H
+	if (0 != doc->encoding) {
+	    rb_enc_associate(key, doc->encoding);
+	}
+#endif
+    } else if (T_ARRAY == leaf->parent_type) {
+	key = LONG2NUM(leaf->index);
+    }
+    return key;
+}
+
+/* call-seq: home() => nil
+ *
+ * Moves the document marker or location to the hoot or home position. The
+ * same operation can be performed with a Oj::Doc.move('/').
+ * @example
+ *   Oj::Doc.open('[1,2,3]') { |doc| doc.move('/2'); doc.home(); doc.where? }  #=> '/'
+ */
+static VALUE
+doc_home(VALUE self) {
+    Doc	doc = DATA_PTR(self);
+
+    *doc->where_path = doc->data;
+    doc->where = doc->where_path;
+
+    return oj_slash_string;
+}
+
+/* call-seq: type(path=nil) => Class
+ *
+ * Returns the Class of the data value at the location identified by the path
+ * or the current location if the path is nil or not provided. This method
+ * does not create the Ruby Object at the location specified so the overhead
+ * is low.
+ * @param [String] path path to the location to get the type of if provided
+ * @example
+ *   Oj::Doc.open('[1,2]') { |doc| doc.type() }      #=> Array
+ *   Oj::Doc.open('[1,2]') { |doc| doc.type('/1') }  #=> Fixnum
+ */
+static VALUE
+doc_type(int argc, VALUE *argv, VALUE self) {
+    Doc		doc = DATA_PTR(self);
+    Leaf	leaf;
+    const char	*path = 0;
+    VALUE	type = Qnil;
+
+    if (1 <= argc) {
+	Check_Type(*argv, T_STRING);
+	path = StringValuePtr(*argv);
+    }
+    if (0 != (leaf = get_doc_leaf(doc, path))) {
+	switch (leaf->type) {
+	case T_NIL:	type = rb_cNilClass;	break;
+	case T_TRUE:	type = rb_cTrueClass;	break;
+	case T_FALSE:	type = rb_cFalseClass;	break;
+	case T_STRING:	type = rb_cString;	break;
+	case T_FIXNUM:	type = rb_cFixnum;	break;
+	case T_FLOAT:	type = rb_cFloat;	break;
+	case T_ARRAY:	type = rb_cArray;	break;
+	case T_HASH:	type = rb_cHash;	break;
+	default:				break;
+	}
+    }
+    return type;
+}
+
+/* call-seq: fetch(path=nil) => nil, true, false, Fixnum, Float, String, Array, Hash
+ *
+ * Returns the value at the location identified by the path or the current
+ * location if the path is nil or not provided. This method will create and
+ * return an Array or Hash if that is the type of Object at the location
+ * specified. This is more expensive than navigating to the leaves of the JSON
+ * document.
+ * @param [String] path path to the location to get the type of if provided
+ * @example
+ *   Oj::Doc.open('[1,2]') { |doc| doc.fetch() }      #=> [1, 2]
+ *   Oj::Doc.open('[1,2]') { |doc| doc.fetch('/1') }  #=> 1
+ */
+static VALUE
+doc_fetch(int argc, VALUE *argv, VALUE self) {
+    Doc		doc = DATA_PTR(self);
+    Leaf	leaf;
+    VALUE	val = Qnil;
+    const char	*path = 0;
+
+    if (1 <= argc) {
+	Check_Type(*argv, T_STRING);
+	path = StringValuePtr(*argv);
+	if (2 == argc) {
+	    val = argv[1];
+	}
+    }
+    if (0 != (leaf = get_doc_leaf(doc, path))) {
+	val = leaf_value(doc, leaf);
+    }
+    return val;
+}
+
+/* call-seq: each_leaf(path=nil) => nil
+ *
+ * Yields to the provided block for each leaf node with the identified
+ * location of the JSON document as the root. The parameter passed to the
+ * block on yield is the Doc instance after moving to the child location.
+ * @param [String] path if provided it identified the top of the branch to process the leaves of
+ * @yieldparam [Doc] Doc at the child location
+ * @example
+ *   Oj::Doc.open('[3,[2,1]]') { |doc|
+ *       result = {}
+ *       doc.each_leaf() { |d| result[d.where?] = d.fetch() }
+ *       result
+ *   }
+ *   #=> ["/1" => 3, "/2/1" => 2, "/2/2" => 1]
+ */
+static VALUE
+doc_each_leaf(int argc, VALUE *argv, VALUE self) {
     if (rb_block_given_p()) {
 	Leaf		save_path[MAX_STACK];
 	Doc		doc = DATA_PTR(self);
@@ -1112,7 +1302,77 @@ doc_each_branch(int argc, VALUE *argv, VALUE self) {
 		return Qnil;
 	    }
 	}
-	if (0 != (*doc->where)->elements) {
+	each_leaf(doc, self);
+	memcpy(doc->where_path, save_path, sizeof(Leaf) * wlen);
+    }
+    return Qnil;
+}
+
+/* call-seq: move(path) => nil
+ *
+ * Moves the document marker to the path specified. The path can an absolute
+ * path or a relative path.
+ * @param [String] path path to the location to move to
+ * @example
+ *   Oj::Doc.open('{"one":[1,2]') { |doc| doc.move('/one/2'); doc.where? }  #=> "/one/2"
+ */
+static VALUE
+doc_move(VALUE self, VALUE str) {
+    Doc		doc = DATA_PTR(self);
+    const char	*path;
+    int		loc;
+
+    Check_Type(str, T_STRING);
+    path = StringValuePtr(str);
+    if ('/' == *path) {
+	doc->where = doc->where_path;
+	path++;
+    }
+    if (0 != (loc = move_step(doc, path, 1))) {
+	rb_raise(rb_eArgError, "Failed to locate element %d of the path %s.", loc, path);
+    }
+    return Qnil;
+}
+
+/* call-seq: each_child(path=nil) { |doc| ... } => nil
+ *
+ * Yields to the provided block for each immediate child node with the
+ * identified location of the JSON document as the root. The parameter passed
+ * to the block on yield is the Doc instance after moving to the child
+ * location.
+ * @param [String] path if provided it identified the top of the branch to process the chilren of
+ * @yieldparam [Doc] Doc at the child location
+ * @example
+ *   Oj::Doc.open('[3,[2,1]]') { |doc|
+ *       result = []
+ *       doc.each_value('/2') { |doc| result << doc.where? }
+ *       result
+ *   }
+ *   #=> ["/2/1", "/2/2"]
+ */
+static VALUE
+doc_each_child(int argc, VALUE *argv, VALUE self) {
+    if (rb_block_given_p()) {
+	Leaf		save_path[MAX_STACK];
+	Doc		doc = DATA_PTR(self);
+	const char	*path = 0;
+	size_t		wlen;
+
+	wlen = doc->where - doc->where_path;
+	memcpy(save_path, doc->where_path, sizeof(Leaf) * wlen);
+	if (1 <= argc) {
+	    Check_Type(*argv, T_STRING);
+	    path = StringValuePtr(*argv);
+	    if ('/' == *path) {
+		doc->where = doc->where_path;
+		path++;
+	    }
+	    if (0 != move_step(doc, path, 1)) {
+		memcpy(doc->where_path, save_path, sizeof(Leaf) * wlen);
+		return Qnil;
+	    }
+	}
+	if (COL_VAL == (*doc->where)->value_type && 0 != (*doc->where)->elements) {
 	    Leaf	first = (*doc->where)->elements->next;
 	    Leaf	e = first;
 	    VALUE	args[1];
@@ -1130,26 +1390,29 @@ doc_each_branch(int argc, VALUE *argv, VALUE self) {
     return Qnil;
 }
 
-static void
-each_value(Doc doc, Leaf leaf) {
-    if (T_ARRAY == leaf->type || T_HASH == leaf->type) {
-	if (0 != leaf->elements) {
-	    Leaf	first = leaf->elements->next;
-	    Leaf	e = first;
-
-	    do {
-		each_value(doc, e);
-		e = e->next;
-	    } while (e != first);
-	}
-    } else {
-	VALUE	args[1];
-
-	*args = leaf_value(doc, leaf);
-	rb_yield_values2(1, args);
-    }
-}
-
+/* call-seq: each_value(path=nil) { |val| ... } => nil
+ *
+ * Yields to the provided block for each leaf value in the identified location
+ * of the JSON document. The parameter passed to the block on yield is the
+ * value of the leaf. Only those leaves below the element specified by the
+ * path parameter are processed.
+ * @param [String] path if provided it identified the top of the branch to process the leaf values of
+ * @yieldparam [Object] val each leaf value
+ * @example
+ *   Oj::Doc.open('[3,[2,1]]') { |doc|
+ *       result = []
+ *       doc.each_value() { |v| result << v }
+ *       result
+ *   }
+ *   #=> [3, 2, 1]
+ *   
+ *   Oj::Doc.open('[3,[2,1]]') { |doc|
+ *       result = []
+ *       doc.each_value('/2') { |v| result << v }
+ *       result
+ *   }
+ *   #=> [2, 1]
+ */
 static VALUE
 doc_each_value(int argc, VALUE *argv, VALUE self) {
     if (rb_block_given_p()) {
@@ -1168,22 +1431,100 @@ doc_each_value(int argc, VALUE *argv, VALUE self) {
     return Qnil;
 }
 
-// TBD improve later to be more direct for higher performance, also make relative
+// TBD improve to be more direct for higher performance
+
+/* call-seq: dump(path=nil) => String
+ *
+ * Dumps the document or nodes to a new JSON document. It uses the default
+ * options for generating the JSON.
+ * @param [String] path if provided it identified the top of the branch to dump to JSON
+ * @example
+ *   Oj::Doc.open('[3,[2,1]]') { |doc|
+ *       doc.dump('/2')
+ *   }
+ *   #=> "[2,1]"
+ */
 static VALUE
-doc_dump(VALUE self) {
+doc_dump(int argc, VALUE *argv, VALUE self) {
     Doc		doc = DATA_PTR(self);
-    VALUE	obj = leaf_value(doc, *doc->where);
+    Leaf	leaf;
+    const char	*path = 0;
     const char	*json;
 
-    json = oj_write_obj_to_str(obj, &oj_default_options);
-    
-    return rb_str_new2(json);
+    if (1 <= argc) {
+	Check_Type(*argv, T_STRING);
+	path = StringValuePtr(*argv);
+    }
+    if (0 != (leaf = get_doc_leaf(doc, path))) {
+	json = oj_write_obj_to_str(leaf_value(doc, leaf), &oj_default_options);
+
+	return rb_str_new2(json);
+    }
+    return Qnil;
 }
 
+/* call-seq: size() => Fixnum
+ *
+ * Returns the number of nodes in the JSON document where a node is any one of
+ * the basic JSON components.
+ * @return Returns the size of the JSON document.
+ * @example
+ *   Oj::Doc.open('[1,2,3]') { |doc| doc.size() }  #=> 4
+ */
+static VALUE
+doc_size(VALUE self) {
+    return ULONG2NUM(((Doc)DATA_PTR(self))->size);
+}
+
+/* Document-class: Oj::Doc
+ *
+ * The Doc class is used to parse and navigate a JSON document. The model it
+ * employs is that of a document that while open can be navigated and values
+ * extracted. Once the document is closed the document can not longer be
+ * accessed. This allows the parsing and data extraction to be extremely fast
+ * compared to other JSON parses.
+ * 
+ * An Oj::Doc class is not created directly but the _open()_ class method is
+ * used to open a document and the yield parameter to the block of the #open()
+ * call is the Doc instance. The Doc instance can be moved across, up, and
+ * down the JSON document. At each element the data associated with the
+ * element can be extracted. It is also possible to just provide a path to the
+ * data to be extracted and retrieve the data in that manner.
+ * 
+ * For many of the methods a path is used to describe the location of an
+ * element. Paths follow a subset of the XPath syntax. The slash ('/')
+ * character is the separator. Each step in the path identifies the next
+ * branch to take through the document. A JSON object will expect a key string
+ * while an array will expect a positive index. A .. step indicates a move up
+ * the JSON document.
+ * 
+ * @example
+ *   json = %{[
+ *     {
+ *       "one"   : 1,
+ *       "two"   : 2
+ *     },
+ *     {
+ *       "three" : 3,
+ *       "four"  : 4
+ *     }
+ *   ]}
+ *   # move and get value
+ *   Oj::Doc.open(json) do |doc|
+ *     doc.move('/1/two')  
+ *     # doc location is now at the 'two' element of the hash that is the first element of the array.
+ *     doc.fetch()
+ *   end
+ *   #=> 2
+ *   
+ *   # Now try again using a path to Oj::Doc.fetch() directly.
+ *   Oj::Doc.open(json) { |doc| doc.fetch('/2/three') }  #=> 3
+ */
 void
 oj_init_doc() {
     oj_doc_class = rb_define_class_under(Oj, "Doc", rb_cObject);
     rb_define_singleton_method(oj_doc_class, "open", doc_open, 1);
+    rb_define_singleton_method(oj_doc_class, "open_file", doc_open_file, 1);
     rb_define_singleton_method(oj_doc_class, "parse", doc_open, 1);
     rb_define_method(oj_doc_class, "where?", doc_where, 0);
     rb_define_method(oj_doc_class, "local_key", doc_local_key, 0);
@@ -1192,7 +1533,8 @@ oj_init_doc() {
     rb_define_method(oj_doc_class, "fetch", doc_fetch, -1);
     rb_define_method(oj_doc_class, "each_leaf", doc_each_leaf, -1);
     rb_define_method(oj_doc_class, "move", doc_move, 1);
-    rb_define_method(oj_doc_class, "each_branch", doc_each_branch, -1);
+    rb_define_method(oj_doc_class, "each_child", doc_each_child, -1);
     rb_define_method(oj_doc_class, "each_value", doc_each_value, -1);
-    rb_define_method(oj_doc_class, "dump", doc_dump, 0);
+    rb_define_method(oj_doc_class, "dump", doc_dump, -1);
+    rb_define_method(oj_doc_class, "size", doc_size, 0);
 }

@@ -1,4 +1,5 @@
-# Copyright (c) 2011, Peter Ohler<br>
+# Copyright (c) 2011, Peter Ohler
+#
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
