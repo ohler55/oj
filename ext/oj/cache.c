@@ -46,7 +46,7 @@ static void     slot_print(Cache cache, unsigned int depth);
 
 void
 oj_cache_new(Cache *cache) {
-    if (0 == (*cache = (Cache)malloc(sizeof(struct _Cache)))) {
+    if (0 == (*cache = ALLOC(struct _Cache))) {
         rb_raise(rb_eNoMemError, "not enough memory\n");
     }
     (*cache)->key = 0;
@@ -87,7 +87,7 @@ oj_cache_get(Cache cache, const char *key, VALUE **slot) {
                     cp2 = (*cp2)->slots + (*ck & 0x0F);
                     oj_cache_new(cp2);
                     if ('\0' == *(ck + 1)) {
-                        free(cache->key);
+                        xfree(cache->key);
                     } else {
                         (*cp2)->key = cache->key;
                     }

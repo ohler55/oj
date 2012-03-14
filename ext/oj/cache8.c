@@ -57,7 +57,7 @@ oj_cache8_new(Cache8 *cache) {
     Cache8     *cp;
     int		i;
     
-    if (0 == (*cache = (Cache8)malloc(sizeof(struct _Cache8)))) {
+    if (0 == (*cache = ALLOC(struct _Cache8))) {
 	rb_raise(rb_eNoMemError, "not enough memory\n");
     }
     for (i = SLOT_CNT, cp = (*cache)->slots; 0 < i; i--, cp++) {
@@ -82,7 +82,7 @@ cache8_delete(Cache8 cache, int depth) {
 	    }
 	}
     }
-    free(cache);
+    xfree(cache);
 }
 
 slot_t

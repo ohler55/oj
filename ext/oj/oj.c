@@ -142,24 +142,23 @@ set_def_opts(VALUE self, VALUE opts) {
     
     Check_Type(opts, T_HASH);
 
-    v = rb_hash_lookup2(opts, encoding_sym, Qundef);
-    if (Qundef == v) {
-	// no change
-    } else if (Qnil == v) {
-        *oj_default_options.encoding = '\0';
-    } else {
-        Check_Type(v, T_STRING);
-        strncpy(oj_default_options.encoding, StringValuePtr(v), sizeof(oj_default_options.encoding) - 1);
+    if (Qtrue == rb_funcall(opts, rb_intern("has_key?"), 1, encoding_sym)) {
+	v = rb_hash_lookup(opts, encoding_sym);
+	if (Qnil == v) {
+	    *oj_default_options.encoding = '\0';
+	} else {
+	    Check_Type(v, T_STRING);
+	    strncpy(oj_default_options.encoding, StringValuePtr(v), sizeof(oj_default_options.encoding) - 1);
+	}
     }
-
     v = rb_hash_aref(opts, indent_sym);
     if (Qnil != v) {
         Check_Type(v, T_FIXNUM);
         oj_default_options.indent = FIX2INT(v);
     }
 
-    v = rb_hash_lookup2(opts, mode_sym, Qundef);
-    if (Qundef == v || Qnil == v) {
+    v = rb_hash_lookup(opts, mode_sym);
+    if (Qnil == v) {
 	// ignore
     } else if (object_sym == v) {
         oj_default_options.mode = ObjectMode;
@@ -174,10 +173,11 @@ set_def_opts(VALUE self, VALUE opts) {
     }
 
     for (o = ynos; 0 != o->attr; o++) {
-        v = rb_hash_lookup2(opts, o->sym, Qundef);
-	if (Qundef == v) {
-	    // no change
-	} else if (Qnil == v) {
+	if (Qtrue != rb_funcall(opts, rb_intern("has_key?"), 1, mode_sym)) {
+	    continue;
+	}
+        v = rb_hash_lookup(opts, o->sym);
+	if (Qnil == v) {
             *o->attr = NotSet;
         } else if (Qtrue == v) {
             *o->attr = Yes;
@@ -252,7 +252,7 @@ load(char *json, int argc, VALUE *argv, VALUE self) {
 	parse_options(*argv, &options);
     }
     obj = oj_parse(json, &options);
-    free(json);
+    //free(json);
 
     return obj;
 }
@@ -268,10 +268,13 @@ load(char *json, int argc, VALUE *argv, VALUE self) {
 static VALUE
 load_str(int argc, VALUE *argv, VALUE self) {
     char        *json;
+    size_t	len;
     
     Check_Type(*argv, T_STRING);
     // the json string gets modified so make a copy of it
-    json = strdup(StringValuePtr(*argv));
+    len = RSTRING_LEN(*argv) + 1;
+    json = ALLOCA_N(char, len);
+    strcpy(json, StringValuePtr(*argv));
 
     return load(json, argc - 1, argv + 1, self);
 }
@@ -290,7 +293,7 @@ load_file(int argc, VALUE *argv, VALUE self) {
     }
     fseek(f, 0, SEEK_END);
     len = ftell(f);
-    if (0 == (json = malloc(len + 1))) {
+    if (0 == (json = ALLOCA_N(char, len + 1))) {
         fclose(f);
         rb_raise(rb_eNoMemError, "Could not allocate memory for %ld byte file.\n", len);
     }
@@ -329,7 +332,7 @@ dump(int argc, VALUE *argv, VALUE self) {
         rb_enc_associate(rstr, rb_enc_find(copts.encoding));
     }
 #endif
-    free(json);
+    xfree(json);
 
     return rstr;
 }

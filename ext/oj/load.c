@@ -216,7 +216,7 @@ static CircArray
 circ_array_new() {
     CircArray   ca;
     
-    if (0 == (ca = (CircArray)malloc(sizeof(struct _CircArray)))) {
+    if (0 == (ca = ALLOC(struct _CircArray))) {
         rb_raise(rb_eNoMemError, "not enough memory\n");
     }
     ca->objs = ca->obj_array;
@@ -229,9 +229,9 @@ circ_array_new() {
 static void
 circ_array_free(CircArray ca) {
     if (ca->objs != ca->obj_array) {
-        free(ca->objs);
+        xfree(ca->objs);
     }
-    free(ca);
+    xfree(ca);
 }
 
 static void
@@ -243,12 +243,12 @@ circ_array_set(CircArray ca, VALUE obj, unsigned long id) {
             unsigned long       cnt = id + 512;
 
             if (ca->objs == ca->obj_array) {
-                if (0 == (ca->objs = (VALUE*)malloc(sizeof(VALUE) * cnt))) {
+                if (0 == (ca->objs = ALLOC_N(VALUE, cnt))) {
                     rb_raise(rb_eNoMemError, "not enough memory\n");
                 }
                 memcpy(ca->objs, ca->obj_array, sizeof(VALUE) * ca->cnt);
             } else { 
-                if (0 == (ca->objs = (VALUE*)realloc(ca->objs, sizeof(VALUE) * cnt))) {
+                if (0 == (ca->objs = REALLOC_N(ca->objs, VALUE, cnt))) {
                     rb_raise(rb_eNoMemError, "not enough memory\n");
                 }
             }
@@ -701,7 +701,7 @@ read_num(ParseInfo pi) {
 	    }
 	    d *= pow(10.0, e);
 	}
-	return DBL2NUM(d);
+	return rb_float_new(d);
     }
 }
 

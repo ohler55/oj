@@ -340,7 +340,7 @@ leaf_fixnum_value(Leaf leaf) {
 #if 1
 static void
 leaf_float_value(Leaf leaf) {
-    leaf->value = DBL2NUM(rb_cstr_to_dbl(leaf->str, 1));
+    leaf->value = rb_float_new(rb_cstr_to_dbl(leaf->str, 1));
     leaf->value_type = RUBY_VAL;
 }
 #else
@@ -1034,10 +1034,7 @@ each_value(Doc doc, Leaf leaf) {
 	    } while (e != first);
 	}
     } else {
-	VALUE	args[1];
-
-	*args = leaf_value(doc, leaf);
-	rb_yield_values2(1, args);
+	rb_yield(leaf_value(doc, leaf));
     }
 }
 
@@ -1375,13 +1372,11 @@ doc_each_child(int argc, VALUE *argv, VALUE self) {
 	if (COL_VAL == (*doc->where)->value_type && 0 != (*doc->where)->elements) {
 	    Leaf	first = (*doc->where)->elements->next;
 	    Leaf	e = first;
-	    VALUE	args[1];
 
-	    *args = self;
 	    doc->where++;
 	    do {
 		*doc->where = e;
-		rb_yield_values2(1, args);
+		rb_yield(self);
 		e = e->next;
 	    } while (e != first);
 	}

@@ -24,9 +24,9 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 1.0.0
+### Release 1.0.1
 
- - The screaming fast Oj::Doc parser added.
+ - Fixed compatibility problems with Ruby 1.8.7.
 
 ## <a name="description">Description</a>
 

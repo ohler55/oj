@@ -85,7 +85,9 @@ static void	dump_obj_comp(VALUE obj, int depth, Out out);
 static void	dump_obj_obj(VALUE obj, int depth, Out out);
 static void	dump_struct_comp(VALUE obj, int depth, Out out);
 static void	dump_struct_obj(VALUE obj, int depth, Out out);
+#if IVAR_HELPERS
 static int	dump_attr_cb(ID key, VALUE value, Out out);
+#endif
 static void	dump_obj_attrs(VALUE obj, int with_class, slot_t id, int depth, Out out);
 
 static void     grow(Out out, size_t len);
@@ -184,7 +186,7 @@ grow(Out out, size_t len) {
     if (size <= len * 2 + pos) {
         size += len;
     }
-    if (0 == (buf = (char*)realloc(out->buf, size + 10))) { // 1 extra for terminator character plus extra (paranoid)
+    if (0 == (buf = REALLOC_N(out->buf, char, size + 10))) { // 1 extra for terminator character plus extra (paranoid)
         rb_raise(rb_eNoMemError, "Failed to create string. [%d:%s]\n", ENOSPC, strerror(ENOSPC));
     }
     out->buf = buf;
@@ -750,6 +752,7 @@ dump_obj_obj(VALUE obj, int depth, Out out) {
     }
 }
 
+#if IVAR_HELPERS
 static int
 dump_attr_cb(ID key, VALUE value, Out out) {
     int		depth = out->depth;
@@ -778,6 +781,7 @@ dump_attr_cb(ID key, VALUE value, Out out) {
     
     return ST_CONTINUE;
 }
+#endif
 
 static void
 dump_obj_attrs(VALUE obj, int with_class, slot_t id, int depth, Out out) {
@@ -1036,7 +1040,7 @@ dump_val(VALUE obj, int depth, Out out) {
 
 static void
 dump_obj_to_json(VALUE obj, Options copts, Out out) {
-    out->buf = (char*)malloc(65336);
+    out->buf = ALLOC_N(char, 65336);
     out->end = out->buf + 65325; // 1 less than end plus extra for possible errors
     out->cur = out->buf;
     out->circ_cnt = 0;
@@ -1076,6 +1080,6 @@ oj_write_obj_to_file(VALUE obj, const char *path, Options copts) {
         int err = ferror(f);
         rb_raise(rb_eIOError, "Write failed. [%d:%s]\n", err, strerror(err));
     }
-    free(out.buf);
+    xfree(out.buf);
     fclose(f);
 }
