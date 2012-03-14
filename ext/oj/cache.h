@@ -31,6 +31,8 @@
 #ifndef __OJ_CACHE_H__
 #define __OJ_CACHE_H__
 
+#define RSTRING_NOT_MODIFIED
+
 #include "ruby.h"
 
 typedef struct _Cache   *Cache;
