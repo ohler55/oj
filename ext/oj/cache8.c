@@ -34,7 +34,6 @@
 #include <string.h>
 #include <stdarg.h>
 
-#include "ruby.h"
 #include "cache8.h"
 
 #define BITS            4

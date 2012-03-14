@@ -33,7 +33,6 @@
 #include <string.h>
 #include <math.h>
 
-#include "ruby.h"
 #include "oj.h"
 
 enum {

@@ -34,7 +34,6 @@
 #include <math.h>
 #include <errno.h>
 
-#include "ruby.h"
 #include "oj.h"
 
 #define MAX_STACK	100

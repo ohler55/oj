@@ -38,6 +38,8 @@ extern "C" {
 #endif
 #endif
 
+#define RSTRING_NOT_MODIFIED
+
 #include "ruby.h"
 #ifdef HAVE_RUBY_ENCODING_H
 // HAVE_RUBY_ENCODING_H defined for Ruby 1.9

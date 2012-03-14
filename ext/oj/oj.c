@@ -34,7 +34,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "ruby.h"
 #include "oj.h"
 
 typedef struct _YesNoOpt {
