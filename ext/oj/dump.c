@@ -83,8 +83,10 @@ static void	dump_data_comp(VALUE obj, Out out);
 static void	dump_data_obj(VALUE obj, Out out);
 static void	dump_obj_comp(VALUE obj, int depth, Out out);
 static void	dump_obj_obj(VALUE obj, int depth, Out out);
+#ifndef NO_RSTRUCT
 static void	dump_struct_comp(VALUE obj, int depth, Out out);
 static void	dump_struct_obj(VALUE obj, int depth, Out out);
+#endif
 #if IVAR_HELPERS
 static int	dump_attr_cb(ID key, VALUE value, Out out);
 #endif
@@ -879,6 +881,7 @@ dump_obj_attrs(VALUE obj, int with_class, slot_t id, int depth, Out out) {
     *out->cur = '\0';
 }
 
+#ifndef NO_RSTRUCT
 static void
 dump_struct_comp(VALUE obj, int depth, Out out) {
     if (rb_respond_to(obj, oj_to_hash_id)) {
@@ -945,6 +948,7 @@ dump_struct_obj(VALUE obj, int depth, Out out) {
     *out->cur++ = '}';
     *out->cur = '\0';
 }
+#endif
 
 static void
 raise_strict(VALUE obj) {
@@ -1007,6 +1011,7 @@ dump_val(VALUE obj, int depth, Out out) {
 	default:		dump_data_obj(obj, out);	break;
 	}
 	break;
+#ifndef NO_RSTRUCT
     case T_STRUCT: // for Range
 	switch (out->opts->mode) {
 	case StrictMode:	raise_strict(obj);		break;
@@ -1016,6 +1021,7 @@ dump_val(VALUE obj, int depth, Out out) {
 	default:		dump_struct_obj(obj, depth, out);	break;
 	}
 	break;
+#endif
 #if (defined T_COMPLEX && defined RCOMPLEX)
     case T_COMPLEX:
 #endif
