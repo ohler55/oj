@@ -24,9 +24,9 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 1.0.1
+### Release 1.0.2
 
- - Fixed compatibility problems with Ruby 1.8.7.
+ - Added RSTRING_NOT_MODIFIED for Rubinius optimization.
 
 ## <a name="description">Description</a>
 
