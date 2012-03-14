@@ -330,7 +330,7 @@ without Objects or numbers (for JSON Pure, Yajl, and Messagepack) JSON:
     #   ]
     # }
 
-    h2 = Oj.parse(json)
+    h2 = Oj.load(json)
     puts "Same? #{h == h2}"
     # true
 
