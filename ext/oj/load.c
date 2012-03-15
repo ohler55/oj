@@ -452,7 +452,11 @@ read_obj(ParseInfo pi) {
 		    }
 		    rb_ivar_set(obj, var_id, val);
 		} else if (T_HASH == obj_type) {
-		    rb_hash_aset(obj, key, val);
+		    if (Yes == pi->options->sym_key) {
+			rb_hash_aset(obj, rb_str_intern(key), val);
+		    } else {
+			rb_hash_aset(obj, key, val);
+		    }
 		    if ((CompatMode == pi->options->mode || ObjectMode == pi->options->mode) &&
 			0 == json_class_name &&
 			0 != ks && 'j' == *ks && 0 == strcmp("json_class", ks) &&

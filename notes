@@ -5,9 +5,8 @@
 
 
 - next
- - update performance tests on README
- - release 0.9.0
- - remove circular branch
+ - symbolize keys option
+ - io object as option for input
 
  - stream
   - load

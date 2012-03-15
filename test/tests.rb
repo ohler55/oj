@@ -5,6 +5,7 @@ $: << File.join(File.dirname(__FILE__), "../lib")
 $: << File.join(File.dirname(__FILE__), "../ext")
 
 require 'test/unit'
+require 'stringio'
 require 'oj'
 
 def hash_eql(h1, h2)
@@ -70,6 +71,7 @@ class Juice < ::Test::Unit::TestCase
                    :indent=>0,
                    :circular=>false,
                    :auto_define=>true,
+                   :symbol_keys=>false,
                    :mode=>:object}, opts)
   end
 
@@ -79,12 +81,14 @@ class Juice < ::Test::Unit::TestCase
       :indent=>0,
       :circular=>false,
       :auto_define=>true,
+      :symbol_keys=>false,
       :mode=>:object}
     o2 = {
       :encoding=>"UTF-8",
       :indent=>4,
       :circular=>true,
       :auto_define=>false,
+      :symbol_keys=>false,
       :mode=>:compat}
     o3 = { :indent => 4 }
     Oj.default_options = o2
@@ -469,6 +473,30 @@ class Juice < ::Test::Unit::TestCase
     obj2 = Oj.load(json, :mode => :object, :circular => true)
     assert_equal(obj.x.__id__, h.__id__)
     assert_equal(h['b'].__id__, obj.__id__)
+  end
+
+# Stream IO
+  def test_string_io
+    json = %{{
+  "x":true,
+  "y":58,
+  "z": [1,2,3]
+}
+}
+    input = StringIO.new(json)
+    obj = Oj.load(input, :mode => :strict)
+    assert_equal({ 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}, obj)
+  end
+
+  def test_symbol_keys
+    json = %{{
+  "x":true,
+  "y":58,
+  "z": [1,2,3]
+}
+}
+    obj = Oj.load(json, :mode => :strict, :symbol_keys => true)
+    assert_equal({ :x => true, :y => 58, :z => [1, 2, 3]}, obj)
   end
 
   def dump_and_load(obj, trace=false)

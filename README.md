@@ -24,9 +24,11 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 1.0.2
+### Release 1.0.3
 
- - Added RSTRING_NOT_MODIFIED for Rubinius optimization.
+ - Added :symbol_keys option to convert String hash keys into Symbols.
+
+ - The load() method now supports IO Objects as input as well as Strings.
 
 ## <a name="description">Description</a>
 
