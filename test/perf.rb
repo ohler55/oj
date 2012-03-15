@@ -54,7 +54,7 @@ class Perf
       end
     end
     puts
-    puts "Comparison Matrix\n(performance factor, 2.0 row is means twice as fast as column)"
+    puts "Comparison Matrix\n(performance factor, 2.0 means row is twice as fast as column)"
     puts ([' ' * width] + iva.map { |i| "%*s" % [width, i.title] }).join('  ')
     puts (['-' * width] + iva.map { |i| '-' * width }).join('  ')
     iva.each do |i|
