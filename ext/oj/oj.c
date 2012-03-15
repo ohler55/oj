@@ -49,6 +49,8 @@ ID	oj_as_json_id;
 ID	oj_at_id;
 ID	oj_instance_variables_id;
 ID	oj_json_create_id;
+ID	oj_read_id;
+ID	oj_string_id;
 ID	oj_to_hash_id;
 ID	oj_to_json_id;
 ID	oj_to_sym_id;
@@ -57,6 +59,8 @@ ID	oj_tv_sec_id;
 ID	oj_tv_usec_id;
 
 VALUE	oj_bag_class;
+VALUE	oj_date_class;
+VALUE	oj_stringio_class;
 VALUE	oj_struct_class;
 VALUE	oj_time_class;
 
@@ -71,6 +75,7 @@ static VALUE	mode_sym;
 static VALUE	null_sym;
 static VALUE	object_sym;
 static VALUE	strict_sym;
+static VALUE	symbol_keys_sym;
 
 Cache   oj_class_cache = 0;
 Cache   oj_attr_cache = 0;
@@ -80,6 +85,7 @@ struct _Options	oj_default_options = {
     0,			// indent
     No,			// circular
     Yes,		// auto_define
+    No,			// sym_key
     ObjectMode,		// mode
 };
 
@@ -90,6 +96,7 @@ struct _Options	oj_default_options = {
  * - encoding: [String] character encoding for the JSON file
  * - circular: [true|false|nil] support circular references while dumping
  * - auto_define: [true|false|nil] automatically define classes if they do not exist
+ * - symbol_keys: [true|false|nil] use symbols instead of strings for hash keys
  * - mode: [:object|:strict|:compat|:null] load and dump modes to use for JSON
  * @return [Hash] all current option settings.
  */
@@ -102,6 +109,7 @@ get_def_opts(VALUE self) {
     rb_hash_aset(opts, indent_sym, INT2FIX(oj_default_options.indent));
     rb_hash_aset(opts, circular_sym, (Yes == oj_default_options.circular) ? Qtrue : ((No == oj_default_options.circular) ? Qfalse : Qnil));
     rb_hash_aset(opts, auto_define_sym, (Yes == oj_default_options.auto_define) ? Qtrue : ((No == oj_default_options.auto_define) ? Qfalse : Qnil));
+    rb_hash_aset(opts, symbol_keys_sym, (Yes == oj_default_options.sym_key) ? Qtrue : ((No == oj_default_options.sym_key) ? Qfalse : Qnil));
     switch (oj_default_options.mode) {
     case StrictMode:	rb_hash_aset(opts, mode_sym, strict_sym);	break;
     case CompatMode:	rb_hash_aset(opts, mode_sym, compat_sym);	break;
@@ -120,6 +128,7 @@ get_def_opts(VALUE self) {
  * @param [String] :encoding character encoding for the JSON file
  * @param [true|false|nil] :circular support circular references while dumping
  * @param [true|false|nil] :auto_define automatically define classes if they do not exist
+ * @param [true|false|nil] :symbol_keys convert hash keys to symbols
  * @param [:object|:strict|:compat|:null] load and dump mode to use for JSON
  *        :strict raises an exception when a non-supported Object is
  *        encountered. :compat attempts to extract variable values from an
@@ -134,6 +143,7 @@ set_def_opts(VALUE self, VALUE opts) {
     struct _YesNoOpt    ynos[] = {
         { circular_sym, &oj_default_options.circular },
         { auto_define_sym, &oj_default_options.auto_define },
+        { symbol_keys_sym, &oj_default_options.sym_key },
         { Qnil, 0 }
     };
     YesNoOpt    o;
@@ -194,6 +204,7 @@ parse_options(VALUE ropts, Options copts) {
     struct _YesNoOpt    ynos[] = {
         { circular_sym, &copts->circular },
         { auto_define_sym, &copts->auto_define },
+        { symbol_keys_sym, &copts->sym_key },
         { Qnil, 0 }
     };
     YesNoOpt    o;
@@ -268,13 +279,38 @@ static VALUE
 load_str(int argc, VALUE *argv, VALUE self) {
     char        *json;
     size_t	len;
+    VALUE	input;
     
-    Check_Type(*argv, T_STRING);
-    // the json string gets modified so make a copy of it
-    len = RSTRING_LEN(*argv) + 1;
-    json = ALLOCA_N(char, len);
-    strcpy(json, StringValuePtr(*argv));
+    if (1 > argc) {
+	rb_raise(rb_eArgError, "Wrong number of arguments to load().\n");
+    }
+    input = *argv;
+    if (rb_type(input) == T_STRING) {
+	// the json string gets modified so make a copy of it
+	len = RSTRING_LEN(*argv) + 1;
+	json = ALLOCA_N(char, len);
+	strcpy(json, StringValuePtr(*argv));
+    } else {
+	VALUE	clas = rb_obj_class(input);
+	VALUE	s;
 
+	if (oj_stringio_class == clas) {
+	    s = rb_funcall2(input, oj_string_id, 0, 0);
+	    len = RSTRING_LEN(s) + 1;
+	    json = ALLOCA_N(char, len);
+	    strcpy(json, StringValuePtr(s));
+
+	    // TBD else responds to fileno
+
+	} else if (rb_respond_to(input, oj_read_id)) {
+	    s = rb_funcall2(input, oj_read_id, 0, 0);
+	    len = RSTRING_LEN(s) + 1;
+	    json = ALLOCA_N(char, len);
+	    strcpy(json, StringValuePtr(s));
+	} else {
+	    rb_raise(rb_eArgError, "load() expected a String or IO Object.\n");
+	}
+    }
     return load(json, argc - 1, argv + 1, self);
 }
 
@@ -365,6 +401,10 @@ void Init_oj() {
     Oj = rb_define_module("Oj");
     keep = rb_cv_get(Oj, "@@keep"); // needed to stop GC from deleting and reusing VALUEs
 
+    rb_require("time");
+    rb_require("date");
+    rb_require("stringio");
+
     rb_define_module_function(Oj, "default_options", get_def_opts, 0);
     rb_define_module_function(Oj, "default_options=", set_def_opts, 1);
 
@@ -377,16 +417,20 @@ void Init_oj() {
     oj_at_id = rb_intern("at");
     oj_instance_variables_id = rb_intern("instance_variables");
     oj_json_create_id = rb_intern("json_create");
+    oj_read_id = rb_intern("read");
+    oj_string_id = rb_intern("string");
     oj_to_hash_id = rb_intern("to_hash");
     oj_to_json_id = rb_intern("to_json");
     oj_to_sym_id = rb_intern("to_sym");
     oj_tv_nsec_id = rb_intern("tv_nsec");
     oj_tv_sec_id = rb_intern("tv_sec");
     oj_tv_usec_id = rb_intern("tv_usec");
-    
+
     oj_bag_class = rb_const_get_at(Oj, rb_intern("Bag"));
     oj_struct_class = rb_const_get(rb_cObject, rb_intern("Struct"));
     oj_time_class = rb_const_get(rb_cObject, rb_intern("Time"));
+    oj_date_class = rb_const_get(rb_cObject, rb_intern("Date"));
+    oj_stringio_class = rb_const_get(rb_cObject, rb_intern("StringIO"));
 
     auto_define_sym = ID2SYM(rb_intern("auto_define"));	rb_ary_push(keep, auto_define_sym);
     circular_sym = ID2SYM(rb_intern("circular"));	rb_ary_push(keep, circular_sym);
@@ -394,6 +438,7 @@ void Init_oj() {
     encoding_sym = ID2SYM(rb_intern("encoding"));	rb_ary_push(keep, encoding_sym);
     indent_sym = ID2SYM(rb_intern("indent"));		rb_ary_push(keep, indent_sym);
     mode_sym = ID2SYM(rb_intern("mode"));		rb_ary_push(keep, mode_sym);
+    symbol_keys_sym = ID2SYM(rb_intern("symbol_keys"));	rb_ary_push(keep, symbol_keys_sym);
     null_sym = ID2SYM(rb_intern("null"));		rb_ary_push(keep, null_sym);
     object_sym = ID2SYM(rb_intern("object"));		rb_ary_push(keep, object_sym);
     strict_sym = ID2SYM(rb_intern("strict"));		rb_ary_push(keep, strict_sym);

@@ -84,6 +84,7 @@ typedef struct _Options {
     int         indent;		// indention for dump, default 2
     char        circular;	// YesNo
     char        auto_define;	// YesNo
+    char        sym_key;	// YesNo
     char        mode;		// Mode
 } *Options;
 
@@ -99,7 +100,9 @@ extern VALUE    Oj;
 extern struct _Options	oj_default_options;
 
 extern VALUE	oj_bag_class;
+extern VALUE	oj_date_class;
 extern VALUE	oj_doc_class;
+extern VALUE	oj_stringio_class;
 extern VALUE	oj_struct_class;
 extern VALUE	oj_time_class;
 
@@ -109,6 +112,7 @@ extern ID	oj_as_json_id;
 extern ID	oj_at_id;
 extern ID	oj_instance_variables_id;
 extern ID	oj_json_create_id;
+extern ID	oj_string_id;
 extern ID	oj_to_hash_id;
 extern ID	oj_to_json_id;
 extern ID	oj_to_sym_id;
