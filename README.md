@@ -26,7 +26,7 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ### Release 1.0.4
 
- - Fixed bug that did not allow symbols as keys in :compat mode
+ - Fixed bug that did not allow symbols as keys in :compat mode.
 
 ## <a name="description">Description</a>
 
