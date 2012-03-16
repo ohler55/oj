@@ -76,6 +76,7 @@ static void	dump_class_comp(VALUE obj, Out out);
 static void	dump_class_obj(VALUE obj, Out out);
 static void	dump_array(VALUE obj, int depth, Out out);
 static int	hash_cb_strict(VALUE key, VALUE value, Out out);
+static int	hash_cb_compat(VALUE key, VALUE value, Out out);
 static int	hash_cb_object(VALUE key, VALUE value, Out out);
 static void	dump_hash(VALUE obj, int depth, int mode, Out out);
 static void	dump_time(VALUE obj, Out out);
@@ -543,6 +544,34 @@ hash_cb_strict(VALUE key, VALUE value, Out out) {
 }
 
 static int
+hash_cb_compat(VALUE key, VALUE value, Out out) {
+    int		depth = out->depth;
+    long	size = depth * out->indent + 1;
+
+    if (out->end - out->cur <= size) {
+	grow(out, size);
+    }
+    fill_indent(out, depth);
+    switch (rb_type(key)) {
+    case T_STRING:
+	dump_str_comp(key, out);
+	break;
+    case T_SYMBOL:
+	dump_sym_comp(key, out);
+	break;
+    default:
+	rb_raise(rb_eTypeError, "In :strict mode all Hash keys must be Strings.");
+	break;
+    }
+    *out->cur++ = ':';
+    dump_val(value, depth, out);
+    out->depth = depth;
+    *out->cur++ = ',';
+
+    return ST_CONTINUE;
+}
+
+static int
 hash_cb_object(VALUE key, VALUE value, Out out) {
     int		depth = out->depth;
     long	size = depth * out->indent + 1;
@@ -639,6 +668,8 @@ dump_hash(VALUE obj, int depth, int mode, Out out) {
 	out->depth = depth + 1;
 	if (ObjectMode == mode) {
 	    rb_hash_foreach(obj, hash_cb_object, (VALUE)out);
+	} else if (CompatMode == mode) {
+	    rb_hash_foreach(obj, hash_cb_compat, (VALUE)out);
 	} else {
 	    rb_hash_foreach(obj, hash_cb_strict, (VALUE)out);
 	}

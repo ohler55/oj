@@ -335,6 +335,7 @@ read_obj(ParseInfo pi) {
     const char	*ks;
     int		obj_type = T_NONE;
     const char	*json_class_name = 0;
+    Mode	mode = pi->options->mode;
     
     pi->s++;
     next_non_white(pi);
@@ -361,7 +362,7 @@ read_obj(ParseInfo pi) {
 	} else {
 	    ks = 0;
 	}
-	if (0 != ks && Qundef == obj && ObjectMode == pi->options->mode) {
+	if (0 != ks && Qundef == obj && ObjectMode == mode) {
 	    if ('^' == *ks && '\0' == ks[2]) { // special directions
 		switch (ks[1]) {
 		case 't': // Time
@@ -390,19 +391,6 @@ read_obj(ParseInfo pi) {
 		    obj_type = T_STRUCT;
 		    key = Qundef;
 		    break;
-		    /*
-		case 'r': // Id for circular reference
-		    val = read_next(pi, T_FIXNUM);
-		    if (T_FIXNUM == rb_type(val)) {
-			obj_type = T_FIXNUM;
-			obj = circ_array_get(pi->circ_array, NUM2ULONG(val));
-			if (Qundef == obj || Qnil == obj) {
-			    raise_error("Failed to find referenced object", pi->str, pi->s);
-			}
-			key = Qundef;
-		    }
-		    break;
-		    */
 		default:
 		    // handle later
 		    break;
@@ -417,7 +405,7 @@ read_obj(ParseInfo pi) {
 		obj = rb_hash_new();
 		obj_type = T_HASH;
 	    }
-	    if (ObjectMode == pi->options->mode && 0 != ks && '^' == *ks) {
+	    if (ObjectMode == mode && 0 != ks && '^' == *ks) {
 		int	val_type = rb_type(val);
 
 		if ('i' == ks[1] && '\0' == ks[2] && T_FIXNUM == val_type) {
@@ -457,7 +445,7 @@ read_obj(ParseInfo pi) {
 		    } else {
 			rb_hash_aset(obj, key, val);
 		    }
-		    if ((CompatMode == pi->options->mode || ObjectMode == pi->options->mode) &&
+		    if ((CompatMode == mode || ObjectMode == mode) &&
 			0 == json_class_name &&
 			0 != ks && 'j' == *ks && 0 == strcmp("json_class", ks) &&
 			T_STRING == rb_type(val)) {
