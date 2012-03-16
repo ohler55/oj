@@ -24,11 +24,9 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 1.0.3
+### Release 1.0.4
 
- - Added :symbol_keys option to convert String hash keys into Symbols.
-
- - The load() method now supports IO Objects as input as well as Strings.
+ - Fixed bug that did not allow symbols as keys in :compat mode
 
 ## <a name="description">Description</a>
 

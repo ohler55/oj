@@ -239,11 +239,10 @@ parse_options(VALUE ropts, Options copts) {
         }
         for (o = ynos; 0 != o->attr; o++) {
             if (Qnil != (v = rb_hash_lookup(ropts, o->sym))) {
-                VALUE       c = rb_obj_class(v);
 
-                if (rb_cTrueClass == c) {
+                if (Qtrue == v) {
                     *o->attr = Yes;
-                } else if (rb_cFalseClass == c) {
+                } else if (Qfalse == v) {
                     *o->attr = No;
                 } else {
                     rb_raise(rb_eArgError, "%s must be true or false.\n", StringValuePtr(o->sym));
