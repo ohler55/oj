@@ -66,6 +66,7 @@ VALUE	oj_time_class;
 
 VALUE	oj_slash_string;
 
+static VALUE	ascii_only_sym;
 static VALUE	auto_define_sym;
 static VALUE	circular_sym;
 static VALUE	compat_sym;
@@ -86,6 +87,7 @@ struct _Options	oj_default_options = {
     No,			// circular
     Yes,		// auto_define
     No,			// sym_key
+    No,			// ascii_only
     ObjectMode,		// mode
 };
 
@@ -109,6 +111,7 @@ get_def_opts(VALUE self) {
     rb_hash_aset(opts, indent_sym, INT2FIX(oj_default_options.indent));
     rb_hash_aset(opts, circular_sym, (Yes == oj_default_options.circular) ? Qtrue : ((No == oj_default_options.circular) ? Qfalse : Qnil));
     rb_hash_aset(opts, auto_define_sym, (Yes == oj_default_options.auto_define) ? Qtrue : ((No == oj_default_options.auto_define) ? Qfalse : Qnil));
+    rb_hash_aset(opts, ascii_only_sym, (Yes == oj_default_options.ascii_only) ? Qtrue : ((No == oj_default_options.ascii_only) ? Qfalse : Qnil));
     rb_hash_aset(opts, symbol_keys_sym, (Yes == oj_default_options.sym_key) ? Qtrue : ((No == oj_default_options.sym_key) ? Qfalse : Qnil));
     switch (oj_default_options.mode) {
     case StrictMode:	rb_hash_aset(opts, mode_sym, strict_sym);	break;
@@ -129,6 +132,7 @@ get_def_opts(VALUE self) {
  * @param [true|false|nil] :circular support circular references while dumping
  * @param [true|false|nil] :auto_define automatically define classes if they do not exist
  * @param [true|false|nil] :symbol_keys convert hash keys to symbols
+ * @param [true|false|nil] :ascii_only encode all high-bit characters as escaped sequences if true
  * @param [:object|:strict|:compat|:null] load and dump mode to use for JSON
  *        :strict raises an exception when a non-supported Object is
  *        encountered. :compat attempts to extract variable values from an
@@ -144,6 +148,7 @@ set_def_opts(VALUE self, VALUE opts) {
         { circular_sym, &oj_default_options.circular },
         { auto_define_sym, &oj_default_options.auto_define },
         { symbol_keys_sym, &oj_default_options.sym_key },
+        { ascii_only_sym, &oj_default_options.ascii_only },
         { Qnil, 0 }
     };
     YesNoOpt    o;
@@ -182,19 +187,18 @@ set_def_opts(VALUE self, VALUE opts) {
     }
 
     for (o = ynos; 0 != o->attr; o++) {
-	if (Qtrue != rb_funcall(opts, rb_intern("has_key?"), 1, mode_sym)) {
+	if (Qtrue != rb_funcall(opts, rb_intern("has_key?"), 1, o->sym)) {
 	    continue;
 	}
-        v = rb_hash_lookup(opts, o->sym);
-	if (Qnil == v) {
-            *o->attr = NotSet;
-        } else if (Qtrue == v) {
-            *o->attr = Yes;
-        } else if (Qfalse == v) {
-            *o->attr = No;
-        } else {
-            rb_raise(rb_eArgError, "%s must be true, false, or nil.\n", StringValuePtr(o->sym));
-        }
+        if (Qnil != (v = rb_hash_lookup(opts, o->sym))) {
+	    if (Qtrue == v) {
+		*o->attr = Yes;
+	    } else if (Qfalse == v) {
+		*o->attr = No;
+	    } else {
+		rb_raise(rb_eArgError, "%s must be true, false, or nil.\n", rb_id2name(SYM2ID(o->sym)));
+	    }
+	}
     }
     return Qnil;
 }
@@ -205,6 +209,7 @@ parse_options(VALUE ropts, Options copts) {
         { circular_sym, &copts->circular },
         { auto_define_sym, &copts->auto_define },
         { symbol_keys_sym, &copts->sym_key },
+        { ascii_only_sym, &copts->ascii_only },
         { Qnil, 0 }
     };
     YesNoOpt    o;
@@ -239,13 +244,12 @@ parse_options(VALUE ropts, Options copts) {
         }
         for (o = ynos; 0 != o->attr; o++) {
             if (Qnil != (v = rb_hash_lookup(ropts, o->sym))) {
-
                 if (Qtrue == v) {
                     *o->attr = Yes;
                 } else if (Qfalse == v) {
                     *o->attr = No;
                 } else {
-                    rb_raise(rb_eArgError, "%s must be true or false.\n", StringValuePtr(o->sym));
+                    rb_raise(rb_eArgError, "%s must be true or false.\n", rb_id2name(SYM2ID(o->sym)));
                 }
             }
         }
@@ -431,6 +435,7 @@ void Init_oj() {
     oj_date_class = rb_const_get(rb_cObject, rb_intern("Date"));
     oj_stringio_class = rb_const_get(rb_cObject, rb_intern("StringIO"));
 
+    ascii_only_sym = ID2SYM(rb_intern("ascii_only"));	rb_ary_push(keep, ascii_only_sym);
     auto_define_sym = ID2SYM(rb_intern("auto_define"));	rb_ary_push(keep, auto_define_sym);
     circular_sym = ID2SYM(rb_intern("circular"));	rb_ary_push(keep, circular_sym);
     compat_sym = ID2SYM(rb_intern("compat"));		rb_ary_push(keep, compat_sym);

@@ -85,6 +85,7 @@ typedef struct _Options {
     char        circular;	// YesNo
     char        auto_define;	// YesNo
     char        sym_key;	// YesNo
+    char        ascii_only;	// YesNo
     char        mode;		// Mode
 } *Options;
 
