@@ -24,9 +24,9 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 1.0.4
+### Release 1.0.5
 
- - Fixed bug that did not allow symbols as keys in :compat mode.
+ - Added :ascii_only options for dumping JSON where all high-bit characters are encoded as escaped sequences.
 
 ## <a name="description">Description</a>
 

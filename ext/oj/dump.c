@@ -94,45 +94,50 @@ static int	dump_attr_cb(ID key, VALUE value, Out out);
 static void	dump_obj_attrs(VALUE obj, int with_class, slot_t id, int depth, Out out);
 
 static void     grow(Out out, size_t len);
-static int      is_json_friendly(const u_char *str, size_t len);
 static size_t	json_friendly_size(const u_char *str, size_t len);
+static size_t	ascii_friendly_size(const u_char *str, size_t len);
 
 
 static const char	hex_chars[17] = "0123456789abcdef";
 
 static char     json_friendly_chars[256] = "\
-uuuuuuuuxxxuxxuuuuuuuuuuuuuuuuuu\
-ooxooooooooooooxoooooooooooooooo\
-ooooooooooooooooooooooooooooxooo\
-ooooooooooooooooooooooooooooooou\
-uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu\
-uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu\
-uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu\
-uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu";
+66666666222622666666666666666666\
+11211111111111121111111111111111\
+11111111111111111111111111112111\
+11111111111111111111111111111111\
+11111111111111111111111111111111\
+11111111111111111111111111111111\
+11111111111111111111111111111111\
+11111111111111111111111111111111";
 
-inline static int
-is_json_friendly(const u_char *str, size_t len) {
-    for (; 0 < len; str++, len--) {
-        if ('o' != json_friendly_chars[*str]) {
-            return 0;
-        }
-    }
-    return 1;
-}
+static char     ascii_friendly_chars[256] = "\
+66666666222622666666666666666666\
+11211111111111121111111111111111\
+11111111111111111111111111112111\
+11111111111111111111111111111116\
+66666666666666666666666666666666\
+66666666666666666666666666666666\
+66666666666666666666666666666666\
+66666666666666666666666666666666";
 
 inline static size_t
 json_friendly_size(const u_char *str, size_t len) {
-    int		cnt = 0;
-    
+    size_t	size = 0;
+
     for (; 0 < len; str++, len--) {
-	switch (json_friendly_chars[*str]) {
-	case 'o':	cnt++;		break;
-	case 'x':	cnt += 2;	break;
-	case 'u':	cnt += 6;	break;
-	default:			break;
-	}
+	size += json_friendly_chars[*str];
     }
-    return cnt;
+    return size - len * (size_t)'0';
+}
+
+inline static size_t
+ascii_friendly_size(const u_char *str, size_t len) {
+    size_t	size = 0;
+
+    for (; 0 < len; str++, len--) {
+	size += ascii_friendly_chars[*str];
+    }
+    return size - len * (size_t)'0';
 }
 
 inline static void
@@ -341,8 +346,16 @@ dump_float(VALUE obj, Out out) {
 
 static void
 dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out) {
-    size_t	size = json_friendly_size((u_char*)str, cnt);
-    
+    size_t	size;
+    char	*cmap;
+
+    if (Yes == out->opts->ascii_only) {
+	cmap = ascii_friendly_chars;
+	size = ascii_friendly_size((u_char*)str, cnt);
+    } else {
+	cmap = json_friendly_chars;
+	size = json_friendly_size((u_char*)str, cnt);
+    }
     if (out->end - out->cur <= (long)size + 10) { // extra 10 for escaped first char, quotes, and sym
 	grow(out, size + 10);
     }
@@ -371,11 +384,11 @@ dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out) {
 	    *out->cur++ = ':';
 	}
 	for (; 0 < cnt; cnt--, str++) {
-	    switch (json_friendly_chars[(u_char)*str]) {
-	    case 'o':
+	    switch (cmap[(u_char)*str]) {
+	    case '1':
 		*out->cur++ = *str;
 		break;
-	    case 'x':
+	    case '2':
 		*out->cur++ = '\\';
 		switch (*str) {
 		case '\b':	*out->cur++ = 'b';	break;
@@ -386,7 +399,7 @@ dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out) {
 		default:	*out->cur++ = *str;	break;
 		}
 		break;
-	    case 'u':
+	    case '6':
 		*out->cur++ = '\\';
 		*out->cur++ = 'u';
 		if ((u_char)*str <= 0x7F) {

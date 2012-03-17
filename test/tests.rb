@@ -72,6 +72,7 @@ class Juice < ::Test::Unit::TestCase
                    :circular=>false,
                    :auto_define=>true,
                    :symbol_keys=>false,
+                   :ascii_only=>false,
                    :mode=>:object}, opts)
   end
 
@@ -82,13 +83,15 @@ class Juice < ::Test::Unit::TestCase
       :circular=>false,
       :auto_define=>true,
       :symbol_keys=>false,
+      :ascii_only=>false,
       :mode=>:object}
     o2 = {
       :encoding=>"UTF-8",
       :indent=>4,
       :circular=>true,
       :auto_define=>false,
-      :symbol_keys=>false,
+      :symbol_keys=>true,
+      :ascii_only=>true,
       :mode=>:compat}
     o3 = { :indent => 4 }
     Oj.default_options = o2
@@ -143,7 +146,9 @@ class Juice < ::Test::Unit::TestCase
   def test_encode
     Oj.default_options = { :encoding => 'UTF-8' }
     dump_and_load("ぴーたー", false)
-    Oj.default_options = { :encoding => nil }
+    Oj.default_options = { :ascii_only => true }
+    dump_and_load("ぴーたー", false)
+    Oj.default_options = { :encoding => nil, :ascii_only => false }
   end
 
   def test_array
