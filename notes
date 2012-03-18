@@ -5,18 +5,23 @@
 
 
 - next
- - symbolize keys option
- - io object as option for input
+ - make file io input use fileno to get file and then use C to load
+  - set up benchmark for this
+ - make sure stack is not exceeded
+ - dump from C structs
 
- - stream
-  - load
-   - callback parser
-    - object_start
-    - object_end
-    - array_start
-    - array_end
-    - value - just primitive or one for each type
-    - key
+
+- stream
+ - use with Oj::Doc
+ - use with standard
+ - add callback SAX like option
+  - callback parser
+   - object_start
+   - object_end
+   - array_start
+   - array_end
+   - value
+   - key
 
    - default callbacks use straight C and create Hash or Object according to mode
     - callback object
@@ -36,9 +41,7 @@
    - always dump to stream/file if possible (check performance)
 
 - dump
- - multibyte group encoding
  - object and other types of object dumping
-
 
 - fast
  - make sure stack is not exceeded
