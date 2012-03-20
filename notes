@@ -7,6 +7,27 @@
 - next
  - make file io input use fileno to get file and then use C to load
 
+ - write JSON compatible extension
+  - attributes - ignore for now
+  - methods
+   - JSON.[](object, opts={})
+    - if String then parse else dump
+   - restore(source, proc=nil) - alias for load
+   - load(source, proc=nil)
+    - takes String, IO, or respond_to?(:read)
+   - dump(obj, io=nil, limit=nil)
+   - fast_generate(obj, opts=nil)
+   - generate(obj, opts=nil)
+   - parse(source, opts={})
+   - parse!(sournce, opts={})
+    - different defaults
+   - pretty_generate(obj, opts=nil)
+   - recurse_proc(result, &proc)
+  - verify
+   - what happens with circular references
+   - how does recurse_proc work
+   - how does proc with load/restore work
+   - can Oj be assigned to JSON if JSON does not exist?
 
 - stream
  - use with Oj::Doc
