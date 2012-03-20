@@ -6,9 +6,6 @@
 
 - next
  - make file io input use fileno to get file and then use C to load
-  - set up benchmark for this
- - make sure stack is not exceeded
- - dump from C structs
 
 
 - stream
@@ -40,13 +37,6 @@
    - support stream as arg
    - always dump to stream/file if possible (check performance)
 
-- dump
- - object and other types of object dumping
-
-- fast
- - make sure stack is not exceeded
- - dump native
- 
  - example
   - contacts
    - pull apart input file with multiple contacts and write individual files

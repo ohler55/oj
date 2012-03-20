@@ -89,9 +89,33 @@ typedef struct _Options {
     char        mode;		// Mode
 } *Options;
 
+enum {
+    STR_VAL  = 0x00,
+    COL_VAL  = 0x01,
+    RUBY_VAL = 0x02
+};
+    
+typedef struct _Leaf {
+    struct _Leaf	*next;
+    union {
+	const char	*key;      // hash key
+	size_t		index;     // array index, 0 is not set
+    };
+    union {
+	char		*str;      // pointer to location in json string
+	struct _Leaf	*elements; // array and hash elements
+	VALUE		value;
+    };
+    uint8_t		type;
+    uint8_t		parent_type;
+    uint8_t		value_type;
+} *Leaf;
+
 extern VALUE	oj_parse(char *json, Options options);
 extern char*	oj_write_obj_to_str(VALUE obj, Options copts);
 extern void	oj_write_obj_to_file(VALUE obj, const char *path, Options copts);
+extern char*	oj_write_leaf_to_str(Leaf leaf, Options copts);
+extern void	oj_write_leaf_to_file(Leaf leaf, const char *path, Options copts);
 
 extern void	_oj_raise_error(const char *msg, const char *xml, const char *current, const char* file, int line);
 

@@ -97,6 +97,14 @@ static void     grow(Out out, size_t len);
 static size_t	json_friendly_size(const u_char *str, size_t len);
 static size_t	ascii_friendly_size(const u_char *str, size_t len);
 
+static void	dump_leaf_to_json(Leaf leaf, Options copts, Out out);
+static void	dump_leaf(Leaf leaf, int depth, Out out);
+static void	dump_leaf_str(Leaf leaf, Out out);
+static void	dump_leaf_fixnum(Leaf leaf, Out out);
+static void	dump_leaf_float(Leaf leaf, Out out);
+static void	dump_leaf_array(Leaf leaf, int depth, Out out);
+static void	dump_leaf_hash(Leaf leaf, int depth, Out out);
+
 
 static const char	hex_chars[17] = "0123456789abcdef";
 
@@ -287,7 +295,7 @@ static void
 dump_fixnum(VALUE obj, Out out) {
     char        buf[32];
     char        *b = buf + sizeof(buf) - 1;
-    long        num = NUM2LONG(obj);
+    long	num = NUM2LONG(obj);
     int         neg = 0;
 
     if (0 > num) {
@@ -407,7 +415,6 @@ dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out) {
 		    *out->cur++ = '0';
 		    dump_hex((u_char)*str, out);
 		} else { // continuation?
-		    // TBD lead with \u00 . grab next char?
 		    *out->cur++ = '0';
 		    *out->cur++ = '0';
 		    dump_hex((u_char)*str, out);
@@ -1128,7 +1135,224 @@ oj_write_obj_to_file(VALUE obj, const char *path, Options copts) {
         rb_raise(rb_eIOError, "%s\n", strerror(errno));
     }
     if (size != fwrite(out.buf, 1, size, f)) {
-        int err = ferror(f);
+        int	err = ferror(f);
+
+        rb_raise(rb_eIOError, "Write failed. [%d:%s]\n", err, strerror(err));
+    }
+    xfree(out.buf);
+    fclose(f);
+}
+
+// dump leaf functions
+
+inline static void
+dump_chars(const char *s, size_t size, Out out) {
+    if (out->end - out->cur <= (long)size) {
+	grow(out, size);
+    }
+    memcpy(out->cur, s, size);
+    out->cur += size;
+    *out->cur = '\0';
+}
+
+static void
+dump_leaf_str(Leaf leaf, Out out) {
+    switch (leaf->value_type) {
+    case STR_VAL:
+	dump_cstr(leaf->str, strlen(leaf->str), 0, 0, out);
+	break;
+    case RUBY_VAL:
+	dump_cstr(StringValuePtr(leaf->value), RSTRING_LEN(leaf->value), 0, 0, out);
+	break;
+    case COL_VAL:
+    default:
+	rb_raise(rb_eTypeError, "Unexpected value type %02x.", leaf->value_type);
+	break;
+    }
+}
+
+static void
+dump_leaf_fixnum(Leaf leaf, Out out) {
+    switch (leaf->value_type) {
+    case STR_VAL:
+	dump_chars(leaf->str, strlen(leaf->str), out);
+	break;
+    case RUBY_VAL:
+	if (T_BIGNUM == rb_type(leaf->value)) {
+	    dump_bignum(leaf->value, out);
+	} else {
+	    dump_fixnum(leaf->value, out);
+	}
+	break;
+    case COL_VAL:
+    default:
+	rb_raise(rb_eTypeError, "Unexpected value type %02x.", leaf->value_type);
+	break;
+    }
+}
+
+static void
+dump_leaf_float(Leaf leaf, Out out) {
+    switch (leaf->value_type) {
+    case STR_VAL:
+	dump_chars(leaf->str, strlen(leaf->str), out);
+	break;
+    case RUBY_VAL:
+	dump_float(leaf->value, out);
+	break;
+    case COL_VAL:
+    default:
+	rb_raise(rb_eTypeError, "Unexpected value type %02x.", leaf->value_type);
+	break;
+    }
+}
+
+static void
+dump_leaf_array(Leaf leaf, int depth, Out out) {
+    size_t	size;
+    int		d2 = depth + 1;
+
+    size = 2;
+    if (out->end - out->cur <= (long)size) {
+        grow(out, size);
+    }
+    *out->cur++ = '[';
+    if (0 == leaf->elements) {
+	*out->cur++ = ']';
+    } else {
+	Leaf	first = leaf->elements->next;
+	Leaf	e = first;
+
+	size = d2 * out->indent + 2;
+	do {
+	    if (out->end - out->cur <= (long)size) {
+		grow(out, size);
+	    }
+	    fill_indent(out, d2);
+	    dump_leaf(e, d2, out);
+	    if (e->next != first) {
+		*out->cur++ = ',';
+	    }
+	    e = e->next;
+	} while (e != first);
+	size = depth * out->indent + 1;
+	if (out->end - out->cur <= (long)size) {
+	    grow(out, size);
+	}
+	fill_indent(out, depth);
+	*out->cur++ = ']';
+    }
+    *out->cur = '\0';
+}
+
+static void
+dump_leaf_hash(Leaf leaf, int depth, Out out) {
+    size_t	size;
+    int		d2 = depth + 1;
+
+    size = 2;
+    if (out->end - out->cur <= (long)size) {
+        grow(out, size);
+    }
+    *out->cur++ = '{';
+    if (0 == leaf->elements) {
+	*out->cur++ = '}';
+    } else {
+	Leaf	first = leaf->elements->next;
+	Leaf	e = first;
+
+	size = d2 * out->indent + 2;
+	do {
+	    if (out->end - out->cur <= (long)size) {
+		grow(out, size);
+	    }
+	    fill_indent(out, d2);
+	    dump_cstr(e->key, strlen(e->key), 0, 0, out);
+	    *out->cur++ = ':';
+	    dump_leaf(e, d2, out);
+	    if (e->next != first) {
+		*out->cur++ = ',';
+	    }
+	    e = e->next;
+	} while (e != first);
+	size = depth * out->indent + 1;
+	if (out->end - out->cur <= (long)size) {
+	    grow(out, size);
+	}
+	fill_indent(out, depth);
+	*out->cur++ = '}';
+    }
+    *out->cur = '\0';
+}
+
+static void
+dump_leaf(Leaf leaf, int depth, Out out) {
+    switch (leaf->type) {
+    case T_NIL:
+	dump_nil(out);
+	break;
+    case T_TRUE:
+	dump_true(out);
+	break;
+    case T_FALSE:
+	dump_false(out);
+	break;
+    case T_STRING:
+	dump_leaf_str(leaf, out);
+	break;
+    case T_FIXNUM:
+	dump_leaf_fixnum(leaf, out);
+	break;
+    case T_FLOAT:
+	dump_leaf_float(leaf, out);
+	break;
+    case T_ARRAY:
+	dump_leaf_array(leaf, depth, out);
+	break;
+    case T_HASH:
+	dump_leaf_hash(leaf, depth, out);
+	break;
+    default:
+	rb_raise(rb_eTypeError, "Unexpected type %02x.", leaf->type);
+	break;
+    }
+}
+
+static void
+dump_leaf_to_json(Leaf leaf, Options copts, Out out) {
+    out->buf = ALLOC_N(char, 65336);
+    out->end = out->buf + 65325; // 10 less than end plus extra for possible errors
+    out->cur = out->buf;
+    out->circ_cnt = 0;
+    out->opts = copts;
+    out->hash_cnt = 0;
+    out->indent = copts->indent;
+    dump_leaf(leaf, 0, out);
+}
+
+char*
+oj_write_leaf_to_str(Leaf leaf, Options copts) {
+    struct _Out out;
+
+    dump_leaf_to_json(leaf, copts, &out);
+
+    return out.buf;
+}
+
+void
+oj_write_leaf_to_file(Leaf leaf, const char *path, Options copts) {
+    struct _Out out;
+    size_t      size;
+    FILE        *f;    
+
+    dump_leaf_to_json(leaf, copts, &out);
+    size = out.cur - out.buf;
+    if (0 == (f = fopen(path, "w"))) {
+        rb_raise(rb_eIOError, "%s\n", strerror(errno));
+    }
+    if (size != fwrite(out.buf, 1, size, f)) {
+        int	err = ferror(f);
+
         rb_raise(rb_eIOError, "Write failed. [%d:%s]\n", err, strerror(err));
     }
     xfree(out.buf);

@@ -14,9 +14,10 @@ require 'oj'
 
 $verbose = false
 $indent = 0
-$iter = 100000
+$iter = 10000
 $gets = 0
 $fetch = false
+$write = false
 
 opts = OptionParser.new
 opts.on("-v", "verbose")                                  { $verbose = true }
@@ -24,6 +25,7 @@ opts.on("-c", "--count [Int]", Integer, "iterations")     { |i| $iter = i }
 opts.on("-i", "--indent [Int]", Integer, "indentation")   { |i| $indent = i }
 opts.on("-g", "--gets [Int]", Integer, "number of gets")  { |i| $gets = i }
 opts.on("-f", "fetch")                                    { $fetch = true }
+opts.on("-w", "write")                                    { $write = true }
 opts.on("-h", "--help", "Show this display")              { puts opts; Process.exit!(0) }
 files = opts.parse(ARGV)
 
@@ -82,6 +84,17 @@ perf.add('Yajl', 'parse') { Yajl::Parser.parse($json) } unless $failed.has_key?(
 perf.add('JSON::Ext', 'parse') { JSON::Ext::Parser.new($json).parse } unless $failed.has_key?('JSON::Ext')
 perf.run($iter)
 
+puts '-' * 80
+puts "JSON generation Performance"
+Oj::Doc.open($json) do |doc|
+  perf = Perf.new()
+  perf.add('Oj::Doc', 'dump') { doc.dump() }
+  perf.add('Yajl', 'encode') { Yajl::Encoder.encode($obj) }
+  perf.add('JSON::Ext', 'fast_generate') { JSON.fast_generate($obj) }
+  perf.before('JSON::Ext') { JSON.generator = JSON::Ext::Generator }
+  perf.run($iter)
+end
+
 if 0 < $gets
   puts '-' * 80
   puts "Parse and get all values Performance"
@@ -109,6 +122,19 @@ if $fetch
     end
     # version that raises if the path is incorrect
 #    perf.add('Ruby', 'fetch') { $fetch.times { json_hash['d'][1][3][1] } }
+    perf.run($iter)
+  end
+end
+
+if $write
+  puts '-' * 80
+  puts "JSON write to file Performance"
+  Oj::Doc.open($json) do |doc|
+    perf = Perf.new()
+    perf.add('Oj::Doc', 'dump') { doc.dump(nil, 'oj.json') }
+    perf.add('Yajl', 'encode') { File.open('yajl.json', 'w') { |f| Yajl::Encoder.encode($obj, f) } }
+    perf.add('JSON::Ext', 'fast_generate') { File.open('json_ext.json', 'w') { |f| f.write(JSON.fast_generate($obj)) } }
+    perf.before('JSON::Ext') { JSON.generator = JSON::Ext::Generator }
     perf.run($iter)
   end
 end
