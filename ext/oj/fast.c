@@ -37,29 +37,6 @@
 #include "oj.h"
 
 #define MAX_STACK	100
-
-enum {
-    STR_VAL  = 0x00,
-    COL_VAL  = 0x01,
-    RUBY_VAL = 0x02
-};
-    
-typedef struct _Leaf {
-    struct _Leaf	*next;
-    union {
-	const char	*key;      // hash key
-	size_t		index;     // array index, 0 is not set
-    };
-    union {
-	char		*str;      // pointer to location in json string
-	struct _Leaf	*elements; // array and hash elements
-	VALUE		value;
-    };
-    uint8_t		type;
-    uint8_t		parent_type;
-    uint8_t		value_type;
-} *Leaf;
-
 //#define BATCH_SIZE	(4096 / sizeof(struct _Leaf) - 1)
 #define BATCH_SIZE	100
 
@@ -81,8 +58,6 @@ typedef struct _Doc {
     unsigned long	size;        // number of leaves/branches in the doc
     VALUE		self;
     Batch		batches;
-    //Leaf		where_array[MAX_STACK];
-    //size_t		where_len;   // length of allocated if longer than where_array
     struct _Batch	batch0;
 } *Doc;
 
@@ -748,8 +723,6 @@ read_quoted_value(ParseInfo pi) {
 // doc support functions
 inline static void
 doc_init(Doc doc) {
-    //doc->where_path = doc->where_array;
-    //doc->where_len = 0;
     doc->where = doc->where_path;
     *doc->where = 0;
     doc->data = 0;
@@ -776,11 +749,6 @@ doc_free(Doc doc) {
 		xfree(b);
 	    }
 	}
-	/*
-	if (doc->where_array != doc->where_path) {
-	    free(doc->where_path);
-	}
-	*/
 	//xfree(f);
     }
 }
@@ -792,6 +760,7 @@ protect_open_proc(VALUE x) {
     pi->doc->data = read_next(pi); // parse
     *pi->doc->where = pi->doc->data;
     pi->doc->where = pi->doc->where_path;
+
     return rb_yield(pi->doc->self); // caller processing
 }
 
@@ -848,6 +817,9 @@ static Leaf
 get_leaf(Leaf *stack, Leaf *lp, const char *path) {
     Leaf	leaf = *lp;
 
+    if (MAX_STACK <= lp - stack) {
+	rb_raise(rb_eIOError, "Path too deep. limit is %d levels.\n", MAX_STACK);
+    }
     if ('\0' != *path) {
 	if ('.' == *path && '.' == *(path + 1)) {
 	    path += 2;
@@ -864,7 +836,6 @@ get_leaf(Leaf *stack, Leaf *lp, const char *path) {
 	    Leaf	e = first;
 	    int		type = leaf->type;
 
-	    // TBD fail if stack too deep
 	    leaf = 0;
 	    if (T_ARRAY == type) {
 		int	cnt = 0;
@@ -933,7 +904,9 @@ each_leaf(Doc doc, VALUE self) {
 
 static int
 move_step(Doc doc, const char *path, int loc) {
-    // TBD raise if too deep
+    if (MAX_STACK <= doc->where - doc->where_path) {
+	rb_raise(rb_eIOError, "Path too deep. limit is %d levels.\n", MAX_STACK);
+    }
     if ('\0' == *path) {
 	loc = 0;
     } else {
@@ -1425,13 +1398,12 @@ doc_each_value(int argc, VALUE *argv, VALUE self) {
     return Qnil;
 }
 
-// TBD improve to be more direct for higher performance
-
 /* call-seq: dump(path=nil) => String
  *
  * Dumps the document or nodes to a new JSON document. It uses the default
  * options for generating the JSON.
  * @param [String] path if provided it identified the top of the branch to dump to JSON
+ * @param [String] filename if provided it is the filename to write the output to
  * @example
  *   Oj::Doc.open('[3,[2,1]]') { |doc|
  *       doc.dump('/2')
@@ -1443,16 +1415,31 @@ doc_dump(int argc, VALUE *argv, VALUE self) {
     Doc		doc = DATA_PTR(self);
     Leaf	leaf;
     const char	*path = 0;
-    const char	*json;
+    const char	*filename = 0;
 
     if (1 <= argc) {
-	Check_Type(*argv, T_STRING);
-	path = StringValuePtr(*argv);
+	if (Qnil != *argv) {
+	    Check_Type(*argv, T_STRING);
+	    path = StringValuePtr(*argv);
+	}
+	if (1 <= argc) {
+	    Check_Type(argv[1], T_STRING);
+	    filename = StringValuePtr(argv[1]);
+	}
     }
     if (0 != (leaf = get_doc_leaf(doc, path))) {
-	json = oj_write_obj_to_str(leaf_value(doc, leaf), &oj_default_options);
+	char	*json;
+	VALUE	rjson;
 
-	return rb_str_new2(json);
+	if (0 == filename) {
+	    json = oj_write_leaf_to_str(leaf, &oj_default_options);
+	    rjson = rb_str_new2(json);
+	    xfree(json);
+	} else {
+	    oj_write_leaf_to_file(leaf, filename, &oj_default_options);
+	    rjson = Qnil;
+	}
+	return rjson;
     }
     return Qnil;
 }
