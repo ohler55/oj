@@ -24,9 +24,9 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 1.0.5
+### Release 1.0.6
 
- - Added :ascii_only options for dumping JSON where all high-bit characters are encoded as escaped sequences.
+ - Gave Oj::Doc a speed increase. It is now 8 times fast than JSON::Ext.
 
 ## <a name="description">Description</a>
 

@@ -1422,7 +1422,7 @@ doc_dump(int argc, VALUE *argv, VALUE self) {
 	    Check_Type(*argv, T_STRING);
 	    path = StringValuePtr(*argv);
 	}
-	if (1 <= argc) {
+	if (2 <= argc) {
 	    Check_Type(argv[1], T_STRING);
 	    filename = StringValuePtr(argv[1]);
 	}
