@@ -36,6 +36,8 @@
 
 #include "oj.h"
 
+// maximum to allocate on the stack, arbitrary limit
+#define SMALL_XML	65536
 #define MAX_STACK	100
 //#define BATCH_SIZE	(4096 / sizeof(struct _Leaf) - 1)
 #define BATCH_SIZE	100
@@ -1027,13 +1029,22 @@ static VALUE
 doc_open(VALUE clas, VALUE str) {
     char	*json;
     size_t	len;
+    VALUE	obj;
 
     Check_Type(str, T_STRING);
     len = RSTRING_LEN(str) + 1;
-    json = ALLOCA_N(char, len);
+    if (SMALL_XML < len) {
+	json = ALLOC_N(char, len);
+    } else {
+	json = ALLOCA_N(char, len);
+    }
     memcpy(json, StringValuePtr(str), len);
 
-    return parse_json(clas, json);
+    obj = parse_json(clas, json);
+    if (SMALL_XML < len) {
+	xfree(json);
+    }    
+    return obj;
 }
 
 /* call-seq: open_file(filename) { |doc| ... } => Object
@@ -1054,6 +1065,7 @@ doc_open_file(VALUE clas, VALUE filename) {
     char	*json;
     FILE	*f;
     size_t	len;
+    VALUE	obj;
 
     Check_Type(filename, T_STRING);
     path = StringValuePtr(filename);
@@ -1062,7 +1074,11 @@ doc_open_file(VALUE clas, VALUE filename) {
     }
     fseek(f, 0, SEEK_END);
     len = ftell(f);
-    json = ALLOCA_N(char, len + 1);
+    if (SMALL_XML < len) {
+	json = ALLOC_N(char, len + 1);
+    } else {
+	json = ALLOCA_N(char, len + 1);
+    }
     fseek(f, 0, SEEK_SET);
     if (len != fread(json, 1, len, f)) {
         fclose(f);
@@ -1070,8 +1086,11 @@ doc_open_file(VALUE clas, VALUE filename) {
     }
     fclose(f);
     json[len] = '\0';
-
-    return parse_json(clas, json);
+    obj = parse_json(clas, json);
+    if (SMALL_XML < len) {
+	xfree(json);
+    }
+    return obj;
 }
 
 /* Document-method: parse

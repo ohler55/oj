@@ -36,6 +36,9 @@
 
 #include "oj.h"
 
+// maximum to allocate on the stack, arbitrary limit
+#define SMALL_XML	65536
+
 typedef struct _YesNoOpt {
     VALUE       sym;
     char        *attr;
@@ -269,7 +272,6 @@ load(char *json, int argc, VALUE *argv, VALUE self) {
 	parse_options(*argv, &options);
     }
     obj = oj_parse(json, &options);
-    //free(json);
 
     return obj;
 }
@@ -287,7 +289,8 @@ load_str(int argc, VALUE *argv, VALUE self) {
     char        *json;
     size_t	len;
     VALUE	input;
-    
+    VALUE	obj;
+
     if (1 > argc) {
 	rb_raise(rb_eArgError, "Wrong number of arguments to load().\n");
     }
@@ -295,7 +298,11 @@ load_str(int argc, VALUE *argv, VALUE self) {
     if (rb_type(input) == T_STRING) {
 	// the json string gets modified so make a copy of it
 	len = RSTRING_LEN(*argv) + 1;
-	json = ALLOCA_N(char, len);
+	if (SMALL_XML < len) {
+	    json = ALLOC_N(char, len);
+	} else {
+	    json = ALLOCA_N(char, len);
+	}
 	strcpy(json, StringValuePtr(*argv));
     } else {
 	VALUE	clas = rb_obj_class(input);
@@ -304,7 +311,11 @@ load_str(int argc, VALUE *argv, VALUE self) {
 	if (oj_stringio_class == clas) {
 	    s = rb_funcall2(input, oj_string_id, 0, 0);
 	    len = RSTRING_LEN(s) + 1;
-	    json = ALLOCA_N(char, len);
+	    if (SMALL_XML < len) {
+		json = ALLOC_N(char, len);
+	    } else {
+		json = ALLOCA_N(char, len);
+	    }
 	    strcpy(json, StringValuePtr(s));
 
 	    // TBD else responds to fileno
@@ -312,13 +323,21 @@ load_str(int argc, VALUE *argv, VALUE self) {
 	} else if (rb_respond_to(input, oj_read_id)) {
 	    s = rb_funcall2(input, oj_read_id, 0, 0);
 	    len = RSTRING_LEN(s) + 1;
-	    json = ALLOCA_N(char, len);
+	    if (SMALL_XML < len) {
+		json = ALLOC_N(char, len);
+	    } else {
+		json = ALLOCA_N(char, len);
+	    }
 	    strcpy(json, StringValuePtr(s));
 	} else {
 	    rb_raise(rb_eArgError, "load() expected a String or IO Object.\n");
 	}
     }
-    return load(json, argc - 1, argv + 1, self);
+    obj = load(json, argc - 1, argv + 1, self);
+    if (SMALL_XML < len) {
+	xfree(json);
+    }
+    return obj;
 }
 
 static VALUE
@@ -327,6 +346,7 @@ load_file(int argc, VALUE *argv, VALUE self) {
     char                *json;
     FILE                *f;
     unsigned long       len;
+    VALUE		obj;
     
     Check_Type(*argv, T_STRING);
     path = StringValuePtr(*argv);
@@ -335,9 +355,10 @@ load_file(int argc, VALUE *argv, VALUE self) {
     }
     fseek(f, 0, SEEK_END);
     len = ftell(f);
-    if (0 == (json = ALLOCA_N(char, len + 1))) {
-        fclose(f);
-        rb_raise(rb_eNoMemError, "Could not allocate memory for %ld byte file.\n", len);
+    if (SMALL_XML < len) {
+	json = ALLOC_N(char, len + 1);
+    } else {
+	json = ALLOCA_N(char, len + 1);
     }
     fseek(f, 0, SEEK_SET);
     if (len != fread(json, 1, len, f)) {
@@ -347,7 +368,11 @@ load_file(int argc, VALUE *argv, VALUE self) {
     fclose(f);
     json[len] = '\0';
 
-    return load(json, argc - 1, argv + 1, self);
+    obj = load(json, argc - 1, argv + 1, self);
+    if (SMALL_XML < len) {
+	xfree(json);
+    }
+    return obj;
 }
 
 /* call-seq: dump(obj, options) => json-string
