@@ -5,8 +5,9 @@
 
 
 - next
- - only alloca when xml is small
  - make file io input use fileno to get file and then use C to load
+ - allow comments in JSON
+  - allow only where whitespace would exist
 
  - write JSON compatible extension
   - attributes - ignore for now
