@@ -91,6 +91,7 @@ class Perf
 
     def run(iter, base)
       begin
+        GC.start
         @before.call unless @before.nil?
         start = Time.now
         iter.times { @blk.call }

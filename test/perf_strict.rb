@@ -65,7 +65,7 @@ end
 
 $verbose = false
 $indent = 0
-$iter = 100000
+$iter = 10000
 $with_object = true
 $with_bignum = true
 $with_nums = true
@@ -130,8 +130,16 @@ capture_error('Oj', $obj, 'load', 'dump') { |o| Oj.load(Oj.dump(o, :mode => :com
 capture_error('Ox', $obj, 'load', 'dump') { |o| Ox.load(Ox.dump(o, :mode => :object), :mode => :object) }
 capture_error('MessagePack', $obj, 'unpack', 'pack') { |o| MessagePack.unpack(MessagePack.pack($obj)) }
 capture_error('Yajl', $obj, 'encode', 'parse') { |o| Yajl::Parser.parse(Yajl::Encoder.encode(o)) }
-capture_error('JSON::Ext', $obj, 'generate', 'parse') { |o| JSON.generator = JSON::Ext::Generator; JSON::Ext::Parser.new(JSON.generate(o)).parse }
-capture_error('JSON::Pure', $obj, 'generate', 'parse') { |o| JSON.generator = JSON::Pure::Generator; JSON::Pure::Parser.new(JSON.generate(o)).parse }
+capture_error('JSON::Ext', $obj, 'generate', 'parse') { |o|
+  JSON.generator = JSON::Ext::Generator
+  JSON.parser = JSON::Ext::Parser
+  JSON.parse(JSON.generate(o))
+}
+capture_error('JSON::Pure', $obj, 'generate', 'parse') { |o|
+  JSON.generator = JSON::Pure::Generator
+  JSON.parser = JSON::Pure::Parser
+  JSON.parse(JSON.generate(o))
+}
 
 begin
   $msgpack = MessagePack.pack($obj)
@@ -150,6 +158,14 @@ end
 puts '-' * 80
 puts "Load/Parse Performance"
 perf = Perf.new()
+unless $failed.has_key?('JSON::Ext')
+  perf.add('JSON::Ext', 'parse') { JSON.parse($json) }
+  perf.before('JSON::Ext') { JSON.parser = JSON::Ext::Parser }
+end
+unless $failed.has_key?('JSON::Pure')
+  perf.add('JSON::Pure', 'parse') { JSON.parse($json) }
+  perf.before('JSON::Pure') { JSON.parser = JSON::Pure::Parser }
+end
 unless $failed.has_key?('Oj:compat')
   perf.add('Oj:compat', 'load') { Oj.load($json) }
   perf.before('Oj:compat') { Oj.default_options = { :mode => :compat} }
@@ -159,8 +175,6 @@ unless $failed.has_key?('Oj')
   perf.before('Oj') { Oj.default_options = { :mode => :object} }
 end
 perf.add('Yajl', 'parse') { Yajl::Parser.parse($json) } unless $failed.has_key?('Yajl')
-perf.add('JSON::Ext', 'parse') { JSON::Ext::Parser.new($json).parse } unless $failed.has_key?('JSON::Ext')
-perf.add('JSON::Pure', 'parse') { JSON::Pure::Parser.new($json).parse } unless $failed.has_key?('JSON::Ext')
 perf.add('Ox', 'load') { Ox.load($xml) } unless $failed.has_key?('Ox')
 perf.add('MessagePack', 'unpack') { MessagePack.unpack($msgpack) } unless $failed.has_key?('MessagePack')
 perf.run($iter)
@@ -169,15 +183,6 @@ puts
 puts '-' * 80
 puts "Dump/Encode/Generate Performance"
 perf = Perf.new()
-unless $failed.has_key?('Oj:compat')
-  perf.add('Oj:compat', 'dump') { Oj.dump($obj) }
-  perf.before('Oj:compat') { Oj.default_options = { :mode => :compat} }
-end
-unless $failed.has_key?('Oj')
-  perf.add('Oj', 'dump') { Oj.dump($obj) }
-  perf.before('Oj') { Oj.default_options = { :mode => :object} }
-end
-perf.add('Yajl', 'encode') { Yajl::Encoder.encode($obj) } unless $failed.has_key?('Yajl')
 unless $failed.has_key?('JSON::Ext')
   if 0 == $indent
     perf.add('JSON::Ext', 'generate') { JSON.generate($obj) }
@@ -194,6 +199,15 @@ unless $failed.has_key?('JSON::Pure')
   end
   perf.before('JSON::Pure') { JSON.generator = JSON::Pure::Generator }
 end
+unless $failed.has_key?('Oj')
+  perf.add('Oj', 'dump') { Oj.dump($obj) }
+  perf.before('Oj') { Oj.default_options = { :mode => :object} }
+end
+unless $failed.has_key?('Oj:compat')
+  perf.add('Oj:compat', 'dump') { Oj.dump($obj) }
+  perf.before('Oj:compat') { Oj.default_options = { :mode => :compat} }
+end
+perf.add('Yajl', 'encode') { Yajl::Encoder.encode($obj) } unless $failed.has_key?('Yajl')
 perf.add('Ox', 'dump') { Ox.dump($obj) } unless $failed.has_key?('Ox')
 perf.add('MessagePack', 'pack') { MessagePack.pack($obj) } unless $failed.has_key?('MessagePack')
 perf.run($iter)
