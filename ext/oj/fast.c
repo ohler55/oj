@@ -1116,7 +1116,7 @@ doc_where(VALUE self) {
 	    *p++ = '/';
 	}
 	*--p = '\0';
-	return rb_str_new2(path);
+	return rb_str_new(path, p - path);
     }
 }
 

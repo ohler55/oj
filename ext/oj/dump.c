@@ -1034,7 +1034,7 @@ dump_val(VALUE obj, int depth, Out out) {
 	default:		dump_sym_obj(obj, out);		break;
 	}
 	break;
-    case T_ARRAY:	dump_array(obj, depth, out);	break;
+    case T_ARRAY:	dump_array(obj, depth, out);		break;
     case T_HASH:	dump_hash(obj, depth, out->opts->mode, out);	break;
     case T_CLASS:
 	switch (out->opts->mode) {

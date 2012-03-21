@@ -78,6 +78,8 @@ static VALUE	object_sym;
 static VALUE	strict_sym;
 static VALUE	symbol_keys_sym;
 
+static VALUE	mimic = Qnil;
+
 Cache   oj_class_cache = 0;
 Cache   oj_attr_cache = 0;
 
@@ -90,6 +92,8 @@ struct _Options	oj_default_options = {
     No,			// ascii_only
     ObjectMode,		// mode
 };
+
+static VALUE	define_mimic_json(VALUE self);
 
 /* call-seq: default_options() => Hash
  *
@@ -411,6 +415,7 @@ void Init_oj() {
     rb_define_module_function(Oj, "default_options", get_def_opts, 0);
     rb_define_module_function(Oj, "default_options=", set_def_opts, 1);
 
+    rb_define_module_function(Oj, "mimic_JSON", define_mimic_json, 0);
     rb_define_module_function(Oj, "load", load_str, -1);
     rb_define_module_function(Oj, "load_file", load_file, -1);
     rb_define_module_function(Oj, "dump", dump, -1);
@@ -455,6 +460,27 @@ void Init_oj() {
     oj_cache_new(&oj_attr_cache);
 
     oj_init_doc();
+}
+
+static VALUE
+define_mimic_json(VALUE self) {
+    if (Qnil == mimic) {
+	mimic = rb_define_module("JSON");
+	// TBD add methods to mimic
+	// [](object, opts={})
+	// restore(source, proc=nil) - alias for load
+	// load(source, proc=nil)
+	// dump(obj, io=nil, limit=nil)
+	// fast_generate(obj, opts=nil)
+	// generate(obj, opts=nil)
+	// parse(source, opts={})
+	// parse!(sournce, opts={})
+	// pretty_generate(obj, opts=nil)
+	// recurse_proc(result, &proc)
+
+	// TBD mode for mimic maps to :compat or :object for higher performance
+    }
+    return mimic;
 }
 
 void
