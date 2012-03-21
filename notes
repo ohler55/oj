@@ -5,6 +5,7 @@
 
 
 - next
+ - only alloca when xml is small
  - make file io input use fileno to get file and then use C to load
 
  - write JSON compatible extension
@@ -19,7 +20,7 @@
    - fast_generate(obj, opts=nil)
    - generate(obj, opts=nil)
    - parse(source, opts={})
-   - parse!(sournce, opts={})
+   - parse!(source, opts={})
     - different defaults
    - pretty_generate(obj, opts=nil)
    - recurse_proc(result, &proc)
@@ -28,6 +29,12 @@
    - how does recurse_proc work
    - how does proc with load/restore work
    - can Oj be assigned to JSON if JSON does not exist?
+ - how
+  - mimic branch
+  - Oj.mimic_JSON()
+   - defines JSON module and methods
+   - provide separate funcs if current does not match exactly
+   - can also add alternate option names
 
 - stream
  - use with Oj::Doc
