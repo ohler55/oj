@@ -6,12 +6,17 @@
 
 - next
  - make file io input use fileno to get file and then use C to load
- - allow comments in JSON
-  - allow only where whitespace would exist
 
  - write JSON compatible extension
   - attributes - ignore for now
   - methods
+   - create_id - default json_class
+    - get/set create_id
+   - generator and parser
+    - just return JSON itself or fake JSON::Ext::xxxx
+   - state
+    - return config info as object with same methods as JSON
+    - JSON::Ext::Generator::State or JSON::Pure::Generator::State
    - JSON.[](object, opts={})
     - if String then parse else dump
    - restore(source, proc=nil) - alias for load
@@ -20,10 +25,29 @@
    - dump(obj, io=nil, limit=nil)
    - fast_generate(obj, opts=nil)
    - generate(obj, opts=nil)
+    - opts
+     - indent
+     - space - after :
+     - space_before - ignored by json
+     - object_nl - after each key/value pair
+     - array_nl
+     - allow_nan
+     - max_nesting
    - parse(source, opts={})
+    - opts
+     - max_nesting - 19
+     - allow_nan - false
+     - symbolize_names - false
+     - create_additions - true (uses create_id to create classes)
+     - object_class - Hash
+     - array_class - Array
    - parse!(source, opts={})
-    - different defaults
+    - opts
+     - max_nesting - nil
+     - allow_nan - true
+     - create_additions - true
    - pretty_generate(obj, opts=nil)
+    - opts same as generate, must have different defaults
    - recurse_proc(result, &proc)
   - verify
    - what happens with circular references
@@ -34,8 +58,22 @@
   - mimic branch
   - Oj.mimic_JSON()
    - defines JSON module and methods
+    - start with basics
+     - only easy options
+     - just JSON module, not others, create functions but return nil
    - provide separate funcs if current does not match exactly
    - can also add alternate option names
+  - support options
+   - keep flag indicating json_formatting
+    - maybe a separate struct for it that can be wrapped
+   - json_indent 
+   - json_space
+   - space_before - ignored by json
+   - object_nl - after each key/value pair
+   - array_nl
+   - allow_nan - ignore
+   - max_nesting - ignore
+
 
 - stream
  - use with Oj::Doc
