@@ -33,6 +33,9 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/uio.h>
+#include <unistd.h>
 
 #include "oj.h"
 
@@ -50,6 +53,7 @@ VALUE    Oj = Qnil;
 
 ID	oj_as_json_id;
 ID	oj_at_id;
+ID	oj_fileno_id;
 ID	oj_instance_variables_id;
 ID	oj_json_create_id;
 ID	oj_read_id;
@@ -60,6 +64,7 @@ ID	oj_to_sym_id;
 ID	oj_tv_nsec_id;
 ID	oj_tv_sec_id;
 ID	oj_tv_usec_id;
+ID	oj_write_id;
 
 VALUE	oj_bag_class;
 VALUE	oj_date_class;
@@ -317,9 +322,21 @@ load_str(int argc, VALUE *argv, VALUE self) {
 		json = ALLOCA_N(char, len);
 	    }
 	    strcpy(json, StringValuePtr(s));
+	} else if (rb_respond_to(input, oj_fileno_id) && Qnil != (s = rb_funcall(input, oj_fileno_id, 0))) {
+	    int		fd = FIX2INT(s);
+	    ssize_t	cnt;
 
-	    // TBD else responds to fileno
-
+	    len = lseek(fd, 0, SEEK_END);
+	    lseek(fd, 0, SEEK_SET);
+	    if (SMALL_XML < len) {
+		json = ALLOC_N(char, len + 1);
+	    } else {
+		json = ALLOCA_N(char, len + 1);
+	    }
+	    if (0 >= (cnt = read(fd, json, len)) || cnt != (ssize_t)len) {
+		rb_raise(rb_eIOError, "failed to read from IO Object.\n");
+	    }
+	    json[len] = '\0';
 	} else if (rb_respond_to(input, oj_read_id)) {
 	    s = rb_funcall2(input, oj_read_id, 0, 0);
 	    len = RSTRING_LEN(s) + 1;
@@ -367,7 +384,6 @@ load_file(int argc, VALUE *argv, VALUE self) {
     }
     fclose(f);
     json[len] = '\0';
-
     obj = load(json, argc - 1, argv + 1, self);
     if (SMALL_XML < len) {
 	xfree(json);
@@ -427,6 +443,88 @@ to_file(int argc, VALUE *argv, VALUE self) {
     return Qnil;
 }
 
+// Mimic JSON section
+
+static VALUE
+mimic_dump(int argc, VALUE *argv, VALUE self) {
+    char                *json;
+    struct _Options     copts = oj_default_options;
+    VALUE               rstr;
+    
+    if (0 == (json = oj_write_obj_to_str(*argv, &copts))) {
+        rb_raise(rb_eNoMemError, "Not enough memory.\n");
+    }
+    rstr = rb_str_new2(json);
+#ifdef ENCODING_INLINE_MAX
+    if ('\0' != *copts.encoding) {
+	rb_enc_associate(rstr, rb_enc_find(copts.encoding));
+    }
+#endif
+    if (2 <= argc && Qnil != argv[1]) {
+	VALUE	io = argv[1];
+	VALUE	args[1];
+
+	*args = rstr;
+	rb_funcall2(io, oj_write_id, 1, args);
+	rstr = io;
+    }
+    xfree(json);
+
+    return rstr;
+}
+
+static void
+mimic_walk(VALUE obj, VALUE proc) {
+    switch (rb_type(obj)) {
+    case T_HASH:
+	// TBD walk hash
+	//break;
+    case T_ARRAY:
+	// TBD walk array
+	//break;
+    default:
+	{
+	    VALUE	args[1];
+
+	    *args = obj;
+	    rb_proc_call_with_block(proc, 1, args, Qnil);
+	    break;
+	}
+    }
+}
+
+static VALUE
+mimic_load(int argc, VALUE *argv, VALUE self) {
+    VALUE	obj = load_str(1, argv, self);
+
+    if (2 <= argc && Qnil != argv[1]) {
+	mimic_walk(obj, argv[1]);
+    }
+    return obj;
+}
+
+static VALUE
+define_mimic_json(VALUE self) {
+    if (Qnil == mimic) {
+	mimic = rb_define_module("JSON");
+	rb_define_module_function(mimic, "dump", mimic_dump, -1);
+	rb_define_module_function(mimic, "load", mimic_load, -1);
+	rb_define_module_function(mimic, "restore", mimic_load, -1);
+
+	// TBD add methods to mimic
+	// [](object, opts={})
+	// fast_generate(obj, opts=nil)
+	// generate(obj, opts=nil)
+	// parse(source, opts={})
+	// parse!(sournce, opts={})
+	// pretty_generate(obj, opts=nil)
+	// recurse_proc(result, &proc)
+
+	// TBD mode for mimic maps to :compat or :object for higher performance
+    }
+    return mimic;
+}
+
 void Init_oj() {
     VALUE       keep = Qnil;
 
@@ -448,6 +546,7 @@ void Init_oj() {
 
     oj_as_json_id = rb_intern("as_json");
     oj_at_id = rb_intern("at");
+    oj_fileno_id = rb_intern("fileno");
     oj_instance_variables_id = rb_intern("instance_variables");
     oj_json_create_id = rb_intern("json_create");
     oj_read_id = rb_intern("read");
@@ -458,6 +557,7 @@ void Init_oj() {
     oj_tv_nsec_id = rb_intern("tv_nsec");
     oj_tv_sec_id = rb_intern("tv_sec");
     oj_tv_usec_id = rb_intern("tv_usec");
+    oj_write_id = rb_intern("write");
 
     oj_bag_class = rb_const_get_at(Oj, rb_intern("Bag"));
     oj_struct_class = rb_const_get(rb_cObject, rb_intern("Struct"));
@@ -485,27 +585,6 @@ void Init_oj() {
     oj_cache_new(&oj_attr_cache);
 
     oj_init_doc();
-}
-
-static VALUE
-define_mimic_json(VALUE self) {
-    if (Qnil == mimic) {
-	mimic = rb_define_module("JSON");
-	// TBD add methods to mimic
-	// [](object, opts={})
-	// restore(source, proc=nil) - alias for load
-	// load(source, proc=nil)
-	// dump(obj, io=nil, limit=nil)
-	// fast_generate(obj, opts=nil)
-	// generate(obj, opts=nil)
-	// parse(source, opts={})
-	// parse!(sournce, opts={})
-	// pretty_generate(obj, opts=nil)
-	// recurse_proc(result, &proc)
-
-	// TBD mode for mimic maps to :compat or :object for higher performance
-    }
-    return mimic;
 }
 
 void

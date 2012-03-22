@@ -5,8 +5,6 @@
 
 
 - next
- - make file io input use fileno to get file and then use C to load
-
  - write JSON compatible extension
   - attributes - ignore for now
   - methods

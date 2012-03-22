@@ -481,7 +481,7 @@ class Juice < ::Test::Unit::TestCase
   end
 
 # Stream IO
-  def test_string_io
+  def test_io_string
     json = %{{
   "x":true,
   "y":58,
@@ -493,6 +493,21 @@ class Juice < ::Test::Unit::TestCase
     assert_equal({ 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}, obj)
   end
 
+  def test_io_file
+    filename = 'open_file_test.json'
+    File.open(filename, 'w') { |f| f.write(%{{
+  "x":true,
+  "y":58,
+  "z": [1,2,3]
+}
+}) }
+    f = File.new(filename)
+    obj = Oj.load(f, :mode => :strict)
+    f.close()
+    assert_equal({ 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}, obj)
+  end
+
+# symbol_keys option
   def test_symbol_keys
     json = %{{
   "x":true,
@@ -513,8 +528,7 @@ class Juice < ::Test::Unit::TestCase
 3 // six
 ]}
 }
-    input = StringIO.new(json)
-    obj = Oj.load(input, :mode => :strict)
+    obj = Oj.load(json, :mode => :strict)
     assert_equal({ 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}, obj)
   end
 
@@ -524,8 +538,7 @@ class Juice < ::Test::Unit::TestCase
   "y":58,
   "z": [1,2,3]}
 }
-    input = StringIO.new(json)
-    obj = Oj.load(input, :mode => :strict)
+    obj = Oj.load(json, :mode => :strict)
     assert_equal({ 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}, obj)
   end
 
@@ -538,8 +551,7 @@ class Juice < ::Test::Unit::TestCase
 ]
 }
 }
-    input = StringIO.new(json)
-    obj = Oj.load(input, :mode => :strict)
+    obj = Oj.load(json, :mode => :strict)
     assert_equal({ 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}, obj)
   end
 
