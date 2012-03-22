@@ -35,12 +35,6 @@
 #include <string.h>
 
 #include "oj.h"
-#if IVAR_HELPERS
-#include "ruby/st.h"
-#else
-#include "st.h"
-#endif
-
 #include "cache8.h"
 
 typedef unsigned long   ulong;

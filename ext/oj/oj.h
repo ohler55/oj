@@ -64,6 +64,12 @@ extern "C" {
 #define IVAR_HELPERS 0
 #endif
 
+#if IVAR_HELPERS
+#include "ruby/st.h"
+#else
+#include "st.h"
+#endif
+
 #define raise_error(msg, xml, current) _oj_raise_error(msg, xml, current, __FILE__, __LINE__)
 
 typedef enum {
