@@ -473,24 +473,35 @@ mimic_dump(int argc, VALUE *argv, VALUE self) {
     return rstr;
 }
 
-static void
-mimic_walk(VALUE obj, VALUE proc) {
+// This is the signature for the hash_foreach callback also.
+static int
+mimic_walk(VALUE key, VALUE obj, VALUE proc) {
+    VALUE	args[1];
+
     switch (rb_type(obj)) {
     case T_HASH:
-	// TBD walk hash
-	//break;
+	rb_hash_foreach(obj, mimic_walk, proc);
+	break;
     case T_ARRAY:
-	// TBD walk array
-	//break;
-    default:
 	{
-	    VALUE	args[1];
-
-	    *args = obj;
-	    rb_proc_call_with_block(proc, 1, args, Qnil);
+	    VALUE	*np = RARRAY_PTR(obj);
+	    size_t	cnt = RARRAY_LEN(obj);
+	
+	    for (; 0 < cnt; cnt--, np++) {
+		mimic_walk(Qnil, *np, proc);
+	    }
 	    break;
 	}
+    default:
+	break;
     }
+    *args = obj;
+    if (Qnil == proc) {
+	rb_yield_values2(1, args);
+    } else {
+	rb_proc_call_with_block(proc, 1, args, Qnil);
+    }
+    return ST_CONTINUE;
 }
 
 static VALUE
@@ -498,9 +509,17 @@ mimic_load(int argc, VALUE *argv, VALUE self) {
     VALUE	obj = load_str(1, argv, self);
 
     if (2 <= argc && Qnil != argv[1]) {
-	mimic_walk(obj, argv[1]);
+	mimic_walk(Qnil, obj, argv[1]);
     }
     return obj;
+}
+
+static VALUE
+mimic_recurse_proc(VALUE self, VALUE obj) {
+    rb_need_block();
+    mimic_walk(Qnil, obj, Qnil);
+
+    return Qnil;
 }
 
 static VALUE
@@ -510,15 +529,15 @@ define_mimic_json(VALUE self) {
 	rb_define_module_function(mimic, "dump", mimic_dump, -1);
 	rb_define_module_function(mimic, "load", mimic_load, -1);
 	rb_define_module_function(mimic, "restore", mimic_load, -1);
+	rb_define_module_function(mimic, "recurse_proc", mimic_recurse_proc, 1);
 
 	// TBD add methods to mimic
 	// [](object, opts={})
 	// fast_generate(obj, opts=nil)
 	// generate(obj, opts=nil)
 	// parse(source, opts={})
-	// parse!(sournce, opts={})
+	// parse!(source, opts={})
 	// pretty_generate(obj, opts=nil)
-	// recurse_proc(result, &proc)
 
 	// TBD mode for mimic maps to :compat or :object for higher performance
     }

@@ -38,16 +38,28 @@ class Mimic < ::Test::Unit::TestCase
   end
 
   def test_load_io
-    
+    json = %{{"a":1,"b":[true,false]}}
+    obj = JSON.load(StringIO.new(json))
+    assert_equal({ 'a' => 1, 'b' => [true, false]}, obj)
   end
 
   def test_load_proc
     children = []
     json = %{{"a":1,"b":[true,false]}}
-    p = Proc.new {|x| children << x; puts "**#{x}**" }
+    p = Proc.new {|x| children << x }
     obj = JSON.load(json, p)
     assert_equal({ 'a' => 1, 'b' => [true, false]}, obj)
-    puts children
+    assert_equal([1, true, false, [true, false], { 'a' => 1, 'b' => [true, false]}], children)
+  end
+
+# []
+
+
+# recurse_proc
+  def test_recurse_proc
+    children = []
+    obj = JSON.recurse_proc({ 'a' => 1, 'b' => [true, false]}) { |x| children << x }
+    assert_equal([1, true, false, [true, false], { 'a' => 1, 'b' => [true, false]}], children)
   end
 
 end # Mimic
