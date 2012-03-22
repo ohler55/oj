@@ -504,6 +504,45 @@ class Juice < ::Test::Unit::TestCase
     assert_equal({ :x => true, :y => 58, :z => [1, 2, 3]}, obj)
   end
 
+# comments
+  def test_comment_slash
+    json = %{{
+  "x":true,//three
+  "y":58,
+  "z": [1,2,
+3 // six
+]}
+}
+    input = StringIO.new(json)
+    obj = Oj.load(input, :mode => :strict)
+    assert_equal({ 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}, obj)
+  end
+
+  def test_comment_c
+    json = %{{
+  "x"/*one*/:/*two*/true,
+  "y":58,
+  "z": [1,2,3]}
+}
+    input = StringIO.new(json)
+    obj = Oj.load(input, :mode => :strict)
+    assert_equal({ 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}, obj)
+  end
+
+  def test_comment
+    json = %{{
+  "x"/*one*/:/*two*/true,//three
+  "y":58/*four*/,
+  "z": [1,2/*five*/,
+3 // six
+]
+}
+}
+    input = StringIO.new(json)
+    obj = Oj.load(input, :mode => :strict)
+    assert_equal({ 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}, obj)
+  end
+
   def dump_and_load(obj, trace=false)
     json = Oj.dump(obj, :indent => 2)
     puts json if trace

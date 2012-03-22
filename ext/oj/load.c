@@ -75,6 +75,7 @@ static VALUE	read_false(ParseInfo pi);
 static VALUE	read_nil(ParseInfo pi);
 static void	next_non_white(ParseInfo pi);
 static char*	read_quoted_value(ParseInfo pi);
+static void	skip_comment(ParseInfo pi);
 
 
 /* This XML parser is a single pass, destructive, callback parser. It is a
@@ -99,6 +100,9 @@ next_non_white(ParseInfo pi) {
 	case '\f':
 	case '\n':
 	case '\r':
+	    break;
+	case '/':
+	    skip_comment(pi);
 	    break;
 	default:
 	    return;
@@ -273,6 +277,36 @@ circ_array_get(CircArray ca, unsigned long id) {
         obj = ca->objs[id - 1];
     }
     return obj;
+}
+
+static void
+skip_comment(ParseInfo pi) {
+    pi->s++; // skip first /
+    if ('*' == *pi->s) {
+	pi->s++;
+	for (; '\0' != *pi->s; pi->s++) {
+	    if ('*' == *pi->s && '/' == *(pi->s + 1)) {
+		pi->s++;
+		return;
+	    } else if ('\0' == *pi->s) {
+		raise_error("comment not terminated", pi->str, pi->s);
+	    }
+	}
+    } else if ('/' == *pi->s) {
+	for (; 1; pi->s++) {
+	    switch (*pi->s) {
+	    case '\n':
+	    case '\r':
+	    case '\f':
+	    case '\0':
+		return;
+	    default:
+		break;
+	    }
+	}
+    } else {
+	raise_error("invalid comment", pi->str, pi->s);
+    }
 }
 
 static VALUE
