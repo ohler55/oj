@@ -33,6 +33,7 @@
 #include <time.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 #include "oj.h"
 #include "cache8.h"
@@ -335,8 +336,35 @@ static void
 dump_float(VALUE obj, Out out) {
     char	buf[64];
     char	*b;
-    int		cnt = sprintf(buf, "%0.16g", RFLOAT_VALUE(obj)); // used sprintf due to bug in snprintf
+    double	d = RFLOAT_VALUE(obj);
+    int		cnt;
 
+    switch (fpclassify(d)) {
+    case FP_NAN:
+	printf("*** nan\n");
+	cnt = sprintf(buf, "%0.16g", d); // used sprintf due to bug in snprintf
+	break;
+    case FP_INFINITE:
+	b = buf;
+	cnt = 8;
+	if (d < 0.0) {
+	    *b++ = '-';
+	    cnt++;
+	}
+	strcpy(b, "Infinity");
+	break;
+    case FP_ZERO:
+	b = buf;
+	*b++ = '0';
+	*b++ = '.';
+	*b++ = '0';
+	*b++ = '\0';
+	cnt = 3;
+	break;
+    default:
+	cnt = sprintf(buf, "%0.16g", d); // used sprintf due to bug in snprintf
+	break;
+    }
     if (out->end - out->cur <= (long)cnt) {
         grow(out, cnt);
     }

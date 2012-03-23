@@ -86,7 +86,15 @@ static VALUE	object_sym;
 static VALUE	strict_sym;
 static VALUE	symbol_keys_sym;
 
+static VALUE	array_nl_sym;
+static VALUE	create_additions_sym;
+static VALUE	object_nl_sym;
+static VALUE	space_before_sym;
+static VALUE	space_sym;
+static VALUE	symbolize_names_sym;
+
 static VALUE	mimic = Qnil;
+static VALUE	keep = Qnil;
 
 Cache   oj_class_cache = 0;
 Cache   oj_attr_cache = 0;
@@ -99,6 +107,7 @@ struct _Options	oj_default_options = {
     No,			// sym_key
     No,			// ascii_only
     ObjectMode,		// mode
+    0,			// dump_opts
 };
 
 static VALUE	define_mimic_json(VALUE self);
@@ -269,46 +278,20 @@ parse_options(VALUE ropts, Options copts) {
  }
 
 static VALUE
-load(char *json, int argc, VALUE *argv, VALUE self) {
-    VALUE		obj;
-    struct _Options	options = oj_default_options;
-
-    if (1 == argc) {
-	parse_options(*argv, &options);
-    }
-    obj = oj_parse(json, &options);
-
-    return obj;
-}
-
-/* call-seq: load(json, options) => Hash, Array, String, Fixnum, Float, true, false, or nil
- *
- * Parses a JSON document String into a Hash, Array, String, Fixnum, Float,
- * true, false, or nil. Raises an exception if the JSON is malformed or the
- * classes specified are not valid.
- * @param [String] json JSON String
- * @param [Hash] options load options (same as default_options)
- */
-static VALUE
-load_str(int argc, VALUE *argv, VALUE self) {
+load_with_opts(VALUE input, Options copts) {
     char        *json;
     size_t	len;
-    VALUE	input;
     VALUE	obj;
 
-    if (1 > argc) {
-	rb_raise(rb_eArgError, "Wrong number of arguments to load().\n");
-    }
-    input = *argv;
     if (rb_type(input) == T_STRING) {
 	// the json string gets modified so make a copy of it
-	len = RSTRING_LEN(*argv) + 1;
+	len = RSTRING_LEN(input) + 1;
 	if (SMALL_XML < len) {
 	    json = ALLOC_N(char, len);
 	} else {
 	    json = ALLOCA_N(char, len);
 	}
-	strcpy(json, StringValuePtr(*argv));
+	strcpy(json, StringValuePtr(input));
     } else {
 	VALUE	clas = rb_obj_class(input);
 	VALUE	s;
@@ -350,11 +333,32 @@ load_str(int argc, VALUE *argv, VALUE self) {
 	    rb_raise(rb_eArgError, "load() expected a String or IO Object.\n");
 	}
     }
-    obj = load(json, argc - 1, argv + 1, self);
+    obj = oj_parse(json, copts);
     if (SMALL_XML < len) {
 	xfree(json);
     }
     return obj;
+}
+
+/* call-seq: load(json, options) => Hash, Array, String, Fixnum, Float, true, false, or nil
+ *
+ * Parses a JSON document String into a Hash, Array, String, Fixnum, Float,
+ * true, false, or nil. Raises an exception if the JSON is malformed or the
+ * classes specified are not valid.
+ * @param [String] json JSON String
+ * @param [Hash] options load options (same as default_options)
+ */
+static VALUE
+load(int argc, VALUE *argv, VALUE self) {
+    struct _Options	options = oj_default_options;
+
+    if (1 > argc) {
+	rb_raise(rb_eArgError, "Wrong number of arguments to load().\n");
+    }
+    if (2 <= argc) {
+	parse_options(argv[1], &options);
+    }
+    return load_with_opts(*argv, &options);
 }
 
 static VALUE
@@ -364,7 +368,8 @@ load_file(int argc, VALUE *argv, VALUE self) {
     FILE                *f;
     unsigned long       len;
     VALUE		obj;
-    
+    struct _Options	options = oj_default_options;
+
     Check_Type(*argv, T_STRING);
     path = StringValuePtr(*argv);
     if (0 == (f = fopen(path, "r"))) {
@@ -384,7 +389,10 @@ load_file(int argc, VALUE *argv, VALUE self) {
     }
     fclose(f);
     json[len] = '\0';
-    obj = load(json, argc - 1, argv + 1, self);
+    if (2 <= argc) {
+	parse_options(argv[1], &options);
+    }
+    obj = oj_parse(json, &options);
     if (SMALL_XML < len) {
 	xfree(json);
     }
@@ -506,12 +514,139 @@ mimic_walk(VALUE key, VALUE obj, VALUE proc) {
 
 static VALUE
 mimic_load(int argc, VALUE *argv, VALUE self) {
-    VALUE	obj = load_str(1, argv, self);
+    VALUE	obj = load(1, argv, self);
 
     if (2 <= argc && Qnil != argv[1]) {
 	mimic_walk(Qnil, obj, argv[1]);
     }
     return obj;
+}
+
+static VALUE
+mimic_dump_load(int argc, VALUE *argv, VALUE self) {
+    if (1 > argc) {
+        rb_raise(rb_eArgError, "wrong number of arguments (0 for 1)\n");
+    } else if (T_STRING == rb_type(*argv)) {
+	return mimic_load(argc, argv, self);
+    } else {
+	return mimic_dump(argc, argv, self);
+    }
+}
+
+static VALUE
+mimic_generate_core(int argc, VALUE *argv, Options copts) {
+    char                *json;
+    VALUE               rstr;
+    
+    if (2 == argc && Qnil != argv[1]) {
+	struct _DumpOpts	dump_opts;
+	VALUE			ropts = argv[1];
+        VALUE   		v;
+
+	memset(&dump_opts, 0, sizeof(dump_opts)); // may not be needed
+	if (T_HASH != rb_type(ropts)) {
+	    rb_raise(rb_eArgError, "options must be a hash.\n");
+	}
+        if (Qnil != (v = rb_hash_lookup(ropts, indent_sym))) {
+	    rb_check_type(v, T_STRING);
+	    if (0 == copts->dump_opts) {
+		copts->dump_opts = &dump_opts;
+	    }
+	    copts->dump_opts->indent = StringValuePtr(v);
+	}
+        if (Qnil != (v = rb_hash_lookup(ropts, space_sym))) {
+	    rb_check_type(v, T_STRING);
+	    if (0 == copts->dump_opts) {
+		copts->dump_opts = &dump_opts;
+	    }
+	    copts->dump_opts->after_key = StringValuePtr(v);
+	}
+        if (Qnil != (v = rb_hash_lookup(ropts, space_before_sym))) {
+	    rb_check_type(v, T_STRING);
+	    if (0 == copts->dump_opts) {
+		copts->dump_opts = &dump_opts;
+	    }
+	    copts->dump_opts->after_key = StringValuePtr(v);
+	}
+        if (Qnil != (v = rb_hash_lookup(ropts, object_nl_sym))) {
+	    rb_check_type(v, T_STRING);
+	    if (0 == copts->dump_opts) {
+		copts->dump_opts = &dump_opts;
+	    }
+	    copts->dump_opts->hash_nl = StringValuePtr(v);
+	}
+        if (Qnil != (v = rb_hash_lookup(ropts, array_nl_sym))) {
+	    rb_check_type(v, T_STRING);
+	    if (0 == copts->dump_opts) {
+		copts->dump_opts = &dump_opts;
+	    }
+	    copts->dump_opts->array_nl = StringValuePtr(v);
+	}
+	// :allow_nan is not supported as Oj always allows_nan
+	// :max_nesting is always set to 100
+    }
+    if (0 == (json = oj_write_obj_to_str(*argv, copts))) {
+        rb_raise(rb_eNoMemError, "Not enough memory.\n");
+    }
+    rstr = rb_str_new2(json);
+#ifdef ENCODING_INLINE_MAX
+    if ('\0' != *copts->encoding) {
+        rb_enc_associate(rstr, rb_enc_find(copts->encoding));
+    }
+#endif
+    xfree(json);
+
+    return rstr;
+}
+
+static VALUE
+mimic_generate(int argc, VALUE *argv, VALUE self) {
+    struct _Options     copts = oj_default_options;
+
+    return mimic_generate_core(argc, argv, &copts);
+}
+
+static VALUE
+mimic_pretty_generate(int argc, VALUE *argv, VALUE self) {
+    struct _Options     copts = oj_default_options;
+    struct _DumpOpts	dump_opts;
+    
+    dump_opts.indent = "  ";
+    dump_opts.before_key = " ";
+    dump_opts.after_key = " ";
+    dump_opts.hash_nl = "\n";
+    dump_opts.array_nl = "\n";
+    copts.dump_opts = &dump_opts;
+
+    return mimic_generate_core(argc, argv, &copts);
+}
+
+static VALUE
+mimic_parse(int argc, VALUE *argv, VALUE self) {
+    struct _Options	options = oj_default_options;
+
+    if (1 > argc) {
+	rb_raise(rb_eArgError, "Wrong number of arguments to load().\n");
+    }
+    if (2 <= argc && Qnil != argv[1]) {
+	VALUE	ropts = argv[1];
+        VALUE   v;
+
+	if (T_HASH != rb_type(ropts)) {
+	    rb_raise(rb_eArgError, "options must be a hash.\n");
+	}
+        if (Qnil != (v = rb_hash_lookup(ropts, symbolize_names_sym))) {
+	    options.sym_key = (Qtrue == v) ? Yes : No;
+	}
+        if (Qnil != (v = rb_hash_lookup(ropts,  create_additions_sym))) {
+	    options.mode = (Qtrue == v) ? CompatMode : StrictMode;
+	}
+	// :allow_nan is not supported as Oj always allows_nan
+	// :max_nesting is always set to 100
+	// :object_class is always Hash
+	// :array_class is always Array
+    }
+    return load_with_opts(*argv, &options);
 }
 
 static VALUE
@@ -530,23 +665,26 @@ define_mimic_json(VALUE self) {
 	rb_define_module_function(mimic, "load", mimic_load, -1);
 	rb_define_module_function(mimic, "restore", mimic_load, -1);
 	rb_define_module_function(mimic, "recurse_proc", mimic_recurse_proc, 1);
+	rb_define_module_function(mimic, "[]", mimic_dump_load, -1);
+	rb_define_module_function(mimic, "generate", mimic_generate, -1);
+	rb_define_module_function(mimic, "fast_generate", mimic_generate, -1);
+	rb_define_module_function(mimic, "pretty_generate", mimic_pretty_generate, -1);
+	rb_define_module_function(mimic, "parse", mimic_parse, -1);
+	rb_define_module_function(mimic, "parse!", mimic_parse, -1);
 
-	// TBD add methods to mimic
-	// [](object, opts={})
-	// fast_generate(obj, opts=nil)
-	// generate(obj, opts=nil)
-	// parse(source, opts={})
-	// parse!(source, opts={})
-	// pretty_generate(obj, opts=nil)
+	array_nl_sym = ID2SYM(rb_intern("array_nl"));	rb_ary_push(keep, array_nl_sym);
+	create_additions_sym = ID2SYM(rb_intern("create_additions"));	rb_ary_push(keep, create_additions_sym);
+	object_nl_sym = ID2SYM(rb_intern("object_nl"));	rb_ary_push(keep, object_nl_sym);
+	space_before_sym = ID2SYM(rb_intern("space_before"));	rb_ary_push(keep, space_before_sym);
+	space_sym = ID2SYM(rb_intern("space"));	rb_ary_push(keep, space_sym);
+	symbolize_names_sym = ID2SYM(rb_intern("symbolize_names"));	rb_ary_push(keep, symbolize_names_sym);
 
-	// TBD mode for mimic maps to :compat or :object for higher performance
+	oj_default_options.mode = CompatMode;
     }
     return mimic;
 }
 
 void Init_oj() {
-    VALUE       keep = Qnil;
-
     Oj = rb_define_module("Oj");
     keep = rb_cv_get(Oj, "@@keep"); // needed to stop GC from deleting and reusing VALUEs
 
@@ -558,7 +696,7 @@ void Init_oj() {
     rb_define_module_function(Oj, "default_options=", set_def_opts, 1);
 
     rb_define_module_function(Oj, "mimic_JSON", define_mimic_json, 0);
-    rb_define_module_function(Oj, "load", load_str, -1);
+    rb_define_module_function(Oj, "load", load, -1);
     rb_define_module_function(Oj, "load_file", load_file, -1);
     rb_define_module_function(Oj, "dump", dump, -1);
     rb_define_module_function(Oj, "to_file", to_file, -1);

@@ -85,6 +85,14 @@ typedef enum {
     CompatMode  = 'c'
 } Mode;
 
+typedef struct _DumpOpts {
+    const char	*indent;
+    const char	*before_key;
+    const char	*after_key;
+    const char	*hash_nl;
+    const char	*array_nl;
+} *DumpOpts;
+
 typedef struct _Options {
     char        encoding[64];	// encoding, stored in the option to avoid GC invalidation in default values
     int         indent;		// indention for dump, default 2
@@ -93,6 +101,7 @@ typedef struct _Options {
     char        sym_key;	// YesNo
     char        ascii_only;	// YesNo
     char        mode;		// Mode
+    DumpOpts	dump_opts;
 } *Options;
 
 enum {

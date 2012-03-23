@@ -8,6 +8,29 @@ require 'test/unit'
 require 'stringio'
 require 'oj'
 
+class Jam
+  attr_accessor :x, :y
+
+  def initialize(x, y)
+    @x = x
+    @y = y
+  end
+
+  def eql?(o)
+    self.class == o.class && @x == o.x && @y == o.y
+  end
+  alias == eql?
+
+  def to_json()
+    %{{"json_class":"#{self.class}","x":#{@x},"y":#{@y}}}
+  end
+
+  def self.json_create(h)
+    self.new(h['x'], h['y'])
+  end
+
+end # Jam
+
 class Mimic < ::Test::Unit::TestCase
 
   def test0_mimic_json
@@ -53,7 +76,69 @@ class Mimic < ::Test::Unit::TestCase
   end
 
 # []
+  def test_bracket_load
+    json = %{{"a":1,"b":[true,false]}}
+    obj = JSON[json]
+    assert_equal({ 'a' => 1, 'b' => [true, false]}, obj)
+  end
 
+  def test_bracket_dump
+    json = JSON[[1, true, nil]]
+    assert_equal(%{[1,true,null]}, json)
+  end
+
+# generate
+  def test_generate
+    json = JSON.generate({ 'a' => 1, 'b' => [true, false]})
+    assert_equal(%{{"a":1,"b":[true,false]}}, json)
+  end
+  # TBD with options
+
+# fast_generate
+  def test_fast_generate
+    json = JSON.generate({ 'a' => 1, 'b' => [true, false]})
+    assert_equal(%{{"a":1,"b":[true,false]}}, json)
+  end
+
+# pretty_generate
+  def test_fast_generate
+    json = JSON.pretty_generate({ 'a' => 1, 'b' => [true, false]})
+    assert_equal(%{{
+  "a":1,
+  "b":[
+    true,
+    false
+  ]}}, json)
+  end
+  # TBD with options
+
+# parse
+  def test_parse
+    json = %{{"a":1,"b":[true,false]}}
+    obj = JSON.parse(json)
+    assert_equal({ 'a' => 1, 'b' => [true, false]}, obj)
+  end
+  def test_parse_sym_names
+    json = %{{"a":1,"b":[true,false]}}
+    obj = JSON.parse(json, :symbolize_names => true)
+    assert_equal({ :a => 1, :b => [true, false]}, obj)
+  end
+  def test_parse_additions
+    jam = Jam.new(true, 58)
+    json = Oj.dump(jam, :mode => :compat)
+    puts json
+    obj = JSON.parse(json)
+    assert_equal(jam, obj)
+    obj = JSON.parse(json, :create_additions => true)
+    assert_equal(jam, obj)
+    obj = JSON.parse(json, :create_additions => false)
+    assert_equal({'json_class' => 'Jam', 'x' => true, 'y' => 58}, obj)
+  end
+  def test_parse_bang
+    json = %{{"a":1,"b":[true,false]}}
+    obj = JSON.parse!(json)
+    assert_equal({ 'a' => 1, 'b' => [true, false]}, obj)
+  end
 
 # recurse_proc
   def test_recurse_proc
