@@ -129,6 +129,8 @@ class Juice < ::Test::Unit::TestCase
     dump_and_load(12345.6789, false)
     dump_and_load(-54321.012, false)
     dump_and_load(2.48e16, false)
+    dump_and_load(2.48e1000, false)
+    dump_and_load(-2.48e1000, false)
   end
 
   def test_string
