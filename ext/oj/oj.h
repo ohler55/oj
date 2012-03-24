@@ -87,10 +87,15 @@ typedef enum {
 
 typedef struct _DumpOpts {
     const char	*indent;
-    const char	*before_key;
-    const char	*after_key;
+    const char	*before_sep;
+    const char	*after_sep;
     const char	*hash_nl;
     const char	*array_nl;
+    uint8_t	indent_size;
+    uint8_t	before_size;
+    uint8_t	after_size;
+    uint8_t	hash_size;
+    uint8_t	array_size;
 } *DumpOpts;
 
 typedef struct _Options {
