@@ -4,9 +4,12 @@
 ^c^s show subtree
 
 - next
- - dump should use dump_opts if available and not 0
+ - Oj::Doc should ignore comments
+
  - implement Oj::Doc.new or open without a block given
   - requires a close
+
+  
 
  - write JSON compatible extension
   - attributes - ignore for now

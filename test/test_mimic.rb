@@ -92,7 +92,21 @@ class Mimic < ::Test::Unit::TestCase
     json = JSON.generate({ 'a' => 1, 'b' => [true, false]})
     assert_equal(%{{"a":1,"b":[true,false]}}, json)
   end
-  # TBD with options
+  def test_generate_options
+    json = JSON.generate({ 'a' => 1, 'b' => [true, false]},
+                         :indent => "--",
+                         :array_nl => "\n",
+                         :object_nl => "#\n",
+                         :space => "*",
+                         :space_before => "~")
+    assert_equal(%{{#
+--"a"~:*1,#
+--"b"~:*[
+----true,
+----false
+--]#
+}}, json)
+  end
 
 # fast_generate
   def test_fast_generate
@@ -101,14 +115,15 @@ class Mimic < ::Test::Unit::TestCase
   end
 
 # pretty_generate
-  def test_fast_generate
+  def test_pretty_generate
     json = JSON.pretty_generate({ 'a' => 1, 'b' => [true, false]})
     assert_equal(%{{
-  "a":1,
-  "b":[
+  "a" : 1,
+  "b" : [
     true,
     false
-  ]}}, json)
+  ]
+}}, json)
   end
   # TBD with options
 
@@ -126,7 +141,6 @@ class Mimic < ::Test::Unit::TestCase
   def test_parse_additions
     jam = Jam.new(true, 58)
     json = Oj.dump(jam, :mode => :compat)
-    puts json
     obj = JSON.parse(json)
     assert_equal(jam, obj)
     obj = JSON.parse(json, :create_additions => true)

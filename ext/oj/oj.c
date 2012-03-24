@@ -553,20 +553,23 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
 		copts->dump_opts = &dump_opts;
 	    }
 	    copts->dump_opts->indent = StringValuePtr(v);
+	    copts->dump_opts->indent_size = (uint8_t)strlen(copts->dump_opts->indent);
 	}
         if (Qnil != (v = rb_hash_lookup(ropts, space_sym))) {
 	    rb_check_type(v, T_STRING);
 	    if (0 == copts->dump_opts) {
 		copts->dump_opts = &dump_opts;
 	    }
-	    copts->dump_opts->after_key = StringValuePtr(v);
+	    copts->dump_opts->after_sep = StringValuePtr(v);
+	    copts->dump_opts->after_size = (uint8_t)strlen(copts->dump_opts->after_sep);
 	}
         if (Qnil != (v = rb_hash_lookup(ropts, space_before_sym))) {
 	    rb_check_type(v, T_STRING);
 	    if (0 == copts->dump_opts) {
 		copts->dump_opts = &dump_opts;
 	    }
-	    copts->dump_opts->after_key = StringValuePtr(v);
+	    copts->dump_opts->before_sep = StringValuePtr(v);
+	    copts->dump_opts->before_size = (uint8_t)strlen(copts->dump_opts->before_sep);
 	}
         if (Qnil != (v = rb_hash_lookup(ropts, object_nl_sym))) {
 	    rb_check_type(v, T_STRING);
@@ -574,6 +577,7 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
 		copts->dump_opts = &dump_opts;
 	    }
 	    copts->dump_opts->hash_nl = StringValuePtr(v);
+	    copts->dump_opts->hash_size = (uint8_t)strlen(copts->dump_opts->hash_nl);
 	}
         if (Qnil != (v = rb_hash_lookup(ropts, array_nl_sym))) {
 	    rb_check_type(v, T_STRING);
@@ -581,6 +585,7 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
 		copts->dump_opts = &dump_opts;
 	    }
 	    copts->dump_opts->array_nl = StringValuePtr(v);
+	    copts->dump_opts->array_size = (uint8_t)strlen(copts->dump_opts->array_nl);
 	}
 	// :allow_nan is not supported as Oj always allows_nan
 	// :max_nesting is always set to 100
@@ -612,10 +617,15 @@ mimic_pretty_generate(int argc, VALUE *argv, VALUE self) {
     struct _DumpOpts	dump_opts;
     
     dump_opts.indent = "  ";
-    dump_opts.before_key = " ";
-    dump_opts.after_key = " ";
+    dump_opts.indent_size = (uint8_t)strlen(dump_opts.indent);
+    dump_opts.before_sep = " ";
+    dump_opts.before_size = (uint8_t)strlen(dump_opts.before_sep);
+    dump_opts.after_sep = " ";
+    dump_opts.after_size = (uint8_t)strlen(dump_opts.after_sep);
     dump_opts.hash_nl = "\n";
+    dump_opts.hash_size = (uint8_t)strlen(dump_opts.hash_nl);
     dump_opts.array_nl = "\n";
+    dump_opts.array_size = (uint8_t)strlen(dump_opts.array_nl);
     copts.dump_opts = &dump_opts;
 
     return mimic_generate_core(argc, argv, &copts);
@@ -658,9 +668,23 @@ mimic_recurse_proc(VALUE self, VALUE obj) {
 }
 
 static VALUE
+no_op1(VALUE self, VALUE obj) {
+    return Qnil;
+}
+
+static VALUE
 define_mimic_json(VALUE self) {
     if (Qnil == mimic) {
+	VALUE	ext;
+
 	mimic = rb_define_module("JSON");
+	ext = rb_define_module_under(mimic, "Ext");
+	rb_define_class_under(ext, "Parser", rb_cObject);
+	rb_define_class_under(ext, "Generator", rb_cObject);
+
+	rb_define_module_function(mimic, "parser=", no_op1, 1);
+	rb_define_module_function(mimic, "generator=", no_op1, 1);
+
 	rb_define_module_function(mimic, "dump", mimic_dump, -1);
 	rb_define_module_function(mimic, "load", mimic_load, -1);
 	rb_define_module_function(mimic, "restore", mimic_load, -1);
