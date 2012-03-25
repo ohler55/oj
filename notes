@@ -4,8 +4,6 @@
 ^c^s show subtree
 
 - next
- - Oj::Doc should ignore comments
-
  - implement Oj::Doc.new or open without a block given
   - requires a close
 
