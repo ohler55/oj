@@ -88,6 +88,7 @@ static Leaf	read_false(ParseInfo pi);
 static Leaf	read_nil(ParseInfo pi);
 static void	next_non_white(ParseInfo pi);
 static char*	read_quoted_value(ParseInfo pi);
+static void	skip_comment(ParseInfo pi);
 
 static VALUE	protect_open_proc(VALUE x);
 static VALUE	parse_json(VALUE clas, char *json);
@@ -124,6 +125,9 @@ next_non_white(ParseInfo pi) {
 	case '\f':
 	case '\n':
 	case '\r':
+	    break;
+	case '/':
+	    skip_comment(pi);
 	    break;
 	default:
 	    return;
@@ -270,6 +274,36 @@ leaf_value(Doc doc, Leaf leaf) {
 	}
     }
     return leaf->value;
+}
+
+static void
+skip_comment(ParseInfo pi) {
+    pi->s++; // skip first /
+    if ('*' == *pi->s) {
+	pi->s++;
+	for (; '\0' != *pi->s; pi->s++) {
+	    if ('*' == *pi->s && '/' == *(pi->s + 1)) {
+		pi->s++;
+		return;
+	    } else if ('\0' == *pi->s) {
+		raise_error("comment not terminated", pi->str, pi->s);
+	    }
+	}
+    } else if ('/' == *pi->s) {
+	for (; 1; pi->s++) {
+	    switch (*pi->s) {
+	    case '\n':
+	    case '\r':
+	    case '\f':
+	    case '\0':
+		return;
+	    default:
+		break;
+	    }
+	}
+    } else {
+	raise_error("invalid comment", pi->str, pi->s);
+    }
 }
 
 #ifdef RUBINIUS
@@ -1039,7 +1073,6 @@ doc_open(VALUE clas, VALUE str) {
 	json = ALLOCA_N(char, len);
     }
     memcpy(json, StringValuePtr(str), len);
-
     obj = parse_json(clas, json);
     if (SMALL_XML < len) {
 	xfree(json);
