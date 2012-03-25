@@ -341,7 +341,10 @@ read_next(ParseInfo pi, int hint) {
 	} else {
 	    obj = read_num(pi);
 	}
-    break;
+	break;
+    case 'I':
+	obj = read_num(pi);
+	break;
     case 't':
 	obj = read_true(pi);
 	break;
@@ -674,6 +677,17 @@ read_num(ParseInfo pi) {
 	neg = 1;
     } else if ('+' == *pi->s) {
 	pi->s++;
+    }
+    if ('I' == *pi->s) {
+	if (0 != strncmp("Infinity", pi->s, 8)) {
+	    raise_error("number or other value", pi->str, pi->s);
+	}
+	pi->s += 8;
+	if (neg) {
+	    return rb_float_new(-INFINITY);
+	} else {
+	    return rb_float_new(INFINITY);
+	}
     }
     for (; '0' <= *pi->s && *pi->s <= '9'; pi->s++) {
 	n = n * 10 + (*pi->s - '0');

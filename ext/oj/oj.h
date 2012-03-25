@@ -64,6 +64,12 @@ extern "C" {
 #define IVAR_HELPERS 0
 #endif
 
+#if IVAR_HELPERS
+#include "ruby/st.h"
+#else
+#include "st.h"
+#endif
+
 #define raise_error(msg, xml, current) _oj_raise_error(msg, xml, current, __FILE__, __LINE__)
 
 typedef enum {
@@ -79,6 +85,19 @@ typedef enum {
     CompatMode  = 'c'
 } Mode;
 
+typedef struct _DumpOpts {
+    const char	*indent;
+    const char	*before_sep;
+    const char	*after_sep;
+    const char	*hash_nl;
+    const char	*array_nl;
+    uint8_t	indent_size;
+    uint8_t	before_size;
+    uint8_t	after_size;
+    uint8_t	hash_size;
+    uint8_t	array_size;
+} *DumpOpts;
+
 typedef struct _Options {
     char        encoding[64];	// encoding, stored in the option to avoid GC invalidation in default values
     int         indent;		// indention for dump, default 2
@@ -87,6 +106,7 @@ typedef struct _Options {
     char        sym_key;	// YesNo
     char        ascii_only;	// YesNo
     char        mode;		// Mode
+    DumpOpts	dump_opts;
 } *Options;
 
 enum {

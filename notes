@@ -3,9 +3,11 @@
 ^c^d hide subtree
 ^c^s show subtree
 
-
 - next
- - make file io input use fileno to get file and then use C to load
+ - implement Oj::Doc.new or open without a block given
+  - requires a close
+
+  
 
  - write JSON compatible extension
   - attributes - ignore for now
@@ -54,26 +56,6 @@
    - how does recurse_proc work
    - how does proc with load/restore work
    - can Oj be assigned to JSON if JSON does not exist?
- - how
-  - mimic branch
-  - Oj.mimic_JSON()
-   - defines JSON module and methods
-    - start with basics
-     - only easy options
-     - just JSON module, not others, create functions but return nil
-   - provide separate funcs if current does not match exactly
-   - can also add alternate option names
-  - support options
-   - keep flag indicating json_formatting
-    - maybe a separate struct for it that can be wrapped
-   - json_indent 
-   - json_space
-   - space_before - ignored by json
-   - object_nl - after each key/value pair
-   - array_nl
-   - allow_nan - ignore
-   - max_nesting - ignore
-
 
 - stream
  - use with Oj::Doc

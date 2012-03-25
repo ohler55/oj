@@ -33,14 +33,9 @@
 #include <time.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 #include "oj.h"
-#if IVAR_HELPERS
-#include "ruby/st.h"
-#else
-#include "st.h"
-#endif
-
 #include "cache8.h"
 
 typedef unsigned long   ulong;
@@ -341,8 +336,35 @@ static void
 dump_float(VALUE obj, Out out) {
     char	buf[64];
     char	*b;
-    int		cnt = sprintf(buf, "%0.16g", RFLOAT_VALUE(obj)); // used sprintf due to bug in snprintf
+    double	d = RFLOAT_VALUE(obj);
+    int		cnt;
 
+    switch (fpclassify(d)) {
+    case FP_NAN:
+	printf("*** nan\n");
+	cnt = sprintf(buf, "%0.16g", d); // used sprintf due to bug in snprintf
+	break;
+    case FP_INFINITE:
+	b = buf;
+	cnt = 8;
+	if (d < 0.0) {
+	    *b++ = '-';
+	    cnt++;
+	}
+	strcpy(b, "Infinity");
+	break;
+    case FP_ZERO:
+	b = buf;
+	*b++ = '0';
+	*b++ = '.';
+	*b++ = '0';
+	*b++ = '\0';
+	cnt = 3;
+	break;
+    default:
+	cnt = sprintf(buf, "%0.16g", d); // used sprintf due to bug in snprintf
+	break;
+    }
     if (out->end - out->cur <= (long)cnt) {
         grow(out, cnt);
     }
@@ -520,12 +542,30 @@ dump_array(VALUE a, int depth, Out out) {
 	if (0 < id) {
 	    *out->cur++ = ',';
 	}
-	size = d2 * out->indent + 2;
+	if (0 == out->opts->dump_opts) {
+	    size = d2 * out->indent + 2;
+	} else {
+	    size = d2 * out->opts->dump_opts->indent_size + out->opts->dump_opts->array_size + 1;
+	}
 	for (; 0 < cnt; cnt--, np++) {
 	    if (out->end - out->cur <= (long)size) {
 		grow(out, size);
 	    }
-	    fill_indent(out, d2);
+	    if (0 == out->opts->dump_opts) {
+		fill_indent(out, d2);
+	    } else {
+		if (0 < out->opts->dump_opts->array_size) {
+		    strcpy(out->cur, out->opts->dump_opts->array_nl);
+		    out->cur += out->opts->dump_opts->array_size;
+		}
+		if (0 < out->opts->dump_opts->indent_size) {
+		    int	i;
+		    for (i = d2; 0 < i; i--) {
+			strcpy(out->cur, out->opts->dump_opts->indent);
+			out->cur += out->opts->dump_opts->indent_size;
+		    }
+		}
+	    }
 	    dump_val(*np, d2, out);
 	    if (1 < cnt) {
 		*out->cur++ = ',';
@@ -535,7 +575,22 @@ dump_array(VALUE a, int depth, Out out) {
 	if (out->end - out->cur <= (long)size) {
 	    grow(out, size);
 	}
-	fill_indent(out, depth);
+	if (0 == out->opts->dump_opts) {
+	    fill_indent(out, depth);
+	} else {
+	    //printf("*** d2: %u  indent: %u '%s'\n", d2, out->opts->dump_opts->indent_size, out->opts->dump_opts->indent);
+	    if (0 < out->opts->dump_opts->array_size) {
+		strcpy(out->cur, out->opts->dump_opts->array_nl);
+		out->cur += out->opts->dump_opts->array_size;
+	    }
+	    if (0 < out->opts->dump_opts->indent_size) {
+		int	i;
+		for (i = depth; 0 < i; i--) {
+		    strcpy(out->cur, out->opts->dump_opts->indent);
+		    out->cur += out->opts->dump_opts->indent_size;
+		}
+	    }
+	}
 	*out->cur++ = ']';
     }
     *out->cur = '\0';
@@ -544,19 +599,51 @@ dump_array(VALUE a, int depth, Out out) {
 static int
 hash_cb_strict(VALUE key, VALUE value, Out out) {
     int		depth = out->depth;
-    long	size = depth * out->indent + 1;
+    long	size;
 
-    if (out->end - out->cur <= size) {
-	grow(out, size);
-    }
-    fill_indent(out, depth);
-    if (rb_type(key) == T_STRING) {
-	dump_str_comp(key, out);
-	*out->cur++ = ':';
-	dump_val(value, depth, out);
-    } else {
+    if (rb_type(key) != T_STRING) {
 	rb_raise(rb_eTypeError, "In :strict mode all Hash keys must be Strings.");
     }
+    if (0 == out->opts->dump_opts) {
+	size = depth * out->indent + 1;
+	if (out->end - out->cur <= size) {
+	    grow(out, size);
+	}
+	fill_indent(out, depth);
+	dump_str_comp(key, out);
+	*out->cur++ = ':';
+    } else {
+	size = depth * out->opts->dump_opts->indent_size + out->opts->dump_opts->hash_size + 1;
+	if (out->end - out->cur <= size) {
+	    grow(out, size);
+	}
+	if (0 < out->opts->dump_opts->hash_size) {
+	    strcpy(out->cur, out->opts->dump_opts->hash_nl);
+	    out->cur += out->opts->dump_opts->hash_size;
+	}
+	if (0 < out->opts->dump_opts->indent_size) {
+	    int	i;
+	    for (i = depth; 0 < i; i--) {
+		strcpy(out->cur, out->opts->dump_opts->indent);
+		out->cur += out->opts->dump_opts->indent_size;
+	    }
+	}
+	dump_str_comp(key, out);
+	size = out->opts->dump_opts->before_size + out->opts->dump_opts->after_size + 2;
+	if (out->end - out->cur <= size) {
+	    grow(out, size);
+	}
+	if (0 < out->opts->dump_opts->before_size) {
+	    strcpy(out->cur, out->opts->dump_opts->before_sep);
+	    out->cur += out->opts->dump_opts->before_size;
+	}
+	*out->cur++ = ':';
+	if (0 < out->opts->dump_opts->after_size) {
+	    strcpy(out->cur, out->opts->dump_opts->after_sep);
+	    out->cur += out->opts->dump_opts->after_size;
+	}
+    }
+    dump_val(value, depth, out);
     out->depth = depth;
     *out->cur++ = ',';
 
@@ -566,12 +653,31 @@ hash_cb_strict(VALUE key, VALUE value, Out out) {
 static int
 hash_cb_compat(VALUE key, VALUE value, Out out) {
     int		depth = out->depth;
-    long	size = depth * out->indent + 1;
+    long	size;
 
-    if (out->end - out->cur <= size) {
-	grow(out, size);
+    if (0 == out->opts->dump_opts) {
+	size = depth * out->indent + 1;
+	if (out->end - out->cur <= size) {
+	    grow(out, size);
+	}
+	fill_indent(out, depth);
+    } else {
+	size = depth * out->opts->dump_opts->indent_size + out->opts->dump_opts->hash_size + 1;
+	if (out->end - out->cur <= size) {
+	    grow(out, size);
+	}
+	if (0 < out->opts->dump_opts->hash_size) {
+	    strcpy(out->cur, out->opts->dump_opts->hash_nl);
+	    out->cur += out->opts->dump_opts->hash_size;
+	}
+	if (0 < out->opts->dump_opts->indent_size) {
+	    int	i;
+	    for (i = depth; 0 < i; i--) {
+		strcpy(out->cur, out->opts->dump_opts->indent);
+		out->cur += out->opts->dump_opts->indent_size;
+	    }
+	}
     }
-    fill_indent(out, depth);
     switch (rb_type(key)) {
     case T_STRING:
 	dump_str_comp(key, out);
@@ -583,7 +689,23 @@ hash_cb_compat(VALUE key, VALUE value, Out out) {
 	rb_raise(rb_eTypeError, "In :strict mode all Hash keys must be Strings.");
 	break;
     }
-    *out->cur++ = ':';
+    if (0 == out->opts->dump_opts) {
+	*out->cur++ = ':';
+    } else {
+	size = out->opts->dump_opts->before_size + out->opts->dump_opts->after_size + 2;
+	if (out->end - out->cur <= size) {
+	    grow(out, size);
+	}
+	if (0 < out->opts->dump_opts->before_size) {
+	    strcpy(out->cur, out->opts->dump_opts->before_sep);
+	    out->cur += out->opts->dump_opts->before_size;
+	}
+	*out->cur++ = ':';
+	if (0 < out->opts->dump_opts->after_size) {
+	    strcpy(out->cur, out->opts->dump_opts->after_sep);
+	    out->cur += out->opts->dump_opts->after_size;
+	}
+    }
     dump_val(value, depth, out);
     out->depth = depth;
     *out->cur++ = ',';
@@ -696,10 +818,28 @@ dump_hash(VALUE obj, int depth, int mode, Out out) {
 	if (',' == *(out->cur - 1)) {
 	    out->cur--; // backup to overwrite last comma
 	}
-	if (out->end - out->cur <= (long)size) {
-	    grow(out, size);
+	if (0 == out->opts->dump_opts) {
+	    if (out->end - out->cur <= (long)size) {
+		grow(out, size);
+	    }
+	    fill_indent(out, depth);
+	} else {
+	    size = depth * out->opts->dump_opts->indent_size + out->opts->dump_opts->hash_size + 1;
+	    if (out->end - out->cur <= (long)size) {
+		grow(out, size);
+	    }
+	    if (0 < out->opts->dump_opts->hash_size) {
+		strcpy(out->cur, out->opts->dump_opts->hash_nl);
+		out->cur += out->opts->dump_opts->hash_size;
+	    }
+	    if (0 < out->opts->dump_opts->indent_size) {
+		int	i;
+		for (i = depth; 0 < i; i--) {
+		    strcpy(out->cur, out->opts->dump_opts->indent);
+		    out->cur += out->opts->dump_opts->indent_size;
+		}
+	    }
 	}
-	fill_indent(out, depth);
 	*out->cur++ = '}';
     }
     *out->cur = '\0';

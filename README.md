@@ -24,9 +24,11 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 1.0.6
+### Release 1.1.0
 
- - Gave Oj::Doc a speed increase. It is now 8 times fast than JSON::Ext.
+ - Errors are not longer raised when comments are encountered in JSON documents.
+
+ - Oj can now mimic JSON. With some expections calling JSON.mimic_JSON will allow all JSON calls to use OJ instead of JSON. This gives a speedup of more than 2x on parsing and 5x for generating over the JSON::Ext module.
 
 ## <a name="description">Description</a>
 
