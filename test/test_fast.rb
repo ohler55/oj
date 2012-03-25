@@ -328,4 +328,21 @@ class DocTest < ::Test::Unit::TestCase
     assert_equal({'/1' => 1, '/2/1' => 2, '/2/2' => 3}, results)
   end
 
+  def test_comment
+    json = %{{
+  "x"/*one*/:/*two*/true,//three
+  "y":58/*four*/,
+  "z": [1,2/*five*/,
+3 // six
+]
+}
+}
+    results = Oj::Doc.open(json) do |doc|
+      h = {}
+      doc.each_leaf() { |d| h[d.where?] = d.fetch() }
+      h
+    end
+    assert_equal({'/x' => true, '/y' => 58, '/z/1' => 1, '/z/2' => 2, '/z/3' => 3}, results)
+  end
+
 end # DocTest
