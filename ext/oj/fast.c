@@ -57,6 +57,7 @@ typedef struct _Doc {
 #else
     void		*encoding;
 #endif
+    char		*json;
     unsigned long	size;        // number of leaves/branches in the doc
     VALUE		self;
     Batch		batches;
@@ -91,7 +92,7 @@ static char*	read_quoted_value(ParseInfo pi);
 static void	skip_comment(ParseInfo pi);
 
 static VALUE	protect_open_proc(VALUE x);
-static VALUE	parse_json(VALUE clas, char *json);
+static VALUE	parse_json(VALUE clas, char *json, int given, int allocated);
 static void	each_leaf(Doc doc, VALUE self);
 static int	move_step(Doc doc, const char *path, int loc);
 static Leaf	get_doc_leaf(Doc doc, const char *path);
@@ -274,6 +275,16 @@ leaf_value(Doc doc, Leaf leaf) {
 	}
     }
     return leaf->value;
+}
+
+inline static Doc
+self_doc(VALUE self) {
+    Doc	doc = DATA_PTR(self);
+
+    if (0 == doc) {
+	rb_raise(rb_eIOError, "Document already closed or not open.");
+    }
+    return doc;
 }
 
 static void
@@ -769,6 +780,7 @@ doc_init(Doc doc) {
     doc->encoding = 0;
 #endif
     doc->size = 0;
+    doc->json = 0;
     doc->batches = &doc->batch0;
     doc->batch0.next = 0;
     doc->batch0.next_avail = 0;
@@ -796,30 +808,41 @@ protect_open_proc(VALUE x) {
     pi->doc->data = read_next(pi); // parse
     *pi->doc->where = pi->doc->data;
     pi->doc->where = pi->doc->where_path;
-
-    return rb_yield(pi->doc->self); // caller processing
+    if (rb_block_given_p()) {
+	return rb_yield(pi->doc->self); // caller processing
+    }
+    return Qnil;
 }
 
 static VALUE
-parse_json(VALUE clas, char *json) {
+parse_json(VALUE clas, char *json, int given, int allocated) {
     struct _ParseInfo	pi;
     VALUE		result = Qnil;
-    struct _Doc		doc;
+    Doc			doc;
     int			ex = 0;
 
-    if (!rb_block_given_p()) {
-	rb_raise(rb_eArgError, "Block or Proc is required.");
+    if (given) {
+	doc = ALLOCA_N(struct _Doc, 1);
+    } else {
+	doc = ALLOC_N(struct _Doc, 1);
     }
     pi.str = json;
     pi.s = pi.str;
-    doc_init(&doc);
-    pi.doc = &doc;
-    doc.self = rb_obj_alloc(clas);
-    DATA_PTR(doc.self) = pi.doc;
+    doc_init(doc);
+    pi.doc = doc;
+    doc->self = rb_obj_alloc(clas);
+    doc->json = json;
+    DATA_PTR(doc->self) = doc;
     result = rb_protect(protect_open_proc, (VALUE)&pi, &ex);
-    DATA_PTR(doc.self) = 0;
-    doc_free(pi.doc);
-    //xfree(pi.str);
+    if (given || 0 != ex) {
+	DATA_PTR(doc->self) = 0;
+	doc_free(pi.doc);
+	if (allocated) {
+	    xfree(json);
+	}
+    } else {
+	result = doc->self;
+    }
     if (0 != ex) {
 	rb_jump_tag(ex);
     }
@@ -1064,19 +1087,22 @@ doc_open(VALUE clas, VALUE str) {
     char	*json;
     size_t	len;
     VALUE	obj;
+    int		given = rb_block_given_p();
+    int		allocate;
 
     Check_Type(str, T_STRING);
     len = RSTRING_LEN(str) + 1;
-    if (SMALL_XML < len) {
+    allocate = (SMALL_XML < len || !given);
+    if (allocate) {
 	json = ALLOC_N(char, len);
     } else {
 	json = ALLOCA_N(char, len);
     }
     memcpy(json, StringValuePtr(str), len);
-    obj = parse_json(clas, json);
-    if (SMALL_XML < len) {
+    obj = parse_json(clas, json, given, allocate);
+    if (given && allocate) {
 	xfree(json);
-    }    
+    }
     return obj;
 }
 
@@ -1099,6 +1125,8 @@ doc_open_file(VALUE clas, VALUE filename) {
     FILE	*f;
     size_t	len;
     VALUE	obj;
+    int		given = rb_block_given_p();
+    int		allocate;
 
     Check_Type(filename, T_STRING);
     path = StringValuePtr(filename);
@@ -1107,7 +1135,8 @@ doc_open_file(VALUE clas, VALUE filename) {
     }
     fseek(f, 0, SEEK_END);
     len = ftell(f);
-    if (SMALL_XML < len) {
+    allocate = (SMALL_XML < len || !given);
+    if (allocate) {
 	json = ALLOC_N(char, len + 1);
     } else {
 	json = ALLOCA_N(char, len + 1);
@@ -1119,8 +1148,8 @@ doc_open_file(VALUE clas, VALUE filename) {
     }
     fclose(f);
     json[len] = '\0';
-    obj = parse_json(clas, json);
-    if (SMALL_XML < len) {
+    obj = parse_json(clas, json, 1, allocate); // TBD check given
+    if (given && allocate) {
 	xfree(json);
     }
     return obj;
@@ -1137,7 +1166,7 @@ doc_open_file(VALUE clas, VALUE filename) {
  */
 static VALUE
 doc_where(VALUE self) {
-    Doc	doc = DATA_PTR(self);
+    Doc	doc = self_doc(self);
 
     if (0 == *doc->where_path || doc->where == doc->where_path) {
 	return oj_slash_string;
@@ -1182,7 +1211,7 @@ doc_where(VALUE self) {
  */
 static VALUE
 doc_local_key(VALUE self) {
-    Doc		doc = DATA_PTR(self);
+    Doc		doc = self_doc(self);
     Leaf	leaf = *doc->where;
     VALUE	key = Qnil;
 
@@ -1208,7 +1237,7 @@ doc_local_key(VALUE self) {
  */
 static VALUE
 doc_home(VALUE self) {
-    Doc	doc = DATA_PTR(self);
+    Doc	doc = self_doc(self);
 
     *doc->where_path = doc->data;
     doc->where = doc->where_path;
@@ -1229,7 +1258,7 @@ doc_home(VALUE self) {
  */
 static VALUE
 doc_type(int argc, VALUE *argv, VALUE self) {
-    Doc		doc = DATA_PTR(self);
+    Doc		doc = self_doc(self);
     Leaf	leaf;
     const char	*path = 0;
     VALUE	type = Qnil;
@@ -1268,7 +1297,7 @@ doc_type(int argc, VALUE *argv, VALUE self) {
  */
 static VALUE
 doc_fetch(int argc, VALUE *argv, VALUE self) {
-    Doc		doc = DATA_PTR(self);
+    Doc		doc = self_doc(self);
     Leaf	leaf;
     VALUE	val = Qnil;
     const char	*path = 0;
@@ -1305,7 +1334,7 @@ static VALUE
 doc_each_leaf(int argc, VALUE *argv, VALUE self) {
     if (rb_block_given_p()) {
 	Leaf		save_path[MAX_STACK];
-	Doc		doc = DATA_PTR(self);
+	Doc		doc = self_doc(self);
 	const char	*path = 0;
 	size_t		wlen;
 
@@ -1339,7 +1368,7 @@ doc_each_leaf(int argc, VALUE *argv, VALUE self) {
  */
 static VALUE
 doc_move(VALUE self, VALUE str) {
-    Doc		doc = DATA_PTR(self);
+    Doc		doc = self_doc(self);
     const char	*path;
     int		loc;
 
@@ -1375,7 +1404,7 @@ static VALUE
 doc_each_child(int argc, VALUE *argv, VALUE self) {
     if (rb_block_given_p()) {
 	Leaf		save_path[MAX_STACK];
-	Doc		doc = DATA_PTR(self);
+	Doc		doc = self_doc(self);
 	const char	*path = 0;
 	size_t		wlen;
 
@@ -1435,7 +1464,7 @@ doc_each_child(int argc, VALUE *argv, VALUE self) {
 static VALUE
 doc_each_value(int argc, VALUE *argv, VALUE self) {
     if (rb_block_given_p()) {
-	Doc		doc = DATA_PTR(self);
+	Doc		doc = self_doc(self);
 	const char	*path = 0;
 	Leaf		leaf;
 
@@ -1464,7 +1493,7 @@ doc_each_value(int argc, VALUE *argv, VALUE self) {
  */
 static VALUE
 doc_dump(int argc, VALUE *argv, VALUE self) {
-    Doc		doc = DATA_PTR(self);
+    Doc		doc = self_doc(self);
     Leaf	leaf;
     const char	*path = 0;
     const char	*filename = 0;
@@ -1507,6 +1536,19 @@ doc_dump(int argc, VALUE *argv, VALUE self) {
 static VALUE
 doc_size(VALUE self) {
     return ULONG2NUM(((Doc)DATA_PTR(self))->size);
+}
+
+/* TBD
+ */
+static VALUE
+doc_close(VALUE self) {
+    Doc		doc = self_doc(self);
+
+    DATA_PTR(doc->self) = 0;
+    xfree(doc->json);
+    doc_free(doc);
+
+    return Qnil;
 }
 
 /* Document-class: Oj::Doc
@@ -1570,4 +1612,5 @@ oj_init_doc() {
     rb_define_method(oj_doc_class, "each_value", doc_each_value, -1);
     rb_define_method(oj_doc_class, "dump", doc_dump, -1);
     rb_define_method(oj_doc_class, "size", doc_size, 0);
+    rb_define_method(oj_doc_class, "close", doc_close, 0);
 }
