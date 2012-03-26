@@ -4,6 +4,7 @@
 ^c^s show subtree
 
 - next
+ - document mimic_JSON
 
  - write JSON compatible extension
   - attributes - ignore for now

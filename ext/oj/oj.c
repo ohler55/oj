@@ -673,6 +673,9 @@ no_op1(VALUE self, VALUE obj) {
     return Qnil;
 }
 
+/*
+ * TBD
+ */
 static VALUE
 define_mimic_json(VALUE self) {
     if (Qnil == mimic) {
