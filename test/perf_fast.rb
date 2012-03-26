@@ -18,6 +18,7 @@ $iter = 10000
 $gets = 0
 $fetch = false
 $write = false
+$read = false
 
 opts = OptionParser.new
 opts.on("-v", "verbose")                                  { $verbose = true }
@@ -26,6 +27,7 @@ opts.on("-i", "--indent [Int]", Integer, "indentation")   { |i| $indent = i }
 opts.on("-g", "--gets [Int]", Integer, "number of gets")  { |i| $gets = i }
 opts.on("-f", "fetch")                                    { $fetch = true }
 opts.on("-w", "write")                                    { $write = true }
+opts.on("-r", "read")                                     { $read = true }
 opts.on("-h", "--help", "Show this display")              { puts opts; Process.exit!(0) }
 files = opts.parse(ARGV)
 
@@ -135,6 +137,23 @@ if $write
     perf.add('Yajl', 'encode') { File.open('yajl.json', 'w') { |f| Yajl::Encoder.encode($obj, f) } }
     perf.add('JSON::Ext', 'fast_generate') { File.open('json_ext.json', 'w') { |f| f.write(JSON.fast_generate($obj)) } }
     perf.before('JSON::Ext') { JSON.generator = JSON::Ext::Generator }
+    perf.run($iter)
+  end
+end
+
+if $read
+  puts '-' * 80
+  puts "JSON read from file Performance"
+  Oj::Doc.open($json) { |doc| doc.dump(nil, 'oj.json') }
+  File.open('yajl.json', 'w') { |f| Yajl::Encoder.encode($obj, f) }
+  JSON.generator = JSON::Ext::Generator
+  File.open('json_ext.json', 'w') { |f| f.write(JSON.fast_generate($obj)) }
+  Oj::Doc.open($json) do |doc|
+    perf = Perf.new()
+    perf.add('Oj::Doc', 'open_file') { ::Oj::Doc.open_file('oj.json') }
+    perf.add('Yajl', 'decode') { Yajl::decoder.decode(File.read('yajl.json')) }
+    perf.add('JSON::Ext', '') { JSON.parse(File.read('json_ext.json')) }
+    perf.before('JSON::Ext') { JSON.parser = JSON::Ext::Parser }
     perf.run($iter)
   end
 end

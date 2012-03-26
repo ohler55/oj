@@ -1073,14 +1073,20 @@ each_value(Doc doc, Leaf leaf) {
 
 /* call-seq: open(json) { |doc| ... } => Object
  *
- * Parses a JSON document String and then yields to the provided block with an
- * instance of the Oj::Doc as the single yield parameter.
+ * Parses a JSON document String and then yields to the provided block if one
+ * is given with an instance of the Oj::Doc as the single yield parameter. If
+ * a block is not given then an Oj::Doc instance is returned and must be
+ * closed with a call to the #close() method when no longer needed.
  *
  * @param [String] json JSON document string
  * @yieldparam [Oj::Doc] doc parsed JSON document
  * @yieldreturn [Object] returns the result of the yield as the result of the method call
  * @example
  *   Oj::Doc.open('[1,2,3]') { |doc| doc.size() }  #=> 4
+ *   # or as an alternative
+ *   doc = Oj::Doc.open('[1,2,3]')
+ *   doc.size()  #=> 4
+ *   doc.close()
  */
 static VALUE
 doc_open(VALUE clas, VALUE str) {
@@ -1108,8 +1114,10 @@ doc_open(VALUE clas, VALUE str) {
 
 /* call-seq: open_file(filename) { |doc| ... } => Object
  *
- * Parses a JSON document from a file and then yields to the provided block
- * with an instance of the Oj::Doc as the single yield parameter.
+ * Parses a JSON document from a file and then yields to the provided block if
+ * one is given with an instance of the Oj::Doc as the single yield
+ * parameter. If a block is not given then an Oj::Doc instance is returned and
+ * must be closed with a call to the #close() method when no longer needed.
  *
  * @param [String] filename name of file that contains a JSON document
  * @yieldparam [Oj::Doc] doc parsed JSON document
@@ -1117,6 +1125,10 @@ doc_open(VALUE clas, VALUE str) {
  * @example
  *   File.open('array.json', 'w') { |f| f.write('[1,2,3]') }
  *   Oj::Doc.open_file(filename) { |doc| doc.size() }  #=> 4
+ *   # or as an alternative
+ *   doc = Oj::Doc.open_file(filename)
+ *   doc.size()  #=> 4
+ *   doc.close()
  */
 static VALUE
 doc_open_file(VALUE clas, VALUE filename) {
@@ -1148,7 +1160,7 @@ doc_open_file(VALUE clas, VALUE filename) {
     }
     fclose(f);
     json[len] = '\0';
-    obj = parse_json(clas, json, 1, allocate); // TBD check given
+    obj = parse_json(clas, json, given, allocate);
     if (given && allocate) {
 	xfree(json);
     }
@@ -1538,7 +1550,14 @@ doc_size(VALUE self) {
     return ULONG2NUM(((Doc)DATA_PTR(self))->size);
 }
 
-/* TBD
+/* call-seq: close() => nil
+ *
+ * Closes an open document. No further calls to the document will be valid
+ * after closing.
+ * @example
+ *   doc = Oj::Doc.open('[1,2,3]')
+ *   doc.size()  #=> 4
+ *   doc.close()
  */
 static VALUE
 doc_close(VALUE self) {
@@ -1592,8 +1611,10 @@ doc_close(VALUE self) {
  *   end
  *   #=> 2
  *   
- *   # Now try again using a path to Oj::Doc.fetch() directly.
- *   Oj::Doc.open(json) { |doc| doc.fetch('/2/three') }  #=> 3
+ *   # Now try again using a path to Oj::Doc.fetch() directly and not using a block.
+ *   doc = Oj::Doc.open(json)
+ *   doc.fetch('/2/three')  #=> 3
+ *   doc.close()
  */
 void
 oj_init_doc() {
