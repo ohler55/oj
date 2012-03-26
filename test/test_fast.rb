@@ -328,6 +328,25 @@ class DocTest < ::Test::Unit::TestCase
     end
   end
 
+  def test_file_open_close
+    filename = 'open_file_test.json'
+    File.open(filename, 'w') { |f| f.write('{"a":[1,2,3]}') }
+    doc = Oj::Doc.open_file(filename)
+    assert_equal(Oj::Doc, doc.class)
+    assert_equal(5, doc.size)
+    assert_equal('/', doc.where?)
+    doc.move('a/1')
+    doc.home()
+    assert_equal(2, doc.fetch('/a/2'))
+    assert_equal(2, doc.fetch('a/2'))
+    doc.close()
+    begin
+      doc.home()
+    rescue Exception => e
+      assert(true)
+    end
+  end
+
   def test_dump
     Oj::Doc.open('[1,[2,3]]') do |doc|
       assert_equal('[1,[2,3]]', doc.dump())

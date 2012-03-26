@@ -30,6 +30,8 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
  - Oj can now mimic JSON. With some expections calling JSON.mimic_JSON will allow all JSON calls to use OJ instead of JSON. This gives a speedup of more than 2x on parsing and 5x for generating over the JSON::Ext module.
 
+ - Oj::Doc now allows a document to be left open and then closed with the Oj::Doc.close() class.
+
 ## <a name="description">Description</a>
 
 Optimized JSON (Oj), as the name implies was written to provide speed
