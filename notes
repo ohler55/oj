@@ -5,9 +5,11 @@
 
 - next
  - implement Oj::Doc.new or open without a block given
-  - requires a close
-
-  
+  - document
+   - close
+   - open for new use
+   - readme
+   - sample
 
  - write JSON compatible extension
   - attributes - ignore for now
@@ -56,6 +58,7 @@
    - how does recurse_proc work
    - how does proc with load/restore work
    - can Oj be assigned to JSON if JSON does not exist?
+
 
 - stream
  - use with Oj::Doc
