@@ -100,7 +100,8 @@ Cache   oj_class_cache = 0;
 Cache   oj_attr_cache = 0;
 
 struct _Options	oj_default_options = {
-    { '\0' },		// encoding
+    //    { '\0' },		// encoding
+    "UTF-8",		// encoding
     0,			// indent
     No,			// circular
     Yes,		// auto_define
@@ -418,7 +419,7 @@ dump(int argc, VALUE *argv, VALUE self) {
         rb_raise(rb_eNoMemError, "Not enough memory.\n");
     }
     rstr = rb_str_new2(json);
-#ifdef ENCODING_INLINE_MAX
+#ifdef HAVE_RUBY_ENCODING_H
     if ('\0' != *copts.encoding) {
         rb_enc_associate(rstr, rb_enc_find(copts.encoding));
     }

@@ -32,6 +32,8 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
  - Oj::Doc now allows a document to be left open and then closed with the Oj::Doc.close() class.
 
+ - Changed the default encoding to UTF-8 instead of the Ruby default String encoding.
+
 ## <a name="description">Description</a>
 
 Optimized JSON (Oj), as the name implies was written to provide speed
