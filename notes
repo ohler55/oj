@@ -4,10 +4,6 @@
 ^c^s show subtree
 
 - next
- - implement Oj::Doc.new or open without a block given
-  - requires a close
-
-  
 
  - write JSON compatible extension
   - attributes - ignore for now
@@ -57,6 +53,7 @@
    - how does proc with load/restore work
    - can Oj be assigned to JSON if JSON does not exist?
 
+
 - stream
  - use with Oj::Doc
  - use with standard
@@ -85,9 +82,3 @@
   - dump
    - support stream as arg
    - always dump to stream/file if possible (check performance)
-
- - example
-  - contacts
-   - pull apart input file with multiple contacts and write individual files
-   - phone book get only name and phone
-
