@@ -24,15 +24,11 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 1.1.0
+### Release 1.1.1
 
- - Errors are not longer raised when comments are encountered in JSON documents.
+ - The encoding option can now be an Encoding Object or a String.
 
- - Oj can now mimic JSON. With some expections calling JSON.mimic_JSON will allow all JSON calls to use OJ instead of JSON. This gives a speedup of more than 2x on parsing and 5x for generating over the JSON::Ext module.
-
- - Oj::Doc now allows a document to be left open and then closed with the Oj::Doc.close() class.
-
- - Changed the default encoding to UTF-8 instead of the Ruby default String encoding.
+ - Fixed Rubinius errors.
 
 ## <a name="description">Description</a>
 

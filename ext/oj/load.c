@@ -520,8 +520,10 @@ read_array(ParseInfo pi, int hint) {
     VALUE	e;
     int		type = T_NONE;
     int		cnt = 0;
-    long	slen = 0;
     int		a_str;
+#ifndef NO_RSTRUCT
+    long	slen = 0;
+#endif
 
     pi->s++;
     next_non_white(pi);
@@ -896,7 +898,8 @@ oj_parse(char *json, Options options) {
 	pi.circ_array = circ_array_new();
     }
 #ifdef HAVE_RUBY_ENCODING_H
-    pi.encoding = ('\0' == *options->encoding) ? 0 : rb_enc_find(options->encoding);
+    pi.encoding = options->encoding;
+    //pi.encoding = ('\0' == *options->encoding) ? 0 : rb_enc_find(options->encoding);
 #else
     pi.encoding = 0;
 #endif

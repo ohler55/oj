@@ -69,10 +69,15 @@ class Mimic < ::Test::Unit::TestCase
   def test_load_proc
     children = []
     json = %{{"a":1,"b":[true,false]}}
-    p = Proc.new {|x| children << x }
-    obj = JSON.load(json, p)
+    if RUBY_ENGINE == 'rbx'
+      obj = JSON.load(json) {|x| children << x }
+    else
+      p = Proc.new {|x| children << x }
+      obj = JSON.load(json, p)
+    end
     assert_equal({ 'a' => 1, 'b' => [true, false]}, obj)
-    assert_equal([1, true, false, [true, false], { 'a' => 1, 'b' => [true, false]}], children)
+    assert([1, true, false, [true, false], { 'a' => 1, 'b' => [true, false]}] == children ||
+           [true, false, [true, false], 1, { 'a' => 1, 'b' => [true, false]}] == children)
   end
 
 # []
@@ -90,7 +95,8 @@ class Mimic < ::Test::Unit::TestCase
 # generate
   def test_generate
     json = JSON.generate({ 'a' => 1, 'b' => [true, false]})
-    assert_equal(%{{"a":1,"b":[true,false]}}, json)
+    assert(%{{"a":1,"b":[true,false]}} == json ||
+           %{{"b":[true,false],"a":1}} == json)
   end
   def test_generate_options
     json = JSON.generate({ 'a' => 1, 'b' => [true, false]},
@@ -99,33 +105,48 @@ class Mimic < ::Test::Unit::TestCase
                          :object_nl => "#\n",
                          :space => "*",
                          :space_before => "~")
-    assert_equal(%{{#
+    assert(%{{#
 --"a"~:*1,#
 --"b"~:*[
 ----true,
 ----false
 --]#
-}}, json)
+}} == json ||
+%{{#
+--"b"~:*[
+----true,
+----false
+--],#
+--"a"~:*1#
+}} == json)
+
   end
 
 # fast_generate
   def test_fast_generate
     json = JSON.generate({ 'a' => 1, 'b' => [true, false]})
-    assert_equal(%{{"a":1,"b":[true,false]}}, json)
+    assert(%{{"a":1,"b":[true,false]}} == json ||
+           %{{"b":[true,false],"a":1}} == json)
   end
 
 # pretty_generate
   def test_pretty_generate
     json = JSON.pretty_generate({ 'a' => 1, 'b' => [true, false]})
-    assert_equal(%{{
+    assert(%{{
   "a" : 1,
   "b" : [
     true,
     false
   ]
-}}, json)
+}} == json ||
+%{{
+  "b" : [
+    true,
+    false
+  ],
+  "a" : 1
+}} == json)
   end
-  # TBD with options
 
 # parse
   def test_parse
@@ -158,7 +179,8 @@ class Mimic < ::Test::Unit::TestCase
   def test_recurse_proc
     children = []
     obj = JSON.recurse_proc({ 'a' => 1, 'b' => [true, false]}) { |x| children << x }
-    assert_equal([1, true, false, [true, false], { 'a' => 1, 'b' => [true, false]}], children)
+    assert([1, true, false, [true, false], { 'a' => 1, 'b' => [true, false]}] == children ||
+           [true, false, [true, false], 1, { 'b' => [true, false], 'a' => 1}] == children)
   end
 
 end # Mimic

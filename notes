@@ -4,55 +4,7 @@
 ^c^s show subtree
 
 - next
- - document mimic_JSON
-
- - write JSON compatible extension
-  - attributes - ignore for now
-  - methods
-   - create_id - default json_class
-    - get/set create_id
-   - generator and parser
-    - just return JSON itself or fake JSON::Ext::xxxx
-   - state
-    - return config info as object with same methods as JSON
-    - JSON::Ext::Generator::State or JSON::Pure::Generator::State
-   - JSON.[](object, opts={})
-    - if String then parse else dump
-   - restore(source, proc=nil) - alias for load
-   - load(source, proc=nil)
-    - takes String, IO, or respond_to?(:read)
-   - dump(obj, io=nil, limit=nil)
-   - fast_generate(obj, opts=nil)
-   - generate(obj, opts=nil)
-    - opts
-     - indent
-     - space - after :
-     - space_before - ignored by json
-     - object_nl - after each key/value pair
-     - array_nl
-     - allow_nan
-     - max_nesting
-   - parse(source, opts={})
-    - opts
-     - max_nesting - 19
-     - allow_nan - false
-     - symbolize_names - false
-     - create_additions - true (uses create_id to create classes)
-     - object_class - Hash
-     - array_class - Array
-   - parse!(source, opts={})
-    - opts
-     - max_nesting - nil
-     - allow_nan - true
-     - create_additions - true
-   - pretty_generate(obj, opts=nil)
-    - opts same as generate, must have different defaults
-   - recurse_proc(result, &proc)
-  - verify
-   - what happens with circular references
-   - how does recurse_proc work
-   - how does proc with load/restore work
-   - can Oj be assigned to JSON if JSON does not exist?
+ - setup travis to run tests
 
 
 - stream
