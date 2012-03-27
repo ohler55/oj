@@ -42,7 +42,7 @@ class Perf
     end
     iva = @items.clone
     iva.delete_if { |i| i.duration.nil? }
-    iva.sort_by! { |i| i.duration }
+    iva = iva.sort_by { |i| i.duration }
     puts
     puts "Summary:"
     puts "%*s  time (secs)  rate (ops/sec)" % [width, 'System']

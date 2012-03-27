@@ -6,3 +6,7 @@ oj-*.gem
 *.o
 Makefile
 *.bundle
+.rbenv-version
+*.rbc
+doc
+.yardoc

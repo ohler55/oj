@@ -40,7 +40,7 @@
 #include "oj.h"
 
 // maximum to allocate on the stack, arbitrary limit
-#define SMALL_XML	65536
+#define SMALL_JSON	65536
 
 typedef struct _YesNoOpt {
     VALUE       sym;
@@ -100,8 +100,7 @@ Cache   oj_class_cache = 0;
 Cache   oj_attr_cache = 0;
 
 struct _Options	oj_default_options = {
-    //    { '\0' },		// encoding
-    "UTF-8",		// encoding
+    0,			// encoding
     0,			// indent
     No,			// circular
     Yes,		// auto_define
@@ -116,8 +115,8 @@ static VALUE	define_mimic_json(VALUE self);
 /* call-seq: default_options() => Hash
  *
  * Returns the default load and dump options as a Hash. The options are
- * - indent: [Fixnum] number of spaces to indent each element in an XML document
- * - encoding: [String] character encoding for the JSON file
+ * - indent: [Fixnum] number of spaces to indent each element in an JSON document
+ * - encoding: [String|Encoding] character encoding for the JSON coument
  * - circular: [true|false|nil] support circular references while dumping
  * - auto_define: [true|false|nil] automatically define classes if they do not exist
  * - symbol_keys: [true|false|nil] use symbols instead of strings for hash keys
@@ -127,9 +126,10 @@ static VALUE	define_mimic_json(VALUE self);
 static VALUE
 get_def_opts(VALUE self) {
     VALUE       opts = rb_hash_new();
-    int         elen = (int)strlen(oj_default_options.encoding);
-
-    rb_hash_aset(opts, encoding_sym, (0 == elen) ? Qnil : rb_str_new(oj_default_options.encoding, elen));
+    
+#ifdef HAVE_RUBY_ENCODING_H
+    rb_hash_aset(opts, encoding_sym, (0 == oj_default_options.encoding) ? Qnil : rb_enc_from_encoding(oj_default_options.encoding));
+#endif
     rb_hash_aset(opts, indent_sym, INT2FIX(oj_default_options.indent));
     rb_hash_aset(opts, circular_sym, (Yes == oj_default_options.circular) ? Qtrue : ((No == oj_default_options.circular) ? Qfalse : Qnil));
     rb_hash_aset(opts, auto_define_sym, (Yes == oj_default_options.auto_define) ? Qtrue : ((No == oj_default_options.auto_define) ? Qfalse : Qnil));
@@ -149,7 +149,7 @@ get_def_opts(VALUE self) {
  *
  * Sets the default options for load and dump.
  * @param [Hash] opts options to change
- * @param [Fixnum] :indent number of spaces to indent each element in an XML document
+ * @param [Fixnum] :indent number of spaces to indent each element in an JSON document
  * @param [String] :encoding character encoding for the JSON file
  * @param [true|false|nil] :circular support circular references while dumping
  * @param [true|false|nil] :auto_define automatically define classes if they do not exist
@@ -178,15 +178,20 @@ set_def_opts(VALUE self, VALUE opts) {
     
     Check_Type(opts, T_HASH);
 
+#ifdef HAVE_RUBY_ENCODING_H
     if (Qtrue == rb_funcall(opts, rb_intern("has_key?"), 1, encoding_sym)) {
 	v = rb_hash_lookup(opts, encoding_sym);
 	if (Qnil == v) {
-	    *oj_default_options.encoding = '\0';
+	    oj_default_options.encoding = 0;
+	} else if (T_STRING == rb_type(v)) {
+	    oj_default_options.encoding = rb_enc_find(StringValuePtr(v));
+	} else if (rb_cEncoding == rb_obj_class(v)) {
+	    oj_default_options.encoding = rb_to_encoding(v);
 	} else {
-	    Check_Type(v, T_STRING);
-	    strncpy(oj_default_options.encoding, StringValuePtr(v), sizeof(oj_default_options.encoding) - 1);
+	    rb_raise(rb_eArgError, ":encoding must be nil, a String, or an Encoding.\n");
 	}
     }
+#endif
     v = rb_hash_aref(opts, indent_sym);
     if (Qnil != v) {
         Check_Type(v, T_FIXNUM);
@@ -245,12 +250,17 @@ parse_options(VALUE ropts, Options copts) {
             }
             copts->indent = NUM2INT(v);
         }
+#ifdef HAVE_RUBY_ENCODING_H
         if (Qnil != (v = rb_hash_lookup(ropts, encoding_sym))) {
-            if (rb_cString != rb_obj_class(v)) {
-                rb_raise(rb_eArgError, ":encoding must be a String.\n");
-            }
-            strncpy(copts->encoding, StringValuePtr(v), sizeof(copts->encoding) - 1);
+	    if (T_STRING == rb_type(v)) {
+		oj_default_options.encoding = rb_enc_find(StringValuePtr(v));
+	    } else if (rb_cEncoding == rb_obj_class(v)) {
+		oj_default_options.encoding = rb_to_encoding(v);
+	    } else {
+		rb_raise(rb_eArgError, ":encoding must be nil, a String, or an Encoding.\n");
+	    }
         }
+#endif
         if (Qnil != (v = rb_hash_lookup(ropts, mode_sym))) {
             if (object_sym == v) {
                 copts->mode = ObjectMode;
@@ -287,7 +297,7 @@ load_with_opts(VALUE input, Options copts) {
     if (rb_type(input) == T_STRING) {
 	// the json string gets modified so make a copy of it
 	len = RSTRING_LEN(input) + 1;
-	if (SMALL_XML < len) {
+	if (SMALL_JSON < len) {
 	    json = ALLOC_N(char, len);
 	} else {
 	    json = ALLOCA_N(char, len);
@@ -300,7 +310,7 @@ load_with_opts(VALUE input, Options copts) {
 	if (oj_stringio_class == clas) {
 	    s = rb_funcall2(input, oj_string_id, 0, 0);
 	    len = RSTRING_LEN(s) + 1;
-	    if (SMALL_XML < len) {
+	    if (SMALL_JSON < len) {
 		json = ALLOC_N(char, len);
 	    } else {
 		json = ALLOCA_N(char, len);
@@ -312,7 +322,7 @@ load_with_opts(VALUE input, Options copts) {
 
 	    len = lseek(fd, 0, SEEK_END);
 	    lseek(fd, 0, SEEK_SET);
-	    if (SMALL_XML < len) {
+	    if (SMALL_JSON < len) {
 		json = ALLOC_N(char, len + 1);
 	    } else {
 		json = ALLOCA_N(char, len + 1);
@@ -324,7 +334,7 @@ load_with_opts(VALUE input, Options copts) {
 	} else if (rb_respond_to(input, oj_read_id)) {
 	    s = rb_funcall2(input, oj_read_id, 0, 0);
 	    len = RSTRING_LEN(s) + 1;
-	    if (SMALL_XML < len) {
+	    if (SMALL_JSON < len) {
 		json = ALLOC_N(char, len);
 	    } else {
 		json = ALLOCA_N(char, len);
@@ -335,7 +345,7 @@ load_with_opts(VALUE input, Options copts) {
 	}
     }
     obj = oj_parse(json, copts);
-    if (SMALL_XML < len) {
+    if (SMALL_JSON < len) {
 	xfree(json);
     }
     return obj;
@@ -378,7 +388,7 @@ load_file(int argc, VALUE *argv, VALUE self) {
     }
     fseek(f, 0, SEEK_END);
     len = ftell(f);
-    if (SMALL_XML < len) {
+    if (SMALL_JSON < len) {
 	json = ALLOC_N(char, len + 1);
     } else {
 	json = ALLOCA_N(char, len + 1);
@@ -394,7 +404,7 @@ load_file(int argc, VALUE *argv, VALUE self) {
 	parse_options(argv[1], &options);
     }
     obj = oj_parse(json, &options);
-    if (SMALL_XML < len) {
+    if (SMALL_JSON < len) {
 	xfree(json);
     }
     return obj;
@@ -420,8 +430,8 @@ dump(int argc, VALUE *argv, VALUE self) {
     }
     rstr = rb_str_new2(json);
 #ifdef HAVE_RUBY_ENCODING_H
-    if ('\0' != *copts.encoding) {
-        rb_enc_associate(rstr, rb_enc_find(copts.encoding));
+    if (0 != copts.encoding) {
+        rb_enc_associate(rstr, copts.encoding);
     }
 #endif
     xfree(json);
@@ -465,8 +475,8 @@ mimic_dump(int argc, VALUE *argv, VALUE self) {
     }
     rstr = rb_str_new2(json);
 #ifdef ENCODING_INLINE_MAX
-    if ('\0' != *copts.encoding) {
-	rb_enc_associate(rstr, rb_enc_find(copts.encoding));
+    if (0 != copts.encoding) {
+	rb_enc_associate(rstr, copts.encoding);
     }
 #endif
     if (2 <= argc && Qnil != argv[1]) {
@@ -485,8 +495,6 @@ mimic_dump(int argc, VALUE *argv, VALUE self) {
 // This is the signature for the hash_foreach callback also.
 static int
 mimic_walk(VALUE key, VALUE obj, VALUE proc) {
-    VALUE	args[1];
-
     switch (rb_type(obj)) {
     case T_HASH:
 	rb_hash_foreach(obj, mimic_walk, proc);
@@ -504,11 +512,19 @@ mimic_walk(VALUE key, VALUE obj, VALUE proc) {
     default:
 	break;
     }
-    *args = obj;
     if (Qnil == proc) {
-	rb_yield_values2(1, args);
+	if (rb_block_given_p()) {
+	    rb_yield(obj);
+	}
     } else {
+#ifdef RUBINIUS
+        rb_raise(rb_eNotImpError, "Not supported in Rubinius.\n");
+#else
+	VALUE	args[1];
+
+	*args = obj;
 	rb_proc_call_with_block(proc, 1, args, Qnil);
+#endif
     }
     return ST_CONTINUE;
 }
@@ -516,10 +532,13 @@ mimic_walk(VALUE key, VALUE obj, VALUE proc) {
 static VALUE
 mimic_load(int argc, VALUE *argv, VALUE self) {
     VALUE	obj = load(1, argv, self);
+    VALUE	p = Qnil;
 
-    if (2 <= argc && Qnil != argv[1]) {
-	mimic_walk(Qnil, obj, argv[1]);
+    if (2 <= argc) {
+	p = argv[1];
     }
+    mimic_walk(Qnil, obj, p);
+
     return obj;
 }
 
@@ -596,8 +615,8 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
     }
     rstr = rb_str_new2(json);
 #ifdef ENCODING_INLINE_MAX
-    if ('\0' != *copts->encoding) {
-        rb_enc_associate(rstr, rb_enc_find(copts->encoding));
+    if (0 != copts->encoding) {
+        rb_enc_associate(rstr, copts->encoding);
     }
 #endif
     xfree(json);
@@ -673,8 +692,13 @@ no_op1(VALUE self, VALUE obj) {
     return Qnil;
 }
 
-/*
- * TBD
+/* call-seq: mimic_JSON() => Module
+ *
+ * Creates the JSON module with methods and classes to mimic the JSON
+ * gem. After this method is invoked calls that expect the JSON module will
+ * use Oj instead and be faster than the original JSON. Most options that
+ * could be passed to the JSON methods are supported. The calls to set parser
+ * or generator will not raise an Exception but will not have any effect.
  */
 static VALUE
 define_mimic_json(VALUE self) {
@@ -765,6 +789,9 @@ void Init_oj() {
     oj_slash_string = rb_str_new2("/");			rb_ary_push(keep, oj_slash_string);
 
     oj_default_options.mode = ObjectMode;
+#ifdef HAVE_RUBY_ENCODING_H
+    oj_default_options.encoding = rb_enc_find("UTF-8");
+#endif
 
     oj_cache_new(&oj_class_cache);
     oj_cache_new(&oj_attr_cache);

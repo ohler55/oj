@@ -99,7 +99,12 @@ typedef struct _DumpOpts {
 } *DumpOpts;
 
 typedef struct _Options {
-    char        encoding[64];	// encoding, stored in the option to avoid GC invalidation in default values
+#ifdef HAVE_RUBY_ENCODING_H
+    rb_encoding	*encoding;
+#else
+    void	*encoding;
+#endif
+    //char        encoding[64];	// encoding, stored in the option to avoid GC invalidation in default values
     int         indent;		// indention for dump, default 2
     char        circular;	// YesNo
     char        auto_define;	// YesNo

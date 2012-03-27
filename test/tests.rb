@@ -67,7 +67,7 @@ class Juice < ::Test::Unit::TestCase
 
   def test0_get_options
     opts = Oj.default_options()
-    assert_equal({ :encoding=>nil,
+    assert_equal({ :encoding=>Encoding.find('UTF-8'),
                    :indent=>0,
                    :circular=>false,
                    :auto_define=>true,
@@ -96,6 +96,7 @@ class Juice < ::Test::Unit::TestCase
     o3 = { :indent => 4 }
     Oj.default_options = o2
     opts = Oj.default_options()
+    o2[:encoding] = Encoding.find('UTF-8')
     assert_equal(opts, o2);
     Oj.default_options = o3 # see if it throws an exception
     Oj.default_options = orig # return to original

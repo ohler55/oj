@@ -6,14 +6,14 @@ $: << File.join(File.dirname(__FILE__), "../lib")
 $: << File.join(File.dirname(__FILE__), "../ext")
 
 require 'optparse'
-require 'yajl'
+#require 'yajl'
 require 'perf'
-require 'json'
-require 'json/pure'
-require 'json/ext'
-require 'msgpack'
+#require 'json'
+#require 'json/pure'
+#require 'json/ext'
+#require 'msgpack'
 require 'oj'
-require 'ox'
+#require 'ox'
 
 class Jazz
   attr_accessor :boolean, :number, :string
@@ -108,11 +108,9 @@ end
 $obj['j'] = Jazz.new() if $with_object
 
 Oj.default_options = { :indent => $indent, :mode => :compat }
-Ox.default_options = { :indent => $indent, :mode => :object }
 
 $json = Oj.dump($obj)
 $obj_json = Oj.dump($obj, :mode => :object)
-$xml = Ox.dump($obj, :indent => $indent)
 $failed = {} # key is same as String used in tests later
 
 def capture_error(tag, orig, load_key, dump_key, &blk)
@@ -127,15 +125,23 @@ end
 # Verify that all packages dump and load correctly and return the same Object as the original.
 capture_error('Oj:compat', $obj, 'load', 'dump') { |o| Oj.load(Oj.dump(o)) }
 capture_error('Oj', $obj, 'load', 'dump') { |o| Oj.load(Oj.dump(o, :mode => :compat), :mode => :compat) }
-capture_error('Ox', $obj, 'load', 'dump') { |o| Ox.load(Ox.dump(o, :mode => :object), :mode => :object) }
-capture_error('MessagePack', $obj, 'unpack', 'pack') { |o| MessagePack.unpack(MessagePack.pack($obj)) }
-capture_error('Yajl', $obj, 'encode', 'parse') { |o| Yajl::Parser.parse(Yajl::Encoder.encode(o)) }
+capture_error('Ox', $obj, 'load', 'dump') { |o|
+  require 'ox'
+  Ox.default_options = { :indent => $indent, :mode => :object }
+  $xml = Ox.dump($obj, :indent => $indent)
+  Ox.load(Ox.dump(o, :mode => :object), :mode => :object)
+}
+capture_error('MessagePack', $obj, 'unpack', 'pack') { |o| require 'msgpack'; MessagePack.unpack(MessagePack.pack($obj)) }
+capture_error('Yajl', $obj, 'encode', 'parse') { |o| require 'yajl'; Yajl::Parser.parse(Yajl::Encoder.encode(o)) }
 capture_error('JSON::Ext', $obj, 'generate', 'parse') { |o|
+  require 'json'
+  require 'json/ext'
   JSON.generator = JSON::Ext::Generator
   JSON.parser = JSON::Ext::Parser
   JSON.parse(JSON.generate(o))
 }
 capture_error('JSON::Pure', $obj, 'generate', 'parse') { |o|
+  require 'json/pure'
   JSON.generator = JSON::Pure::Generator
   JSON.parser = JSON::Pure::Parser
   JSON.parse(JSON.generate(o))

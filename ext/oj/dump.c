@@ -336,7 +336,7 @@ static void
 dump_float(VALUE obj, Out out) {
     char	buf[64];
     char	*b;
-    double	d = RFLOAT_VALUE(obj);
+    double	d = rb_num2dbl(obj);
     int		cnt;
 
     switch (fpclassify(d)) {

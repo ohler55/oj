@@ -775,7 +775,7 @@ doc_init(Doc doc) {
     doc->data = 0;
     doc->self = Qundef;
 #ifdef HAVE_RUBY_ENCODING_H
-    doc->encoding = ('\0' == *oj_default_options.encoding) ? 0 : rb_enc_find(oj_default_options.encoding);
+    doc->encoding = oj_default_options.encoding;
 #else
     doc->encoding = 0;
 #endif
