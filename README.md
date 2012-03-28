@@ -20,7 +20,7 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 *Fast XML parser and marshaller on RubyGems*: https://rubygems.org/gems/ox
 
-*Fast XML parser and marshaller on GitHub*: https://rubygems.org/gems/ox
+*Fast XML parser and marshaller on GitHub*: https://github.com/ohler55/ox
 
 ## <a name="release">Release Notes</a>
 
