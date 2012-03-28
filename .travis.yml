@@ -10,6 +10,6 @@ rvm:
 script:
   - gem build oj.gemspec
   - gem install oj-*
-  - ruby test/tests.rb
-  - ruby test/test_fast.rb
-  - ruby test/test_mimic.rb
+#  - ruby test/tests.rb
+#  - ruby test/test_fast.rb
+#  - ruby test/test_mimic.rb
