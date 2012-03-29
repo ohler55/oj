@@ -67,8 +67,7 @@ class Juice < ::Test::Unit::TestCase
 
   def test0_get_options
     opts = Oj.default_options()
-    assert_equal({ :encoding=>Encoding.find('UTF-8'),
-                   :indent=>0,
+    assert_equal({ :indent=>0,
                    :circular=>false,
                    :auto_define=>true,
                    :symbol_keys=>false,
@@ -78,7 +77,6 @@ class Juice < ::Test::Unit::TestCase
 
   def test0_set_options
     orig = {
-      :encoding=>nil,
       :indent=>0,
       :circular=>false,
       :auto_define=>true,
@@ -86,7 +84,6 @@ class Juice < ::Test::Unit::TestCase
       :ascii_only=>false,
       :mode=>:object}
     o2 = {
-      :encoding=>"UTF-8",
       :indent=>4,
       :circular=>true,
       :auto_define=>false,
@@ -96,7 +93,6 @@ class Juice < ::Test::Unit::TestCase
     o3 = { :indent => 4 }
     Oj.default_options = o2
     opts = Oj.default_options()
-    o2[:encoding] = Encoding.find('UTF-8')
     assert_equal(opts, o2);
     Oj.default_options = o3 # see if it throws an exception
     Oj.default_options = orig # return to original
@@ -147,11 +143,22 @@ class Juice < ::Test::Unit::TestCase
   end
 
   def test_encode
-    Oj.default_options = { :encoding => 'UTF-8' }
+    opts = Oj.default_options
+    Oj.default_options = { :ascii_only => false }
     dump_and_load("ぴーたー", false)
     Oj.default_options = { :ascii_only => true }
+    json = Oj.dump("ぴーたー")
+    assert_equal(%{"\\u3074\\u30fc\\u305f\\u30fc"}, json)
     dump_and_load("ぴーたー", false)
-    Oj.default_options = { :encoding => nil, :ascii_only => false }
+    Oj.default_options = opts
+  end
+
+  def test_unicode
+    # hits the 3 normal ranges and one extended surrogate pair
+    json = %{"\\u019f\\u05e9\\u3074\\ud834\\udd1e"}
+    obj = Oj.load(json)
+    json2 = Oj.dump(obj, :ascii_only => true)
+    assert_equal(json, json2)
   end
 
   def test_array
@@ -202,7 +209,7 @@ class Juice < ::Test::Unit::TestCase
   def test_time_compat
     t = Time.local(2012, 1, 5, 23, 58, 7)
     json = Oj.dump(t, :mode => :compat)
-    assert_equal(%{1325775487.000000}, json)
+    assert_equal(%{1325775487.000000000}, json)
   end    
   def test_time_object
     t = Time.now()

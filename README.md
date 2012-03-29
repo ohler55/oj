@@ -28,6 +28,8 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
  - Removed the encoding option and fixed a misunderstanding of the string encoding. Unicode code points are now used instead of byte codes. This is not compatible with previous releases but is compliant with RFC4627.
 
+ - Time encoding in :object mode is faster and higher nanosecond precision.
+
 ## <a name="description">Description</a>
 
 Optimized JSON (Oj), as the name implies was written to provide speed

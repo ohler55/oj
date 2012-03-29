@@ -61,7 +61,9 @@ extern "C" {
 #undef T_RATIONAL
 #undef T_COMPLEX
 #define NO_RSTRUCT 1
+#ifndef IVAR_HELPERS
 #define IVAR_HELPERS 0
+#endif
 #endif
 
 #if IVAR_HELPERS
