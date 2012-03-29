@@ -725,6 +725,8 @@ void Init_oj() {
     oj_to_json_id = rb_intern("to_json");
     oj_to_sym_id = rb_intern("to_sym");
     oj_write_id = rb_intern("write");
+    oj_tv_nsec_id = rb_intern("tv_nsec");
+    oj_tv_sec_id = rb_intern("tv_sec");
 
     oj_bag_class = rb_const_get_at(Oj, rb_intern("Bag"));
     oj_struct_class = rb_const_get(rb_cObject, rb_intern("Struct"));
