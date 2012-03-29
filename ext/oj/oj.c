@@ -61,6 +61,8 @@ ID	oj_to_hash_id;
 ID	oj_to_json_id;
 ID	oj_to_sym_id;
 ID	oj_write_id;
+ID	oj_tv_nsec_id;
+ID	oj_tv_sec_id;
 
 VALUE	oj_bag_class;
 VALUE	oj_date_class;
