@@ -40,13 +40,13 @@
 #include "cache8.h"
 
 #ifdef RUBY_API_VERSION_MAJOR
-#ifndef RUBINIUS
 #define HAS_TIMESPEC
-#endif
 #endif
 
 #ifndef HAVE_RUBY_ENCODING_H
+#ifndef RUBINIUS
 #define rb_eEncodingError	rb_eException
+#endif
 #endif
 typedef unsigned long   ulong;
 
