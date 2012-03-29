@@ -4,20 +4,6 @@
 ^c^s show subtree
 
 - next
- - unicode
-  - remove option for encoding, always make UTF-8
-   - later allow utf-16
-   - keep ascii-only but make default - this is rcf compliant
-    - maybe change the name to 'unicode' or reverse it to allow-high-bits
-    - 
-  - change encoding to be unicode
-   - use utf-16 surrogate pairs for extended
-   - size logic
-    - if character has hi bit set
-     - size is number of bits set
-      - skip that many characters unless one of them is 0 or exceed length
-  - 
-    
 
  - setup travis to run tests
   - make sure time handles nsec instead of usec

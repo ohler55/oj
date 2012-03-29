@@ -39,6 +39,9 @@
 #include "oj.h"
 #include "cache8.h"
 
+#ifndef HAVE_RUBY_ENCODING_H
+#define rb_eEncodingError	rb_eException
+#endif
 typedef unsigned long   ulong;
 
 typedef struct _Out {
@@ -903,11 +906,17 @@ static void
 dump_time(VALUE obj, Out out) {
     char		buf[64];
     char		*b = buf + sizeof(buf) - 1;
-    char		*dot = b - 10;
     long		size;
+    char		*dot = b - 10;
+#ifdef HAVE_STRUCT_TIMESPEC
     struct timespec	ts = rb_time_timespec(obj);
     time_t		sec = ts.tv_sec;
     long		nsec = ts.tv_nsec;
+#else
+    struct timeval	tv = rb_time_timeval(obj);
+    time_t		sec = tv.tv_sec;
+    long		nsec = tv.tv_usec * 1000;
+#endif
 
     *b-- = '\0';
     for (; dot < b; b--, nsec /= 10) {
