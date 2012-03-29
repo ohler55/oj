@@ -52,7 +52,6 @@ void Init_oj();
 VALUE    Oj = Qnil;
 
 ID	oj_as_json_id;
-ID	oj_at_id;
 ID	oj_fileno_id;
 ID	oj_instance_variables_id;
 ID	oj_json_create_id;
@@ -61,9 +60,6 @@ ID	oj_string_id;
 ID	oj_to_hash_id;
 ID	oj_to_json_id;
 ID	oj_to_sym_id;
-ID	oj_tv_nsec_id;
-ID	oj_tv_sec_id;
-ID	oj_tv_usec_id;
 ID	oj_write_id;
 
 VALUE	oj_bag_class;
@@ -78,7 +74,6 @@ static VALUE	ascii_only_sym;
 static VALUE	auto_define_sym;
 static VALUE	circular_sym;
 static VALUE	compat_sym;
-static VALUE	encoding_sym;
 static VALUE	indent_sym;
 static VALUE	mode_sym;
 static VALUE	null_sym;
@@ -99,8 +94,11 @@ static VALUE	keep = Qnil;
 Cache   oj_class_cache = 0;
 Cache   oj_attr_cache = 0;
 
+#ifdef HAVE_RUBY_ENCODING_H
+rb_encoding	*oj_utf8_encoding = 0;
+#endif
+
 struct _Options	oj_default_options = {
-    0,			// encoding
     0,			// indent
     No,			// circular
     Yes,		// auto_define
@@ -116,7 +114,6 @@ static VALUE	define_mimic_json(VALUE self);
  *
  * Returns the default load and dump options as a Hash. The options are
  * - indent: [Fixnum] number of spaces to indent each element in an JSON document
- * - encoding: [String|Encoding] character encoding for the JSON coument
  * - circular: [true|false|nil] support circular references while dumping
  * - auto_define: [true|false|nil] automatically define classes if they do not exist
  * - symbol_keys: [true|false|nil] use symbols instead of strings for hash keys
@@ -127,9 +124,6 @@ static VALUE
 get_def_opts(VALUE self) {
     VALUE       opts = rb_hash_new();
     
-#ifdef HAVE_RUBY_ENCODING_H
-    rb_hash_aset(opts, encoding_sym, (0 == oj_default_options.encoding) ? Qnil : rb_enc_from_encoding(oj_default_options.encoding));
-#endif
     rb_hash_aset(opts, indent_sym, INT2FIX(oj_default_options.indent));
     rb_hash_aset(opts, circular_sym, (Yes == oj_default_options.circular) ? Qtrue : ((No == oj_default_options.circular) ? Qfalse : Qnil));
     rb_hash_aset(opts, auto_define_sym, (Yes == oj_default_options.auto_define) ? Qtrue : ((No == oj_default_options.auto_define) ? Qfalse : Qnil));
@@ -150,7 +144,6 @@ get_def_opts(VALUE self) {
  * Sets the default options for load and dump.
  * @param [Hash] opts options to change
  * @param [Fixnum] :indent number of spaces to indent each element in an JSON document
- * @param [String] :encoding character encoding for the JSON file
  * @param [true|false|nil] :circular support circular references while dumping
  * @param [true|false|nil] :auto_define automatically define classes if they do not exist
  * @param [true|false|nil] :symbol_keys convert hash keys to symbols
@@ -177,21 +170,6 @@ set_def_opts(VALUE self, VALUE opts) {
     VALUE       v;
     
     Check_Type(opts, T_HASH);
-
-#ifdef HAVE_RUBY_ENCODING_H
-    if (Qtrue == rb_funcall(opts, rb_intern("has_key?"), 1, encoding_sym)) {
-	v = rb_hash_lookup(opts, encoding_sym);
-	if (Qnil == v) {
-	    oj_default_options.encoding = 0;
-	} else if (T_STRING == rb_type(v)) {
-	    oj_default_options.encoding = rb_enc_find(StringValuePtr(v));
-	} else if (rb_cEncoding == rb_obj_class(v)) {
-	    oj_default_options.encoding = rb_to_encoding(v);
-	} else {
-	    rb_raise(rb_eArgError, ":encoding must be nil, a String, or an Encoding.\n");
-	}
-    }
-#endif
     v = rb_hash_aref(opts, indent_sym);
     if (Qnil != v) {
         Check_Type(v, T_FIXNUM);
@@ -250,17 +228,6 @@ parse_options(VALUE ropts, Options copts) {
             }
             copts->indent = NUM2INT(v);
         }
-#ifdef HAVE_RUBY_ENCODING_H
-        if (Qnil != (v = rb_hash_lookup(ropts, encoding_sym))) {
-	    if (T_STRING == rb_type(v)) {
-		oj_default_options.encoding = rb_enc_find(StringValuePtr(v));
-	    } else if (rb_cEncoding == rb_obj_class(v)) {
-		oj_default_options.encoding = rb_to_encoding(v);
-	    } else {
-		rb_raise(rb_eArgError, ":encoding must be nil, a String, or an Encoding.\n");
-	    }
-        }
-#endif
         if (Qnil != (v = rb_hash_lookup(ropts, mode_sym))) {
             if (object_sym == v) {
                 copts->mode = ObjectMode;
@@ -430,9 +397,7 @@ dump(int argc, VALUE *argv, VALUE self) {
     }
     rstr = rb_str_new2(json);
 #ifdef HAVE_RUBY_ENCODING_H
-    if (0 != copts.encoding) {
-        rb_enc_associate(rstr, copts.encoding);
-    }
+    rb_enc_associate(rstr, oj_utf8_encoding);
 #endif
     xfree(json);
 
@@ -475,9 +440,7 @@ mimic_dump(int argc, VALUE *argv, VALUE self) {
     }
     rstr = rb_str_new2(json);
 #ifdef ENCODING_INLINE_MAX
-    if (0 != copts.encoding) {
-	rb_enc_associate(rstr, copts.encoding);
-    }
+    rb_enc_associate(rstr, oj_utf8_encoding);
 #endif
     if (2 <= argc && Qnil != argv[1]) {
 	VALUE	io = argv[1];
@@ -615,9 +578,7 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
     }
     rstr = rb_str_new2(json);
 #ifdef ENCODING_INLINE_MAX
-    if (0 != copts->encoding) {
-        rb_enc_associate(rstr, copts->encoding);
-    }
+    rb_enc_associate(rstr, oj_utf8_encoding);
 #endif
     xfree(json);
 
@@ -755,7 +716,6 @@ void Init_oj() {
     rb_define_module_function(Oj, "to_file", to_file, -1);
 
     oj_as_json_id = rb_intern("as_json");
-    oj_at_id = rb_intern("at");
     oj_fileno_id = rb_intern("fileno");
     oj_instance_variables_id = rb_intern("instance_variables");
     oj_json_create_id = rb_intern("json_create");
@@ -764,9 +724,6 @@ void Init_oj() {
     oj_to_hash_id = rb_intern("to_hash");
     oj_to_json_id = rb_intern("to_json");
     oj_to_sym_id = rb_intern("to_sym");
-    oj_tv_nsec_id = rb_intern("tv_nsec");
-    oj_tv_sec_id = rb_intern("tv_sec");
-    oj_tv_usec_id = rb_intern("tv_usec");
     oj_write_id = rb_intern("write");
 
     oj_bag_class = rb_const_get_at(Oj, rb_intern("Bag"));
@@ -779,7 +736,6 @@ void Init_oj() {
     auto_define_sym = ID2SYM(rb_intern("auto_define"));	rb_ary_push(keep, auto_define_sym);
     circular_sym = ID2SYM(rb_intern("circular"));	rb_ary_push(keep, circular_sym);
     compat_sym = ID2SYM(rb_intern("compat"));		rb_ary_push(keep, compat_sym);
-    encoding_sym = ID2SYM(rb_intern("encoding"));	rb_ary_push(keep, encoding_sym);
     indent_sym = ID2SYM(rb_intern("indent"));		rb_ary_push(keep, indent_sym);
     mode_sym = ID2SYM(rb_intern("mode"));		rb_ary_push(keep, mode_sym);
     symbol_keys_sym = ID2SYM(rb_intern("symbol_keys"));	rb_ary_push(keep, symbol_keys_sym);
@@ -791,7 +747,7 @@ void Init_oj() {
 
     oj_default_options.mode = ObjectMode;
 #ifdef HAVE_RUBY_ENCODING_H
-    oj_default_options.encoding = rb_enc_find("UTF-8");
+    oj_utf8_encoding = rb_enc_find("UTF-8");
 #endif
 
     oj_cache_new(&oj_class_cache);
