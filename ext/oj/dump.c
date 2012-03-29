@@ -1,21 +1,21 @@
 /* dump.c
  * Copyright (c) 2012, Peter Ohler
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  *  - Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  *  - Neither the name of Peter Ohler nor the names of its contributors may be
  *    used to endorse or promote products derived from this software without
  *    specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -206,7 +206,7 @@ grow(Out out, size_t len) {
     size_t  size = out->end - out->buf;
     long    pos = out->cur - out->buf;
     char    *buf;
-        
+
     size *= 2;
     if (size <= len * 2 + pos) {
         size += len;
@@ -234,7 +234,7 @@ dump_unicode(const char *str, const char *end, Out out) {
     uint32_t	code = 0;
     uint8_t	b = *(uint8_t*)str;
     int		i, cnt;
-    
+
     if (0xC0 == (0xE0 & b)) {
 	cnt = 1;
 	code = b & 0x0000001F;
@@ -277,7 +277,7 @@ dump_unicode(const char *str, const char *end, Out out) {
     *out->cur++ = 'u';
     for (i = 3; 0 <= i; i--) {
 	*out->cur++ = hex_chars[(uint8_t)(code >> (i * 4)) & 0x0F];
-    }	
+    }
     return str - 1;
 }
 
@@ -533,7 +533,7 @@ dump_str_obj(VALUE obj, Out out) {
 static void
 dump_sym_comp(VALUE obj, Out out) {
     const char	*sym = rb_id2name(SYM2ID(obj));
-    
+
     dump_cstr(sym, strlen(sym), 0, 0, out);
 }
 
@@ -541,7 +541,7 @@ static void
 dump_sym_obj(VALUE obj, Out out) {
     const char	*sym = rb_id2name(SYM2ID(obj));
     size_t	len = strlen(sym);
-    
+
     dump_cstr(sym, len, 1, 0, out);
 }
 
@@ -837,7 +837,7 @@ hash_cb_object(VALUE key, VALUE value, Out out) {
     }
     out->depth = depth;
     *out->cur++ = ',';
-    
+
     return ST_CONTINUE;
 }
 
@@ -980,18 +980,15 @@ static void
 dump_obj_comp(VALUE obj, int depth, Out out) {
     if (rb_respond_to(obj, oj_to_hash_id)) {
 	VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
- 
+
 	if (T_HASH != rb_type(h)) {
 	    rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
 	}
 	dump_hash(h, depth, out->opts->mode, out);
     } else if (rb_respond_to(obj, oj_as_json_id)) {
 	VALUE	h = rb_funcall(obj, oj_as_json_id, 0);
- 
-	if (T_HASH != rb_type(h)) {
-	    rb_raise(rb_eTypeError, "%s.as_json() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
-	}
-	dump_hash(h, depth, out->opts->mode, out);
+
+  dump_val(h, depth, out);
     } else if (rb_respond_to(obj, oj_to_json_id)) {
 	VALUE		rs = rb_funcall(obj, oj_to_json_id, 0);
 	const char	*s = StringValuePtr(rs);
@@ -1043,7 +1040,7 @@ dump_attr_cb(ID key, VALUE value, Out out) {
     dump_val(value, depth, out);
     out->depth = depth;
     *out->cur++ = ',';
-    
+
     return ST_CONTINUE;
 }
 #endif
@@ -1149,7 +1146,7 @@ static void
 dump_struct_comp(VALUE obj, int depth, Out out) {
     if (rb_respond_to(obj, oj_to_hash_id)) {
 	VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
- 
+
 	if (T_HASH != rb_type(h)) {
 	    rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
 	}
@@ -1179,7 +1176,7 @@ dump_struct_obj(VALUE obj, int depth, Out out) {
     int		d3 = d2 + 1;
     size_t	len = strlen(class_name);
     size_t	size = d2 * out->indent + d3 * out->indent + 10 + len;
-            
+
     if (out->end - out->cur <= (long)size) {
 	grow(out, size);
     }
@@ -1338,7 +1335,7 @@ void
 oj_write_obj_to_file(VALUE obj, const char *path, Options copts) {
     struct _Out out;
     size_t      size;
-    FILE        *f;    
+    FILE        *f;
 
     dump_obj_to_json(obj, copts, &out);
     size = out.cur - out.buf;
@@ -1554,7 +1551,7 @@ void
 oj_write_leaf_to_file(Leaf leaf, const char *path, Options copts) {
     struct _Out out;
     size_t      size;
-    FILE        *f;    
+    FILE        *f;
 
     dump_leaf_to_json(leaf, copts, &out);
     size = out.cur - out.buf;
