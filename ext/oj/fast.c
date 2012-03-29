@@ -1151,7 +1151,7 @@ doc_open_file(VALUE clas, VALUE filename) {
     fseek(f, 0, SEEK_SET);
     if (len != fread(json, 1, len, f)) {
         fclose(f);
-        rb_raise(rb_eLoadError, "Failed to read %lu bytes from %s.\n", len, path);
+        rb_raise(rb_eLoadError, "Failed to read %lu bytes from %s.\n", (unsigned long)len, path);
     }
     fclose(f);
     json[len] = '\0';

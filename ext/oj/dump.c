@@ -39,6 +39,8 @@
 #include "oj.h"
 #include "cache8.h"
 
+#define HAS_TIMESPEC
+
 #ifndef HAVE_RUBY_ENCODING_H
 #define rb_eEncodingError	rb_eException
 #endif
@@ -908,7 +910,7 @@ dump_time(VALUE obj, Out out) {
     char		*b = buf + sizeof(buf) - 1;
     long		size;
     char		*dot = b - 10;
-#ifdef HAVE_STRUCT_TIMESPEC
+#ifdef HAS_TIMESPEC
     struct timespec	ts = rb_time_timespec(obj);
     time_t		sec = ts.tv_sec;
     long		nsec = ts.tv_nsec;
