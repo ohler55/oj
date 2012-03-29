@@ -732,6 +732,7 @@ define_mimic_json(VALUE self) {
 	symbolize_names_sym = ID2SYM(rb_intern("symbolize_names"));	rb_ary_push(keep, symbolize_names_sym);
 
 	oj_default_options.mode = CompatMode;
+	oj_default_options.ascii_only = Yes;
     }
     return mimic;
 }
