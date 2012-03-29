@@ -44,10 +44,12 @@
 #endif
 
 #ifndef HAVE_RUBY_ENCODING_H
-#ifndef RUBINIUS
 #define rb_eEncodingError	rb_eException
 #endif
+#ifdef RUBINIUS
+#define rb_eEncodingError	rb_eException
 #endif
+
 typedef unsigned long   ulong;
 
 typedef struct _Out {
