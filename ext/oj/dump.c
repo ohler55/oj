@@ -36,10 +36,13 @@
 #include <string.h>
 #include <math.h>
 
+#include "ruby/version.h"
 #include "oj.h"
 #include "cache8.h"
 
+#ifdef RUBY_API_VERSION_MAJOR
 #define HAS_TIMESPEC
+#endif
 
 #ifndef HAVE_RUBY_ENCODING_H
 #define rb_eEncodingError	rb_eException
@@ -915,9 +918,8 @@ dump_time(VALUE obj, Out out) {
     time_t		sec = ts.tv_sec;
     long		nsec = ts.tv_nsec;
 #else
-    struct timeval	tv = rb_time_timeval(obj);
-    time_t		sec = tv.tv_sec;
-    long		nsec = tv.tv_usec * 1000;
+    time_t		sec = NUM2LONG(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+    long		nsec = NUM2LONG(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
 #endif
 
     *b-- = '\0';
