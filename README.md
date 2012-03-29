@@ -24,11 +24,9 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 1.1.1
+### Release 1.2.0
 
- - The encoding option can now be an Encoding Object or a String.
-
- - Fixed Rubinius errors.
+ - Removed the encoding option and fixed a misunderstanding of the string encoding. Unicode code points are now used instead of byte codes. This is not compatible with previous releases but is compliant with RFC4627.
 
 ## <a name="description">Description</a>
 
@@ -58,12 +56,6 @@ preference over the to_json() method. If neither the to_json() or to_hash()
 methods exist then the Oj internal Object variable encoding is used.
 
 Oj is compatible with Ruby 1.8.7, 1.9.2, 1.9.3, JRuby, and RBX.
-
-## <a name="plans">Planned Releases</a>
-
-- Release 1.0.1: Optimize the Oj::Doc dump() method to be native.
-
-- Release 1.1: A JSON stream parser. Pushed out for the Oj::Doc parser.
 
 ## <a name="compare">Comparisons</a>
 
