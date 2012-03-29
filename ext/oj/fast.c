@@ -774,11 +774,6 @@ doc_init(Doc doc) {
     *doc->where = 0;
     doc->data = 0;
     doc->self = Qundef;
-#ifdef HAVE_RUBY_ENCODING_H
-    doc->encoding = oj_default_options.encoding;
-#else
-    doc->encoding = 0;
-#endif
     doc->size = 0;
     doc->json = 0;
     doc->batches = &doc->batch0;

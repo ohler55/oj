@@ -99,12 +99,6 @@ typedef struct _DumpOpts {
 } *DumpOpts;
 
 typedef struct _Options {
-#ifdef HAVE_RUBY_ENCODING_H
-    rb_encoding	*encoding;
-#else
-    void	*encoding;
-#endif
-    //char        encoding[64];	// encoding, stored in the option to avoid GC invalidation in default values
     int         indent;		// indention for dump, default 2
     char        circular;	// YesNo
     char        auto_define;	// YesNo
@@ -148,6 +142,9 @@ extern void	oj_init_doc(void);
 
 extern VALUE    Oj;
 extern struct _Options	oj_default_options;
+#ifdef HAVE_RUBY_ENCODING_H
+extern rb_encoding	*oj_utf8_encoding;
+#endif
 
 extern VALUE	oj_bag_class;
 extern VALUE	oj_date_class;
@@ -159,16 +156,12 @@ extern VALUE	oj_time_class;
 extern VALUE	oj_slash_string;
 
 extern ID	oj_as_json_id;
-extern ID	oj_at_id;
 extern ID	oj_instance_variables_id;
 extern ID	oj_json_create_id;
 extern ID	oj_string_id;
 extern ID	oj_to_hash_id;
 extern ID	oj_to_json_id;
 extern ID	oj_to_sym_id;
-extern ID	oj_tv_nsec_id;
-extern ID	oj_tv_sec_id;
-extern ID	oj_tv_usec_id;
 
 extern Cache    oj_class_cache;
 extern Cache    oj_attr_cache;
