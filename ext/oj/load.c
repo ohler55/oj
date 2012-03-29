@@ -50,11 +50,6 @@ typedef struct _ParseInfo {
     char	*str;		/* buffer being read from */
     char	*s;		/* current position in buffer */
     CircArray	circ_array;
-#ifdef HAVE_RUBY_ENCODING_H
-    rb_encoding	*encoding;
-#else
-    void	*encoding;
-#endif
     Options	options;
 } *ParseInfo;
 
@@ -602,20 +597,14 @@ read_str(ParseInfo pi, int hint) {
     case T_STRING:
 	obj = rb_str_new2(text);
 #ifdef HAVE_RUBY_ENCODING_H
-	if (0 != pi->encoding) {
-	    rb_enc_associate(obj, pi->encoding);
-	}
+	rb_enc_associate(obj, oj_utf8_encoding);
 #endif
 	break;
     case T_SYMBOL:
 #ifdef HAVE_RUBY_ENCODING_H
-	if (0 != pi->encoding) {
-	    obj = rb_str_new2(text);
-	    rb_enc_associate(obj, pi->encoding);
-	    obj = rb_funcall(obj, oj_to_sym_id, 0);
-	} else {
-	    obj = ID2SYM(rb_intern(text));
-	}
+	obj = rb_str_new2(text);
+	rb_enc_associate(obj, oj_utf8_encoding);
+	obj = rb_funcall(obj, oj_to_sym_id, 0);
 #else
 	obj = ID2SYM(rb_intern(text));
 #endif
@@ -625,13 +614,9 @@ read_str(ParseInfo pi, int hint) {
 	obj = Qundef;
 	if (':' == *text && !escaped) { // Symbol
 #ifdef HAVE_RUBY_ENCODING_H
-	    if (0 != pi->encoding) {
-		obj = rb_str_new2(text + 1);
-		rb_enc_associate(obj, pi->encoding);
-		obj = rb_funcall(obj, oj_to_sym_id, 0);
-	    } else {
-		obj = ID2SYM(rb_intern(text + 1));
-	    }
+	    obj = rb_str_new2(text + 1);
+	    rb_enc_associate(obj, oj_utf8_encoding);
+	    obj = rb_funcall(obj, oj_to_sym_id, 0);
 #else
 	    obj = ID2SYM(rb_intern(text + 1));
 #endif
@@ -647,9 +632,7 @@ read_str(ParseInfo pi, int hint) {
 	if (Qundef == obj) {
 	    obj = rb_str_new2(text);
 #ifdef HAVE_RUBY_ENCODING_H
-	    if (0 != pi->encoding) {
-		rb_enc_associate(obj, pi->encoding);
-	    }
+	    rb_enc_associate(obj, oj_utf8_encoding);
 #endif
 	}
 	break;
@@ -749,23 +732,24 @@ read_num(ParseInfo pi) {
 
 static VALUE
 read_time(ParseInfo pi) {
-    VALUE       args[2];
-    long        v = 0;
-    long        v2 = 0;
+    time_t	v = 0;
+    long	v2 = 0;
 
     for (; '0' <= *pi->s && *pi->s <= '9'; pi->s++) {
 	v = v * 10 + (*pi->s - '0');
     }
     if ('.' == *pi->s) {
+	int	cnt;
+
 	pi->s++;
-	for (; '0' <= *pi->s && *pi->s <= '9'; pi->s++) {
+	for (cnt = 9; 0 < cnt && '0' <= *pi->s && *pi->s <= '9'; pi->s++, cnt--) {
 	    v2 = v2 * 10 + (*pi->s - '0');
 	}
+	for (; 0 < cnt; cnt--) {
+	    v2 *= 10;
+	}
     }
-    args[0] = LONG2NUM(v);
-    args[1] = LONG2NUM(v2);
-
-    return rb_funcall2(oj_time_class, oj_at_id, 2, args);
+    return rb_time_nano_new(v, v2);
 }
 
 static VALUE
@@ -801,33 +785,61 @@ read_nil(ParseInfo pi) {
     return Qnil;
 }
 
-static char
+static uint32_t
 read_hex(ParseInfo pi, char *h) {
-    uint8_t	b = 0;
+    uint32_t	b = 0;
+    int		i;
 
-    if ('0' <= *h && *h <= '9') {
-	b = *h - '0';
-    } else if ('A' <= *h && *h <= 'F') {
-	b = *h - 'A' + 10;
-    } else if ('a' <= *h && *h <= 'f') {
-	b = *h - 'a' + 10;
-    } else {
-	pi->s = h;
-	raise_error("invalid hex character", pi->str, pi->s);
+    // TBD this can be made faster with a table
+    for (i = 0; i < 4; i++, h++) {
+	b = b << 4;
+	if ('0' <= *h && *h <= '9') {
+	    b += *h - '0';
+	} else if ('A' <= *h && *h <= 'F') {
+	    b += *h - 'A' + 10;
+	} else if ('a' <= *h && *h <= 'f') {
+	    b += *h - 'a' + 10;
+	} else {
+	    pi->s = h;
+	    raise_error("invalid hex character", pi->str, pi->s);
+	}
     }
-    h++;
-    b = b << 4;
-    if ('0' <= *h && *h <= '9') {
-	b += *h - '0';
-    } else if ('A' <= *h && *h <= 'F') {
-	b += *h - 'A' + 10;
-    } else if ('a' <= *h && *h <= 'f') {
-	b += *h - 'a' + 10;
+    return b;
+}
+
+static char*
+unicode_to_chars(ParseInfo pi, char *t, uint32_t code) {
+    if (0x0000007F >= code) {
+	*t = (char)code;
+    } else if (0x000007FF >= code) {
+	*t++ = 0xC0 | (code >> 6);
+	*t = 0x80 | (0x3F & code);
+    } else if (0x0000FFFF >= code) {
+	*t++ = 0xE0 | (code >> 12);
+	*t++ = 0x80 | ((code >> 6) & 0x3F);
+	*t = 0x80 | (0x3F & code);
+    } else if (0x001FFFFF >= code) {
+	*t++ = 0xF0 | (code >> 18);
+	*t++ = 0x80 | ((code >> 12) & 0x3F);
+	*t++ = 0x80 | ((code >> 6) & 0x3F);
+	*t = 0x80 | (0x3F & code);
+    } else if (0x03FFFFFF >= code) {
+	*t++ = 0xF8 | (code >> 24);
+	*t++ = 0x80 | ((code >> 18) & 0x3F);
+	*t++ = 0x80 | ((code >> 12) & 0x3F);
+	*t++ = 0x80 | ((code >> 6) & 0x3F);
+	*t = 0x80 | (0x3F & code);
+    } else if (0x7FFFFFFF >= code) {
+	*t++ = 0xFC | (code >> 30);
+	*t++ = 0x80 | ((code >> 24) & 0x3F);
+	*t++ = 0x80 | ((code >> 18) & 0x3F);
+	*t++ = 0x80 | ((code >> 12) & 0x3F);
+	*t++ = 0x80 | ((code >> 6) & 0x3F);
+	*t = 0x80 | (0x3F & code);
     } else {
-	pi->s = h;
-	raise_error("invalid hex character", pi->str, pi->s);
+	raise_error("invalid Unicode", pi->str, pi->s);
     }
-    return (char)b;
+    return t;
 }
 
 /* Assume the value starts immediately and goes until the quote character is
@@ -838,6 +850,7 @@ read_quoted_value(ParseInfo pi) {
     char	*value = 0;
     char	*h = pi->s; // head
     char	*t = h;     // tail
+    uint32_t	code;
     
     h++;	// skip quote character
     t++;
@@ -859,13 +872,24 @@ read_quoted_value(ParseInfo pi) {
 	    case '\\':	*t = '\\';	break;
 	    case 'u':
 		h++;
-		*t = read_hex(pi, h);
-		h += 2;
-		if ('\0' != *t) {
-		    t++;
+		code = read_hex(pi, h);
+		h += 3;
+		if (0x0000D800 <= code && code <= 0x0000DFFF) {
+		    uint32_t	c1 = (code - 0x0000D800) & 0x000003FF;
+		    uint32_t	c2;
+
+		    h++;
+		    if ('\\' != *h || 'u' != *(h + 1)) {
+			pi->s = h;
+			raise_error("invalid escaped character", pi->str, pi->s);
+		    }
+		    h += 2;
+		    c2 = read_hex(pi, h);
+		    h += 3;
+		    c2 = (c2 - 0x0000DC00) & 0x000003FF;
+		    code = ((c1 << 10) | c2) + 0x00010000;
 		}
-		*t = read_hex(pi, h);
-		h++;
+		t = unicode_to_chars(pi, t, code);
 		break;
 	    default:
 		pi->s = h;
@@ -897,12 +921,6 @@ oj_parse(char *json, Options options) {
     if (Yes == options->circular) {
 	pi.circ_array = circ_array_new();
     }
-#ifdef HAVE_RUBY_ENCODING_H
-    pi.encoding = options->encoding;
-    //pi.encoding = ('\0' == *options->encoding) ? 0 : rb_enc_find(options->encoding);
-#else
-    pi.encoding = 0;
-#endif
     pi.options = options;
     obj = read_next(&pi, 0);
     if (Yes == options->circular) {

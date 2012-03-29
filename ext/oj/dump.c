@@ -30,6 +30,7 @@
 
 #include <stdlib.h>
 #include <errno.h>
+#include <sys/time.h>
 #include <time.h>
 #include <stdio.h>
 #include <string.h>
@@ -89,7 +90,7 @@ static int	dump_attr_cb(ID key, VALUE value, Out out);
 static void	dump_obj_attrs(VALUE obj, int with_class, slot_t id, int depth, Out out);
 
 static void     grow(Out out, size_t len);
-static size_t	json_friendly_size(const u_char *str, size_t len);
+static size_t	hibit_friendly_size(const u_char *str, size_t len);
 static size_t	ascii_friendly_size(const u_char *str, size_t len);
 
 static void	dump_leaf_to_json(Leaf leaf, Options copts, Out out);
@@ -103,7 +104,7 @@ static void	dump_leaf_hash(Leaf leaf, int depth, Out out);
 
 static const char	hex_chars[17] = "0123456789abcdef";
 
-static char     json_friendly_chars[256] = "\
+static char     hibit_friendly_chars[256] = "\
 66666666222622666666666666666666\
 11211111111111121111111111111111\
 11111111111111111111111111112111\
@@ -113,22 +114,24 @@ static char     json_friendly_chars[256] = "\
 11111111111111111111111111111111\
 11111111111111111111111111111111";
 
+// High bit set characters are always encoded as unicode. Worse case is 3
+// bytes per character in the output. That makes this conservative.
 static char     ascii_friendly_chars[256] = "\
 66666666222622666666666666666666\
 11211111111111121111111111111111\
 11111111111111111111111111112111\
 11111111111111111111111111111116\
-66666666666666666666666666666666\
-66666666666666666666666666666666\
-66666666666666666666666666666666\
-66666666666666666666666666666666";
+33333333333333333333333333333333\
+33333333333333333333333333333333\
+33333333333333333333333333333333\
+33333333333333333333333333333333";
 
 inline static size_t
-json_friendly_size(const u_char *str, size_t len) {
+hibit_friendly_size(const u_char *str, size_t len) {
     size_t	size = 0;
 
     for (; 0 < len; str++, len--) {
-	size += json_friendly_chars[*str];
+	size += hibit_friendly_chars[*str];
     }
     return size - len * (size_t)'0';
 }
@@ -213,6 +216,58 @@ dump_hex(u_char c, Out out) {
     *out->cur++ = hex_chars[d];
     d = c & 0x0F;
     *out->cur++ = hex_chars[d];
+}
+
+const char*
+dump_unicode(const char *str, const char *end, Out out) {
+    uint32_t	code = 0;
+    uint8_t	b = *(uint8_t*)str;
+    int		i, cnt;
+    
+    if (0xC0 == (0xE0 & b)) {
+	cnt = 1;
+	code = b & 0x0000001F;
+    } else if (0xE0 == (0xF0 & b)) {
+	cnt = 2;
+	code = b & 0x0000000F;
+    } else if (0xF0 == (0xF8 & b)) {
+	cnt = 3;
+	code = b & 0x00000007;
+    } else if (0xF8 == (0xFC & b)) {
+	cnt = 4;
+	code = b & 0x00000003;
+    } else if (0xFC == (0xFE & b)) {
+	cnt = 5;
+	code = b & 0x00000001;
+    } else {
+        rb_raise(rb_eEncodingError, "Invalid Unicode\n");
+    }
+    str++;
+    for (; 0 < cnt; cnt--, str++) {
+	b = *(uint8_t*)str;
+	if (end <= str || 0x80 != (0xC0 & b)) {
+	    rb_raise(rb_eEncodingError, "Invalid Unicode\n");
+	}
+	code = (code << 6) | (b & 0x0000003F);
+    }
+    if (0x0000FFFF < code) {
+	uint32_t	c1;
+
+	code -= 0x00010000;
+	c1 = ((code >> 10) & 0x000003FF) + 0x0000D800;
+	code = (code & 0x000003FF) + 0x0000DC00;
+	*out->cur++ = '\\';
+	*out->cur++ = 'u';
+	for (i = 3; 0 <= i; i--) {
+	    *out->cur++ = hex_chars[(uint8_t)(c1 >> (i * 4)) & 0x0F];
+	}
+    }
+    *out->cur++ = '\\';
+    *out->cur++ = 'u';
+    for (i = 3; 0 <= i; i--) {
+	*out->cur++ = hex_chars[(uint8_t)(code >> (i * 4)) & 0x0F];
+    }	
+    return str - 1;
 }
 
 // returns 0 if not using circular references, -1 if not further writing is
@@ -383,8 +438,8 @@ dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out) {
 	cmap = ascii_friendly_chars;
 	size = ascii_friendly_size((u_char*)str, cnt);
     } else {
-	cmap = json_friendly_chars;
-	size = json_friendly_size((u_char*)str, cnt);
+	cmap = hibit_friendly_chars;
+	size = hibit_friendly_size((u_char*)str, cnt);
     }
     if (out->end - out->cur <= (long)size + 10) { // extra 10 for escaped first char, quotes, and sym
 	grow(out, size + 10);
@@ -410,10 +465,12 @@ dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out) {
 	}
 	*out->cur++ = '"';
     } else {
+	const char	*end = str + cnt;
+
 	if (is_sym) {
 	    *out->cur++ = ':';
 	}
-	for (; 0 < cnt; cnt--, str++) {
+	for (; str < end; str++) {
 	    switch (cmap[(u_char)*str]) {
 	    case '1':
 		*out->cur++ = *str;
@@ -429,18 +486,15 @@ dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out) {
 		default:	*out->cur++ = *str;	break;
 		}
 		break;
-	    case '6':
+	    case '3': // Unicode
+		str = dump_unicode(str, end, out);
+		break;
+	    case '6': // control characters
 		*out->cur++ = '\\';
 		*out->cur++ = 'u';
-		if ((u_char)*str <= 0x7F) {
-		    *out->cur++ = '0';
-		    *out->cur++ = '0';
-		    dump_hex((u_char)*str, out);
-		} else { // continuation?
-		    *out->cur++ = '0';
-		    *out->cur++ = '0';
-		    dump_hex((u_char)*str, out);
-		}
+		*out->cur++ = '0';
+		*out->cur++ = '0';
+		dump_hex((u_char)*str, out);
 		break;
 	    default:
 		break; // ignore, should never happen if the table is correct
@@ -847,16 +901,17 @@ dump_hash(VALUE obj, int depth, int mode, Out out) {
 
 static void
 dump_time(VALUE obj, Out out) {
-    char        buf[64];
-    char        *b = buf + sizeof(buf) - 1;
-    time_t      sec = NUM2LONG(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
-    long        usec = NUM2LONG(rb_funcall2(obj, oj_tv_usec_id, 0, 0));
-    char        *dot = b - 7;
-    long        size;
+    char		buf[64];
+    char		*b = buf + sizeof(buf) - 1;
+    char		*dot = b - 10;
+    long		size;
+    struct timespec	ts = rb_time_timespec(obj);
+    time_t		sec = ts.tv_sec;
+    long		nsec = ts.tv_nsec;
 
     *b-- = '\0';
-    for (; dot < b; b--, usec /= 10) {
-	*b = '0' + (usec % 10);
+    for (; dot < b; b--, nsec /= 10) {
+	*b = '0' + (nsec % 10);
     }
     *b-- = '.';
     for (; 0 < sec; b--, sec /= 10) {
