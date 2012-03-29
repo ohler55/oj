@@ -36,7 +36,6 @@
 #include <string.h>
 #include <math.h>
 
-#include "ruby/version.h"
 #include "oj.h"
 #include "cache8.h"
 
