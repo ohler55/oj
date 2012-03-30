@@ -52,11 +52,6 @@ typedef struct _Doc {
     Leaf		data;
     Leaf		*where;	     // points to current location
     Leaf		where_path[MAX_STACK]; // points to head of path
-#if HAS_ENCODING_SUPPORT
-    rb_encoding		*encoding;
-#else
-    void		*encoding;
-#endif
     char		*json;
     unsigned long	size;	     // number of leaves/branches in the doc
     VALUE		self;
@@ -257,9 +252,7 @@ leaf_value(Doc doc, Leaf leaf) {
 	case T_STRING:
 	    leaf->value = rb_str_new2(leaf->str);
 #if HAS_ENCODING_SUPPORT
-	    if (0 != doc->encoding) {
-		rb_enc_associate(leaf->value, doc->encoding);
-	    }
+	    rb_enc_associate(leaf->value, oj_utf8_encoding);
 #endif
 	    leaf->value_type = RUBY_VAL;
 	    break;
@@ -460,9 +453,7 @@ leaf_hash_value(Doc doc, Leaf leaf) {
 	do {
 	    key = rb_str_new2(e->key);
 #if HAS_ENCODING_SUPPORT
-	    if (0 != doc->encoding) {
-		rb_enc_associate(key, doc->encoding);
-	    }
+	    rb_enc_associate(key, oj_utf8_encoding);
 #endif
 	    rb_hash_aset(h, key, leaf_value(doc, e));
 	    e = e->next;
@@ -1225,9 +1216,7 @@ doc_local_key(VALUE self) {
     if (T_HASH == leaf->parent_type) {
 	key = rb_str_new2(leaf->key);
 #if HAS_ENCODING_SUPPORT
-	if (0 != doc->encoding) {
-	    rb_enc_associate(key, doc->encoding);
-	}
+	rb_enc_associate(key, oj_utf8_encoding);
 #endif
     } else if (T_ARRAY == leaf->parent_type) {
 	key = LONG2NUM(leaf->index);
