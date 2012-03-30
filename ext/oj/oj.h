@@ -52,7 +52,12 @@ extern "C" {
 #undef T_COMPLEX
 enum st_retval {ST_CONTINUE = 0, ST_STOP = 1, ST_DELETE = 2, ST_CHECK};
 #else
+#ifdef HAS_TOP_LEVEL_ST_H
+// Only on travis, local is where it is for all others.
+#include "st.h"
+#else
 #include "ruby/st.h"
+#endif
 #endif
 
 #define raise_error(msg, xml, current) _oj_raise_error(msg, xml, current, __FILE__, __LINE__)
