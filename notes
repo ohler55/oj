@@ -4,9 +4,8 @@
 ^c^s show subtree
 
 - next
-
+  
  - setup travis to run tests
-  - make sure time handles nsec instead of usec
 
 - stream
  - use with Oj::Doc

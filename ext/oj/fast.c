@@ -50,15 +50,15 @@ typedef struct _Batch {
 
 typedef struct _Doc {
     Leaf		data;
-    Leaf		*where;      // points to current location
+    Leaf		*where;	     // points to current location
     Leaf		where_path[MAX_STACK]; // points to head of path
-#ifdef HAVE_RUBY_ENCODING_H
+#if HAS_ENCODING_SUPPORT
     rb_encoding		*encoding;
 #else
     void		*encoding;
 #endif
     char		*json;
-    unsigned long	size;        // number of leaves/branches in the doc
+    unsigned long	size;	     // number of leaves/branches in the doc
     VALUE		self;
     Batch		batches;
     struct _Batch	batch0;
@@ -156,11 +156,11 @@ next_white(ParseInfo pi) {
 inline static char*
 ulong_fill(char *s, size_t num) {
     char	buf[32];
-    char        *b = buf + sizeof(buf) - 1;
+    char	*b = buf + sizeof(buf) - 1;
 
     *b-- = '\0';
     for (; 0 < num; num /= 10, b--) {
-        *b = (num % 10) + '0';
+	*b = (num % 10) + '0';
     }
     b++;
     if ('\0' == *b) {
@@ -256,7 +256,7 @@ leaf_value(Doc doc, Leaf leaf) {
 	    break;
 	case T_STRING:
 	    leaf->value = rb_str_new2(leaf->str);
-#ifdef HAVE_RUBY_ENCODING_H
+#if HAS_ENCODING_SUPPORT
 	    if (0 != doc->encoding) {
 		rb_enc_associate(leaf->value, doc->encoding);
 	    }
@@ -317,7 +317,7 @@ skip_comment(ParseInfo pi) {
     }
 }
 
-#ifdef RUBINIUS
+#ifdef RUBINIUS_RUBY
 #define NUM_MAX 0x07FFFFFF
 #else
 #define NUM_MAX (FIXNUM_MAX >> 8)
@@ -358,13 +358,7 @@ leaf_fixnum_value(Leaf leaf) {
     leaf->value_type = RUBY_VAL;
 }
 
-#if 1
-static void
-leaf_float_value(Leaf leaf) {
-    leaf->value = rb_float_new(rb_cstr_to_dbl(leaf->str, 1));
-    leaf->value_type = RUBY_VAL;
-}
-#else
+#ifdef JRUBY_RUBY
 static void
 leaf_float_value(Leaf leaf) {
     char	*s = leaf->str;
@@ -426,8 +420,14 @@ leaf_float_value(Leaf leaf) {
 	    }
 	    d *= pow(10.0, e);
 	}
-	leaf->value = DBL2NUM(d);
+	leaf->value = rb_float_new(d);
     }
+    leaf->value_type = RUBY_VAL;
+}
+#else
+static void
+leaf_float_value(Leaf leaf) {
+    leaf->value = rb_float_new(rb_cstr_to_dbl(leaf->str, 1));
     leaf->value_type = RUBY_VAL;
 }
 #endif
@@ -459,7 +459,7 @@ leaf_hash_value(Doc doc, Leaf leaf) {
 
 	do {
 	    key = rb_str_new2(e->key);
-#ifdef HAVE_RUBY_ENCODING_H
+#if HAS_ENCODING_SUPPORT
 	    if (0 != doc->encoding) {
 		rb_enc_associate(key, doc->encoding);
 	    }
@@ -722,7 +722,7 @@ static char*
 read_quoted_value(ParseInfo pi) {
     char	*value = 0;
     char	*h = pi->s; // head
-    char	*t = h;     // tail
+    char	*t = h;	    // tail
     
     h++;	// skip quote character
     t++;
@@ -1138,7 +1138,7 @@ doc_open_file(VALUE clas, VALUE filename) {
     Check_Type(filename, T_STRING);
     path = StringValuePtr(filename);
     if (0 == (f = fopen(path, "r"))) {
-        rb_raise(rb_eIOError, "%s\n", strerror(errno));
+	rb_raise(rb_eIOError, "%s\n", strerror(errno));
     }
     fseek(f, 0, SEEK_END);
     len = ftell(f);
@@ -1150,8 +1150,8 @@ doc_open_file(VALUE clas, VALUE filename) {
     }
     fseek(f, 0, SEEK_SET);
     if (len != fread(json, 1, len, f)) {
-        fclose(f);
-        rb_raise(rb_eLoadError, "Failed to read %lu bytes from %s.\n", (unsigned long)len, path);
+	fclose(f);
+	rb_raise(rb_eLoadError, "Failed to read %lu bytes from %s.\n", (unsigned long)len, path);
     }
     fclose(f);
     json[len] = '\0';
@@ -1212,9 +1212,9 @@ doc_where(VALUE self) {
  *
  * Returns the final key to the current location.
  * @example
- *   Oj::Doc.open('[1,2,3]') { |doc| doc.move('/2'); doc.local_key() }      #=> 2
+ *   Oj::Doc.open('[1,2,3]') { |doc| doc.move('/2'); doc.local_key() }	    #=> 2
  *   Oj::Doc.open('{"one":3}') { |doc| doc.move('/one'); doc.local_key() }  #=> "one"
- *   Oj::Doc.open('[1,2,3]') { |doc| doc.local_key() }                      #=> nil
+ *   Oj::Doc.open('[1,2,3]') { |doc| doc.local_key() }			    #=> nil
  */
 static VALUE
 doc_local_key(VALUE self) {
@@ -1224,7 +1224,7 @@ doc_local_key(VALUE self) {
 
     if (T_HASH == leaf->parent_type) {
 	key = rb_str_new2(leaf->key);
-#ifdef HAVE_RUBY_ENCODING_H
+#if HAS_ENCODING_SUPPORT
 	if (0 != doc->encoding) {
 	    rb_enc_associate(key, doc->encoding);
 	}
@@ -1260,7 +1260,7 @@ doc_home(VALUE self) {
  * is low.
  * @param [String] path path to the location to get the type of if provided
  * @example
- *   Oj::Doc.open('[1,2]') { |doc| doc.type() }      #=> Array
+ *   Oj::Doc.open('[1,2]') { |doc| doc.type() }	     #=> Array
  *   Oj::Doc.open('[1,2]') { |doc| doc.type('/1') }  #=> Fixnum
  */
 static VALUE

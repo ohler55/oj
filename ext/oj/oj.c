@@ -43,13 +43,13 @@
 #define SMALL_JSON	65536
 
 typedef struct _YesNoOpt {
-    VALUE       sym;
-    char        *attr;
+    VALUE	sym;
+    char	*attr;
 } *YesNoOpt;
 
 void Init_oj();
 
-VALUE    Oj = Qnil;
+VALUE	 Oj = Qnil;
 
 ID	oj_as_json_id;
 ID	oj_fileno_id;
@@ -63,6 +63,7 @@ ID	oj_to_sym_id;
 ID	oj_write_id;
 ID	oj_tv_nsec_id;
 ID	oj_tv_sec_id;
+ID	oj_tv_usec_id;
 
 VALUE	oj_bag_class;
 VALUE	oj_date_class;
@@ -93,10 +94,10 @@ static VALUE	symbolize_names_sym;
 static VALUE	mimic = Qnil;
 static VALUE	keep = Qnil;
 
-Cache   oj_class_cache = 0;
-Cache   oj_attr_cache = 0;
+Cache	oj_class_cache = 0;
+Cache	oj_attr_cache = 0;
 
-#ifdef HAVE_RUBY_ENCODING_H
+#if HAS_ENCODING_SUPPORT
 rb_encoding	*oj_utf8_encoding = 0;
 #endif
 
@@ -124,7 +125,7 @@ static VALUE	define_mimic_json(VALUE self);
  */
 static VALUE
 get_def_opts(VALUE self) {
-    VALUE       opts = rb_hash_new();
+    VALUE	opts = rb_hash_new();
     
     rb_hash_aset(opts, indent_sym, INT2FIX(oj_default_options.indent));
     rb_hash_aset(opts, circular_sym, (Yes == oj_default_options.circular) ? Qtrue : ((No == oj_default_options.circular) ? Qfalse : Qnil));
@@ -136,7 +137,7 @@ get_def_opts(VALUE self) {
     case CompatMode:	rb_hash_aset(opts, mode_sym, compat_sym);	break;
     case NullMode:	rb_hash_aset(opts, mode_sym, null_sym);		break;
     case ObjectMode:
-    default:            rb_hash_aset(opts, mode_sym, object_sym);	break;
+    default:		rb_hash_aset(opts, mode_sym, object_sym);	break;
     }
     return opts;
 }
@@ -151,53 +152,53 @@ get_def_opts(VALUE self) {
  * @param [true|false|nil] :symbol_keys convert hash keys to symbols
  * @param [true|false|nil] :ascii_only encode all high-bit characters as escaped sequences if true
  * @param [:object|:strict|:compat|:null] load and dump mode to use for JSON
- *        :strict raises an exception when a non-supported Object is
- *        encountered. :compat attempts to extract variable values from an
- *        Object using to_json() or to_hash() then it walks the Object's
- *        variables if neither is found. The :object mode ignores to_hash()
- *        and to_json() methods and encodes variables using code internal to
- *        the Oj gem. The :null mode ignores non-supported Objects and
- *        replaces them with a null.  @return [nil]
+ *	  :strict raises an exception when a non-supported Object is
+ *	  encountered. :compat attempts to extract variable values from an
+ *	  Object using to_json() or to_hash() then it walks the Object's
+ *	  variables if neither is found. The :object mode ignores to_hash()
+ *	  and to_json() methods and encodes variables using code internal to
+ *	  the Oj gem. The :null mode ignores non-supported Objects and
+ *	  replaces them with a null.  @return [nil]
  */
 static VALUE
 set_def_opts(VALUE self, VALUE opts) {
-    struct _YesNoOpt    ynos[] = {
-        { circular_sym, &oj_default_options.circular },
-        { auto_define_sym, &oj_default_options.auto_define },
-        { symbol_keys_sym, &oj_default_options.sym_key },
-        { ascii_only_sym, &oj_default_options.ascii_only },
-        { Qnil, 0 }
+    struct _YesNoOpt	ynos[] = {
+	{ circular_sym, &oj_default_options.circular },
+	{ auto_define_sym, &oj_default_options.auto_define },
+	{ symbol_keys_sym, &oj_default_options.sym_key },
+	{ ascii_only_sym, &oj_default_options.ascii_only },
+	{ Qnil, 0 }
     };
-    YesNoOpt    o;
-    VALUE       v;
+    YesNoOpt	o;
+    VALUE	v;
     
     Check_Type(opts, T_HASH);
     v = rb_hash_aref(opts, indent_sym);
     if (Qnil != v) {
-        Check_Type(v, T_FIXNUM);
-        oj_default_options.indent = FIX2INT(v);
+	Check_Type(v, T_FIXNUM);
+	oj_default_options.indent = FIX2INT(v);
     }
 
     v = rb_hash_lookup(opts, mode_sym);
     if (Qnil == v) {
 	// ignore
     } else if (object_sym == v) {
-        oj_default_options.mode = ObjectMode;
+	oj_default_options.mode = ObjectMode;
     } else if (strict_sym == v) {
-        oj_default_options.mode = StrictMode;
+	oj_default_options.mode = StrictMode;
     } else if (compat_sym == v) {
-        oj_default_options.mode = CompatMode;
+	oj_default_options.mode = CompatMode;
     } else if (null_sym == v) {
-        oj_default_options.mode = NullMode;
+	oj_default_options.mode = NullMode;
     } else {
-        rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, or :null.\n");
+	rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, or :null.\n");
     }
 
     for (o = ynos; 0 != o->attr; o++) {
 	if (Qtrue != rb_funcall(opts, rb_intern("has_key?"), 1, o->sym)) {
 	    continue;
 	}
-        if (Qnil != (v = rb_hash_lookup(opts, o->sym))) {
+	if (Qnil != (v = rb_hash_lookup(opts, o->sym))) {
 	    if (Qtrue == v) {
 		*o->attr = Yes;
 	    } else if (Qfalse == v) {
@@ -212,54 +213,54 @@ set_def_opts(VALUE self, VALUE opts) {
 
 static void
 parse_options(VALUE ropts, Options copts) {
-    struct _YesNoOpt    ynos[] = {
-        { circular_sym, &copts->circular },
-        { auto_define_sym, &copts->auto_define },
-        { symbol_keys_sym, &copts->sym_key },
-        { ascii_only_sym, &copts->ascii_only },
-        { Qnil, 0 }
+    struct _YesNoOpt	ynos[] = {
+	{ circular_sym, &copts->circular },
+	{ auto_define_sym, &copts->auto_define },
+	{ symbol_keys_sym, &copts->sym_key },
+	{ ascii_only_sym, &copts->ascii_only },
+	{ Qnil, 0 }
     };
-    YesNoOpt    o;
+    YesNoOpt	o;
     
     if (rb_cHash == rb_obj_class(ropts)) {
-        VALUE   v;
-        
-        if (Qnil != (v = rb_hash_lookup(ropts, indent_sym))) {
-            if (rb_cFixnum != rb_obj_class(v)) {
-                rb_raise(rb_eArgError, ":indent must be a Fixnum.\n");
-            }
-            copts->indent = NUM2INT(v);
-        }
-        if (Qnil != (v = rb_hash_lookup(ropts, mode_sym))) {
-            if (object_sym == v) {
-                copts->mode = ObjectMode;
-            } else if (strict_sym == v) {
-                copts->mode = StrictMode;
-            } else if (compat_sym == v) {
-                copts->mode = CompatMode;
-            } else if (null_sym == v) {
-                copts->mode = NullMode;
-            } else {
-                rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, or :null.\n");
-            }
-        }
-        for (o = ynos; 0 != o->attr; o++) {
-            if (Qnil != (v = rb_hash_lookup(ropts, o->sym))) {
-                if (Qtrue == v) {
-                    *o->attr = Yes;
-                } else if (Qfalse == v) {
-                    *o->attr = No;
-                } else {
-                    rb_raise(rb_eArgError, "%s must be true or false.\n", rb_id2name(SYM2ID(o->sym)));
-                }
-            }
-        }
+	VALUE	v;
+	
+	if (Qnil != (v = rb_hash_lookup(ropts, indent_sym))) {
+	    if (rb_cFixnum != rb_obj_class(v)) {
+		rb_raise(rb_eArgError, ":indent must be a Fixnum.\n");
+	    }
+	    copts->indent = NUM2INT(v);
+	}
+	if (Qnil != (v = rb_hash_lookup(ropts, mode_sym))) {
+	    if (object_sym == v) {
+		copts->mode = ObjectMode;
+	    } else if (strict_sym == v) {
+		copts->mode = StrictMode;
+	    } else if (compat_sym == v) {
+		copts->mode = CompatMode;
+	    } else if (null_sym == v) {
+		copts->mode = NullMode;
+	    } else {
+		rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, or :null.\n");
+	    }
+	}
+	for (o = ynos; 0 != o->attr; o++) {
+	    if (Qnil != (v = rb_hash_lookup(ropts, o->sym))) {
+		if (Qtrue == v) {
+		    *o->attr = Yes;
+		} else if (Qfalse == v) {
+		    *o->attr = No;
+		} else {
+		    rb_raise(rb_eArgError, "%s must be true or false.\n", rb_id2name(SYM2ID(o->sym)));
+		}
+	    }
+	}
     }
  }
 
 static VALUE
 load_with_opts(VALUE input, Options copts) {
-    char        *json;
+    char	*json;
     size_t	len;
     VALUE	obj;
 
@@ -343,17 +344,17 @@ load(int argc, VALUE *argv, VALUE self) {
 
 static VALUE
 load_file(int argc, VALUE *argv, VALUE self) {
-    char                *path;
-    char                *json;
-    FILE                *f;
-    unsigned long       len;
+    char		*path;
+    char		*json;
+    FILE		*f;
+    unsigned long	len;
     VALUE		obj;
     struct _Options	options = oj_default_options;
 
     Check_Type(*argv, T_STRING);
     path = StringValuePtr(*argv);
     if (0 == (f = fopen(path, "r"))) {
-        rb_raise(rb_eIOError, "%s\n", strerror(errno));
+	rb_raise(rb_eIOError, "%s\n", strerror(errno));
     }
     fseek(f, 0, SEEK_END);
     len = ftell(f);
@@ -364,8 +365,8 @@ load_file(int argc, VALUE *argv, VALUE self) {
     }
     fseek(f, 0, SEEK_SET);
     if (len != fread(json, 1, len, f)) {
-        fclose(f);
-        rb_raise(rb_eLoadError, "Failed to read %ld bytes from %s.\n", len, path);
+	fclose(f);
+	rb_raise(rb_eLoadError, "Failed to read %ld bytes from %s.\n", len, path);
     }
     fclose(f);
     json[len] = '\0';
@@ -387,18 +388,18 @@ load_file(int argc, VALUE *argv, VALUE self) {
  */
 static VALUE
 dump(int argc, VALUE *argv, VALUE self) {
-    char                *json;
-    struct _Options     copts = oj_default_options;
-    VALUE               rstr;
+    char		*json;
+    struct _Options	copts = oj_default_options;
+    VALUE		rstr;
     
     if (2 == argc) {
-        parse_options(argv[1], &copts);
+	parse_options(argv[1], &copts);
     }
     if (0 == (json = oj_write_obj_to_str(*argv, &copts))) {
-        rb_raise(rb_eNoMemError, "Not enough memory.\n");
+	rb_raise(rb_eNoMemError, "Not enough memory.\n");
     }
     rstr = rb_str_new2(json);
-#ifdef HAVE_RUBY_ENCODING_H
+#if HAS_ENCODING_SUPPORT
     rb_enc_associate(rstr, oj_utf8_encoding);
 #endif
     xfree(json);
@@ -418,10 +419,10 @@ dump(int argc, VALUE *argv, VALUE self) {
  */
 static VALUE
 to_file(int argc, VALUE *argv, VALUE self) {
-    struct _Options     copts = oj_default_options;
+    struct _Options	copts = oj_default_options;
     
     if (3 == argc) {
-        parse_options(argv[2], &copts);
+	parse_options(argv[2], &copts);
     }
     Check_Type(*argv, T_STRING);
     oj_write_obj_to_file(argv[1], StringValuePtr(*argv), &copts);
@@ -433,15 +434,15 @@ to_file(int argc, VALUE *argv, VALUE self) {
 
 static VALUE
 mimic_dump(int argc, VALUE *argv, VALUE self) {
-    char                *json;
-    struct _Options     copts = oj_default_options;
-    VALUE               rstr;
+    char		*json;
+    struct _Options	copts = oj_default_options;
+    VALUE		rstr;
     
     if (0 == (json = oj_write_obj_to_str(*argv, &copts))) {
-        rb_raise(rb_eNoMemError, "Not enough memory.\n");
+	rb_raise(rb_eNoMemError, "Not enough memory.\n");
     }
     rstr = rb_str_new2(json);
-#ifdef ENCODING_INLINE_MAX
+#if HAS_ENCODING_SUPPORT
     rb_enc_associate(rstr, oj_utf8_encoding);
 #endif
     if (2 <= argc && Qnil != argv[1]) {
@@ -482,13 +483,13 @@ mimic_walk(VALUE key, VALUE obj, VALUE proc) {
 	    rb_yield(obj);
 	}
     } else {
-#ifdef RUBINIUS
-        rb_raise(rb_eNotImpError, "Not supported in Rubinius.\n");
-#else
+#if HAS_PROC_WITH_BLOCK
 	VALUE	args[1];
 
 	*args = obj;
 	rb_proc_call_with_block(proc, 1, args, Qnil);
+#else
+	rb_raise(rb_eNotImpError, "Calling a Proc with a block not supported in this version. Use func() {|x| } syntax instead.\n");
 #endif
     }
     return ST_CONTINUE;
@@ -510,7 +511,7 @@ mimic_load(int argc, VALUE *argv, VALUE self) {
 static VALUE
 mimic_dump_load(int argc, VALUE *argv, VALUE self) {
     if (1 > argc) {
-        rb_raise(rb_eArgError, "wrong number of arguments (0 for 1)\n");
+	rb_raise(rb_eArgError, "wrong number of arguments (0 for 1)\n");
     } else if (T_STRING == rb_type(*argv)) {
 	return mimic_load(argc, argv, self);
     } else {
@@ -520,19 +521,19 @@ mimic_dump_load(int argc, VALUE *argv, VALUE self) {
 
 static VALUE
 mimic_generate_core(int argc, VALUE *argv, Options copts) {
-    char                *json;
-    VALUE               rstr;
+    char		*json;
+    VALUE		rstr;
     
     if (2 == argc && Qnil != argv[1]) {
 	struct _DumpOpts	dump_opts;
 	VALUE			ropts = argv[1];
-        VALUE   		v;
+	VALUE			v;
 
 	memset(&dump_opts, 0, sizeof(dump_opts)); // may not be needed
 	if (T_HASH != rb_type(ropts)) {
 	    rb_raise(rb_eArgError, "options must be a hash.\n");
 	}
-        if (Qnil != (v = rb_hash_lookup(ropts, indent_sym))) {
+	if (Qnil != (v = rb_hash_lookup(ropts, indent_sym))) {
 	    rb_check_type(v, T_STRING);
 	    if (0 == copts->dump_opts) {
 		copts->dump_opts = &dump_opts;
@@ -540,7 +541,7 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
 	    copts->dump_opts->indent = StringValuePtr(v);
 	    copts->dump_opts->indent_size = (uint8_t)strlen(copts->dump_opts->indent);
 	}
-        if (Qnil != (v = rb_hash_lookup(ropts, space_sym))) {
+	if (Qnil != (v = rb_hash_lookup(ropts, space_sym))) {
 	    rb_check_type(v, T_STRING);
 	    if (0 == copts->dump_opts) {
 		copts->dump_opts = &dump_opts;
@@ -548,7 +549,7 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
 	    copts->dump_opts->after_sep = StringValuePtr(v);
 	    copts->dump_opts->after_size = (uint8_t)strlen(copts->dump_opts->after_sep);
 	}
-        if (Qnil != (v = rb_hash_lookup(ropts, space_before_sym))) {
+	if (Qnil != (v = rb_hash_lookup(ropts, space_before_sym))) {
 	    rb_check_type(v, T_STRING);
 	    if (0 == copts->dump_opts) {
 		copts->dump_opts = &dump_opts;
@@ -556,7 +557,7 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
 	    copts->dump_opts->before_sep = StringValuePtr(v);
 	    copts->dump_opts->before_size = (uint8_t)strlen(copts->dump_opts->before_sep);
 	}
-        if (Qnil != (v = rb_hash_lookup(ropts, object_nl_sym))) {
+	if (Qnil != (v = rb_hash_lookup(ropts, object_nl_sym))) {
 	    rb_check_type(v, T_STRING);
 	    if (0 == copts->dump_opts) {
 		copts->dump_opts = &dump_opts;
@@ -564,7 +565,7 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
 	    copts->dump_opts->hash_nl = StringValuePtr(v);
 	    copts->dump_opts->hash_size = (uint8_t)strlen(copts->dump_opts->hash_nl);
 	}
-        if (Qnil != (v = rb_hash_lookup(ropts, array_nl_sym))) {
+	if (Qnil != (v = rb_hash_lookup(ropts, array_nl_sym))) {
 	    rb_check_type(v, T_STRING);
 	    if (0 == copts->dump_opts) {
 		copts->dump_opts = &dump_opts;
@@ -576,10 +577,10 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
 	// :max_nesting is always set to 100
     }
     if (0 == (json = oj_write_obj_to_str(*argv, copts))) {
-        rb_raise(rb_eNoMemError, "Not enough memory.\n");
+	rb_raise(rb_eNoMemError, "Not enough memory.\n");
     }
     rstr = rb_str_new2(json);
-#ifdef ENCODING_INLINE_MAX
+#if HAS_ENCODING_SUPPORT
     rb_enc_associate(rstr, oj_utf8_encoding);
 #endif
     xfree(json);
@@ -589,14 +590,14 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
 
 static VALUE
 mimic_generate(int argc, VALUE *argv, VALUE self) {
-    struct _Options     copts = oj_default_options;
+    struct _Options	copts = oj_default_options;
 
     return mimic_generate_core(argc, argv, &copts);
 }
 
 static VALUE
 mimic_pretty_generate(int argc, VALUE *argv, VALUE self) {
-    struct _Options     copts = oj_default_options;
+    struct _Options	copts = oj_default_options;
     struct _DumpOpts	dump_opts;
     
     dump_opts.indent = "  ";
@@ -623,15 +624,15 @@ mimic_parse(int argc, VALUE *argv, VALUE self) {
     }
     if (2 <= argc && Qnil != argv[1]) {
 	VALUE	ropts = argv[1];
-        VALUE   v;
+	VALUE	v;
 
 	if (T_HASH != rb_type(ropts)) {
 	    rb_raise(rb_eArgError, "options must be a hash.\n");
 	}
-        if (Qnil != (v = rb_hash_lookup(ropts, symbolize_names_sym))) {
+	if (Qnil != (v = rb_hash_lookup(ropts, symbolize_names_sym))) {
 	    options.sym_key = (Qtrue == v) ? Yes : No;
 	}
-        if (Qnil != (v = rb_hash_lookup(ropts,  create_additions_sym))) {
+	if (Qnil != (v = rb_hash_lookup(ropts,	create_additions_sym))) {
 	    options.mode = (Qtrue == v) ? CompatMode : StrictMode;
 	}
 	// :allow_nan is not supported as Oj always allows_nan
@@ -729,6 +730,7 @@ void Init_oj() {
     oj_write_id = rb_intern("write");
     oj_tv_nsec_id = rb_intern("tv_nsec");
     oj_tv_sec_id = rb_intern("tv_sec");
+    oj_tv_usec_id = rb_intern("tv_usec");
 
     oj_bag_class = rb_const_get_at(Oj, rb_intern("Bag"));
     oj_struct_class = rb_const_get(rb_cObject, rb_intern("Struct"));
@@ -750,7 +752,7 @@ void Init_oj() {
     oj_slash_string = rb_str_new2("/");			rb_ary_push(keep, oj_slash_string);
 
     oj_default_options.mode = ObjectMode;
-#ifdef HAVE_RUBY_ENCODING_H
+#if HAS_ENCODING_SUPPORT
     oj_utf8_encoding = rb_enc_find("UTF-8");
 #endif
 
@@ -762,16 +764,17 @@ void Init_oj() {
 
 void
 _oj_raise_error(const char *msg, const char *xml, const char *current, const char* file, int line) {
-    int         xline = 1;
-    int         col = 1;
+    int	xline = 1;
+    int	col = 1;
 
     for (; xml < current && '\n' != *current; current--) {
-        col++;
+	col++;
     }
     for (; xml < current; current--) {
-        if ('\n' == *current) {
-            xline++;
-        }
+	if ('\n' == *current) {
+	    xline++;
+	}
     }
     rb_raise(rb_eSyntaxError, "%s at line %d, column %d [%s:%d]\n", msg, xline, col, file, line);
 }
+

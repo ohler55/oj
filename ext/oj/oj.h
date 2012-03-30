@@ -41,50 +41,33 @@ extern "C" {
 #define RSTRING_NOT_MODIFIED
 
 #include "ruby.h"
-#ifdef HAVE_RUBY_ENCODING_H
-// HAVE_RUBY_ENCODING_H defined for Ruby 1.9
-#define IVAR_HELPERS 1
+#if HAS_ENCODING_SUPPORT
 #include "ruby/encoding.h"
 #endif
 
 #include "cache.h"
 
-#ifdef JRUBY
-#define NO_RSTRUCT 1
-#endif
-
-#if (defined RBX_Qnil && !defined RUBINIUS)
-#define RUBINIUS
-#endif
-
-#ifdef RUBINIUS
+#ifdef RUBINIUS_RUBY
 #undef T_RATIONAL
 #undef T_COMPLEX
-#define NO_RSTRUCT 1
-#ifndef IVAR_HELPERS
-#define IVAR_HELPERS 0
-#endif
-#endif
-
-#if IVAR_HELPERS
-#include "ruby/st.h"
+enum st_retval {ST_CONTINUE = 0, ST_STOP = 1, ST_DELETE = 2, ST_CHECK};
 #else
-#include "st.h"
+#include "ruby/st.h"
 #endif
 
 #define raise_error(msg, xml, current) _oj_raise_error(msg, xml, current, __FILE__, __LINE__)
 
 typedef enum {
-    Yes    = 'y',
-    No     = 'n',
+    Yes	   = 'y',
+    No	   = 'n',
     NotSet = 0
 } YesNo;
 
 typedef enum {
-    StrictMode  = 's',
-    ObjectMode  = 'o',
-    NullMode    = 'n',
-    CompatMode  = 'c'
+    StrictMode	= 's',
+    ObjectMode	= 'o',
+    NullMode	= 'n',
+    CompatMode	= 'c'
 } Mode;
 
 typedef struct _DumpOpts {
@@ -101,12 +84,12 @@ typedef struct _DumpOpts {
 } *DumpOpts;
 
 typedef struct _Options {
-    int         indent;		// indention for dump, default 2
-    char        circular;	// YesNo
-    char        auto_define;	// YesNo
-    char        sym_key;	// YesNo
-    char        ascii_only;	// YesNo
-    char        mode;		// Mode
+    int		indent;		// indention for dump, default 2
+    char	circular;	// YesNo
+    char	auto_define;	// YesNo
+    char	sym_key;	// YesNo
+    char	ascii_only;	// YesNo
+    char	mode;		// Mode
     DumpOpts	dump_opts;
 } *Options;
 
@@ -119,11 +102,11 @@ enum {
 typedef struct _Leaf {
     struct _Leaf	*next;
     union {
-	const char	*key;      // hash key
-	size_t		index;     // array index, 0 is not set
+	const char	*key;	   // hash key
+	size_t		index;	   // array index, 0 is not set
     };
     union {
-	char		*str;      // pointer to location in json string
+	char		*str;	   // pointer to location in json string
 	struct _Leaf	*elements; // array and hash elements
 	VALUE		value;
     };
@@ -142,9 +125,9 @@ extern void	_oj_raise_error(const char *msg, const char *xml, const char *curren
 
 extern void	oj_init_doc(void);
 
-extern VALUE    Oj;
+extern VALUE	Oj;
 extern struct _Options	oj_default_options;
-#ifdef HAVE_RUBY_ENCODING_H
+#if HAS_ENCODING_SUPPORT
 extern rb_encoding	*oj_utf8_encoding;
 #endif
 
@@ -166,9 +149,10 @@ extern ID	oj_to_json_id;
 extern ID	oj_to_sym_id;
 extern ID	oj_tv_nsec_id;
 extern ID	oj_tv_sec_id;
+extern ID	oj_tv_usec_id;
 
-extern Cache    oj_class_cache;
-extern Cache    oj_attr_cache;
+extern Cache	oj_class_cache;
+extern Cache	oj_attr_cache;
 
 #if defined(__cplusplus)
 #if 0
