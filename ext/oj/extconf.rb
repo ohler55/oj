@@ -22,7 +22,7 @@ dflags = {
   'HAS_RSTRUCT' => ('ruby' == type || 'ree' == type) ? 1 : 0,
   'HAS_IVAR_HELPERS' => ('ruby' == type && '1' == version[0] && '9' == version[1]) ? 1 : 0,
   'HAS_PROC_WITH_BLOCK' => ('ruby' == type && '1' == version[0] && '9' == version[1]) ? 1 : 0,
-  'HAS_TOP_LEVEL_ST_H' => ('ruby' == type &&  '1' == version[0] && '8' == version[1]) ? 1 : 0,
+  'HAS_TOP_LEVEL_ST_H' => ('ree' == type || ('ruby' == type &&  '1' == version[0] && '8' == version[1])) ? 1 : 0,
 }
 
 dflags.each do |k,v|
