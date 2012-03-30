@@ -24,11 +24,11 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 1.2.0
+### Release 1.2.1
 
- - Removed the encoding option and fixed a misunderstanding of the string encoding. Unicode code points are now used instead of byte codes. This is not compatible with previous releases but is compliant with RFC4627.
+ - Organized compile configuration better.
 
- - Time encoding in :object mode is faster and higher nanosecond precision.
+ - as_json() support now more flexible thanks to a contribution by sauliusg.
 
 ## <a name="description">Description</a>
 
