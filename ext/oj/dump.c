@@ -39,18 +39,11 @@
 #include "oj.h"
 #include "cache8.h"
 
-#ifdef RUBY_API_VERSION_MAJOR
-#define HAS_TIMESPEC
-#endif
-
-#ifndef HAVE_RUBY_ENCODING_H
-#define rb_eEncodingError	rb_eException
-#endif
-#ifdef RUBINIUS
+#if !HAS_ENCODING_SUPPORT
 #define rb_eEncodingError	rb_eException
 #endif
 
-typedef unsigned long   ulong;
+typedef unsigned long	ulong;
 
 typedef struct _Out {
     char	*buf;
@@ -64,7 +57,7 @@ typedef struct _Out {
     uint32_t	hash_cnt;
 } *Out;
 
-static void     dump_obj_to_json(VALUE obj, Options copts, Out out);
+static void	dump_obj_to_json(VALUE obj, Options copts, Out out);
 static void	raise_strict(VALUE obj);
 static void	dump_val(VALUE obj, int depth, Out out);
 static void	dump_nil(Out out);
@@ -91,16 +84,16 @@ static void	dump_data_comp(VALUE obj, Out out);
 static void	dump_data_obj(VALUE obj, Out out);
 static void	dump_obj_comp(VALUE obj, int depth, Out out);
 static void	dump_obj_obj(VALUE obj, int depth, Out out);
-#ifndef NO_RSTRUCT
+#if HAS_RSTRUCT
 static void	dump_struct_comp(VALUE obj, int depth, Out out);
 static void	dump_struct_obj(VALUE obj, int depth, Out out);
 #endif
-#if IVAR_HELPERS
+#if HAS_IVAR_HELPERS
 static int	dump_attr_cb(ID key, VALUE value, Out out);
 #endif
 static void	dump_obj_attrs(VALUE obj, int with_class, slot_t id, int depth, Out out);
 
-static void     grow(Out out, size_t len);
+static void	grow(Out out, size_t len);
 static size_t	hibit_friendly_size(const u_char *str, size_t len);
 static size_t	ascii_friendly_size(const u_char *str, size_t len);
 
@@ -115,7 +108,7 @@ static void	dump_leaf_hash(Leaf leaf, int depth, Out out);
 
 static const char	hex_chars[17] = "0123456789abcdef";
 
-static char     hibit_friendly_chars[256] = "\
+static char	hibit_friendly_chars[256] = "\
 66666666222622666666666666666666\
 11211111111111121111111111111111\
 11111111111111111111111111112111\
@@ -127,7 +120,7 @@ static char     hibit_friendly_chars[256] = "\
 
 // High bit set characters are always encoded as unicode. Worse case is 3
 // bytes per character in the output. That makes this conservative.
-static char     ascii_friendly_chars[256] = "\
+static char	ascii_friendly_chars[256] = "\
 66666666222622666666666666666666\
 11211111111111121111111111111111\
 11111111111111111111111111112111\
@@ -161,20 +154,20 @@ inline static void
 fill_indent(Out out, int cnt) {
     if (0 < cnt && 0 < out->indent) {
 	cnt *= out->indent;
-        *out->cur++ = '\n';
-        for (; 0 < cnt; cnt--) {
-            *out->cur++ = ' ';
-        }
+	*out->cur++ = '\n';
+	for (; 0 < cnt; cnt--) {
+	    *out->cur++ = ' ';
+	}
     }
 }
 
 inline static const char*
 ulong2str(uint32_t num, char *end) {
-    char        *b;
+    char	*b;
 
     *end-- = '\0';
     for (b = end; 0 < num || b == end; num /= 10, b--) {
-        *b = (num % 10) + '0';
+	*b = (num % 10) + '0';
     }
     b++;
 
@@ -183,20 +176,20 @@ ulong2str(uint32_t num, char *end) {
 
 inline static void
 dump_ulong(unsigned long num, Out out) {
-    char        buf[32];
-    char        *b = buf + sizeof(buf) - 1;
+    char	buf[32];
+    char	*b = buf + sizeof(buf) - 1;
 
     *b-- = '\0';
     if (0 < num) {
-        for (; 0 < num; num /= 10, b--) {
-            *b = (num % 10) + '0';
-        }
+	for (; 0 < num; num /= 10, b--) {
+	    *b = (num % 10) + '0';
+	}
 	b++;
     } else {
-        *b = '0';
+	*b = '0';
     }
     for (; '\0' != *b; b++) {
-        *out->cur++ = *b;
+	*out->cur++ = *b;
     }
     *out->cur = '\0';
 }
@@ -206,14 +199,14 @@ grow(Out out, size_t len) {
     size_t  size = out->end - out->buf;
     long    pos = out->cur - out->buf;
     char    *buf;
-        
+	
     size *= 2;
     if (size <= len * 2 + pos) {
-        size += len;
+	size += len;
     }
     buf = REALLOC_N(out->buf, char, (size + 10));
     if (0 == buf) { // 1 extra for terminator character plus extra (paranoid)
-        rb_raise(rb_eNoMemError, "Failed to create string. [%d:%s]\n", ENOSPC, strerror(ENOSPC));
+	rb_raise(rb_eNoMemError, "Failed to create string. [%d:%s]\n", ENOSPC, strerror(ENOSPC));
     }
     out->buf = buf;
     out->end = buf + size;
@@ -251,7 +244,7 @@ dump_unicode(const char *str, const char *end, Out out) {
 	cnt = 5;
 	code = b & 0x00000001;
     } else {
-        rb_raise(rb_eEncodingError, "Invalid Unicode\n");
+	rb_raise(rb_eEncodingError, "Invalid Unicode\n");
     }
     str++;
     for (; 0 < cnt; cnt--, str++) {
@@ -311,10 +304,10 @@ check_circular(VALUE obj, Out out) {
 
 static void
 dump_nil(Out out) {
-    size_t      size = 4;
+    size_t	size = 4;
 
     if (out->end - out->cur <= (long)size) {
-        grow(out, size);
+	grow(out, size);
     }
     *out->cur++ = 'n';
     *out->cur++ = 'u';
@@ -325,10 +318,10 @@ dump_nil(Out out) {
 
 static void
 dump_true(Out out) {
-    size_t      size = 4;
+    size_t	size = 4;
 
     if (out->end - out->cur <= (long)size) {
-        grow(out, size);
+	grow(out, size);
     }
     *out->cur++ = 't';
     *out->cur++ = 'r';
@@ -339,10 +332,10 @@ dump_true(Out out) {
 
 static void
 dump_false(Out out) {
-    size_t      size = 5;
+    size_t	size = 5;
 
     if (out->end - out->cur <= (long)size) {
-        grow(out, size);
+	grow(out, size);
     }
     *out->cur++ = 'f';
     *out->cur++ = 'a';
@@ -354,33 +347,33 @@ dump_false(Out out) {
 
 static void
 dump_fixnum(VALUE obj, Out out) {
-    char        buf[32];
-    char        *b = buf + sizeof(buf) - 1;
+    char	buf[32];
+    char	*b = buf + sizeof(buf) - 1;
     long	num = NUM2LONG(obj);
-    int         neg = 0;
+    int		neg = 0;
 
     if (0 > num) {
-        neg = 1;
-        num = -num;
+	neg = 1;
+	num = -num;
     }
     *b-- = '\0';
     if (0 < num) {
-        for (; 0 < num; num /= 10, b--) {
-            *b = (num % 10) + '0';
-        }
-        if (neg) {
-            *b = '-';
-        } else {
-            b++;
-        }
+	for (; 0 < num; num /= 10, b--) {
+	    *b = (num % 10) + '0';
+	}
+	if (neg) {
+	    *b = '-';
+	} else {
+	    b++;
+	}
     } else {
-        *b = '0';
+	*b = '0';
     }
     if (out->end - out->cur <= (long)(sizeof(buf) - (b - buf))) {
-        grow(out, sizeof(buf) - (b - buf));
+	grow(out, sizeof(buf) - (b - buf));
     }
     for (; '\0' != *b; b++) {
-        *out->cur++ = *b;
+	*out->cur++ = *b;
     }
     *out->cur = '\0';
 }
@@ -391,7 +384,7 @@ dump_bignum(VALUE obj, Out out) {
     int		cnt = (int)RSTRING_LEN(rs);
 
     if (out->end - out->cur <= (long)cnt) {
-        grow(out, cnt);
+	grow(out, cnt);
     }
     memcpy(out->cur, StringValuePtr(rs), cnt);
     out->cur += cnt;
@@ -432,10 +425,10 @@ dump_float(VALUE obj, Out out) {
 	break;
     }
     if (out->end - out->cur <= (long)cnt) {
-        grow(out, cnt);
+	grow(out, cnt);
     }
     for (b = buf; '\0' != *b; b++) {
-        *out->cur++ = *b;
+	*out->cur++ = *b;
     }
     *out->cur = '\0';
 }
@@ -599,7 +592,7 @@ dump_array(VALUE a, int depth, Out out) {
     }
     size = 2;
     if (out->end - out->cur <= (long)size) {
-        grow(out, size);
+	grow(out, size);
     }
     if (0 == cnt) {
 	*out->cur++ = ']';
@@ -916,13 +909,17 @@ dump_time(VALUE obj, Out out) {
     char		*b = buf + sizeof(buf) - 1;
     long		size;
     char		*dot = b - 10;
-#ifdef HAS_TIMESPEC
+#if HAS_RB_TIME_TIMESPEC
     struct timespec	ts = rb_time_timespec(obj);
     time_t		sec = ts.tv_sec;
     long		nsec = ts.tv_nsec;
 #else
     time_t		sec = NUM2LONG(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+#if HAS_NANO_TIME
     long		nsec = NUM2LONG(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+#else
+    long		nsec = NUM2LONG(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
+#endif
 #endif
 
     *b-- = '\0';
@@ -986,12 +983,7 @@ dump_obj_comp(VALUE obj, int depth, Out out) {
 	}
 	dump_hash(h, depth, out->opts->mode, out);
     } else if (rb_respond_to(obj, oj_as_json_id)) {
-	VALUE	h = rb_funcall(obj, oj_as_json_id, 0);
- 
-	if (T_HASH != rb_type(h)) {
-	    rb_raise(rb_eTypeError, "%s.as_json() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
-	}
-	dump_hash(h, depth, out->opts->mode, out);
+	dump_val(rb_funcall(obj, oj_as_json_id, 0), depth, out);
     } else if (rb_respond_to(obj, oj_to_json_id)) {
 	VALUE		rs = rb_funcall(obj, oj_to_json_id, 0);
 	const char	*s = StringValuePtr(rs);
@@ -1017,7 +1009,7 @@ dump_obj_obj(VALUE obj, int depth, Out out) {
     }
 }
 
-#if IVAR_HELPERS
+#if HAS_IVAR_HELPERS
 static int
 dump_attr_cb(ID key, VALUE value, Out out) {
     int		depth = out->depth;
@@ -1090,7 +1082,7 @@ dump_obj_attrs(VALUE obj, int with_class, slot_t id, int depth, Out out) {
     {
 	int	cnt;
 // use encoding as the indicator for Ruby 1.8.7 or 1.9.x
-#if IVAR_HELPERS
+#if HAS_IVAR_HELPERS
 	cnt = (int)rb_ivar_count(obj);
 #else
 	VALUE		vars = rb_funcall2(obj, oj_instance_variables_id, 0, 0);
@@ -1105,14 +1097,14 @@ dump_obj_attrs(VALUE obj, int with_class, slot_t id, int depth, Out out) {
 	    *out->cur++ = ',';
 	}
 	out->depth = depth + 1;
-#if IVAR_HELPERS
+#if HAS_IVAR_HELPERS
 	rb_ivar_foreach(obj, dump_attr_cb, (VALUE)out);
 	out->cur--; // backup to overwrite last comma
 #else
 	size = d2 * out->indent + 1;
 	for (i = cnt; 0 < i; i--, np++) {
 	    if (out->end - out->cur <= (long)size) {
-	        grow(out, size);
+		grow(out, size);
 	    }
 	    vid = rb_to_id(*np);
 	    fill_indent(out, d2);
@@ -1131,7 +1123,7 @@ dump_obj_attrs(VALUE obj, int with_class, slot_t id, int depth, Out out) {
 	    *out->cur++ = ':';
 	    dump_val(rb_ivar_get(obj, vid), d2, out);
 	    if (out->end - out->cur <= 2) {
-	        grow(out, 2);
+		grow(out, 2);
 	    }
 	    if (1 < i) {
 	      *out->cur++ = ',';
@@ -1144,7 +1136,7 @@ dump_obj_attrs(VALUE obj, int with_class, slot_t id, int depth, Out out) {
     *out->cur = '\0';
 }
 
-#ifndef NO_RSTRUCT
+#if HAS_RSTRUCT
 static void
 dump_struct_comp(VALUE obj, int depth, Out out) {
     if (rb_respond_to(obj, oj_to_hash_id)) {
@@ -1179,7 +1171,7 @@ dump_struct_obj(VALUE obj, int depth, Out out) {
     int		d3 = d2 + 1;
     size_t	len = strlen(class_name);
     size_t	size = d2 * out->indent + d3 * out->indent + 10 + len;
-            
+	    
     if (out->end - out->cur <= (long)size) {
 	grow(out, size);
     }
@@ -1274,7 +1266,7 @@ dump_val(VALUE obj, int depth, Out out) {
 	default:		dump_data_obj(obj, out);	break;
 	}
 	break;
-#ifndef NO_RSTRUCT
+#if HAS_RSTRUCT
     case T_STRUCT: // for Range
 	switch (out->opts->mode) {
 	case StrictMode:	raise_strict(obj);		break;
@@ -1316,12 +1308,12 @@ dump_obj_to_json(VALUE obj, Options copts, Out out) {
     out->opts = copts;
     out->hash_cnt = 0;
     if (Yes == copts->circular) {
-        oj_cache8_new(&out->circ_cache);
+	oj_cache8_new(&out->circ_cache);
     }
     out->indent = copts->indent;
     dump_val(obj, 0, out);
     if (Yes == copts->circular) {
-        oj_cache8_delete(out->circ_cache);
+	oj_cache8_delete(out->circ_cache);
     }
 }
 
@@ -1337,18 +1329,18 @@ oj_write_obj_to_str(VALUE obj, Options copts) {
 void
 oj_write_obj_to_file(VALUE obj, const char *path, Options copts) {
     struct _Out out;
-    size_t      size;
-    FILE        *f;    
+    size_t	size;
+    FILE	*f;
 
     dump_obj_to_json(obj, copts, &out);
     size = out.cur - out.buf;
     if (0 == (f = fopen(path, "w"))) {
-        rb_raise(rb_eIOError, "%s\n", strerror(errno));
+	rb_raise(rb_eIOError, "%s\n", strerror(errno));
     }
     if (size != fwrite(out.buf, 1, size, f)) {
-        int	err = ferror(f);
+	int	err = ferror(f);
 
-        rb_raise(rb_eIOError, "Write failed. [%d:%s]\n", err, strerror(err));
+	rb_raise(rb_eIOError, "Write failed. [%d:%s]\n", err, strerror(err));
     }
     xfree(out.buf);
     fclose(f);
@@ -1425,7 +1417,7 @@ dump_leaf_array(Leaf leaf, int depth, Out out) {
 
     size = 2;
     if (out->end - out->cur <= (long)size) {
-        grow(out, size);
+	grow(out, size);
     }
     *out->cur++ = '[';
     if (0 == leaf->elements) {
@@ -1463,7 +1455,7 @@ dump_leaf_hash(Leaf leaf, int depth, Out out) {
 
     size = 2;
     if (out->end - out->cur <= (long)size) {
-        grow(out, size);
+	grow(out, size);
     }
     *out->cur++ = '{';
     if (0 == leaf->elements) {
@@ -1553,18 +1545,18 @@ oj_write_leaf_to_str(Leaf leaf, Options copts) {
 void
 oj_write_leaf_to_file(Leaf leaf, const char *path, Options copts) {
     struct _Out out;
-    size_t      size;
-    FILE        *f;    
+    size_t	size;
+    FILE	*f;
 
     dump_leaf_to_json(leaf, copts, &out);
     size = out.cur - out.buf;
     if (0 == (f = fopen(path, "w"))) {
-        rb_raise(rb_eIOError, "%s\n", strerror(errno));
+	rb_raise(rb_eIOError, "%s\n", strerror(errno));
     }
     if (size != fwrite(out.buf, 1, size, f)) {
-        int	err = ferror(f);
+	int	err = ferror(f);
 
-        rb_raise(rb_eIOError, "Write failed. [%d:%s]\n", err, strerror(err));
+	rb_raise(rb_eIOError, "Write failed. [%d:%s]\n", err, strerror(err));
     }
     xfree(out.buf);
     fclose(f);

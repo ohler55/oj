@@ -8,6 +8,9 @@ require 'test/unit'
 require 'stringio'
 require 'oj'
 
+$ruby = RUBY_DESCRIPTION.split(' ')[0]
+$ruby = 'ree' if 'ruby' == $ruby && RUBY_DESCRIPTION.include?('Ruby Enterprise Edition')
+
 def hash_eql(h1, h2)
   return false if h1.size != h2.size
   h1.keys.each do |k|
@@ -126,8 +129,8 @@ class Juice < ::Test::Unit::TestCase
     dump_and_load(12345.6789, false)
     dump_and_load(-54321.012, false)
     dump_and_load(2.48e16, false)
-    dump_and_load(2.48e1000, false)
-    dump_and_load(-2.48e1000, false)
+    dump_and_load(2.48e100 * 1.0e10, false)
+    dump_and_load(-2.48e100 * 1.0e10, false)
   end
 
   def test_string
@@ -301,16 +304,21 @@ class Juice < ::Test::Unit::TestCase
     Oj.default_options = { :mode => :compat }
     obj = Jeez.new(true, 58)
     json = Oj.dump(obj, :indent => 2)
-    assert_equal(%{{"json_class":"Jeez","x":true,"y":58}}, json)
+    assert(%{{"json_class":"Jeez","x":true,"y":58}} == json ||
+           %{{"json_class":"Jeez","y":58,"x":true}} == json)
     dump_and_load(obj, false)
   end
   def test_json_object_object
     obj = Jeez.new(true, 58)
     json = Oj.dump(obj, :mode => :object, :indent => 2)
-    assert_equal(%{{
+    assert(%{{
   "^o":"Jeez",
   "x":true,
-  "y":58}}, json)
+  "y":58}} == json ||
+%{{
+  "^o":"Jeez",
+  "y":58,
+  "x":true}} == json)
     obj2 = Oj.load(json, :mode => :object)
     assert_equal(obj, obj2)
   end
@@ -338,10 +346,14 @@ class Juice < ::Test::Unit::TestCase
   def test_to_hash_object_object
     obj = Jazz.new(true, 58)
     json = Oj.dump(obj, :mode => :object, :indent => 2)
-    assert_equal(%{{
+    assert(%{{
   "^o":"Jazz",
   "x":true,
-  "y":58}}, json)
+  "y":58}} == json ||
+%{{
+  "^o":"Jazz",
+  "y":58,
+  "x":true}} == json)
     obj2 = Oj.load(json, :mode => :object)
     assert_equal(obj, obj2)
   end
@@ -363,17 +375,24 @@ class Juice < ::Test::Unit::TestCase
   def test_object_compat
     obj = Jam.new(true, 58)
     json = Oj.dump(obj, :mode => :compat, :indent => 2)
-    assert_equal(%{{
+    assert(%{{
   "x":true,
-  "y":58}}, json)
+  "y":58}} == json ||
+%{{
+  "y":58,
+  "x":true}} == json)
   end
   def test_object_object
     obj = Jam.new(true, 58)
     json = Oj.dump(obj, :mode => :object, :indent => 2)
-    assert_equal(%{{
+    assert(%{{
   "^o":"Jam",
   "x":true,
-  "y":58}}, json)
+  "y":58}} == json ||
+%{{
+  "^o":"Jam",
+  "y":58,
+  "x":true}} == json)
     obj2 = Oj.load(json, :mode => :object)
     assert_equal(obj, obj2)
   end
@@ -390,7 +409,7 @@ class Juice < ::Test::Unit::TestCase
     #puts "*** #{json}"
     e2 = Oj.load(json, :mode => :strict)
     assert_equal(err.class.to_s, e2['^o'])
-    unless RUBY_VERSION.start_with?('1.8')
+    unless RUBY_VERSION.start_with?('1.8') || 'rubinius' == $ruby
       assert_equal(err.message, e2['~mesg'])
       assert_equal(err.backtrace, e2['~bt'])
       e2 = Oj.load(json, :mode => :object)
@@ -423,7 +442,11 @@ class Juice < ::Test::Unit::TestCase
     unless RUBY_VERSION.start_with?('1.8')
       Oj.default_options = { :mode => :object }
       json = Oj.dump(1..7, :mode => :object, :indent => 0)
-      assert_equal(%{{"^u":["Range",1,7,false]}}, json)
+      if 'rubinius' == $ruby
+        assert_equal(%{{"^o":"Range","excl":false,"begin":1,"end":7}}, json)
+      else
+        assert_equal(%{{"^u":["Range",1,7,false]}}, json)
+      end
       dump_and_load(1..7, false)
       dump_and_load(1..1, false)
       dump_and_load(1...7, false)
@@ -447,11 +470,16 @@ class Juice < ::Test::Unit::TestCase
     obj = Jam.new(nil, 58)
     obj.x = obj
     json = Oj.dump(obj, :mode => :object, :indent => 2, :circular => true)
-    assert_equal(%{{
+    assert(%{{
   "^o":"Jam",
   "^i":1,
   "x":"^r1",
-  "y":58}}, json)
+  "y":58}} == json ||
+%{{
+  "^o":"Jam",
+  "^i":1,
+  "y":58,
+  "x":"^r1"}} == json)
     obj2 = Oj.load(json, :mode => :object, :circular => true)
     assert_equal(obj2.x.__id__, obj2.__id__)
   end

@@ -40,10 +40,10 @@ enum {
 };
 
 typedef struct _CircArray {
-    VALUE               obj_array[1024];
-    VALUE               *objs;
-    unsigned long       size; // allocated size or initial array size
-    unsigned long       cnt;
+    VALUE		obj_array[1024];
+    VALUE		*objs;
+    unsigned long	size; // allocated size or initial array size
+    unsigned long	cnt;
 } *CircArray;
 
 typedef struct _ParseInfo {
@@ -124,8 +124,8 @@ next_white(ParseInfo pi) {
 
 inline static VALUE
 resolve_classname(VALUE mod, const char *class_name, int auto_define) {
-    VALUE       clas;
-    ID          ci = rb_intern(class_name);
+    VALUE	clas;
+    ID		ci = rb_intern(class_name);
 
     if (rb_const_defined_at(mod, ci) || !auto_define) {
 	clas = rb_const_get_at(mod, ci);
@@ -140,55 +140,55 @@ classname2obj(const char *name, ParseInfo pi) {
     VALUE   clas = classname2class(name, pi);
     
     if (Qundef == clas) {
-        return Qnil;
+	return Qnil;
     } else {
-        return rb_obj_alloc(clas);
+	return rb_obj_alloc(clas);
     }
 }
 
 static VALUE
 classname2class(const char *name, ParseInfo pi) {
-    VALUE       clas;
-    VALUE       *slot;
+    VALUE	clas;
+    VALUE	*slot;
     int		auto_define = (Yes == pi->options->auto_define);
 
     if (Qundef == (clas = oj_cache_get(oj_class_cache, name, &slot))) {
-        char            class_name[1024];
-        char            *s;
-        const char      *n = name;
+	char		class_name[1024];
+	char		*s;
+	const char	*n = name;
 
-        clas = rb_cObject;
-        for (s = class_name; '\0' != *n; n++) {
-            if (':' == *n) {
-                *s = '\0';
-                n++;
+	clas = rb_cObject;
+	for (s = class_name; '\0' != *n; n++) {
+	    if (':' == *n) {
+		*s = '\0';
+		n++;
 		if (':' != *n) {
-                    raise_error("Invalid classname, expected another ':'", pi->str, pi->s);
+		    raise_error("Invalid classname, expected another ':'", pi->str, pi->s);
 		}
-                if (Qundef == (clas = resolve_classname(clas, class_name, auto_define))) {
-                    return Qundef;
-                }
-                s = class_name;
-            } else {
-                *s++ = *n;
-            }
-        }
-        *s = '\0';
-        if (Qundef != (clas = resolve_classname(clas, class_name, auto_define))) {
-            *slot = clas;
-        }
+		if (Qundef == (clas = resolve_classname(clas, class_name, auto_define))) {
+		    return Qundef;
+		}
+		s = class_name;
+	    } else {
+		*s++ = *n;
+	    }
+	}
+	*s = '\0';
+	if (Qundef != (clas = resolve_classname(clas, class_name, auto_define))) {
+	    *slot = clas;
+	}
     }
     return clas;
 }
 
-#ifndef NO_RSTRUCT
+#if HAS_RSTRUCT
 inline static VALUE
 structname2obj(const char *name) {
-    VALUE       ost;
+    VALUE	ost;
 
     ost = rb_const_get(oj_struct_class, rb_intern(name));
 // use encoding as the indicator for Ruby 1.8.7 or 1.9.x
-#ifdef HAVE_RUBY_ENCODING_H
+#if HAS_ENCODING_SUPPORT
     return rb_struct_alloc_noinit(ost);
 #else
     return rb_struct_new(ost);
@@ -212,10 +212,10 @@ read_ulong(const char *s, ParseInfo pi) {
 
 static CircArray
 circ_array_new() {
-    CircArray   ca;
+    CircArray	ca;
     
     if (0 == (ca = ALLOC(struct _CircArray))) {
-        rb_raise(rb_eNoMemError, "not enough memory\n");
+	rb_raise(rb_eNoMemError, "not enough memory\n");
     }
     ca->objs = ca->obj_array;
     ca->size = sizeof(ca->obj_array) / sizeof(VALUE);
@@ -227,7 +227,7 @@ circ_array_new() {
 static void
 circ_array_free(CircArray ca) {
     if (ca->objs != ca->obj_array) {
-        xfree(ca->objs);
+	xfree(ca->objs);
     }
     xfree(ca);
 }
@@ -235,41 +235,41 @@ circ_array_free(CircArray ca) {
 static void
 circ_array_set(CircArray ca, VALUE obj, unsigned long id) {
     if (0 < id && 0 != ca) {
-        unsigned long   i;
+	unsigned long	i;
 
-        if (ca->size < id) {
-            unsigned long       cnt = id + 512;
+	if (ca->size < id) {
+	    unsigned long	cnt = id + 512;
 
-            if (ca->objs == ca->obj_array) {
-                if (0 == (ca->objs = ALLOC_N(VALUE, cnt))) {
-                    rb_raise(rb_eNoMemError, "not enough memory\n");
-                }
-                memcpy(ca->objs, ca->obj_array, sizeof(VALUE) * ca->cnt);
-            } else { 
-                ca->objs = REALLOC_N(ca->objs, VALUE, cnt);
-                if (0 == ca->objs) {
-                    rb_raise(rb_eNoMemError, "not enough memory\n");
-                }
-            }
-            ca->size = cnt;
-        }
-        id--;
-        for (i = ca->cnt; i < id; i++) {
-            ca->objs[i] = Qnil;
-        }
-        ca->objs[id] = obj;
-        if (ca->cnt <= id) {
-            ca->cnt = id + 1;
-        }
+	    if (ca->objs == ca->obj_array) {
+		if (0 == (ca->objs = ALLOC_N(VALUE, cnt))) {
+		    rb_raise(rb_eNoMemError, "not enough memory\n");
+		}
+		memcpy(ca->objs, ca->obj_array, sizeof(VALUE) * ca->cnt);
+	    } else { 
+		ca->objs = REALLOC_N(ca->objs, VALUE, cnt);
+		if (0 == ca->objs) {
+		    rb_raise(rb_eNoMemError, "not enough memory\n");
+		}
+	    }
+	    ca->size = cnt;
+	}
+	id--;
+	for (i = ca->cnt; i < id; i++) {
+	    ca->objs[i] = Qnil;
+	}
+	ca->objs[id] = obj;
+	if (ca->cnt <= id) {
+	    ca->cnt = id + 1;
+	}
     }
 }
 
 static VALUE
 circ_array_get(CircArray ca, unsigned long id) {
-    VALUE       obj = Qnil;
+    VALUE	obj = Qnil;
 
     if (id <= ca->cnt && 0 != ca) {
-        obj = ca->objs[id - 1];
+	obj = ca->objs[id - 1];
     }
     return obj;
 }
@@ -454,8 +454,8 @@ read_obj(ParseInfo pi) {
 	    }
 	    if (Qundef != key) {
 		if (T_OBJECT == obj_type) {
-		    VALUE       *slot;
-		    ID          var_id;
+		    VALUE	*slot;
+		    ID		var_id;
 
 		    if (Qundef == (var_id = oj_cache_get(oj_attr_cache, ks, &slot))) {
 			char	attr[1024];
@@ -516,7 +516,7 @@ read_array(ParseInfo pi, int hint) {
     int		type = T_NONE;
     int		cnt = 0;
     int		a_str;
-#ifndef NO_RSTRUCT
+#if HAS_RSTRUCT
     long	slen = 0;
 #endif
 
@@ -532,7 +532,7 @@ read_array(ParseInfo pi, int hint) {
 	if (Qundef == (e = read_next(pi, 0))) {
 	    raise_error("unexpected character", pi->str, pi->s);
 	}
-#ifndef NO_RSTRUCT
+#if HAS_RSTRUCT
 	if (Qundef == a && T_STRUCT == hint && T_STRING == rb_type(e)) {
 	    a = structname2obj(StringValuePtr(e));
 	    type = T_STRUCT;
@@ -550,13 +550,13 @@ read_array(ParseInfo pi, int hint) {
 	}
 	if (Qundef != e) {
 	    if (T_STRUCT == type) {
-#ifdef NO_RSTRUCT
-		raise_error("Ruby structs not supported with this version of Ruby", pi->str, pi->s);
-#else
+#if HAS_RSTRUCT
 		if (slen <= cnt) {
 		    raise_error("Too many elements for Struct", pi->str, pi->s);
 		}
 		RSTRUCT_PTR(a)[cnt] = e;
+#else
+		raise_error("Ruby structs not supported with this version of Ruby", pi->str, pi->s);
 #endif
 	    } else {
 		rb_ary_push(a, e);
@@ -596,12 +596,12 @@ read_str(ParseInfo pi, int hint) {
 	break;
     case T_STRING:
 	obj = rb_str_new2(text);
-#ifdef HAVE_RUBY_ENCODING_H
+#if HAS_ENCODING_SUPPORT
 	rb_enc_associate(obj, oj_utf8_encoding);
 #endif
 	break;
     case T_SYMBOL:
-#ifdef HAVE_RUBY_ENCODING_H
+#if HAS_ENCODING_SUPPORT
 	obj = rb_str_new2(text);
 	rb_enc_associate(obj, oj_utf8_encoding);
 	obj = rb_funcall(obj, oj_to_sym_id, 0);
@@ -613,7 +613,7 @@ read_str(ParseInfo pi, int hint) {
     default:
 	obj = Qundef;
 	if (':' == *text && !escaped) { // Symbol
-#ifdef HAVE_RUBY_ENCODING_H
+#if HAS_ENCODING_SUPPORT
 	    obj = rb_str_new2(text + 1);
 	    rb_enc_associate(obj, oj_utf8_encoding);
 	    obj = rb_funcall(obj, oj_to_sym_id, 0);
@@ -631,7 +631,7 @@ read_str(ParseInfo pi, int hint) {
 	}
 	if (Qundef == obj) {
 	    obj = rb_str_new2(text);
-#ifdef HAVE_RUBY_ENCODING_H
+#if HAS_ENCODING_SUPPORT
 	    rb_enc_associate(obj, oj_utf8_encoding);
 #endif
 	}
@@ -640,7 +640,7 @@ read_str(ParseInfo pi, int hint) {
     return obj;
 }
 
-#ifdef RUBINIUS
+#ifdef RUBINIUS_RUBY
 #define NUM_MAX 0x07FFFFFF
 #else
 #define NUM_MAX (FIXNUM_MAX >> 8)
@@ -749,7 +749,11 @@ read_time(ParseInfo pi) {
 	    v2 *= 10;
 	}
     }
+#if HAS_NANO_TIME
     return rb_time_nano_new(v, v2);
+#else
+    return rb_time_new(v, v2 / 1000);
+#endif
 }
 
 static VALUE
@@ -849,7 +853,7 @@ static char*
 read_quoted_value(ParseInfo pi) {
     char	*value = 0;
     char	*h = pi->s; // head
-    char	*t = h;     // tail
+    char	*t = h;	    // tail
     uint32_t	code;
     
     h++;	// skip quote character
