@@ -48,6 +48,37 @@ class Jeez < Jam
   end
 end # Jeez
 
+# contributed by sauliusg to fix as_json
+class Orange < Jam
+  def initialize(x, y)
+    super
+  end
+
+  def as_json()
+    { :json_class => self.class,
+      :x => @x,
+      :y => @y }
+  end
+
+  def self.json_create(h)
+    self.new(h['x'], h['y'])
+  end
+end
+
+class Melon < Jam
+  def initialize(x, y)
+    super
+  end
+
+  def as_json()
+    "#{x} #{y}"
+  end
+
+  def self.json_create(h)
+    self.new(h['x'], h['y'])
+  end
+end
+
 class Jazz < Jam
   def initialize(x, y)
     super
@@ -286,7 +317,7 @@ class Juice < ::Test::Unit::TestCase
     assert_equal({ 1 => true, 'nil' => nil, :sim => 4 }, h)
   end
 
-# Object with to_json()
+  # Object with to_json()
   def test_json_object_strict
     obj = Jeez.new(true, 58)
     begin
@@ -354,6 +385,51 @@ class Juice < ::Test::Unit::TestCase
   "^o":"Jazz",
   "y":58,
   "x":true}} == json)
+    obj2 = Oj.load(json, :mode => :object)
+    assert_equal(obj, obj2)
+  end
+
+  # Object with as_json() # contributed by sauliusg
+  def test_as_json_object_strict
+    obj = Orange.new(true, 58)
+    begin
+      json = Oj.dump(obj, :mode => :strict)
+    rescue Exception => e
+      assert(true)
+    end
+  end
+
+  def test_as_json_object_null
+    obj = Orange.new(true, 58)
+    json = Oj.dump(obj, :mode => :null)
+    assert_equal('null', json)
+  end
+
+  def test_as_json_object_compat_hash
+    Oj.default_options = { :mode => :compat }
+    obj = Orange.new(true, 58)
+    json = Oj.dump(obj, :indent => 2)
+    assert_equal(%{{
+  "json_class":"Orange",
+  "x":true,
+  "y":58}}, json)
+    dump_and_load(obj, false)
+  end
+
+  def test_as_json_object_compat_non_hash
+    Oj.default_options = { :mode => :compat }
+    obj = Melon.new(true, 58)
+    json = Oj.dump(obj, :indent => 2)
+    assert_equal(%{"true 58"}, json)
+  end
+
+  def test_as_json_object_object
+    obj = Orange.new(true, 58)
+    json = Oj.dump(obj, :mode => :object, :indent => 2)
+    assert_equal(%{{
+  "^o":"Orange",
+  "x":true,
+  "y":58}}, json)
     obj2 = Oj.load(json, :mode => :object)
     assert_equal(obj, obj2)
   end
