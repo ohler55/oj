@@ -21,6 +21,8 @@ do
     cd ../../test
     rbenv local $ruby
     ./tests.rb
+    ./test_mimic.rb
+    ./test_fast.rb
     cd ..
 
     echo "\n"

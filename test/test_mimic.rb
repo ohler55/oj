@@ -8,6 +8,9 @@ require 'test/unit'
 require 'stringio'
 require 'oj'
 
+$ruby = RUBY_DESCRIPTION.split(' ')[0]
+$ruby = 'ree' if 'ruby' == $ruby && RUBY_DESCRIPTION.include?('Ruby Enterprise Edition')
+
 class Jam
   attr_accessor :x, :y
 
@@ -69,7 +72,7 @@ class Mimic < ::Test::Unit::TestCase
   def test_load_proc
     children = []
     json = %{{"a":1,"b":[true,false]}}
-    if RUBY_ENGINE == 'rbx'
+    if 'rubinius' == $ruby || 'jruby' == $ruby || '1.8.7' == RUBY_VERSION
       obj = JSON.load(json) {|x| children << x }
     else
       p = Proc.new {|x| children << x }

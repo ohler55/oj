@@ -610,7 +610,7 @@ static Leaf
 read_num(ParseInfo pi) {
     char	*start = pi->s;
     int		type = T_FIXNUM;
-    Leaf	leaf = leaf_new(pi->doc, type);
+    Leaf	leaf;
 
     if ('-' == *pi->s) {
 	pi->s++;
@@ -845,6 +845,9 @@ get_doc_leaf(Doc doc, const char *path) {
 
 	if ('/' == *path) {
 	    path++;
+	    *stack = doc->data;
+	    lp = stack;
+	} else if (doc->where == doc->where_path) {
 	    *stack = doc->data;
 	    lp = stack;
 	} else {
@@ -1335,7 +1338,9 @@ doc_each_leaf(int argc, VALUE *argv, VALUE self) {
 	size_t		wlen;
 
 	wlen = doc->where - doc->where_path;
-	memcpy(save_path, doc->where_path, sizeof(Leaf) * wlen);
+	if (0 < wlen) {
+	    memcpy(save_path, doc->where_path, sizeof(Leaf) * wlen);
+	}
 	if (1 <= argc) {
 	    Check_Type(*argv, T_STRING);
 	    path = StringValuePtr(*argv);
@@ -1344,12 +1349,16 @@ doc_each_leaf(int argc, VALUE *argv, VALUE self) {
 		path++;
 	    }
 	    if (0 != move_step(doc, path, 1)) {
-		memcpy(doc->where_path, save_path, sizeof(Leaf) * wlen);
+		if (0 < wlen) {
+		    memcpy(doc->where_path, save_path, sizeof(Leaf) * wlen);
+		}
 		return Qnil;
 	    }
 	}
 	each_leaf(doc, self);
-	memcpy(doc->where_path, save_path, sizeof(Leaf) * wlen);
+	if (0 < wlen) {
+	    memcpy(doc->where_path, save_path, sizeof(Leaf) * wlen);
+	}
     }
     return Qnil;
 }
@@ -1405,7 +1414,9 @@ doc_each_child(int argc, VALUE *argv, VALUE self) {
 	size_t		wlen;
 
 	wlen = doc->where - doc->where_path;
-	memcpy(save_path, doc->where_path, sizeof(Leaf) * wlen);
+	if (0 < wlen) {
+	    memcpy(save_path, doc->where_path, sizeof(Leaf) * wlen);
+	}
 	if (1 <= argc) {
 	    Check_Type(*argv, T_STRING);
 	    path = StringValuePtr(*argv);
@@ -1414,7 +1425,9 @@ doc_each_child(int argc, VALUE *argv, VALUE self) {
 		path++;
 	    }
 	    if (0 != move_step(doc, path, 1)) {
-		memcpy(doc->where_path, save_path, sizeof(Leaf) * wlen);
+		if (0 < wlen) {
+		    memcpy(doc->where_path, save_path, sizeof(Leaf) * wlen);
+		}
 		return Qnil;
 	    }
 	}
@@ -1429,7 +1442,9 @@ doc_each_child(int argc, VALUE *argv, VALUE self) {
 		e = e->next;
 	    } while (e != first);
 	}
-	memcpy(doc->where_path, save_path, sizeof(Leaf) * wlen);
+	if (0 < wlen) {
+	    memcpy(doc->where_path, save_path, sizeof(Leaf) * wlen);
+	}
     }
     return Qnil;
 }
