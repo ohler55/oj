@@ -520,12 +520,12 @@ class Juice < ::Test::Unit::TestCase
     assert_equal({'begin' => 1, 'end' => 7, 'exclude_end' => true}, h)
   end
   def test_range_object
-    # TBD get Range working with 1.8.7
     unless RUBY_VERSION.start_with?('1.8')
       Oj.default_options = { :mode => :object }
       json = Oj.dump(1..7, :mode => :object, :indent => 0)
       if 'rubinius' == $ruby
-        assert_equal(%{{"^o":"Range","excl":false,"begin":1,"end":7}}, json)
+        assert(%{{"^o":"Range","excl":false,"begin":1,"end":7}} == json ||
+               %{{"^o":"Range","begin":1,"end":7,"excl":false}} == json)
       else
         assert_equal(%{{"^u":["Range",1,7,false]}}, json)
       end
