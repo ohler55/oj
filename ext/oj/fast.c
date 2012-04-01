@@ -816,7 +816,7 @@ parse_json(VALUE clas, char *json, int given, int allocated) {
     pi.s = pi.str;
     doc_init(doc);
     pi.doc = doc;
-    //doc->self = rb_obj_alloc(clas);
+    // last arg is free func void* func(void*)
     doc->self = rb_data_object_alloc(clas, doc, 0, 0);
     doc->json = json;
     DATA_PTR(doc->self) = doc;
