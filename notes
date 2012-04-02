@@ -4,15 +4,9 @@
 ^c^s show subtree
 
 - next
- - Oj::Doc
-  - deal with object being freed automatically
-   - add free routine to rb_data_object_alloc
-   - close and free
- - readme
-  - bug fixes for different rubies
-  - Oj::Doc will automatically close on GC
 
  - setup travis to run tests
+  - does not load the oj gem in some cases
 
 - stream
  - use with Oj::Doc

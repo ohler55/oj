@@ -348,6 +348,22 @@ class DocTest < ::Test::Unit::TestCase
     end
   end
 
+
+  def test_open_no_close
+    json = %{{"a":[1,2,3]}}
+    doc = Oj::Doc.open(json)
+    assert_equal(Oj::Doc, doc.class)
+    assert_equal(5, doc.size)
+    assert_equal('/', doc.where?)
+    doc.move('a/1')
+    doc.home()
+    assert_equal(2, doc.fetch('/a/2'))
+    assert_equal(2, doc.fetch('a/2'))
+    doc = nil
+    GC.start
+  end
+
+
   def test_dump
     Oj::Doc.open('[1,[2,3]]') do |doc|
       assert_equal('[1,[2,3]]', doc.dump())

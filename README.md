@@ -24,11 +24,11 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 1.2.1
+### Release 1.2.2
 
- - Organized compile configuration better.
+ - minor bug fixes for different rubies along with test updates
 
- - as_json() support now more flexible thanks to a contribution by sauliusg.
+ - Oj::Doc will now automatically close on GC.
 
 ## <a name="description">Description</a>
 
