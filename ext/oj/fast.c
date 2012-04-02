@@ -800,6 +800,16 @@ protect_open_proc(VALUE x) {
     return Qnil;
 }
 
+static void
+free_doc_cb(void *x) {
+    Doc	doc = (Doc)x;
+
+    if (0 != doc) {
+	xfree(doc->json);
+	doc_free(doc);
+    }
+}
+
 static VALUE
 parse_json(VALUE clas, char *json, int given, int allocated) {
     struct _ParseInfo	pi;
@@ -817,7 +827,7 @@ parse_json(VALUE clas, char *json, int given, int allocated) {
     doc_init(doc);
     pi.doc = doc;
     // last arg is free func void* func(void*)
-    doc->self = rb_data_object_alloc(clas, doc, 0, 0);
+    doc->self = rb_data_object_alloc(clas, doc, 0, free_doc_cb);
     doc->json = json;
     DATA_PTR(doc->self) = doc;
     result = rb_protect(protect_open_proc, (VALUE)&pi, &ex);
@@ -1564,9 +1574,10 @@ doc_close(VALUE self) {
     Doc		doc = self_doc(self);
 
     DATA_PTR(doc->self) = 0;
-    xfree(doc->json);
-    doc_free(doc);
-
+    if (0 != doc) {
+	xfree(doc->json);
+	doc_free(doc);
+    }
     return Qnil;
 }
 
