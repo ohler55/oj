@@ -361,6 +361,7 @@ class DocTest < ::Test::Unit::TestCase
     assert_equal(2, doc.fetch('a/2'))
     doc = nil
     GC.start
+    # a print statement confirms close is called
   end
 
 
