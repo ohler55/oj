@@ -24,11 +24,9 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 1.2.2
+### Release 1.2.3
 
- - minor bug fixes for different rubies along with test updates
-
- - Oj::Doc will now automatically close on GC.
+ - Fixed compile error for the latest RBX on Travis.
 
 ## <a name="description">Description</a>
 
