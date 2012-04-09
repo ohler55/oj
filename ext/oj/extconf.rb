@@ -17,7 +17,7 @@ dflags = {
   'RUBY_VERSION_MINOR' => version[1],
   'RUBY_VERSION_MICRO' => version[2],
   'HAS_RB_TIME_TIMESPEC' => ('ruby' == type && '1.9.3' == RUBY_VERSION) ? 1 : 0,
-  'HAS_ENCODING_SUPPORT' => ('ruby' == type && '1' == version[0] && '9' == version[1]) ? 1 : 0,
+  'HAS_ENCODING_SUPPORT' => (('ruby' == type || 'rubinius' == type) && '1' == version[0] && '9' == version[1]) ? 1 : 0,
   'HAS_NANO_TIME' => ('ruby' == type && '1' == version[0] && '9' == version[1]) ? 1 : 0,
   'HAS_RSTRUCT' => ('ruby' == type || 'ree' == type) ? 1 : 0,
   'HAS_IVAR_HELPERS' => ('ruby' == type && '1' == version[0] && '9' == version[1]) ? 1 : 0,
