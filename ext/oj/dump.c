@@ -39,7 +39,7 @@
 #include "oj.h"
 #include "cache8.h"
 
-#if !HAS_ENCODING_SUPPORT
+#if !HAS_ENCODING_SUPPORT || defined(RUBINIUS_RUBY)
 #define rb_eEncodingError	rb_eException
 #endif
 
