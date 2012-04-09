@@ -16,7 +16,7 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="links">Links of Interest</a>
 
-[Need for Speed](http://www.ohler.com/software/thoughts/Blog/Entries/2012/3/13_Need_for_Speed.html) for an overview of how Oj::Doc was designed.
+[Need for Speed](http://www.ohler.com/dev/need_for_speed/need_for_speed.html) for an overview of how Oj::Doc was designed.
 
 *Fast XML parser and marshaller on RubyGems*: https://rubygems.org/gems/ox
 

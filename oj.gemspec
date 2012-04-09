@@ -8,7 +8,7 @@ Gem::Specification.new do |s|
   s.authors = "Peter Ohler"
   s.date = Date.today.to_s
   s.email = "peter@ohler.com"
-  s.homepage = "https://github.com/ohler55/oj"
+  s.homepage = "http://www.ohler.com/oj"
   s.summary = "A fast JSON parser and serializer."
   s.description = %{The fastest JSON parser and object serializer. }
 
