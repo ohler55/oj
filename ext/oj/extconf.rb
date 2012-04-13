@@ -24,6 +24,15 @@ dflags = {
   'HAS_PROC_WITH_BLOCK' => ('ruby' == type && '1' == version[0] && '9' == version[1]) ? 1 : 0,
   'HAS_TOP_LEVEL_ST_H' => ('ree' == type || ('ruby' == type &&  '1' == version[0] && '8' == version[1])) ? 1 : 0,
 }
+# This is a monster hack to get around issues with 1.9.3-p0 on CentOS 5.4. SO
+# some reason math.h and string.h contents are not processed. Might be a
+# missing #define. This is the quick and easy way around it.
+if 'x86_64-linux' == RUBY_PLATFORM && '1.9.3' == RUBY_VERSION && '2011-10-30' == RUBY_RELEASE_DATE
+  begin
+    dflags['NEEDS_STPCPY'] = nil if `more /etc/issue`.include?('CentOS release 5.4')
+  rescue Exception => e
+  end
+end
 
 dflags.each do |k,v|
   if v.nil?
@@ -35,3 +44,5 @@ end
 $CPPFLAGS += ' -Wall'
 #puts "*** $CPPFLAGS: #{$CPPFLAGS}"
 create_makefile(extension_name)
+
+%x{make clean}
