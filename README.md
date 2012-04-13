@@ -24,9 +24,9 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 1.2.3
+### Release 1.2.4
 
- - Fixed compile error for the latest RBX on Travis.
+ - Removed all use of math.h to get around CentOS 5.4 compile problem.
 
 ## <a name="description">Description</a>
 

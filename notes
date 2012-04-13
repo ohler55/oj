@@ -5,6 +5,10 @@
 
 - next
 
+ - optimize read_hex in load.c
+ - add options for path in fetch
+  - wild cards
+
  - setup travis to run tests
   - does not load the oj gem in some cases
 
@@ -17,8 +21,8 @@
    - object_end
    - array_start
    - array_end
-   - value
-   - key
+   - value - provide accessor call or object to get value
+   - key - provide accessor call or object to get value
 
    - default callbacks use straight C and create Hash or Object according to mode
     - callback object

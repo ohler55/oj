@@ -112,6 +112,17 @@ static VALUE	doc_size(VALUE self);
 
 VALUE	oj_doc_class = 0;
 
+// This is only for CentOS 5.4 with Ruby 1.9.3-p0.
+#ifdef NEEDS_STPCPY
+char *stpcpy(char *dest, const char *src) {
+    size_t	cnt = strlen(src);
+    
+    strcpy(dest, src);
+
+    return dest + cnt;
+}
+#endif
+
 inline static void
 next_non_white(ParseInfo pi) {
     for (; 1; pi->s++) {

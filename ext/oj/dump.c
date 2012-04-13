@@ -34,7 +34,6 @@
 #include <time.h>
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
 
 #include "oj.h"
 #include "cache8.h"
@@ -42,6 +41,8 @@
 #if !HAS_ENCODING_SUPPORT || defined(RUBINIUS_RUBY)
 #define rb_eEncodingError	rb_eException
 #endif
+
+#define DBL_INF	1.e500
 
 typedef unsigned long	ulong;
 
@@ -391,6 +392,7 @@ dump_bignum(VALUE obj, Out out) {
     *out->cur = '\0';
 }
 
+// Removed dependencies on math due to problems with CentOS 5.4.
 static void
 dump_float(VALUE obj, Out out) {
     char	buf[64];
@@ -398,32 +400,22 @@ dump_float(VALUE obj, Out out) {
     double	d = rb_num2dbl(obj);
     int		cnt;
 
-    switch (fpclassify(d)) {
-    case FP_NAN:
-	printf("*** nan\n");
-	cnt = sprintf(buf, "%0.16g", d); // used sprintf due to bug in snprintf
-	break;
-    case FP_INFINITE:
-	b = buf;
-	cnt = 8;
-	if (d < 0.0) {
-	    *b++ = '-';
-	    cnt++;
-	}
-	strcpy(b, "Infinity");
-	break;
-    case FP_ZERO:
+    if (0.0 == d) {
 	b = buf;
 	*b++ = '0';
 	*b++ = '.';
 	*b++ = '0';
 	*b++ = '\0';
 	cnt = 3;
-	break;
-    default:
+    } else if (DBL_INF == d) {
+	strcpy(buf, "Infinity");
+	cnt = 8;
+    } else if (-DBL_INF == d) {
+	strcpy(buf, "-Infinity");
+	cnt = 9;
+    } else {
 	cnt = sprintf(buf, "%0.16g", d); // used sprintf due to bug in snprintf
-	break;
-    }
+    }	
     if (out->end - out->cur <= (long)cnt) {
 	grow(out, cnt);
     }
