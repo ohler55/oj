@@ -638,7 +638,7 @@ mimic_parse(int argc, VALUE *argv, VALUE self) {
 	if (Qnil != (v = rb_hash_lookup(ropts,	create_additions_sym))) {
 	    options.mode = (Qtrue == v) ? CompatMode : StrictMode;
 	}
-	// :allow_nan is not supported as Oj always allows_nan
+	// :allow_nan is not supported as Oj always allows nan
 	// :max_nesting is always set to 100
 	// :object_class is always Hash
 	// :array_class is always Array
