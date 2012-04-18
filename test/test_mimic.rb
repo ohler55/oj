@@ -171,6 +171,11 @@ class Mimic < ::Test::Unit::TestCase
     assert_equal(jam, obj)
     obj = JSON.parse(json, :create_additions => false)
     assert_equal({'json_class' => 'Jam', 'x' => true, 'y' => 58}, obj)
+    json.gsub!('json_class', 'kson_class')
+    JSON.create_id = 'kson_class'
+    obj = JSON.parse(json, :create_additions => true)
+    JSON.create_id = 'json_class'
+    assert_equal(jam, obj)
   end
   def test_parse_bang
     json = %{{"a":1,"b":[true,false]}}

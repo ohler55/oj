@@ -95,6 +95,7 @@ typedef struct _Options {
     char	sym_key;	// YesNo
     char	ascii_only;	// YesNo
     char	mode;		// Mode
+    const char	*create_id;	// 0 or string
     DumpOpts	dump_opts;
 } *Options;
 

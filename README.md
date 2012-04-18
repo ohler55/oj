@@ -24,9 +24,9 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 1.2.4
+### Release 1.2.5
 
- - Removed all use of math.h to get around CentOS 5.4 compile problem.
+ - Added support for create_id in Oj and in mimic_JSON mode
 
 ## <a name="description">Description</a>
 
