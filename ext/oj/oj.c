@@ -77,6 +77,7 @@ static VALUE	ascii_only_sym;
 static VALUE	auto_define_sym;
 static VALUE	circular_sym;
 static VALUE	compat_sym;
+static VALUE	create_id_sym;
 static VALUE	indent_sym;
 static VALUE	mode_sym;
 static VALUE	null_sym;
@@ -101,6 +102,8 @@ Cache	oj_attr_cache = 0;
 rb_encoding	*oj_utf8_encoding = 0;
 #endif
 
+static const char	json_class[] = "json_class";
+
 struct _Options	oj_default_options = {
     0,			// indent
     No,			// circular
@@ -108,6 +111,7 @@ struct _Options	oj_default_options = {
     No,			// sym_key
     No,			// ascii_only
     ObjectMode,		// mode
+    json_class,		// create_id
     0,			// dump_opts
 };
 
@@ -121,6 +125,7 @@ static VALUE	define_mimic_json(VALUE self);
  * - auto_define: [true|false|nil] automatically define classes if they do not exist
  * - symbol_keys: [true|false|nil] use symbols instead of strings for hash keys
  * - mode: [:object|:strict|:compat|:null] load and dump modes to use for JSON
+ * - create_id: [String|nil] create id for json compatible object encoding, default is 'json_create'
  * @return [Hash] all current option settings.
  */
 static VALUE
@@ -139,6 +144,8 @@ get_def_opts(VALUE self) {
     case ObjectMode:
     default:		rb_hash_aset(opts, mode_sym, object_sym);	break;
     }
+    rb_hash_aset(opts, create_id_sym, (0 == oj_default_options.create_id) ? Qnil : rb_str_new2(oj_default_options.create_id));
+
     return opts;
 }
 
@@ -158,7 +165,9 @@ get_def_opts(VALUE self) {
  *	  variables if neither is found. The :object mode ignores to_hash()
  *	  and to_json() methods and encodes variables using code internal to
  *	  the Oj gem. The :null mode ignores non-supported Objects and
- *	  replaces them with a null.  @return [nil]
+ *	  replaces them with a null.
+ * @param [String|nil] :create_id create id for json compatible object encoding
+ * @return [nil]
  */
 static VALUE
 set_def_opts(VALUE self, VALUE opts) {
@@ -192,6 +201,22 @@ set_def_opts(VALUE self, VALUE opts) {
 	oj_default_options.mode = NullMode;
     } else {
 	rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, or :null.\n");
+    }
+
+    if (Qtrue == rb_funcall(opts, rb_intern("has_key?"), 1, create_id_sym)) {
+	if (0 != oj_default_options.create_id) {
+	    if (json_class != oj_default_options.create_id) {
+		xfree((char*)oj_default_options.create_id);
+	    }
+	    oj_default_options.create_id = 0;
+	}
+	v = rb_hash_lookup(opts, create_id_sym);
+	if (Qnil != v) {
+	    size_t	len = RSTRING_LEN(v) + 1;
+
+	    oj_default_options.create_id = ALLOC_N(char, len);
+	    strcpy((char*)oj_default_options.create_id, StringValuePtr(v));
+	}
     }
 
     for (o = ynos; 0 != o->attr; o++) {
@@ -659,6 +684,25 @@ no_op1(VALUE self, VALUE obj) {
     return Qnil;
 }
 
+static VALUE
+mimic_create_id(VALUE self, VALUE id) {
+    Check_Type(id, T_STRING);
+
+    if (0 != oj_default_options.create_id) {
+	if (json_class != oj_default_options.create_id) {
+	    xfree((char*)oj_default_options.create_id);
+	}
+	oj_default_options.create_id = 0;
+    }
+    if (Qnil != id) {
+	size_t	len = RSTRING_LEN(id) + 1;
+
+	oj_default_options.create_id = ALLOC_N(char, len);
+	strcpy((char*)oj_default_options.create_id, StringValuePtr(id));
+    }
+    return id;
+}
+
 /* call-seq: mimic_JSON() => Module
  *
  * Creates the JSON module with methods and classes to mimic the JSON
@@ -679,6 +723,7 @@ define_mimic_json(VALUE self) {
 
 	rb_define_module_function(mimic, "parser=", no_op1, 1);
 	rb_define_module_function(mimic, "generator=", no_op1, 1);
+	rb_define_module_function(mimic, "create_id=", mimic_create_id, 1);
 
 	rb_define_module_function(mimic, "dump", mimic_dump, -1);
 	rb_define_module_function(mimic, "load", mimic_load, -1);
@@ -745,6 +790,7 @@ void Init_oj() {
     auto_define_sym = ID2SYM(rb_intern("auto_define"));	rb_ary_push(keep, auto_define_sym);
     circular_sym = ID2SYM(rb_intern("circular"));	rb_ary_push(keep, circular_sym);
     compat_sym = ID2SYM(rb_intern("compat"));		rb_ary_push(keep, compat_sym);
+    create_id_sym = ID2SYM(rb_intern("create_id"));	rb_ary_push(keep, create_id_sym);
     indent_sym = ID2SYM(rb_intern("indent"));		rb_ary_push(keep, indent_sym);
     mode_sym = ID2SYM(rb_intern("mode"));		rb_ary_push(keep, mode_sym);
     symbol_keys_sym = ID2SYM(rb_intern("symbol_keys"));	rb_ary_push(keep, symbol_keys_sym);

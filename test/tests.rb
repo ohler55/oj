@@ -106,7 +106,8 @@ class Juice < ::Test::Unit::TestCase
                    :auto_define=>true,
                    :symbol_keys=>false,
                    :ascii_only=>false,
-                   :mode=>:object}, opts)
+                   :mode=>:object,
+                   :create_id=>'json_class'}, opts)
   end
 
   def test0_set_options
@@ -116,18 +117,20 @@ class Juice < ::Test::Unit::TestCase
       :auto_define=>true,
       :symbol_keys=>false,
       :ascii_only=>false,
-      :mode=>:object}
+      :mode=>:object,
+      :create_id=>'json_class'}
     o2 = {
       :indent=>4,
       :circular=>true,
       :auto_define=>false,
       :symbol_keys=>true,
       :ascii_only=>true,
-      :mode=>:compat}
+      :mode=>:compat,
+      :create_id=>nil}
     o3 = { :indent => 4 }
     Oj.default_options = o2
     opts = Oj.default_options()
-    assert_equal(opts, o2);
+    assert_equal(o2, opts);
     Oj.default_options = o3 # see if it throws an exception
     Oj.default_options = orig # return to original
   end
@@ -338,6 +341,14 @@ class Juice < ::Test::Unit::TestCase
     assert(%{{"json_class":"Jeez","x":true,"y":58}} == json ||
            %{{"json_class":"Jeez","y":58,"x":true}} == json)
     dump_and_load(obj, false)
+  end
+  def test_json_object_create_id
+    Oj.default_options = { :mode => :compat, :create_id => 'kson_class' }
+    expected = Jeez.new(true, 58)
+    json = %{{"kson_class":"Jeez","x":true,"y":58}}
+    obj = Oj.load(json)
+    assert_equal(expected, obj)
+    Oj.default_options = { :create_id => 'json_class' }
   end
   def test_json_object_object
     obj = Jeez.new(true, 58)

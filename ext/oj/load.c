@@ -475,8 +475,8 @@ read_obj(ParseInfo pi) {
 			rb_hash_aset(obj, key, val);
 		    }
 		    if ((CompatMode == mode || ObjectMode == mode) &&
-			0 == json_class_name &&
-			0 != ks && 'j' == *ks && 0 == strcmp("json_class", ks) &&
+			0 == json_class_name && 0 != ks && 
+			0 != pi->options->create_id && *pi->options->create_id == *ks && 0 == strcmp(pi->options->create_id, ks) &&
 			T_STRING == rb_type(val)) {
 			json_class_name = StringValuePtr(val);
 		    }
