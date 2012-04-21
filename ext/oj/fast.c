@@ -1591,6 +1591,10 @@ doc_close(VALUE self) {
     }
     return Qnil;
 }
+#if 0
+// hack to keep the doc generator happy
+Oj = rb_define_module("Oj");
+#endif
 
 /* Document-class: Oj::Doc
  *

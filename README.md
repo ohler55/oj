@@ -24,9 +24,9 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 1.2.5
+### Release 1.2.6
 
- - Added support for create_id in Oj and in mimic_JSON mode
+ - Cleaned up documentations errors.
 
 ## <a name="description">Description</a>
 

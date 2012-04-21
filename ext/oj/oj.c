@@ -93,7 +93,6 @@ static VALUE	space_sym;
 static VALUE	symbolize_names_sym;
 
 static VALUE	mimic = Qnil;
-static VALUE	keep = Qnil;
 
 Cache	oj_class_cache = 0;
 Cache	oj_attr_cache = 0;
@@ -370,6 +369,16 @@ load(int argc, VALUE *argv, VALUE self) {
     return load_with_opts(*argv, &options);
 }
 
+/* Document-method: load_file
+ *   call-seq: load_file(path, options) => Hash, Array, String, Fixnum, Float, true, false, or nil
+ *
+ * Parses a JSON document from a file into a Hash, Array, String, Fixnum,
+ * Float, true, false, or nil. Raises an exception if the JSON is malformed or
+ * the classes specified are not valid.
+ *
+ * @param [String] path path to a file containing a JSON document
+ * @param [Hash] options load options (same as default_options)
+ */
 static VALUE
 load_file(int argc, VALUE *argv, VALUE self) {
     char		*path;
@@ -703,7 +712,8 @@ mimic_create_id(VALUE self, VALUE id) {
     return id;
 }
 
-/* call-seq: mimic_JSON() => Module
+/* Document-method: mimic_JSON
+ *    call-seq: mimic_JSON() => Module
  *
  * Creates the JSON module with methods and classes to mimic the JSON
  * gem. After this method is invoked calls that expect the JSON module will
@@ -715,11 +725,12 @@ static VALUE
 define_mimic_json(VALUE self) {
     if (Qnil == mimic) {
 	VALUE	ext;
+	VALUE	dummy;
 
 	mimic = rb_define_module("JSON");
 	ext = rb_define_module_under(mimic, "Ext");
-	rb_define_class_under(ext, "Parser", rb_cObject);
-	rb_define_class_under(ext, "Generator", rb_cObject);
+	dummy = rb_define_class_under(ext, "Parser", rb_cObject);
+	dummy = rb_define_class_under(ext, "Generator", rb_cObject);
 
 	rb_define_module_function(mimic, "parser=", no_op1, 1);
 	rb_define_module_function(mimic, "generator=", no_op1, 1);
@@ -736,12 +747,12 @@ define_mimic_json(VALUE self) {
 	rb_define_module_function(mimic, "parse", mimic_parse, -1);
 	rb_define_module_function(mimic, "parse!", mimic_parse, -1);
 
-	array_nl_sym = ID2SYM(rb_intern("array_nl"));	rb_ary_push(keep, array_nl_sym);
-	create_additions_sym = ID2SYM(rb_intern("create_additions"));	rb_ary_push(keep, create_additions_sym);
-	object_nl_sym = ID2SYM(rb_intern("object_nl"));	rb_ary_push(keep, object_nl_sym);
-	space_before_sym = ID2SYM(rb_intern("space_before"));	rb_ary_push(keep, space_before_sym);
-	space_sym = ID2SYM(rb_intern("space"));	rb_ary_push(keep, space_sym);
-	symbolize_names_sym = ID2SYM(rb_intern("symbolize_names"));	rb_ary_push(keep, symbolize_names_sym);
+	array_nl_sym = ID2SYM(rb_intern("array_nl"));			rb_gc_register_address(&array_nl_sym);
+	create_additions_sym = ID2SYM(rb_intern("create_additions"));	rb_gc_register_address(&create_additions_sym);
+	object_nl_sym = ID2SYM(rb_intern("object_nl"));			rb_gc_register_address(&object_nl_sym);
+	space_before_sym = ID2SYM(rb_intern("space_before"));		rb_gc_register_address(&space_before_sym);
+	space_sym = ID2SYM(rb_intern("space"));				rb_gc_register_address(&space_sym);
+	symbolize_names_sym = ID2SYM(rb_intern("symbolize_names"));	rb_gc_register_address(&symbolize_names_sym);
 
 	oj_default_options.mode = CompatMode;
 	oj_default_options.ascii_only = Yes;
@@ -751,7 +762,6 @@ define_mimic_json(VALUE self) {
 
 void Init_oj() {
     Oj = rb_define_module("Oj");
-    keep = rb_cv_get(Oj, "@@keep"); // needed to stop GC from deleting and reusing VALUEs
 
     rb_require("time");
     rb_require("date");
@@ -786,19 +796,19 @@ void Init_oj() {
     oj_date_class = rb_const_get(rb_cObject, rb_intern("Date"));
     oj_stringio_class = rb_const_get(rb_cObject, rb_intern("StringIO"));
 
-    ascii_only_sym = ID2SYM(rb_intern("ascii_only"));	rb_ary_push(keep, ascii_only_sym);
-    auto_define_sym = ID2SYM(rb_intern("auto_define"));	rb_ary_push(keep, auto_define_sym);
-    circular_sym = ID2SYM(rb_intern("circular"));	rb_ary_push(keep, circular_sym);
-    compat_sym = ID2SYM(rb_intern("compat"));		rb_ary_push(keep, compat_sym);
-    create_id_sym = ID2SYM(rb_intern("create_id"));	rb_ary_push(keep, create_id_sym);
-    indent_sym = ID2SYM(rb_intern("indent"));		rb_ary_push(keep, indent_sym);
-    mode_sym = ID2SYM(rb_intern("mode"));		rb_ary_push(keep, mode_sym);
-    symbol_keys_sym = ID2SYM(rb_intern("symbol_keys"));	rb_ary_push(keep, symbol_keys_sym);
-    null_sym = ID2SYM(rb_intern("null"));		rb_ary_push(keep, null_sym);
-    object_sym = ID2SYM(rb_intern("object"));		rb_ary_push(keep, object_sym);
-    strict_sym = ID2SYM(rb_intern("strict"));		rb_ary_push(keep, strict_sym);
+    ascii_only_sym = ID2SYM(rb_intern("ascii_only"));	rb_gc_register_address(&ascii_only_sym);
+    auto_define_sym = ID2SYM(rb_intern("auto_define"));	rb_gc_register_address(&auto_define_sym);
+    circular_sym = ID2SYM(rb_intern("circular"));	rb_gc_register_address(&circular_sym);
+    compat_sym = ID2SYM(rb_intern("compat"));		rb_gc_register_address(&compat_sym);
+    create_id_sym = ID2SYM(rb_intern("create_id"));	rb_gc_register_address(&create_id_sym);
+    indent_sym = ID2SYM(rb_intern("indent"));		rb_gc_register_address(&indent_sym);
+    mode_sym = ID2SYM(rb_intern("mode"));		rb_gc_register_address(&mode_sym);
+    symbol_keys_sym = ID2SYM(rb_intern("symbol_keys"));	rb_gc_register_address(&symbol_keys_sym);
+    null_sym = ID2SYM(rb_intern("null"));		rb_gc_register_address(&null_sym);
+    object_sym = ID2SYM(rb_intern("object"));		rb_gc_register_address(&object_sym);
+    strict_sym = ID2SYM(rb_intern("strict"));		rb_gc_register_address(&strict_sym);
 
-    oj_slash_string = rb_str_new2("/");			rb_ary_push(keep, oj_slash_string);
+    oj_slash_string = rb_str_new2("/");			rb_gc_register_address(&oj_slash_string);
 
     oj_default_options.mode = ObjectMode;
 #if HAS_ENCODING_SUPPORT
@@ -827,3 +837,69 @@ _oj_raise_error(const char *msg, const char *xml, const char *current, const cha
     rb_raise(rb_eSyntaxError, "%s at line %d, column %d [%s:%d]\n", msg, xline, col, file, line);
 }
 
+// mimic JSON documentation
+
+/* Document-module: JSON
+ * 
+ * JSON is a JSON parser. This module when defined by the Oj module is a
+ * faster replacement for the original.
+ */
+/* Document-module: JSON::Ext
+ * 
+ * The Ext module is a placeholder in the mimic JSON module used for
+ * compatibility only.
+ */
+/* Document-class: JSON::Ext::Parser
+ * 
+ * The JSON::Ext::Parser is a placeholder in the mimic JSON module used for
+ * compatibility only.
+ */
+/* Document-class: JSON::Ext::Generator
+ * 
+ * The JSON::Ext::Generator is a placeholder in the mimic JSON module used for
+ * compatibility only.
+ */
+
+/* Document-method: create_id=
+ *   call-seq: create_id=(id) -> String
+ *
+ * Sets the create_id tag to look for in JSON document. That key triggers the
+ * creation of a class with the same name.
+ *
+ * @param [nil|String] id new create_id
+ * @return the id
+ */
+/* Document-method: parser=
+ *   call-seq: parser=(parser) -> nil
+ * 
+ * Does nothing other than provide compatibiltiy.
+ * @param [Object] parser ignored
+ */
+/* Document-method: generator=
+ *   call-seq: generator=(generator) -> nil
+ * 
+ * Does nothing other than provide compatibiltiy.
+ * @param [Object] generator ignored
+ */
+/* Document-method: dump
+ *   call-seq: dump(obj, anIO=nil, limit = nil) -> String
+ * 
+ * Encodes an object as a JSON String.
+ * 
+ * @param [Object] obj object to convert to encode as JSON
+ * @param [IO] anIO an IO that allows writing
+ * @param [Fixnum] limit ignored
+ */
+
+
+/*
+	rb_define_module_function(mimic, "load", mimic_load, -1);
+	rb_define_module_function(mimic, "restore", mimic_load, -1);
+	rb_define_module_function(mimic, "recurse_proc", mimic_recurse_proc, 1);
+	rb_define_module_function(mimic, "[]", mimic_dump_load, -1);
+	rb_define_module_function(mimic, "generate", mimic_generate, -1);
+	rb_define_module_function(mimic, "fast_generate", mimic_generate, -1);
+	rb_define_module_function(mimic, "pretty_generate", mimic_pretty_generate, -1);
+	rb_define_module_function(mimic, "parse", mimic_parse, -1);
+	rb_define_module_function(mimic, "parse!", mimic_parse, -1);
+*/

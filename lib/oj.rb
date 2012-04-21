@@ -1,35 +1,27 @@
-# Copyright (c) 2011, Peter Ohler
-#
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# - Redistributions of source code must retain the above copyright notice, this
-#   list of conditions and the following disclaimer.
-#
-# - Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the following disclaimer in the documentation
-#   and/or other materials provided with the distribution.
-#
-# - Neither the name of Peter Ohler nor the names of its contributors may be 
-#   used to endorse or promote products derived from this software without
-#   specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+# Optimized JSON (Oj), as the name implies was written to provide speed
+# optimized JSON handling.
+# 
+# Oj has several dump or serialization modes which control how Objects are
+# converted to JSON. These modes are set with the :effort option in either the
+# default options or as one of the options to the dump() method.
+# 
+# - :strict mode will only allow the 7 basic JSON types to be serialized. Any other Object
+#   will raise and Exception. 
+# 
+# - :null mode replaces any Object that is not one of the JSON types is replaced by a JSON null.
+# 
+# - :object mode will dump any Object as a JSON Object with keys that match
+#   the Ruby Object's variable names without the '@' character. This is the
+#   highest performance mode.
+# 
+# - :compat mode is is the compatible with other systems. It will serialize
+#   any Object but will check to see if the Object implements a to_hash() or
+#   to_json() method. If either exists that method is used for serializing the
+#   Object. The to_hash() is more flexible and produces more consistent output
+#   so it has a preference over the to_json() method. If neither the to_json()
+#   or to_hash() methods exist then the Oj internal Object variable encoding
+#   is used.
 module Oj
-  private
-  @@keep = []
 end
 
 require 'oj/version'
