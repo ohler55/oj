@@ -14,7 +14,6 @@ do
     cd ext/oj
     rbenv local $ruby
     ruby extconf.rb
-    make clean
     make
 
     echo "\nRunning tests for $ruby"
@@ -27,3 +26,19 @@ do
 
     echo "\n"
 done
+
+PATH=/System/Library/Frameworks/Ruby.framework/Versions/1.8/usr/bin:$PATH
+echo "\n********************************************************************************"
+echo "Building OS X Ruby\n"
+cd ext/oj
+ruby extconf.rb
+make -d
+
+echo "\nRunning tests for OS X Ruby"
+cd ../../test
+./tests.rb
+./test_mimic.rb
+./test_fast.rb
+cd ..
+
+echo "\n"
