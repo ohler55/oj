@@ -26,7 +26,9 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ### Release 1.2.6
 
- - Cleaned up documentations errors.
+ - Cleaned up documentation errors.
+
+ - Added support for OS X Ruby 1.8.7.
 
 ## <a name="description">Description</a>
 

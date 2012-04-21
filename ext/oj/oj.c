@@ -657,7 +657,7 @@ mimic_parse(int argc, VALUE *argv, VALUE self) {
     struct _Options	options = oj_default_options;
 
     if (1 > argc) {
-	rb_raise(rb_eArgError, "Wrong number of arguments to load().\n");
+	rb_raise(rb_eArgError, "Wrong number of arguments to parse().\n");
     }
     if (2 <= argc && Qnil != argv[1]) {
 	VALUE	ropts = argv[1];
@@ -890,12 +890,37 @@ _oj_raise_error(const char *msg, const char *xml, const char *current, const cha
  * @param [IO] anIO an IO that allows writing
  * @param [Fixnum] limit ignored
  */
+/* Document-method: load
+ *   call-seq: load(source, proc=nil) -> Object
+ * 
+ * Loads a Ruby Object from a JSON source that can be either a String or an
+ * IO. If Proc is given or a block is providedit is called with each nested
+ * element of the loaded Object.
+ * 
+ * @param [String|IO] source JSON source
+ * @param [Proc] proc to yield to on each element or nil
+ */
+/* Document-method: restore
+ *   call-seq: restore(source, proc=nil) -> Object
+ * 
+ * Loads a Ruby Object from a JSON source that can be either a String or an
+ * IO. If Proc is given or a block is providedit is called with each nested
+ * element of the loaded Object.
+ * 
+ * @param [String|IO] source JSON source
+ * @param [Proc] proc to yield to on each element or nil
+ */
+/* Document-method: recurse_proc
+ *   call-seq: recurse_proc(obj, &proc) -> Object
+ * 
+ * Yields to the proc for every element in the obj recursivly.
+ * 
+ * @param [Hash|Array] obj object to walk
+ * @param [Proc] proc to yield to on each element
+ */
 
 
 /*
-	rb_define_module_function(mimic, "load", mimic_load, -1);
-	rb_define_module_function(mimic, "restore", mimic_load, -1);
-	rb_define_module_function(mimic, "recurse_proc", mimic_recurse_proc, 1);
 	rb_define_module_function(mimic, "[]", mimic_dump_load, -1);
 	rb_define_module_function(mimic, "generate", mimic_generate, -1);
 	rb_define_module_function(mimic, "fast_generate", mimic_generate, -1);
