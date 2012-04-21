@@ -45,6 +45,8 @@ extern "C" {
 #include "ruby/encoding.h"
 #endif
 
+#include "stdint.h"
+
 #include "cache.h"
 
 #ifdef RUBINIUS_RUBY
