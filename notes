@@ -5,7 +5,8 @@
 
 - next
 
- - support create_id in mimic
+ - doc for mimic
+ - get rid of @@keep
 
  - optimize read_hex in load.c
  - add options for path in fetch
