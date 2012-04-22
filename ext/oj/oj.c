@@ -911,20 +911,62 @@ _oj_raise_error(const char *msg, const char *xml, const char *current, const cha
  * @param [Proc] proc to yield to on each element or nil
  */
 /* Document-method: recurse_proc
- *   call-seq: recurse_proc(obj, &proc) -> Object
+ *   call-seq: recurse_proc(obj, &proc) -> nil
  * 
  * Yields to the proc for every element in the obj recursivly.
  * 
  * @param [Hash|Array] obj object to walk
  * @param [Proc] proc to yield to on each element
  */
-
-
-/*
-	rb_define_module_function(mimic, "[]", mimic_dump_load, -1);
-	rb_define_module_function(mimic, "generate", mimic_generate, -1);
-	rb_define_module_function(mimic, "fast_generate", mimic_generate, -1);
-	rb_define_module_function(mimic, "pretty_generate", mimic_pretty_generate, -1);
-	rb_define_module_function(mimic, "parse", mimic_parse, -1);
-	rb_define_module_function(mimic, "parse!", mimic_parse, -1);
-*/
+/* Document-method: []
+ *   call-seq: [](obj, opts={}) -> Object
+ * 
+ * If the obj argument is a String then it is assumed to be a JSON String and
+ * parsed otherwise the obj is encoded as a JSON String.
+ * 
+ * @param [String|Hash|Array] obj object to convert
+ * @param [Hash] opts same options as either generate or parse
+ */
+/* Document-method: generate
+ *   call-seq: generate(obj, opts=nil) -> String
+ * 
+ * Encode obj as a JSON String. The obj argument must be a Hash, Array, or
+ * respond to to_h or to_json. Options other than those listed such as
+ * +:allow_nan+ or +:max_nesting+ are ignored.
+ * 
+ * @param [Object|Hash|Array] obj object to convert to a JSON String
+ * @param [Hash] opts options
+ * @param [String] :indent String to use for indentation
+ * @param [String] :space String placed after a , or : delimiter
+ * @param [String] :space_before String placed before a : delimiter
+ * @param [String] :object_nl String placed after a JSON object
+ * @param [String] :array_nl String placed after a JSON array
+ */
+/* Document-method: fast_generate
+ *   call-seq: fast_generate(obj, opts=nil) -> String
+ * Same as generate().
+ * @see generate
+ */
+/* Document-method: pretty_generate
+ *   call-seq: pretty_generate(obj, opts=nil) -> String
+ * Same as generate() but with different defaults for the spacing options.
+ * @see generate
+ */
+/* Document-method: parse
+ *   call-seq: parse(source, opts=nil) -> Object
+ *
+ * Parses a JSON String or IO into a Ruby Object.  Options other than those
+ * listed such as +:allow_nan+ or +:max_nesting+ are ignored. +:object_class+ and
+ * +:array_object+ are not supported.
+ *
+ * @param [String|IO] source source to parse
+ * @param [Hash] opts options
+ * @param [true|false] :symbolize_names flag indicating JSON object keys should be Symbols instead of Strings
+ * @param [true|false] :create_additions flag indicating a key matching +create_id+ in a JSON object should trigger the creation of Ruby Object
+ * @see create_id=
+ */
+/* Document-method: parse!
+ *   call-seq: parse!(source, opts=nil) -> Object
+ * Same as parse().
+ * @see parse
+ */
