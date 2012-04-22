@@ -24,7 +24,9 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 1.2.6
+### Release 1.2.7
+
+ - Fixed bug where a float with too many characters would generate an error. It is not parsed as accuractly as Ruby will support.
 
  - Cleaned up documentation errors.
 
