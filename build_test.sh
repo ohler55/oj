@@ -32,7 +32,7 @@ echo "\n************************************************************************
 echo "Building OS X Ruby\n"
 cd ext/oj
 ruby extconf.rb
-make -d
+make
 
 echo "\nRunning tests for OS X Ruby"
 cd ../../test

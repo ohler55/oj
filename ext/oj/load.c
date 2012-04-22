@@ -672,20 +672,14 @@ read_num(ParseInfo pi) {
 	}
     }
     for (; '0' <= *pi->s && *pi->s <= '9'; pi->s++) {
-	n = n * 10 + (*pi->s - '0');
-	if (NUM_MAX <= n) {
-	    big = 1;
+	if (big) {
+	    big++;
+	} else {
+	    n = n * 10 + (*pi->s - '0');
+	    if (NUM_MAX <= n) {
+		big = 1;
+	    }
 	}
-    }
-    if (big) {
-	char	c = *pi->s;
-	VALUE	num;
-	
-	*pi->s = '\0';
-	num = rb_cstr_to_inum(start, 10, 0);
-	*pi->s = c;
-
-	return num;
     }
     if ('.' == *pi->s) {
 	pi->s++;
@@ -707,15 +701,29 @@ read_num(ParseInfo pi) {
 	}
     }
     if (0 == e && 0 == a && 1 == div) {
-	if (neg) {
-	    n = -n;
+	if (big) {
+	    char	c = *pi->s;
+	    VALUE	num;
+	
+	    *pi->s = '\0';
+	    num = rb_cstr_to_inum(start, 10, 0);
+	    *pi->s = c;
+
+	    return num;
+	} else {
+	    if (neg) {
+		n = -n;
+	    }
+	    return LONG2NUM(n);
 	}
-	return LONG2NUM(n);
     } else {
 	double	d = (double)n + (double)a / (double)div;
 
 	if (neg) {
 	    d = -d;
+	}
+	if (1 < big) {
+	    e += big - 1;
 	}
 	if (0 != e) {
 	    if (eneg) {
