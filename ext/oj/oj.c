@@ -727,6 +727,9 @@ define_mimic_json(VALUE self) {
 	VALUE	ext;
 	VALUE	dummy;
 
+	if (rb_const_defined_at(rb_cObject, rb_intern("JSON"))) {
+	    rb_raise(rb_eTypeError, "JSON module already exists. Can not mimic. Do not require 'json' before calling mimic_JSON.");
+	}
 	mimic = rb_define_module("JSON");
 	ext = rb_define_module_under(mimic, "Ext");
 	dummy = rb_define_class_under(ext, "Parser", rb_cObject);
