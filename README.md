@@ -40,7 +40,7 @@ other the common Ruby JSON parsers. So far is has achieved that at about 2
 time faster than Yajl for parsing and 3 or more times faster writing JSON.
 
 Oj has several dump or serialization modes which control how Objects are
-converted to JSON. These modes are set with the :effort option in either the
+converted to JSON. These modes are set with the :mode option in either the
 default options or as one of the options to the dump() method.
 
 - :strict mode will only allow the 7 basic JSON types to be serialized. Any other Object
