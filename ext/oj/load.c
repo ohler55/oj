@@ -33,6 +33,11 @@
 #include <string.h>
 #include <math.h>
 
+//Workaround:
+#ifndef INFINITY
+#define INFINITY (1.0/0.0)
+#endif
+
 #include "oj.h"
 
 enum {
