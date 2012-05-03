@@ -24,13 +24,11 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 1.2.7
+### Release 1.2.8
 
- - Fixed bug where a float with too many characters would generate an error. It is not parsed as accuractly as Ruby will support.
+ - Included a contribution by nevans to fix a math.h issue with an old fedora linux machine.
 
- - Cleaned up documentation errors.
-
- - Added support for OS X Ruby 1.8.7.
+ - Included a fix to the documentation found by mat.
 
 ## <a name="description">Description</a>
 
