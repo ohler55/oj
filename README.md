@@ -57,7 +57,10 @@ to_hash() is more flexible and produces more consistent output so it has a
 preference over the to_json() method. If neither the to_json() or to_hash()
 methods exist then the Oj internal Object variable encoding is used.
 
-Oj is compatible with Ruby 1.8.7, 1.9.2, 1.9.3, JRuby, and RBX.
+Oj is compatible with Ruby 1.8.7, 1.9.2, 1.9.3, JRuby, RBX, and the latest 2.0dev.
+
+Oj is also compatible with Rails. Just make sure the Oj gem is installed and
+[multi_json](https://github.com/intridea/multi_json) will pick it up and use it.
 
 ## <a name="compare">Comparisons</a>
 
