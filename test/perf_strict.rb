@@ -50,8 +50,8 @@ class Jazz
   end
   alias as_json to_hash
 
-  def to_msgpack(out)
-    out << MessagePack.pack(to_hash())
+  def to_msgpack(out='')
+    to_hash().to_msgpack(out)
   end
 
   def self.json_create(h)
