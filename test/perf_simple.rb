@@ -39,8 +39,8 @@ class Jazz
       'hash' => @hash,
     }
   end
-  def to_msgpack(out)
-    out << MessagePack.pack(to_hash())
+  def to_msgpack(out='')
+    to_hash().to_msgpack(out)
   end
 end
 

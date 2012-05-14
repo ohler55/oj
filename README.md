@@ -166,9 +166,8 @@ not have a to_json() method or were of the 7 native JSON types.
 A perf_obj.rb file was added for comparing different Object marshalling
 packages.
 
-It is also worth noting that although Oj is slightly behind MessagePack for
-parsing, Oj serialization is much faster than MessagePack even though Oj uses
-human readable JSON vs the binary MessagePack format.
+It is also worth noting that although Oj is just slightly behind MessagePack for
+parsing.
 
 Oj supports circular references when in :object mode and when the :circular
 flag is true. None of the other gems tested supported circular
@@ -246,72 +245,71 @@ with Object and Bignum encoding:
 
 without Objects or numbers (for JSON Pure, Yajl, and Messagepack) JSON:
 
+    > perf_strict.rb -n -o
     --------------------------------------------------------------------------------
     Load/Parse Performance
-    Oj:compat.load 100000 times in 0.806 seconds or 124051.164 load/sec.
-    Oj.load 100000 times in 0.810 seconds or 123384.587 load/sec.
-    Yajl.parse 100000 times in 1.441 seconds or 69385.996 parse/sec.
-    JSON::Ext.parse 100000 times in 1.567 seconds or 63797.848 parse/sec.
-    JSON::Pure.parse 100000 times in 13.500 seconds or 7407.247 parse/sec.
-    Ox.load 100000 times in 0.954 seconds or 104836.748 load/sec.
-    MessagePack.unpack 100000 times in 0.651 seconds or 153707.817 unpack/sec.
+    JSON::Ext.parse 10000 times in 0.314 seconds or 31797.615 parse/sec.
+    Oj:compat.load 10000 times in 0.194 seconds or 51415.203 load/sec.
+    Oj.load 10000 times in 0.186 seconds or 53834.352 load/sec.
+    Yajl.parse 10000 times in 0.310 seconds or 32292.962 parse/sec.
+    Ox.load 10000 times in 0.215 seconds or 46474.232 load/sec.
+    MessagePack.unpack 10000 times in 0.166 seconds or 60156.165 unpack/sec.
     
     Summary:
          System  time (secs)  rate (ops/sec)
     -----------  -----------  --------------
-    MessagePack       0.651      153707.817
-      Oj:compat       0.806      124051.164
-             Oj       0.810      123384.587
-             Ox       0.954      104836.748
-           Yajl       1.441       69385.996
-      JSON::Ext       1.567       63797.848
-     JSON::Pure      13.500        7407.247
+    MessagePack       0.166       60156.165
+             Oj       0.186       53834.352
+      Oj:compat       0.194       51415.203
+             Ox       0.215       46474.232
+           Yajl       0.310       32292.962
+      JSON::Ext       0.314       31797.615
     
     Comparison Matrix
-    (performance factor, 2.0 row is means twice as fast as column)
-                 MessagePack    Oj:compat           Oj           Ox         Yajl    JSON::Ext   JSON::Pure
-    -----------  -----------  -----------  -----------  -----------  -----------  -----------  -----------
-    MessagePack         1.00         1.24         1.25         1.47         2.22         2.41        20.75
-      Oj:compat         0.81         1.00         1.01         1.18         1.79         1.94        16.75
-             Oj         0.80         0.99         1.00         1.18         1.78         1.93        16.66
-             Ox         0.68         0.85         0.85         1.00         1.51         1.64        14.15
-           Yajl         0.45         0.56         0.56         0.66         1.00         1.09         9.37
-      JSON::Ext         0.42         0.51         0.52         0.61         0.92         1.00         8.61
-     JSON::Pure         0.05         0.06         0.06         0.07         0.11         0.12         1.00
+    (performance factor, 2.0 means row is twice as fast as column)
+                 MessagePack           Oj    Oj:compat           Ox         Yajl    JSON::Ext
+    -----------  -----------  -----------  -----------  -----------  -----------  -----------
+    MessagePack         1.00         1.12         1.17         1.29         1.86         1.89
+             Oj         0.89         1.00         1.05         1.16         1.67         1.69
+      Oj:compat         0.85         0.96         1.00         1.11         1.59         1.62
+             Ox         0.77         0.86         0.90         1.00         1.44         1.46
+           Yajl         0.54         0.60         0.63         0.69         1.00         1.02
+      JSON::Ext         0.53         0.59         0.62         0.68         0.98         1.00
     
     
     --------------------------------------------------------------------------------
     Dump/Encode/Generate Performance
-    Oj:compat.dump 100000 times in 0.173 seconds or 578526.262 dump/sec.
-    Oj.dump 100000 times in 0.179 seconds or 558362.880 dump/sec.
-    Yajl.encode 100000 times in 0.776 seconds or 128794.279 encode/sec.
-    JSON::Ext.generate 100000 times in 3.511 seconds or 28483.812 generate/sec.
-    JSON::Pure.generate 100000 times in 7.389 seconds or 13533.717 generate/sec.
-    Ox.dump 100000 times in 0.196 seconds or 510589.629 dump/sec.
-    MessagePack.pack 100000 times in 0.317 seconds or 315307.220 pack/sec.
+    JSON::Ext.generate 10000 times in 0.457 seconds or 21863.563 generate/sec.
+    Oj.dump 10000 times in 0.271 seconds or 36862.418 dump/sec.
+    Oj:compat.dump 10000 times in 0.279 seconds or 35894.012 dump/sec.
+    Yajl.encode 10000 times in 0.122 seconds or 81863.877 encode/sec.
+    Ox.dump 10000 times in 0.291 seconds or 34399.843 dump/sec.
+    MessagePack.pack 10000 times in 0.072 seconds or 138632.803 pack/sec.
     
     Summary:
          System  time (secs)  rate (ops/sec)
     -----------  -----------  --------------
-      Oj:compat       0.173      578526.262
-             Oj       0.179      558362.880
-             Ox       0.196      510589.629
-    MessagePack       0.317      315307.220
-           Yajl       0.776      128794.279
-      JSON::Ext       3.511       28483.812
-     JSON::Pure       7.389       13533.717
+    MessagePack       0.072      138632.803
+           Yajl       0.122       81863.877
+             Oj       0.271       36862.418
+      Oj:compat       0.279       35894.012
+             Ox       0.291       34399.843
+      JSON::Ext       0.457       21863.563
     
     Comparison Matrix
-    (performance factor, 2.0 row is means twice as fast as column)
-                   Oj:compat           Oj           Ox  MessagePack         Yajl    JSON::Ext   JSON::Pure
-    -----------  -----------  -----------  -----------  -----------  -----------  -----------  -----------
-      Oj:compat         1.00         1.04         1.13         1.83         4.49        20.31        42.75
-             Oj         0.97         1.00         1.09         1.77         4.34        19.60        41.26
-             Ox         0.88         0.91         1.00         1.62         3.96        17.93        37.73
-    MessagePack         0.55         0.56         0.62         1.00         2.45        11.07        23.30
-           Yajl         0.22         0.23         0.25         0.41         1.00         4.52         9.52
-      JSON::Ext         0.05         0.05         0.06         0.09         0.22         1.00         2.10
-     JSON::Pure         0.02         0.02         0.03         0.04         0.11         0.48         1.00
+    (performance factor, 2.0 means row is twice as fast as column)
+                 MessagePack         Yajl           Oj    Oj:compat           Ox    JSON::Ext
+    -----------  -----------  -----------  -----------  -----------  -----------  -----------
+    MessagePack         1.00         1.69         3.76         3.86         4.03         6.34
+           Yajl         0.59         1.00         2.22         2.28         2.38         3.74
+             Oj         0.27         0.45         1.00         1.03         1.07         1.69
+      Oj:compat         0.26         0.44         0.97         1.00         1.04         1.64
+             Ox         0.25         0.42         0.93         0.96         1.00         1.57
+      JSON::Ext         0.16         0.27         0.59         0.61         0.64         1.00
+    
+    
+    The following packages were not included for the reason listed
+    ***** JSON::Pure: RuntimeError: can't modify frozen object
     
 ### Simple JSON Writing and Parsing:
 
