@@ -736,7 +736,7 @@ hash_cb_compat(VALUE key, VALUE value, Out out) {
 	dump_sym_comp(key, out);
 	break;
     default:
-	rb_raise(rb_eTypeError, "In :strict mode all Hash keys must be Strings.");
+	rb_raise(rb_eTypeError, "In :compat mode all Hash keys must be Strings or Symbols.");
 	break;
     }
     if (0 == out->opts->dump_opts) {
