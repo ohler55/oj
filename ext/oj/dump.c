@@ -652,7 +652,7 @@ hash_cb_strict(VALUE key, VALUE value, Out out) {
     long	size;
 
     if (rb_type(key) != T_STRING) {
-	rb_raise(rb_eTypeError, "In :strict mode all Hash keys must be Strings.");
+	rb_raise(rb_eTypeError, "In :strict mode all Hash keys must be Strings, not %s.\n", rb_class2name(rb_obj_class(key)));
     }
     if (0 == out->opts->dump_opts) {
 	size = depth * out->indent + 1;
@@ -736,7 +736,7 @@ hash_cb_compat(VALUE key, VALUE value, Out out) {
 	dump_sym_comp(key, out);
 	break;
     default:
-	rb_raise(rb_eTypeError, "In :compat mode all Hash keys must be Strings or Symbols.");
+	rb_raise(rb_eTypeError, "In :compat mode all Hash keys must be Strings or Symbols, not %s.\n", rb_class2name(rb_obj_class(key)));
 	break;
     }
     if (0 == out->opts->dump_opts) {
@@ -1361,7 +1361,7 @@ dump_leaf_str(Leaf leaf, Out out) {
 	break;
     case COL_VAL:
     default:
-	rb_raise(rb_eTypeError, "Unexpected value type %02x.", leaf->value_type);
+	rb_raise(rb_eTypeError, "Unexpected value type %02x.\n", leaf->value_type);
 	break;
     }
 }
@@ -1381,7 +1381,7 @@ dump_leaf_fixnum(Leaf leaf, Out out) {
 	break;
     case COL_VAL:
     default:
-	rb_raise(rb_eTypeError, "Unexpected value type %02x.", leaf->value_type);
+	rb_raise(rb_eTypeError, "Unexpected value type %02x.\n", leaf->value_type);
 	break;
     }
 }
@@ -1397,7 +1397,7 @@ dump_leaf_float(Leaf leaf, Out out) {
 	break;
     case COL_VAL:
     default:
-	rb_raise(rb_eTypeError, "Unexpected value type %02x.", leaf->value_type);
+	rb_raise(rb_eTypeError, "Unexpected value type %02x.\n", leaf->value_type);
 	break;
     }
 }
@@ -1508,7 +1508,7 @@ dump_leaf(Leaf leaf, int depth, Out out) {
 	dump_leaf_hash(leaf, depth, out);
 	break;
     default:
-	rb_raise(rb_eTypeError, "Unexpected type %02x.", leaf->type);
+	rb_raise(rb_eTypeError, "Unexpected type %02x.\n", leaf->type);
 	break;
     }
 }
