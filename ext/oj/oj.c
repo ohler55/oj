@@ -29,6 +29,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <pthread.h> // TBD LOCK
 #include <stdlib.h>
 #include <errno.h>
 #include <stdio.h>
@@ -100,6 +101,8 @@ Cache	oj_attr_cache = 0;
 #if HAS_ENCODING_SUPPORT
 rb_encoding	*oj_utf8_encoding = 0;
 #endif
+
+pthread_mutex_t	oj_cache_mutex; // only used if SAFE_CACHE defined
 
 static const char	json_class[] = "json_class";
 
@@ -821,6 +824,9 @@ void Init_oj() {
     oj_cache_new(&oj_class_cache);
     oj_cache_new(&oj_attr_cache);
 
+#ifdef SAFE_CACHE
+    pthread_mutex_init(&oj_cache_mutex, 0);
+#endif
     oj_init_doc();
 }
 

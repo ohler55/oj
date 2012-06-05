@@ -300,6 +300,7 @@ class Juice < ::Test::Unit::TestCase
     begin
       json = Oj.dump({ 1 => true, 0 => false }, :mode => :compat)
     rescue Exception => e
+      assert(e.message.include?('Fixnum'))
       assert(true)
     end
   end

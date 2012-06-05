@@ -24,11 +24,11 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 1.2.8
+### Release 1.2.10
 
- - Included a contribution by nevans to fix a math.h issue with an old fedora linux machine.
+ - Added json.rb to $" in mimic mode to avoid pulling in the real JSON by accident.
 
- - Included a fix to the documentation found by mat.
+ - Oj is now thread safe for all functions.
 
 ## <a name="description">Description</a>
 

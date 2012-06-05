@@ -28,6 +28,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <pthread.h> // TBD LOCK
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -157,6 +158,9 @@ classname2class(const char *name, ParseInfo pi) {
     VALUE	*slot;
     int		auto_define = (Yes == pi->options->auto_define);
 
+#ifdef SAFE_CACHE
+    pthread_mutex_lock(&oj_cache_mutex);
+#endif
     if (Qundef == (clas = oj_cache_get(oj_class_cache, name, &slot))) {
 	char		class_name[1024];
 	char		*s;
@@ -183,6 +187,9 @@ classname2class(const char *name, ParseInfo pi) {
 	    *slot = clas;
 	}
     }
+#ifdef SAFE_CACHE
+    pthread_mutex_unlock(&oj_cache_mutex);
+#endif
     return clas;
 }
 
@@ -459,6 +466,9 @@ read_obj(ParseInfo pi) {
 		    VALUE	*slot;
 		    ID		var_id;
 
+#ifdef SAFE_CACHE
+		    pthread_mutex_lock(&oj_cache_mutex);
+#endif
 		    if (Qundef == (var_id = oj_cache_get(oj_attr_cache, ks, &slot))) {
 			char	attr[1024];
 
@@ -472,6 +482,9 @@ read_obj(ParseInfo pi) {
 			var_id = rb_intern(attr);
 			*slot = var_id;
 		    }
+#ifdef SAFE_CACHE
+		    pthread_mutex_unlock(&oj_cache_mutex);
+#endif
 		    rb_ivar_set(obj, var_id, val);
 		} else if (T_HASH == obj_type) {
 		    if (Yes == pi->options->sym_key) {

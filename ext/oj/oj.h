@@ -46,6 +46,7 @@ extern "C" {
 #endif
 
 #include "stdint.h"
+#include <pthread.h> // for SAFE_CACHE
 
 #include "cache.h"
 
@@ -161,6 +162,8 @@ extern ID	oj_tv_usec_id;
 
 extern Cache	oj_class_cache;
 extern Cache	oj_attr_cache;
+
+extern pthread_mutex_t	oj_cache_mutex;
 
 #if defined(__cplusplus)
 #if 0
