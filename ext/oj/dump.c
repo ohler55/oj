@@ -938,6 +938,9 @@ dump_data_comp(VALUE obj, Out out) {
 
     if (rb_cTime == clas) {
 	dump_time(obj, out);
+	// TBD BigDecimal
+	// TBD Date
+	// TBD DateTime
     } else {
 	dump_nil(out);
     }

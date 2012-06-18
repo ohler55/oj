@@ -6,6 +6,7 @@ $: << File.join(File.dirname(__FILE__), "../ext")
 
 require 'test/unit'
 require 'stringio'
+require 'bigdecimal'
 require 'oj'
 
 $ruby = RUBY_DESCRIPTION.split(' ')[0]
@@ -210,6 +211,7 @@ class Juice < ::Test::Unit::TestCase
   def test_symbol_strict
     begin
       json = Oj.dump(:abc, :mode => :strict)
+      assert(false)
     rescue Exception => e
       assert(true)
     end
@@ -234,6 +236,7 @@ class Juice < ::Test::Unit::TestCase
     t = Time.local(2012, 1, 5, 23, 58, 7)
     begin
       json = Oj.dump(t, :mode => :strict)
+      assert(false)
     rescue Exception => e
       assert(true)
     end
@@ -254,10 +257,11 @@ class Juice < ::Test::Unit::TestCase
     dump_and_load(t, false)
   end
 
-# Class
+  # Class
   def test_class_strict
     begin
       json = Oj.dump(Juice, :mode => :strict)
+      assert(false)
     rescue Exception => e
       assert(true)
     end
@@ -275,7 +279,7 @@ class Juice < ::Test::Unit::TestCase
     dump_and_load(Juice, false)
   end
 
-# Hash
+  # Hash
   def test_hash
     Oj.default_options = { :mode => :strict }
     dump_and_load({}, false)
@@ -285,6 +289,7 @@ class Juice < ::Test::Unit::TestCase
   def test_non_str_hash_strict
     begin
       json = Oj.dump({ 1 => true, 0 => false }, :mode => :strict)
+      assert(false)
     rescue Exception => e
       assert(true)
     end
@@ -292,6 +297,7 @@ class Juice < ::Test::Unit::TestCase
   def test_non_str_hash_null
     begin
       json = Oj.dump({ 1 => true, 0 => false }, :mode => :null)
+      assert(false)
     rescue Exception => e
       assert(true)
     end
@@ -299,6 +305,7 @@ class Juice < ::Test::Unit::TestCase
   def test_non_str_hash_compat
     begin
       json = Oj.dump({ 1 => true, 0 => false }, :mode => :compat)
+      assert(false)
     rescue Exception => e
       assert(e.message.include?('Fixnum'))
       assert(true)
@@ -326,6 +333,7 @@ class Juice < ::Test::Unit::TestCase
     obj = Jeez.new(true, 58)
     begin
       json = Oj.dump(obj, :mode => :strict)
+      assert(false)
     rescue Exception => e
       assert(true)
     end
@@ -371,6 +379,7 @@ class Juice < ::Test::Unit::TestCase
     obj = Jazz.new(true, 58)
     begin
       json = Oj.dump(obj, :mode => :strict)
+      assert(false)
     rescue Exception => e
       assert(true)
     end
@@ -406,6 +415,7 @@ class Juice < ::Test::Unit::TestCase
     obj = Orange.new(true, 58)
     begin
       json = Oj.dump(obj, :mode => :strict)
+      assert(false)
     rescue Exception => e
       assert(true)
     end
@@ -457,6 +467,7 @@ class Juice < ::Test::Unit::TestCase
     obj = Jam.new(true, 58)
     begin
       json = Oj.dump(obj, :mode => :strict)
+      assert(false)
     rescue Exception => e
       assert(true)
     end
@@ -496,6 +507,7 @@ class Juice < ::Test::Unit::TestCase
     err = nil
     begin
       raise StandardError.new('A Message')
+      assert(false)
     rescue Exception => e
       err = e
     end
@@ -515,6 +527,7 @@ class Juice < ::Test::Unit::TestCase
   def test_range_strict
     begin
       json = Oj.dump(1..7, :mode => :strict)
+      assert(false)
     rescue Exception => e
       assert(true)
     end
@@ -546,6 +559,54 @@ class Juice < ::Test::Unit::TestCase
       dump_and_load(1...7, false)
     end
   end
+
+  # BigNum
+  def test_bignum_strict
+    json = Oj.dump(7 ** 55, :mode => :strict)
+    assert_equal('30226801971775055948247051683954096612865741943', json)
+  end
+  def test_bignum_null
+    json = Oj.dump(7 ** 55, :mode => :null)
+    assert_equal('30226801971775055948247051683954096612865741943', json)
+  end
+  def test_bignum_compat
+    json = Oj.dump(7 ** 55, :mode => :compat)
+    b = Oj.load(json, :mode => :strict)
+    assert_equal(30226801971775055948247051683954096612865741943, b)
+  end
+  def test_bignum_object
+    dump_and_load(7 ** 55, false)
+  end
+
+  # BigDecimal
+  def test_bigdecimal_strict
+    begin
+      json = Oj.dump(BigDecimal.new('3.14159265358979323846'), :mode => :strict)
+      assert(false)
+    rescue Exception => e
+      assert(true)
+    end
+  end
+  def test_bigdecimal_null
+    json = Oj.dump(BigDecimal.new('3.14159265358979323846'), :mode => :null)
+    assert_equal('null', json)
+  end
+  def test_bigdecimal_compat
+    begin
+      json = Oj.dump(BigDecimal.new('3.14159265358979323846'), :mode => :compat)
+      assert(false)
+    rescue Exception => e
+      assert(true)
+    end
+  end
+  def test_bigdecimal_object
+    dump_and_load(BigDecimal.new('3.14159265358979323846'), false)
+    dump_and_load(BigDecimal.new('Infinity'), false)
+    dump_and_load(BigDecimal.new('-Infinity'), false)
+  end
+
+  # TBD Date
+  # TBD DateTime
 
   # autodefine Oj::Bag
   def test_bag

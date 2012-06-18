@@ -28,11 +28,7 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
  - Added check for circular on loading of circular dumped JSON.
 
-#### old notes
-
- - Added json.rb to $" in mimic mode to avoid pulling in the real JSON by accident.
-
- - Oj is now thread safe for all functions.
+ - 
 
 ## <a name="description">Description</a>
 
