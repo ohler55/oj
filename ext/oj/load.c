@@ -625,7 +625,7 @@ read_str(ParseInfo pi, int hint) {
 	} else if (ObjectMode == pi->options->mode && '^' == *text && '\0' != text[2]) {
 	    char	c1 = text[1];
 
-	    if ('r' == c1) {
+	    if ('r' == c1 && 0 != pi->circ_array) {
 		obj = circ_array_get(pi->circ_array, read_ulong(text + 2, pi));
 	    } else if ('i' == c1) {
 		obj = ULONG2NUM(read_ulong(text + 2, pi));
