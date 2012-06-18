@@ -24,7 +24,11 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 1.2.10
+### Release 1.2.11
+
+ - Added check for circular on loading of circular dumped JSON.
+
+#### old notes
 
  - Added json.rb to $" in mimic mode to avoid pulling in the real JSON by accident.
 
