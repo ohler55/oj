@@ -60,14 +60,18 @@ ID	oj_read_id;
 ID	oj_string_id;
 ID	oj_to_hash_id;
 ID	oj_to_json_id;
+ID	oj_to_s_id;
 ID	oj_to_sym_id;
-ID	oj_write_id;
+ID	oj_to_time_id;
 ID	oj_tv_nsec_id;
 ID	oj_tv_sec_id;
 ID	oj_tv_usec_id;
+ID	oj_write_id;
 
 VALUE	oj_bag_class;
+VALUE	oj_bigdecimal_class;
 VALUE	oj_date_class;
+VALUE	oj_datetime_class;
 VALUE	oj_stringio_class;
 VALUE	oj_struct_class;
 VALUE	oj_time_class;
@@ -771,6 +775,7 @@ void Init_oj() {
 
     rb_require("time");
     rb_require("date");
+    rb_require("bigdecimal");
     rb_require("stringio");
 
     rb_define_module_function(Oj, "default_options", get_def_opts, 0);
@@ -790,16 +795,20 @@ void Init_oj() {
     oj_string_id = rb_intern("string");
     oj_to_hash_id = rb_intern("to_hash");
     oj_to_json_id = rb_intern("to_json");
+    oj_to_s_id = rb_intern("to_s");
     oj_to_sym_id = rb_intern("to_sym");
-    oj_write_id = rb_intern("write");
+    oj_to_time_id = rb_intern("to_time");
     oj_tv_nsec_id = rb_intern("tv_nsec");
     oj_tv_sec_id = rb_intern("tv_sec");
     oj_tv_usec_id = rb_intern("tv_usec");
+    oj_write_id = rb_intern("write");
 
     oj_bag_class = rb_const_get_at(Oj, rb_intern("Bag"));
     oj_struct_class = rb_const_get(rb_cObject, rb_intern("Struct"));
     oj_time_class = rb_const_get(rb_cObject, rb_intern("Time"));
     oj_date_class = rb_const_get(rb_cObject, rb_intern("Date"));
+    oj_datetime_class = rb_const_get(rb_cObject, rb_intern("DateTime"));
+    oj_bigdecimal_class = rb_const_get(rb_cObject, rb_intern("BigDecimal"));
     oj_stringio_class = rb_const_get(rb_cObject, rb_intern("StringIO"));
 
     ascii_only_sym = ID2SYM(rb_intern("ascii_only"));	rb_gc_register_address(&ascii_only_sym);

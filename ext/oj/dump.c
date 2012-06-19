@@ -67,6 +67,7 @@ static void	dump_false(Out out);
 static void	dump_fixnum(VALUE obj, Out out);
 static void	dump_bignum(VALUE obj, Out out);
 static void	dump_float(VALUE obj, Out out);
+static void	dump_raw(const char *str, size_t cnt, Out out);
 static void	dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out);
 static void	dump_hex(u_char c, Out out);
 static void	dump_str_comp(VALUE obj, Out out);
@@ -221,6 +222,16 @@ dump_hex(u_char c, Out out) {
     *out->cur++ = hex_chars[d];
     d = c & 0x0F;
     *out->cur++ = hex_chars[d];
+}
+
+static void
+dump_raw(const char *str, size_t cnt, Out out) {
+    if (out->end - out->cur <= (long)cnt + 10) {
+	grow(out, cnt + 10);
+    }
+    memcpy(out->cur, str, cnt);
+    out->cur += cnt;
+    *out->cur = '\0';
 }
 
 const char*
@@ -635,6 +646,7 @@ dump_array(VALUE a, int depth, Out out) {
 	    }
 	    if (0 < out->opts->dump_opts->indent_size) {
 		int	i;
+
 		for (i = depth; 0 < i; i--) {
 		    strcpy(out->cur, out->opts->dump_opts->indent);
 		    out->cur += out->opts->dump_opts->indent_size;
@@ -934,22 +946,36 @@ dump_time(VALUE obj, Out out) {
 
 static void
 dump_data_comp(VALUE obj, Out out) {
-    VALUE   clas = rb_obj_class(obj);
+    VALUE	clas = rb_obj_class(obj);
 
     if (rb_cTime == clas) {
 	dump_time(obj, out);
-	// TBD BigDecimal
-	// TBD Date
-	// TBD DateTime
+    } else if (oj_date_class == clas || oj_datetime_class == clas) {
+	dump_time(rb_funcall(obj, oj_to_time_id, 0), out);
     } else {
-	dump_nil(out);
+	VALUE	rstr;
+
+	if (oj_bigdecimal_class == clas) {
+	    rstr = rb_funcall(obj, oj_to_s_id, 1, rb_intern("E"));
+	    dump_raw(StringValuePtr(rstr), RSTRING_LEN(rstr), out);
+	} else {
+	    rstr = rb_any_to_s(obj);
+	    dump_cstr(StringValuePtr(rstr), RSTRING_LEN(rstr), 0, 0, out);
+	}
+	//dump_nil(out);
     }
 }
 
 static void
 dump_data_obj(VALUE obj, Out out) {
-    VALUE   clas = rb_obj_class(obj);
+    VALUE	clas = rb_obj_class(obj);
+    char	type = 't';
 
+    if (oj_date_class == clas || oj_datetime_class == clas) {
+	type = (oj_date_class == clas) ? 'd' : 'T';
+	clas = rb_cTime;
+	obj = rb_funcall(obj, oj_to_time_id, 0);
+    }
     if (rb_cTime == clas) {
 	if (out->end - out->cur <= 6) {
 	    grow(out, 6);
@@ -957,7 +983,7 @@ dump_data_obj(VALUE obj, Out out) {
 	*out->cur++ = '{';
 	*out->cur++ = '"';
 	*out->cur++ = '^';
-	*out->cur++ = 't';
+	*out->cur++ = type;
 	*out->cur++ = '"';
 	*out->cur++ = ':';
 	dump_time(obj, out);
@@ -990,7 +1016,21 @@ dump_obj_comp(VALUE obj, int depth, Out out) {
 	memcpy(out->cur, s, len);
 	out->cur += len;
     } else {
+#if DATE_IS_DATA
 	dump_obj_attrs(obj, 0, 0, depth, out);
+#else
+	VALUE	clas = rb_obj_class(obj);
+
+	if (oj_date_class == clas || oj_datetime_class == clas) {
+#if HAS_TO_TIME
+	    dump_time(rb_funcall(obj, oj_to_time_id, 0), out);
+#else
+	    dump_time(rb_funcall(rb_cTime, rb_intern("parse"), 1, rb_funcall(obj, oj_to_s_id, 0)), out);
+#endif
+	} else {
+	    dump_obj_attrs(obj, 0, 0, depth, out);
+	}
+#endif
     }
     *out->cur = '\0';
 }
@@ -1000,7 +1040,34 @@ dump_obj_obj(VALUE obj, int depth, Out out) {
     long	id = check_circular(obj, out);
 
     if (0 <= id) {
+#if DATE_IS_DATA
 	dump_obj_attrs(obj, 1, id, depth, out);
+#else
+	VALUE	clas = rb_obj_class(obj);
+
+	if (oj_date_class == clas || oj_datetime_class == clas) {
+	    char	type = (oj_date_class == clas) ? 'd' : 'T';
+
+	    if (out->end - out->cur <= 6) {
+		grow(out, 6);
+	    }
+	    *out->cur++ = '{';
+	    *out->cur++ = '"';
+	    *out->cur++ = '^';
+	    *out->cur++ = type;
+	    *out->cur++ = '"';
+	    *out->cur++ = ':';
+#if HAS_TO_TIME
+	    dump_time(rb_funcall(obj, oj_to_time_id, 0), out);
+#else
+	    dump_time(rb_funcall(rb_cTime, rb_intern("parse"), 1, rb_funcall(obj, oj_to_s_id, 0)), out);
+#endif
+	    *out->cur++ = '}';
+	    *out->cur = '\0';
+	} else {
+	    dump_obj_attrs(obj, 1, id, depth, out);
+	}
+#endif
     }
 }
 
@@ -1094,7 +1161,9 @@ dump_obj_attrs(VALUE obj, int with_class, slot_t id, int depth, Out out) {
 	out->depth = depth + 1;
 #if HAS_IVAR_HELPERS
 	rb_ivar_foreach(obj, dump_attr_cb, (VALUE)out);
-	out->cur--; // backup to overwrite last comma
+	if (',' == *(out->cur - 1)) {
+	    out->cur--; // backup to overwrite last comma
+	}
 #else
 	size = d2 * out->indent + 1;
 	for (i = cnt; 0 < i; i--, np++) {

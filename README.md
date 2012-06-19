@@ -24,11 +24,15 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 1.2.11
+### Release 1.2.10
 
  - Added check for circular on loading of circular dumped JSON.
 
- - 
+ - Added support for direct serialization of BigDecimal, Date, and DateTime.
+
+ - Added json.rb to $" in mimic mode to avoid pulling in the real JSON by accident.
+
+ - Oj is now thread safe for all functions.
 
 ## <a name="description">Description</a>
 
@@ -354,9 +358,10 @@ excaping the first character so that it appears as `\u005e` or `\u003a` instead 
 class. The sequence `{"^c":"Oj::Bag"}` is read as the Oj::Bag class.
 
 6. A `"^t"` JSON Object key indicates the value should be converted to a Ruby
-Time. The sequence `{"^t":1325775487.000000}` is read as Jan 5, 2012 at 23:58:07.
+Time. The sequence `{"^t":1325775487.000000}` is read as Jan 5, 2012 at
+23:58:07. Similarly, `"^d"` is for a Date and `"^T"` is for a DateTime.
 
-87. A `"^o"` JSON Object key indicates the value should be converted to a Ruby
+7. A `"^o"` JSON Object key indicates the value should be converted to a Ruby
 Object. The first entry in the JSON Object must be a class with the `"^o"`
 key. After that each entry is treated as a variable of the Object where the
 key is the variable name without the preceeding `@`. An example is

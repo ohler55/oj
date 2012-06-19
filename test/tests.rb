@@ -6,6 +6,7 @@ $: << File.join(File.dirname(__FILE__), "../ext")
 
 require 'test/unit'
 require 'stringio'
+require 'date'
 require 'bigdecimal'
 require 'oj'
 
@@ -592,21 +593,69 @@ class Juice < ::Test::Unit::TestCase
     assert_equal('null', json)
   end
   def test_bigdecimal_compat
+    orig = BigDecimal.new('3.14159265358979323846')
+    json = Oj.dump(orig, :mode => :compat)
+    bg = Oj.load(json, :mode => :compat)
+    assert_equal(orig, bg)
+  end
+  def test_bigdecimal_object
+    dump_and_load(BigDecimal.new('3.14159265358979323846'), false)
+    # Infinity is the same for Float and BigDecimal
+    json = Oj.dump(BigDecimal.new('Infinity'), :mode => :compat)
+    assert_equal('Infinity', json)
+    json = Oj.dump(BigDecimal.new('-Infinity'), :mode => :compat)
+    assert_equal('-Infinity', json)
+  end
+
+  # TBD Date
+  def test_date_strict
     begin
-      json = Oj.dump(BigDecimal.new('3.14159265358979323846'), :mode => :compat)
+      json = Oj.dump(Date.new(2012, 6, 19), :mode => :strict)
       assert(false)
     rescue Exception => e
       assert(true)
     end
   end
-  def test_bigdecimal_object
-    dump_and_load(BigDecimal.new('3.14159265358979323846'), false)
-    dump_and_load(BigDecimal.new('Infinity'), false)
-    dump_and_load(BigDecimal.new('-Infinity'), false)
+  def test_date_null
+    json = Oj.dump(Date.new(2012, 6, 19), :mode => :null)
+    assert_equal('null', json)
+  end
+  def test_date_compat
+    orig = Date.new(2012, 6, 19)
+    json = Oj.dump(orig, :mode => :compat)
+    f = Oj.load(json, :mode => :compat)
+    t = Time.at(f)
+    assert_equal(orig, Date.new(t.year, t.month, t.day))
+  end
+  def test_date_object
+    dump_and_load(Date.new(2012, 6, 19), false)
   end
 
-  # TBD Date
   # TBD DateTime
+  def test_datetime_strict
+    begin
+      json = Oj.dump(DateTime.new(2012, 6, 19, 20, 19, 27), :mode => :strict)
+      assert(false)
+    rescue Exception => e
+      assert(true)
+    end
+  end
+  def test_datetime_null
+    json = Oj.dump(DateTime.new(2012, 6, 19, 20, 19, 27), :mode => :null)
+    assert_equal('null', json)
+  end
+  def test_datetime_compat
+    orig = DateTime.new(2012, 6, 19, 20, 19, 27)
+    json = Oj.dump(orig, :mode => :compat)
+    f = Oj.load(json, :mode => :compat)
+    t = Time.at(f)
+    t = t.getutc()
+    assert_equal(orig, DateTime.new(t.year, t.month, t.mday, t.hour, t.min, t.sec))
+    #assert_equal(orig, Time.at(f).to_datetime)
+  end
+  def test_datetime_object
+    dump_and_load(DateTime.new(2012, 6, 19), false)
+  end
 
   # autodefine Oj::Bag
   def test_bag

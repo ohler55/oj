@@ -410,6 +410,35 @@ read_obj(ParseInfo pi) {
 		    obj = read_next(pi, TIME_HINT); // raises if can not convert to Time
 		    key = Qundef;
 		    break;
+		case 'd': // Date
+		    obj = read_next(pi, TIME_HINT); // raises if can not convert to Time
+		    // TBD change to utc for some rubies (rbx-1.2.4, rbx-2.0.0-dev)
+#if HAS_TO_TIME
+		    obj = rb_funcall(obj, rb_intern("to_date"), 0);
+#else
+		    obj = rb_funcall(oj_date_class, rb_intern("new"), 3,
+				     rb_funcall(obj, rb_intern("year"), 0),
+				     rb_funcall(obj, rb_intern("month"), 0),
+				     rb_funcall(obj, rb_intern("mday"), 0));
+#endif
+		    key = Qundef;
+		    break;
+		case 'T': // DateTime
+		    obj = read_next(pi, TIME_HINT); // raises if can not convert to Time
+		    obj = rb_funcall(obj, rb_intern("getutc"), 0);
+#if HAS_TO_TIME
+		    obj = rb_funcall(obj, rb_intern("to_datetime"), 0);
+#else
+		    obj = rb_funcall(oj_datetime_class, rb_intern("new"), 6,
+				     rb_funcall(obj, rb_intern("year"), 0),
+				     rb_funcall(obj, rb_intern("month"), 0),
+				     rb_funcall(obj, rb_intern("mday"), 0),
+				     rb_funcall(obj, rb_intern("hour"), 0),
+				     rb_funcall(obj, rb_intern("min"), 0),
+				     rb_funcall(obj, rb_intern("sec"), 0));
+#endif
+		    key = Qundef;
+		    break;
 		case 'c': // Class
 		    obj = read_next(pi, T_CLASS);
 		    key = Qundef;
@@ -432,6 +461,7 @@ read_obj(ParseInfo pi) {
 		    obj_type = T_STRUCT;
 		    key = Qundef;
 		    break;
+		    // TBD d for Date, T for DateTime
 		default:
 		    // handle later
 		    break;
@@ -704,6 +734,9 @@ read_num(ParseInfo pi) {
 	for (; '0' <= *pi->s && *pi->s <= '9'; pi->s++) {
 	    a = a * 10 + (*pi->s - '0');
 	    div *= 10;
+	    if (NUM_MAX <= div) {
+		big = 1;
+	    }
 	}
     }
     if ('e' == *pi->s || 'E' == *pi->s) {
@@ -716,6 +749,9 @@ read_num(ParseInfo pi) {
 	}
 	for (; '0' <= *pi->s && *pi->s <= '9'; pi->s++) {
 	    e = e * 10 + (*pi->s - '0');
+	    if (NUM_MAX <= e) {
+		big = 1;
+	    }
 	}
     }
     if (0 == e && 0 == a && 1 == div) {
@@ -734,22 +770,33 @@ read_num(ParseInfo pi) {
 	    }
 	    return LONG2NUM(n);
 	}
-    } else {
-	double	d = (double)n + (double)a / (double)div;
+    } else { // decimal
+	if (big) {
+	    char	c = *pi->s;
+	    VALUE	num;
+	
+	    *pi->s = '\0';
+	    num = rb_funcall(oj_bigdecimal_class, rb_intern("new"), 1, rb_str_new2(start));
+	    *pi->s = c;
 
-	if (neg) {
-	    d = -d;
-	}
-	if (1 < big) {
-	    e += big - 1;
-	}
-	if (0 != e) {
-	    if (eneg) {
-		e = -e;
+	    return num;
+	} else {
+	    double	d = (double)n + (double)a / (double)div;
+
+	    if (neg) {
+		d = -d;
 	    }
-	    d *= pow(10.0, e);
+	    if (1 < big) {
+		e += big - 1;
+	    }
+	    if (0 != e) {
+		if (eneg) {
+		    e = -e;
+		}
+		d *= pow(10.0, e);
+	    }
+	    return rb_float_new(d);
 	}
-	return rb_float_new(d);
     }
 }
 

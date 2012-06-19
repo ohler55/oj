@@ -141,7 +141,9 @@ extern rb_encoding	*oj_utf8_encoding;
 #endif
 
 extern VALUE	oj_bag_class;
+extern VALUE	oj_bigdecimal_class;
 extern VALUE	oj_date_class;
+extern VALUE	oj_datetime_class;
 extern VALUE	oj_doc_class;
 extern VALUE	oj_stringio_class;
 extern VALUE	oj_struct_class;
@@ -155,7 +157,9 @@ extern ID	oj_json_create_id;
 extern ID	oj_string_id;
 extern ID	oj_to_hash_id;
 extern ID	oj_to_json_id;
+extern ID	oj_to_s_id;
 extern ID	oj_to_sym_id;
+extern ID	oj_to_time_id;
 extern ID	oj_tv_nsec_id;
 extern ID	oj_tv_sec_id;
 extern ID	oj_tv_usec_id;

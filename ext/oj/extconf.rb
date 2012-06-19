@@ -24,6 +24,8 @@ dflags = {
   'HAS_IVAR_HELPERS' => ('ruby' == type && ('1' == version[0] && '9' == version[1]) || '2' <= version[0]) ? 1 : 0,
   'HAS_PROC_WITH_BLOCK' => ('ruby' == type && ('1' == version[0] && '9' == version[1]) || '2' <= version[0]) ? 1 : 0,
   'HAS_TOP_LEVEL_ST_H' => ('ree' == type || ('ruby' == type &&  '1' == version[0] && '8' == version[1])) ? 1 : 0,
+  'DATE_IS_DATA' => ('ruby' == type && '1' == version[0] && '9' == version[1] && '3' <= version[0]) ? 1 : 0,
+  'HAS_TO_TIME' => ('ruby' == type && '1' == version[0] && '9' == version[1]) ? 1 : 0,
   'SAFE_CACHE' => nil,
 }
 # This is a monster hack to get around issues with 1.9.3-p0 on CentOS 5.4. SO
