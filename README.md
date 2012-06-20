@@ -28,11 +28,13 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
  - Added check for circular on loading of circular dumped JSON.
 
- - Added support for direct serialization of BigDecimal, Date, and DateTime.
+ - Added support for direct serialization of BigDecimal, Rational, Date, and DateTime.
 
  - Added json.rb to $" in mimic mode to avoid pulling in the real JSON by accident.
 
  - Oj is now thread safe for all functions.
+
+ - The / (solidus) character is now placed in strings without being escaped.
 
 ## <a name="description">Description</a>
 
@@ -362,13 +364,15 @@ class. The sequence `{"^c":"Oj::Bag"}` is read as the Oj::Bag class.
 
 6. A `"^t"` JSON Object key indicates the value should be converted to a Ruby
 Time. The sequence `{"^t":1325775487.000000}` is read as Jan 5, 2012 at
-23:58:07. Similarly, `"^d"` is for a Date and `"^T"` is for a DateTime.
+23:58:07.
 
 7. A `"^o"` JSON Object key indicates the value should be converted to a Ruby
 Object. The first entry in the JSON Object must be a class with the `"^o"`
 key. After that each entry is treated as a variable of the Object where the
 key is the variable name without the preceeding `@`. An example is
-`{"^o":"Oj::Bag","x":58,"y":"marbles"}`.
+`{"^o":"Oj::Bag","x":58,"y":"marbles"}`. `"^O"` is the same except that it is
+for built in or odd classes that don't obey the normal Ruby rules. Examples
+are Rational, Date, and DateTime.
 
 8. A `"^u"` JSON Object key indicates the value should be converted to a Ruby
 Struct. The first entry in the JSON Object must be a class with the `"^u"`

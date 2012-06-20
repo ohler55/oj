@@ -56,6 +56,7 @@ ID	oj_as_json_id;
 ID	oj_fileno_id;
 ID	oj_instance_variables_id;
 ID	oj_json_create_id;
+ID	oj_new_id;
 ID	oj_read_id;
 ID	oj_string_id;
 ID	oj_to_hash_id;
@@ -70,8 +71,6 @@ ID	oj_write_id;
 
 VALUE	oj_bag_class;
 VALUE	oj_bigdecimal_class;
-VALUE	oj_date_class;
-VALUE	oj_datetime_class;
 VALUE	oj_stringio_class;
 VALUE	oj_struct_class;
 VALUE	oj_time_class;
@@ -122,6 +121,20 @@ struct _Options	oj_default_options = {
 };
 
 static VALUE	define_mimic_json(VALUE self);
+
+static struct _Odd	odds[4]; // bump up if new Odd classes are added
+
+Odd
+oj_get_odd(VALUE clas) {
+    Odd	odd = odds;
+
+    for (; Qundef != odd->clas; odd++) {
+	if (clas == odd->clas) {
+	    return odd;
+	}
+    }
+    return 0;
+}
 
 /* call-seq: default_options() => Hash
  *
@@ -771,6 +784,9 @@ define_mimic_json(VALUE self) {
 }
 
 void Init_oj() {
+    Odd	odd;
+    ID	*idp;
+
     Oj = rb_define_module("Oj");
 
     rb_require("time");
@@ -791,6 +807,7 @@ void Init_oj() {
     oj_fileno_id = rb_intern("fileno");
     oj_instance_variables_id = rb_intern("instance_variables");
     oj_json_create_id = rb_intern("json_create");
+    oj_new_id = rb_intern("new");
     oj_read_id = rb_intern("read");
     oj_string_id = rb_intern("string");
     oj_to_hash_id = rb_intern("to_hash");
@@ -806,8 +823,6 @@ void Init_oj() {
     oj_bag_class = rb_const_get_at(Oj, rb_intern("Bag"));
     oj_struct_class = rb_const_get(rb_cObject, rb_intern("Struct"));
     oj_time_class = rb_const_get(rb_cObject, rb_intern("Time"));
-    oj_date_class = rb_const_get(rb_cObject, rb_intern("Date"));
-    oj_datetime_class = rb_const_get(rb_cObject, rb_intern("DateTime"));
     oj_bigdecimal_class = rb_const_get(rb_cObject, rb_intern("BigDecimal"));
     oj_stringio_class = rb_const_get(rb_cObject, rb_intern("StringIO"));
 
@@ -832,6 +847,48 @@ void Init_oj() {
 
     oj_cache_new(&oj_class_cache);
     oj_cache_new(&oj_attr_cache);
+
+    odd = odds;
+    // Rational
+    idp = odd->attrs;
+    odd->clas = rb_const_get(rb_cObject, rb_intern("Rational"));
+    odd->create_obj = rb_cObject;
+    odd->create_op = rb_intern("Rational");
+    odd->attr_cnt = 2;
+    *idp++ = rb_intern("numerator");
+    *idp++ = rb_intern("denominator");
+    *idp++ = 0;
+    // Date
+    odd++;
+    idp = odd->attrs;
+    odd->clas = rb_const_get(rb_cObject, rb_intern("Date"));
+    odd->create_obj = odd->clas;
+    odd->create_op = oj_new_id;
+    odd->attr_cnt = 4;
+    *idp++ = rb_intern("year");
+    *idp++ = rb_intern("month");
+    *idp++ = rb_intern("day");
+    *idp++ = rb_intern("start");
+    *idp++ = 0;
+    // DateTime
+    odd++;
+    idp = odd->attrs;
+    odd->clas = rb_const_get(rb_cObject, rb_intern("DateTime"));
+    odd->create_obj = odd->clas;
+    odd->create_op = oj_new_id;
+    odd->attr_cnt = 8;
+    *idp++ = rb_intern("year");
+    *idp++ = rb_intern("month");
+    *idp++ = rb_intern("day");
+    *idp++ = rb_intern("hour");
+    *idp++ = rb_intern("min");
+    *idp++ = rb_intern("sec");
+    *idp++ = rb_intern("offset");
+    *idp++ = rb_intern("start");
+    *idp++ = 0;
+    odd++;
+    // The end. bump up the size of odds if a new class is added.
+    odd->clas = Qundef;
 
 #ifdef SAFE_CACHE
     pthread_mutex_init(&oj_cache_mutex, 0);

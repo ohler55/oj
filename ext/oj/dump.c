@@ -83,7 +83,7 @@ static int	hash_cb_object(VALUE key, VALUE value, Out out);
 static void	dump_hash(VALUE obj, int depth, int mode, Out out);
 static void	dump_time(VALUE obj, Out out);
 static void	dump_data_comp(VALUE obj, Out out);
-static void	dump_data_obj(VALUE obj, Out out);
+static void	dump_data_obj(VALUE obj, int depth, Out out);
 static void	dump_obj_comp(VALUE obj, int depth, Out out);
 static void	dump_obj_obj(VALUE obj, int depth, Out out);
 #if HAS_RSTRUCT
@@ -93,7 +93,8 @@ static void	dump_struct_obj(VALUE obj, int depth, Out out);
 #if HAS_IVAR_HELPERS
 static int	dump_attr_cb(ID key, VALUE value, Out out);
 #endif
-static void	dump_obj_attrs(VALUE obj, int with_class, slot_t id, int depth, Out out);
+static void	dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out);
+static void	dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out);
 
 static void	grow(Out out, size_t len);
 static size_t	hibit_friendly_size(const u_char *str, size_t len);
@@ -112,7 +113,7 @@ static const char	hex_chars[17] = "0123456789abcdef";
 
 static char	hibit_friendly_chars[256] = "\
 66666666222622666666666666666666\
-11211111111111121111111111111111\
+11211111111111111111111111111111\
 11111111111111111111111111112111\
 11111111111111111111111111111111\
 11111111111111111111111111111111\
@@ -950,32 +951,24 @@ dump_data_comp(VALUE obj, Out out) {
 
     if (rb_cTime == clas) {
 	dump_time(obj, out);
-    } else if (oj_date_class == clas || oj_datetime_class == clas) {
-	dump_time(rb_funcall(obj, oj_to_time_id, 0), out);
     } else {
 	VALUE	rstr;
 
 	if (oj_bigdecimal_class == clas) {
-	    rstr = rb_funcall(obj, oj_to_s_id, 1, rb_intern("E"));
+	    //rstr = rb_funcall(obj, oj_to_s_id, 1, rb_intern("E"));
+	    rstr = rb_funcall(obj, oj_to_s_id, 0);
 	    dump_raw(StringValuePtr(rstr), RSTRING_LEN(rstr), out);
 	} else {
-	    rstr = rb_any_to_s(obj);
+	    rstr = rb_funcall(obj, oj_to_s_id, 0);
 	    dump_cstr(StringValuePtr(rstr), RSTRING_LEN(rstr), 0, 0, out);
 	}
-	//dump_nil(out);
     }
 }
 
 static void
-dump_data_obj(VALUE obj, Out out) {
+dump_data_obj(VALUE obj, int depth, Out out) {
     VALUE	clas = rb_obj_class(obj);
-    char	type = 't';
 
-    if (oj_date_class == clas || oj_datetime_class == clas) {
-	type = (oj_date_class == clas) ? 'd' : 'T';
-	clas = rb_cTime;
-	obj = rb_funcall(obj, oj_to_time_id, 0);
-    }
     if (rb_cTime == clas) {
 	if (out->end - out->cur <= 6) {
 	    grow(out, 6);
@@ -983,14 +976,21 @@ dump_data_obj(VALUE obj, Out out) {
 	*out->cur++ = '{';
 	*out->cur++ = '"';
 	*out->cur++ = '^';
-	*out->cur++ = type;
+	*out->cur++ = 't';
 	*out->cur++ = '"';
 	*out->cur++ = ':';
 	dump_time(obj, out);
 	*out->cur++ = '}';
 	*out->cur = '\0';
     } else {
-	dump_nil(out);
+	VALUE	clas = rb_obj_class(obj);
+	Odd	odd = oj_get_odd(clas);
+
+	if (0 == odd) {
+	    dump_nil(out);
+	} else {
+	    dump_odd(obj, odd, clas, depth + 1, out);
+	}
     }
 }
 
@@ -1016,21 +1016,21 @@ dump_obj_comp(VALUE obj, int depth, Out out) {
 	memcpy(out->cur, s, len);
 	out->cur += len;
     } else {
-#if DATE_IS_DATA
-	dump_obj_attrs(obj, 0, 0, depth, out);
-#else
 	VALUE	clas = rb_obj_class(obj);
 
-	if (oj_date_class == clas || oj_datetime_class == clas) {
-#if HAS_TO_TIME
-	    dump_time(rb_funcall(obj, oj_to_time_id, 0), out);
-#else
-	    dump_time(rb_funcall(rb_cTime, rb_intern("parse"), 1, rb_funcall(obj, oj_to_s_id, 0)), out);
-#endif
+	if (oj_bigdecimal_class == clas) {
+	    VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+
+	    dump_raw(StringValuePtr(rstr), RSTRING_LEN(rstr), out);
 	} else {
-	    dump_obj_attrs(obj, 0, 0, depth, out);
+	    Odd	odd = oj_get_odd(clas);
+
+	    if (0 == odd) {
+		dump_obj_attrs(obj, 0, 0, depth, out);
+	    } else {
+		dump_odd(obj, odd, 0, depth + 1, out);
+	    }
 	}
-#endif
     }
     *out->cur = '\0';
 }
@@ -1040,34 +1040,14 @@ dump_obj_obj(VALUE obj, int depth, Out out) {
     long	id = check_circular(obj, out);
 
     if (0 <= id) {
-#if DATE_IS_DATA
-	dump_obj_attrs(obj, 1, id, depth, out);
-#else
 	VALUE	clas = rb_obj_class(obj);
+	Odd	odd = oj_get_odd(clas);
 
-	if (oj_date_class == clas || oj_datetime_class == clas) {
-	    char	type = (oj_date_class == clas) ? 'd' : 'T';
-
-	    if (out->end - out->cur <= 6) {
-		grow(out, 6);
-	    }
-	    *out->cur++ = '{';
-	    *out->cur++ = '"';
-	    *out->cur++ = '^';
-	    *out->cur++ = type;
-	    *out->cur++ = '"';
-	    *out->cur++ = ':';
-#if HAS_TO_TIME
-	    dump_time(rb_funcall(obj, oj_to_time_id, 0), out);
-#else
-	    dump_time(rb_funcall(rb_cTime, rb_intern("parse"), 1, rb_funcall(obj, oj_to_s_id, 0)), out);
-#endif
-	    *out->cur++ = '}';
-	    *out->cur = '\0';
+	if (0 == odd) {
+	    dump_obj_attrs(obj, clas, id, depth, out);
 	} else {
-	    dump_obj_attrs(obj, 1, id, depth, out);
+	    dump_odd(obj, odd, clas, depth + 1, out);
 	}
-#endif
     }
 }
 
@@ -1103,7 +1083,7 @@ dump_attr_cb(ID key, VALUE value, Out out) {
 #endif
 
 static void
-dump_obj_attrs(VALUE obj, int with_class, slot_t id, int depth, Out out) {
+dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
     size_t	size;
     int		d2 = depth + 1;
 
@@ -1111,8 +1091,8 @@ dump_obj_attrs(VALUE obj, int with_class, slot_t id, int depth, Out out) {
 	grow(out, 2);
     }
     *out->cur++ = '{';
-    if (with_class) {
-	const char	*class_name = rb_class2name(rb_obj_class(obj));
+    if (0 != clas) {
+	const char	*class_name = rb_class2name(clas);
 	int		clen = (int)strlen(class_name);
 
 	size = d2 * out->indent + clen + 10;
@@ -1155,7 +1135,7 @@ dump_obj_attrs(VALUE obj, int with_class, slot_t id, int depth, Out out) {
 
 	cnt = (int)RARRAY_LEN(vars);
 #endif
-	if (with_class && 0 < cnt) {
+	if (0 != clas && 0 < cnt) {
 	    *out->cur++ = ',';
 	}
 	out->depth = depth + 1;
@@ -1270,6 +1250,56 @@ dump_struct_obj(VALUE obj, int depth, Out out) {
 #endif
 
 static void
+dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
+    ID		*idp;
+    VALUE	v;
+    const char	*name;
+    size_t	size;
+    int		d2 = depth + 1;
+
+    if (out->end - out->cur <= 2) {
+	grow(out, 2);
+    }
+    *out->cur++ = '{';
+    if (0 != clas) {
+	const char	*class_name = rb_class2name(clas);
+	int		clen = (int)strlen(class_name);
+
+	size = d2 * out->indent + clen + 10;
+	if (out->end - out->cur <= (long)size) {
+	    grow(out, size);
+	}
+	fill_indent(out, d2);
+	*out->cur++ = '"';
+	*out->cur++ = '^';
+	*out->cur++ = 'O';
+	*out->cur++ = '"';
+	*out->cur++ = ':';
+	dump_cstr(class_name, clen, 0, 0, out);
+	*out->cur++ = ',';
+    }
+    size = d2 * out->indent + 1;
+    for (idp = odd->attrs; 0 != *idp; idp++) {
+	if (out->end - out->cur <= (long)size) {
+	    grow(out, size);
+	}
+	name = rb_id2name(*idp);
+	v = rb_funcall(obj, *idp, 0);
+	fill_indent(out, d2);
+	dump_cstr(name, strlen(name), 0, 0, out);
+	*out->cur++ = ':';
+	dump_val(v, d2, out);
+	if (out->end - out->cur <= 2) {
+	    grow(out, 2);
+	}
+	*out->cur++ = ',';
+    }
+    out->cur--;
+    *out->cur++ = '}';
+    *out->cur = '\0';
+}
+
+static void
 raise_strict(VALUE obj) {
     rb_raise(rb_eTypeError, "Failed to dump %s Object to JSON in strict mode.\n", rb_class2name(rb_obj_class(obj)));
 }
@@ -1312,6 +1342,9 @@ dump_val(VALUE obj, int depth, Out out) {
 	default:		dump_class_obj(obj, out);	break;
 	}
 	break;
+#if (defined T_RATIONAL && defined RRATIONAL)
+    case T_RATIONAL:
+#endif
     case T_OBJECT:
 	switch (out->opts->mode) {
 	case StrictMode:	raise_strict(obj);		break;
@@ -1327,7 +1360,7 @@ dump_val(VALUE obj, int depth, Out out) {
 	case NullMode:		dump_nil(out);			break;
 	case CompatMode:	dump_data_comp(obj, out);	break;
 	case ObjectMode:
-	default:		dump_data_obj(obj, out);	break;
+	default:		dump_data_obj(obj, depth, out);	break;
 	}
 	break;
 #if HAS_RSTRUCT
@@ -1343,9 +1376,6 @@ dump_val(VALUE obj, int depth, Out out) {
 #endif
 #if (defined T_COMPLEX && defined RCOMPLEX)
     case T_COMPLEX:
-#endif
-#if (defined T_RATIONAL && defined RRATIONAL)
-    case T_RATIONAL:
 #endif
     case T_REGEXP:
 	switch (out->opts->mode) {

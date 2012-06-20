@@ -6,7 +6,7 @@
 - next
 
  - finish implementing BigDecimal for all rubies
- - fix Date loading with RBX
+  - jruby 1.6.7 has problems
 
 
 

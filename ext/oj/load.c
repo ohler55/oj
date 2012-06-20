@@ -377,6 +377,9 @@ read_obj(ParseInfo pi) {
     int		obj_type = T_NONE;
     const char	*json_class_name = 0;
     Mode	mode = pi->options->mode;
+    Odd		odd = 0;
+    VALUE	odd_args[MAX_ODD_ARGS];
+    VALUE	*vp;
     
     pi->s++;
     next_non_white(pi);
@@ -410,35 +413,6 @@ read_obj(ParseInfo pi) {
 		    obj = read_next(pi, TIME_HINT); // raises if can not convert to Time
 		    key = Qundef;
 		    break;
-		case 'd': // Date
-		    obj = read_next(pi, TIME_HINT); // raises if can not convert to Time
-		    // TBD change to utc for some rubies (rbx-1.2.4, rbx-2.0.0-dev)
-#if HAS_TO_TIME
-		    obj = rb_funcall(obj, rb_intern("to_date"), 0);
-#else
-		    obj = rb_funcall(oj_date_class, rb_intern("new"), 3,
-				     rb_funcall(obj, rb_intern("year"), 0),
-				     rb_funcall(obj, rb_intern("month"), 0),
-				     rb_funcall(obj, rb_intern("mday"), 0));
-#endif
-		    key = Qundef;
-		    break;
-		case 'T': // DateTime
-		    obj = read_next(pi, TIME_HINT); // raises if can not convert to Time
-		    obj = rb_funcall(obj, rb_intern("getutc"), 0);
-#if HAS_TO_TIME
-		    obj = rb_funcall(obj, rb_intern("to_datetime"), 0);
-#else
-		    obj = rb_funcall(oj_datetime_class, rb_intern("new"), 6,
-				     rb_funcall(obj, rb_intern("year"), 0),
-				     rb_funcall(obj, rb_intern("month"), 0),
-				     rb_funcall(obj, rb_intern("mday"), 0),
-				     rb_funcall(obj, rb_intern("hour"), 0),
-				     rb_funcall(obj, rb_intern("min"), 0),
-				     rb_funcall(obj, rb_intern("sec"), 0));
-#endif
-		    key = Qundef;
-		    break;
 		case 'c': // Class
 		    obj = read_next(pi, T_CLASS);
 		    key = Qundef;
@@ -456,12 +430,21 @@ read_obj(ParseInfo pi) {
 		    obj_type = T_OBJECT;
 		    key = Qundef;
 		    break;
+		case 'O': // Odd class
+		    if (0 == (odd = oj_get_odd(read_next(pi, T_CLASS)))) {
+			raise_error("Not a valid build in class.", pi->str, pi->s);
+		    }
+		    obj = Qundef;
+		    key = Qundef;
+		    for (vp = odd_args + MAX_ODD_ARGS - 1; odd_args <=vp; vp--) {
+			*vp = Qnil;
+		    }
+		    break;
 		case 'u': // Struct
 		    obj = read_next(pi, T_STRUCT);
 		    obj_type = T_STRUCT;
 		    key = Qundef;
 		    break;
-		    // TBD d for Date, T for DateTime
 		default:
 		    // handle later
 		    break;
@@ -472,7 +455,7 @@ read_obj(ParseInfo pi) {
 	    if (Qundef == val && Qundef == (val = read_next(pi, 0))) {
 		raise_error("unexpected character", pi->str, pi->s);
 	    }
-	    if (Qundef == obj) {
+	    if (Qundef == obj && 0 == odd) {
 		obj = rb_hash_new();
 		obj_type = T_HASH;
 	    }
@@ -492,7 +475,19 @@ read_obj(ParseInfo pi) {
 		}
 	    }
 	    if (Qundef != key) {
-		if (T_OBJECT == obj_type) {
+		if (0 != odd) {
+		    ID	*idp;
+
+		    for (idp = odd->attrs, vp = odd_args; 0 != *idp; idp++, vp++) {
+			if (0 == strcmp(rb_id2name(*idp), ks)) {
+			    *vp = val;
+			    break;
+			}
+		    }
+		    if (odd_args + MAX_ODD_ARGS <= vp) {
+			raise_error("invalid attribute", pi->str, pi->s);
+		    }
+		} else if (T_OBJECT == obj_type) {
 		    VALUE	*slot;
 		    ID		var_id;
 
@@ -544,7 +539,9 @@ read_obj(ParseInfo pi) {
 	    raise_error("invalid format, expected , or } while in an object", pi->str, pi->s);
 	}
     }
-    if (0 != json_class_name) {
+    if (0 != odd) {
+	obj = rb_funcall2(odd->create_obj, odd->create_op, odd->attr_cnt, odd_args);
+    } else if (0 != json_class_name) {
 	VALUE	clas = classname2class(json_class_name, pi);
 	VALUE	args[1];
 
@@ -776,7 +773,7 @@ read_num(ParseInfo pi) {
 	    VALUE	num;
 	
 	    *pi->s = '\0';
-	    num = rb_funcall(oj_bigdecimal_class, rb_intern("new"), 1, rb_str_new2(start));
+	    num = rb_funcall(oj_bigdecimal_class, oj_new_id, 1, rb_str_new2(start));
 	    *pi->s = c;
 
 	    return num;

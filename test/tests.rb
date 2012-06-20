@@ -607,7 +607,7 @@ class Juice < ::Test::Unit::TestCase
     assert_equal('-Infinity', json)
   end
 
-  # TBD Date
+  # Date
   def test_date_strict
     begin
       json = Oj.dump(Date.new(2012, 6, 19), :mode => :strict)
@@ -623,15 +623,20 @@ class Juice < ::Test::Unit::TestCase
   def test_date_compat
     orig = Date.new(2012, 6, 19)
     json = Oj.dump(orig, :mode => :compat)
-    f = Oj.load(json, :mode => :compat)
-    t = Time.at(f)
-    assert_equal(orig, Date.new(t.year, t.month, t.day))
+    x = Oj.load(json, :mode => :compat)
+    # Some Rubies implement Date as data and some as a real Object. Either are
+    # okay for the test.
+    if x.is_a?(String)
+      assert_equal(orig.to_s, x)
+    else # better be a Hash
+      assert_equal({"year" => orig.year, "month" => orig.month, "day" => orig.day, "start" => orig.start}, x)
+    end
   end
   def test_date_object
     dump_and_load(Date.new(2012, 6, 19), false)
   end
 
-  # TBD DateTime
+  # DateTime
   def test_datetime_strict
     begin
       json = Oj.dump(DateTime.new(2012, 6, 19, 20, 19, 27), :mode => :strict)
@@ -647,11 +652,16 @@ class Juice < ::Test::Unit::TestCase
   def test_datetime_compat
     orig = DateTime.new(2012, 6, 19, 20, 19, 27)
     json = Oj.dump(orig, :mode => :compat)
-    f = Oj.load(json, :mode => :compat)
-    t = Time.at(f)
-    t = t.getutc()
-    assert_equal(orig, DateTime.new(t.year, t.month, t.mday, t.hour, t.min, t.sec))
-    #assert_equal(orig, Time.at(f).to_datetime)
+    x = Oj.load(json, :mode => :compat)
+    # Some Rubies implement Date as data and some as a real Object. Either are
+    # okay for the test.
+    if x.is_a?(String)
+      assert_equal(orig.to_s, x)
+    else # better be a Hash
+      assert_equal({ "year" => orig.year, "month" => orig.month, "day" => orig.day,
+                     "hour" => orig.hour, "min" => orig.min, "sec" => orig.sec,
+                     "offset" => orig.offset, "start" => orig.start}, x)
+    end
   end
   def test_datetime_object
     dump_and_load(DateTime.new(2012, 6, 19), false)

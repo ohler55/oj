@@ -65,6 +65,8 @@ enum st_retval {ST_CONTINUE = 0, ST_STOP = 1, ST_DELETE = 2, ST_CHECK};
 
 #define raise_error(msg, xml, current) _oj_raise_error(msg, xml, current, __FILE__, __LINE__)
 
+#define MAX_ODD_ARGS	10
+
 typedef enum {
     Yes	   = 'y',
     No	   = 'n',
@@ -102,6 +104,14 @@ typedef struct _Options {
     DumpOpts	dump_opts;
 } *Options;
 
+typedef struct _Odd {
+    VALUE	clas;			// Ruby class
+    VALUE	create_obj;
+    ID		create_op;
+    int		attr_cnt;
+    ID		attrs[MAX_ODD_ARGS];	// 0 terminated attr IDs
+} *Odd;
+
 enum {
     STR_VAL  = 0x00,
     COL_VAL  = 0x01,
@@ -134,6 +144,8 @@ extern void	_oj_raise_error(const char *msg, const char *xml, const char *curren
 
 extern void	oj_init_doc(void);
 
+extern Odd	oj_get_odd(VALUE clas);
+
 extern VALUE	Oj;
 extern struct _Options	oj_default_options;
 #if HAS_ENCODING_SUPPORT
@@ -142,8 +154,6 @@ extern rb_encoding	*oj_utf8_encoding;
 
 extern VALUE	oj_bag_class;
 extern VALUE	oj_bigdecimal_class;
-extern VALUE	oj_date_class;
-extern VALUE	oj_datetime_class;
 extern VALUE	oj_doc_class;
 extern VALUE	oj_stringio_class;
 extern VALUE	oj_struct_class;
@@ -154,6 +164,7 @@ extern VALUE	oj_slash_string;
 extern ID	oj_as_json_id;
 extern ID	oj_instance_variables_id;
 extern ID	oj_json_create_id;
+extern ID	oj_new_id;
 extern ID	oj_string_id;
 extern ID	oj_to_hash_id;
 extern ID	oj_to_json_id;
