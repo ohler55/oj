@@ -101,6 +101,7 @@ typedef struct _Options {
     char	ascii_only;	// YesNo
     char	mode;		// Mode
     const char	*create_id;	// 0 or string
+    size_t	max_stack;	// max size to allocate on the stack
     DumpOpts	dump_opts;
 } *Options;
 

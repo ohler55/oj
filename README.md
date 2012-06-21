@@ -24,6 +24,10 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
+### Release 1.2.11
+
+ - Added :max_stack option to limit the size of string allocated on the stack.
+
 ### Release 1.2.10
 
  - Added check for circular on loading of circular dumped JSON.

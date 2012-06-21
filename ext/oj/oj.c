@@ -40,9 +40,6 @@
 
 #include "oj.h"
 
-// maximum to allocate on the stack, arbitrary limit
-#define SMALL_JSON	65536
-
 typedef struct _YesNoOpt {
     VALUE	sym;
     char	*attr;
@@ -83,6 +80,7 @@ static VALUE	circular_sym;
 static VALUE	compat_sym;
 static VALUE	create_id_sym;
 static VALUE	indent_sym;
+static VALUE	max_stack_sym;
 static VALUE	mode_sym;
 static VALUE	null_sym;
 static VALUE	object_sym;
@@ -117,6 +115,7 @@ struct _Options	oj_default_options = {
     No,			// ascii_only
     ObjectMode,		// mode
     json_class,		// create_id
+    65536,		// max_stack
     0,			// dump_opts
 };
 
@@ -145,6 +144,7 @@ oj_get_odd(VALUE clas) {
  * - symbol_keys: [true|false|nil] use symbols instead of strings for hash keys
  * - mode: [:object|:strict|:compat|:null] load and dump modes to use for JSON
  * - create_id: [String|nil] create id for json compatible object encoding, default is 'json_create'
+ * - max_stack: [Fixnum|nil] maximum json size to allocate on the stack, default is 65536
  * @return [Hash] all current option settings.
  */
 static VALUE
@@ -152,6 +152,7 @@ get_def_opts(VALUE self) {
     VALUE	opts = rb_hash_new();
     
     rb_hash_aset(opts, indent_sym, INT2FIX(oj_default_options.indent));
+    rb_hash_aset(opts, max_stack_sym, INT2FIX(oj_default_options.max_stack));
     rb_hash_aset(opts, circular_sym, (Yes == oj_default_options.circular) ? Qtrue : ((No == oj_default_options.circular) ? Qfalse : Qnil));
     rb_hash_aset(opts, auto_define_sym, (Yes == oj_default_options.auto_define) ? Qtrue : ((No == oj_default_options.auto_define) ? Qfalse : Qnil));
     rb_hash_aset(opts, ascii_only_sym, (Yes == oj_default_options.ascii_only) ? Qtrue : ((No == oj_default_options.ascii_only) ? Qfalse : Qnil));
@@ -186,6 +187,7 @@ get_def_opts(VALUE self) {
  *	  the Oj gem. The :null mode ignores non-supported Objects and
  *	  replaces them with a null.
  * @param [String|nil] :create_id create id for json compatible object encoding
+ * @param [Fixnum|nil] :max_stack maximum size to allocate on the stack for a JSON String
  * @return [nil]
  */
 static VALUE
@@ -205,6 +207,17 @@ set_def_opts(VALUE self, VALUE opts) {
     if (Qnil != v) {
 	Check_Type(v, T_FIXNUM);
 	oj_default_options.indent = FIX2INT(v);
+    }
+    v = rb_hash_aref(opts, max_stack_sym);
+    if (Qnil != v) {
+	int	i;
+
+	Check_Type(v, T_FIXNUM);
+	i = FIX2INT(v);
+	if (0 > i) {
+	    i = 0;
+	}
+	oj_default_options.max_stack = (size_t)i;
     }
 
     v = rb_hash_lookup(opts, mode_sym);
@@ -311,7 +324,7 @@ load_with_opts(VALUE input, Options copts) {
     if (rb_type(input) == T_STRING) {
 	// the json string gets modified so make a copy of it
 	len = RSTRING_LEN(input) + 1;
-	if (SMALL_JSON < len) {
+	if (copts->max_stack < len) {
 	    json = ALLOC_N(char, len);
 	} else {
 	    json = ALLOCA_N(char, len);
@@ -324,7 +337,7 @@ load_with_opts(VALUE input, Options copts) {
 	if (oj_stringio_class == clas) {
 	    s = rb_funcall2(input, oj_string_id, 0, 0);
 	    len = RSTRING_LEN(s) + 1;
-	    if (SMALL_JSON < len) {
+	    if (copts->max_stack < len) {
 		json = ALLOC_N(char, len);
 	    } else {
 		json = ALLOCA_N(char, len);
@@ -338,7 +351,7 @@ load_with_opts(VALUE input, Options copts) {
 
 	    len = lseek(fd, 0, SEEK_END);
 	    lseek(fd, 0, SEEK_SET);
-	    if (SMALL_JSON < len) {
+	    if (copts->max_stack < len) {
 		json = ALLOC_N(char, len + 1);
 	    } else {
 		json = ALLOCA_N(char, len + 1);
@@ -351,7 +364,7 @@ load_with_opts(VALUE input, Options copts) {
 	} else if (rb_respond_to(input, oj_read_id)) {
 	    s = rb_funcall2(input, oj_read_id, 0, 0);
 	    len = RSTRING_LEN(s) + 1;
-	    if (SMALL_JSON < len) {
+	    if (copts->max_stack < len) {
 		json = ALLOC_N(char, len);
 	    } else {
 		json = ALLOCA_N(char, len);
@@ -362,7 +375,7 @@ load_with_opts(VALUE input, Options copts) {
 	}
     }
     obj = oj_parse(json, copts);
-    if (SMALL_JSON < len) {
+    if (copts->max_stack < len) {
 	xfree(json);
     }
     return obj;
@@ -407,6 +420,7 @@ load_file(int argc, VALUE *argv, VALUE self) {
     unsigned long	len;
     VALUE		obj;
     struct _Options	options = oj_default_options;
+    size_t		max_stack = oj_default_options.max_stack;
 
     Check_Type(*argv, T_STRING);
     path = StringValuePtr(*argv);
@@ -415,7 +429,7 @@ load_file(int argc, VALUE *argv, VALUE self) {
     }
     fseek(f, 0, SEEK_END);
     len = ftell(f);
-    if (SMALL_JSON < len) {
+    if (max_stack < len) {
 	json = ALLOC_N(char, len + 1);
     } else {
 	json = ALLOCA_N(char, len + 1);
@@ -431,7 +445,7 @@ load_file(int argc, VALUE *argv, VALUE self) {
 	parse_options(argv[1], &options);
     }
     obj = oj_parse(json, &options);
-    if (SMALL_JSON < len) {
+    if (max_stack < len) {
 	xfree(json);
     }
     return obj;
@@ -832,11 +846,12 @@ void Init_oj() {
     compat_sym = ID2SYM(rb_intern("compat"));		rb_gc_register_address(&compat_sym);
     create_id_sym = ID2SYM(rb_intern("create_id"));	rb_gc_register_address(&create_id_sym);
     indent_sym = ID2SYM(rb_intern("indent"));		rb_gc_register_address(&indent_sym);
+    max_stack_sym = ID2SYM(rb_intern("max_stack"));	rb_gc_register_address(&max_stack_sym);
     mode_sym = ID2SYM(rb_intern("mode"));		rb_gc_register_address(&mode_sym);
-    symbol_keys_sym = ID2SYM(rb_intern("symbol_keys"));	rb_gc_register_address(&symbol_keys_sym);
     null_sym = ID2SYM(rb_intern("null"));		rb_gc_register_address(&null_sym);
     object_sym = ID2SYM(rb_intern("object"));		rb_gc_register_address(&object_sym);
     strict_sym = ID2SYM(rb_intern("strict"));		rb_gc_register_address(&strict_sym);
+    symbol_keys_sym = ID2SYM(rb_intern("symbol_keys"));	rb_gc_register_address(&symbol_keys_sym);
 
     oj_slash_string = rb_str_new2("/");			rb_gc_register_address(&oj_slash_string);
 

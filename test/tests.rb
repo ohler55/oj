@@ -109,6 +109,7 @@ class Juice < ::Test::Unit::TestCase
                    :symbol_keys=>false,
                    :ascii_only=>false,
                    :mode=>:object,
+                   :max_stack=>65536,
                    :create_id=>'json_class'}, opts)
   end
 
@@ -120,6 +121,7 @@ class Juice < ::Test::Unit::TestCase
       :symbol_keys=>false,
       :ascii_only=>false,
       :mode=>:object,
+      :max_stack=>65536,
       :create_id=>'json_class'}
     o2 = {
       :indent=>4,
@@ -128,6 +130,7 @@ class Juice < ::Test::Unit::TestCase
       :symbol_keys=>true,
       :ascii_only=>true,
       :mode=>:compat,
+      :max_stack=>4000,
       :create_id=>nil}
     o3 = { :indent => 4 }
     Oj.default_options = o2
