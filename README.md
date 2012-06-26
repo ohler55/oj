@@ -6,7 +6,7 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="documentation">Documentation</a>
 
-*Documentation*: https://www.ohler.com/oj
+*Documentation*: http://www.ohler.com/oj
 
 ## <a name="source">Source</a>
 
