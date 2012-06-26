@@ -4,7 +4,7 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 ## <a name="installation">Installation</a>
     gem install oj
 
-## <a name="source">Source</a>
+## <a name="documentation">Documentation</a>
 
 *Documentation*: https://www.ohler.com/oj
 
