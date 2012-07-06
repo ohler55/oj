@@ -36,6 +36,8 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
  - Fixed GC bug in Oj::Doc, the fast parser.
 
+ - Serialization of Exceptions in Ruby 1.8.7 now includes message and backtrace.
+
 ## <a name="description">Description</a>
 
 Optimized JSON (Oj), as the name implies was written to provide speed

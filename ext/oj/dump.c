@@ -1146,6 +1146,39 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	}
 #else
 	size = d2 * out->indent + 1;
+#if HAS_EXCEPTION_MAGIC
+	if (Qtrue == rb_obj_is_kind_of(obj, rb_eException)) {
+	    if (',' != *(out->cur - 1)) {
+		*out->cur++ = ',';
+	    }
+	    // message
+	    if (out->end - out->cur <= (long)size) {
+		grow(out, size);
+	    }
+	    fill_indent(out, d2);
+	    dump_cstr("~mesg", 5, 0, 0, out);
+	    *out->cur++ = ':';
+	    dump_val(rb_funcall2(obj, rb_intern("message"), 0, 0), d2, out);
+	    if (out->end - out->cur <= 2) {
+		grow(out, 2);
+	    }
+	    *out->cur++ = ',';
+	    // backtrace
+	    if (out->end - out->cur <= (long)size) {
+		grow(out, size);
+	    }
+	    fill_indent(out, d2);
+	    dump_cstr("~bt", 3, 0, 0, out);
+	    *out->cur++ = ':';
+	    dump_val(rb_funcall2(obj, rb_intern("backtrace"), 0, 0), d2, out);
+	    if (out->end - out->cur <= 2) {
+		grow(out, 2);
+	    }
+	    if (0 < cnt) {
+		*out->cur++ = ',';
+	    }
+	}
+#endif
 	for (i = cnt; 0 < i; i--, np++) {
 	    if (out->end - out->cur <= (long)size) {
 		grow(out, size);

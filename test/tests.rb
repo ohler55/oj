@@ -519,10 +519,14 @@ class Juice < ::Test::Unit::TestCase
     #puts "*** #{json}"
     e2 = Oj.load(json, :mode => :strict)
     assert_equal(err.class.to_s, e2['^o'])
-    unless RUBY_VERSION.start_with?('1.8') || 'rubinius' == $ruby
-      assert_equal(err.message, e2['~mesg'])
-      assert_equal(err.backtrace, e2['~bt'])
-      e2 = Oj.load(json, :mode => :object)
+    assert_equal(err.message, e2['~mesg'])
+    assert_equal(err.backtrace, e2['~bt'])
+    e2 = Oj.load(json, :mode => :object)
+    if RUBY_VERSION.start_with?('1.8') || 'rubinius' == $ruby
+      assert_equal(e.class, e2.class);
+      assert_equal(e.message, e2.message);
+      assert_equal(e.backtrace, e2.backtrace);
+    else
       assert_equal(e, e2);
     end
   end

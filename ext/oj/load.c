@@ -510,7 +510,22 @@ read_obj(ParseInfo pi) {
 #ifdef SAFE_CACHE
 		    pthread_mutex_unlock(&oj_cache_mutex);
 #endif
+#if HAS_EXCEPTION_MAGIC
+		    if ('~' == *ks && Qtrue == rb_obj_is_kind_of(obj, rb_eException)) {
+			if (0 == strcmp("~mesg", ks)) {
+			    VALUE	args[1];
+
+			    args[0] = val;
+			    obj = rb_class_new_instance(1, args, rb_class_of(obj));
+			} else if (0 == strcmp("~bt", ks)) {
+			    rb_funcall(obj, rb_intern("set_backtrace"), 1, val);
+			}
+		    } else {
+			rb_ivar_set(obj, var_id, val);
+		    }
+#else
 		    rb_ivar_set(obj, var_id, val);
+#endif
 		} else if (T_HASH == obj_type) {
 		    if (Yes == pi->options->sym_key) {
 			rb_hash_aset(obj, rb_str_intern(key), val);
