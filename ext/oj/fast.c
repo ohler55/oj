@@ -562,7 +562,7 @@ read_obj(ParseInfo pi) {
 	} else if (',' == *pi->s) {
 	    pi->s++;
 	} else {
-	    printf("*** '%s'\n", pi->s);
+	    //printf("*** '%s'\n", pi->s);
 	    raise_error("invalid format, expected , or } while in an object", pi->str, pi->s);
 	}
 	*end = '\0';
@@ -839,10 +839,12 @@ parse_json(VALUE clas, char *json, int given, int allocated) {
     pi.doc = doc;
     // last arg is free func void* func(void*)
     doc->self = rb_data_object_alloc(clas, doc, 0, free_doc_cb);
+    rb_gc_register_address(&doc->self);
     doc->json = json;
     DATA_PTR(doc->self) = doc;
     result = rb_protect(protect_open_proc, (VALUE)&pi, &ex);
     if (given || 0 != ex) {
+	rb_gc_unregister_address(&doc->self);
 	DATA_PTR(doc->self) = 0;
 	doc_free(pi.doc);
 	if (allocated) {
@@ -1318,11 +1320,12 @@ doc_type(int argc, VALUE *argv, VALUE self) {
  */
 static VALUE
 doc_fetch(int argc, VALUE *argv, VALUE self) {
-    Doc		doc = self_doc(self);
+    Doc		doc;
     Leaf	leaf;
     VALUE	val = Qnil;
     const char	*path = 0;
 
+    doc = self_doc(self);
     if (1 <= argc) {
 	Check_Type(*argv, T_STRING);
 	path = StringValuePtr(*argv);
@@ -1584,6 +1587,7 @@ static VALUE
 doc_close(VALUE self) {
     Doc		doc = self_doc(self);
 
+    rb_gc_unregister_address(&doc->self);
     DATA_PTR(doc->self) = 0;
     if (0 != doc) {
 	xfree(doc->json);

@@ -32,21 +32,9 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 1.2.11
+### Release 1.2.12
 
- - Added :max_stack option to limit the size of string allocated on the stack.
-
-### Release 1.2.10
-
- - Added check for circular on loading of circular dumped JSON.
-
- - Added support for direct serialization of BigDecimal, Rational, Date, and DateTime.
-
- - Added json.rb to $" in mimic mode to avoid pulling in the real JSON by accident.
-
- - Oj is now thread safe for all functions.
-
- - The / (solidus) character is now placed in strings without being escaped.
+ - Fixed GC bug in Oj::Doc, the fast parser.
 
 ## <a name="description">Description</a>
 
