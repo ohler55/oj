@@ -847,7 +847,7 @@ parse_json(VALUE clas, char *json, int given, int allocated) {
 	rb_gc_unregister_address(&doc->self);
 	DATA_PTR(doc->self) = 0;
 	doc_free(pi.doc);
-	if (allocated) {
+	if (allocated && 0 != ex) { // will jump so caller will not free
 	    xfree(json);
 	}
     } else {

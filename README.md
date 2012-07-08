@@ -32,6 +32,10 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
+### Release 1.2.13
+
+ - Fixed double free bug in Oj::Doc that showed up for larger documents.
+
 ### Release 1.2.12
 
  - Fixed GC bug in Oj::Doc, the fast parser.
