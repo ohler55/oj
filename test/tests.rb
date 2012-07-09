@@ -109,6 +109,7 @@ class Juice < ::Test::Unit::TestCase
                    :symbol_keys=>false,
                    :ascii_only=>false,
                    :mode=>:object,
+                   :time_format=>:unix,
                    :max_stack=>65536,
                    :create_id=>'json_class'}, opts)
   end
@@ -121,6 +122,7 @@ class Juice < ::Test::Unit::TestCase
       :symbol_keys=>false,
       :ascii_only=>false,
       :mode=>:object,
+      :time_format=>:unix,
       :max_stack=>65536,
       :create_id=>'json_class'}
     o2 = {
@@ -130,6 +132,7 @@ class Juice < ::Test::Unit::TestCase
       :symbol_keys=>true,
       :ascii_only=>true,
       :mode=>:compat,
+      :time_format=>:ruby,
       :max_stack=>4000,
       :create_id=>nil}
     o3 = { :indent => 4 }
@@ -250,10 +253,22 @@ class Juice < ::Test::Unit::TestCase
     json = Oj.dump(t, :mode => :null)
     assert_equal('null', json)
   end
-  def test_time_compat
-    t = Time.local(2012, 1, 5, 23, 58, 7)
+  def test_unix_time_compat
+    t = Time.xmlschema("2012-01-05T23:58:07.123456000+09:00")
+    #t = Time.local(2012, 1, 5, 23, 58, 7, 123456)
     json = Oj.dump(t, :mode => :compat)
-    assert_equal(%{1325775487.000000000}, json)
+    assert_equal(%{1325775487.123456000}, json)
+  end    
+  def test_ruby_time_compat
+    t = Time.xmlschema("2012-01-05T23:58:07.123456000+09:00")
+    json = Oj.dump(t, :mode => :compat, :time_format => :ruby)
+    #assert_equal(%{"2012-01-05 23:58:07 +0900"}, json)
+    assert_equal(%{"#{t.to_s}"}, json)
+  end    
+  def test_xml_time_compat
+    t = Time.xmlschema("2012-01-05T23:58:07.123456000+09:00")
+    json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema)
+    assert_equal(%{"2012-01-05T23:58:07.123456000+09:00"}, json)
   end    
   def test_time_object
     t = Time.now()

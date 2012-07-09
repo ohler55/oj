@@ -29,7 +29,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <pthread.h> // TBD LOCK
+#include <pthread.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <stdio.h>
@@ -84,8 +84,12 @@ static VALUE	max_stack_sym;
 static VALUE	mode_sym;
 static VALUE	null_sym;
 static VALUE	object_sym;
+static VALUE	ruby_sym;
 static VALUE	strict_sym;
 static VALUE	symbol_keys_sym;
+static VALUE	time_format_sym;
+static VALUE	unix_sym;
+static VALUE	xmlschema_sym;
 
 static VALUE	array_nl_sym;
 static VALUE	create_additions_sym;
@@ -114,6 +118,7 @@ struct _Options	oj_default_options = {
     No,			// sym_key
     No,			// ascii_only
     ObjectMode,		// mode
+    UnixTime,		// time_format
     json_class,		// create_id
     65536,		// max_stack
     0,			// dump_opts
@@ -143,6 +148,7 @@ oj_get_odd(VALUE clas) {
  * - auto_define: [true|false|nil] automatically define classes if they do not exist
  * - symbol_keys: [true|false|nil] use symbols instead of strings for hash keys
  * - mode: [:object|:strict|:compat|:null] load and dump modes to use for JSON
+ * - time_format: [:unix|:xmlschema|:ruby] time format when dumping in :compat mode
  * - create_id: [String|nil] create id for json compatible object encoding, default is 'json_create'
  * - max_stack: [Fixnum|nil] maximum json size to allocate on the stack, default is 65536
  * @return [Hash] all current option settings.
@@ -163,6 +169,12 @@ get_def_opts(VALUE self) {
     case NullMode:	rb_hash_aset(opts, mode_sym, null_sym);		break;
     case ObjectMode:
     default:		rb_hash_aset(opts, mode_sym, object_sym);	break;
+    }
+    switch (oj_default_options.time_format) {
+    case XmlTime:	rb_hash_aset(opts, time_format_sym, xmlschema_sym);	break;
+    case RubyTime:	rb_hash_aset(opts, time_format_sym, ruby_sym);		break;
+    case UnixTime:
+    default:		rb_hash_aset(opts, time_format_sym, unix_sym);		break;
     }
     rb_hash_aset(opts, create_id_sym, (0 == oj_default_options.create_id) ? Qnil : rb_str_new2(oj_default_options.create_id));
 
@@ -186,6 +198,10 @@ get_def_opts(VALUE self) {
  *	  and to_json() methods and encodes variables using code internal to
  *	  the Oj gem. The :null mode ignores non-supported Objects and
  *	  replaces them with a null.
+ * @param [:unix|:xmlschema|:ruby] time format when dumping in :compat mode
+ *        :unix decimal number denoting the number of seconds since 1/1/1970,
+ *        :xmlschema date-time format taken from XML Schema as a String,
+ *        :ruby Time.to_s formatted String
  * @param [String|nil] :create_id create id for json compatible object encoding
  * @param [Fixnum|nil] :max_stack maximum size to allocate on the stack for a JSON String
  * @return [nil]
@@ -233,6 +249,19 @@ set_def_opts(VALUE self, VALUE opts) {
 	oj_default_options.mode = NullMode;
     } else {
 	rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, or :null.\n");
+    }
+
+    v = rb_hash_lookup(opts, time_format_sym);
+    if (Qnil == v) {
+	// ignore
+    } else if (unix_sym == v) {
+	oj_default_options.time_format = UnixTime;
+    } else if (xmlschema_sym == v) {
+	oj_default_options.time_format = XmlTime;
+    } else if (ruby_sym == v) {
+	oj_default_options.time_format = RubyTime;
+    } else {
+	rb_raise(rb_eArgError, ":time_format must be :unix, :xmlschema, or :ruby.\n");
     }
 
     if (Qtrue == rb_funcall(opts, rb_intern("has_key?"), 1, create_id_sym)) {
@@ -299,6 +328,17 @@ parse_options(VALUE ropts, Options copts) {
 		copts->mode = NullMode;
 	    } else {
 		rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, or :null.\n");
+	    }
+	}
+	if (Qnil != (v = rb_hash_lookup(ropts, time_format_sym))) {
+	    if (unix_sym == v) {
+		copts->time_format = UnixTime;
+	    } else if (xmlschema_sym == v) {
+		copts->time_format = XmlTime;
+	    } else if (ruby_sym == v) {
+		copts->time_format = RubyTime;
+	    } else {
+		rb_raise(rb_eArgError, ":time_format must be :unix, :xmlschema, or :ruby.\n");
 	    }
 	}
 	for (o = ynos; 0 != o->attr; o++) {
@@ -850,8 +890,12 @@ void Init_oj() {
     mode_sym = ID2SYM(rb_intern("mode"));		rb_gc_register_address(&mode_sym);
     null_sym = ID2SYM(rb_intern("null"));		rb_gc_register_address(&null_sym);
     object_sym = ID2SYM(rb_intern("object"));		rb_gc_register_address(&object_sym);
+    ruby_sym = ID2SYM(rb_intern("ruby"));		rb_gc_register_address(&ruby_sym);
     strict_sym = ID2SYM(rb_intern("strict"));		rb_gc_register_address(&strict_sym);
     symbol_keys_sym = ID2SYM(rb_intern("symbol_keys"));	rb_gc_register_address(&symbol_keys_sym);
+    time_format_sym = ID2SYM(rb_intern("time_format"));	rb_gc_register_address(&time_format_sym);
+    unix_sym = ID2SYM(rb_intern("unix"));		rb_gc_register_address(&unix_sym);
+    xmlschema_sym = ID2SYM(rb_intern("xmlschema"));	rb_gc_register_address(&xmlschema_sym);
 
     oj_slash_string = rb_str_new2("/");			rb_gc_register_address(&oj_slash_string);
 

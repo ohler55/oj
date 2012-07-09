@@ -82,6 +82,8 @@ static int	hash_cb_compat(VALUE key, VALUE value, Out out);
 static int	hash_cb_object(VALUE key, VALUE value, Out out);
 static void	dump_hash(VALUE obj, int depth, int mode, Out out);
 static void	dump_time(VALUE obj, Out out);
+static void	dump_ruby_time(VALUE obj, Out out);
+static void	dump_xml_time(VALUE obj, Out out);
 static void	dump_data_comp(VALUE obj, Out out);
 static void	dump_data_obj(VALUE obj, int depth, Out out);
 static void	dump_obj_comp(VALUE obj, int depth, Out out);
@@ -946,11 +948,62 @@ dump_time(VALUE obj, Out out) {
 }
 
 static void
+dump_ruby_time(VALUE obj, Out out) {
+    VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+
+    dump_cstr(StringValuePtr(rstr), RSTRING_LEN(rstr), 0, 0, out);
+}
+
+static void
+dump_xml_time(VALUE obj, Out out) {
+    char		buf[64];
+    struct tm		*tm;
+#if HAS_RB_TIME_TIMESPEC
+    struct timespec	ts = rb_time_timespec(obj);
+    time_t		sec = ts.tv_sec;
+    long		nsec = ts.tv_nsec;
+#else
+    time_t		sec = NUM2LONG(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+#if HAS_NANO_TIME
+    long		nsec = NUM2LONG(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+#else
+    long		nsec = NUM2LONG(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
+#endif
+#endif
+    int			tzhour, tzmin;
+    char		tzsign = '+';
+
+    if (out->end - out->cur <= 36) {
+	grow(out, 36);
+    }
+    // 2012-01-05T23:58:07.123456000+09:00
+    tm = localtime(&sec);
+    if (0 > tm->tm_gmtoff) {
+        tzsign = '-';
+        tzhour = (int)(tm->tm_gmtoff / -3600);
+        tzmin = (int)(tm->tm_gmtoff / -60) - (tzhour * 60);
+    } else {
+        tzhour = (int)(tm->tm_gmtoff / 3600);
+        tzmin = (int)(tm->tm_gmtoff / 60) - (tzhour * 60);
+    }
+    sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02d.%09ld%c%02d:%02d",
+	    tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
+	    tm->tm_hour, tm->tm_min, tm->tm_sec, nsec,
+	    tzsign, tzhour, tzmin);
+    dump_cstr(buf, 35, 0, 0, out);
+}
+
+static void
 dump_data_comp(VALUE obj, Out out) {
     VALUE	clas = rb_obj_class(obj);
 
     if (rb_cTime == clas) {
-	dump_time(obj, out);
+	switch (out->opts->time_format) {
+	case RubyTime:	dump_ruby_time(obj, out);	break;
+	case XmlTime:	dump_xml_time(obj, out);	break;
+	case UnixTime:
+	default:	dump_time(obj, out);		break;
+	}
     } else {
 	VALUE	rstr;
 

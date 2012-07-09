@@ -80,6 +80,12 @@ typedef enum {
     CompatMode	= 'c'
 } Mode;
 
+typedef enum {
+    UnixTime	= 'u',
+    XmlTime	= 'x',
+    RubyTime	= 'r'
+} TimeFormat;
+
 typedef struct _DumpOpts {
     const char	*indent;
     const char	*before_sep;
@@ -100,6 +106,7 @@ typedef struct _Options {
     char	sym_key;	// YesNo
     char	ascii_only;	// YesNo
     char	mode;		// Mode
+    char	time_format;	// TimeFormat
     const char	*create_id;	// 0 or string
     size_t	max_stack;	// max size to allocate on the stack
     DumpOpts	dump_opts;
