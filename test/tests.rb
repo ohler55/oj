@@ -266,9 +266,43 @@ class Juice < ::Test::Unit::TestCase
     assert_equal(%{"#{t.to_s}"}, json)
   end    
   def test_xml_time_compat
-    t = Time.xmlschema("2012-01-05T23:58:07.123456000+09:00")
-    json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema)
-    assert_equal(%{"2012-01-05T23:58:07.123456000+09:00"}, json)
+    begin
+      t = Time.new(2012, 1, 5, 23, 58, 7.123456000, 34200)
+      json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema)
+      assert_equal(%{"2012-01-05T23:58:07.123456000+09:30"}, json)
+    rescue Exception => e
+      # some Rubies (1.8.7) do not allow the timezome to be set
+      t = Time.local(2012, 1, 5, 23, 58, 7, 123456)
+      json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema)
+      tz = t.utc_offset
+      assert_equal(%{"2012-01-05T23:58:07.123456000+%02d:%02d"} % [tz / 3600, tz / 60 % 60], json)
+    end
+  end    
+  def test_xml_time_compat_no_secs
+    begin
+      t = Time.new(2012, 1, 5, 23, 58, 7.0, 34200)
+      json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema)
+      assert_equal(%{"2012-01-05T23:58:07+09:30"}, json)
+    rescue Exception => e
+      # some Rubies (1.8.7) do not allow the timezome to be set
+      t = Time.local(2012, 1, 5, 23, 58, 7, 0)
+      json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema)
+      tz = t.utc_offset
+      assert_equal(%{"2012-01-05T23:58:07+%02d:%02d"} % [tz / 3600, tz / 60 % 60], json)
+    end
+  end    
+  def test_xml_time_compat_zulu
+    begin
+      t = Time.new(2012, 1, 5, 23, 58, 7.0, 0)
+      json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema)
+      assert_equal(%{"2012-01-05T23:58:07Z"}, json)
+    rescue Exception => e
+      # some Rubies (1.8.7) do not allow the timezome to be set
+      t = Time.utc(2012, 1, 5, 23, 58, 7, 0)
+      json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema)
+      tz = t.utc_offset
+      assert_equal(%{"2012-01-05T23:58:07Z"}, json)
+    end
   end    
   def test_time_object
     t = Time.now()
