@@ -32,7 +32,7 @@ dflags = {
 # missing #define. This is the quick and easy way around it.
 if 'x86_64-linux' == RUBY_PLATFORM && '1.9.3' == RUBY_VERSION && '2011-10-30' == RUBY_RELEASE_DATE
   begin
-    dflags['NEEDS_STPCPY'] = nil if `more /etc/issue`.include?('CentOS release 5.4')
+    dflags['NEEDS_STPCPY'] = nil if File.read('/etc/redhat-release').include?('CentOS release 5.4')
   rescue Exception => e
   end
 end
