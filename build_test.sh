@@ -1,22 +1,5 @@
 #!/bin/sh
 
-
-PATH=/System/Library/Frameworks/Ruby.framework/Versions/1.8/usr/bin:$PATH
-echo "\n********************************************************************************"
-echo "Building OS X Ruby\n"
-cd ext/oj
-ruby extconf.rb
-make
-
-echo "\nRunning tests for OS X Ruby"
-cd ../../test
-./tests.rb
-./test_mimic.rb
-./test_fast.rb
-cd ..
-
-echo "\n"
-
 for ruby in \
  1.8.7-p358\
  1.9.2-p290\
@@ -43,3 +26,20 @@ do
 
     echo "\n"
 done
+
+PATH=/System/Library/Frameworks/Ruby.framework/Versions/1.8/usr/bin:$PATH
+echo "\n********************************************************************************"
+echo "Building OS X Ruby\n"
+cd ext/oj
+ruby extconf.rb
+make
+
+echo "\nRunning tests for OS X Ruby"
+cd ../../test
+./tests.rb
+./test_mimic.rb
+./test_fast.rb
+cd ..
+
+echo "\n"
+

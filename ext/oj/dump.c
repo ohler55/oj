@@ -970,6 +970,7 @@ dump_xml_time(VALUE obj, Out out) {
     long		nsec = NUM2LONG(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
 #endif
 #endif
+    long		tz_secs = NUM2LONG(rb_funcall2(obj, oj_utc_offset_id, 0, 0));
     int			tzhour, tzmin;
     char		tzsign = '+';
 
@@ -977,7 +978,19 @@ dump_xml_time(VALUE obj, Out out) {
 	grow(out, 36);
     }
     // 2012-01-05T23:58:07.123456000+09:00
-    tm = localtime(&sec);
+    //tm = localtime(&sec);
+    sec += tz_secs;
+    tm = gmtime(&sec);
+#if 1
+    if (0 > tz_secs) {
+        tzsign = '-';
+        tzhour = (int)(tz_secs / -3600);
+        tzmin = (int)(tz_secs / -60) - (tzhour * 60);
+    } else {
+        tzhour = (int)(tz_secs / 3600);
+        tzmin = (int)(tz_secs / 60) - (tzhour * 60);
+    }
+#else
     if (0 > tm->tm_gmtoff) {
         tzsign = '-';
         tzhour = (int)(tm->tm_gmtoff / -3600);
@@ -986,11 +999,27 @@ dump_xml_time(VALUE obj, Out out) {
         tzhour = (int)(tm->tm_gmtoff / 3600);
         tzmin = (int)(tm->tm_gmtoff / 60) - (tzhour * 60);
     }
-    sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02d.%09ld%c%02d:%02d",
-	    tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
-	    tm->tm_hour, tm->tm_min, tm->tm_sec, nsec,
-	    tzsign, tzhour, tzmin);
-    dump_cstr(buf, 35, 0, 0, out);
+#endif
+    if (0 == nsec) {
+	if (0 == tzhour && 0 == tzmin) {
+	    sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02dZ",
+		    tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
+		    tm->tm_hour, tm->tm_min, tm->tm_sec);
+	    dump_cstr(buf, 20, 0, 0, out);
+	} else {
+	    sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02d%c%02d:%02d",
+		    tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
+		    tm->tm_hour, tm->tm_min, tm->tm_sec,
+		    tzsign, tzhour, tzmin);
+	    dump_cstr(buf, 25, 0, 0, out);
+	}
+    } else {
+	sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02d.%09ld%c%02d:%02d",
+		tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
+		tm->tm_hour, tm->tm_min, tm->tm_sec, nsec,
+		tzsign, tzhour, tzmin);
+	dump_cstr(buf, 35, 0, 0, out);
+    }
 }
 
 static void

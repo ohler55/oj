@@ -64,6 +64,7 @@ ID	oj_to_time_id;
 ID	oj_tv_nsec_id;
 ID	oj_tv_sec_id;
 ID	oj_tv_usec_id;
+ID	oj_utc_offset_id;
 ID	oj_write_id;
 
 VALUE	oj_bag_class;
@@ -872,6 +873,7 @@ void Init_oj() {
     oj_tv_nsec_id = rb_intern("tv_nsec");
     oj_tv_sec_id = rb_intern("tv_sec");
     oj_tv_usec_id = rb_intern("tv_usec");
+    oj_utc_offset_id = rb_intern("utc_offset");
     oj_write_id = rb_intern("write");
 
     oj_bag_class = rb_const_get_at(Oj, rb_intern("Bag"));

@@ -182,6 +182,7 @@ extern ID	oj_to_time_id;
 extern ID	oj_tv_nsec_id;
 extern ID	oj_tv_sec_id;
 extern ID	oj_tv_usec_id;
+extern ID	oj_utc_offset_id;
 
 extern Cache	oj_class_cache;
 extern Cache	oj_attr_cache;
