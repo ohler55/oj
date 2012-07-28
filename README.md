@@ -32,11 +32,9 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 1.3.1
+### Release 1.3.2
 
- - Fixed time zone issue with :xmlschema date format.
-
- - extconf.rb fixed to not pause on some OSs when checking CentOS special case.
+ - Fixed compile problems with native Ruby on OS X 10.8 (Mountain Lion)
 
 ## <a name="description">Description</a>
 

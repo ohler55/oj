@@ -29,7 +29,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <pthread.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <stdio.h>
@@ -108,8 +107,9 @@ Cache	oj_attr_cache = 0;
 rb_encoding	*oj_utf8_encoding = 0;
 #endif
 
+#ifdef SAFE_CACHE
 pthread_mutex_t	oj_cache_mutex; // only used if SAFE_CACHE defined
-
+#endif
 static const char	json_class[] = "json_class";
 
 struct _Options	oj_default_options = {
@@ -629,6 +629,7 @@ mimic_dump_load(int argc, VALUE *argv, VALUE self) {
     } else {
 	return mimic_dump(argc, argv, self);
     }
+    return Qnil;
 }
 
 static VALUE

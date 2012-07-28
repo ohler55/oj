@@ -34,6 +34,7 @@
 #include <time.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 #include "oj.h"
 #include "cache8.h"
@@ -41,8 +42,6 @@
 #if !HAS_ENCODING_SUPPORT || defined(RUBINIUS_RUBY)
 #define rb_eEncodingError	rb_eException
 #endif
-
-#define DBL_INF	1.e500
 
 typedef unsigned long	ulong;
 
@@ -421,10 +420,10 @@ dump_float(VALUE obj, Out out) {
 	*b++ = '0';
 	*b++ = '\0';
 	cnt = 3;
-    } else if (DBL_INF == d) {
+    } else if (INFINITY == d) {
 	strcpy(buf, "Infinity");
 	cnt = 8;
-    } else if (-DBL_INF == d) {
+    } else if (-INFINITY == d) {
 	strcpy(buf, "-Infinity");
 	cnt = 9;
     } else {

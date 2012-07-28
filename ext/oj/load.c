@@ -28,7 +28,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef SAFE_CACHE
 #include <pthread.h> // TBD LOCK
+#endif
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

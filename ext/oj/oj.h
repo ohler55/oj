@@ -46,8 +46,9 @@ extern "C" {
 #endif
 
 #include "stdint.h"
-#include <pthread.h> // for SAFE_CACHE
-
+#ifdef SAFE_CACHE
+#include <pthread.h>
+#endif
 #include "cache.h"
 
 #ifdef RUBINIUS_RUBY
@@ -187,8 +188,9 @@ extern ID	oj_utc_offset_id;
 extern Cache	oj_class_cache;
 extern Cache	oj_attr_cache;
 
+#ifdef SAFE_CACHE
 extern pthread_mutex_t	oj_cache_mutex;
-
+#endif
 #if defined(__cplusplus)
 #if 0
 { /* satisfy cc-mode */
