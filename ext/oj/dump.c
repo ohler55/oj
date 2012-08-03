@@ -43,6 +43,12 @@
 #define rb_eEncodingError	rb_eException
 #endif
 
+//Workaround:
+#ifndef INFINITY
+#define INFINITY (1.0/0.0)
+#endif
+      
+
 typedef unsigned long	ulong;
 
 typedef struct _Out {
