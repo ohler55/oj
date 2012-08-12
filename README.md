@@ -32,9 +32,9 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 1.3.2
+### Release 1.3.4
 
- - Fixed compile problems with native Ruby on OS X 10.8 (Mountain Lion)
+ - Fixed mimic_JSON so it convinces Ruby that the json gem is already loaded.
 
 ## <a name="description">Description</a>
 

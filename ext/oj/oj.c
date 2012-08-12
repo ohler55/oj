@@ -810,6 +810,11 @@ define_mimic_json(VALUE self) {
 	ext = rb_define_module_under(mimic, "Ext");
 	dummy = rb_define_class_under(ext, "Parser", rb_cObject);
 	dummy = rb_define_class_under(ext, "Generator", rb_cObject);
+	// convince Ruby that the json gem has already been loaded
+	dummy = rb_gv_get("$LOADED_FEATURES");
+	if (rb_type(dummy) == T_ARRAY) {
+	    rb_ary_push(dummy, rb_str_new2("json"));
+	}
 
 	rb_define_module_function(mimic, "parser=", no_op1, 1);
 	rb_define_module_function(mimic, "generator=", no_op1, 1);
