@@ -3,6 +3,8 @@
 ^c^d hide subtree
 ^c^s show subtree
 
+- memory leak on bad json
+
 - next
 
  - optimize read_hex in load.c

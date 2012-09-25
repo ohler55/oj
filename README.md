@@ -32,9 +32,9 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 1.3.4
+### Release 1.3.5
 
- - Fixed mimic_JSON so it convinces Ruby that the json gem is already loaded.
+ - Fixed mimic_JSON so it convinces Ruby that the **ALL** versions of the json gem are already loaded.
 
 ## <a name="description">Description</a>
 

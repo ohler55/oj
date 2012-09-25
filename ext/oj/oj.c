@@ -814,6 +814,7 @@ define_mimic_json(VALUE self) {
 	dummy = rb_gv_get("$LOADED_FEATURES");
 	if (rb_type(dummy) == T_ARRAY) {
 	    rb_ary_push(dummy, rb_str_new2("json"));
+	    rb_funcall2(Oj, rb_intern("mimic_loaded"), 0, 0);
 	}
 
 	rb_define_module_function(mimic, "parser=", no_op1, 1);
