@@ -36,6 +36,7 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
  - Fixed mimic_JSON so it convinces Ruby that the **ALL** versions of the json gem are already loaded.
 
+
 ## <a name="description">Description</a>
 
 Optimized JSON (Oj), as the name implies was written to provide speed
