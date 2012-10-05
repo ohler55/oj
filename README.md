@@ -32,6 +32,10 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
+### Release 1.3.7
+
+ - Added header file for linux builds.
+
 ### Release 1.3.6
 
  - Oj.load() now raises a SystemStackError if a JSON is too deeply nested. The loading is allowed to use on 75% of the stack.
