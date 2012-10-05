@@ -29,8 +29,9 @@
  */
 
 #ifdef SAFE_CACHE
-#include <pthread.h> // TBD LOCK
+#include <pthread.h>
 #endif
+#include <sys/resource.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -59,6 +60,7 @@ typedef struct _ParseInfo {
     char	*s;		/* current position in buffer */
     CircArray	circ_array;
     Options	options;
+    uint64_t	stack_min;
 } *ParseInfo;
 
 static CircArray	circ_array_new(void);
@@ -319,6 +321,9 @@ static VALUE
 read_next(ParseInfo pi, int hint) {
     VALUE	obj;
 
+    if ((uint64_t)&obj < pi->stack_min) {
+	rb_raise(rb_eSysStackError, "JSON is too deeply nested");
+    }
     next_non_white(pi);	// skip white space
     switch (*pi->s) {
     case '{':
@@ -998,6 +1003,7 @@ VALUE
 oj_parse(char *json, Options options) {
     VALUE		obj;
     struct _ParseInfo	pi;
+    struct rlimit	lim;
 
     if (0 == json) {
 	raise_error("Invalid arg, xml string can not be null", json, 0);
@@ -1010,6 +1016,11 @@ oj_parse(char *json, Options options) {
 	pi.circ_array = circ_array_new();
     }
     pi.options = options;
+    if (0 == getrlimit(RLIMIT_STACK, &lim)) {
+	pi.stack_min = (uint64_t)&lim - (lim.rlim_cur / 4 * 3); // let 3/4ths of the stack be used only
+    } else {
+	pi.stack_min = 0; // indicates not to check stack limit
+    }
     obj = read_next(&pi, 0);
     if (Yes == options->circular) {
 	circ_array_free(pi.circ_array);

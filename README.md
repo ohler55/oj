@@ -32,10 +32,11 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 1.3.5
+### Release 1.3.6
 
- - Fixed mimic_JSON so it convinces Ruby that the **ALL** versions of the json gem are already loaded.
+ - Oj.load() now raises a SystemStackError if a JSON is too deeply nested. The loading is allowed to use on 75% of the stack.
 
+ - Oj::Doc.open() now raises a SystemStackError if a JSON is too deeply nested. The loading is allowed to use on 75% of the stack. Oj::Doc.open will allow much deeper nesting than Oj.load().
 
 ## <a name="description">Description</a>
 

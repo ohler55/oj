@@ -63,6 +63,7 @@ typedef struct _ParseInfo {
     char	*str;		/* buffer being read from */
     char	*s;		/* current position in buffer */
     Doc		doc;
+    uint64_t	stack_min;
 } *ParseInfo;
 
 static void	leaf_init(Leaf leaf, int type);
@@ -477,6 +478,9 @@ static Leaf
 read_next(ParseInfo pi) {
     Leaf	leaf = 0;
 
+    if ((uint64_t)&leaf < pi->stack_min) {
+	rb_raise(rb_eSysStackError, "JSON is too deeply nested");
+    }
     next_non_white(pi);	// skip white space
     switch (*pi->s) {
     case '{':
@@ -827,6 +831,7 @@ parse_json(VALUE clas, char *json, int given, int allocated) {
     VALUE		result = Qnil;
     Doc			doc;
     int			ex = 0;
+    struct rlimit	lim;
 
     if (given) {
 	doc = ALLOCA_N(struct _Doc, 1);
@@ -837,6 +842,11 @@ parse_json(VALUE clas, char *json, int given, int allocated) {
     pi.s = pi.str;
     doc_init(doc);
     pi.doc = doc;
+    if (0 == getrlimit(RLIMIT_STACK, &lim)) {
+	pi.stack_min = (uint64_t)&lim - (lim.rlim_cur / 4 * 3); // let 3/4ths of the stack be used only
+    } else {
+	pi.stack_min = 0; // indicates not to check stack limit
+    }
     // last arg is free func void* func(void*)
     doc->self = rb_data_object_alloc(clas, doc, 0, free_doc_cb);
     rb_gc_register_address(&doc->self);

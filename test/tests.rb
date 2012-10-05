@@ -275,7 +275,13 @@ class Juice < ::Test::Unit::TestCase
       t = Time.local(2012, 1, 5, 23, 58, 7, 123456)
       json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema)
       tz = t.utc_offset
-      assert_equal(%{"2012-01-05T23:58:07.123456000+%02d:%02d"} % [tz / 3600, tz / 60 % 60], json)
+      # Ruby does not handle a %+02d properly so...
+      sign = '+'
+      if 0 > tz
+        sign = '-'
+        tz = -tz
+      end
+      assert_equal(%{"2012-01-05T23:58:07.123456000%s%02d:%02d"} % [sign, tz / 3600, tz / 60 % 60], json)
     end
   end    
   def test_xml_time_compat_no_secs
@@ -288,7 +294,13 @@ class Juice < ::Test::Unit::TestCase
       t = Time.local(2012, 1, 5, 23, 58, 7, 0)
       json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema)
       tz = t.utc_offset
-      assert_equal(%{"2012-01-05T23:58:07+%02d:%02d"} % [tz / 3600, tz / 60 % 60], json)
+      # Ruby does not handle a %+02d properly so...
+      sign = '+'
+      if 0 > tz
+        sign = '-'
+        tz = -tz
+      end
+      assert_equal(%{"2012-01-05T23:58:07%s%02d:%02d"} % [sign, tz / 3600, tz / 60 % 60], json)
     end
   end    
   def test_xml_time_compat_zulu
