@@ -276,7 +276,7 @@ leaf_value(Doc doc, Leaf leaf) {
 	    return leaf_hash_value(doc, leaf);
 	    break;
 	default:
-	    rb_raise(rb_eTypeError, "Unexpected type %02x.", leaf->type);
+	    rb_raise(rb_const_get_at(Oj, rb_intern("Error")), "Unexpected type %02x.", leaf->type);
 	    break;
 	}
     }
@@ -901,7 +901,7 @@ get_leaf(Leaf *stack, Leaf *lp, const char *path) {
     Leaf	leaf = *lp;
 
     if (MAX_STACK <= lp - stack) {
-	rb_raise(rb_eIOError, "Path too deep. limit is %d levels.\n", MAX_STACK);
+	rb_raise(rb_const_get_at(Oj, rb_intern("DepthError")), "Path too deep. Limit is %d levels.", MAX_STACK);
     }
     if ('\0' != *path) {
 	if ('.' == *path && '.' == *(path + 1)) {
@@ -988,7 +988,7 @@ each_leaf(Doc doc, VALUE self) {
 static int
 move_step(Doc doc, const char *path, int loc) {
     if (MAX_STACK <= doc->where - doc->where_path) {
-	rb_raise(rb_eIOError, "Path too deep. limit is %d levels.\n", MAX_STACK);
+	rb_raise(rb_const_get_at(Oj, rb_intern("DepthError")), "Path too deep. Limit is %d levels.", MAX_STACK);
     }
     if ('\0' == *path) {
 	loc = 0;
@@ -1167,7 +1167,7 @@ doc_open_file(VALUE clas, VALUE filename) {
     Check_Type(filename, T_STRING);
     path = StringValuePtr(filename);
     if (0 == (f = fopen(path, "r"))) {
-	rb_raise(rb_eIOError, "%s\n", strerror(errno));
+	rb_raise(rb_eIOError, "%s", strerror(errno));
     }
     fseek(f, 0, SEEK_END);
     len = ftell(f);
@@ -1180,7 +1180,8 @@ doc_open_file(VALUE clas, VALUE filename) {
     fseek(f, 0, SEEK_SET);
     if (len != fread(json, 1, len, f)) {
 	fclose(f);
-	rb_raise(rb_eLoadError, "Failed to read %lu bytes from %s.\n", (unsigned long)len, path);
+	rb_raise(rb_const_get_at(Oj, rb_intern("LoadError")), 
+		 "Failed to read %lu bytes from %s.", (unsigned long)len, path);
     }
     fclose(f);
     json[len] = '\0';

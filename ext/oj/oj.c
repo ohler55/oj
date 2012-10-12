@@ -67,6 +67,7 @@ ID	oj_utc_offset_id;
 ID	oj_write_id;
 
 VALUE	oj_bag_class;
+VALUE	oj_parse_error_class;
 VALUE	oj_bigdecimal_class;
 VALUE	oj_stringio_class;
 VALUE	oj_struct_class;
@@ -249,7 +250,7 @@ set_def_opts(VALUE self, VALUE opts) {
     } else if (null_sym == v) {
 	oj_default_options.mode = NullMode;
     } else {
-	rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, or :null.\n");
+	rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, or :null.");
     }
 
     v = rb_hash_lookup(opts, time_format_sym);
@@ -262,7 +263,7 @@ set_def_opts(VALUE self, VALUE opts) {
     } else if (ruby_sym == v) {
 	oj_default_options.time_format = RubyTime;
     } else {
-	rb_raise(rb_eArgError, ":time_format must be :unix, :xmlschema, or :ruby.\n");
+	rb_raise(rb_eArgError, ":time_format must be :unix, :xmlschema, or :ruby.");
     }
 
     if (Qtrue == rb_funcall(opts, rb_intern("has_key?"), 1, create_id_sym)) {
@@ -291,7 +292,7 @@ set_def_opts(VALUE self, VALUE opts) {
 	    } else if (Qfalse == v) {
 		*o->attr = No;
 	    } else {
-		rb_raise(rb_eArgError, "%s must be true, false, or nil.\n", rb_id2name(SYM2ID(o->sym)));
+		rb_raise(rb_eArgError, "%s must be true, false, or nil.", rb_id2name(SYM2ID(o->sym)));
 	    }
 	}
     }
@@ -314,7 +315,7 @@ parse_options(VALUE ropts, Options copts) {
 	
 	if (Qnil != (v = rb_hash_lookup(ropts, indent_sym))) {
 	    if (rb_cFixnum != rb_obj_class(v)) {
-		rb_raise(rb_eArgError, ":indent must be a Fixnum.\n");
+		rb_raise(rb_eArgError, ":indent must be a Fixnum.");
 	    }
 	    copts->indent = NUM2INT(v);
 	}
@@ -328,7 +329,7 @@ parse_options(VALUE ropts, Options copts) {
 	    } else if (null_sym == v) {
 		copts->mode = NullMode;
 	    } else {
-		rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, or :null.\n");
+		rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, or :null.");
 	    }
 	}
 	if (Qnil != (v = rb_hash_lookup(ropts, time_format_sym))) {
@@ -339,7 +340,7 @@ parse_options(VALUE ropts, Options copts) {
 	    } else if (ruby_sym == v) {
 		copts->time_format = RubyTime;
 	    } else {
-		rb_raise(rb_eArgError, ":time_format must be :unix, :xmlschema, or :ruby.\n");
+		rb_raise(rb_eArgError, ":time_format must be :unix, :xmlschema, or :ruby.");
 	    }
 	}
 	for (o = ynos; 0 != o->attr; o++) {
@@ -349,7 +350,7 @@ parse_options(VALUE ropts, Options copts) {
 		} else if (Qfalse == v) {
 		    *o->attr = No;
 		} else {
-		    rb_raise(rb_eArgError, "%s must be true or false.\n", rb_id2name(SYM2ID(o->sym)));
+		    rb_raise(rb_eArgError, "%s must be true or false.", rb_id2name(SYM2ID(o->sym)));
 		}
 	    }
 	}
@@ -398,7 +399,7 @@ load_with_opts(VALUE input, Options copts) {
 		json = ALLOCA_N(char, len + 1);
 	    }
 	    if (0 >= (cnt = read(fd, json, len)) || cnt != (ssize_t)len) {
-		rb_raise(rb_eIOError, "failed to read from IO Object.\n");
+		rb_raise(rb_eIOError, "failed to read from IO Object.");
 	    }
 	    json[len] = '\0';
 #endif
@@ -412,7 +413,7 @@ load_with_opts(VALUE input, Options copts) {
 	    }
 	    strcpy(json, StringValuePtr(s));
 	} else {
-	    rb_raise(rb_eArgError, "load() expected a String or IO Object.\n");
+	    rb_raise(rb_eArgError, "load() expected a String or IO Object.");
 	}
     }
     obj = oj_parse(json, copts);
@@ -435,7 +436,7 @@ load(int argc, VALUE *argv, VALUE self) {
     struct _Options	options = oj_default_options;
 
     if (1 > argc) {
-	rb_raise(rb_eArgError, "Wrong number of arguments to load().\n");
+	rb_raise(rb_eArgError, "Wrong number of arguments to load().");
     }
     if (2 <= argc) {
 	parse_options(argv[1], &options);
@@ -466,7 +467,7 @@ load_file(int argc, VALUE *argv, VALUE self) {
     Check_Type(*argv, T_STRING);
     path = StringValuePtr(*argv);
     if (0 == (f = fopen(path, "r"))) {
-	rb_raise(rb_eIOError, "%s\n", strerror(errno));
+	rb_raise(rb_eIOError, "%s", strerror(errno));
     }
     fseek(f, 0, SEEK_END);
     len = ftell(f);
@@ -478,7 +479,7 @@ load_file(int argc, VALUE *argv, VALUE self) {
     fseek(f, 0, SEEK_SET);
     if (len != fread(json, 1, len, f)) {
 	fclose(f);
-	rb_raise(rb_eLoadError, "Failed to read %ld bytes from %s.\n", len, path);
+	rb_raise(rb_const_get_at(Oj, rb_intern("LoadError")), "Failed to read %ld bytes from %s.", len, path);
     }
     fclose(f);
     json[len] = '\0';
@@ -508,7 +509,7 @@ dump(int argc, VALUE *argv, VALUE self) {
 	parse_options(argv[1], &copts);
     }
     if (0 == (json = oj_write_obj_to_str(*argv, &copts))) {
-	rb_raise(rb_eNoMemError, "Not enough memory.\n");
+	rb_raise(rb_eNoMemError, "Not enough memory.");
     }
     rstr = rb_str_new2(json);
 #if HAS_ENCODING_SUPPORT
@@ -551,7 +552,7 @@ mimic_dump(int argc, VALUE *argv, VALUE self) {
     VALUE		rstr;
     
     if (0 == (json = oj_write_obj_to_str(*argv, &copts))) {
-	rb_raise(rb_eNoMemError, "Not enough memory.\n");
+	rb_raise(rb_eNoMemError, "Not enough memory.");
     }
     rstr = rb_str_new2(json);
 #if HAS_ENCODING_SUPPORT
@@ -601,7 +602,7 @@ mimic_walk(VALUE key, VALUE obj, VALUE proc) {
 	*args = obj;
 	rb_proc_call_with_block(proc, 1, args, Qnil);
 #else
-	rb_raise(rb_eNotImpError, "Calling a Proc with a block not supported in this version. Use func() {|x| } syntax instead.\n");
+	rb_raise(rb_eNotImpError, "Calling a Proc with a block not supported in this version. Use func() {|x| } syntax instead.");
 #endif
     }
     return ST_CONTINUE;
@@ -623,7 +624,7 @@ mimic_load(int argc, VALUE *argv, VALUE self) {
 static VALUE
 mimic_dump_load(int argc, VALUE *argv, VALUE self) {
     if (1 > argc) {
-	rb_raise(rb_eArgError, "wrong number of arguments (0 for 1)\n");
+	rb_raise(rb_eArgError, "wrong number of arguments (0 for 1)");
     } else if (T_STRING == rb_type(*argv)) {
 	return mimic_load(argc, argv, self);
     } else {
@@ -644,7 +645,7 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
 
 	memset(&dump_opts, 0, sizeof(dump_opts)); // may not be needed
 	if (T_HASH != rb_type(ropts)) {
-	    rb_raise(rb_eArgError, "options must be a hash.\n");
+	    rb_raise(rb_eArgError, "options must be a hash.");
 	}
 	if (Qnil != (v = rb_hash_lookup(ropts, indent_sym))) {
 	    rb_check_type(v, T_STRING);
@@ -690,7 +691,7 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
 	// :max_nesting is always set to 100
     }
     if (0 == (json = oj_write_obj_to_str(*argv, copts))) {
-	rb_raise(rb_eNoMemError, "Not enough memory.\n");
+	rb_raise(rb_eNoMemError, "Not enough memory.");
     }
     rstr = rb_str_new2(json);
 #if HAS_ENCODING_SUPPORT
@@ -733,14 +734,14 @@ mimic_parse(int argc, VALUE *argv, VALUE self) {
     struct _Options	options = oj_default_options;
 
     if (1 > argc) {
-	rb_raise(rb_eArgError, "Wrong number of arguments to parse().\n");
+	rb_raise(rb_eArgError, "Wrong number of arguments to parse().");
     }
     if (2 <= argc && Qnil != argv[1]) {
 	VALUE	ropts = argv[1];
 	VALUE	v;
 
 	if (T_HASH != rb_type(ropts)) {
-	    rb_raise(rb_eArgError, "options must be a hash.\n");
+	    rb_raise(rb_eArgError, "options must be a hash.");
 	}
 	if (Qnil != (v = rb_hash_lookup(ropts, symbolize_names_sym))) {
 	    options.sym_key = (Qtrue == v) ? Yes : No;
@@ -804,7 +805,8 @@ define_mimic_json(VALUE self) {
 	VALUE	dummy;
 
 	if (rb_const_defined_at(rb_cObject, rb_intern("JSON"))) {
-	    rb_raise(rb_eTypeError, "JSON module already exists. Can not mimic. Do not require 'json' before calling mimic_JSON.");
+	    rb_raise(rb_const_get_at(Oj, rb_intern("MimicError")),
+		     "JSON module already exists. Can not mimic. Do not require 'json' before calling mimic_JSON.");
 	}
 	mimic = rb_define_module("JSON");
 	ext = rb_define_module_under(mimic, "Ext");
@@ -884,6 +886,7 @@ void Init_oj() {
     oj_write_id = rb_intern("write");
 
     oj_bag_class = rb_const_get_at(Oj, rb_intern("Bag"));
+    oj_parse_error_class = rb_const_get_at(Oj, rb_intern("ParseError"));
     oj_struct_class = rb_const_get(rb_cObject, rb_intern("Struct"));
     oj_time_class = rb_const_get(rb_cObject, rb_intern("Time"));
     oj_bigdecimal_class = rb_const_get(rb_cObject, rb_intern("BigDecimal"));
@@ -965,19 +968,19 @@ void Init_oj() {
 }
 
 void
-_oj_raise_error(const char *msg, const char *xml, const char *current, const char* file, int line) {
-    int	xline = 1;
+_oj_raise_error(const char *msg, const char *json, const char *current, const char* file, int line) {
+    int	jline = 1;
     int	col = 1;
 
-    for (; xml < current && '\n' != *current; current--) {
+    for (; json < current && '\n' != *current; current--) {
 	col++;
     }
-    for (; xml < current; current--) {
+    for (; json < current; current--) {
 	if ('\n' == *current) {
-	    xline++;
+	    jline++;
 	}
     }
-    rb_raise(rb_eSyntaxError, "%s at line %d, column %d [%s:%d]\n", msg, xline, col, file, line);
+    rb_raise(oj_parse_error_class, "%s at line %d, column %d [%s:%d]", msg, jline, col, file, line);
 }
 
 // mimic JSON documentation
