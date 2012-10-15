@@ -30,7 +30,9 @@
 
 #include <stdlib.h>
 #include <errno.h>
+#if !IS_WINDOWS
 #include <sys/time.h>
+#endif
 #include <time.h>
 #include <stdio.h>
 #include <string.h>

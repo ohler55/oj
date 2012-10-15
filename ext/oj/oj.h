@@ -46,7 +46,7 @@ extern "C" {
 #endif
 
 #include "stdint.h"
-#ifdef SAFE_CACHE
+#if SAFE_CACHE
 #include <pthread.h>
 #endif
 #include "cache.h"
@@ -188,7 +188,7 @@ extern ID	oj_utc_offset_id;
 extern Cache	oj_class_cache;
 extern Cache	oj_attr_cache;
 
-#ifdef SAFE_CACHE
+#if SAFE_CACHE
 extern pthread_mutex_t	oj_cache_mutex;
 #endif
 #if defined(__cplusplus)

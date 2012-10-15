@@ -6,9 +6,8 @@ dir_config(extension_name)
 parts = RUBY_DESCRIPTION.split(' ')
 type = parts[0]
 type = 'ree' if 'ruby' == type && RUBY_DESCRIPTION.include?('Ruby Enterprise Edition')
-platform = parts[5][1...-1]
+platform = RUBY_PLATFORM
 version = RUBY_VERSION.split('.')
-puts ">>>>> RUBY_DESCRIPTION: #{RUBY_DESCRIPTION} <<<<<<"
 puts ">>>>> Creating Makefile for #{type} version #{RUBY_VERSION} on #{platform} <<<<<"
 
 dflags = {
@@ -27,7 +26,8 @@ dflags = {
   'HAS_EXCEPTION_MAGIC' => ('ruby' == type && ('1' == version[0] && '9' == version[1]) || '2' <= version[0]) ? 0 : 1,
   'HAS_PROC_WITH_BLOCK' => ('ruby' == type && ('1' == version[0] && '9' == version[1]) || '2' <= version[0]) ? 1 : 0,
   'HAS_TOP_LEVEL_ST_H' => ('ree' == type || ('ruby' == type &&  '1' == version[0] && '8' == version[1])) ? 1 : 0,
-  'SAFE_CACHE' => nil,
+  'IS_WINDOWS' => ('i386-mingw32' == platform || 'tcs-ruby' == type) ? 1 : 0,
+  'SAFE_CACHE' => ('i386-mingw32' == platform || 'tcs-ruby' == type) ? 0 : 1,
 }
 # This is a monster hack to get around issues with 1.9.3-p0 on CentOS 5.4. SO
 # some reason math.h and string.h contents are not processed. Might be a

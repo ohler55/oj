@@ -108,7 +108,7 @@ Cache	oj_attr_cache = 0;
 rb_encoding	*oj_utf8_encoding = 0;
 #endif
 
-#ifdef SAFE_CACHE
+#if SAFE_CACHE
 pthread_mutex_t	oj_cache_mutex; // only used if SAFE_CACHE defined
 #endif
 static const char	json_class[] = "json_class";
@@ -961,7 +961,7 @@ void Init_oj() {
     // The end. bump up the size of odds if a new class is added.
     odd->clas = Qundef;
 
-#ifdef SAFE_CACHE
+#if SAFE_CACHE
     pthread_mutex_init(&oj_cache_mutex, 0);
 #endif
     oj_init_doc();

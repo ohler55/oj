@@ -28,7 +28,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef SAFE_CACHE
+#if SAFE_CACHE
 #include <pthread.h>
 #endif
 #include <sys/resource.h>
@@ -162,7 +162,7 @@ classname2class(const char *name, ParseInfo pi) {
     VALUE	*slot;
     int		auto_define = (Yes == pi->options->auto_define);
 
-#ifdef SAFE_CACHE
+#if SAFE_CACHE
     pthread_mutex_lock(&oj_cache_mutex);
 #endif
     if (Qundef == (clas = oj_cache_get(oj_class_cache, name, &slot))) {
@@ -191,7 +191,7 @@ classname2class(const char *name, ParseInfo pi) {
 	    *slot = clas;
 	}
     }
-#ifdef SAFE_CACHE
+#if SAFE_CACHE
     pthread_mutex_unlock(&oj_cache_mutex);
 #endif
     return clas;
@@ -498,7 +498,7 @@ read_obj(ParseInfo pi) {
 		    VALUE	*slot;
 		    ID		var_id;
 
-#ifdef SAFE_CACHE
+#if SAFE_CACHE
 		    pthread_mutex_lock(&oj_cache_mutex);
 #endif
 		    if (Qundef == (var_id = oj_cache_get(oj_attr_cache, ks, &slot))) {
@@ -514,7 +514,7 @@ read_obj(ParseInfo pi) {
 			var_id = rb_intern(attr);
 			*slot = var_id;
 		    }
-#ifdef SAFE_CACHE
+#if SAFE_CACHE
 		    pthread_mutex_unlock(&oj_cache_mutex);
 #endif
 #if HAS_EXCEPTION_MAGIC
