@@ -37,6 +37,8 @@ if 'x86_64-linux' == RUBY_PLATFORM && '1.9.3' == RUBY_VERSION && '2011-10-30' ==
     dflags['NEEDS_STPCPY'] = nil if File.read('/etc/redhat-release').include?('CentOS release 5.4')
   rescue Exception => e
   end
+else
+  dflags['NEEDS_STPCPY'] = nil if 'i386-mingw32' == platform || 'tcs-ruby' == type
 end
 
 dflags.each do |k,v|
