@@ -31,7 +31,7 @@
 #if SAFE_CACHE
 #include <pthread.h>
 #endif
-#include <sys/resource.h>
+//#include <sys/resource.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
