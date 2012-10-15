@@ -834,7 +834,6 @@ parse_json(VALUE clas, char *json, int given, int allocated) {
     VALUE		result = Qnil;
     Doc			doc;
     int			ex = 0;
-    struct rlimit	lim;
 
     if (given) {
 	doc = ALLOCA_N(struct _Doc, 1);
@@ -845,10 +844,18 @@ parse_json(VALUE clas, char *json, int given, int allocated) {
     pi.s = pi.str;
     doc_init(doc);
     pi.doc = doc;
-    if (0 == getrlimit(RLIMIT_STACK, &lim)) {
-	pi.stack_min = (uint64_t)&lim - (lim.rlim_cur / 4 * 3); // let 3/4ths of the stack be used only
-    } else {
-	pi.stack_min = 0; // indicates not to check stack limit
+    {
+#if IS_WINDOWS
+	pi.stack_min = (uint64_t)&pi - (512 * 1024); // assume a 1M stack and give half to ruby
+#else
+	struct rlimit	lim;
+
+	if (0 == getrlimit(RLIMIT_STACK, &lim)) {
+	    pi.stack_min = (uint64_t)&pi - (lim.rlim_cur / 4 * 3); // let 3/4ths of the stack be used only
+#endif
+	} else {
+	    pi.stack_min = 0; // indicates not to check stack limit
+	}
     }
     // last arg is free func void* func(void*)
     doc->self = rb_data_object_alloc(clas, doc, 0, free_doc_cb);

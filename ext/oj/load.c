@@ -1005,7 +1005,6 @@ VALUE
 oj_parse(char *json, Options options) {
     VALUE		obj;
     struct _ParseInfo	pi;
-    struct rlimit	lim;
 
     if (0 == json) {
 	raise_error("Invalid arg, xml string can not be null", json, 0);
@@ -1018,10 +1017,18 @@ oj_parse(char *json, Options options) {
 	pi.circ_array = circ_array_new();
     }
     pi.options = options;
-    if (0 == getrlimit(RLIMIT_STACK, &lim)) {
-	pi.stack_min = (uint64_t)&lim - (lim.rlim_cur / 4 * 3); // let 3/4ths of the stack be used only
-    } else {
-	pi.stack_min = 0; // indicates not to check stack limit
+    {
+#if IS_WINDOWS
+	pi.stack_min = (uint64_t)&obj - (512 * 1024); // assume a 1M stack and give half to ruby
+#else
+	struct rlimit	lim;
+
+	if (0 == getrlimit(RLIMIT_STACK, &lim)) {
+	    pi.stack_min = (uint64_t)&obj - (lim.rlim_cur / 4 * 3); // let 3/4ths of the stack be used only
+#endif
+	} else {
+	    pi.stack_min = 0; // indicates not to check stack limit
+	}
     }
     obj = read_next(&pi, 0);
     if (Yes == options->circular) {
