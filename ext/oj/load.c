@@ -31,7 +31,9 @@
 #if SAFE_CACHE
 #include <pthread.h>
 #endif
-//#include <sys/resource.h>
+#if !IS_WINDOWS
+#include <sys/resource.h>  // for getrlimit() on linux
+#endif
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

@@ -28,7 +28,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-//#include <sys/resource.h>  // for getrlimit()
+#if !IS_WINDOWS
+#include <sys/resource.h>  // for getrlimit() on linux
+#endif
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
