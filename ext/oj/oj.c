@@ -385,6 +385,7 @@ load_with_opts(VALUE input, Options copts) {
 	    }
 	    strcpy(json, StringValuePtr(s));
 #ifndef JRUBY_RUBY
+#if !IS_WINDOWS
 	    // JRuby gets confused with what is the real fileno.
 	} else if (rb_respond_to(input, oj_fileno_id) && Qnil != (s = rb_funcall(input, oj_fileno_id, 0))) {
 	    int		fd = FIX2INT(s);
@@ -401,6 +402,7 @@ load_with_opts(VALUE input, Options copts) {
 		rb_raise(rb_eIOError, "failed to read from IO Object.");
 	    }
 	    json[len] = '\0';
+#endif
 #endif
 	} else if (rb_respond_to(input, oj_read_id)) {
 	    s = rb_funcall2(input, oj_read_id, 0, 0);
