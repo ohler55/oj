@@ -481,7 +481,11 @@ static Leaf
 read_next(ParseInfo pi) {
     Leaf	leaf = 0;
 
+#if IS_WINDOWS
+    if ((uint64_t)(uint32_t)&leaf < pi->stack_min) {
+#else
     if ((uint64_t)&leaf < pi->stack_min) {
+#endif
 	rb_raise(rb_eSysStackError, "JSON is too deeply nested");
     }
     next_non_white(pi);	// skip white space
@@ -845,7 +849,7 @@ parse_json(VALUE clas, char *json, int given, int allocated) {
     doc_init(doc);
     pi.doc = doc;
 #if IS_WINDOWS
-    pi.stack_min = (uint64_t)&pi - (512 * 1024); // assume a 1M stack and give half to ruby
+    pi.stack_min = (uint64_t)(uint32_t)&pi - (512 * 1024); // assume a 1M stack and give half to ruby
 #else
     {
 	struct rlimit	lim;

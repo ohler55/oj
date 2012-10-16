@@ -323,7 +323,11 @@ static VALUE
 read_next(ParseInfo pi, int hint) {
     VALUE	obj;
 
+#if IS_WINDOWS
+    if ((uint64_t)(uint32_t)&obj < pi->stack_min) {
+#else
     if ((uint64_t)&obj < pi->stack_min) {
+#endif
 	rb_raise(rb_eSysStackError, "JSON is too deeply nested");
     }
     next_non_white(pi);	// skip white space
@@ -1018,7 +1022,7 @@ oj_parse(char *json, Options options) {
     }
     pi.options = options;
 #if IS_WINDOWS
-    pi.stack_min = (uint64_t)&obj - (512 * 1024); // assume a 1M stack and give half to ruby
+    pi.stack_min = (uint64_t)(uint32_t)&obj - (512 * 1024); // assume a 1M stack and give half to ruby
 #else
     {
 	struct rlimit	lim;
