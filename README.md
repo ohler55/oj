@@ -32,9 +32,9 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 1.4.0
+### Release 1.4.1
 
- - Parse errors now raise an Exception that inherites form Oj::Error which inherits from StandardError. Some other Exceptions were changed as well to make it easier to rescue errors.
+ - Windows RubyInstaller and TCS-Ruby now supported thanks to Jarmo Pertman. Thanks Jarmo.
 
 ## <a name="description">Description</a>
 
