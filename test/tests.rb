@@ -162,10 +162,6 @@ class Juice < ::Test::Unit::TestCase
     dump_and_load(1, false)
   end
 
-  def test_bignum
-    dump_and_load(12345678901234567890123456789, false)
-  end
-
   def test_float
     dump_and_load(0.0, false)
     dump_and_load(12345.6789, false)
@@ -667,11 +663,14 @@ class Juice < ::Test::Unit::TestCase
     assert_equal(orig, bg)
   end
   def test_bigdecimal_object
+    mode = Oj.default_options[:mode]
+    Oj.default_options = {:mode => :object}
     dump_and_load(BigDecimal.new('3.14159265358979323846'), false)
+    Oj.default_options = {:mode => mode}
     # Infinity is the same for Float and BigDecimal
-    json = Oj.dump(BigDecimal.new('Infinity'), :mode => :compat)
+    json = Oj.dump(BigDecimal.new('Infinity'), :mode => :object)
     assert_equal('Infinity', json)
-    json = Oj.dump(BigDecimal.new('-Infinity'), :mode => :compat)
+    json = Oj.dump(BigDecimal.new('-Infinity'), :mode => :object)
     assert_equal('-Infinity', json)
   end
 

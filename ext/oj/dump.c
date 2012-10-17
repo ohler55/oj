@@ -1072,11 +1072,16 @@ dump_data_obj(VALUE obj, int depth, Out out) {
 	*out->cur++ = '}';
 	*out->cur = '\0';
     } else {
-	VALUE	clas = rb_obj_class(obj);
 	Odd	odd = oj_get_odd(clas);
 
 	if (0 == odd) {
-	    dump_nil(out);
+	    if (oj_bigdecimal_class == clas) {
+		VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+
+		dump_raw(StringValuePtr(rstr), RSTRING_LEN(rstr), out);
+	    } else {
+		dump_nil(out);
+	    }
 	} else {
 	    dump_odd(obj, odd, clas, depth + 1, out);
 	}
@@ -1133,7 +1138,13 @@ dump_obj_obj(VALUE obj, int depth, Out out) {
 	Odd	odd = oj_get_odd(clas);
 
 	if (0 == odd) {
-	    dump_obj_attrs(obj, clas, id, depth, out);
+	    if (oj_bigdecimal_class == clas) {
+		VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+
+		dump_raw(StringValuePtr(rstr), RSTRING_LEN(rstr), out);
+	    } else {
+		dump_obj_attrs(obj, clas, id, depth, out);
+	    }
 	} else {
 	    dump_odd(obj, odd, clas, depth + 1, out);
 	}
