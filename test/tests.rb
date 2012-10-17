@@ -645,16 +645,16 @@ class Juice < ::Test::Unit::TestCase
 
   # BigDecimal
   def test_bigdecimal_strict
-    begin
-      json = Oj.dump(BigDecimal.new('3.14159265358979323846'), :mode => :strict)
-      assert(false)
-    rescue Exception => e
-      assert(true)
-    end
+    mode = Oj.default_options[:mode]
+    Oj.default_options = {:mode => :strict}
+    dump_and_load(BigDecimal.new('3.14159265358979323846'), false)
+    Oj.default_options = {:mode => mode}
   end
   def test_bigdecimal_null
-    json = Oj.dump(BigDecimal.new('3.14159265358979323846'), :mode => :null)
-    assert_equal('null', json)
+    mode = Oj.default_options[:mode]
+    Oj.default_options = {:mode => :null}
+    dump_and_load(BigDecimal.new('3.14159265358979323846'), false)
+    Oj.default_options = {:mode => mode}
   end
   def test_bigdecimal_compat
     orig = BigDecimal.new('3.14159265358979323846')

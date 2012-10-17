@@ -91,6 +91,8 @@ static void	dump_hash(VALUE obj, int depth, int mode, Out out);
 static void	dump_time(VALUE obj, Out out);
 static void	dump_ruby_time(VALUE obj, Out out);
 static void	dump_xml_time(VALUE obj, Out out);
+static void	dump_data_strict(VALUE obj, Out out);
+static void	dump_data_null(VALUE obj, Out out);
 static void	dump_data_comp(VALUE obj, Out out);
 static void	dump_data_obj(VALUE obj, int depth, Out out);
 static void	dump_obj_comp(VALUE obj, int depth, Out out);
@@ -1030,6 +1032,32 @@ dump_xml_time(VALUE obj, Out out) {
 }
 
 static void
+dump_data_strict(VALUE obj, Out out) {
+    VALUE	clas = rb_obj_class(obj);
+
+    if (oj_bigdecimal_class == clas) {
+	VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+
+	dump_raw(StringValuePtr(rstr), RSTRING_LEN(rstr), out);
+    } else {
+	raise_strict(obj);
+    }
+}
+
+static void
+dump_data_null(VALUE obj, Out out) {
+    VALUE	clas = rb_obj_class(obj);
+
+    if (oj_bigdecimal_class == clas) {
+	VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+
+	dump_raw(StringValuePtr(rstr), RSTRING_LEN(rstr), out);
+    } else {
+	dump_nil(out);
+    }
+}
+
+static void
 dump_data_comp(VALUE obj, Out out) {
     VALUE	clas = rb_obj_class(obj);
 
@@ -1480,8 +1508,8 @@ dump_val(VALUE obj, int depth, Out out) {
 #endif
     case T_OBJECT:
 	switch (out->opts->mode) {
-	case StrictMode:	raise_strict(obj);		break;
-	case NullMode:		dump_nil(out);			break;
+	case StrictMode:	dump_data_strict(obj, out);	break;
+	case NullMode:		dump_data_null(obj, out);	break;
 	case CompatMode:	dump_obj_comp(obj, depth, out);	break;
 	case ObjectMode:
 	default:		dump_obj_obj(obj, depth, out);	break;
@@ -1489,8 +1517,8 @@ dump_val(VALUE obj, int depth, Out out) {
 	break;
     case T_DATA:
 	switch (out->opts->mode) {
-	case StrictMode:	raise_strict(obj);		break;
-	case NullMode:		dump_nil(out);			break;
+	case StrictMode:	dump_data_strict(obj, out);	break;
+	case NullMode:		dump_data_null(obj, out);	break;
 	case CompatMode:	dump_data_comp(obj, out);	break;
 	case ObjectMode:
 	default:		dump_data_obj(obj, depth, out);	break;

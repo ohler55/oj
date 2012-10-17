@@ -36,6 +36,8 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
  - Fixed dump and load of BigDecimals in :object mode.
 
+ - BigDecimals are now dumped and loaded in all modes.
+
 ### Release 1.4.1
 
  - Windows RubyInstaller and TCS-Ruby now supported thanks to Jarmo Pertman. Thanks Jarmo.
