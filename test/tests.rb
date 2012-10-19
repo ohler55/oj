@@ -573,7 +573,7 @@ class Juice < ::Test::Unit::TestCase
       err = e
     end
     json = Oj.dump(err, :mode => :object, :indent => 2)
-    #puts "*** #{json}"
+    puts "*** #{json}"
     e2 = Oj.load(json, :mode => :strict)
     assert_equal(err.class.to_s, e2['^o'])
     assert_equal(err.message, e2['~mesg'])
