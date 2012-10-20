@@ -25,7 +25,7 @@ dflags = {
                              (('1' == version[0] && '9' == version[1]) || '2' <= version[0])) ? 1 : 0,
   'HAS_NANO_TIME' => ('ruby' == type && ('1' == version[0] && '9' == version[1]) || '2' <= version[0]) ? 1 : 0,
   'HAS_RSTRUCT' => ('ruby' == type || 'ree' == type || 'tcs-ruby' == type) ? 1 : 0,
-  'HAS_IVAR_HELPERS' => ('ruby' == type && !is_windows && ('1' == version[0] && '9' == version[1]) || '2' <= version[0]) ? 1 : 0,
+  'HAS_IVAR_HELPERS' => ('ruby' == type && !is_windows && (('1' == version[0] && '9' == version[1]) || '2' <= version[0])) ? 1 : 0,
   'HAS_EXCEPTION_MAGIC' => ('ruby' == type && !is_windows && (('1' == version[0] && '9' == version[1]) || '2' <= version[0])) ? 0 : 1,
   'HAS_PROC_WITH_BLOCK' => ('ruby' == type && ('1' == version[0] && '9' == version[1]) || '2' <= version[0]) ? 1 : 0,
   'HAS_TOP_LEVEL_ST_H' => ('ree' == type || ('ruby' == type &&  '1' == version[0] && '8' == version[1])) ? 1 : 0,

@@ -1275,7 +1275,6 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 #else
 	size = d2 * out->indent + 1;
 #if HAS_EXCEPTION_MAGIC
-	printf("\n*** Using exception magic to get exception attributes\n");
 	if (Qtrue == rb_obj_is_kind_of(obj, rb_eException)) {
 	    if (',' != *(out->cur - 1)) {
 		*out->cur++ = ',';
