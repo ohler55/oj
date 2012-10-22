@@ -1,5 +1,11 @@
-#!/usr/bin/env ruby -wW1
+#!/usr/bin/env ruby
 # encoding: UTF-8
+
+# Ubuntu does not accept arguments to ruby when called using env. To get warnings to show up the -w options is
+# required. That can be set in the RUBYOPT environment variable.
+# export RUBYOPT=-w
+
+$VERBOSE = true
 
 $: << File.join(File.dirname(__FILE__), "../lib")
 $: << File.join(File.dirname(__FILE__), "../ext")
@@ -213,9 +219,9 @@ class Juice < ::Test::Unit::TestCase
   # Symbol
   def test_symbol_strict
     begin
-      json = Oj.dump(:abc, :mode => :strict)
+      Oj.dump(:abc, :mode => :strict)
       assert(false)
-    rescue Exception => e
+    rescue Exception
       assert(true)
     end
   end
@@ -238,9 +244,9 @@ class Juice < ::Test::Unit::TestCase
   def test_time_strict
     t = Time.local(2012, 1, 5, 23, 58, 7)
     begin
-      json = Oj.dump(t, :mode => :strict)
+      Oj.dump(t, :mode => :strict)
       assert(false)
-    rescue Exception => e
+    rescue Exception
       assert(true)
     end
   end
@@ -266,7 +272,7 @@ class Juice < ::Test::Unit::TestCase
       t = Time.new(2012, 1, 5, 23, 58, 7.123456000, 34200)
       json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema)
       assert_equal(%{"2012-01-05T23:58:07.123456000+09:30"}, json)
-    rescue Exception => e
+    rescue Exception
       # some Rubies (1.8.7) do not allow the timezome to be set
       t = Time.local(2012, 1, 5, 23, 58, 7, 123456)
       json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema)
@@ -285,7 +291,7 @@ class Juice < ::Test::Unit::TestCase
       t = Time.new(2012, 1, 5, 23, 58, 7.0, 34200)
       json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema)
       assert_equal(%{"2012-01-05T23:58:07+09:30"}, json)
-    rescue Exception => e
+    rescue Exception
       # some Rubies (1.8.7) do not allow the timezome to be set
       t = Time.local(2012, 1, 5, 23, 58, 7, 0)
       json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema)
@@ -304,11 +310,11 @@ class Juice < ::Test::Unit::TestCase
       t = Time.new(2012, 1, 5, 23, 58, 7.0, 0)
       json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema)
       assert_equal(%{"2012-01-05T23:58:07Z"}, json)
-    rescue Exception => e
+    rescue Exception
       # some Rubies (1.8.7) do not allow the timezome to be set
       t = Time.utc(2012, 1, 5, 23, 58, 7, 0)
       json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema)
-      tz = t.utc_offset
+      #tz = t.utc_offset
       assert_equal(%{"2012-01-05T23:58:07Z"}, json)
     end
   end    
@@ -321,9 +327,9 @@ class Juice < ::Test::Unit::TestCase
   # Class
   def test_class_strict
     begin
-      json = Oj.dump(Juice, :mode => :strict)
+      Oj.dump(Juice, :mode => :strict)
       assert(false)
-    rescue Exception => e
+    rescue Exception
       assert(true)
     end
   end
@@ -349,23 +355,23 @@ class Juice < ::Test::Unit::TestCase
   end
   def test_non_str_hash_strict
     begin
-      json = Oj.dump({ 1 => true, 0 => false }, :mode => :strict)
+      Oj.dump({ 1 => true, 0 => false }, :mode => :strict)
       assert(false)
-    rescue Exception => e
+    rescue Exception
       assert(true)
     end
   end
   def test_non_str_hash_null
     begin
-      json = Oj.dump({ 1 => true, 0 => false }, :mode => :null)
+      Oj.dump({ 1 => true, 0 => false }, :mode => :null)
       assert(false)
-    rescue Exception => e
+    rescue Exception
       assert(true)
     end
   end
   def test_non_str_hash_compat
     begin
-      json = Oj.dump({ 1 => true, 0 => false }, :mode => :compat)
+      Oj.dump({ 1 => true, 0 => false }, :mode => :compat)
       assert(false)
     rescue Exception => e
       assert(e.message.include?('Fixnum'))
@@ -393,9 +399,9 @@ class Juice < ::Test::Unit::TestCase
   def test_json_object_strict
     obj = Jeez.new(true, 58)
     begin
-      json = Oj.dump(obj, :mode => :strict)
+      Oj.dump(obj, :mode => :strict)
       assert(false)
-    rescue Exception => e
+    rescue Exception
       assert(true)
     end
   end
@@ -439,9 +445,9 @@ class Juice < ::Test::Unit::TestCase
   def test_to_hash_object_strict
     obj = Jazz.new(true, 58)
     begin
-      json = Oj.dump(obj, :mode => :strict)
+      Oj.dump(obj, :mode => :strict)
       assert(false)
-    rescue Exception => e
+    rescue Exception
       assert(true)
     end
   end
@@ -475,9 +481,9 @@ class Juice < ::Test::Unit::TestCase
   def test_as_json_object_strict
     obj = Orange.new(true, 58)
     begin
-      json = Oj.dump(obj, :mode => :strict)
+      Oj.dump(obj, :mode => :strict)
       assert(false)
-    rescue Exception => e
+    rescue Exception
       assert(true)
     end
   end
@@ -492,6 +498,7 @@ class Juice < ::Test::Unit::TestCase
     Oj.default_options = { :mode => :compat }
     obj = Orange.new(true, 58)
     json = Oj.dump(obj, :indent => 2)
+    assert(!json.nil?)
 =begin
     assert_equal(%{{
   "json_class":"Orange",
@@ -527,9 +534,9 @@ class Juice < ::Test::Unit::TestCase
   def test_object_strict
     obj = Jam.new(true, 58)
     begin
-      json = Oj.dump(obj, :mode => :strict)
+      Oj.dump(obj, :mode => :strict)
       assert(false)
-    rescue Exception => e
+    rescue Exception
       assert(true)
     end
   end
@@ -591,9 +598,9 @@ class Juice < ::Test::Unit::TestCase
   # Range
   def test_range_strict
     begin
-      json = Oj.dump(1..7, :mode => :strict)
+      Oj.dump(1..7, :mode => :strict)
       assert(false)
-    rescue Exception => e
+    rescue Exception
       assert(true)
     end
   end
@@ -677,9 +684,9 @@ class Juice < ::Test::Unit::TestCase
   # Date
   def test_date_strict
     begin
-      json = Oj.dump(Date.new(2012, 6, 19), :mode => :strict)
+      Oj.dump(Date.new(2012, 6, 19), :mode => :strict)
       assert(false)
-    rescue Exception => e
+    rescue Exception
       assert(true)
     end
   end
@@ -706,9 +713,9 @@ class Juice < ::Test::Unit::TestCase
   # DateTime
   def test_datetime_strict
     begin
-      json = Oj.dump(DateTime.new(2012, 6, 19, 20, 19, 27), :mode => :strict)
+      Oj.dump(DateTime.new(2012, 6, 19, 20, 19, 27), :mode => :strict)
       assert(false)
-    rescue Exception => e
+    rescue Exception
       assert(true)
     end
   end
@@ -801,11 +808,14 @@ class Juice < ::Test::Unit::TestCase
 
 # Stream Deeply Nested
   def test_deep_nest
-    begin
-      Oj.load(-> n { ?[ * n  + ?] * n }.(100000))
-      assert(false)
-    rescue Exception => e
-      assert(e.class == SystemStackError)
+    unless 'jruby' == RUBY_DESCRIPTION.split(' ')[0]
+      begin
+        n = 100000
+        Oj.load('[' * n + ']' * n)
+        assert(false)
+      rescue Exception => e
+        assert(e.class == SystemStackError)
+      end
     end
   end
 
