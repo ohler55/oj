@@ -62,7 +62,7 @@ typedef struct _ParseInfo {
     char	*s;		/* current position in buffer */
     CircArray	circ_array;
     Options	options;
-    uint64_t	stack_min;
+    void	*stack_min;
 } *ParseInfo;
 
 static CircArray	circ_array_new(void);
@@ -323,11 +323,7 @@ static VALUE
 read_next(ParseInfo pi, int hint) {
     VALUE	obj;
 
-#if IS_WINDOWS
-    if ((uint64_t)(uint32_t)&obj < pi->stack_min) {
-#else
-    if ((uint64_t)&obj < pi->stack_min) {
-#endif
+    if ((void*)&obj < pi->stack_min) {
 	rb_raise(rb_eSysStackError, "JSON is too deeply nested");
     }
     next_non_white(pi);	// skip white space
@@ -1022,13 +1018,13 @@ oj_parse(char *json, Options options) {
     }
     pi.options = options;
 #if IS_WINDOWS
-    pi.stack_min = (uint64_t)(uint32_t)&obj - (512 * 1024); // assume a 1M stack and give half to ruby
+    pi.stack_min = (void*)((char*)&obj - (512 * 1024)); // assume a 1M stack and give half to ruby
 #else
     {
 	struct rlimit	lim;
 
 	if (0 == getrlimit(RLIMIT_STACK, &lim)) {
-	    pi.stack_min = (uint64_t)&obj - (lim.rlim_cur / 4 * 3); // let 3/4ths of the stack be used only
+	    pi.stack_min = (void*)((char*)&obj - (lim.rlim_cur / 4 * 3)); // let 3/4ths of the stack be used only
 	} else {
 	    pi.stack_min = 0; // indicates not to check stack limit
 	}

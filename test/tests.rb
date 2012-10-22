@@ -799,6 +799,16 @@ class Juice < ::Test::Unit::TestCase
     assert_equal(h['b'].__id__, obj.__id__)
   end
 
+# Stream Deeply Nested
+  def test_deep_nest
+    begin
+      Oj.load(-> n { ?[ * n  + ?] * n }.(100000))
+      assert(false)
+    rescue Exception => e
+      assert(e.class == SystemStackError)
+    end
+  end
+
 # Stream IO
   def test_io_string
     json = %{{
