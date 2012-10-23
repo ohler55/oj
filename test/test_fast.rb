@@ -151,7 +151,7 @@ class DocTest < ::Test::Unit::TestCase
       end
       begin
         doc.move('/array/x')
-      rescue Exception => e
+      rescue Exception
         assert_equal('/', doc.where?)
         assert(true)
       end
@@ -330,7 +330,7 @@ class DocTest < ::Test::Unit::TestCase
     doc.close()
     begin
       doc.home()
-    rescue Exception => e
+    rescue Exception
       assert(true)
     end
   end
@@ -349,7 +349,7 @@ class DocTest < ::Test::Unit::TestCase
     doc.close()
     begin
       doc.home()
-    rescue Exception => e
+    rescue Exception
       assert(true)
     end
   end

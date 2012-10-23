@@ -778,7 +778,7 @@ class Juice < ::Test::Unit::TestCase
     json = Oj.dump(h, :mode => :object, :indent => 2, :circular => true)
     ha = Oj.load(json, :mode => :strict)
     assert_equal({'^i' => 1, 'a' => 7, 'b' => '^r1'}, ha)
-    h2 = Oj.load(json, :mode => :object, :circular => true)
+    Oj.load(json, :mode => :object, :circular => true)
     assert_equal(h['b'].__id__, h.__id__)
   end
 
@@ -801,7 +801,7 @@ class Juice < ::Test::Unit::TestCase
     json = Oj.dump(obj, :mode => :object, :indent => 2, :circular => true)
     ha = Oj.load(json, :mode => :strict)
     assert_equal({'^o' => 'Jam', '^i' => 1, 'x' => { '^i' => 2, 'a' => 7, 'b' => '^r1' }, 'y' => 58 }, ha)
-    obj2 = Oj.load(json, :mode => :object, :circular => true)
+    Oj.load(json, :mode => :object, :circular => true)
     assert_equal(obj.x.__id__, h.__id__)
     assert_equal(h['b'].__id__, obj.__id__)
   end
