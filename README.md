@@ -32,9 +32,9 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 1.4.3
+### Release 1.4.4
 
- - Fixed Exception encoding in Windows version.
+ - Fixed bug in mimic that missed mimicing json_pure.
 
 ## <a name="description">Description</a>
 
