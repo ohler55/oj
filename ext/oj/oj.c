@@ -829,9 +829,15 @@ define_mimic_json(VALUE self) {
 	rb_define_module_function(mimic, "restore", mimic_load, -1);
 	rb_define_module_function(mimic, "recurse_proc", mimic_recurse_proc, 1);
 	rb_define_module_function(mimic, "[]", mimic_dump_load, -1);
+
 	rb_define_module_function(mimic, "generate", mimic_generate, -1);
 	rb_define_module_function(mimic, "fast_generate", mimic_generate, -1);
 	rb_define_module_function(mimic, "pretty_generate", mimic_pretty_generate, -1);
+	/* for older versions of JSON, the deprecated unparse methods */
+	rb_define_module_function(mimic, "unparse", mimic_generate, -1);
+	rb_define_module_function(mimic, "fast_unparse", mimic_generate, -1);
+	rb_define_module_function(mimic, "pretty_unparse", mimic_pretty_generate, -1);
+
 	rb_define_module_function(mimic, "parse", mimic_parse, -1);
 	rb_define_module_function(mimic, "parse!", mimic_parse, -1);
 
