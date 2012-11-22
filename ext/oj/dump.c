@@ -76,7 +76,7 @@ static void	dump_bignum(VALUE obj, Out out);
 static void	dump_float(VALUE obj, Out out);
 static void	dump_raw(const char *str, size_t cnt, Out out);
 static void	dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out);
-static void	dump_hex(u_char c, Out out);
+static void	dump_hex(uint8_t c, Out out);
 static void	dump_str_comp(VALUE obj, Out out);
 static void	dump_str_obj(VALUE obj, Out out);
 static void	dump_sym_comp(VALUE obj, Out out);
@@ -108,8 +108,8 @@ static void	dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out)
 static void	dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out);
 
 static void	grow(Out out, size_t len);
-static size_t	hibit_friendly_size(const u_char *str, size_t len);
-static size_t	ascii_friendly_size(const u_char *str, size_t len);
+static size_t	hibit_friendly_size(const uint8_t *str, size_t len);
+static size_t	ascii_friendly_size(const uint8_t *str, size_t len);
 
 static void	dump_leaf_to_json(Leaf leaf, Options copts, Out out);
 static void	dump_leaf(Leaf leaf, int depth, Out out);
@@ -145,7 +145,7 @@ static char	ascii_friendly_chars[256] = "\
 33333333333333333333333333333333";
 
 inline static size_t
-hibit_friendly_size(const u_char *str, size_t len) {
+hibit_friendly_size(const uint8_t *str, size_t len) {
     size_t	size = 0;
 
     for (; 0 < len; str++, len--) {
@@ -155,7 +155,7 @@ hibit_friendly_size(const u_char *str, size_t len) {
 }
 
 inline static size_t
-ascii_friendly_size(const u_char *str, size_t len) {
+ascii_friendly_size(const uint8_t *str, size_t len) {
     size_t	size = 0;
 
     for (; 0 < len; str++, len--) {
@@ -228,8 +228,8 @@ grow(Out out, size_t len) {
 }
 
 inline static void
-dump_hex(u_char c, Out out) {
-    u_char	d = (c >> 4) & 0x0F;
+dump_hex(uint8_t c, Out out) {
+    uint8_t	d = (c >> 4) & 0x0F;
 
     *out->cur++ = hex_chars[d];
     d = c & 0x0F;
@@ -455,10 +455,10 @@ dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out) {
 
     if (Yes == out->opts->ascii_only) {
 	cmap = ascii_friendly_chars;
-	size = ascii_friendly_size((u_char*)str, cnt);
+	size = ascii_friendly_size((uint8_t*)str, cnt);
     } else {
 	cmap = hibit_friendly_chars;
-	size = hibit_friendly_size((u_char*)str, cnt);
+	size = hibit_friendly_size((uint8_t*)str, cnt);
     }
     if (out->end - out->cur <= (long)size + 10) { // extra 10 for escaped first char, quotes, and sym
 	grow(out, size + 10);
@@ -469,7 +469,7 @@ dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out) {
 	*out->cur++ = 'u';
 	*out->cur++ = '0';
 	*out->cur++ = '0';
-	dump_hex((u_char)*str, out);
+	dump_hex((uint8_t)*str, out);
 	cnt--;
 	size--;
 	str++;
@@ -490,7 +490,7 @@ dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out) {
 	    *out->cur++ = ':';
 	}
 	for (; str < end; str++) {
-	    switch (cmap[(u_char)*str]) {
+	    switch (cmap[(uint8_t)*str]) {
 	    case '1':
 		*out->cur++ = *str;
 		break;
@@ -513,7 +513,7 @@ dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out) {
 		*out->cur++ = 'u';
 		*out->cur++ = '0';
 		*out->cur++ = '0';
-		dump_hex((u_char)*str, out);
+		dump_hex((uint8_t)*str, out);
 		break;
 	    default:
 		break; // ignore, should never happen if the table is correct
@@ -809,7 +809,7 @@ hash_cb_object(VALUE key, VALUE value, Out out) {
 	long	s2 = size + out->indent + 1;
 	int	i;
 	int	started = 0;
-	u_char	b;
+	uint8_t	b;
 
 	if (out->end - out->cur <= s2 + 15) {
 	    grow(out, s2 + 15);
@@ -819,7 +819,7 @@ hash_cb_object(VALUE key, VALUE value, Out out) {
 	*out->cur++ = '#';
 	out->hash_cnt++;
 	for (i = 28; 0 <= i; i -= 4) {
-	    b = (u_char)((out->hash_cnt >> i) & 0x0000000F);
+	    b = (uint8_t)((out->hash_cnt >> i) & 0x0000000F);
 	    if ('\0' != b) {
 		started = 1;
 	    }
