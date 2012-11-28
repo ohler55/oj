@@ -840,7 +840,12 @@ parse_json(VALUE clas, char *json, int given, int allocated) {
     } else {
 	doc = ALLOC_N(struct _Doc, 1);
     }
-    pi.str = json;
+    /* skip UTF-8 BOM if present */
+    if (0xEF == (uint8_t)*json && 0xBB == (uint8_t)json[1] && 0xBF == (uint8_t)json[2]) {
+	pi.str = json + 3;
+    } else {
+	pi.str = json;
+    }
     pi.s = pi.str;
     doc_init(doc);
     pi.doc = doc;

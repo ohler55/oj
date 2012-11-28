@@ -192,7 +192,7 @@ class Mimic < ::Test::Unit::TestCase
 # recurse_proc
   def test_recurse_proc
     children = []
-    obj = JSON.recurse_proc({ 'a' => 1, 'b' => [true, false]}) { |x| children << x }
+    JSON.recurse_proc({ 'a' => 1, 'b' => [true, false]}) { |x| children << x }
     assert([1, true, false, [true, false], { 'a' => 1, 'b' => [true, false]}] == children ||
            [true, false, [true, false], 1, { 'b' => [true, false], 'a' => 1}] == children)
   end

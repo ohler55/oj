@@ -1009,6 +1009,10 @@ oj_parse(char *json, Options options) {
     if (0 == json) {
 	raise_error("Invalid arg, xml string can not be null", json, 0);
     }
+    /* skip UTF-8 BOM if present */
+    if (0xEF == (uint8_t)*json && 0xBB == (uint8_t)json[1] && 0xBF == (uint8_t)json[2]) {
+	json += 3;
+    }
     /* initialize parse info */
     pi.str = json;
     pi.s = json;

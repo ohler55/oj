@@ -125,8 +125,7 @@ struct _Options	oj_default_options = {
     0,			// dump_opts
 };
 
-static VALUE	define_mimic_json(VALUE self);
-
+static VALUE	define_mimic_json(int argc, VALUE *argv, VALUE self);
 static struct _Odd	odds[4]; // bump up if new Odd classes are added
 
 Odd
@@ -800,7 +799,7 @@ mimic_create_id(VALUE self, VALUE id) {
  * or generator will not raise an Exception but will not have any effect.
  */
 static VALUE
-define_mimic_json(VALUE self) {
+define_mimic_json(int argc, VALUE *argv, VALUE self) {
     if (Qnil == mimic) {
 	VALUE	ext;
 	VALUE	dummy;
@@ -817,7 +816,14 @@ define_mimic_json(VALUE self) {
 	dummy = rb_gv_get("$LOADED_FEATURES");
 	if (rb_type(dummy) == T_ARRAY) {
 	    rb_ary_push(dummy, rb_str_new2("json"));
-	    rb_funcall2(Oj, rb_intern("mimic_loaded"), 0, 0);
+	    if (0 < argc) {
+		VALUE	mimic_args[1];
+
+		*mimic_args = *argv;
+		rb_funcall2(Oj, rb_intern("mimic_loaded"), 1, mimic_args);
+	    } else {
+		rb_funcall2(Oj, rb_intern("mimic_loaded"), 0, 0);
+	    }
 	}
 
 	rb_define_module_function(mimic, "parser=", no_op1, 1);
@@ -868,7 +874,7 @@ void Init_oj() {
     rb_define_module_function(Oj, "default_options", get_def_opts, 0);
     rb_define_module_function(Oj, "default_options=", set_def_opts, 1);
 
-    rb_define_module_function(Oj, "mimic_JSON", define_mimic_json, 0);
+    rb_define_module_function(Oj, "mimic_JSON", define_mimic_json, -1);
     rb_define_module_function(Oj, "load", load, -1);
     rb_define_module_function(Oj, "load_file", load_file, -1);
     rb_define_module_function(Oj, "dump", dump, -1);
