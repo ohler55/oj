@@ -32,9 +32,11 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 1.4.5
+### Release 1.4.6
 
- - Adds the old deprecated methods of unparse(), fast_unparse(), and pretty_unparse() to JSON_mimic.
+ - Silently ignores BOM on files and Strings.
+
+ - 
 
 ## <a name="description">Description</a>
 

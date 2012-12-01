@@ -192,11 +192,15 @@ class Juice < ::Test::Unit::TestCase
   def test_encode
     opts = Oj.default_options
     Oj.default_options = { :ascii_only => false }
-    dump_and_load("ぴーたー", false)
+    unless 'jruby' == $ruby
+      dump_and_load("ぴーたー", false)
+    end
     Oj.default_options = { :ascii_only => true }
     json = Oj.dump("ぴーたー")
     assert_equal(%{"\\u3074\\u30fc\\u305f\\u30fc"}, json)
-    dump_and_load("ぴーたー", false)
+    unless 'jruby' == $ruby
+      dump_and_load("ぴーたー", false)
+    end
     Oj.default_options = opts
   end
 
@@ -623,6 +627,8 @@ class Juice < ::Test::Unit::TestCase
       if 'rubinius' == $ruby
         assert(%{{"^o":"Range","excl":false,"begin":1,"end":7}} == json ||
                %{{"^o":"Range","begin":1,"end":7,"excl":false}} == json)
+      elsif 'jruby' == $ruby
+        assert(%{{"^O":"Range","begin":1,"end":7,"exclude_end?":false}} == json)
       else
         assert_equal(%{{"^u":["Range",1,7,false]}}, json)
       end

@@ -76,6 +76,7 @@ class Mimic < ::Test::Unit::TestCase
   end
 
   def test_load_proc
+    Oj.mimic_JSON # TBD
     children = []
     json = %{{"a":1,"b":[true,false]}}
     if 'rubinius' == $ruby || 'jruby' == $ruby || '1.8.7' == RUBY_VERSION
@@ -85,8 +86,12 @@ class Mimic < ::Test::Unit::TestCase
       obj = JSON.load(json, p)
     end
     assert_equal({ 'a' => 1, 'b' => [true, false]}, obj)
-    assert([1, true, false, [true, false], { 'a' => 1, 'b' => [true, false]}] == children ||
-           [true, false, [true, false], 1, { 'a' => 1, 'b' => [true, false]}] == children)
+    # JRuby 1.7.0 rb_yield() is broken and converts the [true, falser] array into true
+    unless 'jruby' == $ruby && '1.9.3' == RUBY_VERSION
+      assert([1, true, false, [true, false], { 'a' => 1, 'b' => [true, false]}] == children ||
+             [true, false, [true, false], 1, { 'a' => 1, 'b' => [true, false]}] == children,
+             "children don't match")
+    end
   end
 
 # []
@@ -193,8 +198,11 @@ class Mimic < ::Test::Unit::TestCase
   def test_recurse_proc
     children = []
     JSON.recurse_proc({ 'a' => 1, 'b' => [true, false]}) { |x| children << x }
-    assert([1, true, false, [true, false], { 'a' => 1, 'b' => [true, false]}] == children ||
-           [true, false, [true, false], 1, { 'b' => [true, false], 'a' => 1}] == children)
+    # JRuby 1.7.0 rb_yield() is broken and converts the [true, falser] array into true
+    unless 'jruby' == $ruby && '1.9.3' == RUBY_VERSION
+      assert([1, true, false, [true, false], { 'a' => 1, 'b' => [true, false]}] == children ||
+             [true, false, [true, false], 1, { 'b' => [true, false], 'a' => 1}] == children)
+    end
   end
 
 end # Mimic

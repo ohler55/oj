@@ -126,7 +126,7 @@ struct _Options	oj_default_options = {
 };
 
 static VALUE	define_mimic_json(int argc, VALUE *argv, VALUE self);
-static struct _Odd	odds[4]; // bump up if new Odd classes are added
+static struct _Odd	odds[5]; // bump up if new Odd classes are added
 
 Odd
 oj_get_odd(VALUE clas) {
@@ -970,8 +970,19 @@ void Init_oj() {
     *idp++ = rb_intern("offset");
     *idp++ = rb_intern("start");
     *idp++ = 0;
+    // Range
     odd++;
+    idp = odd->attrs;
+    odd->clas = rb_const_get(rb_cObject, rb_intern("Range"));
+    odd->create_obj = odd->clas;
+    odd->create_op = oj_new_id;
+    odd->attr_cnt = 3;
+    *idp++ = rb_intern("begin");
+    *idp++ = rb_intern("end");
+    *idp++ = rb_intern("exclude_end?");
+    *idp++ = 0;
     // The end. bump up the size of odds if a new class is added.
+    odd++;
     odd->clas = Qundef;
 
 #if SAFE_CACHE
