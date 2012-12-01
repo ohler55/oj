@@ -9,7 +9,7 @@ rvm:
   - ree
 
 env:
-  - JRUBY_OPTS="--1.8 -Xcext.enabled=true"
+  - JRUBY_OPTS="-Xcext.enabled=true"
 
 script:
   - gem build oj.gemspec
