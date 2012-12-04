@@ -66,9 +66,9 @@ preference over the to_json() method. If neither the to_json() or to_hash()
 methods exist then the Oj internal Object variable encoding is used.
 
 Oj is compatible with Ruby 1.8.7, 1.9.2, 1.9.3, JRuby, RBX, and the latest 2.0dev. Note that JRuby now disables support
-for extentions by default and is no longer supporting C extensions. Bug reported in the JRuby MRI are not longer being
-fixed and there is at least one that has caused a test to be commented out for JRuby. JRuby can be build with extensions
-enabled. Check the documenation for JRuby installs in your environment.
+for extentions by default and is no longer supporting C extensions. Bugs reported in the JRuby MRI are no longer being
+fixed and there is at least one that has caused a test to be commented out for JRuby in the Oj test suite. JRuby can be
+build with extensions enabled. Check the documenation for JRuby installs in your environment.
 
 Oj is also compatible with Rails. Just make sure the Oj gem is installed and
 [multi_json](https://github.com/intridea/multi_json) will pick it up and use it.
