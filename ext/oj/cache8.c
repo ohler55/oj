@@ -94,7 +94,7 @@ slot_print(Cache8 c, sid_t key, unsigned int depth) {
 	    k = (k8 << BITS) | i;
 	    /*printf("*** key: 0x%016llx  depth: %u  i: %u\n", k, depth, i); */
 	    if (DEPTH - 1 == depth) {
-		printf("0x%016llx: %4llu\n", k, b->value);
+		printf("0x%016llx: %4llu\n", (long long unsigned int)k, (long long unsigned int)b->value);
 	    } else {
 		slot_print(b->child, k, depth + 1);
 	    }
