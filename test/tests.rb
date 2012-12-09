@@ -375,7 +375,8 @@ class Juice < ::Test::Unit::TestCase
   end
   def test_non_str_hash_compat
     json = Oj.dump({ 1 => true, 0 => false }, :mode => :compat)
-    assert_equal(%{{"1":true,"0":false}}, json)
+    h = Oj.load(json, :mode => :strict)
+    assert_equal({ "1" => true, "0" => false }, h)
   end
   def test_non_str_hash_object
     Oj.default_options = { :mode => :object }
