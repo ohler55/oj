@@ -32,11 +32,9 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 1.4.6
+### Release 1.4.7
 
- - Silently ignores BOM on files and Strings.
-
- - Now works with JRuby 1.7.0 to the extent possible with the unsupported C extension in JRuby.
+ - In compat mode non-String keys are converted to Strings instead of raising and error. (issue #52)
 
 ## <a name="description">Description</a>
 

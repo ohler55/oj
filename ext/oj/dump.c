@@ -760,7 +760,8 @@ hash_cb_compat(VALUE key, VALUE value, Out out) {
 	dump_sym_comp(key, out);
 	break;
     default:
-	rb_raise(rb_eTypeError, "In :compat mode all Hash keys must be Strings or Symbols, not %s.\n", rb_class2name(rb_obj_class(key)));
+	/*rb_raise(rb_eTypeError, "In :compat mode all Hash keys must be Strings or Symbols, not %s.\n", rb_class2name(rb_obj_class(key)));*/
+	dump_str_comp(rb_funcall(key, oj_to_s_id, 0), out);
 	break;
     }
     if (0 == out->opts->dump_opts) {
