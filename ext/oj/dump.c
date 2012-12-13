@@ -437,8 +437,8 @@ dump_float(VALUE obj, Out out) {
 	strcpy(buf, "-Infinity");
 	cnt = 9;
     } else {
-	cnt = sprintf(buf, "%0.16g", d); // used sprintf due to bug in snprintf
-    }	
+	cnt = sprintf(buf, (d - ((long)d)) ? "%0.16g" : "%.1f", d); // used sprintf due to bug in snprintf
+    }
     if (out->end - out->cur <= (long)cnt) {
 	grow(out, cnt);
     }
