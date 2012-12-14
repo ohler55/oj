@@ -32,9 +32,9 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 1.4.7
+### Release 1.4.8
 
- - In compat mode non-String keys are converted to Strings instead of raising and error. (issue #52)
+ - Thanks to yuki24 Floats are now output with a decimal even if they are an integer value.
 
 ## <a name="description">Description</a>
 

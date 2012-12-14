@@ -3,7 +3,14 @@
 ^c^d hide subtree
 ^c^s show subtree
 
-- memory leak on bad json
+- prepop
+ - write perf test for 10 arrays and some numbers
+ - separate out new array function (inline)
+ - create queue
+  - circular with floating insert and pop pointers
+   - mark unused as Qnil
+ - if one not available, create it in the normal way
+ - use for array, hash, and object
 
 - next
 
