@@ -416,6 +416,7 @@ load_with_opts(VALUE input, Options copts) {
 	    rb_raise(rb_eArgError, "load() expected a String or IO Object.");
 	}
     }
+    // TBD pick SAJ or normal
     obj = oj_parse(json, copts);
     if (copts->max_stack < len) {
 	xfree(json);
