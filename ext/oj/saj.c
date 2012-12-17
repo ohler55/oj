@@ -29,14 +29,14 @@
  */
 
 #if !IS_WINDOWS
-#include <sys/resource.h>  // for getrlimit() on linux
+#include <sys/resource.h>  /* for getrlimit() on linux */
 #endif
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
 
-//Workaround:
+/* Workaround: */
 #ifndef INFINITY
 #define INFINITY (1.0/0.0)
 #endif
@@ -174,7 +174,7 @@ call_no_value(VALUE handler, ID method, const char *key) {
 
 static void
 skip_comment(ParseInfo pi) {
-    pi->s++; // skip first /
+    pi->s++; /* skip first / */
     if ('*' == *pi->s) {
 	pi->s++;
 	for (; '\0' != *pi->s; pi->s++) {
@@ -217,7 +217,7 @@ read_next(ParseInfo pi, const char *key) {
     if ((void*)&obj < pi->stack_min) {
 	rb_raise(rb_eSysStackError, "JSON is too deeply nested");
     }
-    next_non_white(pi);	// skip white space
+    next_non_white(pi);	/* skip white space */
     switch (*pi->s) {
     case '{':
 	read_hash(pi, key);
@@ -257,9 +257,7 @@ read_next(ParseInfo pi, const char *key) {
     case '\0':
 	return;
     default:
-	// TBD error
 	return;
-	break;
     }
 }
 
@@ -295,7 +293,6 @@ read_hash(ParseInfo pi, const char *key) {
 	    } else if (',' == *pi->s) {
 		pi->s++;
 	    } else {
-		//printf("*** '%s'\n", pi->s);
 		if (pi->has_error) {
 		    call_error("invalid format, expected , or } while in an object", pi, __FILE__, __LINE__);
 		}
@@ -449,7 +446,7 @@ read_num(ParseInfo pi, const char *key) {
 	    }
 	}
 	return;
-    } else { // decimal
+    } else { /* decimal */
 	if (big) {
 	    char	c = *pi->s;
 	
@@ -530,7 +527,7 @@ read_hex(ParseInfo pi, char *h) {
     uint32_t	b = 0;
     int		i;
 
-    // TBD this can be made faster with a table
+    /* TBD this can be made faster with a table */
     for (i = 0; i < 4; i++, h++) {
 	b = b << 4;
 	if ('0' <= *h && *h <= '9') {
@@ -594,11 +591,11 @@ unicode_to_chars(ParseInfo pi, char *t, uint32_t code) {
 static char*
 read_quoted_value(ParseInfo pi) {
     char	*value = 0;
-    char	*h = pi->s; // head
-    char	*t = h;	    // tail
+    char	*h = pi->s; /* head */
+    char	*t = h;	    /* tail */
     uint32_t	code;
     
-    h++;	// skip quote character
+    h++;	/* skip quote character */
     t++;
     value = h;
     for (; '"' != *h; h++, t++) {
@@ -652,7 +649,7 @@ read_quoted_value(ParseInfo pi) {
 	    *t = *h;
 	}
     }
-    *t = '\0'; // terminate value
+    *t = '\0'; /* terminate value */
     pi->s = h + 1;
 
     return value;
@@ -693,15 +690,15 @@ oj_saj_parse(VALUE handler, char *json) {
     pi.str = json;
     pi.s = json;
 #if IS_WINDOWS
-    pi.stack_min = (void*)((char*)&obj - (512 * 1024)); // assume a 1M stack and give half to ruby
+    pi.stack_min = (void*)((char*)&obj - (512 * 1024)); /* assume a 1M stack and give half to ruby */
 #else
     {
 	struct rlimit	lim;
 
 	if (0 == getrlimit(RLIMIT_STACK, &lim)) {
-	    pi.stack_min = (void*)((char*)&obj - (lim.rlim_cur / 4 * 3)); // let 3/4ths of the stack be used only
+	    pi.stack_min = (void*)((char*)&obj - (lim.rlim_cur / 4 * 3)); /* let 3/4ths of the stack be used only */
 	} else {
-	    pi.stack_min = 0; // indicates not to check stack limit
+	    pi.stack_min = 0; /* indicates not to check stack limit */
 	}
     }
 #endif
