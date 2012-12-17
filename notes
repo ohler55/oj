@@ -3,49 +3,12 @@
 ^c^d hide subtree
 ^c^s show subtree
 
-- prepop
- - write perf test for 10 arrays and some numbers
- - separate out new array function (inline)
- - create queue
-  - circular with floating insert and pop pointers
-   - mark unused as Qnil
- - if one not available, create it in the normal way
- - use for array, hash, and object
+-  saj_parse (Simple API for JSON)
 
-- next
 
- - optimize read_hex in load.c
- - add options for path in fetch
-  - wild cards
 
- - setup travis to run tests
-  - does not load the oj gem in some cases
 
-- stream
- - use with Oj::Doc
- - use with standard
- - add callback SAX like option
-  - callback parser
-   - object_start
-   - object_end
-   - array_start
-   - array_end
-   - value - provide accessor call or object to get value
-   - key - provide accessor call or object to get value
-
-   - default callbacks use straight C and create Hash or Object according to mode
-    - callback object
-    - check respond_to? for each method at start
-    - methods to indicate that defaults should be used instead of ignored
-     - use_default_hash_callback?
-     - use_default_array_callback?
-     - use_default_key_callback?
-     - use_default_value_callback?
-    - or maybe
-     - hash_callback? returns nil, :default, :my_hash_callback
-      - default is to check hash_start and hash_end and no nothing if they do not exist
-      - 
-
-  - dump
-   - support stream as arg
-   - always dump to stream/file if possible (check performance)
+---------------------------
+Tried a separate thread for the parser and the results were poor. The parsing is 10% to 15% of the total so splitting
+ruby calls and c does not help much and the overhead of swapping data was too high. It was not possible to split ruby
+calls into both threads due to not getting a lock on the ruby environment for object creation.

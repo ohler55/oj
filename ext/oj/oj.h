@@ -144,6 +144,8 @@ typedef struct _Leaf {
 } *Leaf;
 
 extern VALUE	oj_parse(char *json, Options options);
+extern void	oj_saj_parse(VALUE handler, char *json);
+
 extern char*	oj_write_obj_to_str(VALUE obj, Options copts);
 extern void	oj_write_obj_to_file(VALUE obj, const char *path, Options copts);
 extern char*	oj_write_leaf_to_str(Leaf leaf, Options copts);
@@ -164,6 +166,7 @@ extern rb_encoding	*oj_utf8_encoding;
 extern VALUE	oj_bag_class;
 extern VALUE	oj_bigdecimal_class;
 extern VALUE	oj_doc_class;
+extern VALUE	oj_parse_error_class;
 extern VALUE	oj_stringio_class;
 extern VALUE	oj_struct_class;
 extern VALUE	oj_time_class;
@@ -184,6 +187,12 @@ extern ID	oj_tv_nsec_id;
 extern ID	oj_tv_sec_id;
 extern ID	oj_tv_usec_id;
 extern ID	oj_utc_offset_id;
+
+extern ID	oj_hash_start_id;
+extern ID	oj_hash_end_id;
+extern ID	oj_array_start_id;
+extern ID	oj_array_end_id;
+extern ID	oj_add_value_id;
 
 extern Cache	oj_class_cache;
 extern Cache	oj_attr_cache;

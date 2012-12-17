@@ -65,6 +65,12 @@ ID	oj_tv_usec_id;
 ID	oj_utc_offset_id;
 ID	oj_write_id;
 
+ID	oj_hash_start_id;
+ID	oj_hash_end_id;
+ID	oj_array_start_id;
+ID	oj_array_end_id;
+ID	oj_add_value_id;
+
 VALUE	oj_bag_class;
 VALUE	oj_parse_error_class;
 VALUE	oj_bigdecimal_class;
@@ -416,7 +422,6 @@ load_with_opts(VALUE input, Options copts) {
 	    rb_raise(rb_eArgError, "load() expected a String or IO Object.");
 	}
     }
-    // TBD pick SAJ or normal
     obj = oj_parse(json, copts);
     if (copts->max_stack < len) {
 	xfree(json);
@@ -541,6 +546,85 @@ to_file(int argc, VALUE *argv, VALUE self) {
     Check_Type(*argv, T_STRING);
     oj_write_obj_to_file(argv[1], StringValuePtr(*argv), &copts);
 
+    return Qnil;
+}
+
+/* call-seq: saj_parse(handler, io)
+ *
+ * Parses an IO stream or file containing an JSON document. Raises an exception
+ * if the JSON is malformed.
+ * @param [Oj::Saj] handler SAJ (responds to Oj::Saj methods) like handler
+ * @param [IO|String] io IO Object to read from
+ */
+static VALUE
+saj_parse(int argc, VALUE *argv, VALUE self) {
+    struct _Options	copts = oj_default_options;
+    char		*json;
+    size_t		len;
+    VALUE		input = argv[1];
+
+    if (argc < 2) {
+	rb_raise(rb_eArgError, "Wrong number of arguments to saj_parse.\n");
+    }
+    if (rb_type(input) == T_STRING) {
+	// the json string gets modified so make a copy of it
+	len = RSTRING_LEN(input) + 1;
+	if (copts.max_stack < len) {
+	    json = ALLOC_N(char, len);
+	} else {
+	    json = ALLOCA_N(char, len);
+	}
+	strcpy(json, StringValuePtr(input));
+    } else {
+	VALUE	clas = rb_obj_class(input);
+	VALUE	s;
+
+	if (oj_stringio_class == clas) {
+	    s = rb_funcall2(input, oj_string_id, 0, 0);
+	    len = RSTRING_LEN(s) + 1;
+	    if (copts.max_stack < len) {
+		json = ALLOC_N(char, len);
+	    } else {
+		json = ALLOCA_N(char, len);
+	    }
+	    strcpy(json, StringValuePtr(s));
+#ifndef JRUBY_RUBY
+#if !IS_WINDOWS
+	    // JRuby gets confused with what is the real fileno.
+	} else if (rb_respond_to(input, oj_fileno_id) && Qnil != (s = rb_funcall(input, oj_fileno_id, 0))) {
+	    int		fd = FIX2INT(s);
+	    ssize_t	cnt;
+
+	    len = lseek(fd, 0, SEEK_END);
+	    lseek(fd, 0, SEEK_SET);
+	    if (copts.max_stack < len) {
+		json = ALLOC_N(char, len + 1);
+	    } else {
+		json = ALLOCA_N(char, len + 1);
+	    }
+	    if (0 >= (cnt = read(fd, json, len)) || cnt != (ssize_t)len) {
+		rb_raise(rb_eIOError, "failed to read from IO Object.");
+	    }
+	    json[len] = '\0';
+#endif
+#endif
+	} else if (rb_respond_to(input, oj_read_id)) {
+	    s = rb_funcall2(input, oj_read_id, 0, 0);
+	    len = RSTRING_LEN(s) + 1;
+	    if (copts.max_stack < len) {
+		json = ALLOC_N(char, len);
+	    } else {
+		json = ALLOCA_N(char, len);
+	    }
+	    strcpy(json, StringValuePtr(s));
+	} else {
+	    rb_raise(rb_eArgError, "saj_parse() expected a String or IO Object.");
+	}
+    }
+    oj_saj_parse(*argv, json);
+    if (copts.max_stack < len) {
+	xfree(json);
+    }
     return Qnil;
 }
 
@@ -881,6 +965,8 @@ void Init_oj() {
     rb_define_module_function(Oj, "dump", dump, -1);
     rb_define_module_function(Oj, "to_file", to_file, -1);
 
+    rb_define_module_function(Oj, "saj_parse", saj_parse, -1);
+
     oj_as_json_id = rb_intern("as_json");
     oj_fileno_id = rb_intern("fileno");
     oj_instance_variables_id = rb_intern("instance_variables");
@@ -898,6 +984,12 @@ void Init_oj() {
     oj_tv_usec_id = rb_intern("tv_usec");
     oj_utc_offset_id = rb_intern("utc_offset");
     oj_write_id = rb_intern("write");
+
+    oj_hash_start_id = rb_intern("hash_start");
+    oj_hash_end_id = rb_intern("hash_end");
+    oj_array_start_id = rb_intern("array_start");
+    oj_array_end_id = rb_intern("array_end");
+    oj_add_value_id = rb_intern("add_value");
 
     oj_bag_class = rb_const_get_at(Oj, rb_intern("Bag"));
     oj_parse_error_class = rb_const_get_at(Oj, rb_intern("ParseError"));

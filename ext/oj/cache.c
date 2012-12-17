@@ -51,7 +51,6 @@ oj_cache_new(Cache *cache) {
     }
     (*cache)->key = 0;
     (*cache)->value = Qundef;
-    //bzero((*cache)->slots, sizeof((*cache)->slots));
     memset((*cache)->slots, 0, sizeof((*cache)->slots));
 }
 
