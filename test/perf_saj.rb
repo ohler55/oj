@@ -51,6 +51,14 @@ class AllSaj < Oj::Saj
   end
 end # AllSaj
 
+class NoSaj < Oj::Saj
+  def initialize()
+  end
+end # NoSaj
+
+saj_handler = AllSaj.new()
+no_saj = NoSaj.new()
+
 $obj = {
   'a' => 'Alpha', # string
   'b' => true,    # boolean
@@ -78,7 +86,6 @@ def capture_error(tag, orig, load_key, dump_key, &blk)
 end
 
 # Verify that all packages dump and load correctly and return the same Object as the original.
-capture_error('Oj::Doc', $obj, 'load', 'dump') { |o| Oj::Doc.open(Oj.dump(o, :mode => :strict)) { |f| f.fetch() } }
 capture_error('Yajl', $obj, 'encode', 'parse') { |o| Yajl::Parser.parse(Yajl::Encoder.encode(o)) }
 capture_error('JSON::Ext', $obj, 'generate', 'parse') { |o| JSON.generator = JSON::Ext::Generator; JSON::Ext::Parser.new(JSON.generate(o)).parse }
 
@@ -86,12 +93,12 @@ if $verbose
   puts "json:\n#{$json}\n"
 end
 
-saj_handler = AllSaj.new()
 
 puts '-' * 80
 puts "Parse Performance"
 perf = Perf.new()
-perf.add('Oj::Saj', 'parse') { Oj.saj_parse(saj_handler, $json) } unless $failed.has_key?('Oj::Saj')
+perf.add('Oj::Saj', 'all') { Oj.saj_parse(saj_handler, $json) }
+perf.add('Oj::Saj', 'none') { Oj.saj_parse(no_saj, $json) }
 perf.add('Yajl', 'parse') { Yajl::Parser.parse($json) } unless $failed.has_key?('Yajl')
 perf.add('JSON::Ext', 'parse') { JSON::Ext::Parser.new($json).parse } unless $failed.has_key?('JSON::Ext')
 perf.run($iter)

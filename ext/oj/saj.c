@@ -59,6 +59,7 @@ typedef struct _ParseInfo {
     int		has_array_start;
     int		has_array_end;
     int		has_add_value;
+    int		has_error;
 } *ParseInfo;
 
 static void	read_next(ParseInfo pi, const char *key);
@@ -85,6 +86,25 @@ static void	skip_comment(ParseInfo pi);
  * endings are passed over without raising an error. A best attempt is made in
  * all cases to parse the string.
  */
+
+inline static void
+call_error(const char *msg, ParseInfo pi, const char* file, int line) {
+    char	buf[128];
+    const char	*s = pi->s;
+    int		jline = 1;
+    int		col = 1;
+
+    for (; pi->str < s && '\n' != *s; s--) {
+	col++;
+    }
+    for (; pi->str < s; s--) {
+	if ('\n' == *s) {
+	    jline++;
+	}
+    }
+    sprintf(buf, "%s at line %d, column %d [%s:%d]", msg, jline, col, file, line);
+    rb_funcall(pi->handler, oj_error_id, 3, rb_str_new2(buf), LONG2NUM(jline), LONG2NUM(col));
+}
 
 inline static void
 next_non_white(ParseInfo pi) {
@@ -120,20 +140,6 @@ next_white(ParseInfo pi) {
 	    break;
 	}
     }
-}
-
-inline static unsigned long
-read_ulong(const char *s, ParseInfo pi) {
-    unsigned long	n = 0;
-
-    for (; '\0' != *s; s++) {
-	if ('0' <= *s && *s <= '9') {
-	    n = n * 10 + (*s - '0');
-	} else {
-	    raise_error("Not a valid ID number", pi->str, pi->s);
-	}
-    }
-    return n;
 }
 
 inline static void
@@ -176,7 +182,11 @@ skip_comment(ParseInfo pi) {
 		pi->s++;
 		return;
 	    } else if ('\0' == *pi->s) {
-		raise_error("comment not terminated", pi->str, pi->s);
+		if (pi->has_error) {
+		    call_error("comment not terminated", pi, __FILE__, __LINE__);
+		} else {
+		    raise_error("comment not terminated", pi->str, pi->s);
+		}
 	    }
 	}
     } else if ('/' == *pi->s) {
@@ -192,7 +202,11 @@ skip_comment(ParseInfo pi) {
 	    }
 	}
     } else {
-	raise_error("invalid comment", pi->str, pi->s);
+	if (pi->has_error) {
+	    call_error("invalid comment", pi, __FILE__, __LINE__);
+	} else {
+	    raise_error("invalid comment", pi->str, pi->s);
+	}
     }
 }
 
@@ -268,6 +282,9 @@ read_hash(ParseInfo pi, const char *key) {
 	    if (':' == *pi->s) {
 		pi->s++;
 	    } else {
+		if (pi->has_error) {
+		    call_error("invalid format, expected :", pi, __FILE__, __LINE__);
+		}
 		raise_error("invalid format, expected :", pi->str, pi->s);
 	    }
 	    read_next(pi, ks);
@@ -279,6 +296,9 @@ read_hash(ParseInfo pi, const char *key) {
 		pi->s++;
 	    } else {
 		//printf("*** '%s'\n", pi->s);
+		if (pi->has_error) {
+		    call_error("invalid format, expected , or } while in an object", pi, __FILE__, __LINE__);
+		}
 		raise_error("invalid format, expected , or } while in an object", pi->str, pi->s);
 	    }
 	}
@@ -307,6 +327,9 @@ read_array(ParseInfo pi, const char *key) {
 		pi->s++;
 		break;
 	    } else {
+		if (pi->has_error) {
+		    call_error("invalid format, expected , or ] while in an array", pi, __FILE__, __LINE__);
+		}
 		raise_error("invalid format, expected , or ] while in an array", pi->str, pi->s);
 	    }
 	}
@@ -319,14 +342,14 @@ read_array(ParseInfo pi, const char *key) {
 static void
 read_str(ParseInfo pi, const char *key) {
     char	*text;
-    VALUE	s;
 
     text = read_quoted_value(pi);
-    s = rb_str_new2(text);
-#if HAS_ENCODING_SUPPORT
-    rb_enc_associate(s, oj_utf8_encoding);
-#endif
     if (pi->has_add_value) {
+	VALUE	s = rb_str_new2(text);
+
+#if HAS_ENCODING_SUPPORT
+	rb_enc_associate(s, oj_utf8_encoding);
+#endif
 	call_add_value(pi->handler, s, key);
     }
 }
@@ -347,7 +370,6 @@ read_num(ParseInfo pi, const char *key) {
     int		neg = 0;
     int		eneg = 0;
     int		big = 0;
-    VALUE	num;
 
     if ('-' == *pi->s) {
 	pi->s++;
@@ -357,6 +379,9 @@ read_num(ParseInfo pi, const char *key) {
     }
     if ('I' == *pi->s) {
 	if (0 != strncmp("Infinity", pi->s, 8)) {
+	    if (pi->has_error) {
+		call_error("number or other value", pi, __FILE__, __LINE__);
+	    }
 	    raise_error("number or other value", pi->str, pi->s);
 	}
 	pi->s += 8;
@@ -448,9 +473,8 @@ read_num(ParseInfo pi, const char *key) {
 		}
 		d *= pow(10.0, e);
 	    }
-	    num = rb_float_new(d);
 	    if (pi->has_add_value) {
-		call_add_value(pi->handler, num, key);
+		call_add_value(pi->handler, rb_float_new(d), key);
 	    }
 	}
     }
@@ -460,6 +484,9 @@ static void
 read_true(ParseInfo pi, const char *key) {
     pi->s++;
     if ('r' != *pi->s || 'u' != *(pi->s + 1) || 'e' != *(pi->s + 2)) {
+	if (pi->has_error) {
+	    call_error("invalid format, expected 'true'", pi, __FILE__, __LINE__);
+	}
 	raise_error("invalid format, expected 'true'", pi->str, pi->s);
     }
     pi->s += 3;
@@ -472,6 +499,9 @@ static void
 read_false(ParseInfo pi, const char *key) {
     pi->s++;
     if ('a' != *pi->s || 'l' != *(pi->s + 1) || 's' != *(pi->s + 2) || 'e' != *(pi->s + 3)) {
+	if (pi->has_error) {
+	    call_error("invalid format, expected 'false'", pi, __FILE__, __LINE__);
+	}
 	raise_error("invalid format, expected 'false'", pi->str, pi->s);
     }
     pi->s += 4;
@@ -484,7 +514,10 @@ static void
 read_nil(ParseInfo pi, const char *key) {
     pi->s++;
     if ('u' != *pi->s || 'l' != *(pi->s + 1) || 'l' != *(pi->s + 2)) {
-	raise_error("invalid format, expected 'nil'", pi->str, pi->s);
+	if (pi->has_error) {
+	    call_error("invalid format, expected 'null'", pi, __FILE__, __LINE__);
+	}
+	raise_error("invalid format, expected 'null'", pi->str, pi->s);
     }
     pi->s += 3;
     if (pi->has_add_value) {
@@ -508,6 +541,9 @@ read_hex(ParseInfo pi, char *h) {
 	    b += *h - 'a' + 10;
 	} else {
 	    pi->s = h;
+	    if (pi->has_error) {
+		call_error("invalid hex character", pi, __FILE__, __LINE__);
+	    }
 	    raise_error("invalid hex character", pi->str, pi->s);
 	}
     }
@@ -544,6 +580,9 @@ unicode_to_chars(ParseInfo pi, char *t, uint32_t code) {
 	*t++ = 0x80 | ((code >> 6) & 0x3F);
 	*t = 0x80 | (0x3F & code);
     } else {
+	if (pi->has_error) {
+	    call_error("invalid Unicode", pi, __FILE__, __LINE__);
+	}
 	raise_error("invalid Unicode", pi->str, pi->s);
     }
     return t;
@@ -588,6 +627,9 @@ read_quoted_value(ParseInfo pi) {
 		    h++;
 		    if ('\\' != *h || 'u' != *(h + 1)) {
 			pi->s = h;
+			if (pi->has_error) {
+			    call_error("invalid escaped character", pi, __FILE__, __LINE__);
+			}
 			raise_error("invalid escaped character", pi->str, pi->s);
 		    }
 		    h += 2;
@@ -600,6 +642,9 @@ read_quoted_value(ParseInfo pi) {
 		break;
 	    default:
 		pi->s = h;
+		if (pi->has_error) {
+		    call_error("invalid escaped character", pi, __FILE__, __LINE__);
+		}
 		raise_error("invalid escaped character", pi->str, pi->s);
 		break;
 	    }
@@ -635,6 +680,9 @@ oj_saj_parse(VALUE handler, char *json) {
     struct _ParseInfo	pi;
 
     if (0 == json) {
+	if (pi.has_error) {
+	    call_error("Invalid arg, xml string can not be null", &pi, __FILE__, __LINE__);
+	}
 	raise_error("Invalid arg, xml string can not be null", json, 0);
     }
     /* skip UTF-8 BOM if present */
@@ -663,10 +711,15 @@ oj_saj_parse(VALUE handler, char *json) {
     pi.has_array_start = respond_to(handler, oj_array_start_id);
     pi.has_array_end = respond_to(handler, oj_array_end_id);
     pi.has_add_value = respond_to(handler, oj_add_value_id);
+    pi.has_error = respond_to(handler, oj_error_id);
     read_next(&pi, 0);
     next_non_white(&pi);
     if ('\0' != *pi.s) {
-	raise_error("invalid format, extra characters", pi.str, pi.s);
+	if (pi.has_error) {
+	    call_error("invalid format, extra characters", &pi, __FILE__, __LINE__);
+	} else {
+	    raise_error("invalid format, extra characters", pi.str, pi.s);
+	}
     }
 }
 

@@ -173,7 +173,13 @@ extern VALUE	oj_time_class;
 
 extern VALUE	oj_slash_string;
 
+extern ID	oj_add_value_id;
+extern ID	oj_array_end_id;
+extern ID	oj_array_start_id;
 extern ID	oj_as_json_id;
+extern ID	oj_error_id;
+extern ID	oj_hash_end_id;
+extern ID	oj_hash_start_id;
 extern ID	oj_instance_variables_id;
 extern ID	oj_json_create_id;
 extern ID	oj_new_id;
@@ -187,12 +193,6 @@ extern ID	oj_tv_nsec_id;
 extern ID	oj_tv_sec_id;
 extern ID	oj_tv_usec_id;
 extern ID	oj_utc_offset_id;
-
-extern ID	oj_hash_start_id;
-extern ID	oj_hash_end_id;
-extern ID	oj_array_start_id;
-extern ID	oj_array_end_id;
-extern ID	oj_add_value_id;
 
 extern Cache	oj_class_cache;
 extern Cache	oj_attr_cache;

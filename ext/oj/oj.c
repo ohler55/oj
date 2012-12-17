@@ -47,8 +47,14 @@ void Init_oj();
 
 VALUE	 Oj = Qnil;
 
+ID	oj_add_value_id;
+ID	oj_array_end_id;
+ID	oj_array_start_id;
 ID	oj_as_json_id;
+ID	oj_error_id;
 ID	oj_fileno_id;
+ID	oj_hash_end_id;
+ID	oj_hash_start_id;
 ID	oj_instance_variables_id;
 ID	oj_json_create_id;
 ID	oj_new_id;
@@ -64,12 +70,6 @@ ID	oj_tv_sec_id;
 ID	oj_tv_usec_id;
 ID	oj_utc_offset_id;
 ID	oj_write_id;
-
-ID	oj_hash_start_id;
-ID	oj_hash_end_id;
-ID	oj_array_start_id;
-ID	oj_array_end_id;
-ID	oj_add_value_id;
 
 VALUE	oj_bag_class;
 VALUE	oj_parse_error_class;
@@ -967,8 +967,14 @@ void Init_oj() {
 
     rb_define_module_function(Oj, "saj_parse", saj_parse, -1);
 
+    oj_add_value_id = rb_intern("add_value");
+    oj_array_end_id = rb_intern("array_end");
+    oj_array_start_id = rb_intern("array_start");
     oj_as_json_id = rb_intern("as_json");
+    oj_error_id = rb_intern("error");
     oj_fileno_id = rb_intern("fileno");
+    oj_hash_end_id = rb_intern("hash_end");
+    oj_hash_start_id = rb_intern("hash_start");
     oj_instance_variables_id = rb_intern("instance_variables");
     oj_json_create_id = rb_intern("json_create");
     oj_new_id = rb_intern("new");
@@ -984,12 +990,6 @@ void Init_oj() {
     oj_tv_usec_id = rb_intern("tv_usec");
     oj_utc_offset_id = rb_intern("utc_offset");
     oj_write_id = rb_intern("write");
-
-    oj_hash_start_id = rb_intern("hash_start");
-    oj_hash_end_id = rb_intern("hash_end");
-    oj_array_start_id = rb_intern("array_start");
-    oj_array_end_id = rb_intern("array_end");
-    oj_add_value_id = rb_intern("add_value");
 
     oj_bag_class = rb_const_get_at(Oj, rb_intern("Bag"));
     oj_parse_error_class = rb_const_get_at(Oj, rb_intern("ParseError"));
