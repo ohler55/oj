@@ -370,7 +370,6 @@ class DocTest < ::Test::Unit::TestCase
     # a print statement confirms close is called
   end
 
-
   def test_dump
     Oj::Doc.open('[1,[2,3]]') do |doc|
       assert_equal('[1,[2,3]]', doc.dump())
