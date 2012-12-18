@@ -1,6 +1,6 @@
 #!/bin/sh
 
-JRUBY_OPTS="-Xcext.enabled=true"
+export JRUBY_OPTS="-Xcext.enabled=true"
 
 for ruby in \
  1.8.7-p358\
@@ -25,6 +25,7 @@ do
     ./tests.rb
     ./test_mimic.rb
     ./test_fast.rb
+    ./test_saj.rb
     cd ..
 
     echo "\n"
@@ -42,6 +43,7 @@ cd ../../test
 ./tests.rb
 ./test_mimic.rb
 ./test_fast.rb
+./test_saj.rb
 cd ..
 
 echo "\n"

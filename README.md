@@ -32,9 +32,11 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 1.4.8
+### Release 2.0.0
 
  - Thanks to yuki24 Floats are now output with a decimal even if they are an integer value.
+
+ - <b>The Simple API for JSON (SAJ) API has been added. Read more about it on the [Oj::Saj page](http://www.ohler.com/oj/Oj/Saj.html).</b>
 
 ## <a name="description">Description</a>
 
@@ -70,6 +72,15 @@ build with extensions enabled. Check the documenation for JRuby installs in your
 
 Oj is also compatible with Rails. Just make sure the Oj gem is installed and
 [multi_json](https://github.com/intridea/multi_json) will pick it up and use it.
+
+Oj offers two alternative APIs for processing JSON. The fastest one is the Oj::Doc API. The Oj::Doc API takes a
+completely different approach by opening a JSON document and providing calls to navigate around the JSON while it is
+open. With this approach JSON access can be well over 20 times faster than conventional JSON parsing.
+
+Another API, the Oj::Saj API follows an XML SAX model and walks the JSON document depth first and makes callbacks for
+each element. The Oj::Saj API is useful when only portions of the JSON are of interest. Performance up to 20 times
+faster than conventional JSON are possible. The API is simple to use but does require a different approach than the
+conventional parse followed by access approach used by conventional JSON parsing.
 
 ## <a name="compare">Comparisons</a>
 
