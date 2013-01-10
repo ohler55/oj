@@ -666,10 +666,10 @@ class Juice < ::Test::Unit::TestCase
     Oj.default_options = {:mode => mode}
   end
   def test_bigdecimal_compat
-    orig = BigDecimal.new('3.14159265358979323846')
+    orig = BigDecimal.new('80.51')
     json = Oj.dump(orig, :mode => :compat)
     bg = Oj.load(json, :mode => :compat)
-    assert_equal(orig, bg)
+    assert_equal(orig.to_s, bg)
   end
   def test_bigdecimal_object
     mode = Oj.default_options[:mode]
