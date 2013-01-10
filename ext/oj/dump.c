@@ -1074,14 +1074,8 @@ dump_data_comp(VALUE obj, Out out) {
     } else {
 	VALUE	rstr;
 
-	if (oj_bigdecimal_class == clas) {
-	    //rstr = rb_funcall(obj, oj_to_s_id, 1, rb_intern("E"));
-	    rstr = rb_funcall(obj, oj_to_s_id, 0);
-	    dump_raw(StringValuePtr(rstr), RSTRING_LEN(rstr), out);
-	} else {
-	    rstr = rb_funcall(obj, oj_to_s_id, 0);
-	    dump_cstr(StringValuePtr(rstr), RSTRING_LEN(rstr), 0, 0, out);
-	}
+	rstr = rb_funcall(obj, oj_to_s_id, 0);
+	dump_cstr(StringValuePtr(rstr), RSTRING_LEN(rstr), 0, 0, out);
     }
 }
 
