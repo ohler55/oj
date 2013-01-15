@@ -110,6 +110,7 @@ class Juice < ::Test::Unit::TestCase
   def test0_get_options
     opts = Oj.default_options()
     assert_equal({ :indent=>0,
+                   :second_precision=>9,
                    :circular=>false,
                    :auto_define=>true,
                    :symbol_keys=>false,
@@ -123,6 +124,7 @@ class Juice < ::Test::Unit::TestCase
   def test0_set_options
     orig = {
       :indent=>0,
+      :second_precision=>9,
       :circular=>false,
       :auto_define=>true,
       :symbol_keys=>false,
@@ -133,6 +135,7 @@ class Juice < ::Test::Unit::TestCase
       :create_id=>'json_class'}
     o2 = {
       :indent=>4,
+      :second_precision=>7,
       :circular=>true,
       :auto_define=>false,
       :symbol_keys=>true,
@@ -265,6 +268,22 @@ class Juice < ::Test::Unit::TestCase
     json = Oj.dump(t, :mode => :compat)
     assert_equal(%{1325775487.123456000}, json)
   end    
+  def test_unix_time_compat_precision
+    t = Time.xmlschema("2012-01-05T23:58:07.123456789+09:00")
+    #t = Time.local(2012, 1, 5, 23, 58, 7, 123456)
+    json = Oj.dump(t, :mode => :compat, :second_precision => 5)
+    assert_equal(%{1325775487.12346}, json)
+  end    
+  def test_unix_time_compat_early
+    t = Time.xmlschema("1954-01-05T00:00:00.123456789+00:00")
+    json = Oj.dump(t, :mode => :compat, :second_precision => 5)
+    assert_equal(%{-504575999.87654}, json)
+  end    
+  def test_unix_time_compat_1970
+    t = Time.xmlschema("1970-01-01T00:00:00.123456789+00:00")
+    json = Oj.dump(t, :mode => :compat, :second_precision => 5)
+    assert_equal(%{0.12346}, json)
+  end    
   def test_ruby_time_compat
     t = Time.xmlschema("2012-01-05T23:58:07.123456000+09:00")
     json = Oj.dump(t, :mode => :compat, :time_format => :ruby)
@@ -309,6 +328,25 @@ class Juice < ::Test::Unit::TestCase
       assert_equal(%{"2012-01-05T23:58:07%s%02d:%02d"} % [sign, tz / 3600, tz / 60 % 60], json)
     end
   end    
+  def test_xml_time_compat_precision
+    begin
+      t = Time.new(2012, 1, 5, 23, 58, 7.123456789, 32400)
+      json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema, :second_precision => 5)
+      assert_equal(%{"2012-01-05T23:58:07.12346+09:00"}, json)
+    rescue Exception
+      # some Rubies (1.8.7) do not allow the timezome to be set
+      t = Time.local(2012, 1, 5, 23, 58, 7.123456789, 0)
+      json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema, :second_precision => 5)
+      tz = t.utc_offset
+      # Ruby does not handle a %+02d properly so...
+      sign = '+'
+      if 0 > tz
+        sign = '-'
+        tz = -tz
+      end
+      assert_equal(%{"2012-01-05T23:58:07.12346%s%02d:%02d"} % [sign, tz / 3600, tz / 60 % 60], json)
+    end
+  end    
   def test_xml_time_compat_zulu
     begin
       t = Time.new(2012, 1, 5, 23, 58, 7.0, 0)
@@ -324,6 +362,11 @@ class Juice < ::Test::Unit::TestCase
   end    
   def test_time_object
     t = Time.now()
+    Oj.default_options = { :mode => :object }
+    dump_and_load(t, false)
+  end
+  def test_time_object_early
+    t = Time.xmlschema("1954-01-05T00:00:00.123456789+00:00")
     Oj.default_options = { :mode => :object }
     dump_and_load(t, false)
   end
@@ -667,6 +710,10 @@ class Juice < ::Test::Unit::TestCase
   end
   def test_bigdecimal_compat
     orig = BigDecimal.new('80.51')
+    json = Oj.dump(orig, :mode => :compat)
+    bg = Oj.load(json, :mode => :compat)
+    assert_equal(orig.to_s, bg)
+    orig = BigDecimal.new('3.14159265358979323846')
     json = Oj.dump(orig, :mode => :compat)
     bg = Oj.load(json, :mode => :compat)
     assert_equal(orig.to_s, bg)

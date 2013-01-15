@@ -32,11 +32,11 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 2.0.0
+### Release 2.0.1
 
- - Thanks to yuki24 Floats are now output with a decimal even if they are an integer value.
+ - BigDecimals now dump to a string in compat mode thanks to cgriego.
 
- - <b>The Simple API for JSON (SAJ) API has been added. Read more about it on the [Oj::Saj page](http://www.ohler.com/oj/Oj/Saj.html).</b>
+ - High precision time (nano time) can be turned off for better compatibility with other JSON parsers.
 
 ## <a name="description">Description</a>
 

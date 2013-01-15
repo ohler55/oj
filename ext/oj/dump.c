@@ -928,6 +928,7 @@ dump_time(VALUE obj, Out out) {
     char		*b = buf + sizeof(buf) - 1;
     long		size;
     char		*dot = b - 10;
+    int			neg = 0;
 #if HAS_RB_TIME_TIMESPEC
     struct timespec	ts = rb_time_timespec(obj);
     time_t		sec = ts.tv_sec;
@@ -941,13 +942,38 @@ dump_time(VALUE obj, Out out) {
 #endif
 #endif
 
-    *b-- = '\0';
-    for (; dot < b; b--, nsec /= 10) {
-	*b = '0' + (nsec % 10);
+    if (0 > sec) {
+	neg = 1;
+	sec = -sec;
+	if (0 < nsec) {
+	    nsec = 1000000000 - nsec;
+	    sec--;
+	}
     }
-    *b-- = '.';
-    for (; 0 < sec; b--, sec /= 10) {
-	*b = '0' + (sec % 10);
+    *b-- = '\0';
+    if (0 < out->opts->sec_prec) {
+	if (9 > out->opts->sec_prec) {
+	    int	i;
+
+	    for (i = 9 - out->opts->sec_prec; 0 < i; i--) {
+		dot++;
+		nsec = (nsec + 5) / 10;
+	    }
+	}
+	for (; dot < b; b--, nsec /= 10) {
+	    *b = '0' + (nsec % 10);
+	}
+	*b-- = '.';
+    }
+    if (0 == sec) {
+	*b-- = '0';
+    } else {
+	for (; 0 < sec; b--, sec /= 10) {
+	    *b = '0' + (sec % 10);
+	}
+    }
+    if (neg) {
+	*b-- = '-';
     }
     b++;
     size = sizeof(buf) - (b - buf) - 1;
@@ -1012,7 +1038,7 @@ dump_xml_time(VALUE obj, Out out) {
         tzmin = (int)(tm->tm_gmtoff / 60) - (tzhour * 60);
     }
 #endif
-    if (0 == nsec) {
+    if (0 == nsec || 0 == out->opts->sec_prec) {
 	if (0 == tzhour && 0 == tzmin) {
 	    sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02dZ",
 		    tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
@@ -1026,11 +1052,23 @@ dump_xml_time(VALUE obj, Out out) {
 	    dump_cstr(buf, 25, 0, 0, out);
 	}
     } else {
-	sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02d.%09ld%c%02d:%02d",
+	char	format[64] = "%04d-%02d-%02dT%02d:%02d:%02d.%09ld%c%02d:%02d";
+	int	len = 35;
+
+	if (9 > out->opts->sec_prec) {
+	    int	i;
+
+	    format[32] = '0' + out->opts->sec_prec;
+	    for (i = 9 - out->opts->sec_prec; 0 < i; i--) {
+		nsec = (nsec + 5) / 10;
+		len--;
+	    }
+	}
+	sprintf(buf, format,
 		tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
 		tm->tm_hour, tm->tm_min, tm->tm_sec, nsec,
 		tzsign, tzhour, tzmin);
-	dump_cstr(buf, 35, 0, 0, out);
+	dump_cstr(buf, len, 0, 0, out);
     }
 }
 

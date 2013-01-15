@@ -91,6 +91,7 @@ static VALUE	mode_sym;
 static VALUE	null_sym;
 static VALUE	object_sym;
 static VALUE	ruby_sym;
+static VALUE	sec_prec_sym;
 static VALUE	strict_sym;
 static VALUE	symbol_keys_sym;
 static VALUE	time_format_sym;
@@ -128,6 +129,7 @@ struct _Options	oj_default_options = {
     UnixTime,		// time_format
     json_class,		// create_id
     65536,		// max_stack
+    9,			// sec_prec
     0,			// dump_opts
 };
 
@@ -157,6 +159,7 @@ oj_get_odd(VALUE clas) {
  * - time_format: [:unix|:xmlschema|:ruby] time format when dumping in :compat mode
  * - create_id: [String|nil] create id for json compatible object encoding, default is 'json_create'
  * - max_stack: [Fixnum|nil] maximum json size to allocate on the stack, default is 65536
+ * - second_precision: [Fixnum|nil] number of digits after the decimal when dumping the seconds portion of time
  * @return [Hash] all current option settings.
  */
 static VALUE
@@ -164,6 +167,7 @@ get_def_opts(VALUE self) {
     VALUE	opts = rb_hash_new();
     
     rb_hash_aset(opts, indent_sym, INT2FIX(oj_default_options.indent));
+    rb_hash_aset(opts, sec_prec_sym, INT2FIX(oj_default_options.sec_prec));
     rb_hash_aset(opts, max_stack_sym, INT2FIX(oj_default_options.max_stack));
     rb_hash_aset(opts, circular_sym, (Yes == oj_default_options.circular) ? Qtrue : ((No == oj_default_options.circular) ? Qfalse : Qnil));
     rb_hash_aset(opts, auto_define_sym, (Yes == oj_default_options.auto_define) ? Qtrue : ((No == oj_default_options.auto_define) ? Qfalse : Qnil));
@@ -210,6 +214,7 @@ get_def_opts(VALUE self) {
  *        :ruby Time.to_s formatted String
  * @param [String|nil] :create_id create id for json compatible object encoding
  * @param [Fixnum|nil] :max_stack maximum size to allocate on the stack for a JSON String
+ * @param [Fixnum|nil] :second_precision number of digits after the decimal when dumping the seconds portion of time
  * @return [nil]
  */
 static VALUE
@@ -229,6 +234,19 @@ set_def_opts(VALUE self, VALUE opts) {
     if (Qnil != v) {
 	Check_Type(v, T_FIXNUM);
 	oj_default_options.indent = FIX2INT(v);
+    }
+    v = rb_hash_aref(opts, sec_prec_sym);
+    if (Qnil != v) {
+	int	n;
+
+	Check_Type(v, T_FIXNUM);
+	n = FIX2INT(v);
+	if (0 > n) {
+	    n = 0;
+	} else if (9 < n) {
+	    n = 9;
+	}
+	oj_default_options.sec_prec = n;
     }
     v = rb_hash_aref(opts, max_stack_sym);
     if (Qnil != v) {
@@ -322,6 +340,20 @@ parse_options(VALUE ropts, Options copts) {
 		rb_raise(rb_eArgError, ":indent must be a Fixnum.");
 	    }
 	    copts->indent = NUM2INT(v);
+	}
+	if (Qnil != (v = rb_hash_lookup(ropts, sec_prec_sym))) {
+	    int	n;
+
+	    if (rb_cFixnum != rb_obj_class(v)) {
+		rb_raise(rb_eArgError, ":second_precision must be a Fixnum.");
+	    }
+	    n = NUM2INT(v);
+	    if (0 > n) {
+		n = 0;
+	    } else if (9 < n) {
+		n = 9;
+	    }
+	    copts->sec_prec = n;
 	}
 	if (Qnil != (v = rb_hash_lookup(ropts, mode_sym))) {
 	    if (object_sym == v) {
@@ -1009,6 +1041,7 @@ void Init_oj() {
     null_sym = ID2SYM(rb_intern("null"));		rb_gc_register_address(&null_sym);
     object_sym = ID2SYM(rb_intern("object"));		rb_gc_register_address(&object_sym);
     ruby_sym = ID2SYM(rb_intern("ruby"));		rb_gc_register_address(&ruby_sym);
+    sec_prec_sym = ID2SYM(rb_intern("second_precision"));rb_gc_register_address(&sec_prec_sym);
     strict_sym = ID2SYM(rb_intern("strict"));		rb_gc_register_address(&strict_sym);
     symbol_keys_sym = ID2SYM(rb_intern("symbol_keys"));	rb_gc_register_address(&symbol_keys_sym);
     time_format_sym = ID2SYM(rb_intern("time_format"));	rb_gc_register_address(&time_format_sym);

@@ -110,6 +110,7 @@ typedef struct _Options {
     char	time_format;	// TimeFormat
     const char	*create_id;	// 0 or string
     size_t	max_stack;	// max size to allocate on the stack
+    int		sec_prec;	// second precision when dumping time
     DumpOpts	dump_opts;
 } *Options;
 

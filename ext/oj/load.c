@@ -825,7 +825,12 @@ static VALUE
 read_time(ParseInfo pi) {
     time_t	v = 0;
     long	v2 = 0;
+    int		neg = 0;
 
+    if ('-' == *pi->s) {
+	pi->s++;
+	neg = 1;
+    }
     for (; '0' <= *pi->s && *pi->s <= '9'; pi->s++) {
 	v = v * 10 + (*pi->s - '0');
     }
@@ -838,6 +843,13 @@ read_time(ParseInfo pi) {
 	}
 	for (; 0 < cnt; cnt--) {
 	    v2 *= 10;
+	}
+    }
+    if (neg) {
+	v = -v;
+	if (0 < v2) {
+	    v--;
+	    v2 = 1000000000 - v2;
 	}
     }
 #if HAS_NANO_TIME
