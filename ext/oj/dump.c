@@ -947,7 +947,9 @@ dump_time(VALUE obj, Out out) {
 	sec = -sec;
 	if (0 < nsec) {
 	    nsec = 1000000000 - nsec;
+#ifndef JRUBY_RUBY
 	    sec--;
+#endif
 	}
     }
     *b-- = '\0';
@@ -1178,7 +1180,8 @@ dump_obj_comp(VALUE obj, int depth, Out out) {
 	if (oj_bigdecimal_class == clas) {
 	    VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-	    dump_raw(StringValuePtr(rstr), RSTRING_LEN(rstr), out);
+	    //dump_raw(StringValuePtr(rstr), RSTRING_LEN(rstr), out);
+	    dump_cstr(StringValuePtr(rstr), RSTRING_LEN(rstr), 0, 0, out);
 	} else {
 	    Odd	odd = oj_get_odd(clas);
 

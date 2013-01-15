@@ -335,7 +335,7 @@ class Juice < ::Test::Unit::TestCase
       assert_equal(%{"2012-01-05T23:58:07.12346+09:00"}, json)
     rescue Exception
       # some Rubies (1.8.7) do not allow the timezome to be set
-      t = Time.local(2012, 1, 5, 23, 58, 7.123456789, 0)
+      t = Time.local(2012, 1, 5, 23, 58, 7, 123456)
       json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema, :second_precision => 5)
       tz = t.utc_offset
       # Ruby does not handle a %+02d properly so...
@@ -366,7 +366,7 @@ class Juice < ::Test::Unit::TestCase
     dump_and_load(t, false)
   end
   def test_time_object_early
-    t = Time.xmlschema("1954-01-05T00:00:00.123456789+00:00")
+    t = Time.xmlschema("1954-01-05T00:00:00.123456")
     Oj.default_options = { :mode => :object }
     dump_and_load(t, false)
   end

@@ -38,6 +38,8 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
  - High precision time (nano time) can be turned off for better compatibility with other JSON parsers.
 
+ - Times before 1970 now encode correctly.
+
 ## <a name="description">Description</a>
 
 Optimized JSON (Oj), as the name implies was written to provide speed
