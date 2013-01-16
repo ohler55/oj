@@ -354,7 +354,6 @@ class DocTest < ::Test::Unit::TestCase
     end
   end
 
-
   def test_open_no_close
     json = %{{"a":[1,2,3]}}
     doc = Oj::Doc.open(json)
