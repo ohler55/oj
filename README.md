@@ -32,6 +32,10 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
+### Release 2.0.2
+
+ - Fixed bug in Oj.load where loading a hash with symbold keys and also turning on symbolize keys would try to symbolize a symbol.
+
 ### Release 2.0.1
 
  - BigDecimals now dump to a string in compat mode thanks to cgriego.
