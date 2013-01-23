@@ -536,7 +536,7 @@ read_obj(ParseInfo pi) {
 		    rb_ivar_set(obj, var_id, val);
 #endif
 		} else if (T_HASH == obj_type) {
-		    if (Yes == pi->options->sym_key && T_SYMBOL != rb_type(key)) {
+		    if (Yes == pi->options->sym_key && T_STRING == rb_type(key)) {
 			rb_hash_aset(obj, rb_str_intern(key), val);
 		    } else {
 			rb_hash_aset(obj, key, val);
