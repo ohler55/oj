@@ -32,17 +32,9 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 2.0.2
+### Release 2.0.3
 
- - Fixed bug in Oj.load where loading a hash with symbold keys and also turning on symbolize keys would try to symbolize a symbol.
-
-### Release 2.0.1
-
- - BigDecimals now dump to a string in compat mode thanks to cgriego.
-
- - High precision time (nano time) can be turned off for better compatibility with other JSON parsers.
-
- - Times before 1970 now encode correctly.
+ - Fixed round off error in time format when rounding up to the next second.
 
 ## <a name="description">Description</a>
 

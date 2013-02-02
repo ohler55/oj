@@ -929,6 +929,7 @@ dump_time(VALUE obj, Out out) {
     long		size;
     char		*dot = b - 10;
     int			neg = 0;
+    long		one = 1000000000;
 #if HAS_RB_TIME_TIMESPEC
     struct timespec	ts = rb_time_timespec(obj);
     time_t		sec = ts.tv_sec;
@@ -960,7 +961,12 @@ dump_time(VALUE obj, Out out) {
 	    for (i = 9 - out->opts->sec_prec; 0 < i; i--) {
 		dot++;
 		nsec = (nsec + 5) / 10;
+		one /= 10;
 	    }
+	}
+	if (one <= nsec) {
+	    nsec -= one;
+	    sec++;
 	}
 	for (; dot < b; b--, nsec /= 10) {
 	    *b = '0' + (nsec % 10);
@@ -998,6 +1004,7 @@ static void
 dump_xml_time(VALUE obj, Out out) {
     char		buf[64];
     struct tm		*tm;
+    long		one = 1000000000;
 #if HAS_RB_TIME_TIMESPEC
     struct timespec	ts = rb_time_timespec(obj);
     time_t		sec = ts.tv_sec;
@@ -1016,6 +1023,18 @@ dump_xml_time(VALUE obj, Out out) {
 
     if (out->end - out->cur <= 36) {
 	grow(out, 36);
+    }
+    if (9 > out->opts->sec_prec) {
+	int	i;
+
+	for (i = 9 - out->opts->sec_prec; 0 < i; i--) {
+	    nsec = (nsec + 5) / 10;
+	    one /= 10;
+	}
+	if (one <= nsec) {
+	    nsec -= one;
+	    sec++;
+	}
     }
     // 2012-01-05T23:58:07.123456000+09:00
     //tm = localtime(&sec);
@@ -1058,13 +1077,8 @@ dump_xml_time(VALUE obj, Out out) {
 	int	len = 35;
 
 	if (9 > out->opts->sec_prec) {
-	    int	i;
-
 	    format[32] = '0' + out->opts->sec_prec;
-	    for (i = 9 - out->opts->sec_prec; 0 < i; i--) {
-		nsec = (nsec + 5) / 10;
-		len--;
-	    }
+	    len -= 9 - out->opts->sec_prec;
 	}
 	sprintf(buf, format,
 		tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
