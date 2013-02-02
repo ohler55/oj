@@ -6,7 +6,6 @@ rvm:
   - jruby-19mode
   - rbx
   - rbx-19mode
-  - ree
 
 env:
   - JRUBY_OPTS="-Xcext.enabled=true"
