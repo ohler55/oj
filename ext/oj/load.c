@@ -169,6 +169,7 @@ classname2class(const char *name, ParseInfo pi) {
 #endif
     if (Qundef == (clas = oj_cache_get(oj_class_cache, name, &slot))) {
 	char		class_name[1024];
+	char		*end = class_name + sizeof(class_name) - 1;
 	char		*s;
 	const char	*n = name;
 
@@ -184,6 +185,8 @@ classname2class(const char *name, ParseInfo pi) {
 		    return Qundef;
 		}
 		s = class_name;
+	    } else if (end <= s) {
+		raise_error("Invalid classname, limit is 1024 characters", pi->str, pi->s);
 	    } else {
 		*s++ = *n;
 	    }

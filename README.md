@@ -32,9 +32,9 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 2.0.3
+### Release 2.0.4
 
- - Fixed round off error in time format when rounding up to the next second.
+ - Fixed bug related to long class names.
 
 ## <a name="description">Description</a>
 
