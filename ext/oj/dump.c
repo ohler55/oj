@@ -1195,8 +1195,7 @@ dump_obj_comp(VALUE obj, int depth, Out out) {
 	if (oj_bigdecimal_class == clas) {
 	    VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-	    //dump_raw(StringValuePtr(rstr), RSTRING_LEN(rstr), out);
-	    dump_cstr(StringValuePtr(rstr), RSTRING_LEN(rstr), 0, 0, out);
+	    dump_raw(StringValuePtr(rstr), RSTRING_LEN(rstr), out);
 	} else {
 	    Odd	odd = oj_get_odd(clas);
 
