@@ -395,8 +395,8 @@ parse_options(VALUE ropts, Options copts) {
 
 static VALUE
 load_with_opts(VALUE input, Options copts) {
-    char	*json;
-    size_t	len;
+    char	*json = 0;
+    size_t	len = 0;
     VALUE	obj;
 
     if (rb_type(input) == T_STRING) {
@@ -609,8 +609,8 @@ to_file(int argc, VALUE *argv, VALUE self) {
 static VALUE
 saj_parse(int argc, VALUE *argv, VALUE self) {
     struct _Options	copts = oj_default_options;
-    char		*json;
-    size_t		len;
+    char		*json = 0;
+    size_t		len = 0;
     VALUE		input = argv[1];
 
     if (argc < 2) {

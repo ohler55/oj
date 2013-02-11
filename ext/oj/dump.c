@@ -268,6 +268,7 @@ dump_unicode(const char *str, const char *end, Out out) {
 	cnt = 5;
 	code = b & 0x00000001;
     } else {
+	cnt = 0;
 	rb_raise(rb_eEncodingError, "Invalid Unicode\n");
     }
     str++;

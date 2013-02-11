@@ -112,7 +112,7 @@ class Juice < ::Test::Unit::TestCase
     assert_equal({ :indent=>0,
                    :second_precision=>9,
                    :circular=>false,
-                   :auto_define=>true,
+                   :auto_define=>false,
                    :symbol_keys=>false,
                    :ascii_only=>false,
                    :mode=>:object,
@@ -126,7 +126,7 @@ class Juice < ::Test::Unit::TestCase
       :indent=>0,
       :second_precision=>9,
       :circular=>false,
-      :auto_define=>true,
+      :auto_define=>false,
       :symbol_keys=>false,
       :ascii_only=>false,
       :mode=>:object,
@@ -137,7 +137,7 @@ class Juice < ::Test::Unit::TestCase
       :indent=>4,
       :second_precision=>7,
       :circular=>true,
-      :auto_define=>false,
+      :auto_define=>true,
       :symbol_keys=>true,
       :ascii_only=>true,
       :mode=>:compat,
@@ -818,7 +818,7 @@ class Juice < ::Test::Unit::TestCase
   "^o":"Jem",
   "x":true,
   "y":58 }}
-    obj = Oj.load(json, :mode => :object)
+    obj = Oj.load(json, :mode => :object, :auto_define => true)
     assert_equal('Jem', obj.class.name)
     assert_equal(true, obj.x)
     assert_equal(58, obj.y)

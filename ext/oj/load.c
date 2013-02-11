@@ -139,10 +139,12 @@ resolve_classname(VALUE mod, const char *class_name, int auto_define) {
     VALUE	clas;
     ID		ci = rb_intern(class_name);
 
-    if (rb_const_defined_at(mod, ci) || !auto_define) {
+    if (rb_const_defined_at(mod, ci)) {
 	clas = rb_const_get_at(mod, ci);
-    } else {
+    } else if (auto_define) {
 	clas = rb_define_class_under(mod, class_name, oj_bag_class);
+    } else {
+	clas = Qundef;
     }
     return clas;
 }
