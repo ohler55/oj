@@ -122,7 +122,7 @@ static const char	json_class[] = "json_class";
 struct _Options	oj_default_options = {
     0,			// indent
     No,			// circular
-    Yes,		// auto_define
+    No,			// auto_define
     No,			// sym_key
     No,			// ascii_only
     ObjectMode,		// mode
@@ -529,6 +529,24 @@ load_file(int argc, VALUE *argv, VALUE self) {
 	xfree(json);
     }
     return obj;
+}
+
+/* call-seq: strict_load(doc)
+ *
+ * Loads a JSON document in strict mode with auto_define and symbol_keys turned off. This function should be safe to use
+ * with JSON received on an unprotected public interface.
+ * @param [String|IO] doc JSON String or IO to load
+ * @return [Hash|Array|String|Fixnum|Bignum|BigDecimal|nil|True|False]
+ */
+static VALUE
+strict_load(VALUE self, VALUE doc) {
+    struct _Options	options = oj_default_options;
+
+    options.auto_define = No;
+    options.sym_key = No;
+    options.mode = StrictMode;
+
+    return load_with_opts(doc, &options);
 }
 
 /* call-seq: dump(obj, options) => json-string
@@ -994,6 +1012,7 @@ void Init_oj() {
     rb_define_module_function(Oj, "mimic_JSON", define_mimic_json, -1);
     rb_define_module_function(Oj, "load", load, -1);
     rb_define_module_function(Oj, "load_file", load_file, -1);
+    rb_define_module_function(Oj, "strict_load", strict_load, 1);
     rb_define_module_function(Oj, "dump", dump, -1);
     rb_define_module_function(Oj, "to_file", to_file, -1);
 

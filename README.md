@@ -36,6 +36,12 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
  - Fixed bug related to long class names.
 
+ - Change the default for the auto_define option.
+
+ - Added Oj.strict_load() method that sets the options to public safe options. This should be safe for loading JSON
+   documents from a public unverified source. It does not eleviate to need for reasonable programming practices of
+   course. See the section on the <a href="#proper_use">proper use of Oj</a> in a public exposure.
+
 ## <a name="description">Description</a>
 
 Optimized JSON (Oj), as the name implies was written to provide speed
@@ -79,6 +85,21 @@ Another API, the Oj::Saj API follows an XML SAX model and walks the JSON documen
 each element. The Oj::Saj API is useful when only portions of the JSON are of interest. Performance up to 20 times
 faster than conventional JSON are possible. The API is simple to use but does require a different approach than the
 conventional parse followed by access approach used by conventional JSON parsing.
+
+## <a name="proper_use">Proper Use</a>
+
+Two settings in Oj are useful for parsing but do expose a vunerability if used from an untrusted source. Symbolizing
+keys can be used to cause memory to be filled up since Ruby does not garbage collect Symbols. The same is true for auto
+defining classes. Memory can be exhausted if too many classes are automatically defined. Auto defining is a useful
+feature during development and from trusted sources but it does allow too many classes to be created in the object load
+mode and auto defined is used with an untrusted source. The Oj.strict_load() method sets uses the most strict and safest
+options. It should be used by developers who find it difficult to understand the options available in Oj.
+
+The options in Oj are designed to provide flexibility to the developer. This flexibility allows Objects to be serialized
+and deserialized. No methods are ever called on these created Objects but that does not stop the developer from calling
+methods on the Objects created. As in any system, check your inputs before working with them. Taking an arbitrary String
+from a user and evaluating it is never a good idea from an unsecure source. The same is true for Object attributes as
+they are not more than Strings. Always check inputs from untrusted sources.
 
 ## <a name="compare">Comparisons</a>
 
