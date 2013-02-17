@@ -117,6 +117,7 @@ class Juice < ::Test::Unit::TestCase
                    :ascii_only=>false,
                    :mode=>:object,
                    :time_format=>:unix,
+                   :bigdecimal_as_decimal=>true,
                    :max_stack=>65536,
                    :create_id=>'json_class'}, opts)
   end
@@ -131,6 +132,7 @@ class Juice < ::Test::Unit::TestCase
       :ascii_only=>false,
       :mode=>:object,
       :time_format=>:unix,
+      :bigdecimal_as_decimal=>true,
       :max_stack=>65536,
       :create_id=>'json_class'}
     o2 = {
@@ -142,6 +144,7 @@ class Juice < ::Test::Unit::TestCase
       :ascii_only=>true,
       :mode=>:compat,
       :time_format=>:ruby,
+      :bigdecimal_as_decimal=>false,
       :max_stack=>4000,
       :create_id=>nil}
     o3 = { :indent => 4 }
@@ -732,13 +735,23 @@ class Juice < ::Test::Unit::TestCase
   end
   def test_bigdecimal_compat
     orig = BigDecimal.new('80.51')
-    json = Oj.dump(orig, :mode => :compat)
+    json = Oj.dump(orig, :mode => :compat, :bigdecimal_as_decimal => false)
     bg = Oj.load(json, :mode => :compat)
     assert_equal(orig.to_s, bg)
     orig = BigDecimal.new('3.14159265358979323846')
-    json = Oj.dump(orig, :mode => :compat)
+    json = Oj.dump(orig, :mode => :compat, :bigdecimal_as_decimal => false)
     bg = Oj.load(json, :mode => :compat)
     assert_equal(orig.to_s, bg)
+  end
+  def test_bigdecimal_compat_to_json
+    orig = BigDecimal.new('80.51')
+    BigDecimal.send(:define_method, :to_json) do
+      %{"this is big"}
+    end
+    json = Oj.dump(orig, :mode => :compat)
+    bg = Oj.load(json, :mode => :compat)
+    assert_equal("this is big", bg)
+    BigDecimal.send(:remove_method, :to_json) # cleanup
   end
   def test_bigdecimal_object
     mode = Oj.default_options[:mode]
@@ -800,13 +813,7 @@ class Juice < ::Test::Unit::TestCase
     x = Oj.load(json, :mode => :compat)
     # Some Rubies implement Date as data and some as a real Object. Either are
     # okay for the test.
-    if x.is_a?(String)
-      assert_equal(orig.to_s, x)
-    else # better be a Hash
-      assert_equal({ "year" => orig.year, "month" => orig.month, "day" => orig.day,
-                     "hour" => orig.hour, "min" => orig.min, "sec" => orig.sec,
-                     "offset" => orig.offset, "start" => orig.start}, x)
-    end
+    assert_equal(orig.to_s, x)
   end
   def test_datetime_object
     dump_and_load(DateTime.new(2012, 6, 19), false)

@@ -32,15 +32,14 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 2.0.4
+### Release 2.0.5
 
- - Fixed bug related to long class names.
+ - DateTimes are now output the same in compat mode for both 1.8.7 and 1.9.3 even though they are implemented differently in each Ruby.
 
- - Change the default for the auto_define option.
+ - Objects implemented as data structs can now change the encoding by implemented either to_json(), as_json(), or to_hash().
 
- - Added Oj.strict_load() method that sets the options to public safe options. This should be safe for loading JSON
-   documents from a public unverified source. It does not eleviate to need for reasonable programming practices of
-   course. See the section on the <a href="#proper_use">proper use of Oj</a> in a public exposure.
+ - Added an option to allow BigDecimals to be dumped as either a string or as a number. There was no agreement on which
+   was the best or correct so both are possible with the correct option setting.
 
 ## <a name="description">Description</a>
 

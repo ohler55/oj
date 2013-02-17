@@ -108,6 +108,7 @@ typedef struct _Options {
     char	ascii_only;	// YesNo
     char	mode;		// Mode
     char	time_format;	// TimeFormat
+    char	bigdec_as_num;	// YesNo
     const char	*create_id;	// 0 or string
     size_t	max_stack;	// max size to allocate on the stack
     int		sec_prec;	// second precision when dumping time
@@ -166,6 +167,8 @@ extern rb_encoding	*oj_utf8_encoding;
 
 extern VALUE	oj_bag_class;
 extern VALUE	oj_bigdecimal_class;
+extern VALUE	oj_date_class;
+extern VALUE	oj_datetime_class;
 extern VALUE	oj_doc_class;
 extern VALUE	oj_parse_error_class;
 extern VALUE	oj_stringio_class;

@@ -72,8 +72,10 @@ ID	oj_utc_offset_id;
 ID	oj_write_id;
 
 VALUE	oj_bag_class;
-VALUE	oj_parse_error_class;
 VALUE	oj_bigdecimal_class;
+VALUE	oj_date_class;
+VALUE	oj_datetime_class;
+VALUE	oj_parse_error_class;
 VALUE	oj_stringio_class;
 VALUE	oj_struct_class;
 VALUE	oj_time_class;
@@ -82,6 +84,7 @@ VALUE	oj_slash_string;
 
 static VALUE	ascii_only_sym;
 static VALUE	auto_define_sym;
+static VALUE	bigdecimal_as_decimal_sym;
 static VALUE	circular_sym;
 static VALUE	compat_sym;
 static VALUE	create_id_sym;
@@ -127,6 +130,7 @@ struct _Options	oj_default_options = {
     No,			// ascii_only
     ObjectMode,		// mode
     UnixTime,		// time_format
+    Yes,		// bigdec_as_num
     json_class,		// create_id
     65536,		// max_stack
     9,			// sec_prec
@@ -157,6 +161,7 @@ oj_get_odd(VALUE clas) {
  * - symbol_keys: [true|false|nil] use symbols instead of strings for hash keys
  * - mode: [:object|:strict|:compat|:null] load and dump modes to use for JSON
  * - time_format: [:unix|:xmlschema|:ruby] time format when dumping in :compat mode
+ * - bigdecimal_as_decimal: [true|false|nil] dump BigDecimal as a decimal number or as a String
  * - create_id: [String|nil] create id for json compatible object encoding, default is 'json_create'
  * - max_stack: [Fixnum|nil] maximum json size to allocate on the stack, default is 65536
  * - second_precision: [Fixnum|nil] number of digits after the decimal when dumping the seconds portion of time
@@ -173,6 +178,7 @@ get_def_opts(VALUE self) {
     rb_hash_aset(opts, auto_define_sym, (Yes == oj_default_options.auto_define) ? Qtrue : ((No == oj_default_options.auto_define) ? Qfalse : Qnil));
     rb_hash_aset(opts, ascii_only_sym, (Yes == oj_default_options.ascii_only) ? Qtrue : ((No == oj_default_options.ascii_only) ? Qfalse : Qnil));
     rb_hash_aset(opts, symbol_keys_sym, (Yes == oj_default_options.sym_key) ? Qtrue : ((No == oj_default_options.sym_key) ? Qfalse : Qnil));
+    rb_hash_aset(opts, bigdecimal_as_decimal_sym, (Yes == oj_default_options.bigdec_as_num) ? Qtrue : ((No == oj_default_options.bigdec_as_num) ? Qfalse : Qnil));
     switch (oj_default_options.mode) {
     case StrictMode:	rb_hash_aset(opts, mode_sym, strict_sym);	break;
     case CompatMode:	rb_hash_aset(opts, mode_sym, compat_sym);	break;
@@ -200,6 +206,7 @@ get_def_opts(VALUE self) {
  * @param [true|false|nil] :auto_define automatically define classes if they do not exist
  * @param [true|false|nil] :symbol_keys convert hash keys to symbols
  * @param [true|false|nil] :ascii_only encode all high-bit characters as escaped sequences if true
+ * @param [true|false|nil] :bigdecimal_as_decimal dump BigDecimal as a decimal number or as a String
  * @param [:object|:strict|:compat|:null] load and dump mode to use for JSON
  *	  :strict raises an exception when a non-supported Object is
  *	  encountered. :compat attempts to extract variable values from an
@@ -224,6 +231,7 @@ set_def_opts(VALUE self, VALUE opts) {
 	{ auto_define_sym, &oj_default_options.auto_define },
 	{ symbol_keys_sym, &oj_default_options.sym_key },
 	{ ascii_only_sym, &oj_default_options.ascii_only },
+	{ bigdecimal_as_decimal_sym, &oj_default_options.bigdec_as_num },
 	{ Qnil, 0 }
     };
     YesNoOpt	o;
@@ -328,6 +336,7 @@ parse_options(VALUE ropts, Options copts) {
 	{ auto_define_sym, &copts->auto_define },
 	{ symbol_keys_sym, &copts->sym_key },
 	{ ascii_only_sym, &copts->ascii_only },
+	{ bigdecimal_as_decimal_sym, &copts->bigdec_as_num },
 	{ Qnil, 0 }
     };
     YesNoOpt	o;
@@ -1043,14 +1052,17 @@ void Init_oj() {
     oj_write_id = rb_intern("write");
 
     oj_bag_class = rb_const_get_at(Oj, rb_intern("Bag"));
+    oj_bigdecimal_class = rb_const_get(rb_cObject, rb_intern("BigDecimal"));
+    oj_date_class = rb_const_get(rb_cObject, rb_intern("Date"));
+    oj_datetime_class = rb_const_get(rb_cObject, rb_intern("DateTime"));
     oj_parse_error_class = rb_const_get_at(Oj, rb_intern("ParseError"));
+    oj_stringio_class = rb_const_get(rb_cObject, rb_intern("StringIO"));
     oj_struct_class = rb_const_get(rb_cObject, rb_intern("Struct"));
     oj_time_class = rb_const_get(rb_cObject, rb_intern("Time"));
-    oj_bigdecimal_class = rb_const_get(rb_cObject, rb_intern("BigDecimal"));
-    oj_stringio_class = rb_const_get(rb_cObject, rb_intern("StringIO"));
 
     ascii_only_sym = ID2SYM(rb_intern("ascii_only"));	rb_gc_register_address(&ascii_only_sym);
     auto_define_sym = ID2SYM(rb_intern("auto_define"));	rb_gc_register_address(&auto_define_sym);
+    bigdecimal_as_decimal_sym = ID2SYM(rb_intern("bigdecimal_as_decimal"));rb_gc_register_address(&bigdecimal_as_decimal_sym);
     circular_sym = ID2SYM(rb_intern("circular"));	rb_gc_register_address(&circular_sym);
     compat_sym = ID2SYM(rb_intern("compat"));		rb_gc_register_address(&compat_sym);
     create_id_sym = ID2SYM(rb_intern("create_id"));	rb_gc_register_address(&create_id_sym);
@@ -1090,7 +1102,7 @@ void Init_oj() {
     // Date
     odd++;
     idp = odd->attrs;
-    odd->clas = rb_const_get(rb_cObject, rb_intern("Date"));
+    odd->clas = oj_date_class;
     odd->create_obj = odd->clas;
     odd->create_op = oj_new_id;
     odd->attr_cnt = 4;
@@ -1102,7 +1114,7 @@ void Init_oj() {
     // DateTime
     odd++;
     idp = odd->attrs;
-    odd->clas = rb_const_get(rb_cObject, rb_intern("DateTime"));
+    odd->clas = oj_datetime_class;
     odd->create_obj = odd->clas;
     odd->create_op = oj_new_id;
     odd->attr_cnt = 8;

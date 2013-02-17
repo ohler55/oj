@@ -93,7 +93,7 @@ static void	dump_ruby_time(VALUE obj, Out out);
 static void	dump_xml_time(VALUE obj, Out out);
 static void	dump_data_strict(VALUE obj, Out out);
 static void	dump_data_null(VALUE obj, Out out);
-static void	dump_data_comp(VALUE obj, Out out);
+static void	dump_data_comp(VALUE obj, int depth, Out out);
 static void	dump_data_obj(VALUE obj, int depth, Out out);
 static void	dump_obj_comp(VALUE obj, int depth, Out out);
 static void	dump_obj_obj(VALUE obj, int depth, Out out);
@@ -1116,21 +1116,51 @@ dump_data_null(VALUE obj, Out out) {
 }
 
 static void
-dump_data_comp(VALUE obj, Out out) {
-    VALUE	clas = rb_obj_class(obj);
-
-    if (rb_cTime == clas) {
-	switch (out->opts->time_format) {
-	case RubyTime:	dump_ruby_time(obj, out);	break;
-	case XmlTime:	dump_xml_time(obj, out);	break;
-	case UnixTime:
-	default:	dump_time(obj, out);		break;
+dump_data_comp(VALUE obj, int depth, Out out) {
+    if (rb_respond_to(obj, oj_to_hash_id)) {
+	VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
+ 
+	if (T_HASH != rb_type(h)) {
+	    rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
 	}
-    } else {
-	VALUE	rstr;
+	dump_hash(h, depth, out->opts->mode, out);
+    } else if (rb_respond_to(obj, oj_as_json_id)) {
+	dump_val(rb_funcall(obj, oj_as_json_id, 0), depth, out);
+    } else if (rb_respond_to(obj, oj_to_json_id)) {
+	VALUE		rs = rb_funcall(obj, oj_to_json_id, 0);
+	const char	*s = StringValuePtr(rs);
+	int		len = (int)RSTRING_LEN(rs);
 
-	rstr = rb_funcall(obj, oj_to_s_id, 0);
-	dump_cstr(StringValuePtr(rstr), RSTRING_LEN(rstr), 0, 0, out);
+	if (out->end - out->cur <= len + 1) {
+	    grow(out, len);
+	}
+	memcpy(out->cur, s, len);
+	out->cur += len;
+	*out->cur = '\0';
+    } else {
+	VALUE	clas = rb_obj_class(obj);
+
+	if (rb_cTime == clas) {
+	    switch (out->opts->time_format) {
+	    case RubyTime:	dump_ruby_time(obj, out);	break;
+	    case XmlTime:	dump_xml_time(obj, out);	break;
+	    case UnixTime:
+	    default:	dump_time(obj, out);		break;
+	    }
+	} else if (oj_bigdecimal_class == clas) {
+	    VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+
+	    if (Yes == out->opts->bigdec_as_num) {
+		dump_raw(StringValuePtr(rstr), RSTRING_LEN(rstr), out);
+	    } else {
+		dump_cstr(StringValuePtr(rstr), RSTRING_LEN(rstr), 0, 0, out);
+	    }
+	} else {
+	    VALUE	rstr;
+
+	    rstr = rb_funcall(obj, oj_to_s_id, 0);
+	    dump_cstr(StringValuePtr(rstr), RSTRING_LEN(rstr), 0, 0, out);
+	}
     }
 }
 
@@ -1157,8 +1187,12 @@ dump_data_obj(VALUE obj, int depth, Out out) {
 	if (0 == odd) {
 	    if (oj_bigdecimal_class == clas) {
 		VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
-
-		dump_raw(StringValuePtr(rstr), RSTRING_LEN(rstr), out);
+		
+		if (Yes == out->opts->bigdec_as_num) {
+		    dump_raw(StringValuePtr(rstr), RSTRING_LEN(rstr), out);
+		} else {
+		    dump_cstr(StringValuePtr(rstr), RSTRING_LEN(rstr), 0, 0, out);
+		}
 	    } else {
 		dump_nil(out);
 	    }
@@ -1184,18 +1218,26 @@ dump_obj_comp(VALUE obj, int depth, Out out) {
 	const char	*s = StringValuePtr(rs);
 	int		len = (int)RSTRING_LEN(rs);
 
-	if (out->end - out->cur <= len) {
+	if (out->end - out->cur <= len + 1) {
 	    grow(out, len);
 	}
 	memcpy(out->cur, s, len);
 	out->cur += len;
+	*out->cur = '\0';
     } else {
 	VALUE	clas = rb_obj_class(obj);
 
 	if (oj_bigdecimal_class == clas) {
 	    VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-	    //dump_raw(StringValuePtr(rstr), RSTRING_LEN(rstr), out);
+	    if (Yes == out->opts->bigdec_as_num) {
+		dump_raw(StringValuePtr(rstr), RSTRING_LEN(rstr), out);
+	    } else {
+		dump_cstr(StringValuePtr(rstr), RSTRING_LEN(rstr), 0, 0, out);
+	    }
+	} else if (oj_datetime_class == clas || oj_date_class == clas) {
+	    VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+
 	    dump_cstr(StringValuePtr(rstr), RSTRING_LEN(rstr), 0, 0, out);
 	} else {
 	    Odd	odd = oj_get_odd(clas);
@@ -1572,7 +1614,7 @@ dump_val(VALUE obj, int depth, Out out) {
 	switch (out->opts->mode) {
 	case StrictMode:	dump_data_strict(obj, out);	break;
 	case NullMode:		dump_data_null(obj, out);	break;
-	case CompatMode:	dump_data_comp(obj, out);	break;
+	case CompatMode:	dump_data_comp(obj, depth, out);break;
 	case ObjectMode:
 	default:		dump_data_obj(obj, depth, out);	break;
 	}
