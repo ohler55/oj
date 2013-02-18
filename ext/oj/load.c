@@ -62,7 +62,7 @@ typedef struct _ParseInfo {
     char	*s;		/* current position in buffer */
     CircArray	circ_array;
     Options	options;
-    void	*stack_min;
+    char	*stack_min;
 } *ParseInfo;
 
 static CircArray	circ_array_new(void);
@@ -328,7 +328,7 @@ static VALUE
 read_next(ParseInfo pi, int hint) {
     VALUE	obj;
 
-    if ((void*)&obj < pi->stack_min) {
+    if ((char*)&obj < pi->stack_min) {
 	rb_raise(rb_eSysStackError, "JSON is too deeply nested");
     }
     next_non_white(pi);	// skip white space
@@ -1039,12 +1039,14 @@ oj_parse(char *json, Options options) {
     }
     pi.options = options;
 #if IS_WINDOWS
-    pi.stack_min = (void*)((char*)&obj - (512 * 1024)); // assume a 1M stack and give half to ruby
+    pi.stack_min = (char*)&obj - (512 * 1024); // assume a 1M stack and give half to ruby
 #else
     {
 	struct rlimit	lim;
 
-	if (0 == getrlimit(RLIMIT_STACK, &lim)) {
+	// When run under make on linux the limit is not reported corrected and is infinity even though
+	// the return code indicates no error. That forces the rlim_cur value as well as the return code.
+	if (0 == getrlimit(RLIMIT_STACK, &lim) && RLIM_INFINITY != lim.rlim_cur) {
 	    pi.stack_min = (void*)((char*)&obj - (lim.rlim_cur / 4 * 3)); // let 3/4ths of the stack be used only
 	} else {
 	    pi.stack_min = 0; // indicates not to check stack limit
