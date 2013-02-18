@@ -32,6 +32,10 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
+### Release 2.0.6
+
+ - Worked around an undocumented feature in linux when using make that misreports the stack limits.
+
 ### Release 2.0.5
 
  - DateTimes are now output the same in compat mode for both 1.8.7 and 1.9.3 even though they are implemented differently in each Ruby.
