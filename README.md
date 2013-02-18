@@ -32,6 +32,11 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
+### Release 2.0.7
+
+ - Fixed bug where undefined classes specified in a JSON document would freeze Ruby instead of raising an exception when
+   the auto_define option was not set. (It seems that Ruby freezes on trying to add variables to nil.)
+
 ### Release 2.0.6
 
  - Worked around an undocumented feature in linux when using make that misreports the stack limits.

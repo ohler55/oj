@@ -184,7 +184,10 @@ classname2class(const char *name, ParseInfo pi) {
 		    raise_error("Invalid classname, expected another ':'", pi->str, pi->s);
 		}
 		if (Qundef == (clas = resolve_classname(clas, class_name, auto_define))) {
-		    return Qundef;
+		    char	buf[1024];
+
+		    snprintf(buf, sizeof(buf) - 1, "Class %s not defined", class_name);
+		    raise_error(buf, pi->str, pi->s);
 		}
 		s = class_name;
 	    } else if (end <= s) {
