@@ -109,6 +109,7 @@ typedef struct _Options {
     char	mode;		// Mode
     char	time_format;	// TimeFormat
     char	bigdec_as_num;	// YesNo
+    char	bigdec_load;	// YesNo
     const char	*create_id;	// 0 or string
     size_t	max_stack;	// max size to allocate on the stack
     int		sec_prec;	// second precision when dumping time

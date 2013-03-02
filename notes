@@ -3,6 +3,8 @@
 ^c^d hide subtree
 ^c^s show subtree
 
+- active_support issue with BigDecimal.as_json returning self
+- add option to always use bigdecimal for loading
 
 
 ---------------------------

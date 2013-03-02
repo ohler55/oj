@@ -32,23 +32,21 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
+### Release 2.0.8
+
+ - Added :bigdecimal_load option that forces all decimals in a JSON string to be read as BigDecimals instead of as
+   Floats. This is useful if precision is important.
+
+ - Worked around bug in active_support 2.3.x where BigDecimal.as_json() returned self instead of a JSON primitive. Of
+   course that creates a loop and blows the stack. Oj ignores the as_json() for any object that returns itself and
+   instead encodes the object as it sees fit which is usually what is expected.
+
+ - All tests pass with Ruby 2.0.0-p0. Had to modify Exception encoding slightly.
+
 ### Release 2.0.7
 
  - Fixed bug where undefined classes specified in a JSON document would freeze Ruby instead of raising an exception when
    the auto_define option was not set. (It seems that Ruby freezes on trying to add variables to nil.)
-
-### Release 2.0.6
-
- - Worked around an undocumented feature in linux when using make that misreports the stack limits.
-
-### Release 2.0.5
-
- - DateTimes are now output the same in compat mode for both 1.8.7 and 1.9.3 even though they are implemented differently in each Ruby.
-
- - Objects implemented as data structs can now change the encoding by implemented either to_json(), as_json(), or to_hash().
-
- - Added an option to allow BigDecimals to be dumped as either a string or as a number. There was no agreement on which
-   was the best or correct so both are possible with the correct option setting.
 
 ## <a name="description">Description</a>
 

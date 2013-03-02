@@ -742,10 +742,21 @@ read_num(ParseInfo pi) {
 	    raise_error("number or other value", pi->str, pi->s);
 	}
 	pi->s += 8;
-	if (neg) {
-	    return rb_float_new(-INFINITY);
+	if (Yes == pi->options->bigdec_load) {
+	    char	c = *pi->s;
+	    VALUE	num;
+
+	    *pi->s = '\0';
+	    num = rb_funcall(oj_bigdecimal_class, oj_new_id, 1, rb_str_new2(start));
+	    *pi->s = c;
+
+	    return num;
 	} else {
-	    return rb_float_new(INFINITY);
+	    if (neg) {
+		return rb_float_new(-INFINITY);
+	    } else {
+		return rb_float_new(INFINITY);
+	    }
 	}
     }
     for (; '0' <= *pi->s && *pi->s <= '9'; pi->s++) {
@@ -800,7 +811,7 @@ read_num(ParseInfo pi) {
 	    return LONG2NUM(n);
 	}
     } else { // decimal
-	if (big) {
+	if (big || Yes == pi->options->bigdec_load) {
 	    char	c = *pi->s;
 	    VALUE	num;
 	

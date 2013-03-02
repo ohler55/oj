@@ -1117,6 +1117,8 @@ dump_data_null(VALUE obj, Out out) {
 
 static void
 dump_data_comp(VALUE obj, int depth, Out out) {
+    VALUE	o2;
+
     if (rb_respond_to(obj, oj_to_hash_id)) {
 	VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
  
@@ -1124,8 +1126,8 @@ dump_data_comp(VALUE obj, int depth, Out out) {
 	    rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
 	}
 	dump_hash(h, depth, out->opts->mode, out);
-    } else if (rb_respond_to(obj, oj_as_json_id)) {
-	dump_val(rb_funcall(obj, oj_as_json_id, 0), depth, out);
+    } else if (rb_respond_to(obj, oj_as_json_id) && obj != (o2 = rb_funcall(obj, oj_as_json_id, 0))) {
+	dump_val(o2, depth, out);
     } else if (rb_respond_to(obj, oj_to_json_id)) {
 	VALUE		rs = rb_funcall(obj, oj_to_json_id, 0);
 	const char	*s = StringValuePtr(rs);
@@ -1281,6 +1283,11 @@ dump_attr_cb(ID key, VALUE value, Out out) {
     size_t	size = depth * out->indent + 1;
     const char	*attr = rb_id2name(key);
 
+#if HAS_EXCEPTION_MAGIC
+    if (0 == strcmp("bt", attr) || 0 == strcmp("mesg", attr)) {
+	return ST_CONTINUE;
+    }
+#endif
     if (out->end - out->cur <= (long)size) {
 	grow(out, size);
     }
@@ -1369,6 +1376,34 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	}
 #else
 	size = d2 * out->indent + 1;
+	for (i = cnt; 0 < i; i--, np++) {
+	    if (out->end - out->cur <= (long)size) {
+		grow(out, size);
+	    }
+	    vid = rb_to_id(*np);
+	    fill_indent(out, d2);
+	    attr = rb_id2name(vid);
+	    if ('@' == *attr) {
+		attr++;
+		dump_cstr(attr, strlen(attr), 0, 0, out);
+	    } else {
+		char	buf[32];
+
+		*buf = '~';
+		strncpy(buf + 1, attr, sizeof(buf) - 2);
+		buf[sizeof(buf) - 1] = '\0';
+		dump_cstr(buf, strlen(attr) + 1, 0, 0, out);
+	    }
+	    *out->cur++ = ':';
+	    dump_val(rb_ivar_get(obj, vid), d2, out);
+	    if (out->end - out->cur <= 2) {
+		grow(out, 2);
+	    }
+	    if (1 < i) {
+	      *out->cur++ = ',';
+	    }
+	}
+#endif
 #if HAS_EXCEPTION_MAGIC
 	if (Qtrue == rb_obj_is_kind_of(obj, rb_eException)) {
 	    if (',' != *(out->cur - 1)) {
@@ -1396,37 +1431,6 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	    dump_val(rb_funcall2(obj, rb_intern("backtrace"), 0, 0), d2, out);
 	    if (out->end - out->cur <= 2) {
 		grow(out, 2);
-	    }
-	    if (0 < cnt) {
-		*out->cur++ = ',';
-	    }
-	}
-#endif
-	for (i = cnt; 0 < i; i--, np++) {
-	    if (out->end - out->cur <= (long)size) {
-		grow(out, size);
-	    }
-	    vid = rb_to_id(*np);
-	    fill_indent(out, d2);
-	    attr = rb_id2name(vid);
-	    if ('@' == *attr) {
-		attr++;
-		dump_cstr(attr, strlen(attr), 0, 0, out);
-	    } else {
-		char	buf[32];
-
-		*buf = '~';
-		strncpy(buf + 1, attr, sizeof(buf) - 2);
-		buf[sizeof(buf) - 1] = '\0';
-		dump_cstr(buf, strlen(attr) + 1, 0, 0, out);
-	    }
-	    *out->cur++ = ':';
-	    dump_val(rb_ivar_get(obj, vid), d2, out);
-	    if (out->end - out->cur <= 2) {
-		grow(out, 2);
-	    }
-	    if (1 < i) {
-	      *out->cur++ = ',';
 	    }
 	}
 #endif
