@@ -45,11 +45,8 @@
 #define rb_eEncodingError	rb_eException
 #endif
 
-//Workaround:
-#ifndef INFINITY
-#define INFINITY (1.0/0.0)
-#endif
-      
+// Workaround in case INFINITY is not defined in math.h or if the OS is CentOS
+#define OJ_INFINITY (1.0/0.0)
 
 typedef unsigned long	ulong;
 
@@ -431,10 +428,10 @@ dump_float(VALUE obj, Out out) {
 	*b++ = '0';
 	*b++ = '\0';
 	cnt = 3;
-    } else if (INFINITY == d) {
+    } else if (OJ_INFINITY == d) {
 	strcpy(buf, "Infinity");
 	cnt = 8;
-    } else if (-INFINITY == d) {
+    } else if (-OJ_INFINITY == d) {
 	strcpy(buf, "-Infinity");
 	cnt = 9;
     } else if (d == (double)(long long int)d) {
