@@ -36,10 +36,8 @@
 #include <string.h>
 #include <math.h>
 
-/* Workaround: */
-#ifndef INFINITY
-#define INFINITY (1.0/0.0)
-#endif
+// Workaround in case INFINITY is not defined in math.h or if the OS is CentOS
+#define OJ_INFINITY (1.0/0.0)
 
 #include "oj.h"
 
@@ -384,11 +382,11 @@ read_num(ParseInfo pi, const char *key) {
 	pi->s += 8;
 	if (neg) {
 	    if (pi->has_add_value) {
-		call_add_value(pi->handler, rb_float_new(-INFINITY), key);
+		call_add_value(pi->handler, rb_float_new(-OJ_INFINITY), key);
 	    }
 	} else {
 	    if (pi->has_add_value) {
-		call_add_value(pi->handler, rb_float_new(INFINITY), key);
+		call_add_value(pi->handler, rb_float_new(OJ_INFINITY), key);
 	    }
 	}
 	return;
