@@ -1652,8 +1652,8 @@ dump_val(VALUE obj, int depth, Out out) {
 
 static void
 dump_obj_to_json(VALUE obj, Options copts, Out out) {
-    out->buf = ALLOC_N(char, 65336);
-    out->end = out->buf + 65325; // 1 less than end plus extra for possible errors
+    out->buf = ALLOC_N(char, 4096);
+    out->end = out->buf + 4085; // 1 less than end plus extra for possible errors
     out->cur = out->buf;
     out->circ_cnt = 0;
     out->opts = copts;
@@ -1874,8 +1874,8 @@ dump_leaf(Leaf leaf, int depth, Out out) {
 
 static void
 dump_leaf_to_json(Leaf leaf, Options copts, Out out) {
-    out->buf = ALLOC_N(char, 65336);
-    out->end = out->buf + 65325; // 10 less than end plus extra for possible errors
+    out->buf = ALLOC_N(char, 4096);
+    out->end = out->buf + 4085; // 10 less than end plus extra for possible errors
     out->cur = out->buf;
     out->circ_cnt = 0;
     out->opts = copts;
