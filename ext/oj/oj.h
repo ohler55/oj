@@ -50,6 +50,7 @@ extern "C" {
 #include <pthread.h>
 #endif
 #include "cache.h"
+#include "cache8.h"
 
 #ifdef RUBINIUS_RUBY
 #undef T_RATIONAL
@@ -116,6 +117,19 @@ typedef struct _Options {
     DumpOpts	dump_opts;
 } *Options;
 
+typedef struct _Out {
+    char	*buf;
+    char	*end;
+    char	*cur;
+    Cache8	circ_cache;
+    slot_t	circ_cnt;
+    int		indent;
+    int		depth; // used by dump_hash
+    Options	opts;
+    uint32_t	hash_cnt;
+    int		allocated;
+} *Out;
+
 typedef struct _Odd {
     VALUE	clas;			// Ruby class
     VALUE	create_obj;
@@ -149,9 +163,9 @@ typedef struct _Leaf {
 extern VALUE	oj_parse(char *json, Options options);
 extern void	oj_saj_parse(VALUE handler, char *json);
 
-extern char*	oj_write_obj_to_str(VALUE obj, Options copts);
+extern void	oj_dump_obj_to_json(VALUE obj, Options copts, Out out);
 extern void	oj_write_obj_to_file(VALUE obj, const char *path, Options copts);
-extern char*	oj_write_leaf_to_str(Leaf leaf, Options copts);
+extern void	oj_dump_leaf_to_json(Leaf leaf, Options copts, Out out);
 extern void	oj_write_leaf_to_file(Leaf leaf, const char *path, Options copts);
 
 extern void	_oj_raise_error(const char *msg, const char *xml, const char *current, const char* file, int line);

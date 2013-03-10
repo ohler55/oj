@@ -1571,13 +1571,20 @@ doc_dump(int argc, VALUE *argv, VALUE self) {
 	}
     }
     if (0 != (leaf = get_doc_leaf(doc, path))) {
-	char	*json;
 	VALUE	rjson;
 
 	if (0 == filename) {
-	    json = oj_write_leaf_to_str(leaf, &oj_default_options);
-	    rjson = rb_str_new2(json);
-	    xfree(json);
+	    char	buf[4096];
+	    struct _Out out;
+
+	    out.buf = buf;
+	    out.end = buf + sizeof(buf) - 10;
+	    out.allocated = 0;
+	    oj_dump_leaf_to_json(leaf, &oj_default_options, &out);
+	    rjson = rb_str_new2(out.buf);
+	    if (out.allocated) {
+		xfree(out.buf);
+	    }
 	} else {
 	    oj_write_leaf_to_file(leaf, filename, &oj_default_options);
 	    rjson = Qnil;

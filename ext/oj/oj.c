@@ -573,22 +573,28 @@ strict_load(VALUE self, VALUE doc) {
  */
 static VALUE
 dump(int argc, VALUE *argv, VALUE self) {
-    char		*json;
+    char		buf[4096];
+    struct _Out		out;
     struct _Options	copts = oj_default_options;
     VALUE		rstr;
     
     if (2 == argc) {
 	parse_options(argv[1], &copts);
     }
-    if (0 == (json = oj_write_obj_to_str(*argv, &copts))) {
+    out.buf = buf;
+    out.end = buf + sizeof(buf) - 10;
+    out.allocated = 0;
+    oj_dump_obj_to_json(*argv, &copts, &out);
+    if (0 == out.buf) {
 	rb_raise(rb_eNoMemError, "Not enough memory.");
     }
-    rstr = rb_str_new2(json);
+    rstr = rb_str_new2(out.buf);
 #if HAS_ENCODING_SUPPORT
     rb_enc_associate(rstr, oj_utf8_encoding);
 #endif
-    xfree(json);
-
+    if (out.allocated) {
+	xfree(out.buf);
+    }
     return rstr;
 }
 
@@ -698,14 +704,19 @@ saj_parse(int argc, VALUE *argv, VALUE self) {
 
 static VALUE
 mimic_dump(int argc, VALUE *argv, VALUE self) {
-    char		*json;
+    char		buf[4096];
+    struct _Out		out;
     struct _Options	copts = oj_default_options;
     VALUE		rstr;
     
-    if (0 == (json = oj_write_obj_to_str(*argv, &copts))) {
+    out.buf = buf;
+    out.end = buf + sizeof(buf) - 10;
+    out.allocated = 0;
+    oj_dump_obj_to_json(*argv, &copts, &out);
+    if (0 == out.buf) {
 	rb_raise(rb_eNoMemError, "Not enough memory.");
     }
-    rstr = rb_str_new2(json);
+    rstr = rb_str_new2(out.buf);
 #if HAS_ENCODING_SUPPORT
     rb_enc_associate(rstr, oj_utf8_encoding);
 #endif
@@ -717,8 +728,9 @@ mimic_dump(int argc, VALUE *argv, VALUE self) {
 	rb_funcall2(io, oj_write_id, 1, args);
 	rstr = io;
     }
-    xfree(json);
-
+    if (out.allocated) {
+	xfree(out.buf);
+    }
     return rstr;
 }
 
@@ -786,9 +798,13 @@ mimic_dump_load(int argc, VALUE *argv, VALUE self) {
 
 static VALUE
 mimic_generate_core(int argc, VALUE *argv, Options copts) {
-    char		*json;
-    VALUE		rstr;
+    char	buf[4096];
+    struct _Out	out;
+    VALUE	rstr;
     
+    out.buf = buf;
+    out.end = buf + sizeof(buf) - 10;
+    out.allocated = 0;
     if (2 == argc && Qnil != argv[1]) {
 	struct _DumpOpts	dump_opts;
 	VALUE			ropts = argv[1];
@@ -841,15 +857,17 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
 	// :allow_nan is not supported as Oj always allows_nan
 	// :max_nesting is always set to 100
     }
-    if (0 == (json = oj_write_obj_to_str(*argv, copts))) {
+    oj_dump_obj_to_json(*argv, copts, &out);
+    if (0 == out.buf) {
 	rb_raise(rb_eNoMemError, "Not enough memory.");
     }
-    rstr = rb_str_new2(json);
+    rstr = rb_str_new2(out.buf);
 #if HAS_ENCODING_SUPPORT
     rb_enc_associate(rstr, oj_utf8_encoding);
 #endif
-    xfree(json);
-
+    if (out.allocated) {
+	xfree(out.buf);
+    }
     return rstr;
 }
 
