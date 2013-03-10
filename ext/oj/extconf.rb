@@ -20,7 +20,7 @@ dflags = {
   'RUBY_VERSION_MAJOR' => version[0],
   'RUBY_VERSION_MINOR' => version[1],
   'RUBY_VERSION_MICRO' => version[2],
-  'HAS_RB_TIME_TIMESPEC' => ('ruby' == type && ('1.9.3' == RUBY_VERSION || '2' <= version[0])) ? 1 : 0,
+  'HAS_RB_TIME_TIMESPEC' => (!is_windows && 'ruby' == type && ('1.9.3' == RUBY_VERSION || '2' <= version[0])) ? 1 : 0,
   'HAS_ENCODING_SUPPORT' => (('ruby' == type || 'rubinius' == type) &&
                              (('1' == version[0] && '9' == version[1]) || '2' <= version[0])) ? 1 : 0,
   'HAS_NANO_TIME' => ('ruby' == type && ('1' == version[0] && '9' == version[1]) || '2' <= version[0]) ? 1 : 0,
