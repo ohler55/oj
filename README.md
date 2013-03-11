@@ -36,7 +36,7 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
  - Tweaked dump calls by reducing preallocation. Speeds are now several times faster for smaller objects.
 
- - TBD Fixed Windows compile error with Ruby 2.0.0.
+ - Fixed Windows compile error with Ruby 2.0.0.
 
 ### Release 2.0.9
 
