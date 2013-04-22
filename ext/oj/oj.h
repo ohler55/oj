@@ -108,6 +108,7 @@ typedef struct _Options {
     char	sym_key;	// YesNo
     char	ascii_only;	// YesNo
     char	mode;		// Mode
+    char	class_cache;	// YesNo
     char	time_format;	// TimeFormat
     char	bigdec_as_num;	// YesNo
     char	bigdec_load;	// YesNo

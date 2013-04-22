@@ -87,6 +87,7 @@ static VALUE	auto_define_sym;
 static VALUE	bigdecimal_as_decimal_sym;
 static VALUE	bigdecimal_load_sym;
 static VALUE	circular_sym;
+static VALUE	class_cache_sym;
 static VALUE	compat_sym;
 static VALUE	create_id_sym;
 static VALUE	indent_sym;
@@ -130,6 +131,7 @@ struct _Options	oj_default_options = {
     No,			// sym_key
     No,			// ascii_only
     ObjectMode,		// mode
+    Yes,		// class_cache
     UnixTime,		// time_format
     Yes,		// bigdec_as_num
     No,			// bigdec_load
@@ -161,6 +163,7 @@ oj_get_odd(VALUE clas) {
  * - circular: [true|false|nil] support circular references while dumping
  * - auto_define: [true|false|nil] automatically define classes if they do not exist
  * - symbol_keys: [true|false|nil] use symbols instead of strings for hash keys
+ * - class_cache: [true|false|nil] cache classes for faster parsing (if dynamically modifying classes or reloading classes then don't use this)
  * - mode: [:object|:strict|:compat|:null] load and dump modes to use for JSON
  * - time_format: [:unix|:xmlschema|:ruby] time format when dumping in :compat mode
  * - bigdecimal_as_decimal: [true|false|nil] dump BigDecimal as a decimal number or as a String
@@ -178,6 +181,7 @@ get_def_opts(VALUE self) {
     rb_hash_aset(opts, sec_prec_sym, INT2FIX(oj_default_options.sec_prec));
     rb_hash_aset(opts, max_stack_sym, INT2FIX(oj_default_options.max_stack));
     rb_hash_aset(opts, circular_sym, (Yes == oj_default_options.circular) ? Qtrue : ((No == oj_default_options.circular) ? Qfalse : Qnil));
+    rb_hash_aset(opts, class_cache_sym, (Yes == oj_default_options.class_cache) ? Qtrue : ((No == oj_default_options.class_cache) ? Qfalse : Qnil));
     rb_hash_aset(opts, auto_define_sym, (Yes == oj_default_options.auto_define) ? Qtrue : ((No == oj_default_options.auto_define) ? Qfalse : Qnil));
     rb_hash_aset(opts, ascii_only_sym, (Yes == oj_default_options.ascii_only) ? Qtrue : ((No == oj_default_options.ascii_only) ? Qfalse : Qnil));
     rb_hash_aset(opts, symbol_keys_sym, (Yes == oj_default_options.sym_key) ? Qtrue : ((No == oj_default_options.sym_key) ? Qfalse : Qnil));
@@ -209,6 +213,7 @@ get_def_opts(VALUE self) {
  * @param [true|false|nil] :circular support circular references while dumping
  * @param [true|false|nil] :auto_define automatically define classes if they do not exist
  * @param [true|false|nil] :symbol_keys convert hash keys to symbols
+ * @param [true|false|nil] :class_cache cache classes for faster parsing
  * @param [true|false|nil] :ascii_only encode all high-bit characters as escaped sequences if true
  * @param [true|false|nil] :bigdecimal_as_decimal dump BigDecimal as a decimal number or as a String
  * @param [true|false|nil] :bigdecimal_load load decimals as a BigDecimal instead of as a Float
@@ -235,6 +240,7 @@ set_def_opts(VALUE self, VALUE opts) {
 	{ circular_sym, &oj_default_options.circular },
 	{ auto_define_sym, &oj_default_options.auto_define },
 	{ symbol_keys_sym, &oj_default_options.sym_key },
+	{ class_cache_sym, &oj_default_options.class_cache },
 	{ ascii_only_sym, &oj_default_options.ascii_only },
 	{ bigdecimal_as_decimal_sym, &oj_default_options.bigdec_as_num },
 	{ bigdecimal_load_sym, &oj_default_options.bigdec_load },
@@ -341,6 +347,7 @@ parse_options(VALUE ropts, Options copts) {
 	{ circular_sym, &copts->circular },
 	{ auto_define_sym, &copts->auto_define },
 	{ symbol_keys_sym, &copts->sym_key },
+	{ class_cache_sym, &copts->class_cache },
 	{ ascii_only_sym, &copts->ascii_only },
 	{ bigdecimal_as_decimal_sym, &copts->bigdec_as_num },
 	{ bigdecimal_load_sym, &copts->bigdec_load },
@@ -1090,6 +1097,7 @@ void Init_oj() {
     bigdecimal_as_decimal_sym = ID2SYM(rb_intern("bigdecimal_as_decimal"));rb_gc_register_address(&bigdecimal_as_decimal_sym);
     bigdecimal_load_sym = ID2SYM(rb_intern("bigdecimal_load"));rb_gc_register_address(&bigdecimal_load_sym);
     circular_sym = ID2SYM(rb_intern("circular"));	rb_gc_register_address(&circular_sym);
+    class_cache_sym = ID2SYM(rb_intern("class_cache"));	rb_gc_register_address(&class_cache_sym);
     compat_sym = ID2SYM(rb_intern("compat"));		rb_gc_register_address(&compat_sym);
     create_id_sym = ID2SYM(rb_intern("create_id"));	rb_gc_register_address(&create_id_sym);
     indent_sym = ID2SYM(rb_intern("indent"));		rb_gc_register_address(&indent_sym);

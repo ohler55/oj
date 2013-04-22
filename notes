@@ -3,7 +3,8 @@
 ^c^d hide subtree
 ^c^s show subtree
 
-- add option to avoid class caching
++ fixed mimic issue with debian
++ add option to avoid class caching
 - can dump be smarter about floats
 - print for time when zulu
 

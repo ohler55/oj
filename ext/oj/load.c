@@ -159,43 +159,52 @@ classname2obj(const char *name, ParseInfo pi) {
 }
 
 static VALUE
+resolve_classpath(const char *name, ParseInfo pi) {
+    char	class_name[1024];
+    VALUE	clas;
+    int		auto_define = (Yes == pi->options->auto_define);
+    char	*end = class_name + sizeof(class_name) - 1;
+    char	*s;
+    const char	*n = name;
+
+    clas = rb_cObject;
+    for (s = class_name; '\0' != *n; n++) {
+	if (':' == *n) {
+	    *s = '\0';
+	    n++;
+	    if (':' != *n) {
+		raise_error("Invalid classname, expected another ':'", pi->str, pi->s);
+	    }
+	    if (Qundef == (clas = resolve_classname(clas, class_name, auto_define))) {
+		char	buf[1024];
+
+		snprintf(buf, sizeof(buf) - 1, "Class %s not defined", class_name);
+		raise_error(buf, pi->str, pi->s);
+	    }
+	    s = class_name;
+	} else if (end <= s) {
+	    raise_error("Invalid classname, limit is 1024 characters", pi->str, pi->s);
+	} else {
+	    *s++ = *n;
+	}
+    }
+    *s = '\0';
+    return resolve_classname(clas, class_name, auto_define);
+}
+
+static VALUE
 classname2class(const char *name, ParseInfo pi) {
     VALUE	clas;
     VALUE	*slot;
-    int		auto_define = (Yes == pi->options->auto_define);
 
+    if (No == pi->options->class_cache) {
+	return resolve_classpath(name, pi);
+    }
 #if SAFE_CACHE
     pthread_mutex_lock(&oj_cache_mutex);
 #endif
     if (Qundef == (clas = oj_cache_get(oj_class_cache, name, &slot))) {
-	char		class_name[1024];
-	char		*end = class_name + sizeof(class_name) - 1;
-	char		*s;
-	const char	*n = name;
-
-	clas = rb_cObject;
-	for (s = class_name; '\0' != *n; n++) {
-	    if (':' == *n) {
-		*s = '\0';
-		n++;
-		if (':' != *n) {
-		    raise_error("Invalid classname, expected another ':'", pi->str, pi->s);
-		}
-		if (Qundef == (clas = resolve_classname(clas, class_name, auto_define))) {
-		    char	buf[1024];
-
-		    snprintf(buf, sizeof(buf) - 1, "Class %s not defined", class_name);
-		    raise_error(buf, pi->str, pi->s);
-		}
-		s = class_name;
-	    } else if (end <= s) {
-		raise_error("Invalid classname, limit is 1024 characters", pi->str, pi->s);
-	    } else {
-		*s++ = *n;
-	    }
-	}
-	*s = '\0';
-	if (Qundef != (clas = resolve_classname(clas, class_name, auto_define))) {
+	if (Qundef != (clas = resolve_classpath(name, pi))) {
 	    *slot = clas;
 	}
     }

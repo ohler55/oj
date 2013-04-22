@@ -114,6 +114,7 @@ class Juice < ::Test::Unit::TestCase
                    :circular=>false,
                    :auto_define=>false,
                    :symbol_keys=>false,
+                   :class_cache=>true,
                    :ascii_only=>false,
                    :mode=>:object,
                    :time_format=>:unix,
@@ -130,6 +131,7 @@ class Juice < ::Test::Unit::TestCase
       :circular=>false,
       :auto_define=>false,
       :symbol_keys=>false,
+      :class_cache=>true,
       :ascii_only=>false,
       :mode=>:object,
       :time_format=>:unix,
@@ -143,6 +145,7 @@ class Juice < ::Test::Unit::TestCase
       :circular=>true,
       :auto_define=>true,
       :symbol_keys=>true,
+      :class_cache=>false,
       :ascii_only=>true,
       :mode=>:compat,
       :time_format=>:ruby,
@@ -638,6 +641,21 @@ class Juice < ::Test::Unit::TestCase
   "y":58,
   "x":true}} == json)
     obj2 = Oj.load(json, :mode => :object)
+    assert_equal(obj, obj2)
+  end
+
+  def test_object_object_no_cache
+    obj = Jam.new(true, 58)
+    json = Oj.dump(obj, :mode => :object, :indent => 2)
+    assert(%{{
+  "^o":"Jam",
+  "x":true,
+  "y":58}} == json ||
+%{{
+  "^o":"Jam",
+  "y":58,
+  "x":true}} == json)
+    obj2 = Oj.load(json, :mode => :object, :class_cache => false)
     assert_equal(obj, obj2)
   end
 
