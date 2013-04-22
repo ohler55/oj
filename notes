@@ -3,8 +3,9 @@
 ^c^d hide subtree
 ^c^s show subtree
 
-- active_support issue with BigDecimal.as_json returning self
-- add option to always use bigdecimal for loading
+- add option to avoid class caching
+- can dump be smarter about floats
+- print for time when zulu
 
 
 ---------------------------
