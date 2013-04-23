@@ -183,6 +183,7 @@ class Juice < ::Test::Unit::TestCase
   def test_float
     dump_and_load(0.0, false)
     dump_and_load(12345.6789, false)
+    dump_and_load(70.35, false)
     dump_and_load(-54321.012, false)
     dump_and_load(2.48e16, false)
     dump_and_load(2.48e100 * 1.0e10, false)
@@ -363,7 +364,7 @@ class Juice < ::Test::Unit::TestCase
     begin
       t = Time.new(2012, 1, 5, 23, 58, 7.9996, 32400)
       json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema, :second_precision => 3)
-      assert_equal(%{"2012-01-05T23:58:08.000+09:00"}, json)
+      assert_equal(%{"2012-01-05T23:58:08+09:00"}, json)
     rescue Exception
       # some Rubies (1.8.7) do not allow the timezome to be set
       t = Time.local(2012, 1, 5, 23, 58, 7, 999600)

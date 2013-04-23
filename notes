@@ -3,11 +3,6 @@
 ^c^d hide subtree
 ^c^s show subtree
 
-+ fixed mimic issue with debian
-+ add option to avoid class caching
-- can dump be smarter about floats
-- print for time when zulu
-
 
 ---------------------------
 Tried a separate thread for the parser and the results were poor. The parsing is 10% to 15% of the total so splitting

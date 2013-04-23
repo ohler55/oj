@@ -32,15 +32,15 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 2.0.10
+### Release 2.0.11
 
- - Tweaked dump calls by reducing preallocation. Speeds are now several times faster for smaller objects.
+ - Fixed mimic issue with Debian
 
- - Fixed Windows compile error with Ruby 2.0.0.
+ - Added option to not cache classes when loading. This should be used when classes are dynamically unloaded and the redefined.
 
-### Release 2.0.9
+ - Float rounding improved by limiting decimal places to 15 places.
 
- - Fixed problem with INFINITY with CentOS and Ruby 2.0.0. There are some header file conflicts so a different INFINITY was used.
+ - Fixed xml time dumping test.
 
 ## <a name="description">Description</a>
 
