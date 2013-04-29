@@ -32,6 +32,14 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
+### Release 2.0.12
+
+ - Another fix for mimic.
+
+ - mimic_JSON now can now be called after loading the json gem. This will
+   replace the json gem methods after loading. This may be more compatible in
+   many cases.
+
 ### Release 2.0.11
 
  - Fixed mimic issue with Debian

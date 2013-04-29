@@ -979,15 +979,25 @@ define_mimic_json(int argc, VALUE *argv, VALUE self) {
     if (Qnil == mimic) {
 	VALUE	ext;
 	VALUE	dummy;
-
+	
+	// Either set the paths to indicate JSON has been loaded or replaces the
+	// methods if it has been loaded.
 	if (rb_const_defined_at(rb_cObject, rb_intern("JSON"))) {
-	    rb_raise(rb_const_get_at(Oj, rb_intern("MimicError")),
-		     "JSON module already exists. Can not mimic. Do not require 'json' before calling mimic_JSON.");
+	    mimic = rb_const_get_at(rb_cObject, rb_intern("JSON"));
+	} else {
+	    mimic = rb_define_module("JSON");
 	}
-	mimic = rb_define_module("JSON");
-	ext = rb_define_module_under(mimic, "Ext");
-	dummy = rb_define_class_under(ext, "Parser", rb_cObject);
-	dummy = rb_define_class_under(ext, "Generator", rb_cObject);
+	if (rb_const_defined_at(mimic, rb_intern("Ext"))) {
+	    ext = rb_const_get_at(mimic, rb_intern("Ext"));
+	} else {
+	    ext = rb_define_module_under(mimic, "Ext");
+	}
+	if (!rb_const_defined_at(ext, rb_intern("Parser"))) {
+	    dummy = rb_define_class_under(ext, "Parser", rb_cObject);
+	}
+	if (!rb_const_defined_at(ext, rb_intern("Generator"))) {
+	    dummy = rb_define_class_under(ext, "Generator", rb_cObject);
+	}
 	// convince Ruby that the json gem has already been loaded
 	dummy = rb_gv_get("$LOADED_FEATURES");
 	if (rb_type(dummy) == T_ARRAY) {
@@ -1001,7 +1011,8 @@ define_mimic_json(int argc, VALUE *argv, VALUE self) {
 		rb_funcall2(Oj, rb_intern("mimic_loaded"), 0, 0);
 	    }
 	}
-
+	dummy = rb_gv_get("$VERBOSE");
+	rb_gv_set("$VERBOSE", Qfalse);
 	rb_define_module_function(mimic, "parser=", no_op1, 1);
 	rb_define_module_function(mimic, "generator=", no_op1, 1);
 	rb_define_module_function(mimic, "create_id=", mimic_create_id, 1);
@@ -1022,6 +1033,7 @@ define_mimic_json(int argc, VALUE *argv, VALUE self) {
 
 	rb_define_module_function(mimic, "parse", mimic_parse, -1);
 	rb_define_module_function(mimic, "parse!", mimic_parse, -1);
+	rb_gv_set("$VERBOSE", dummy);
 
 	array_nl_sym = ID2SYM(rb_intern("array_nl"));			rb_gc_register_address(&array_nl_sym);
 	create_additions_sym = ID2SYM(rb_intern("create_additions"));	rb_gc_register_address(&create_additions_sym);

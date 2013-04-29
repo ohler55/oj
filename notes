@@ -3,6 +3,20 @@
 ^c^d hide subtree
 ^c^s show subtree
 
+- make test for mimic
+ - try define or load module
+ - see if it works after loading json
+
+- replace_JSON
+ - after json require
+
+- allow maps to be used for classnames when encoding and decoding objects
+ - build a string to string map/table that allows lookups in either direction
+ - could use exising cache to do the mapping for decode
+  - problem if no class_cache
+
+- try hash for cache/str-str mapping
+ - 
 
 ---------------------------
 Tried a separate thread for the parser and the results were poor. The parsing is 10% to 15% of the total so splitting
