@@ -976,75 +976,74 @@ mimic_create_id(VALUE self, VALUE id) {
  */
 static VALUE
 define_mimic_json(int argc, VALUE *argv, VALUE self) {
-    if (Qnil == mimic) {
-	VALUE	ext;
-	VALUE	dummy;
+    VALUE	ext;
+    VALUE	dummy;
 	
-	// Either set the paths to indicate JSON has been loaded or replaces the
-	// methods if it has been loaded.
-	if (rb_const_defined_at(rb_cObject, rb_intern("JSON"))) {
-	    mimic = rb_const_get_at(rb_cObject, rb_intern("JSON"));
-	} else {
-	    mimic = rb_define_module("JSON");
-	}
-	if (rb_const_defined_at(mimic, rb_intern("Ext"))) {
-	    ext = rb_const_get_at(mimic, rb_intern("Ext"));
-	} else {
-	    ext = rb_define_module_under(mimic, "Ext");
-	}
-	if (!rb_const_defined_at(ext, rb_intern("Parser"))) {
-	    dummy = rb_define_class_under(ext, "Parser", rb_cObject);
-	}
-	if (!rb_const_defined_at(ext, rb_intern("Generator"))) {
-	    dummy = rb_define_class_under(ext, "Generator", rb_cObject);
-	}
-	// convince Ruby that the json gem has already been loaded
-	dummy = rb_gv_get("$LOADED_FEATURES");
-	if (rb_type(dummy) == T_ARRAY) {
-	    rb_ary_push(dummy, rb_str_new2("json"));
-	    if (0 < argc) {
-		VALUE	mimic_args[1];
-
-		*mimic_args = *argv;
-		rb_funcall2(Oj, rb_intern("mimic_loaded"), 1, mimic_args);
-	    } else {
-		rb_funcall2(Oj, rb_intern("mimic_loaded"), 0, 0);
-	    }
-	}
-	dummy = rb_gv_get("$VERBOSE");
-	rb_gv_set("$VERBOSE", Qfalse);
-	rb_define_module_function(mimic, "parser=", no_op1, 1);
-	rb_define_module_function(mimic, "generator=", no_op1, 1);
-	rb_define_module_function(mimic, "create_id=", mimic_create_id, 1);
-
-	rb_define_module_function(mimic, "dump", mimic_dump, -1);
-	rb_define_module_function(mimic, "load", mimic_load, -1);
-	rb_define_module_function(mimic, "restore", mimic_load, -1);
-	rb_define_module_function(mimic, "recurse_proc", mimic_recurse_proc, 1);
-	rb_define_module_function(mimic, "[]", mimic_dump_load, -1);
-
-	rb_define_module_function(mimic, "generate", mimic_generate, -1);
-	rb_define_module_function(mimic, "fast_generate", mimic_generate, -1);
-	rb_define_module_function(mimic, "pretty_generate", mimic_pretty_generate, -1);
-	/* for older versions of JSON, the deprecated unparse methods */
-	rb_define_module_function(mimic, "unparse", mimic_generate, -1);
-	rb_define_module_function(mimic, "fast_unparse", mimic_generate, -1);
-	rb_define_module_function(mimic, "pretty_unparse", mimic_pretty_generate, -1);
-
-	rb_define_module_function(mimic, "parse", mimic_parse, -1);
-	rb_define_module_function(mimic, "parse!", mimic_parse, -1);
-	rb_gv_set("$VERBOSE", dummy);
-
-	array_nl_sym = ID2SYM(rb_intern("array_nl"));			rb_gc_register_address(&array_nl_sym);
-	create_additions_sym = ID2SYM(rb_intern("create_additions"));	rb_gc_register_address(&create_additions_sym);
-	object_nl_sym = ID2SYM(rb_intern("object_nl"));			rb_gc_register_address(&object_nl_sym);
-	space_before_sym = ID2SYM(rb_intern("space_before"));		rb_gc_register_address(&space_before_sym);
-	space_sym = ID2SYM(rb_intern("space"));				rb_gc_register_address(&space_sym);
-	symbolize_names_sym = ID2SYM(rb_intern("symbolize_names"));	rb_gc_register_address(&symbolize_names_sym);
-
-	oj_default_options.mode = CompatMode;
-	oj_default_options.ascii_only = Yes;
+    // Either set the paths to indicate JSON has been loaded or replaces the
+    // methods if it has been loaded.
+    if (rb_const_defined_at(rb_cObject, rb_intern("JSON"))) {
+	mimic = rb_const_get_at(rb_cObject, rb_intern("JSON"));
+    } else {
+	mimic = rb_define_module("JSON");
     }
+    if (rb_const_defined_at(mimic, rb_intern("Ext"))) {
+	ext = rb_const_get_at(mimic, rb_intern("Ext"));
+    } else {
+	ext = rb_define_module_under(mimic, "Ext");
+    }
+    if (!rb_const_defined_at(ext, rb_intern("Parser"))) {
+	dummy = rb_define_class_under(ext, "Parser", rb_cObject);
+    }
+    if (!rb_const_defined_at(ext, rb_intern("Generator"))) {
+	dummy = rb_define_class_under(ext, "Generator", rb_cObject);
+    }
+    // convince Ruby that the json gem has already been loaded
+    dummy = rb_gv_get("$LOADED_FEATURES");
+    if (rb_type(dummy) == T_ARRAY) {
+	rb_ary_push(dummy, rb_str_new2("json"));
+	if (0 < argc) {
+	    VALUE	mimic_args[1];
+
+	    *mimic_args = *argv;
+	    rb_funcall2(Oj, rb_intern("mimic_loaded"), 1, mimic_args);
+	} else {
+	    rb_funcall2(Oj, rb_intern("mimic_loaded"), 0, 0);
+	}
+    }
+    dummy = rb_gv_get("$VERBOSE");
+    rb_gv_set("$VERBOSE", Qfalse);
+    rb_define_module_function(mimic, "parser=", no_op1, 1);
+    rb_define_module_function(mimic, "generator=", no_op1, 1);
+    rb_define_module_function(mimic, "create_id=", mimic_create_id, 1);
+
+    rb_define_module_function(mimic, "dump", mimic_dump, -1);
+    rb_define_module_function(mimic, "load", mimic_load, -1);
+    rb_define_module_function(mimic, "restore", mimic_load, -1);
+    rb_define_module_function(mimic, "recurse_proc", mimic_recurse_proc, 1);
+    rb_define_module_function(mimic, "[]", mimic_dump_load, -1);
+
+    rb_define_module_function(mimic, "generate", mimic_generate, -1);
+    rb_define_module_function(mimic, "fast_generate", mimic_generate, -1);
+    rb_define_module_function(mimic, "pretty_generate", mimic_pretty_generate, -1);
+    /* for older versions of JSON, the deprecated unparse methods */
+    rb_define_module_function(mimic, "unparse", mimic_generate, -1);
+    rb_define_module_function(mimic, "fast_unparse", mimic_generate, -1);
+    rb_define_module_function(mimic, "pretty_unparse", mimic_pretty_generate, -1);
+
+    rb_define_module_function(mimic, "parse", mimic_parse, -1);
+    rb_define_module_function(mimic, "parse!", mimic_parse, -1);
+    rb_gv_set("$VERBOSE", dummy);
+
+    array_nl_sym = ID2SYM(rb_intern("array_nl"));			rb_gc_register_address(&array_nl_sym);
+    create_additions_sym = ID2SYM(rb_intern("create_additions"));	rb_gc_register_address(&create_additions_sym);
+    object_nl_sym = ID2SYM(rb_intern("object_nl"));			rb_gc_register_address(&object_nl_sym);
+    space_before_sym = ID2SYM(rb_intern("space_before"));		rb_gc_register_address(&space_before_sym);
+    space_sym = ID2SYM(rb_intern("space"));				rb_gc_register_address(&space_sym);
+    symbolize_names_sym = ID2SYM(rb_intern("symbolize_names"));	rb_gc_register_address(&symbolize_names_sym);
+
+    oj_default_options.mode = CompatMode;
+    oj_default_options.ascii_only = Yes;
+
     return mimic;
 }
 
