@@ -968,11 +968,13 @@ mimic_create_id(VALUE self, VALUE id) {
 /* Document-method: mimic_JSON
  *    call-seq: mimic_JSON() => Module
  *
- * Creates the JSON module with methods and classes to mimic the JSON
- * gem. After this method is invoked calls that expect the JSON module will
- * use Oj instead and be faster than the original JSON. Most options that
- * could be passed to the JSON methods are supported. The calls to set parser
- * or generator will not raise an Exception but will not have any effect.
+ * Creates the JSON module with methods and classes to mimic the JSON gem. After
+ * this method is invoked calls that expect the JSON module will use Oj instead
+ * and be faster than the original JSON. Most options that could be passed to
+ * the JSON methods are supported. The calls to set parser or generator will not
+ * raise an Exception but will not have any effect. The method can also be
+ * called after the json gem is loaded. The necessary methods on the json gem
+ * will be replaced with Oj methods.
  */
 static VALUE
 define_mimic_json(int argc, VALUE *argv, VALUE self) {
