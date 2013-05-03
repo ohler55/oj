@@ -4,7 +4,7 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 ## <a name="installation">Installation</a>
     gem install oj
 
-## <a name="documentation">Documentation</a>
+## Documentation
 
 *Documentation*: http://www.ohler.com/oj
 
@@ -14,7 +14,7 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 *RubyGems* *repo*: https://rubygems.org/gems/oj
 
-## <a name="follow">Follow @oxgem on Twitter</a>
+## <a name="follow">Follow @peterohler on Twitter</a>
 
 [Follow @peterohler on Twitter](http://twitter.com/#!/peterohler) for announcements and news about the Oj gem.
 
