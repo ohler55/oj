@@ -362,23 +362,25 @@ without Objects or numbers (for JSON Pure, Yajl, and Messagepack) JSON:
     
 ### Simple JSON Writing and Parsing:
 
-    require 'oj'
+```ruby
+require 'oj'
     
-    h = { 'one' => 1, 'array' => [ true, false ] }
-    json = Oj.dump(h)
-    
-    # json =
-    # {
-    #   "one":1,
-    #   "array":[
-    #     true,
-    #     false
-    #   ]
-    # }
+h = { 'one' => 1, 'array' => [ true, false ] }
+json = Oj.dump(h)
 
-    h2 = Oj.load(json)
-    puts "Same? #{h == h2}"
-    # true
+# json =
+# {
+#   "one":1,
+#   "array":[
+#     true,
+#     false
+#   ]
+# }
+
+h2 = Oj.load(json)
+puts "Same? #{h == h2}"
+# true
+```
 
 ### Object JSON format:
 
