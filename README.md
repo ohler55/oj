@@ -4,7 +4,7 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 ## <a name="installation">Installation</a>
     gem install oj
 
-## Documentation
+## <a name="documentation">Documentation</a>
 
 *Documentation*: http://www.ohler.com/oj
 
@@ -32,6 +32,14 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
+### Release 2.0.13
+
+ - Mimic is better at masking out json gem but the oj_mimic_json gem does not
+   work with ruby 2.0.0 correctly. The Oj.mimic_JSON() method should be called
+   directly either before or after the json gem is required. Depending on the
+   situation one may work better than the other. Oj.mimic_JSON() may now be
+   called multiple times.
+
 ### Release 2.0.12
 
  - Another fix for mimic.
@@ -39,16 +47,6 @@ A fast JSON parser and Object marshaller as a Ruby gem.
  - mimic_JSON now can now be called after loading the json gem. This will
    replace the json gem methods after loading. This may be more compatible in
    many cases.
-
-### Release 2.0.11
-
- - Fixed mimic issue with Debian
-
- - Added option to not cache classes when loading. This should be used when classes are dynamically unloaded and the redefined.
-
- - Float rounding improved by limiting decimal places to 15 places.
-
- - Fixed xml time dumping test.
 
 ## <a name="description">Description</a>
 
