@@ -3,12 +3,7 @@
 ^c^d hide subtree
 ^c^s show subtree
 
-- make test for mimic
- - try define or load module
- - see if it works after loading json
 
-- replace_JSON
- - after json require
 
 - allow maps to be used for classnames when encoding and decoding objects
  - build a string to string map/table that allows lookups in either direction

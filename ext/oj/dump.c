@@ -149,7 +149,7 @@ ascii_friendly_size(const uint8_t *str, size_t len) {
 
 inline static void
 fill_indent(Out out, int cnt) {
-    if (0 < cnt && 0 < out->indent) {
+    if (0 < out->indent) {
 	cnt *= out->indent;
 	*out->cur++ = '\n';
 	for (; 0 < cnt; cnt--) {
@@ -901,6 +901,7 @@ dump_hash(VALUE obj, int depth, int mode, Out out) {
 	    }
 	    if (0 < out->opts->dump_opts->indent_size) {
 		int	i;
+
 		for (i = depth; 0 < i; i--) {
 		    strcpy(out->cur, out->opts->dump_opts->indent);
 		    out->cur += out->opts->dump_opts->indent_size;
@@ -1425,6 +1426,7 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 #endif
 	out->depth = depth;
     }
+    fill_indent(out, depth);
     *out->cur++ = '}';
     *out->cur = '\0';
 }

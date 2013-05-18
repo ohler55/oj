@@ -83,9 +83,9 @@ static char*	read_quoted_value(ParseInfo pi);
 static void	skip_comment(ParseInfo pi);
 
 
-/* This XML parser is a single pass, destructive, callback parser. It is a
+/* This JSON parser is a single pass, destructive, callback parser. It is a
  * single pass parse since it only make one pass over the characters in the
- * XML document string. It is destructive because it re-uses the content of
+ * JSON document string. It is destructive because it re-uses the content of
  * the string for values in the callback and places \0 characters at various
  * places to mark the end of tokens and strings. It is a callback parser like
  * a SAX parser because it uses callback when document elements are

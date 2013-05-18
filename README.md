@@ -40,13 +40,8 @@ A fast JSON parser and Object marshaller as a Ruby gem.
    situation one may work better than the other. Oj.mimic_JSON() may now be
    called multiple times.
 
-### Release 2.0.12
-
- - Another fix for mimic.
-
- - mimic_JSON now can now be called after loading the json gem. This will
-   replace the json gem methods after loading. This may be more compatible in
-   many cases.
+ - Changed dump to put closing array brackets and closing object curlies on the
+   line following the last element if :indent is set to greater than zero.
 
 ## <a name="description">Description</a>
 
