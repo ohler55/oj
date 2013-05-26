@@ -37,7 +37,8 @@ A fast JSON parser and Object marshaller as a Ruby gem.
  - Fixed bug in Oj::Doc.each_leaf that caused an incorrect where path to be
    created and also added a chack for where path maximum length.
 
- - 
+ - Updated the documentation to note that invalid JSON documents, which includes
+   an empty string or file, will cause an exception to be raised.
 
 ## <a name="description">Description</a>
 
