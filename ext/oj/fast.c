@@ -902,6 +902,9 @@ get_doc_leaf(Doc doc, const char *path) {
 	} else {
 	    size_t	cnt = doc->where - doc->where_path;
 
+	    if (MAX_STACK <= cnt) {
+		rb_raise(rb_const_get_at(Oj, rb_intern("DepthError")), "Path too deep. Limit is %d levels.", MAX_STACK);
+	    }
 	    memcpy(stack, doc->where_path, sizeof(Leaf) * cnt);
 	    lp = stack + cnt;
 	}
@@ -988,11 +991,15 @@ each_leaf(Doc doc, VALUE self) {
 	    Leaf	e = first;
 
 	    doc->where++;
+	    if (MAX_STACK <= doc->where - doc->where_path) {
+		rb_raise(rb_const_get_at(Oj, rb_intern("DepthError")), "Path too deep. Limit is %d levels.", MAX_STACK);
+	    }
 	    do {
 		*doc->where = e;
 		each_leaf(doc, self);
 		e = e->next;
 	    } while (e != first);
+	    doc->where--;
 	}
     } else {
 	rb_yield(self);

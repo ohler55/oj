@@ -387,6 +387,15 @@ class DocTest < ::Test::Unit::TestCase
     assert_equal({'/1' => 1, '/2/1' => 2, '/2/2' => 3}, results)
   end
 
+  def test_each_leaf_hash
+    results = Oj::Doc.open('{"a":{"x":2},"b":{"y":4}}') do |doc|
+      h = {}
+      doc.each_leaf() { |d| h[d.where?] = d.fetch() }
+      h
+    end
+    assert_equal({'/a/x' => 2, '/b/y' => 4}, results)
+  end
+
   def test_comment
     json = %{{
   "x"/*one*/:/*two*/true,//three

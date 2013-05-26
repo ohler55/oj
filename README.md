@@ -32,16 +32,12 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## <a name="release">Release Notes</a>
 
-### Release 2.0.13
+### Release 2.0.14
 
- - Mimic is better at masking out json gem but the oj_mimic_json gem does not
-   work with ruby 2.0.0 correctly. The Oj.mimic_JSON() method should be called
-   directly either before or after the json gem is required. Depending on the
-   situation one may work better than the other. Oj.mimic_JSON() may now be
-   called multiple times.
+ - Fixed bug in Oj::Doc.each_leaf that caused an incoorect where path to be
+   created and also added a chack for where path maximum length.
 
- - Changed dump to put closing array brackets and closing object curlies on the
-   line following the last element if :indent is set to greater than zero.
+ - 
 
 ## <a name="description">Description</a>
 
