@@ -34,7 +34,7 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ### Release 2.0.14
 
- - Fixed bug in Oj::Doc.each_leaf that caused an incoorect where path to be
+ - Fixed bug in Oj::Doc.each_leaf that caused an incorrect where path to be
    created and also added a chack for where path maximum length.
 
  - 
