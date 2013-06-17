@@ -49,7 +49,6 @@ extern "C" {
 #if SAFE_CACHE
 #include <pthread.h>
 #endif
-#include "cache.h"
 #include "cache8.h"
 
 #ifdef RUBINIUS_RUBY
