@@ -65,9 +65,7 @@ enum st_retval {ST_CONTINUE = 0, ST_STOP = 1, ST_DELETE = 2, ST_CHECK};
 #endif
 #endif
 
-#define raise_error(msg, xml, current) _oj_raise_error(msg, xml, current, __FILE__, __LINE__)
-
-#define MAX_ODD_ARGS	10
+#include "err.h"
 
 typedef enum {
     Yes	   = 'y',
@@ -113,7 +111,7 @@ typedef struct _Options {
     char	bigdec_as_num;	// YesNo
     char	bigdec_load;	// YesNo
     const char	*create_id;	// 0 or string
-    size_t	max_stack;	// max size to allocate on the stack
+    size_t	create_id_len;	// length of create_id
     int		sec_prec;	// second precision when dumping time
     DumpOpts	dump_opts;
 } *Options;
@@ -130,14 +128,6 @@ typedef struct _Out {
     uint32_t	hash_cnt;
     int		allocated;
 } *Out;
-
-typedef struct _Odd {
-    VALUE	clas;			// Ruby class
-    VALUE	create_obj;
-    ID		create_op;
-    int		attr_cnt;
-    ID		attrs[MAX_ODD_ARGS];	// 0 terminated attr IDs
-} *Odd;
 
 enum {
     STR_VAL  = 0x00,
@@ -161,19 +151,25 @@ typedef struct _Leaf {
     uint8_t		value_type;
 } *Leaf;
 
-extern VALUE	oj_parse(char *json, Options options);
-extern void	oj_saj_parse(VALUE handler, char *json);
+extern VALUE	oj_saj_parse(int argc, VALUE *argv, VALUE self);
+extern VALUE	oj_sc_parse(int argc, VALUE *argv, VALUE self);
+
+extern VALUE	oj_strict_parse(int argc, VALUE *argv, VALUE self);
+extern VALUE	oj_compat_parse(int argc, VALUE *argv, VALUE self);
+extern VALUE	oj_object_parse(int argc, VALUE *argv, VALUE self);
+
+extern VALUE	oj_strict_parse_cstr(int argc, VALUE *argv, char *json);
+extern VALUE	oj_compat_parse_cstr(int argc, VALUE *argv, char *json);
+extern VALUE	oj_object_parse_cstr(int argc, VALUE *argv, char *json);
+
+extern void	oj_parse_options(VALUE ropts, Options copts);
 
 extern void	oj_dump_obj_to_json(VALUE obj, Options copts, Out out);
 extern void	oj_write_obj_to_file(VALUE obj, const char *path, Options copts);
 extern void	oj_dump_leaf_to_json(Leaf leaf, Options copts, Out out);
 extern void	oj_write_leaf_to_file(Leaf leaf, const char *path, Options copts);
 
-extern void	_oj_raise_error(const char *msg, const char *xml, const char *current, const char* file, int line);
-
 extern void	oj_init_doc(void);
-
-extern Odd	oj_get_odd(VALUE clas);
 
 extern VALUE	Oj;
 extern struct _Options	oj_default_options;
@@ -186,7 +182,6 @@ extern VALUE	oj_bigdecimal_class;
 extern VALUE	oj_date_class;
 extern VALUE	oj_datetime_class;
 extern VALUE	oj_doc_class;
-extern VALUE	oj_parse_error_class;
 extern VALUE	oj_stringio_class;
 extern VALUE	oj_struct_class;
 extern VALUE	oj_time_class;
@@ -194,15 +189,19 @@ extern VALUE	oj_time_class;
 extern VALUE	oj_slash_string;
 
 extern ID	oj_add_value_id;
+extern ID	oj_array_append_id;
 extern ID	oj_array_end_id;
 extern ID	oj_array_start_id;
 extern ID	oj_as_json_id;
 extern ID	oj_error_id;
+extern ID	oj_fileno_id;
 extern ID	oj_hash_end_id;
+extern ID	oj_hash_set_id;
 extern ID	oj_hash_start_id;
 extern ID	oj_instance_variables_id;
 extern ID	oj_json_create_id;
 extern ID	oj_new_id;
+extern ID	oj_read_id;
 extern ID	oj_string_id;
 extern ID	oj_to_hash_id;
 extern ID	oj_to_json_id;
@@ -213,9 +212,6 @@ extern ID	oj_tv_nsec_id;
 extern ID	oj_tv_sec_id;
 extern ID	oj_tv_usec_id;
 extern ID	oj_utc_offset_id;
-
-extern Cache	oj_class_cache;
-extern Cache	oj_attr_cache;
 
 #if SAFE_CACHE
 extern pthread_mutex_t	oj_cache_mutex;

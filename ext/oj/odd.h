@@ -1,4 +1,4 @@
-/* cache.h
+/* odd.h
  * Copyright (c) 2011, Peter Ohler
  * All rights reserved.
  * 
@@ -28,19 +28,34 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __OJ_CACHE_H__
-#define __OJ_CACHE_H__
-
-#define RSTRING_NOT_MODIFIED
+#ifndef __OJ_ODD_H__
+#define __OJ_ODD_H__
 
 #include "ruby.h"
 
-typedef struct _Cache   *Cache;
+#define MAX_ODD_ARGS	10
 
-extern void     oj_cache_new(Cache *cache);
+typedef struct _Odd {
+    const char	*classname;
+    size_t	clen;
+    VALUE	clas;			// Ruby class
+    VALUE	create_obj;
+    ID		create_op;
+    int		attr_cnt;
+    const char	*attr_names[MAX_ODD_ARGS];	// 0 terminated attr IDs
+    ID		attrs[MAX_ODD_ARGS];	// 0 terminated attr IDs
+} *Odd;
 
-extern VALUE    oj_cache_get(Cache cache, const char *key, VALUE **slot);
+typedef struct _OddArgs {
+    Odd		odd;
+    VALUE	args[MAX_ODD_ARGS];
+} *OddArgs;
 
-extern void     oj_cache_print(Cache cache);
+extern void	oj_odd_init(void);
+extern Odd	oj_get_odd(VALUE clas);
+extern Odd	oj_get_oddc(const char *classname, size_t len);
+extern OddArgs	oj_odd_alloc_args(Odd odd);
+extern void	oj_odd_free(OddArgs args);
+extern int	oj_odd_set_arg(OddArgs args, const char *key, size_t klen, VALUE value);
 
-#endif /* __OJ_CACHE_H__ */
+#endif /* __OJ_ODD_H__ */

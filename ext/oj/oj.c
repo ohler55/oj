@@ -37,6 +37,9 @@
 #include <unistd.h>
 
 #include "oj.h"
+#include "parse.h"
+#include "hash.h"
+#include "odd.h"
 
 typedef struct _YesNoOpt {
     VALUE	sym;
@@ -48,12 +51,14 @@ void Init_oj();
 VALUE	 Oj = Qnil;
 
 ID	oj_add_value_id;
+ID	oj_array_append_id;
 ID	oj_array_end_id;
 ID	oj_array_start_id;
 ID	oj_as_json_id;
 ID	oj_error_id;
 ID	oj_fileno_id;
 ID	oj_hash_end_id;
+ID	oj_hash_set_id;
 ID	oj_hash_start_id;
 ID	oj_instance_variables_id;
 ID	oj_json_create_id;
@@ -91,7 +96,6 @@ static VALUE	class_cache_sym;
 static VALUE	compat_sym;
 static VALUE	create_id_sym;
 static VALUE	indent_sym;
-static VALUE	max_stack_sym;
 static VALUE	mode_sym;
 static VALUE	null_sym;
 static VALUE	object_sym;
@@ -111,9 +115,6 @@ static VALUE	space_sym;
 static VALUE	symbolize_names_sym;
 
 static VALUE	mimic = Qnil;
-
-Cache	oj_class_cache = 0;
-Cache	oj_attr_cache = 0;
 
 #if HAS_ENCODING_SUPPORT
 rb_encoding	*oj_utf8_encoding = 0;
@@ -136,25 +137,12 @@ struct _Options	oj_default_options = {
     Yes,		// bigdec_as_num
     No,			// bigdec_load
     json_class,		// create_id
-    65536,		// max_stack
+    10,			// create_id_len
     9,			// sec_prec
     0,			// dump_opts
 };
 
 static VALUE	define_mimic_json(int argc, VALUE *argv, VALUE self);
-static struct _Odd	odds[5]; // bump up if new Odd classes are added
-
-Odd
-oj_get_odd(VALUE clas) {
-    Odd	odd = odds;
-
-    for (; Qundef != odd->clas; odd++) {
-	if (clas == odd->clas) {
-	    return odd;
-	}
-    }
-    return 0;
-}
 
 /* call-seq: default_options() => Hash
  *
@@ -169,7 +157,6 @@ oj_get_odd(VALUE clas) {
  * - bigdecimal_as_decimal: [true|false|nil] dump BigDecimal as a decimal number or as a String
  * - bigdecimal_load: [true|false|nil] load decimals as BigDecimal instead of as a Float
  * - create_id: [String|nil] create id for json compatible object encoding, default is 'json_create'
- * - max_stack: [Fixnum|nil] maximum json size to allocate on the stack, default is 65536
  * - second_precision: [Fixnum|nil] number of digits after the decimal when dumping the seconds portion of time
  * @return [Hash] all current option settings.
  */
@@ -179,7 +166,6 @@ get_def_opts(VALUE self) {
     
     rb_hash_aset(opts, indent_sym, INT2FIX(oj_default_options.indent));
     rb_hash_aset(opts, sec_prec_sym, INT2FIX(oj_default_options.sec_prec));
-    rb_hash_aset(opts, max_stack_sym, INT2FIX(oj_default_options.max_stack));
     rb_hash_aset(opts, circular_sym, (Yes == oj_default_options.circular) ? Qtrue : ((No == oj_default_options.circular) ? Qfalse : Qnil));
     rb_hash_aset(opts, class_cache_sym, (Yes == oj_default_options.class_cache) ? Qtrue : ((No == oj_default_options.class_cache) ? Qfalse : Qnil));
     rb_hash_aset(opts, auto_define_sym, (Yes == oj_default_options.auto_define) ? Qtrue : ((No == oj_default_options.auto_define) ? Qfalse : Qnil));
@@ -230,7 +216,6 @@ get_def_opts(VALUE self) {
  *        :xmlschema date-time format taken from XML Schema as a String,
  *        :ruby Time.to_s formatted String
  * @param [String|nil] :create_id create id for json compatible object encoding
- * @param [Fixnum|nil] :max_stack maximum size to allocate on the stack for a JSON String
  * @param [Fixnum|nil] :second_precision number of digits after the decimal when dumping the seconds portion of time
  * @return [nil]
  */
@@ -268,17 +253,6 @@ set_def_opts(VALUE self, VALUE opts) {
 	}
 	oj_default_options.sec_prec = n;
     }
-    v = rb_hash_aref(opts, max_stack_sym);
-    if (Qnil != v) {
-	int	i;
-
-	Check_Type(v, T_FIXNUM);
-	i = FIX2INT(v);
-	if (0 > i) {
-	    i = 0;
-	}
-	oj_default_options.max_stack = (size_t)i;
-    }
 
     v = rb_hash_lookup(opts, mode_sym);
     if (Qnil == v) {
@@ -314,6 +288,7 @@ set_def_opts(VALUE self, VALUE opts) {
 		xfree((char*)oj_default_options.create_id);
 	    }
 	    oj_default_options.create_id = 0;
+	    oj_default_options.create_id_len = 0;
 	}
 	v = rb_hash_lookup(opts, create_id_sym);
 	if (Qnil != v) {
@@ -321,6 +296,7 @@ set_def_opts(VALUE self, VALUE opts) {
 
 	    oj_default_options.create_id = ALLOC_N(char, len);
 	    strcpy((char*)oj_default_options.create_id, StringValuePtr(v));
+	    oj_default_options.create_id_len = len - 1;
 	}
     }
 
@@ -341,8 +317,8 @@ set_def_opts(VALUE self, VALUE opts) {
     return Qnil;
 }
 
-static void
-parse_options(VALUE ropts, Options copts) {
+void
+oj_parse_options(VALUE ropts, Options copts) {
     struct _YesNoOpt	ynos[] = {
 	{ circular_sym, &copts->circular },
 	{ auto_define_sym, &copts->auto_define },
@@ -402,6 +378,28 @@ parse_options(VALUE ropts, Options copts) {
 		rb_raise(rb_eArgError, ":time_format must be :unix, :xmlschema, or :ruby.");
 	    }
 	}
+	if (Qtrue == rb_funcall(ropts, rb_intern("has_key?"), 1, create_id_sym)) {
+	    v = rb_hash_lookup(ropts, create_id_sym);
+	    if (Qnil == v) {
+		if (json_class != oj_default_options.create_id) {
+		    xfree((char*)oj_default_options.create_id);
+		}
+		copts->create_id = 0;
+		copts->create_id_len = 0;
+	    } else if (T_STRING == rb_type(v)) {
+		size_t		len = RSTRING_LEN(v);
+		const char	*str = StringValuePtr(v);
+
+		if (len != copts->create_id_len ||
+		    0 != strcmp(copts->create_id, str)) {
+		    copts->create_id = ALLOC_N(char, len + 1);
+		    strcpy((char*)copts->create_id, str);
+		    copts->create_id_len = len;
+		}
+	    } else {
+		rb_raise(rb_eArgError, ":create_id must be string.");
+	    }
+	}
 	for (o = ynos; 0 != o->attr; o++) {
 	    if (Qnil != (v = rb_hash_lookup(ropts, o->sym))) {
 		if (Qtrue == v) {
@@ -416,105 +414,118 @@ parse_options(VALUE ropts, Options copts) {
     }
  }
 
-static VALUE
-load_with_opts(VALUE input, Options copts) {
-    char	*json = 0;
-    size_t	len = 0;
-    VALUE	obj;
-
-    if (rb_type(input) == T_STRING) {
-	// the json string gets modified so make a copy of it
-	len = RSTRING_LEN(input) + 1;
-	if (copts->max_stack < len) {
-	    json = ALLOC_N(char, len);
-	} else {
-	    json = ALLOCA_N(char, len);
-	}
-	strcpy(json, StringValuePtr(input));
-    } else {
-	VALUE	clas = rb_obj_class(input);
-	VALUE	s;
-
-	if (oj_stringio_class == clas) {
-	    s = rb_funcall2(input, oj_string_id, 0, 0);
-	    len = RSTRING_LEN(s) + 1;
-	    if (copts->max_stack < len) {
-		json = ALLOC_N(char, len);
-	    } else {
-		json = ALLOCA_N(char, len);
-	    }
-	    strcpy(json, StringValuePtr(s));
-#ifndef JRUBY_RUBY
-#if !IS_WINDOWS
-	    // JRuby gets confused with what is the real fileno.
-	} else if (rb_respond_to(input, oj_fileno_id) && Qnil != (s = rb_funcall(input, oj_fileno_id, 0))) {
-	    int		fd = FIX2INT(s);
-	    ssize_t	cnt;
-
-	    len = lseek(fd, 0, SEEK_END);
-	    lseek(fd, 0, SEEK_SET);
-	    if (copts->max_stack < len) {
-		json = ALLOC_N(char, len + 1);
-	    } else {
-		json = ALLOCA_N(char, len + 1);
-	    }
-	    if (0 >= (cnt = read(fd, json, len)) || cnt != (ssize_t)len) {
-		rb_raise(rb_eIOError, "failed to read from IO Object.");
-	    }
-	    json[len] = '\0';
-#endif
-#endif
-	} else if (rb_respond_to(input, oj_read_id)) {
-	    s = rb_funcall2(input, oj_read_id, 0, 0);
-	    len = RSTRING_LEN(s) + 1;
-	    if (copts->max_stack < len) {
-		json = ALLOC_N(char, len);
-	    } else {
-		json = ALLOCA_N(char, len);
-	    }
-	    strcpy(json, StringValuePtr(s));
-	} else {
-	    rb_raise(rb_eArgError, "load() expected a String or IO Object.");
-	}
-    }
-    obj = oj_parse(json, copts);
-    if (copts->max_stack < len) {
-	xfree(json);
-    }
-    return obj;
-}
-
-/* call-seq: load(json, options) => Hash, Array, String, Fixnum, Float, true, false, or nil
+/* Document-method: strict_load
+ *	call-seq: strict_load(json, options) => Hash, Array, String, Fixnum, Float, true, false, or nil
  *
- * Parses a JSON document String into a Hash, Array, String, Fixnum, Float,
- * true, false, or nil. Raises an exception if the JSON is malformed or the
- * classes specified are not valid. If the string input is not a valid JSON
- * document (an empty string is not a valid JSON document) an exception is
- * raised.
+ * Parses a JSON document String into an Hash, Array, String, Fixnum, Float,
+ * true, false, or nil. It parses using a mode that is strict in that it maps
+ * each primitive JSON type to a similar Ruby type. The :create_id is not
+ * honored in this mode. Note that a Ruby Hash is used to represent the JSON
+ * Object type. These two are not the same since teh JSON Object type can have
+ * repeating entries with the same key and Ruby Hash can not.
  *
- * @param [String] json JSON String
+ * Raises an exception if the JSON is malformed or the classes specified are not
+ * valid. If the input is not a valid JSON document (an empty string is not a
+ * valid JSON document) an exception is raised.
+ *
+ * @param [String|IO] json JSON String or an Object that responds to read()
+ * @param [Hash] options load options (same as default_options)
+ */
+
+/* Document-method: compat_load
+ *	call-seq: compat_load(json, options) => Object, Hash, Array, String, Fixnum, Float, true, false, or nil
+ *
+ * Parses a JSON document String into an Object, Hash, Array, String, Fixnum,
+ * Float, true, false, or nil. It parses using a mode that is generally
+ * compatible with other Ruby JSON parsers in that it will create objects based
+ * on the :create_id value. It is not compatible in every way to every other
+ * parser though as each parser has it's own variations.
+ *
+ * Raises an exception if the JSON is malformed or the classes specified are not
+ * valid. If the input is not a valid JSON document (an empty string is not a
+ * valid JSON document) an exception is raised.
+ *
+ * @param [String|IO] json JSON String or an Object that responds to read()
+ * @param [Hash] options load options (same as default_options)
+ */
+
+/* Document-method: object_load
+ *	call-seq: object_load(json, options) => Object, Hash, Array, String, Fixnum, Float, true, false, or nil
+ *
+ * Parses a JSON document String into an Object, Hash, Array, String, Fixnum,
+ * Float, true, false, or nil. In the :object mode the JSON should have been
+ * generated by Oj.dump(). The parser will reconstitute the original marshalled
+ * or dumped Object. The :auto_define and :circular options have meaning with
+ * this parsing mode.
+ *
+ * Raises an exception if the JSON is malformed or the classes specified are not
+ * valid. If the input is not a valid JSON document (an empty string is not a
+ * valid JSON document) an exception is raised.
+ *
+ * @param [String|IO] json JSON String or an Object that responds to read()
+ * @param [Hash] options load options (same as default_options)
+ */
+
+/* call-seq: load(json, options) => Object, Hash, Array, String, Fixnum, Float, true, false, or nil
+ *
+ * Parses a JSON document String into a Object, Hash, Array, String, Fixnum,
+ * Float, true, false, or nil according to the default mode or the mode
+ * specified. Raises an exception if the JSON is malformed or the classes
+ * specified are not valid. If the string input is not a valid JSON document (an
+ * empty string is not a valid JSON document) an exception is raised.
+ *
+ * @param [String|IO] json JSON String or an Object that responds to read()
  * @param [Hash] options load options (same as default_options)
  */
 static VALUE
 load(int argc, VALUE *argv, VALUE self) {
-    struct _Options	options = oj_default_options;
+    Mode	mode = oj_default_options.mode;
 
     if (1 > argc) {
 	rb_raise(rb_eArgError, "Wrong number of arguments to load().");
     }
     if (2 <= argc) {
-	parse_options(argv[1], &options);
+	VALUE	ropts = argv[1];
+	VALUE	v;
+
+	if (Qnil != (v = rb_hash_lookup(ropts, mode_sym))) {
+	    if (object_sym == v) {
+		mode = ObjectMode;
+	    } else if (strict_sym == v) {
+		mode = StrictMode;
+	    } else if (compat_sym == v) {
+		mode = CompatMode;
+	    } else if (null_sym == v) {
+		mode = NullMode;
+	    } else {
+		rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, or :null.");
+	    }
+	}
     }
-    return load_with_opts(*argv, &options);
+    switch (mode) {
+    case StrictMode:
+	return oj_strict_parse(argc, argv, self);
+    case NullMode:
+    case CompatMode:
+	return oj_compat_parse(argc, argv, self);
+    case ObjectMode:
+    default:
+	break;
+    }
+    return oj_object_parse(argc, argv, self);
 }
 
 /* Document-method: load_file
- *   call-seq: load_file(path, options) => Hash, Array, String, Fixnum, Float, true, false, or nil
+ *   call-seq: load_file(path, options) => Object, Hash, Array, String, Fixnum, Float, true, false, or nil
  *
- * Parses a JSON document from a file into a Hash, Array, String, Fixnum, Float,
- * true, false, or nil. Raises an exception if the JSON is malformed or the
- * classes specified are not valid. If the input file is not a valid JSON
- * document (an empty file is not a valid JSON document) an exception is raised.
+ * Parses a JSON document String into a Object, Hash, Array, String, Fixnum,
+ * Float, true, false, or nil according to the default mode or the mode
+ * specified. Raises an exception if the JSON is malformed or the classes
+ * specified are not valid. If the string input is not a valid JSON document (an
+ * empty string is not a valid JSON document) an exception is raised.
+ *
+ * If the input file is not a valid JSON document (an empty file is not a valid
+ * JSON document) an exception is raised.
  *
  * @param [String] path path to a file containing a JSON document
  * @param [Hash] options load options (same as default_options)
@@ -525,9 +536,7 @@ load_file(int argc, VALUE *argv, VALUE self) {
     char		*json;
     FILE		*f;
     unsigned long	len;
-    VALUE		obj;
-    struct _Options	options = oj_default_options;
-    size_t		max_stack = oj_default_options.max_stack;
+    Mode		mode = oj_default_options.mode;
 
     Check_Type(*argv, T_STRING);
     path = StringValuePtr(*argv);
@@ -536,45 +545,98 @@ load_file(int argc, VALUE *argv, VALUE self) {
     }
     fseek(f, 0, SEEK_END);
     len = ftell(f);
-    if (max_stack < len) {
-	json = ALLOC_N(char, len + 1);
-    } else {
-	json = ALLOCA_N(char, len + 1);
-    }
+    json = ALLOC_N(char, len + 1);
     fseek(f, 0, SEEK_SET);
     if (len != fread(json, 1, len, f)) {
+	xfree(json);
 	fclose(f);
 	rb_raise(rb_const_get_at(Oj, rb_intern("LoadError")), "Failed to read %ld bytes from %s.", len, path);
     }
     fclose(f);
     json[len] = '\0';
+
+    if (1 > argc) {
+	rb_raise(rb_eArgError, "Wrong number of arguments to load().");
+    }
     if (2 <= argc) {
-	parse_options(argv[1], &options);
+	VALUE	ropts = argv[1];
+	VALUE	v;
+
+	if (Qnil != (v = rb_hash_lookup(ropts, mode_sym))) {
+	    if (object_sym == v) {
+		mode = ObjectMode;
+	    } else if (strict_sym == v) {
+		mode = StrictMode;
+	    } else if (compat_sym == v) {
+		mode = CompatMode;
+	    } else if (null_sym == v) {
+		mode = NullMode;
+	    } else {
+		rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, or :null.");
+	    }
+	}
     }
-    obj = oj_parse(json, &options);
-    if (max_stack < len) {
-	xfree(json);
+    // The json string is freed in the parser when it is finished with it.
+    switch (mode) {
+    case StrictMode:
+	return oj_strict_parse_cstr(argc, argv, json);
+    case NullMode:
+    case CompatMode:
+	return oj_compat_parse_cstr(argc, argv, json);
+    case ObjectMode:
+    default:
+	break;
     }
-    return obj;
+    return oj_object_parse_cstr(argc, argv, json);
 }
 
-/* call-seq: strict_load(doc)
+/* call-seq: safe_load(doc)
  *
- * Loads a JSON document in strict mode with auto_define and symbol_keys turned off. This function should be safe to use
- * with JSON received on an unprotected public interface.
+ * Loads a JSON document in strict mode with :auto_define and :symbol_keys
+ * turned off. This function should be safe to use with JSON received on an
+ * unprotected public interface.
+ *
  * @param [String|IO] doc JSON String or IO to load
  * @return [Hash|Array|String|Fixnum|Bignum|BigDecimal|nil|True|False]
  */
 static VALUE
-strict_load(VALUE self, VALUE doc) {
-    struct _Options	options = oj_default_options;
+safe_load(VALUE self, VALUE doc) {
+    struct _ParseInfo	pi;
+    VALUE		args[1];
 
-    options.auto_define = No;
-    options.sym_key = No;
-    options.mode = StrictMode;
+    pi.options = oj_default_options;
+    pi.options.auto_define = No;
+    pi.options.sym_key = No;
+    pi.options.mode = StrictMode;
+    oj_set_strict_callbacks(&pi);
+    *args = doc;
 
-    return load_with_opts(doc, &options);
+    return oj_pi_parse(1, args, &pi, 0);
 }
+
+/* call-seq: saj_parse(handler, io)
+ *
+ * Parses an IO stream or file containing a JSON document. Raises an exception
+ * if the JSON is malformed. This is a callback parser that calls the methods in
+ * the handler if they exist. A sample is the Oj::Saj class which can be used as
+ * a base class for the handler.
+ *
+ * @param [Oj::Saj] handler responds to Oj::Saj methods
+ * @param [IO|String] io IO Object to read from
+ */
+
+/* call-seq: sc_parse(handler, io)
+ *
+ * Parses an IO stream or file containing a JSON document. Raises an exception
+ * if the JSON is malformed. This is a callback parser (Simple Callback Parser)
+ * that calls the methods in the handler if they exist. A sample is the
+ * Oj::ScHandler class which can be used as a base class for the handler. This
+ * callback parser is slightly more efficient than the Saj callback parser and
+ * requires less argument checking.
+ *
+ * @param [Oj::ScHandler] handler responds to Oj::ScHandler methods
+ * @param [IO|String] io IO Object to read from
+ */
 
 /* call-seq: dump(obj, options) => json-string
  *
@@ -590,7 +652,7 @@ dump(int argc, VALUE *argv, VALUE self) {
     VALUE		rstr;
     
     if (2 == argc) {
-	parse_options(argv[1], &copts);
+	oj_parse_options(argv[1], &copts);
     }
     out.buf = buf;
     out.end = buf + sizeof(buf) - 10;
@@ -624,90 +686,11 @@ to_file(int argc, VALUE *argv, VALUE self) {
     struct _Options	copts = oj_default_options;
     
     if (3 == argc) {
-	parse_options(argv[2], &copts);
+	oj_parse_options(argv[2], &copts);
     }
     Check_Type(*argv, T_STRING);
     oj_write_obj_to_file(argv[1], StringValuePtr(*argv), &copts);
 
-    return Qnil;
-}
-
-/* call-seq: saj_parse(handler, io)
- *
- * Parses an IO stream or file containing an JSON document. Raises an exception
- * if the JSON is malformed.
- * @param [Oj::Saj] handler SAJ (responds to Oj::Saj methods) like handler
- * @param [IO|String] io IO Object to read from
- */
-static VALUE
-saj_parse(int argc, VALUE *argv, VALUE self) {
-    struct _Options	copts = oj_default_options;
-    char		*json = 0;
-    size_t		len = 0;
-    VALUE		input = argv[1];
-
-    if (argc < 2) {
-	rb_raise(rb_eArgError, "Wrong number of arguments to saj_parse.\n");
-    }
-    if (rb_type(input) == T_STRING) {
-	// the json string gets modified so make a copy of it
-	len = RSTRING_LEN(input) + 1;
-	if (copts.max_stack < len) {
-	    json = ALLOC_N(char, len);
-	} else {
-	    json = ALLOCA_N(char, len);
-	}
-	strcpy(json, StringValuePtr(input));
-    } else {
-	VALUE	clas = rb_obj_class(input);
-	VALUE	s;
-
-	if (oj_stringio_class == clas) {
-	    s = rb_funcall2(input, oj_string_id, 0, 0);
-	    len = RSTRING_LEN(s) + 1;
-	    if (copts.max_stack < len) {
-		json = ALLOC_N(char, len);
-	    } else {
-		json = ALLOCA_N(char, len);
-	    }
-	    strcpy(json, StringValuePtr(s));
-#ifndef JRUBY_RUBY
-#if !IS_WINDOWS
-	    // JRuby gets confused with what is the real fileno.
-	} else if (rb_respond_to(input, oj_fileno_id) && Qnil != (s = rb_funcall(input, oj_fileno_id, 0))) {
-	    int		fd = FIX2INT(s);
-	    ssize_t	cnt;
-
-	    len = lseek(fd, 0, SEEK_END);
-	    lseek(fd, 0, SEEK_SET);
-	    if (copts.max_stack < len) {
-		json = ALLOC_N(char, len + 1);
-	    } else {
-		json = ALLOCA_N(char, len + 1);
-	    }
-	    if (0 >= (cnt = read(fd, json, len)) || cnt != (ssize_t)len) {
-		rb_raise(rb_eIOError, "failed to read from IO Object.");
-	    }
-	    json[len] = '\0';
-#endif
-#endif
-	} else if (rb_respond_to(input, oj_read_id)) {
-	    s = rb_funcall2(input, oj_read_id, 0, 0);
-	    len = RSTRING_LEN(s) + 1;
-	    if (copts.max_stack < len) {
-		json = ALLOC_N(char, len);
-	    } else {
-		json = ALLOCA_N(char, len);
-	    }
-	    strcpy(json, StringValuePtr(s));
-	} else {
-	    rb_raise(rb_eArgError, "saj_parse() expected a String or IO Object.");
-	}
-    }
-    oj_saj_parse(*argv, json);
-    if (copts.max_stack < len) {
-	xfree(json);
-    }
     return Qnil;
 }
 
@@ -911,12 +894,16 @@ mimic_pretty_generate(int argc, VALUE *argv, VALUE self) {
 
 static VALUE
 mimic_parse(int argc, VALUE *argv, VALUE self) {
-    struct _Options	options = oj_default_options;
+    struct _ParseInfo	pi;
+    VALUE		args[1];
 
-    if (1 > argc) {
-	rb_raise(rb_eArgError, "Wrong number of arguments to parse().");
+    if (argc < 1) {
+	rb_raise(rb_eArgError, "Wrong number of arguments to parse.");
     }
-    if (2 <= argc && Qnil != argv[1]) {
+    oj_set_compat_callbacks(&pi);
+    pi.options = oj_default_options;
+    pi.options.auto_define = No;
+    if (2 <= argc) {
 	VALUE	ropts = argv[1];
 	VALUE	v;
 
@@ -924,17 +911,21 @@ mimic_parse(int argc, VALUE *argv, VALUE self) {
 	    rb_raise(rb_eArgError, "options must be a hash.");
 	}
 	if (Qnil != (v = rb_hash_lookup(ropts, symbolize_names_sym))) {
-	    options.sym_key = (Qtrue == v) ? Yes : No;
+	    pi.options.sym_key = (Qtrue == v) ? Yes : No;
 	}
-	if (Qnil != (v = rb_hash_lookup(ropts,	create_additions_sym))) {
-	    options.mode = (Qtrue == v) ? CompatMode : StrictMode;
+	if (Qnil != (v = rb_hash_lookup(ropts, create_additions_sym))) {
+	    if (Qfalse == v) {
+		oj_set_strict_callbacks(&pi);
+	    }
 	}
 	// :allow_nan is not supported as Oj always allows nan
-	// :max_nesting is always set to 100
+	// :max_nesting is ignored as Oj has not nesting limit
 	// :object_class is always Hash
 	// :array_class is always Array
     }
-    return load_with_opts(*argv, &options);
+    *args = *argv;
+
+    return oj_pi_parse(1, args, &pi, 0);
 }
 
 static VALUE
@@ -959,12 +950,14 @@ mimic_create_id(VALUE self, VALUE id) {
 	    xfree((char*)oj_default_options.create_id);
 	}
 	oj_default_options.create_id = 0;
+	oj_default_options.create_id_len = 0;
     }
     if (Qnil != id) {
 	size_t	len = RSTRING_LEN(id) + 1;
 
 	oj_default_options.create_id = ALLOC_N(char, len);
 	strcpy((char*)oj_default_options.create_id, StringValuePtr(id));
+	oj_default_options.create_id_len = len - 1;
     }
     return id;
 }
@@ -1045,7 +1038,7 @@ define_mimic_json(int argc, VALUE *argv, VALUE self) {
     object_nl_sym = ID2SYM(rb_intern("object_nl"));			rb_gc_register_address(&object_nl_sym);
     space_before_sym = ID2SYM(rb_intern("space_before"));		rb_gc_register_address(&space_before_sym);
     space_sym = ID2SYM(rb_intern("space"));				rb_gc_register_address(&space_sym);
-    symbolize_names_sym = ID2SYM(rb_intern("symbolize_names"));	rb_gc_register_address(&symbolize_names_sym);
+    symbolize_names_sym = ID2SYM(rb_intern("symbolize_names"));		rb_gc_register_address(&symbolize_names_sym);
 
     oj_default_options.mode = CompatMode;
     oj_default_options.ascii_only = Yes;
@@ -1054,9 +1047,6 @@ define_mimic_json(int argc, VALUE *argv, VALUE self) {
 }
 
 void Init_oj() {
-    Odd	odd;
-    ID	*idp;
-
     Oj = rb_define_module("Oj");
 
     rb_require("time");
@@ -1070,19 +1060,26 @@ void Init_oj() {
     rb_define_module_function(Oj, "mimic_JSON", define_mimic_json, -1);
     rb_define_module_function(Oj, "load", load, -1);
     rb_define_module_function(Oj, "load_file", load_file, -1);
-    rb_define_module_function(Oj, "strict_load", strict_load, 1);
+    rb_define_module_function(Oj, "safe_load", safe_load, 1);
+    rb_define_module_function(Oj, "strict_load", oj_strict_parse, -1);
+    rb_define_module_function(Oj, "compat_load", oj_compat_parse, -1);
+    rb_define_module_function(Oj, "object_load", oj_object_parse, -1);
+
     rb_define_module_function(Oj, "dump", dump, -1);
     rb_define_module_function(Oj, "to_file", to_file, -1);
 
-    rb_define_module_function(Oj, "saj_parse", saj_parse, -1);
+    rb_define_module_function(Oj, "saj_parse", oj_saj_parse, -1);
+    rb_define_module_function(Oj, "sc_parse", oj_sc_parse, -1);
 
     oj_add_value_id = rb_intern("add_value");
+    oj_array_append_id = rb_intern("array_append");
     oj_array_end_id = rb_intern("array_end");
     oj_array_start_id = rb_intern("array_start");
     oj_as_json_id = rb_intern("as_json");
     oj_error_id = rb_intern("error");
     oj_fileno_id = rb_intern("fileno");
     oj_hash_end_id = rb_intern("hash_end");
+    oj_hash_set_id = rb_intern("hash_set");
     oj_hash_start_id = rb_intern("hash_start");
     oj_instance_variables_id = rb_intern("instance_variables");
     oj_json_create_id = rb_intern("json_create");
@@ -1118,7 +1115,6 @@ void Init_oj() {
     compat_sym = ID2SYM(rb_intern("compat"));		rb_gc_register_address(&compat_sym);
     create_id_sym = ID2SYM(rb_intern("create_id"));	rb_gc_register_address(&create_id_sym);
     indent_sym = ID2SYM(rb_intern("indent"));		rb_gc_register_address(&indent_sym);
-    max_stack_sym = ID2SYM(rb_intern("max_stack"));	rb_gc_register_address(&max_stack_sym);
     mode_sym = ID2SYM(rb_intern("mode"));		rb_gc_register_address(&mode_sym);
     null_sym = ID2SYM(rb_intern("null"));		rb_gc_register_address(&null_sym);
     object_sym = ID2SYM(rb_intern("object"));		rb_gc_register_address(&object_sym);
@@ -1137,82 +1133,16 @@ void Init_oj() {
     oj_utf8_encoding = rb_enc_find("UTF-8");
 #endif
 
-    oj_cache_new(&oj_class_cache);
-    oj_cache_new(&oj_attr_cache);
-
-    odd = odds;
-    // Rational
-    idp = odd->attrs;
-    odd->clas = rb_const_get(rb_cObject, rb_intern("Rational"));
-    odd->create_obj = rb_cObject;
-    odd->create_op = rb_intern("Rational");
-    odd->attr_cnt = 2;
-    *idp++ = rb_intern("numerator");
-    *idp++ = rb_intern("denominator");
-    *idp++ = 0;
-    // Date
-    odd++;
-    idp = odd->attrs;
-    odd->clas = oj_date_class;
-    odd->create_obj = odd->clas;
-    odd->create_op = oj_new_id;
-    odd->attr_cnt = 4;
-    *idp++ = rb_intern("year");
-    *idp++ = rb_intern("month");
-    *idp++ = rb_intern("day");
-    *idp++ = rb_intern("start");
-    *idp++ = 0;
-    // DateTime
-    odd++;
-    idp = odd->attrs;
-    odd->clas = oj_datetime_class;
-    odd->create_obj = odd->clas;
-    odd->create_op = oj_new_id;
-    odd->attr_cnt = 8;
-    *idp++ = rb_intern("year");
-    *idp++ = rb_intern("month");
-    *idp++ = rb_intern("day");
-    *idp++ = rb_intern("hour");
-    *idp++ = rb_intern("min");
-    *idp++ = rb_intern("sec");
-    *idp++ = rb_intern("offset");
-    *idp++ = rb_intern("start");
-    *idp++ = 0;
-    // Range
-    odd++;
-    idp = odd->attrs;
-    odd->clas = rb_const_get(rb_cObject, rb_intern("Range"));
-    odd->create_obj = odd->clas;
-    odd->create_op = oj_new_id;
-    odd->attr_cnt = 3;
-    *idp++ = rb_intern("begin");
-    *idp++ = rb_intern("end");
-    *idp++ = rb_intern("exclude_end?");
-    *idp++ = 0;
-    // The end. bump up the size of odds if a new class is added.
-    odd++;
-    odd->clas = Qundef;
+    oj_hash_init();
+    oj_odd_init();
 
 #if SAFE_CACHE
     pthread_mutex_init(&oj_cache_mutex, 0);
 #endif
     oj_init_doc();
-}
 
-void
-_oj_raise_error(const char *msg, const char *json, const char *current, const char* file, int line) {
-    int	jline = 1;
-    int	col = 1;
+    //rb_define_module_function(Oj, "hash_test", hash_test, 0);
 
-    for (; json < current && '\n' != *current; current--) {
-	col++;
-    }
-    for (; json < current; current--) {
-	if ('\n' == *current) {
-	    jline++;
-	}
-    }
-    rb_raise(oj_parse_error_class, "%s at line %d, column %d [%s:%d]", msg, jline, col, file, line);
 }
 
 // mimic JSON documentation

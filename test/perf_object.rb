@@ -29,9 +29,12 @@ do_dump = false
 do_read = false
 do_write = false
 $iter = 1000
+$mult = 1
 
 opts = OptionParser.new
 opts.on("-c", "circular options")                           { $circular = true }
+
+opts.on("-x", "use sample instead of files")                { do_sample = true }
 
 opts.on("-s", "load and dump as sample Ruby object")        { do_sample = true }
 opts.on("-f", "load and dump as files Ruby object")         { do_files = true }
@@ -43,6 +46,7 @@ opts.on("-w", "write")                                      { do_write = true }
 opts.on("-a", "load, dump, read and write")                 { do_load = true; do_dump = true; do_read = true; do_write = true }
 
 opts.on("-i", "--iterations [Int]", Integer, "iterations")  { |i| $iter = i }
+opts.on("-m", "--multiply [Int]", Integer, "multiplier")    { |i| $mult = i }
 
 opts.on("-h", "--help", "Show this display")                { puts opts; Process.exit!(0) }
 files = opts.parse(ARGV)
@@ -61,7 +65,11 @@ end
 
 # prepare all the formats for input
 if files.empty?
-  $obj = do_sample ? sample_doc(2) : files('..')
+  $obj = []
+  $mult.times do
+    $obj << (do_sample ? sample_doc(2) : files('..'))
+  end
+
   $mars = Marshal.dump($obj)
   $xml = Ox.dump($obj, :indent => $indent, :circular => $circular)
   $json = Oj.dump($obj, :indent => $indent, :circular => $circular)
@@ -75,18 +83,22 @@ else
     $xml = File.read(f)
     $obj = Ox.load($xml);
     $mars = Marshal.dump($obj)
-    $json = Oj.dump($obj, :indent => $indent, circular: $circular)
+    $json = Oj.dump($obj, :indent => $indent, :circular => $circular)
   end
 end
 
 Oj.default_options = { :mode => :object, :indent => $indent, :circular => $circular }
+#puts "json: #{$json.size}"
+#puts "xml: #{$xml.size}"
+#puts "marshal: #{$mars.size}"
+
 
 if do_load
   puts '-' * 80
   puts "Load Performance"
   perf = Perf.new()
+  perf.add('Oj.object', 'load') { Oj.object_load($json) }
   perf.add('Ox', 'load') { Ox.load($xml, :mode => :object) }
-  perf.add('Oj', 'load') { Oj.load($json) }
   perf.add('Marshal', 'load') { Marshal.load($mars) }
   perf.run($iter)
 end
@@ -95,8 +107,8 @@ if do_dump
   puts '-' * 80
   puts "Dump Performance"
   perf = Perf.new()
-  perf.add('Ox', 'dump') { Ox.dump($obj, :indent => $indent, :circular => $circular) }
   perf.add('Oj', 'dump') { Oj.dump($obj) }
+  perf.add('Ox', 'dump') { Ox.dump($obj, :indent => $indent, :circular => $circular) }
   perf.add('Marshal', 'dump') { Marshal.dump($obj) }
   perf.run($iter)
 end
@@ -105,8 +117,8 @@ if do_read
   puts '-' * 80
   puts "Read from file Performance"
   perf = Perf.new()
-  perf.add('Ox', 'load_file') { Ox.load_file('sample.xml', :mode => :object) }
   perf.add('Oj', 'load') { Oj.load_file('sample.json') }
+  perf.add('Ox', 'load_file') { Ox.load_file('sample.xml', :mode => :object) }
   perf.add('Marshal', 'load') { Marshal.load(File.new('sample.marshal')) }
   perf.run($iter)
 end
@@ -115,8 +127,8 @@ if do_write
   puts '-' * 80
   puts "Write to file Performance"
   perf = Perf.new()
-  perf.add('Ox', 'to_file') { Ox.to_file('sample.xml', $obj, :indent => $indent, :circular => $circular) }
   perf.add('Oj', 'to_file') { Oj.to_file('sample.json', $obj) }
+  perf.add('Ox', 'to_file') { Ox.to_file('sample.xml', $obj, :indent => $indent, :circular => $circular) }
   perf.add('Marshal', 'dump') { Marshal.dump($obj, File.new('sample.marshal', 'w')) }
   perf.run($iter)
 end

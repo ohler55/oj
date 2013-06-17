@@ -29,7 +29,7 @@ def sample_doc(size=3)
       (1..size).each do |k|
         g2 = ::Sample::Group.new
         r = ::Sample::Rect.new(j * 40 + 10.0, i * 10.0,
-                                 10.123456 / k, 10.0 / k, colors[(i + j + k) % colors.size])
+                               10.123456 / k, 10.0 / k, colors[(i + j + k) % colors.size])
         r.add_prop(:part_of, layer.name)
         g2 << r
         g2 << ::Sample::Text.new("#{k} in #{j}", r.left, r.top, r.width, r.height)
@@ -38,7 +38,7 @@ def sample_doc(size=3)
       g2 = ::Sample::Group.new
       (1..size).each do |k|
         o = ::Sample::Oval.new(j * 40 + 12.0, i * 10.0 + 2.0,
-                                 6.0 / k, 6.0 / k, colors[(i + j + k) % colors.size])
+                               6.0 / k, 6.0 / k, colors[(i + j + k) % colors.size])
         o.add_prop(:inside, true)
         g << o
       end

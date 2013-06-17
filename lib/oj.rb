@@ -29,5 +29,6 @@ require 'oj/bag'
 require 'oj/error'
 require 'oj/mimic'
 require 'oj/saj'
+require 'oj/schandler'
 
 require 'oj/oj' # C extension

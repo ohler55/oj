@@ -1,7 +1,9 @@
 module Oj
-  # A SAX style parse handler for JSON hence the acronym SAJ for Simple API for JSON. The Oj::Saj handler class should be subclassed
-  # and then used with the Oj.saj_parse() method. The Saj methods will then be
-  # called as the file is parsed.
+  # A SAX style parse handler for JSON hence the acronym SAJ for Simple API for
+  # JSON. The Oj::Saj handler class should be subclassed and then used with
+  # the Oj.sajkey_parse() method. The Saj methods will then be called as the
+  # file is parsed.
+  #
   # @example
   # 
   #  require 'oj'
@@ -21,8 +23,9 @@ module Oj
   #    Oj.saj_parse(cnt, f)
   #  end
   #
-  # To make the desired methods active while parsing the desired method should be made public in the subclasses. If the
-  # methods remain private they will not be called during parsing.
+  # To make the desired methods active while parsing the desired method should
+  # be made public in the subclasses. If the methods remain private they will
+  # not be called during parsing.
   #
   #    def hash_start(key); end
   #    def hash_end(key); end
@@ -36,9 +39,9 @@ module Oj
     def initialize()
     end
 
-    # To make the desired methods active while parsing the desired method
-    # should be made public in the subclasses. If the methods remain private
-    # they will not be called during parsing.
+    # To make the desired methods active while parsing the desired method should
+    # be made public in the subclasses. If the methods remain private they will
+    # not be called during parsing.
     private
 
     def hash_start(key)

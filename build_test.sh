@@ -22,10 +22,7 @@ do
     echo "\nRunning tests for $ruby"
     cd ../../test
     rbenv local $ruby
-    ./tests.rb
-    ./test_mimic.rb
-    ./test_fast.rb
-    ./test_saj.rb
+    ./test_all.sh
     cd ..
 
     echo "\n"
@@ -40,10 +37,7 @@ make
 
 echo "\nRunning tests for OS X Ruby"
 cd ../../test
-./tests.rb
-./test_mimic.rb
-./test_fast.rb
-./test_saj.rb
+./test_all.sh
 cd ..
 
 echo "\n"

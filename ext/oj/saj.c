@@ -1,4 +1,4 @@
-/* saj.c
+/* sajkey.c
  * Copyright (c) 2012, Peter Ohler
  * All rights reserved.
  * 
@@ -35,6 +35,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 // Workaround in case INFINITY is not defined in math.h or if the OS is CentOS
 #define OJ_INFINITY (1.0/0.0)
@@ -669,8 +671,8 @@ respond_to(VALUE obj, ID method) {
 #endif
 }
 
-void
-oj_saj_parse(VALUE handler, char *json) {
+static void
+sajkey_parse(VALUE handler, char *json) {
     VALUE		obj = Qnil;
     struct _ParseInfo	pi;
 
@@ -718,93 +720,63 @@ oj_saj_parse(VALUE handler, char *json) {
     }
 }
 
+/* call-seq: sajkey_parse(handler, io)
+ *
+ * Parses an IO stream or file containing an JSON document. Raises an exception
+ * if the JSON is malformed.
+ * @param [Oj::SajKey] handler SajKey (responds to Oj::SajKey methods) like handler
+ * @param [IO|String] io IO Object to read from
+ */
+VALUE
+oj_saj_parse(int argc, VALUE *argv, VALUE self) {
+    char	*json = 0;
+    size_t	len = 0;
+    VALUE	input = argv[1];
 
-#if 0
-static void
-cx_add(CX cx, VALUE obj, const char *key) {
-    if (0 == cx->cur) {
-	cx->cur = cx->stack;
-	*cx->cur = obj;
+    if (argc < 2) {
+	rb_raise(rb_eArgError, "Wrong number of arguments to saj_parse.\n");
+    }
+    if (rb_type(input) == T_STRING) {
+	// the json string gets modified so make a copy of it
+	len = RSTRING_LEN(input) + 1;
+	json = ALLOC_N(char, len);
+	strcpy(json, StringValuePtr(input));
     } else {
-	if (0 != key) {
-	    VALUE	ks = rb_str_new2(key);
-#if HAS_ENCODING_SUPPORT
-	    rb_enc_associate(ks, oj_utf8_encoding);
+	VALUE	clas = rb_obj_class(input);
+	VALUE	s;
+
+	if (oj_stringio_class == clas) {
+	    s = rb_funcall2(input, oj_string_id, 0, 0);
+	    len = RSTRING_LEN(s) + 1;
+	    json = ALLOC_N(char, len);
+	    strcpy(json, StringValuePtr(s));
+#ifndef JRUBY_RUBY
+#if !IS_WINDOWS
+	    // JRuby gets confused with what is the real fileno.
+	} else if (rb_respond_to(input, oj_fileno_id) && Qnil != (s = rb_funcall(input, oj_fileno_id, 0))) {
+	    int		fd = FIX2INT(s);
+	    ssize_t	cnt;
+
+	    len = lseek(fd, 0, SEEK_END);
+	    lseek(fd, 0, SEEK_SET);
+	    json = ALLOC_N(char, len + 1);
+	    if (0 >= (cnt = read(fd, json, len)) || cnt != (ssize_t)len) {
+		rb_raise(rb_eIOError, "failed to read from IO Object.");
+	    }
+	    json[len] = '\0';
 #endif
-	    rb_hash_aset(*cx->cur, ks, obj);
+#endif
+	} else if (rb_respond_to(input, oj_read_id)) {
+	    s = rb_funcall2(input, oj_read_id, 0, 0);
+	    len = RSTRING_LEN(s) + 1;
+	    json = ALLOC_N(char, len);
+	    strcpy(json, StringValuePtr(s));
 	} else {
-	    rb_ary_push(*cx->cur, obj);
+	    rb_raise(rb_eArgError, "saj_parse() expected a String or IO Object.");
 	}
     }
-}
+    sajkey_parse(*argv, json);
+    xfree(json);
 
-static void
-cx_push(CX cx, VALUE obj, const char *key) {
-    if (0 == cx->cur) {
-	cx->cur = cx->stack;
-    } else {
-	if (cx->end <= cx->cur) {
-	    rb_raise(oj_parse_error_class, "too deeply nested");
-	}
-	cx_add(cx, obj, key);
-	cx->cur++;
-    }
-    *cx->cur = obj;
+    return Qnil;
 }
-
-static void
-hash_start(void *context, const char *key) {
-    cx_push((CX)context, rb_hash_new(), key);
-}
-
-static void
-col_end(void *context, const char *key) {
-    ((CX)context)->cur--;
-}
-
-static void
-array_start(void *context, const char *key) {
-    cx_push((CX)context, rb_ary_new(), key);
-}
-
-static void
-add_str(void *context, const char *str, const char *key) {
-    VALUE	s;
-
-    s = rb_str_new2(str);
-#if HAS_ENCODING_SUPPORT
-    rb_enc_associate(s, oj_utf8_encoding);
-#endif
-    cx_add((CX)context, s, key);
-}
-
-static void
-add_big(void *context, const char *str, const char *key) {
-    cx_add((CX)context, rb_funcall(oj_bigdecimal_class, oj_new_id, 1, rb_str_new2(str)), key);
-}
-
-static void
-add_float(void *context, double num, const char *key) {
-    cx_add((CX)context, rb_float_new(num), key);
-}
-
-static void
-add_fixnum(void *context, int64_t num, const char *key) {
-    cx_add((CX)context, LONG2NUM(num), key);
-}
-
-static void
-add_true(void *context, const char *key) {
-    cx_add((CX)context, Qtrue, key);
-}
-
-static void
-add_false(void *context, const char *key) {
-    cx_add((CX)context, Qfalse, key);
-}
-
-static void
-add_nil(void *context, const char *key) {
-    cx_add((CX)context, Qnil, key);
-}
-#endif
