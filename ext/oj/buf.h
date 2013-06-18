@@ -34,16 +34,16 @@
 #include "ruby.h"
 
 typedef struct _Buf {
-    char	base[1024];
     char	*head;
     char	*end;
     char	*tail;
+    char	base[1024];
 } *Buf;
 
 inline static void
 buf_init(Buf buf) {
     buf->head = buf->base;
-    buf->end = buf->base + sizeof(buf->base);
+    buf->end = buf->base + sizeof(buf->base) - 1;
     buf->tail = buf->head;
 }
 
@@ -73,7 +73,7 @@ buf_append_string(Buf buf, const char *s, size_t slen) {
 	    REALLOC_N(buf->head, char, new_len);
 	}
 	buf->tail = buf->head + toff;
-	buf->end = buf->head + new_len;
+	buf->end = buf->head + new_len - 1;
     }
     memcpy(buf->tail, s, slen);
     buf->tail += slen;
@@ -93,7 +93,7 @@ buf_append(Buf buf, char c) {
 	    REALLOC_N(buf->head, char, new_len);
 	}
 	buf->tail = buf->head + toff;
-	buf->end = buf->head + new_len;
+	buf->end = buf->head + new_len - 1;
     }
     *buf->tail = c;
     buf->tail++;

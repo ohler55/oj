@@ -88,6 +88,14 @@ class StrictJuice < ::Test::Unit::TestCase
     assert_equal(json, json2)
   end
 
+  def test_unicode_long
+    # tests buffer overflow
+    json = %{"\\u019f\\u05e9\\u3074\\ud834\\udd1e #{'x' * 2000}"}
+    obj = Oj.load(json)
+    json2 = Oj.dump(obj, :ascii_only => true)
+    assert_equal(json, json2)
+  end
+
   def test_array
     dump_and_load([], false)
     dump_and_load([true, false], false)
@@ -238,6 +246,7 @@ class StrictJuice < ::Test::Unit::TestCase
     obj = Oj.strict_load(json)
     assert_equal({ 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}, obj)
   end
+
 
   def dump_and_load(obj, trace=false)
     json = Oj.dump(obj, :indent => 2)
