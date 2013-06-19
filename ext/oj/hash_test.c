@@ -468,7 +468,11 @@ perf() {
 	}
     }
     dt = micro_time() - start;
+#if IS_WINDOWS
+    printf("%d iterations took %ld msecs\n", iter, (long)(dt / 1000));
+#else
     printf("%d iterations took %lld msecs\n", iter, dt / 1000);
+#endif
 }
 
 void

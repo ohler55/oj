@@ -116,7 +116,7 @@ hash_get(Hash hash, const char *key, size_t len, VALUE **slotp, VALUE def_value)
 	    bucket->next = b;
 	
 	}
-	bucket->key = strndup(key, len);
+	bucket->key = oj_strndup(key, len);
 	bucket->len = len;
 	bucket->val = def_value;
 	*slotp = &bucket->val;
@@ -146,4 +146,14 @@ oj_class_hash_get(const char *key, size_t len, VALUE **slotp) {
 ID
 oj_attr_hash_get(const char *key, size_t len, ID **slotp) {
     return (ID)hash_get(&intern_hash, key, len, (VALUE**)slotp, 0);
+}
+
+char*
+oj_strndup(const char *s, size_t len) {
+    char	*d = ALLOC_N(char, len + 1);
+    
+    memcpy(d, s, len);
+    d[len] = '\0';
+
+    return d;
 }

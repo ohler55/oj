@@ -34,6 +34,7 @@
 #include "err.h"
 #include "parse.h"
 #include "resolve.h"
+#include "hash.h"
 
 static void
 hash_set_cstr(ParseInfo pi, const char *key, size_t klen, const char *str, size_t len, const char *orig) {
@@ -44,7 +45,7 @@ hash_set_cstr(ParseInfo pi, const char *key, size_t klen, const char *str, size_
 	pi->options.create_id_len == klen &&
 	0 == strncmp(pi->options.create_id, key, klen)) {
 	if (str < pi->json || pi->cur < str) {
-	    parent->classname = strndup(str, len);
+	    parent->classname = oj_strndup(str, len);
 	} else {
 	    parent->classname = str;
 	}

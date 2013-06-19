@@ -41,5 +41,6 @@ extern VALUE	oj_class_hash_get(const char *key, size_t len, VALUE **slotp);
 extern ID	oj_attr_hash_get(const char *key, size_t len, ID **slotp);
 
 extern void	oj_hash_print();
+extern char*	oj_strndup(const char *s, size_t len);
 
 #endif /* __OJ_HASH_H__ */
