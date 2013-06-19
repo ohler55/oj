@@ -3,8 +3,6 @@
 ^c^d hide subtree
 ^c^s show subtree
 
-- implement a strndup for ruby with ALLOC_N
-
 - license review
 - add the rest of the old release notes
 
