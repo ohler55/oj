@@ -28,8 +28,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef _WIN32
 #include <sys/time.h>
 #include <time.h>
+#endif
 #include "hash.h"
 
 typedef struct _StrLen {
