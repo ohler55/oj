@@ -33,6 +33,7 @@
 
 #include "ruby.h"
 #include "odd.h"
+#include <stdint.h>
 
 #define STACK_INC	32
 

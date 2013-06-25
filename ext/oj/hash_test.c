@@ -33,6 +33,11 @@
 #include <time.h>
 #endif
 #include "hash.h"
+#include <stdint.h>
+
+/* Define printf formats for standard types, like PRIu64 for uint64_t. */
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 
 typedef struct _StrLen {
     const char	*str;
@@ -473,7 +478,7 @@ perf() {
 #if IS_WINDOWS
     printf("%d iterations took %ld msecs\n", iter, (long)(dt / 1000));
 #else
-    printf("%d iterations took %lld msecs\n", iter, dt / 1000);
+    printf("%d iterations took %"PRIu64" msecs\n", iter, dt / 1000);
 #endif
 }
 
