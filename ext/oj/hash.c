@@ -29,6 +29,7 @@
  */
 
 #include "hash.h"
+#include <stdint.h>
 
 #define HASH_MASK	0x000003FF
 #define  HASH_SLOT_CNT	1024
