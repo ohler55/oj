@@ -28,10 +28,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+// if windows, comment out the whole file. It's only a performance test.
 #ifndef _WIN32
 #include <sys/time.h>
 #include <time.h>
-#endif
 #include "hash.h"
 #include <stdint.h>
 
@@ -510,3 +510,4 @@ oj_hash_test() {
     oj_hash_print();
     perf();
 }
+#endif

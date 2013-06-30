@@ -1046,6 +1046,7 @@ define_mimic_json(int argc, VALUE *argv, VALUE self) {
     return mimic;
 }
 
+/*
 extern void	oj_hash_test();
 
 static VALUE
@@ -1053,6 +1054,7 @@ hash_test(VALUE self) {
     oj_hash_test();
     return Qnil;
 }
+*/
 
 void Init_oj() {
     Oj = rb_define_module("Oj");
@@ -1062,7 +1064,7 @@ void Init_oj() {
     rb_require("bigdecimal");
     rb_require("stringio");
 
-    rb_define_module_function(Oj, "hash_test", hash_test, 0);
+    //rb_define_module_function(Oj, "hash_test", hash_test, 0);
 
     rb_define_module_function(Oj, "default_options", get_def_opts, 0);
     rb_define_module_function(Oj, "default_options=", set_def_opts, 1);
