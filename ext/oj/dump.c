@@ -1344,7 +1344,6 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
     }
     {
 	int	cnt;
-// use encoding as the indicator for Ruby 1.8.7 or 1.9.x
 #if HAS_IVAR_HELPERS
 	cnt = (int)rb_ivar_count(obj);
 #else

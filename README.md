@@ -20,31 +20,11 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
-### Current Release 2.1.2
+### Current Release 2.1.3
 
- - Fixed support for Windows.
+ - Fixed bug that did not deserialize all attributes in an Exception subclass.
 
-### Current Release 2.1.1
-
- - Fixed off by 1 error in buffer for escaped strings.
-
-### Current Release 2.1.0
-
- - This version is a major rewrite of the parser. The parser now uses a constant
-   stack size no matter how deeply nested the JSON document is. The parser is
-   also slightly faster for larger documents and 30% faster for object parsing.
-
- - Oj.strict_load() was renamed to Oj.safe_load() to better represent its
-   functionality. A new Oj.strict_load() is simply Oj.load() with :mode set to
-   :strict.
-
- - Oj.compat_load() and Oj.object_load() added.
-
- - A new Simple Callback Parser was added invoked by Oj.sc_parse().
-
- - Eliminated :max_stack option as it is no longer needed.
-
- - Handle cleanup after exceptions better.
+ - Added a sample to demonstrate how to write Exception subclasses that will automatically serialize and deserialize.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 

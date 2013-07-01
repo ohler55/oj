@@ -462,6 +462,22 @@ oj_parse_options(VALUE ropts, Options copts) {
  * valid. If the input is not a valid JSON document (an empty string is not a
  * valid JSON document) an exception is raised.
  *
+ * Note: Oj is not able to automatically deserialize all classes that are a
+ * subclass of a Ruby Exception. Only exception that take one required string
+ * argument in the initialize() method are supported. This is an example of how
+ * to write an Exception subclass that supports both a single string intializer
+ * and an Exception as an argument. Additional optional arguments can be added
+ * as well.
+ *
+ * The reason for this restriction has to do with a design decision on the part
+ * of the Ruby developers. Exceptions are special Objects. They do not follow the
+ * rules of other Objects. Exceptions have 'mesg' and a 'bt' attribute. Note that
+ * these are not '@mesg' and '@bt'. They can not be set using the normal C or
+ * Ruby calls. The only way I have found to set the 'mesg' attribute is through
+ * the initializer. Unfortunately that means any subclass that provides a
+ * different initializer can not be automatically decoded. A way around this is
+ * to use a create function but this example shows an alternative.
+ *
  * @param [String|IO] json JSON String or an Object that responds to read()
  * @param [Hash] options load options (same as default_options)
  */
