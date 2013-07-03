@@ -48,7 +48,7 @@
 #define NUM_MAX		(FIXNUM_MAX >> 8)
 #endif
 #define EXP_MAX		1023
-#define I64_MAX		0x7FFFFFFFFFFFFFFFLL
+//#define I64_MAX		0x7FFFFFFFFFFFFFFFLL
 #define DEC_MAX		14
 
 static void
@@ -418,7 +418,7 @@ read_num(ParseInfo pi) {
 		zero_cnt = 0;
 	    }
 	    ni.i = ni.i * 10 + d;
-	    if (I64_MAX <= ni.i || DEC_MAX < ni.dec_cnt - zero_cnt) {
+	    if (LONG_MAX <= ni.i || DEC_MAX < ni.dec_cnt - zero_cnt) {
 		ni.big = 1;
 	    }
 	}
@@ -436,7 +436,7 @@ read_num(ParseInfo pi) {
 	    ni.dec_cnt++;
 	    ni.num = ni.num * 10 + d;
 	    ni.div *= 10;
-	    if (I64_MAX <= ni.div || DEC_MAX < ni.dec_cnt - zero_cnt) {
+	    if (LONG_MAX <= ni.div || DEC_MAX < ni.dec_cnt - zero_cnt) {
 		ni.big = 1;
 	    }
 	}
