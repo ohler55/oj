@@ -36,6 +36,7 @@
 #include "resolve.h"
 #include "hash.h"
 #include "odd.h"
+#include "encode.h"
 
 inline static long
 read_long(const char *str, size_t len) {
@@ -57,16 +58,11 @@ hash_key(ParseInfo pi, const char *key, size_t klen, char k1) {
 
     if (':' == k1) {
 	rkey = rb_str_new(key + 1, klen - 1);
-#if HAS_ENCODING_SUPPORT
-	rb_enc_associate(rkey, oj_utf8_encoding);
-#endif
+	rkey = oj_encode(rkey);
 	rkey = rb_funcall(rkey, oj_to_sym_id, 0);
     } else {
 	rkey = rb_str_new(key, klen);
-
-#if HAS_ENCODING_SUPPORT
-	rb_enc_associate(rkey, oj_utf8_encoding);
-#endif
+	rkey = oj_encode(rkey);
 	if (Yes == pi->options.sym_key) {
 	    rkey = rb_str_intern(rkey);
 	}
@@ -80,9 +76,7 @@ str_to_value(ParseInfo pi, const char *str, size_t len, const char *orig) {
 
     if (':' == *orig && 0 < len) {
 	rstr = rb_str_new(str + 1, len - 1);
-#if HAS_ENCODING_SUPPORT
-	rb_enc_associate(rstr, oj_utf8_encoding);
-#endif
+	rstr = oj_encode(rstr);
 	rstr = rb_funcall(rstr, oj_to_sym_id, 0);
     } else if (pi->circ_array && 3 <= len && '^' == *orig && 'r' == orig[1]) {
 	long	i = read_long(str + 2, len - 2);
@@ -94,9 +88,7 @@ str_to_value(ParseInfo pi, const char *str, size_t len, const char *orig) {
 	rstr = oj_circ_array_get(pi->circ_array, i);
     } else {
 	rstr = rb_str_new(str, len);
-#if HAS_ENCODING_SUPPORT
-	rb_enc_associate(rstr, oj_utf8_encoding);
-#endif
+	rstr = oj_encode(rstr);
     }
     return rstr;
 }
@@ -127,16 +119,12 @@ hat_cstr(ParseInfo pi, Val parent, const char *key, size_t klen, const char *str
 	    break;
 	case 'm':
 	    parent->val = rb_str_new(str + 1, len - 1);
-#if HAS_ENCODING_SUPPORT
-	    rb_enc_associate(parent->val, oj_utf8_encoding);
-#endif
+	    parent->val = oj_encode(parent->val);
 	    parent->val = rb_funcall(parent->val, oj_to_sym_id, 0);
 	    break;
 	case 's':
 	    parent->val = rb_str_new(str, len);
-#if HAS_ENCODING_SUPPORT
-	    rb_enc_associate(parent->val, oj_utf8_encoding);
-#endif
+	    parent->val = oj_encode(parent->val);
 	    break;
 	case 'c': // class
 	    parent->val = oj_name2class(pi, str, len, Yes == pi->options.auto_define);

@@ -42,6 +42,7 @@
 #define OJ_INFINITY (1.0/0.0)
 
 #include "oj.h"
+#include "encode.h"
 
 typedef struct _CX {
     VALUE	*cur;
@@ -150,9 +151,7 @@ call_add_value(VALUE handler, VALUE value, const char *key) {
 	k = Qnil;
     } else {
 	k = rb_str_new2(key);
-#if HAS_ENCODING_SUPPORT
-	rb_enc_associate(k, oj_utf8_encoding);
-#endif
+	k = oj_encode(k);
     }
     rb_funcall(handler, oj_add_value_id, 2, value, k);
 }
@@ -165,9 +164,7 @@ call_no_value(VALUE handler, ID method, const char *key) {
 	k = Qnil;
     } else {
 	k = rb_str_new2(key);
-#if HAS_ENCODING_SUPPORT
-	rb_enc_associate(k, oj_utf8_encoding);
-#endif
+	k = oj_encode(k);
     }
     rb_funcall(handler, method, 1, k);
 }
@@ -344,9 +341,7 @@ read_str(ParseInfo pi, const char *key) {
     if (pi->has_add_value) {
 	VALUE	s = rb_str_new2(text);
 
-#if HAS_ENCODING_SUPPORT
-	rb_enc_associate(s, oj_utf8_encoding);
-#endif
+	s = oj_encode(s);
 	call_add_value(pi->handler, s, key);
     }
 }

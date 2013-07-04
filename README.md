@@ -20,11 +20,9 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
-### Current Release 2.1.3
+### Current Release 2.1.4
 
- - Fixed bug that did not deserialize all attributes in an Exception subclass.
-
- - Added a sample to demonstrate how to write Exception subclasses that will automatically serialize and deserialize.
+ - Fixed Linux 32 bit rounding bug.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 

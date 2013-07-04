@@ -35,6 +35,7 @@
 #include "parse.h"
 #include "resolve.h"
 #include "hash.h"
+#include "encode.h"
 
 static void
 hash_set_cstr(ParseInfo pi, const char *key, size_t klen, const char *str, size_t len, const char *orig) {
@@ -54,10 +55,8 @@ hash_set_cstr(ParseInfo pi, const char *key, size_t klen, const char *str, size_
 	VALUE	rstr = rb_str_new(str, len);
 	VALUE	rkey = rb_str_new(key, klen);
 
-#if HAS_ENCODING_SUPPORT
-	rb_enc_associate(rstr, oj_utf8_encoding);
-	rb_enc_associate(rkey, oj_utf8_encoding);
-#endif
+	rstr = oj_encode(rstr);
+	rkey = oj_encode(rkey);
 	if (Yes == pi->options.sym_key) {
 	    rkey = rb_str_intern(rkey);
 	}

@@ -37,6 +37,7 @@
 
 #include "oj.h"
 #include "parse.h"
+#include "encode.h"
 
 inline static int
 respond_to(VALUE obj, ID method) {
@@ -108,9 +109,7 @@ static void
 add_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
     VALUE	rstr = rb_str_new(str, len);
 
-#if HAS_ENCODING_SUPPORT
-    rb_enc_associate(rstr, oj_utf8_encoding);
-#endif
+    rstr = oj_encode(rstr);
      rb_funcall((VALUE)pi->cbc, oj_add_value_id, 1, rstr);
 }
 
@@ -143,9 +142,7 @@ static VALUE
 hash_key(ParseInfo pi, const char *key, size_t klen) {
     VALUE	rkey = rb_str_new(key, klen);
 
-#if HAS_ENCODING_SUPPORT
-    rb_enc_associate(rkey, oj_utf8_encoding);
-#endif
+    rkey = oj_encode(rkey);
     if (Yes == pi->options.sym_key) {
 	rkey = rb_str_intern(rkey);
     }
@@ -156,9 +153,7 @@ static void
 hash_set_cstr(ParseInfo pi, const char *key, size_t klen, const char *str, size_t len, const char *orig) {
     VALUE	rstr = rb_str_new(str, len);
 
-#if HAS_ENCODING_SUPPORT
-    rb_enc_associate(rstr, oj_utf8_encoding);
-#endif
+    rstr = oj_encode(rstr);
     rb_funcall((VALUE)pi->cbc, oj_hash_set_id, 3, stack_peek(&pi->stack)->val, hash_key(pi, key, klen), rstr);
 }
 
@@ -176,9 +171,7 @@ static void
 array_append_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
     VALUE	rstr = rb_str_new(str, len);
 
-#if HAS_ENCODING_SUPPORT
-    rb_enc_associate(rstr, oj_utf8_encoding);
-#endif
+    rstr = oj_encode(rstr);
     rb_funcall((VALUE)pi->cbc, oj_array_append_id, 2, stack_peek(&pi->stack)->val, rstr);
 }
 

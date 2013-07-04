@@ -40,6 +40,7 @@
 #include "parse.h"
 #include "hash.h"
 #include "odd.h"
+#include "encode.h"
 
 typedef struct _YesNoOpt {
     VALUE	sym;
@@ -60,6 +61,7 @@ ID	oj_fileno_id;
 ID	oj_hash_end_id;
 ID	oj_hash_set_id;
 ID	oj_hash_start_id;
+ID	oj_iconv_id;
 ID	oj_instance_variables_id;
 ID	oj_json_create_id;
 ID	oj_new_id;
@@ -118,6 +120,8 @@ static VALUE	mimic = Qnil;
 
 #if HAS_ENCODING_SUPPORT
 rb_encoding	*oj_utf8_encoding = 0;
+#else
+VALUE		oj_utf8_encoding = Qnil;
 #endif
 
 #if SAFE_CACHE
@@ -678,9 +682,7 @@ dump(int argc, VALUE *argv, VALUE self) {
 	rb_raise(rb_eNoMemError, "Not enough memory.");
     }
     rstr = rb_str_new2(out.buf);
-#if HAS_ENCODING_SUPPORT
-    rb_enc_associate(rstr, oj_utf8_encoding);
-#endif
+    rstr = oj_encode(rstr);
     if (out.allocated) {
 	xfree(out.buf);
     }
@@ -727,9 +729,7 @@ mimic_dump(int argc, VALUE *argv, VALUE self) {
 	rb_raise(rb_eNoMemError, "Not enough memory.");
     }
     rstr = rb_str_new2(out.buf);
-#if HAS_ENCODING_SUPPORT
-    rb_enc_associate(rstr, oj_utf8_encoding);
-#endif
+    rstr = oj_encode(rstr);
     if (2 <= argc && Qnil != argv[1]) {
 	VALUE	io = argv[1];
 	VALUE	args[1];
@@ -872,9 +872,7 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
 	rb_raise(rb_eNoMemError, "Not enough memory.");
     }
     rstr = rb_str_new2(out.buf);
-#if HAS_ENCODING_SUPPORT
-    rb_enc_associate(rstr, oj_utf8_encoding);
-#endif
+    rstr = oj_encode(rstr);
     if (out.allocated) {
 	xfree(out.buf);
     }
@@ -1072,6 +1070,23 @@ hash_test(VALUE self) {
 }
 */
 
+#if !HAS_ENCODING_SUPPORT
+static VALUE
+iconv_encoder(VALUE x) {
+    VALUE	iconv;
+
+    rb_require("iconv");
+    iconv = rb_const_get(rb_cObject, rb_intern("Iconv"));
+
+    return rb_funcall(iconv, rb_intern("new"), 2, rb_str_new2("ASCII//TRANSLIT"), rb_str_new2("UTF-8"));
+}
+
+static VALUE
+iconv_rescue(VALUE x) {
+    return Qnil;
+}
+#endif
+
 void Init_oj() {
     Oj = rb_define_module("Oj");
 
@@ -1079,6 +1094,13 @@ void Init_oj() {
     rb_require("date");
     rb_require("bigdecimal");
     rb_require("stringio");
+#if HAS_ENCODING_SUPPORT
+    oj_utf8_encoding = rb_enc_find("UTF-8");
+#else
+    // need an option to turn this on
+    oj_utf8_encoding = rb_rescue(iconv_encoder, Qnil, iconv_rescue, Qnil);
+    oj_utf8_encoding = Qnil;
+#endif
 
     //rb_define_module_function(Oj, "hash_test", hash_test, 0);
 
@@ -1109,6 +1131,7 @@ void Init_oj() {
     oj_hash_end_id = rb_intern("hash_end");
     oj_hash_set_id = rb_intern("hash_set");
     oj_hash_start_id = rb_intern("hash_start");
+    oj_iconv_id = rb_intern("iconv");
     oj_instance_variables_id = rb_intern("instance_variables");
     oj_json_create_id = rb_intern("json_create");
     oj_new_id = rb_intern("new");
@@ -1157,9 +1180,6 @@ void Init_oj() {
     oj_slash_string = rb_str_new2("/");			rb_gc_register_address(&oj_slash_string);
 
     oj_default_options.mode = ObjectMode;
-#if HAS_ENCODING_SUPPORT
-    oj_utf8_encoding = rb_enc_find("UTF-8");
-#endif
 
     oj_hash_init();
     oj_odd_init();

@@ -174,6 +174,8 @@ extern VALUE	Oj;
 extern struct _Options	oj_default_options;
 #if HAS_ENCODING_SUPPORT
 extern rb_encoding	*oj_utf8_encoding;
+#else
+extern VALUE		oj_utf8_encoding;
 #endif
 
 extern VALUE	oj_bag_class;
@@ -197,6 +199,7 @@ extern ID	oj_fileno_id;
 extern ID	oj_hash_end_id;
 extern ID	oj_hash_set_id;
 extern ID	oj_hash_start_id;
+extern ID	oj_iconv_id;
 extern ID	oj_instance_variables_id;
 extern ID	oj_json_create_id;
 extern ID	oj_new_id;

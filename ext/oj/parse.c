@@ -48,7 +48,6 @@
 #define NUM_MAX		(FIXNUM_MAX >> 8)
 #endif
 #define EXP_MAX		1023
-//#define I64_MAX		0x7FFFFFFFFFFFFFFFLL
 #define DEC_MAX		14
 
 static void
