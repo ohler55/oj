@@ -1138,7 +1138,7 @@ dump_data_comp(VALUE obj, int depth, Out out) {
 	    case RubyTime:	dump_ruby_time(obj, out);	break;
 	    case XmlTime:	dump_xml_time(obj, out);	break;
 	    case UnixTime:
-	    default:	dump_time(obj, out);		break;
+	    default:		dump_time(obj, out);		break;
 	    }
 	} else if (oj_bigdecimal_class == clas) {
 	    VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
