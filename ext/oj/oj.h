@@ -165,6 +165,7 @@ extern void	oj_parse_options(VALUE ropts, Options copts);
 
 extern void	oj_dump_obj_to_json(VALUE obj, Options copts, Out out);
 extern void	oj_write_obj_to_file(VALUE obj, const char *path, Options copts);
+extern void	oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts);
 extern void	oj_dump_leaf_to_json(Leaf leaf, Options copts, Out out);
 extern void	oj_write_leaf_to_file(Leaf leaf, const char *path, Options copts);
 
@@ -214,6 +215,7 @@ extern ID	oj_tv_nsec_id;
 extern ID	oj_tv_sec_id;
 extern ID	oj_tv_usec_id;
 extern ID	oj_utc_offset_id;
+extern ID	oj_write_id;
 
 #if SAFE_CACHE
 extern pthread_mutex_t	oj_cache_mutex;

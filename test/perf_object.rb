@@ -78,7 +78,6 @@ if files.empty?
   File.open('sample.marshal', 'w') { |f| f.write($mars) }
 else
   puts "loading and parsing #{files}\n\n"
-  # TBD change to allow xml and json
   data = files.map do |f|
     $xml = File.read(f)
     $obj = Ox.load($xml);

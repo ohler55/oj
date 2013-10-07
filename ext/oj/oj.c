@@ -712,6 +712,27 @@ to_file(int argc, VALUE *argv, VALUE self) {
     return Qnil;
 }
 
+/* call-seq: to_stream(io, obj, options)
+ *
+ * Dumps an Object to the specified IO stream.
+ * @param [IO] io IO stream to write the JSON document to
+ * @param [Object] obj Object to serialize as an JSON document String
+ * @param [Hash] options formating options
+ * @param [Fixnum] :indent format expected
+ * @param [true|false] :circular allow circular references, default: false
+ */
+static VALUE
+to_stream(int argc, VALUE *argv, VALUE self) {
+    struct _Options	copts = oj_default_options;
+    
+    if (3 == argc) {
+	oj_parse_options(argv[2], &copts);
+    }
+    oj_write_obj_to_stream(argv[1], *argv, &copts);
+
+    return Qnil;
+}
+
 // Mimic JSON section
 
 static VALUE
@@ -1117,6 +1138,7 @@ void Init_oj() {
 
     rb_define_module_function(Oj, "dump", dump, -1);
     rb_define_module_function(Oj, "to_file", to_file, -1);
+    rb_define_module_function(Oj, "to_stream", to_stream, -1);
 
     rb_define_module_function(Oj, "saj_parse", oj_saj_parse, -1);
     rb_define_module_function(Oj, "sc_parse", oj_sc_parse, -1);

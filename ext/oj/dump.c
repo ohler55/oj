@@ -37,6 +37,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <unistd.h>
+#include <errno.h>
 
 #include "oj.h"
 #include "cache8.h"
@@ -1671,6 +1673,7 @@ oj_write_obj_to_file(VALUE obj, const char *path, Options copts) {
     struct _Out out;
     size_t	size;
     FILE	*f;
+    int		ok;
 
     out.buf = buf;
     out.end = buf + sizeof(buf) - 10;
@@ -1678,17 +1681,62 @@ oj_write_obj_to_file(VALUE obj, const char *path, Options copts) {
     oj_dump_obj_to_json(obj, copts, &out);
     size = out.cur - out.buf;
     if (0 == (f = fopen(path, "w"))) {
+	if (out.allocated) {
+	    xfree(out.buf);
+	}
 	rb_raise(rb_eIOError, "%s\n", strerror(errno));
     }
-    if (size != fwrite(out.buf, 1, size, f)) {
-	int	err = ferror(f);
-
-	rb_raise(rb_eIOError, "Write failed. [%d:%s]\n", err, strerror(err));
-    }
+    ok = (size == fwrite(out.buf, 1, size, f));
     if (out.allocated) {
 	xfree(out.buf);
     }
     fclose(f);
+    if (!ok) {
+	int	err = ferror(f);
+
+	rb_raise(rb_eIOError, "Write failed. [%d:%s]\n", err, strerror(err));
+    }
+}
+
+void
+oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
+    char	buf[4096];
+    struct _Out out;
+    size_t	size;
+    VALUE	clas = rb_obj_class(stream);
+    VALUE	s;
+
+    out.buf = buf;
+    out.end = buf + sizeof(buf) - 10;
+    out.allocated = 0;
+    oj_dump_obj_to_json(obj, copts, &out);
+    size = out.cur - out.buf;
+    if (oj_stringio_class == clas) {
+	rb_funcall(stream, oj_write_id, 1, rb_str_new(out.buf, size));
+#ifndef JRUBY_RUBY
+#if !IS_WINDOWS
+    } else if (rb_respond_to(stream, oj_fileno_id) && Qnil != (s = rb_funcall(stream, oj_fileno_id, 0))) {
+	    int		fd = FIX2INT(s);
+
+	    if (size != write(fd, out.buf, size)) {
+		if (out.allocated) {
+		    xfree(out.buf);
+		}
+		rb_raise(rb_eIOError, "Write failed. [%d:%s]\n", errno, strerror(errno));
+	    }
+#endif
+#endif
+    } else if (rb_respond_to(stream, oj_write_id)) {
+	s = rb_funcall(stream, oj_write_id, 1, rb_str_new(out.buf, size));
+    } else {
+	if (out.allocated) {
+	    xfree(out.buf);
+	}
+	rb_raise(rb_eArgError, "to_stream() expected an IO Object.");
+    }
+    if (out.allocated) {
+	xfree(out.buf);
+    }
 }
 
 // dump leaf functions

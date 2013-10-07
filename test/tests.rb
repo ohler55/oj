@@ -933,29 +933,25 @@ class Juice < ::Test::Unit::TestCase
 
 # Stream IO
   def test_io_string
-    json = %{{
-  "x":true,
-  "y":58,
-  "z": [1,2,3]
-}
-}
-    input = StringIO.new(json)
+    src = { 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}
+    output = StringIO.open("", "w+")
+    Oj.to_stream(output, src)
+
+    input = StringIO.new(output.string())
     obj = Oj.load(input, :mode => :strict)
-    assert_equal({ 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}, obj)
+    assert_equal(src, obj)
   end
 
   def test_io_file
+    src = { 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}
     filename = 'open_file_test.json'
-    File.open(filename, 'w') { |f| f.write(%{{
-  "x":true,
-  "y":58,
-  "z": [1,2,3]
-}
-}) }
+    File.open(filename, "w") { |f|
+      Oj.to_stream(f, src)
+    }
     f = File.new(filename)
     obj = Oj.load(f, :mode => :strict)
     f.close()
-    assert_equal({ 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}, obj)
+    assert_equal(src, obj)
   end
 
 # symbol_keys option
