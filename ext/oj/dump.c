@@ -586,7 +586,9 @@ dump_array(VALUE a, int depth, Out out) {
 	return;
     }
 
+#if HAS_GC_GUARD
     RB_GC_GUARD(a);
+#endif
     np = RARRAY_PTR(a);
     cnt = (int)RARRAY_LEN(a);
     *out->cur++ = '[';
@@ -1201,7 +1203,9 @@ dump_data_obj(VALUE obj, int depth, Out out) {
 
 static void
 dump_obj_comp(VALUE obj, int depth, Out out) {
+#if HAS_GC_GUARD
     RB_GC_GUARD(obj);
+#endif
     if (rb_respond_to(obj, oj_to_hash_id)) {
 	VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
  

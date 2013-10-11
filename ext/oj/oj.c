@@ -1114,6 +1114,9 @@ void Init_oj() {
     rb_require("time");
     rb_require("date");
     rb_require("bigdecimal");
+#if NEEDS_RATIONAL
+    rb_require("rational");
+#endif
     rb_require("stringio");
 #if HAS_ENCODING_SUPPORT
     oj_utf8_encoding = rb_enc_find("UTF-8");
