@@ -1007,6 +1007,9 @@ mimic_create_id(VALUE self, VALUE id) {
  * raise an Exception but will not have any effect. The method can also be
  * called after the json gem is loaded. The necessary methods on the json gem
  * will be replaced with Oj methods.
+ *
+ * Note that this also sets the default options of :mode to :compat and
+ * :ascii_only to true.
  */
 static VALUE
 define_mimic_json(int argc, VALUE *argv, VALUE self) {
