@@ -1709,7 +1709,7 @@ void
 oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
     char	buf[4096];
     struct _Out out;
-    size_t	size;
+    ssize_t	size;
     VALUE	clas = rb_obj_class(stream);
     VALUE	s;
 
