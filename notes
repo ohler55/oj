@@ -4,6 +4,10 @@
 ^c^s show subtree
 
 
+- #102 Support NaN and -NaN
+- #104 require rational on 1.8.7
+- #106 added comment regarding changing of defaults with mimic
+
 ---------------------------
 Tried a separate thread for the parser and the results were poor. The parsing is 10% to 15% of the total so splitting
 ruby calls and c does not help much and the overhead of swapping data was too high. It was not possible to split ruby

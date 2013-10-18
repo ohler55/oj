@@ -105,6 +105,20 @@ class Range
   end
 end # Range
 
+# define the symbol
+class ActiveSupport
+end
+
+class RailsLike
+  attr_accessor :x
+  def initialize(x)
+    @x = x
+  end
+  def to_json(options = nil)
+    Oj.dump(self, :mode => :compat)
+  end
+end # RailsLike
+
 class Juice < ::Test::Unit::TestCase
 
   def test0_get_options
@@ -1000,6 +1014,14 @@ class Juice < ::Test::Unit::TestCase
 }
     obj = Oj.load(json, :mode => :strict)
     assert_equal({ 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}, obj)
+  end
+
+# Rails re-call test. Active support recalls the json dumper when the to_json
+# method is called. This mimics that and verifies Oj detects it.
+  def test_rails_like
+    obj = RailsLike.new(3)
+    json = Oj.dump(obj, :mode => :compat)
+    assert_equal('{"x":3}', json)
   end
 
   def dump_and_load(obj, trace=false)

@@ -20,9 +20,14 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
-### Current Release 2.1.6
+### Current Release 2.1.7
 
- - Added Oj.to_stream() for dumping JSON to an IO object.
+ - TBD support NaN #102
+
+ - Added require for rational if the Ruby version is 1.8.7 to address issue #104.
+
+ - Added Rails re-call of Oj.dump in the to_json() method which caused loops with Rational objects to fix issue #108 and #105.
+
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 

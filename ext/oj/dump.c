@@ -105,6 +105,10 @@ static void	dump_leaf_float(Leaf leaf, Out out);
 static void	dump_leaf_array(Leaf leaf, int depth, Out out);
 static void	dump_leaf_hash(Leaf leaf, int depth, Out out);
 
+// These are used to detect rails re-call of Oj.dump() inside the to_json()
+// method. It is not thread safe.
+static VALUE	last_obj = Qundef;
+static int	oj_rails_hack = -1;
 
 static const char	hex_chars[17] = "0123456789abcdef";
 
@@ -1125,10 +1129,16 @@ dump_data_comp(VALUE obj, int depth, Out out) {
 	dump_hash(h, depth, out->opts->mode, out);
     } else if (rb_respond_to(obj, oj_as_json_id) && obj != (o2 = rb_funcall(obj, oj_as_json_id, 0))) {
 	dump_val(o2, depth, out);
-    } else if (rb_respond_to(obj, oj_to_json_id)) {
-	VALUE		rs = rb_funcall(obj, oj_to_json_id, 0);
-	const char	*s = StringValuePtr(rs);
-	int		len = (int)RSTRING_LEN(rs);
+    } else if (rb_respond_to(obj, oj_to_json_id) && (!oj_rails_hack || last_obj != obj)) {
+	VALUE		rs;
+	const char	*s;
+	int		len;
+
+	last_obj = obj;
+	rs = rb_funcall(obj, oj_to_json_id, 0);
+	last_obj = Qundef;
+	s = StringValuePtr(rs);
+	len = (int)RSTRING_LEN(rs);
 
 	if (out->end - out->cur <= len + 1) {
 	    grow(out, len);
@@ -1215,10 +1225,16 @@ dump_obj_comp(VALUE obj, int depth, Out out) {
 	dump_hash(h, depth, out->opts->mode, out);
     } else if (rb_respond_to(obj, oj_as_json_id)) {
 	dump_val(rb_funcall(obj, oj_as_json_id, 0), depth, out);
-    } else if (rb_respond_to(obj, oj_to_json_id)) {
-	VALUE		rs = rb_funcall(obj, oj_to_json_id, 0);
-	const char	*s = StringValuePtr(rs);
-	int		len = (int)RSTRING_LEN(rs);
+    } else if (rb_respond_to(obj, oj_to_json_id) && (!oj_rails_hack || last_obj != obj)) {
+	VALUE		rs;
+	const char	*s;
+	int		len;
+
+	last_obj = obj;
+	rs = rb_funcall(obj, oj_to_json_id, 0);
+	last_obj = Qundef;
+	s = StringValuePtr(rs);
+	len = (int)RSTRING_LEN(rs);
 
 	if (out->end - out->cur <= len + 1) {
 	    grow(out, len);
@@ -1668,6 +1684,9 @@ oj_dump_obj_to_json(VALUE obj, Options copts, Out out) {
 	oj_cache8_new(&out->circ_cache);
     }
     out->indent = copts->indent;
+    if (0 > oj_rails_hack) {
+	oj_rails_hack = (rb_const_defined_at(rb_cObject, rb_intern("ActiveSupport")));
+    }
     dump_val(obj, 0, out);
     if (Yes == copts->circular) {
 	oj_cache8_delete(out->circ_cache);
