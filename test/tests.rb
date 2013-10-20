@@ -199,6 +199,12 @@ class Juice < ::Test::Unit::TestCase
     dump_and_load(2.48e16, false)
     dump_and_load(2.48e100 * 1.0e10, false)
     dump_and_load(-2.48e100 * 1.0e10, false)
+    dump_and_load(1/0.0, false)
+    # NaN does not always == NaN
+    json = Oj.dump(0/0.0)
+    assert_equal('NaN', json)
+    loaded = Oj.load(json);
+    assert_equal(true, loaded.nan?)
   end
 
   def test_string

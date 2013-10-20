@@ -387,6 +387,7 @@ read_num(ParseInfo pi) {
     ni.dec_cnt = 0;
     ni.big = 0;
     ni.infinity = 0;
+    ni.nan = 0;
     ni.neg = 0;
 
     if ('-' == *pi->cur) {
@@ -402,66 +403,73 @@ read_num(ParseInfo pi) {
 	}
 	pi->cur += 8;
 	ni.infinity = 1;
-	return;
-    }
-    for (; '0' <= *pi->cur && *pi->cur <= '9'; pi->cur++) {
-	ni.dec_cnt++;
-	if (ni.big) {
-	    ni.big++;
-	} else {
-	    int	d = (*pi->cur - '0');
-
-	    if (0 == d) {
-		zero_cnt++;
-	    } else {
-		zero_cnt = 0;
-	    }
-	    ni.i = ni.i * 10 + d;
-	    if (LONG_MAX <= ni.i || DEC_MAX < ni.dec_cnt - zero_cnt) {
-		ni.big = 1;
-	    }
+    } else if ('N' == *pi->cur || 'n' == *pi->cur) {
+	if ('a' != pi->cur[1] || ('N' != pi->cur[2] && 'n' != pi->cur[2])) {
+	    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number or other value");
+	    return;
 	}
-    }
-    if ('.' == *pi->cur) {
-	pi->cur++;
+	pi->cur += 3;
+	ni.nan = 1;
+    } else {
 	for (; '0' <= *pi->cur && *pi->cur <= '9'; pi->cur++) {
-	    int	d = (*pi->cur - '0');
-
-	    if (0 == d) {
-		zero_cnt++;
-	    } else {
-		zero_cnt = 0;
-	    }
 	    ni.dec_cnt++;
-	    ni.num = ni.num * 10 + d;
-	    ni.div *= 10;
-	    if (LONG_MAX <= ni.div || DEC_MAX < ni.dec_cnt - zero_cnt) {
-		ni.big = 1;
-	    }
-	}
-    }
-    if ('e' == *pi->cur || 'E' == *pi->cur) {
-	int	eneg = 0;
+	    if (ni.big) {
+		ni.big++;
+	    } else {
+		int	d = (*pi->cur - '0');
 
-	pi->cur++;
-	if ('-' == *pi->cur) {
-	    pi->cur++;
-	    eneg = 1;
-	} else if ('+' == *pi->cur) {
-	    pi->cur++;
-	}
-	for (; '0' <= *pi->cur && *pi->cur <= '9'; pi->cur++) {
-	    ni.exp = ni.exp * 10 + (*pi->cur - '0');
-	    if (EXP_MAX <= ni.exp) {
-		ni.big = 1;
+		if (0 == d) {
+		    zero_cnt++;
+		} else {
+		    zero_cnt = 0;
+		}
+		ni.i = ni.i * 10 + d;
+		if (LONG_MAX <= ni.i || DEC_MAX < ni.dec_cnt - zero_cnt) {
+		    ni.big = 1;
+		}
 	    }
 	}
-	if (eneg) {
-	    ni.exp = -ni.exp;
+	if ('.' == *pi->cur) {
+	    pi->cur++;
+	    for (; '0' <= *pi->cur && *pi->cur <= '9'; pi->cur++) {
+		int	d = (*pi->cur - '0');
+
+		if (0 == d) {
+		    zero_cnt++;
+		} else {
+		    zero_cnt = 0;
+		}
+		ni.dec_cnt++;
+		ni.num = ni.num * 10 + d;
+		ni.div *= 10;
+		if (LONG_MAX <= ni.div || DEC_MAX < ni.dec_cnt - zero_cnt) {
+		    ni.big = 1;
+		}
+	    }
 	}
+	if ('e' == *pi->cur || 'E' == *pi->cur) {
+	    int	eneg = 0;
+
+	    pi->cur++;
+	    if ('-' == *pi->cur) {
+		pi->cur++;
+		eneg = 1;
+	    } else if ('+' == *pi->cur) {
+		pi->cur++;
+	    }
+	    for (; '0' <= *pi->cur && *pi->cur <= '9'; pi->cur++) {
+		ni.exp = ni.exp * 10 + (*pi->cur - '0');
+		if (EXP_MAX <= ni.exp) {
+		    ni.big = 1;
+		}
+	    }
+	    if (eneg) {
+		ni.exp = -ni.exp;
+	    }
+	}
+	ni.dec_cnt -= zero_cnt;
+	ni.len = pi->cur - ni.str;
     }
-    ni.dec_cnt -= zero_cnt;
-    ni.len = pi->cur - ni.str;
     if (Yes == pi->options.bigdec_load) {
 	ni.big = 1;
     }
@@ -603,6 +611,7 @@ oj_parse2(ParseInfo pi) {
 	case '8':
 	case '9':
 	case 'I':
+	case 'N':
 	    pi->cur--;
 	    read_num(pi);
 	    break;
@@ -613,7 +622,12 @@ oj_parse2(ParseInfo pi) {
 	    read_false(pi);
 	    break;
 	case 'n':
-	    read_null(pi);
+	    if ('u' == *pi->cur) {
+		read_null(pi);
+	    } else {
+		pi->cur--;
+		read_num(pi);
+	    }
 	    break;
 	case '/':
 	    skip_comment(pi);
@@ -641,6 +655,8 @@ oj_num_as_value(NumInfo ni) {
 	} else {
 	    rnum = rb_float_new(OJ_INFINITY);
 	}
+    } else if (ni->nan) {
+	rnum = rb_float_new(NAN);
     } else if (1 == ni->div && 0 == ni->exp) { // fixnum
 	if (ni->big) {
 	    if (256 > ni->len) {

@@ -433,6 +433,9 @@ dump_float(VALUE obj, Out out) {
     } else if (-OJ_INFINITY == d) {
 	strcpy(buf, "-Infinity");
 	cnt = 9;
+    } else if (isnan(d)) {
+	strcpy(buf, "NaN");
+	cnt = 3;
     } else if (d == (double)(long long int)d) {
 	cnt = sprintf(buf, "%.1f", d); // used sprintf due to bug in snprintf
     } else {

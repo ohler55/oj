@@ -22,12 +22,11 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 ### Current Release 2.1.7
 
- - TBD support NaN #102
+ - Added support for NaN and -NaN to address issue #102. This is not according to the JSON spec but seems to be expected.
 
  - Added require for rational if the Ruby version is 1.8.7 to address issue #104.
 
  - Added Rails re-call of Oj.dump in the to_json() method which caused loops with Rational objects to fix issue #108 and #105.
-
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 

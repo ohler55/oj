@@ -3,7 +3,7 @@
 export JRUBY_OPTS="-Xcext.enabled=true"
 
 for ruby in \
- 1.8.7-p358\
+ 1.8.7-p334\
  1.9.2-p290\
  jruby-1.6.7\
  jruby-1.7.0\

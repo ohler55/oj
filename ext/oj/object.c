@@ -199,7 +199,7 @@ hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, VALUE value) {
 #if HAS_ENCODING_SUPPORT
 	s = rb_struct_alloc_noinit(sc);
 #else
-	s = rb_struct_new(sc);
+	s = rb_struct_new(sc, Qnil, Qnil, Qnil, Qnil, Qnil, Qnil, Qnil, Qnil, Qnil, Qnil, Qnil, Qnil, Qnil, Qnil, Qnil, Qnil, Qnil, Qnil, Qnil, Qnil);
 #endif
 	sv = RSTRUCT_PTR(s);
 	if (RSTRUCT_LEN(s) < len - 1) {
