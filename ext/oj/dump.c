@@ -592,10 +592,6 @@ dump_array(VALUE a, int depth, Out out) {
     if (id < 0) {
 	return;
     }
-
-#if HAS_GC_GUARD
-    RB_GC_GUARD(a);
-#endif
     np = RARRAY_PTR(a);
     cnt = (int)RARRAY_LEN(a);
     *out->cur++ = '[';
@@ -1000,7 +996,7 @@ dump_time(VALUE obj, Out out) {
 
 static void
 dump_ruby_time(VALUE obj, Out out) {
-    VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
     dump_cstr(StringValuePtr(rstr), RSTRING_LEN(rstr), 0, 0, out);
 }
@@ -1098,7 +1094,7 @@ dump_data_strict(VALUE obj, Out out) {
     VALUE	clas = rb_obj_class(obj);
 
     if (oj_bigdecimal_class == clas) {
-	VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+	volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
 	dump_raw(StringValuePtr(rstr), RSTRING_LEN(rstr), out);
     } else {
@@ -1111,7 +1107,7 @@ dump_data_null(VALUE obj, Out out) {
     VALUE	clas = rb_obj_class(obj);
 
     if (oj_bigdecimal_class == clas) {
-	VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+	volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
 	dump_raw(StringValuePtr(rstr), RSTRING_LEN(rstr), out);
     } else {
@@ -1121,10 +1117,10 @@ dump_data_null(VALUE obj, Out out) {
 
 static void
 dump_data_comp(VALUE obj, int depth, Out out) {
-    VALUE	o2;
+    volatile VALUE	o2;
 
     if (rb_respond_to(obj, oj_to_hash_id)) {
-	VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
+	volatile VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
  
 	if (T_HASH != rb_type(h)) {
 	    rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
@@ -1133,7 +1129,7 @@ dump_data_comp(VALUE obj, int depth, Out out) {
     } else if (rb_respond_to(obj, oj_as_json_id) && obj != (o2 = rb_funcall(obj, oj_as_json_id, 0))) {
 	dump_val(o2, depth, out);
     } else if (rb_respond_to(obj, oj_to_json_id) && (!oj_rails_hack || last_obj != obj)) {
-	VALUE		rs;
+	volatile VALUE	rs;
 	const char	*s;
 	int		len;
 
@@ -1160,7 +1156,7 @@ dump_data_comp(VALUE obj, int depth, Out out) {
 	    default:		dump_time(obj, out);		break;
 	    }
 	} else if (oj_bigdecimal_class == clas) {
-	    VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
 	    if (Yes == out->opts->bigdec_as_num) {
 		dump_raw(StringValuePtr(rstr), RSTRING_LEN(rstr), out);
@@ -1168,9 +1164,8 @@ dump_data_comp(VALUE obj, int depth, Out out) {
 		dump_cstr(StringValuePtr(rstr), RSTRING_LEN(rstr), 0, 0, out);
 	    }
 	} else {
-	    VALUE	rstr;
+	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-	    rstr = rb_funcall(obj, oj_to_s_id, 0);
 	    dump_cstr(StringValuePtr(rstr), RSTRING_LEN(rstr), 0, 0, out);
 	}
     }
@@ -1198,7 +1193,7 @@ dump_data_obj(VALUE obj, int depth, Out out) {
 
 	if (0 == odd) {
 	    if (oj_bigdecimal_class == clas) {
-		VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+		volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 		
 		if (Yes == out->opts->bigdec_as_num) {
 		    dump_raw(StringValuePtr(rstr), RSTRING_LEN(rstr), out);
@@ -1216,20 +1211,19 @@ dump_data_obj(VALUE obj, int depth, Out out) {
 
 static void
 dump_obj_comp(VALUE obj, int depth, Out out) {
-#if HAS_GC_GUARD
-    RB_GC_GUARD(obj);
-#endif
     if (rb_respond_to(obj, oj_to_hash_id)) {
-	VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
+	volatile VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
  
 	if (T_HASH != rb_type(h)) {
 	    rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
 	}
 	dump_hash(h, depth, out->opts->mode, out);
     } else if (rb_respond_to(obj, oj_as_json_id)) {
-	dump_val(rb_funcall(obj, oj_as_json_id, 0), depth, out);
+	volatile VALUE	js = rb_funcall(obj, oj_as_json_id, 0);
+
+	dump_val(js, depth, out);
     } else if (rb_respond_to(obj, oj_to_json_id) && (!oj_rails_hack || last_obj != obj)) {
-	VALUE		rs;
+	volatile VALUE	rs;
 	const char	*s;
 	int		len;
 
@@ -1249,7 +1243,7 @@ dump_obj_comp(VALUE obj, int depth, Out out) {
 	VALUE	clas = rb_obj_class(obj);
 
 	if (oj_bigdecimal_class == clas) {
-	    VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
 	    if (Yes == out->opts->bigdec_as_num) {
 		dump_raw(StringValuePtr(rstr), RSTRING_LEN(rstr), out);
@@ -1257,7 +1251,7 @@ dump_obj_comp(VALUE obj, int depth, Out out) {
 		dump_cstr(StringValuePtr(rstr), RSTRING_LEN(rstr), 0, 0, out);
 	    }
 	} else if (oj_datetime_class == clas || oj_date_class == clas) {
-	    VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
 	    dump_cstr(StringValuePtr(rstr), RSTRING_LEN(rstr), 0, 0, out);
 	} else {
@@ -1283,7 +1277,7 @@ dump_obj_obj(VALUE obj, int depth, Out out) {
 
 	if (0 == odd) {
 	    if (oj_bigdecimal_class == clas) {
-		VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+		volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
 		dump_raw(StringValuePtr(rstr), RSTRING_LEN(rstr), out);
 	    } else {
@@ -1375,7 +1369,7 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 #if HAS_IVAR_HELPERS
 	cnt = (int)rb_ivar_count(obj);
 #else
-	VALUE		vars = rb_funcall2(obj, oj_instance_variables_id, 0, 0);
+	volatile VALUE	vars = rb_funcall2(obj, oj_instance_variables_id, 0, 0);
 	VALUE		*np = RARRAY_PTR(vars);
 	ID		vid;
 	const char	*attr;
@@ -1424,6 +1418,8 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 #endif
 #if HAS_EXCEPTION_MAGIC
 	if (Qtrue == rb_obj_is_kind_of(obj, rb_eException)) {
+	    volatile VALUE	rv;
+
 	    if (',' != *(out->cur - 1)) {
 		*out->cur++ = ',';
 	    }
@@ -1434,7 +1430,8 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	    fill_indent(out, d2);
 	    dump_cstr("~mesg", 5, 0, 0, out);
 	    *out->cur++ = ':';
-	    dump_val(rb_funcall2(obj, rb_intern("message"), 0, 0), d2, out);
+	    rv = rb_funcall2(obj, rb_intern("message"), 0, 0);
+	    dump_val(rv, d2, out);
 	    if (out->end - out->cur <= 2) {
 		grow(out, 2);
 	    }
@@ -1446,7 +1443,8 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	    fill_indent(out, d2);
 	    dump_cstr("~bt", 3, 0, 0, out);
 	    *out->cur++ = ':';
-	    dump_val(rb_funcall2(obj, rb_intern("backtrace"), 0, 0), d2, out);
+	    rv = rb_funcall2(obj, rb_intern("backtrace"), 0, 0);
+	    dump_val(rv, d2, out);
 	    if (out->end - out->cur <= 2) {
 		grow(out, 2);
 	    }
@@ -1463,17 +1461,19 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 static void
 dump_struct_comp(VALUE obj, int depth, Out out) {
     if (rb_respond_to(obj, oj_to_hash_id)) {
-	VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
+	volatile VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
  
 	if (T_HASH != rb_type(h)) {
 	    rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
 	}
 	dump_hash(h, depth, out->opts->mode, out);
     } else if (rb_respond_to(obj, oj_to_json_id)) {
-	VALUE		rs = rb_funcall(obj, oj_to_json_id, 0);
-	const char	*s = StringValuePtr(rs);
-	int		len = (int)RSTRING_LEN(rs);
+	volatile VALUE	rs = rb_funcall(obj, oj_to_json_id, 0);
+	const char	*s;
+	int		len;
 
+	s = StringValuePtr(rs);
+	len = (int)RSTRING_LEN(rs);
 	if (out->end - out->cur <= len) {
 	    grow(out, len);
 	}
@@ -1530,11 +1530,11 @@ dump_struct_obj(VALUE obj, int depth, Out out) {
 
 static void
 dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
-    ID		*idp;
-    VALUE	v;
-    const char	*name;
-    size_t	size;
-    int		d2 = depth + 1;
+    ID			*idp;
+    volatile VALUE	v;
+    const char		*name;
+    size_t		size;
+    int			d2 = depth + 1;
 
     if (out->end - out->cur <= 2) {
 	grow(out, 2);
@@ -1745,18 +1745,18 @@ oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
 #ifndef JRUBY_RUBY
 #if !IS_WINDOWS
     } else if (rb_respond_to(stream, oj_fileno_id) && Qnil != (s = rb_funcall(stream, oj_fileno_id, 0))) {
-	    int		fd = FIX2INT(s);
+	int	fd = FIX2INT(s);
 
-	    if (size != write(fd, out.buf, size)) {
-		if (out.allocated) {
-		    xfree(out.buf);
-		}
-		rb_raise(rb_eIOError, "Write failed. [%d:%s]\n", errno, strerror(errno));
+	if (size != write(fd, out.buf, size)) {
+	    if (out.allocated) {
+		xfree(out.buf);
 	    }
+	    rb_raise(rb_eIOError, "Write failed. [%d:%s]\n", errno, strerror(errno));
+	}
 #endif
 #endif
     } else if (rb_respond_to(stream, oj_write_id)) {
-	s = rb_funcall(stream, oj_write_id, 1, rb_str_new(out.buf, size));
+	rb_funcall(stream, oj_write_id, 1, rb_str_new(out.buf, size));
     } else {
 	if (out.allocated) {
 	    xfree(out.buf);

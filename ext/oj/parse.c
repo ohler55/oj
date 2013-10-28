@@ -719,11 +719,11 @@ protect_parse(VALUE pip) {
 
 VALUE
 oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json) {
-    char	*buf = 0;
-    VALUE	input;
-    VALUE	result = Qnil;
-    int		line = 0;
-    int		free_json = 0;
+    char		*buf = 0;
+    VALUE		input;
+    volatile VALUE	result = Qnil;
+    int			line = 0;
+    int			free_json = 0;
 
     if (argc < 1) {
 	rb_raise(rb_eArgError, "Wrong number of arguments to parse.");
@@ -784,15 +784,8 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json) {
     // GC can run at any time. When it runs any Object created by C will be
     // freed. This usually only happens with large files but it does happen and
     // it happens more frequently on Ruby 1.8.7.
-#if HAS_GC_GUARD
-    rb_gc_disable();
-#endif
     rb_protect(protect_parse, (VALUE)pi, &line);
     result = stack_head_val(&pi->stack);
-#if HAS_GC_GUARD
-    RB_GC_GUARD(result);
-    rb_gc_enable();
-#endif
     // proceed with cleanup
     if (0 != pi->circ_array) {
 	oj_circ_array_free(pi->circ_array);
