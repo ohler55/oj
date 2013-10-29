@@ -20,9 +20,15 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
+### Current Release 2.1.8
+
+ - All 1.8.x versions of Ruby now have require 'rational' called.
+
+ - Removed the temporary GC disable and implemented mark strategy instead.
+
 ### Current Release 2.1.7
 
- - Added support for NaN and -NaN to address issue #102. This is not according to the JSON spec but seems to be expected.
+ - Added support for NaN to address issue #102. This is not according to the JSON spec but seems to be expected.
 
  - Added require for rational if the Ruby version is 1.8.7 to address issue #104.
 

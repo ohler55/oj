@@ -69,19 +69,7 @@ typedef struct _ValStack {
     Val		tail;	// pointer to one past last element name on stack
 } *ValStack;
 
-inline static void
-stack_init(ValStack stack) {
-    stack->head = stack->base;
-    stack->end = stack->base + sizeof(stack->base) / sizeof(struct _Val);
-    stack->tail = stack->head;
-    stack->head->val = Qundef;
-    stack->head->key = 0;
-    stack->head->classname = 0;
-    stack->head->klen = 0;
-    stack->head->clen = 0;
-    stack->head->next = NEXT_NONE;
-    //stack->head->type = TYPE_NONE;
-}
+extern VALUE	oj_stack_init(ValStack stack);
 
 inline static int
 stack_empty(ValStack stack) {
@@ -116,7 +104,6 @@ stack_push(ValStack stack, VALUE val, ValNext next) {
     stack->tail->key = 0;
     stack->tail->clen = 0;
     stack->tail->klen = 0;
-    //stack->tail->type = TYPE_NONE;
     stack->tail++;
 }
 

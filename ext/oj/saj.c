@@ -44,12 +44,6 @@
 #include "oj.h"
 #include "encode.h"
 
-typedef struct _CX {
-    VALUE	*cur;
-    VALUE	*end;
-    VALUE	stack[1024];
-} *CX;
-
 typedef struct _ParseInfo {
     char	*str;		/* buffer being read from */
     char	*s;		/* current position in buffer */
@@ -145,7 +139,7 @@ next_white(ParseInfo pi) {
 
 inline static void
 call_add_value(VALUE handler, VALUE value, const char *key) {
-    VALUE	k;
+    volatile VALUE	k;
 
     if (0 == key) {
 	k = Qnil;
@@ -158,7 +152,7 @@ call_add_value(VALUE handler, VALUE value, const char *key) {
 
 inline static void
 call_no_value(VALUE handler, ID method, const char *key) {
-    VALUE	k;
+    volatile VALUE	k;
 
     if (0 == key) {
 	k = Qnil;
@@ -668,7 +662,7 @@ respond_to(VALUE obj, ID method) {
 
 static void
 sajkey_parse(VALUE handler, char *json) {
-    VALUE		obj = Qnil;
+    volatile VALUE	obj = Qnil;
     struct _ParseInfo	pi;
 
     if (0 == json) {
@@ -737,14 +731,14 @@ oj_saj_parse(int argc, VALUE *argv, VALUE self) {
 	json = ALLOC_N(char, len);
 	strcpy(json, StringValuePtr(input));
     } else {
-	VALUE	clas = rb_obj_class(input);
-	VALUE	s;
+	VALUE		clas = rb_obj_class(input);
+	volatile VALUE	s;
 
 	if (oj_stringio_class == clas) {
 	    s = rb_funcall2(input, oj_string_id, 0, 0);
 	    len = RSTRING_LEN(s) + 1;
 	    json = ALLOC_N(char, len);
-	    strcpy(json, StringValuePtr(s));
+	    strcpy(json, rb_string_value_cstr((VALUE*)&s));
 #ifndef JRUBY_RUBY
 #if !IS_WINDOWS
 	    // JRuby gets confused with what is the real fileno.
@@ -765,7 +759,7 @@ oj_saj_parse(int argc, VALUE *argv, VALUE self) {
 	    s = rb_funcall2(input, oj_read_id, 0, 0);
 	    len = RSTRING_LEN(s) + 1;
 	    json = ALLOC_N(char, len);
-	    strcpy(json, StringValuePtr(s));
+	    strcpy(json, rb_string_value_cstr((VALUE*)&s));
 	} else {
 	    rb_raise(rb_eArgError, "saj_parse() expected a String or IO Object.");
 	}

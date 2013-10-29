@@ -181,6 +181,7 @@ extern VALUE		oj_utf8_encoding;
 
 extern VALUE	oj_bag_class;
 extern VALUE	oj_bigdecimal_class;
+extern VALUE	oj_cstack_class;
 extern VALUE	oj_date_class;
 extern VALUE	oj_datetime_class;
 extern VALUE	oj_doc_class;

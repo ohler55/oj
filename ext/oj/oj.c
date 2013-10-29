@@ -80,6 +80,7 @@ ID	oj_write_id;
 
 VALUE	oj_bag_class;
 VALUE	oj_bigdecimal_class;
+VALUE	oj_cstack_class;
 VALUE	oj_date_class;
 VALUE	oj_datetime_class;
 VALUE	oj_parse_error_class;
@@ -1113,6 +1114,8 @@ iconv_rescue(VALUE x) {
 
 void Init_oj() {
     Oj = rb_define_module("Oj");
+
+    oj_cstack_class = rb_define_class_under(Oj, "CStack", rb_cObject);
 
     rb_require("time");
     rb_require("date");

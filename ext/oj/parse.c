@@ -499,9 +499,8 @@ read_num(ParseInfo pi) {
 
 static void
 array_start(ParseInfo pi) {
-    VALUE	v = Qnil;
+    VALUE	v = pi->start_array(pi);
 
-    v = pi->start_array(pi);
     stack_push(&pi->stack, v, NEXT_ARRAY_NEW);
 }
 
@@ -521,9 +520,8 @@ array_end(ParseInfo pi) {
 
 static void
 hash_start(ParseInfo pi) {
-    VALUE	v = Qnil;
+    VALUE	v = pi->start_hash(pi);
 
-    v = pi->start_hash(pi);
     stack_push(&pi->stack, v, NEXT_HASH_NEW);
 }
 
@@ -571,9 +569,11 @@ colon(ParseInfo pi) {
 
 void
 oj_parse2(ParseInfo pi) {
+    volatile VALUE	rstack = Qnil;
+
     pi->cur = pi->json;
     err_init(&pi->err);
-    stack_init(&pi->stack);
+    rstack = oj_stack_init(&pi->stack);
     while (1) {
 	next_non_white(pi);
 	switch (*pi->cur++) {

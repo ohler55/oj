@@ -52,7 +52,7 @@ add_value(ParseInfo pi, VALUE val) {
 
 static void
 add_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
-    VALUE	rstr = rb_str_new(str, len);
+    volatile VALUE	rstr = rb_str_new(str, len);
 
     rstr = oj_encode(rstr);
     pi->stack.head->val = rstr;
@@ -70,7 +70,7 @@ start_hash(ParseInfo pi) {
 
 static VALUE
 hash_key(ParseInfo pi, const char *key, size_t klen) {
-    VALUE	rkey = rb_str_new(key, klen);
+    volatile VALUE	rkey = rb_str_new(key, klen);
 
     rkey = oj_encode(rkey);
     if (Yes == pi->options.sym_key) {
@@ -81,7 +81,7 @@ hash_key(ParseInfo pi, const char *key, size_t klen) {
 
 static void
 hash_set_cstr(ParseInfo pi, const char *key, size_t klen, const char *str, size_t len, const char *orig) {
-    VALUE	rstr = rb_str_new(str, len);
+    volatile VALUE	rstr = rb_str_new(str, len);
 
     rstr = oj_encode(rstr);
     rb_hash_aset(stack_peek(&pi->stack)->val, hash_key(pi, key, klen), rstr);
@@ -104,7 +104,7 @@ start_array(ParseInfo pi) {
 
 static void
 array_append_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
-    VALUE	rstr = rb_str_new(str, len);
+    volatile VALUE	rstr = rb_str_new(str, len);
 
     rstr = oj_encode(rstr);
     rb_ary_push(stack_peek(&pi->stack)->val, rstr);

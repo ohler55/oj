@@ -16,3 +16,5 @@ echo "----- SAJ parser tests (test_saj.rb) -----"
 ./test_saj.rb
 echo "----- SC Parser tests (test_scp.rb) -----"
 ./test_scp.rb
+echo "----- GC tests (test_gc.rb) -----"
+./test_gc.rb

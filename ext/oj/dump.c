@@ -401,13 +401,13 @@ dump_fixnum(VALUE obj, Out out) {
 
 static void
 dump_bignum(VALUE obj, Out out) {
-    VALUE	rs = rb_big2str(obj, 10);
-    int		cnt = (int)RSTRING_LEN(rs);
+    volatile VALUE	rs = rb_big2str(obj, 10);
+    int			cnt = (int)RSTRING_LEN(rs);
 
     if (out->end - out->cur <= (long)cnt) {
 	grow(out, cnt);
     }
-    memcpy(out->cur, StringValuePtr(rs), cnt);
+    memcpy(out->cur, rb_string_value_cstr((VALUE*)&rs), cnt);
     out->cur += cnt;
     *out->cur = '\0';
 }
@@ -528,12 +528,12 @@ dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out) {
 
 static void
 dump_str_comp(VALUE obj, Out out) {
-    dump_cstr(StringValuePtr(obj), RSTRING_LEN(obj), 0, 0, out);
+    dump_cstr(rb_string_value_cstr((VALUE*)&obj), RSTRING_LEN(obj), 0, 0, out);
 }
 
 static void
 dump_str_obj(VALUE obj, Out out) {
-    const char	*s = StringValuePtr(obj);
+    const char	*s = rb_string_value_cstr((VALUE*)&obj);
     size_t	len = RSTRING_LEN(obj);
     char	s1 = s[1];
 
@@ -998,7 +998,7 @@ static void
 dump_ruby_time(VALUE obj, Out out) {
     volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-    dump_cstr(StringValuePtr(rstr), RSTRING_LEN(rstr), 0, 0, out);
+    dump_cstr(rb_string_value_cstr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
 }
 
 static void
@@ -1096,7 +1096,7 @@ dump_data_strict(VALUE obj, Out out) {
     if (oj_bigdecimal_class == clas) {
 	volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-	dump_raw(StringValuePtr(rstr), RSTRING_LEN(rstr), out);
+	dump_raw(rb_string_value_cstr((VALUE*)&rstr), RSTRING_LEN(rstr), out);
     } else {
 	raise_strict(obj);
     }
@@ -1109,7 +1109,7 @@ dump_data_null(VALUE obj, Out out) {
     if (oj_bigdecimal_class == clas) {
 	volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-	dump_raw(StringValuePtr(rstr), RSTRING_LEN(rstr), out);
+	dump_raw(rb_string_value_cstr((VALUE*)&rstr), RSTRING_LEN(rstr), out);
     } else {
 	dump_nil(out);
     }
@@ -1136,7 +1136,7 @@ dump_data_comp(VALUE obj, int depth, Out out) {
 	last_obj = obj;
 	rs = rb_funcall(obj, oj_to_json_id, 0);
 	last_obj = Qundef;
-	s = StringValuePtr(rs);
+	s = rb_string_value_cstr((VALUE*)&rs);
 	len = (int)RSTRING_LEN(rs);
 
 	if (out->end - out->cur <= len + 1) {
@@ -1159,14 +1159,14 @@ dump_data_comp(VALUE obj, int depth, Out out) {
 	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
 	    if (Yes == out->opts->bigdec_as_num) {
-		dump_raw(StringValuePtr(rstr), RSTRING_LEN(rstr), out);
+		dump_raw(rb_string_value_cstr((VALUE*)&rstr), RSTRING_LEN(rstr), out);
 	    } else {
-		dump_cstr(StringValuePtr(rstr), RSTRING_LEN(rstr), 0, 0, out);
+		dump_cstr(rb_string_value_cstr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
 	    }
 	} else {
 	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-	    dump_cstr(StringValuePtr(rstr), RSTRING_LEN(rstr), 0, 0, out);
+	    dump_cstr(rb_string_value_cstr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
 	}
     }
 }
@@ -1196,9 +1196,9 @@ dump_data_obj(VALUE obj, int depth, Out out) {
 		volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 		
 		if (Yes == out->opts->bigdec_as_num) {
-		    dump_raw(StringValuePtr(rstr), RSTRING_LEN(rstr), out);
+		    dump_raw(rb_string_value_cstr((VALUE*)&rstr), RSTRING_LEN(rstr), out);
 		} else {
-		    dump_cstr(StringValuePtr(rstr), RSTRING_LEN(rstr), 0, 0, out);
+		    dump_cstr(rb_string_value_cstr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
 		}
 	    } else {
 		dump_nil(out);
@@ -1230,7 +1230,7 @@ dump_obj_comp(VALUE obj, int depth, Out out) {
 	last_obj = obj;
 	rs = rb_funcall(obj, oj_to_json_id, 0);
 	last_obj = Qundef;
-	s = StringValuePtr(rs);
+	s = rb_string_value_cstr((VALUE*)&rs);
 	len = (int)RSTRING_LEN(rs);
 
 	if (out->end - out->cur <= len + 1) {
@@ -1246,14 +1246,14 @@ dump_obj_comp(VALUE obj, int depth, Out out) {
 	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
 	    if (Yes == out->opts->bigdec_as_num) {
-		dump_raw(StringValuePtr(rstr), RSTRING_LEN(rstr), out);
+		dump_raw(rb_string_value_cstr((VALUE*)&rstr), RSTRING_LEN(rstr), out);
 	    } else {
-		dump_cstr(StringValuePtr(rstr), RSTRING_LEN(rstr), 0, 0, out);
+		dump_cstr(rb_string_value_cstr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
 	    }
 	} else if (oj_datetime_class == clas || oj_date_class == clas) {
 	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-	    dump_cstr(StringValuePtr(rstr), RSTRING_LEN(rstr), 0, 0, out);
+	    dump_cstr(rb_string_value_cstr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
 	} else {
 	    Odd	odd = oj_get_odd(clas);
 
@@ -1279,7 +1279,7 @@ dump_obj_obj(VALUE obj, int depth, Out out) {
 	    if (oj_bigdecimal_class == clas) {
 		volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-		dump_raw(StringValuePtr(rstr), RSTRING_LEN(rstr), out);
+		dump_raw(rb_string_value_cstr((VALUE*)&rstr), RSTRING_LEN(rstr), out);
 	    } else {
 		dump_obj_attrs(obj, clas, id, depth, out);
 	    }
@@ -1472,7 +1472,7 @@ dump_struct_comp(VALUE obj, int depth, Out out) {
 	const char	*s;
 	int		len;
 
-	s = StringValuePtr(rs);
+	s = rb_string_value_cstr((VALUE*)&rs);
 	len = (int)RSTRING_LEN(rs);
 	if (out->end - out->cur <= len) {
 	    grow(out, len);
@@ -1787,7 +1787,7 @@ dump_leaf_str(Leaf leaf, Out out) {
 	dump_cstr(leaf->str, strlen(leaf->str), 0, 0, out);
 	break;
     case RUBY_VAL:
-	dump_cstr(StringValuePtr(leaf->value), RSTRING_LEN(leaf->value), 0, 0, out);
+	dump_cstr(rb_string_value_cstr(&leaf->value), RSTRING_LEN(leaf->value), 0, 0, out);
 	break;
     case COL_VAL:
     default:

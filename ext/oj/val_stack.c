@@ -28,7 +28,34 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "oj.h"
 #include "val_stack.h"
+
+static void
+mark(void *ptr) {
+    ValStack	stack = (ValStack)ptr;
+    Val		v;
+
+    for (v = stack->head; v < stack->tail; v++) {
+	if (Qnil != v->val) {
+	    rb_gc_mark(v->val);
+	}
+    }
+}
+
+VALUE
+oj_stack_init(ValStack stack) {
+    stack->head = stack->base;
+    stack->end = stack->base + sizeof(stack->base) / sizeof(struct _Val);
+    stack->tail = stack->head;
+    stack->head->val = Qundef;
+    stack->head->key = 0;
+    stack->head->classname = 0;
+    stack->head->klen = 0;
+    stack->head->clen = 0;
+    stack->head->next = NEXT_NONE;
+    return Data_Wrap_Struct(oj_cstack_class, mark, 0, stack);
+}
 
 const char*
 oj_stack_next_string(ValNext n) {
