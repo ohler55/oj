@@ -64,6 +64,7 @@ static void	dump_float(VALUE obj, Out out);
 static void	dump_raw(const char *str, size_t cnt, Out out);
 static void	dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out);
 static void	dump_hex(uint8_t c, Out out);
+static void dump_escaped_entity(const char *str, Out out);
 static void	dump_str_comp(VALUE obj, Out out);
 static void	dump_str_obj(VALUE obj, Out out);
 static void	dump_sym_comp(VALUE obj, Out out);
@@ -230,6 +231,15 @@ dump_hex(uint8_t c, Out out) {
     *out->cur++ = hex_chars[d];
     d = c & 0x0F;
     *out->cur++ = hex_chars[d];
+}
+
+inline static void
+dump_escaped_entity(const char *str, Out out) {
+    *out->cur++ = '\\';
+    *out->cur++ = 'u';
+    *out->cur++ = '0';
+    *out->cur++ = '0';
+    dump_hex((uint8_t)*str, out);
 }
 
 static void
@@ -478,23 +488,37 @@ dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out) {
 	is_sym = 0; // just to make sure
     }
     if (cnt == size) {
-	if (is_sym) {
-	    *out->cur++ = ':';
-	}
-	for (; '\0' != *str; str++) {
-	    *out->cur++ = *str;
-	}
-	*out->cur++ = '"';
+	   if (is_sym) {
+	       *out->cur++ = ':';
+	   }
+	   for (; '\0' != *str; str++) {
+	        *out->cur++ = *str;
+	   }
+	   *out->cur++ = '"';
     } else {
-	const char	*end = str + cnt;
+	   const char	*end = str + cnt;
 
-	if (is_sym) {
-	    *out->cur++ = ':';
-	}
+	   if (is_sym) {
+	       *out->cur++ = ':';
+	   }
 	for (; str < end; str++) {
 	    switch (cmap[(uint8_t)*str]) {
 	    case '1':
-		*out->cur++ = *str;
+        switch (*str){
+            case '<':
+            case '>':
+            case '&':
+                if (Yes == out->opts->escape_entities){
+                    dump_escaped_entity(str, out);
+                } else {
+                    *out->cur++ = *str;
+                }
+                break;
+
+            default:
+                *out->cur++ = *str;
+                break;
+        }
 		break;
 	    case '2':
 		*out->cur++ = '\\';
@@ -504,7 +528,9 @@ dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out) {
 		case '\n':	*out->cur++ = 'n';	break;
 		case '\f':	*out->cur++ = 'f';	break;
 		case '\r':	*out->cur++ = 'r';	break;
-		default:	*out->cur++ = *str;	break;
+		default:
+            *out->cur++ = *str;
+            break;
 		}
 		break;
 	    case '3': // Unicode

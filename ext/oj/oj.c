@@ -108,6 +108,7 @@ static VALUE	symbol_keys_sym;
 static VALUE	time_format_sym;
 static VALUE	unix_sym;
 static VALUE	xmlschema_sym;
+static VALUE  escape_entities_sym;
 
 static VALUE	array_nl_sym;
 static VALUE	create_additions_sym;
@@ -143,6 +144,7 @@ struct _Options	oj_default_options = {
     json_class,		// create_id
     10,			// create_id_len
     9,			// sec_prec
+    No,     // escape_entities
     0,			// dump_opts
 };
 
@@ -162,12 +164,13 @@ static VALUE	define_mimic_json(int argc, VALUE *argv, VALUE self);
  * - bigdecimal_load: [true|false|nil] load decimals as BigDecimal instead of as a Float
  * - create_id: [String|nil] create id for json compatible object encoding, default is 'json_create'
  * - second_precision: [Fixnum|nil] number of digits after the decimal when dumping the seconds portion of time
+ * - escape_entities: [true|false|nil] escape &, < and > to their unicode equivalents '&' => '\u0026', '>' => '\u003E', '<' => '\u003C'
  * @return [Hash] all current option settings.
  */
 static VALUE
 get_def_opts(VALUE self) {
     VALUE	opts = rb_hash_new();
-    
+
     rb_hash_aset(opts, indent_sym, INT2FIX(oj_default_options.indent));
     rb_hash_aset(opts, sec_prec_sym, INT2FIX(oj_default_options.sec_prec));
     rb_hash_aset(opts, circular_sym, (Yes == oj_default_options.circular) ? Qtrue : ((No == oj_default_options.circular) ? Qfalse : Qnil));
@@ -191,6 +194,7 @@ get_def_opts(VALUE self) {
     default:		rb_hash_aset(opts, time_format_sym, unix_sym);		break;
     }
     rb_hash_aset(opts, create_id_sym, (0 == oj_default_options.create_id) ? Qnil : rb_str_new2(oj_default_options.create_id));
+    rb_hash_aset(opts, escape_entities_sym, (Yes == oj_default_options.escape_entities) ? Qtrue : ((No == oj_default_options.escape_entities) ? Qfalse : Qnil));
 
     return opts;
 }
@@ -221,7 +225,8 @@ get_def_opts(VALUE self) {
  *        :ruby Time.to_s formatted String
  * @param [String|nil] :create_id create id for json compatible object encoding
  * @param [Fixnum|nil] :second_precision number of digits after the decimal when dumping the seconds portion of time
- * @return [nil]
+ * @param [true|false|nil] :escape_entities escape &, < and > to their unicode equivalents '&' => '\u0026', '>' => '\u003E', '<' => '\u003C'
+* @return [nil]
  */
 static VALUE
 set_def_opts(VALUE self, VALUE opts) {
@@ -231,13 +236,14 @@ set_def_opts(VALUE self, VALUE opts) {
 	{ symbol_keys_sym, &oj_default_options.sym_key },
 	{ class_cache_sym, &oj_default_options.class_cache },
 	{ ascii_only_sym, &oj_default_options.ascii_only },
+  { escape_entities_sym, &oj_default_options.escape_entities },
 	{ bigdecimal_as_decimal_sym, &oj_default_options.bigdec_as_num },
 	{ bigdecimal_load_sym, &oj_default_options.bigdec_load },
 	{ Qnil, 0 }
     };
     YesNoOpt	o;
     VALUE	v;
-    
+
     Check_Type(opts, T_HASH);
     v = rb_hash_aref(opts, indent_sym);
     if (Qnil != v) {
@@ -331,13 +337,14 @@ oj_parse_options(VALUE ropts, Options copts) {
 	{ ascii_only_sym, &copts->ascii_only },
 	{ bigdecimal_as_decimal_sym, &copts->bigdec_as_num },
 	{ bigdecimal_load_sym, &copts->bigdec_load },
+  { escape_entities_sym, &copts->escape_entities },
 	{ Qnil, 0 }
     };
     YesNoOpt	o;
-    
+
     if (rb_cHash == rb_obj_class(ropts)) {
 	VALUE	v;
-	
+
 	if (Qnil != (v = rb_hash_lookup(ropts, indent_sym))) {
 	    if (rb_cFixnum != rb_obj_class(v)) {
 		rb_raise(rb_eArgError, ":indent must be a Fixnum.");
@@ -1080,6 +1087,7 @@ define_mimic_json(int argc, VALUE *argv, VALUE self) {
 
     oj_default_options.mode = CompatMode;
     oj_default_options.ascii_only = Yes;
+    oj_default_options.escape_entities = No;
 
     return mimic;
 }
@@ -1204,6 +1212,7 @@ void Init_oj() {
     time_format_sym = ID2SYM(rb_intern("time_format"));	rb_gc_register_address(&time_format_sym);
     unix_sym = ID2SYM(rb_intern("unix"));		rb_gc_register_address(&unix_sym);
     xmlschema_sym = ID2SYM(rb_intern("xmlschema"));	rb_gc_register_address(&xmlschema_sym);
+    escape_entities_sym = ID2SYM(rb_intern("escape_entities")); rb_gc_register_address(&escape_entities_sym);
 
     oj_slash_string = rb_str_new2("/");			rb_gc_register_address(&oj_slash_string);
 

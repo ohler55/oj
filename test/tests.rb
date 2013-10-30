@@ -46,7 +46,7 @@ class Jeez < Jam
   def initialize(x, y)
     super
   end
-  
+
   def to_json()
     %{{"json_class":"#{self.class}","x":#{@x},"y":#{@y}}}
   end
@@ -134,7 +134,8 @@ class Juice < ::Test::Unit::TestCase
                    :time_format=>:unix,
                    :bigdecimal_as_decimal=>true,
                    :bigdecimal_load=>false,
-                   :create_id=>'json_class'}, opts)
+                   :create_id=>'json_class',
+                   :escape_entities=>false}, opts)
   end
 
   def test0_set_options
@@ -150,7 +151,8 @@ class Juice < ::Test::Unit::TestCase
       :time_format=>:unix,
       :bigdecimal_as_decimal=>true,
       :bigdecimal_load=>false,
-      :create_id=>'json_class'}
+      :create_id=>'json_class',
+      :escape_entities=>false}
     o2 = {
       :indent=>4,
       :second_precision=>7,
@@ -163,7 +165,8 @@ class Juice < ::Test::Unit::TestCase
       :time_format=>:ruby,
       :bigdecimal_as_decimal=>false,
       :bigdecimal_load=>true,
-      :create_id=>nil}
+      :create_id=>nil,
+      :escape_entities=>true}
     o3 = { :indent => 4 }
     Oj.default_options = o2
     opts = Oj.default_options()
@@ -267,7 +270,7 @@ class Juice < ::Test::Unit::TestCase
   def test_symbol_compat
     json = Oj.dump(:abc, :mode => :compat)
     assert_equal('"abc"', json)
-  end    
+  end
   def test_symbol_object
     Oj.default_options = { :mode => :object }
     #dump_and_load(''.to_sym, false)
@@ -295,7 +298,7 @@ class Juice < ::Test::Unit::TestCase
     #t = Time.local(2012, 1, 5, 23, 58, 7, 123456)
     json = Oj.dump(t, :mode => :compat)
     assert_equal(%{1325775487.123456000}, json)
-  end    
+  end
   def test_unix_time_compat_precision
     t = Time.xmlschema("2012-01-05T23:58:07.123456789+09:00")
     #t = Time.local(2012, 1, 5, 23, 58, 7, 123456)
@@ -304,23 +307,23 @@ class Juice < ::Test::Unit::TestCase
     t = Time.xmlschema("2012-01-05T23:58:07.999600+09:00")
     json = Oj.dump(t, :mode => :compat, :second_precision => 3)
     assert_equal(%{1325775488.000}, json)
-  end    
+  end
   def test_unix_time_compat_early
     t = Time.xmlschema("1954-01-05T00:00:00.123456789+00:00")
     json = Oj.dump(t, :mode => :compat, :second_precision => 5)
     assert_equal(%{-504575999.87654}, json)
-  end    
+  end
   def test_unix_time_compat_1970
     t = Time.xmlschema("1970-01-01T00:00:00.123456789+00:00")
     json = Oj.dump(t, :mode => :compat, :second_precision => 5)
     assert_equal(%{0.12346}, json)
-  end    
+  end
   def test_ruby_time_compat
     t = Time.xmlschema("2012-01-05T23:58:07.123456000+09:00")
     json = Oj.dump(t, :mode => :compat, :time_format => :ruby)
     #assert_equal(%{"2012-01-05 23:58:07 +0900"}, json)
     assert_equal(%{"#{t.to_s}"}, json)
-  end    
+  end
   def test_xml_time_compat
     begin
       t = Time.new(2012, 1, 5, 23, 58, 7.123456000, 34200)
@@ -339,7 +342,7 @@ class Juice < ::Test::Unit::TestCase
       end
       assert_equal(%{"2012-01-05T23:58:07.123456000%s%02d:%02d"} % [sign, tz / 3600, tz / 60 % 60], json)
     end
-  end    
+  end
   def test_xml_time_compat_no_secs
     begin
       t = Time.new(2012, 1, 5, 23, 58, 7.0, 34200)
@@ -358,7 +361,7 @@ class Juice < ::Test::Unit::TestCase
       end
       assert_equal(%{"2012-01-05T23:58:07%s%02d:%02d"} % [sign, tz / 3600, tz / 60 % 60], json)
     end
-  end    
+  end
   def test_xml_time_compat_precision
     begin
       t = Time.new(2012, 1, 5, 23, 58, 7.123456789, 32400)
@@ -377,7 +380,7 @@ class Juice < ::Test::Unit::TestCase
       end
       assert_equal(%{"2012-01-05T23:58:07.12346%s%02d:%02d"} % [sign, tz / 3600, tz / 60 % 60], json)
     end
-  end    
+  end
   def test_xml_time_compat_precision_round
     begin
       t = Time.new(2012, 1, 5, 23, 58, 7.9996, 32400)
@@ -396,7 +399,7 @@ class Juice < ::Test::Unit::TestCase
       end
       assert_equal(%{"2012-01-05T23:58:08%s%02d:%02d"} % [sign, tz / 3600, tz / 60 % 60], json)
     end
-  end    
+  end
   def test_xml_time_compat_zulu
     begin
       t = Time.new(2012, 1, 5, 23, 58, 7.0, 0)
@@ -409,7 +412,7 @@ class Juice < ::Test::Unit::TestCase
       #tz = t.utc_offset
       assert_equal(%{"2012-01-05T23:58:07Z"}, json)
     end
-  end    
+  end
   def test_time_object
     t = Time.now()
     Oj.default_options = { :mode => :object }
@@ -437,7 +440,7 @@ class Juice < ::Test::Unit::TestCase
   def test_class_compat
     json = Oj.dump(Juice, :mode => :compat)
     assert_equal(%{"Juice"}, json)
-  end    
+  end
   def test_class_object
     Oj.default_options = { :mode => :object }
     dump_and_load(Juice, false)
