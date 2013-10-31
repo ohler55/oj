@@ -64,7 +64,6 @@ static void	dump_float(VALUE obj, Out out);
 static void	dump_raw(const char *str, size_t cnt, Out out);
 static void	dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out);
 static void	dump_hex(uint8_t c, Out out);
-static void dump_escaped_entity(const char *str, Out out);
 static void	dump_str_comp(VALUE obj, Out out);
 static void	dump_str_obj(VALUE obj, Out out);
 static void	dump_sym_comp(VALUE obj, Out out);
@@ -231,15 +230,6 @@ dump_hex(uint8_t c, Out out) {
     *out->cur++ = hex_chars[d];
     d = c & 0x0F;
     *out->cur++ = hex_chars[d];
-}
-
-inline static void
-dump_escaped_entity(const char *str, Out out) {
-    *out->cur++ = '\\';
-    *out->cur++ = 'u';
-    *out->cur++ = '0';
-    *out->cur++ = '0';
-    dump_hex((uint8_t)*str, out);
 }
 
 static void
