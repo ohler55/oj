@@ -461,6 +461,11 @@ dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out) {
     } else {
 	cmap = hibit_friendly_chars;
 	size = hibit_friendly_size((uint8_t*)str, cnt);
+    if (Yes == out->opts->escape_entities){
+        cmap[38] = '6'; // &
+        cmap[60] = '6'; // <
+        cmap[62] = '6'; // >
+    }
     }
     if (out->end - out->cur <= (long)size + 10) { // extra 10 for escaped first char, quotes, and sym
 	grow(out, size + 10);
@@ -478,23 +483,23 @@ dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out) {
 	is_sym = 0; // just to make sure
     }
     if (cnt == size) {
-	if (is_sym) {
-	    *out->cur++ = ':';
-	}
-	for (; '\0' != *str; str++) {
-	    *out->cur++ = *str;
-	}
-	*out->cur++ = '"';
+	   if (is_sym) {
+	       *out->cur++ = ':';
+	   }
+	   for (; '\0' != *str; str++) {
+	        *out->cur++ = *str;
+	   }
+	   *out->cur++ = '"';
     } else {
-	const char	*end = str + cnt;
+	   const char	*end = str + cnt;
 
-	if (is_sym) {
-	    *out->cur++ = ':';
-	}
+	   if (is_sym) {
+	       *out->cur++ = ':';
+	   }
 	for (; str < end; str++) {
 	    switch (cmap[(uint8_t)*str]) {
 	    case '1':
-		*out->cur++ = *str;
+        *out->cur++ = *str;
 		break;
 	    case '2':
 		*out->cur++ = '\\';
@@ -504,7 +509,9 @@ dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out) {
 		case '\n':	*out->cur++ = 'n';	break;
 		case '\f':	*out->cur++ = 'f';	break;
 		case '\r':	*out->cur++ = 'r';	break;
-		default:	*out->cur++ = *str;	break;
+		default:
+            *out->cur++ = *str;
+            break;
 		}
 		break;
 	    case '3': // Unicode
