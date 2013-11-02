@@ -96,6 +96,7 @@ static void	dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out);
 
 static void	grow(Out out, size_t len);
 static size_t	hibit_friendly_size(const uint8_t *str, size_t len);
+static size_t	rails_friendly_size(const uint8_t *str, size_t len);
 static size_t	ascii_friendly_size(const uint8_t *str, size_t len);
 
 static void	dump_leaf(Leaf leaf, int depth, Out out);
@@ -160,6 +161,16 @@ ascii_friendly_size(const uint8_t *str, size_t len) {
 
     for (; 0 < len; str++, len--) {
 	size += ascii_friendly_chars[*str];
+    }
+    return size - len * (size_t)'0';
+}
+
+inline static size_t
+rails_friendly_size(const uint8_t *str, size_t len) {
+    size_t	size = 0;
+
+    for (; 0 < len; str++, len--) {
+	size += rails_friendly_chars[*str];
     }
     return size - len * (size_t)'0';
 }
@@ -465,10 +476,17 @@ dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out) {
     size_t	size;
     char	*cmap;
 
-    if (Yes == out->opts->ascii_only) {
+    switch (out->opts->encoding) {
+    case ASCIIEncoding:
 	cmap = ascii_friendly_chars;
 	size = ascii_friendly_size((uint8_t*)str, cnt);
-    } else {
+	break;
+    case RailsEncoding:
+	cmap = rails_friendly_chars;
+	size = rails_friendly_size((uint8_t*)str, cnt);
+	break;
+    case JSONEncoding:
+    default:
 	cmap = hibit_friendly_chars;
 	size = hibit_friendly_size((uint8_t*)str, cnt);
     }

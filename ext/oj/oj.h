@@ -85,6 +85,12 @@ typedef enum {
     RubyTime	= 'r'
 } TimeFormat;
 
+typedef enum {
+    JSONEncoding	= 'j',
+    RailsEncoding	= 'r',
+    ASCIIEncoding	= 'a'
+} Encoding;
+
 typedef struct _DumpOpts {
     const char	*indent;
     const char	*before_sep;
@@ -103,7 +109,7 @@ typedef struct _Options {
     char	circular;	// YesNo
     char	auto_define;	// YesNo
     char	sym_key;	// YesNo
-    char	ascii_only;	// YesNo
+    char	encoding;	// Encoding
     char	mode;		// Mode
     char	class_cache;	// YesNo
     char	time_format;	// TimeFormat

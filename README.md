@@ -26,15 +26,7 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
  - Removed the temporary GC disable and implemented mark strategy instead.
 
- - Added new character encoding mode to support the Rails escape characters of &, <, and >.
-
-### Current Release 2.1.7
-
- - Added support for NaN to address issue #102. This is not according to the JSON spec but seems to be expected.
-
- - Added require for rational if the Ruby version is 1.8.7 to address issue #104.
-
- - Added Rails re-call of Oj.dump in the to_json() method which caused loops with Rational objects to fix issue #108 and #105.
+ - Added new character encoding mode to support the Rails escape characters of &, <, and >. The :encoding option replaces the :ascii_only option.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 

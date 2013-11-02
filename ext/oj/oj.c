@@ -90,6 +90,7 @@ VALUE	oj_time_class;
 
 VALUE	oj_slash_string;
 
+static VALUE	ascii_sym;
 static VALUE	ascii_only_sym;
 static VALUE	auto_define_sym;
 static VALUE	bigdecimal_as_decimal_sym;
@@ -98,10 +99,13 @@ static VALUE	circular_sym;
 static VALUE	class_cache_sym;
 static VALUE	compat_sym;
 static VALUE	create_id_sym;
+static VALUE	encoding_sym;
 static VALUE	indent_sym;
+static VALUE	json_sym;
 static VALUE	mode_sym;
 static VALUE	null_sym;
 static VALUE	object_sym;
+static VALUE	rails_sym;
 static VALUE	ruby_sym;
 static VALUE	sec_prec_sym;
 static VALUE	strict_sym;
@@ -135,7 +139,7 @@ struct _Options	oj_default_options = {
     No,			// circular
     No,			// auto_define
     No,			// sym_key
-    No,			// ascii_only
+    JSONEncoding,	// encoding
     ObjectMode,		// mode
     Yes,		// class_cache
     UnixTime,		// time_format
@@ -156,6 +160,7 @@ static VALUE	define_mimic_json(int argc, VALUE *argv, VALUE self);
  * - circular: [true|false|nil] support circular references while dumping
  * - auto_define: [true|false|nil] automatically define classes if they do not exist
  * - symbol_keys: [true|false|nil] use symbols instead of strings for hash keys
+ * - encoding: [:json|:rails|:ascii|nil] use symbols instead of strings for hash keys
  * - class_cache: [true|false|nil] cache classes for faster parsing (if dynamically modifying classes or reloading classes then don't use this)
  * - mode: [:object|:strict|:compat|:null] load and dump modes to use for JSON
  * - time_format: [:unix|:xmlschema|:ruby] time format when dumping in :compat mode
@@ -174,7 +179,6 @@ get_def_opts(VALUE self) {
     rb_hash_aset(opts, circular_sym, (Yes == oj_default_options.circular) ? Qtrue : ((No == oj_default_options.circular) ? Qfalse : Qnil));
     rb_hash_aset(opts, class_cache_sym, (Yes == oj_default_options.class_cache) ? Qtrue : ((No == oj_default_options.class_cache) ? Qfalse : Qnil));
     rb_hash_aset(opts, auto_define_sym, (Yes == oj_default_options.auto_define) ? Qtrue : ((No == oj_default_options.auto_define) ? Qfalse : Qnil));
-    rb_hash_aset(opts, ascii_only_sym, (Yes == oj_default_options.ascii_only) ? Qtrue : ((No == oj_default_options.ascii_only) ? Qfalse : Qnil));
     rb_hash_aset(opts, symbol_keys_sym, (Yes == oj_default_options.sym_key) ? Qtrue : ((No == oj_default_options.sym_key) ? Qfalse : Qnil));
     rb_hash_aset(opts, bigdecimal_as_decimal_sym, (Yes == oj_default_options.bigdec_as_num) ? Qtrue : ((No == oj_default_options.bigdec_as_num) ? Qfalse : Qnil));
     rb_hash_aset(opts, bigdecimal_load_sym, (Yes == oj_default_options.bigdec_load) ? Qtrue : ((No == oj_default_options.bigdec_load) ? Qfalse : Qnil));
@@ -184,6 +188,12 @@ get_def_opts(VALUE self) {
     case NullMode:	rb_hash_aset(opts, mode_sym, null_sym);		break;
     case ObjectMode:
     default:		rb_hash_aset(opts, mode_sym, object_sym);	break;
+    }
+    switch (oj_default_options.encoding) {
+    case JSONEncoding:	rb_hash_aset(opts, encoding_sym, json_sym);	break;
+    case RailsEncoding:	rb_hash_aset(opts, encoding_sym, rails_sym);	break;
+    case ASCIIEncoding:	rb_hash_aset(opts, encoding_sym, ascii_sym);	break;
+    default:		rb_hash_aset(opts, encoding_sym, json_sym);	break;
     }
     switch (oj_default_options.time_format) {
     case XmlTime:	rb_hash_aset(opts, time_format_sym, xmlschema_sym);	break;
@@ -205,7 +215,9 @@ get_def_opts(VALUE self) {
  * @param [true|false|nil] :auto_define automatically define classes if they do not exist
  * @param [true|false|nil] :symbol_keys convert hash keys to symbols
  * @param [true|false|nil] :class_cache cache classes for faster parsing
- * @param [true|false|nil] :ascii_only encode all high-bit characters as escaped sequences if true
+ * @param [:json|:rails|:ascii|nil] :encoding encode all high-bit characters as
+ *        escaped sequences if :ascii, :json is standand UTF-8 JSON encoding,
+ *        and :rails escapes &, <, and >.
  * @param [true|false|nil] :bigdecimal_as_decimal dump BigDecimal as a decimal number or as a String
  * @param [true|false|nil] :bigdecimal_load load decimals as a BigDecimal instead of as a Float
  * @param [:object|:strict|:compat|:null] load and dump mode to use for JSON
@@ -231,7 +243,6 @@ set_def_opts(VALUE self, VALUE opts) {
 	{ auto_define_sym, &oj_default_options.auto_define },
 	{ symbol_keys_sym, &oj_default_options.sym_key },
 	{ class_cache_sym, &oj_default_options.class_cache },
-	{ ascii_only_sym, &oj_default_options.ascii_only },
 	{ bigdecimal_as_decimal_sym, &oj_default_options.bigdec_as_num },
 	{ bigdecimal_load_sym, &oj_default_options.bigdec_load },
 	{ Qnil, 0 }
@@ -287,6 +298,19 @@ set_def_opts(VALUE self, VALUE opts) {
 	rb_raise(rb_eArgError, ":time_format must be :unix, :xmlschema, or :ruby.");
     }
 
+    v = rb_hash_lookup(opts, encoding_sym);
+    if (Qnil == v) {
+	// ignore
+    } else if (json_sym == v) {
+	oj_default_options.encoding = JSONEncoding;
+    } else if (rails_sym == v) {
+	oj_default_options.encoding = RailsEncoding;
+    } else if (ascii_sym == v) {
+	oj_default_options.encoding = ASCIIEncoding;
+    } else {
+	rb_raise(rb_eArgError, ":encoding must be :json, :rails, or :ascii.");
+    }
+
     if (Qtrue == rb_funcall(opts, rb_intern("has_key?"), 1, create_id_sym)) {
 	if (0 != oj_default_options.create_id) {
 	    if (json_class != oj_default_options.create_id) {
@@ -319,6 +343,13 @@ set_def_opts(VALUE self, VALUE opts) {
 	    }
 	}
     }
+    // This is here only for backwards compatibility with the original Oj.
+    v = rb_hash_lookup(opts, ascii_only_sym);
+    if (Qtrue == v) {
+	oj_default_options.encoding = ASCIIEncoding;
+    } else if (Qfalse == v) {
+	oj_default_options.encoding = JSONEncoding;
+    }
     return Qnil;
 }
 
@@ -329,7 +360,6 @@ oj_parse_options(VALUE ropts, Options copts) {
 	{ auto_define_sym, &copts->auto_define },
 	{ symbol_keys_sym, &copts->sym_key },
 	{ class_cache_sym, &copts->class_cache },
-	{ ascii_only_sym, &copts->ascii_only },
 	{ bigdecimal_as_decimal_sym, &copts->bigdec_as_num },
 	{ bigdecimal_load_sym, &copts->bigdec_load },
 	{ Qnil, 0 }
@@ -383,6 +413,19 @@ oj_parse_options(VALUE ropts, Options copts) {
 		rb_raise(rb_eArgError, ":time_format must be :unix, :xmlschema, or :ruby.");
 	    }
 	}
+
+	if (Qnil != (v = rb_hash_lookup(ropts, encoding_sym))) {
+	    if (json_sym == v) {
+		copts->encoding = JSONEncoding;
+	    } else if (rails_sym == v) {
+		copts->encoding = RailsEncoding;
+	    } else if (ascii_sym == v) {
+		copts->encoding = ASCIIEncoding;
+	    } else {
+		rb_raise(rb_eArgError, ":encoding must be :json, :rails, or :ascii.");
+	    }
+	}
+
 	if (Qtrue == rb_funcall(ropts, rb_intern("has_key?"), 1, create_id_sym)) {
 	    v = rb_hash_lookup(ropts, create_id_sym);
 	    if (Qnil == v) {
@@ -415,6 +458,13 @@ oj_parse_options(VALUE ropts, Options copts) {
 		    rb_raise(rb_eArgError, "%s must be true or false.", rb_id2name(SYM2ID(o->sym)));
 		}
 	    }
+	}
+	// This is here only for backwards compatibility with the original Oj.
+	v = rb_hash_lookup(ropts, ascii_only_sym);
+	if (Qtrue == v) {
+	    copts->encoding = ASCIIEncoding;
+	} else if (Qfalse == v) {
+	    copts->encoding = JSONEncoding;
 	}
     }
  }
@@ -1010,7 +1060,7 @@ mimic_create_id(VALUE self, VALUE id) {
  * will be replaced with Oj methods.
  *
  * Note that this also sets the default options of :mode to :compat and
- * :ascii_only to true.
+ * :encoding to :ascii.
  */
 static VALUE
 define_mimic_json(int argc, VALUE *argv, VALUE self) {
@@ -1080,7 +1130,7 @@ define_mimic_json(int argc, VALUE *argv, VALUE self) {
     symbolize_names_sym = ID2SYM(rb_intern("symbolize_names"));		rb_gc_register_address(&symbolize_names_sym);
 
     oj_default_options.mode = CompatMode;
-    oj_default_options.ascii_only = Yes;
+    oj_default_options.encoding = ASCIIEncoding;
 
     return mimic;
 }
@@ -1188,6 +1238,7 @@ void Init_oj() {
     oj_struct_class = rb_const_get(rb_cObject, rb_intern("Struct"));
     oj_time_class = rb_const_get(rb_cObject, rb_intern("Time"));
 
+    ascii_sym = ID2SYM(rb_intern("ascii"));		rb_gc_register_address(&ascii_sym);
     ascii_only_sym = ID2SYM(rb_intern("ascii_only"));	rb_gc_register_address(&ascii_only_sym);
     auto_define_sym = ID2SYM(rb_intern("auto_define"));	rb_gc_register_address(&auto_define_sym);
     bigdecimal_as_decimal_sym = ID2SYM(rb_intern("bigdecimal_as_decimal"));rb_gc_register_address(&bigdecimal_as_decimal_sym);
@@ -1196,10 +1247,13 @@ void Init_oj() {
     class_cache_sym = ID2SYM(rb_intern("class_cache"));	rb_gc_register_address(&class_cache_sym);
     compat_sym = ID2SYM(rb_intern("compat"));		rb_gc_register_address(&compat_sym);
     create_id_sym = ID2SYM(rb_intern("create_id"));	rb_gc_register_address(&create_id_sym);
+    encoding_sym = ID2SYM(rb_intern("encoding"));	rb_gc_register_address(&encoding_sym);
     indent_sym = ID2SYM(rb_intern("indent"));		rb_gc_register_address(&indent_sym);
+    json_sym = ID2SYM(rb_intern("json"));		rb_gc_register_address(&json_sym);
     mode_sym = ID2SYM(rb_intern("mode"));		rb_gc_register_address(&mode_sym);
     null_sym = ID2SYM(rb_intern("null"));		rb_gc_register_address(&null_sym);
     object_sym = ID2SYM(rb_intern("object"));		rb_gc_register_address(&object_sym);
+    rails_sym = ID2SYM(rb_intern("rails"));		rb_gc_register_address(&rails_sym);
     ruby_sym = ID2SYM(rb_intern("ruby"));		rb_gc_register_address(&ruby_sym);
     sec_prec_sym = ID2SYM(rb_intern("second_precision"));rb_gc_register_address(&sec_prec_sym);
     strict_sym = ID2SYM(rb_intern("strict"));		rb_gc_register_address(&strict_sym);
