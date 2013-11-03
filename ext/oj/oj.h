@@ -86,9 +86,9 @@ typedef enum {
 } TimeFormat;
 
 typedef enum {
-    JSONEncoding	= 'j',
-    RailsEncoding	= 'r',
-    ASCIIEncoding	= 'a'
+    JSONEsc	= 'j',
+    XSSEsc	= 'x',
+    ASCIIEsc	= 'a'
 } Encoding;
 
 typedef struct _DumpOpts {
@@ -109,7 +109,7 @@ typedef struct _Options {
     char	circular;	// YesNo
     char	auto_define;	// YesNo
     char	sym_key;	// YesNo
-    char	encoding;	// Encoding
+    char	escape_mode;	// Escape_Mode
     char	mode;		// Mode
     char	class_cache;	// YesNo
     char	time_format;	// TimeFormat

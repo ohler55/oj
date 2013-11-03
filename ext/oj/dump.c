@@ -96,7 +96,7 @@ static void	dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out);
 
 static void	grow(Out out, size_t len);
 static size_t	hibit_friendly_size(const uint8_t *str, size_t len);
-static size_t	rails_friendly_size(const uint8_t *str, size_t len);
+static size_t	xss_friendly_size(const uint8_t *str, size_t len);
 static size_t	ascii_friendly_size(const uint8_t *str, size_t len);
 
 static void	dump_leaf(Leaf leaf, int depth, Out out);
@@ -135,7 +135,7 @@ static char	ascii_friendly_chars[256] = "\
 33333333333333333333333333333333\
 33333333333333333333333333333333";
 
-static char	rails_friendly_chars[256] = "\
+static char	xss_friendly_chars[256] = "\
 66666666222622666666666666666666\
 11211161111111121111111111116161\
 11111111111111111111111111112111\
@@ -166,11 +166,11 @@ ascii_friendly_size(const uint8_t *str, size_t len) {
 }
 
 inline static size_t
-rails_friendly_size(const uint8_t *str, size_t len) {
+xss_friendly_size(const uint8_t *str, size_t len) {
     size_t	size = 0;
 
     for (; 0 < len; str++, len--) {
-	size += rails_friendly_chars[*str];
+	size += xss_friendly_chars[*str];
     }
     return size - len * (size_t)'0';
 }
@@ -476,16 +476,16 @@ dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out) {
     size_t	size;
     char	*cmap;
 
-    switch (out->opts->encoding) {
-    case ASCIIEncoding:
+    switch (out->opts->escape_mode) {
+    case ASCIIEsc:
 	cmap = ascii_friendly_chars;
 	size = ascii_friendly_size((uint8_t*)str, cnt);
 	break;
-    case RailsEncoding:
-	cmap = rails_friendly_chars;
-	size = rails_friendly_size((uint8_t*)str, cnt);
+    case XSSEsc:
+	cmap = xss_friendly_chars;
+	size = xss_friendly_size((uint8_t*)str, cnt);
 	break;
-    case JSONEncoding:
+    case JSONEsc:
     default:
 	cmap = hibit_friendly_chars;
 	size = hibit_friendly_size((uint8_t*)str, cnt);

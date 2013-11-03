@@ -99,13 +99,13 @@ static VALUE	circular_sym;
 static VALUE	class_cache_sym;
 static VALUE	compat_sym;
 static VALUE	create_id_sym;
-static VALUE	encoding_sym;
+static VALUE	escape_mode_sym;
 static VALUE	indent_sym;
 static VALUE	json_sym;
 static VALUE	mode_sym;
 static VALUE	null_sym;
 static VALUE	object_sym;
-static VALUE	rails_sym;
+static VALUE	xss_safe_sym;
 static VALUE	ruby_sym;
 static VALUE	sec_prec_sym;
 static VALUE	strict_sym;
@@ -139,7 +139,7 @@ struct _Options	oj_default_options = {
     No,			// circular
     No,			// auto_define
     No,			// sym_key
-    JSONEncoding,	// encoding
+    JSONEsc,		// escape_mode
     ObjectMode,		// mode
     Yes,		// class_cache
     UnixTime,		// time_format
@@ -160,7 +160,7 @@ static VALUE	define_mimic_json(int argc, VALUE *argv, VALUE self);
  * - circular: [true|false|nil] support circular references while dumping
  * - auto_define: [true|false|nil] automatically define classes if they do not exist
  * - symbol_keys: [true|false|nil] use symbols instead of strings for hash keys
- * - encoding: [:json|:rails|:ascii|nil] use symbols instead of strings for hash keys
+ * - escape_mode: [:json|:xss_safe|:ascii|nil] use symbols instead of strings for hash keys
  * - class_cache: [true|false|nil] cache classes for faster parsing (if dynamically modifying classes or reloading classes then don't use this)
  * - mode: [:object|:strict|:compat|:null] load and dump modes to use for JSON
  * - time_format: [:unix|:xmlschema|:ruby] time format when dumping in :compat mode
@@ -189,11 +189,11 @@ get_def_opts(VALUE self) {
     case ObjectMode:
     default:		rb_hash_aset(opts, mode_sym, object_sym);	break;
     }
-    switch (oj_default_options.encoding) {
-    case JSONEncoding:	rb_hash_aset(opts, encoding_sym, json_sym);	break;
-    case RailsEncoding:	rb_hash_aset(opts, encoding_sym, rails_sym);	break;
-    case ASCIIEncoding:	rb_hash_aset(opts, encoding_sym, ascii_sym);	break;
-    default:		rb_hash_aset(opts, encoding_sym, json_sym);	break;
+    switch (oj_default_options.escape_mode) {
+    case JSONEsc:	rb_hash_aset(opts, escape_mode_sym, json_sym);		break;
+    case XSSEsc:	rb_hash_aset(opts, escape_mode_sym, xss_safe_sym);	break;
+    case ASCIIEsc:	rb_hash_aset(opts, escape_mode_sym, ascii_sym);		break;
+    default:		rb_hash_aset(opts, escape_mode_sym, json_sym);		break;
     }
     switch (oj_default_options.time_format) {
     case XmlTime:	rb_hash_aset(opts, time_format_sym, xmlschema_sym);	break;
@@ -215,9 +215,9 @@ get_def_opts(VALUE self) {
  * @param [true|false|nil] :auto_define automatically define classes if they do not exist
  * @param [true|false|nil] :symbol_keys convert hash keys to symbols
  * @param [true|false|nil] :class_cache cache classes for faster parsing
- * @param [:json|:rails|:ascii|nil] :encoding encode all high-bit characters as
+ * @param [:json|:xss_safe|:ascii|nil] :escape mode encodes all high-bit characters as
  *        escaped sequences if :ascii, :json is standand UTF-8 JSON encoding,
- *        and :rails escapes &, <, and >.
+ *        and :xss_safe escapes &, <, and >, and some others.
  * @param [true|false|nil] :bigdecimal_as_decimal dump BigDecimal as a decimal number or as a String
  * @param [true|false|nil] :bigdecimal_load load decimals as a BigDecimal instead of as a Float
  * @param [:object|:strict|:compat|:null] load and dump mode to use for JSON
@@ -298,15 +298,15 @@ set_def_opts(VALUE self, VALUE opts) {
 	rb_raise(rb_eArgError, ":time_format must be :unix, :xmlschema, or :ruby.");
     }
 
-    v = rb_hash_lookup(opts, encoding_sym);
+    v = rb_hash_lookup(opts, escape_mode_sym);
     if (Qnil == v) {
 	// ignore
     } else if (json_sym == v) {
-	oj_default_options.encoding = JSONEncoding;
-    } else if (rails_sym == v) {
-	oj_default_options.encoding = RailsEncoding;
+	oj_default_options.escape_mode = JSONEsc;
+    } else if (xss_safe_sym == v) {
+	oj_default_options.escape_mode = XSSEsc;
     } else if (ascii_sym == v) {
-	oj_default_options.encoding = ASCIIEncoding;
+	oj_default_options.escape_mode = ASCIIEsc;
     } else {
 	rb_raise(rb_eArgError, ":encoding must be :json, :rails, or :ascii.");
     }
@@ -346,9 +346,9 @@ set_def_opts(VALUE self, VALUE opts) {
     // This is here only for backwards compatibility with the original Oj.
     v = rb_hash_lookup(opts, ascii_only_sym);
     if (Qtrue == v) {
-	oj_default_options.encoding = ASCIIEncoding;
+	oj_default_options.escape_mode = ASCIIEsc;
     } else if (Qfalse == v) {
-	oj_default_options.encoding = JSONEncoding;
+	oj_default_options.escape_mode = JSONEsc;
     }
     return Qnil;
 }
@@ -414,13 +414,13 @@ oj_parse_options(VALUE ropts, Options copts) {
 	    }
 	}
 
-	if (Qnil != (v = rb_hash_lookup(ropts, encoding_sym))) {
+	if (Qnil != (v = rb_hash_lookup(ropts, escape_mode_sym))) {
 	    if (json_sym == v) {
-		copts->encoding = JSONEncoding;
-	    } else if (rails_sym == v) {
-		copts->encoding = RailsEncoding;
+		copts->escape_mode = JSONEsc;
+	    } else if (xss_safe_sym == v) {
+		copts->escape_mode = XSSEsc;
 	    } else if (ascii_sym == v) {
-		copts->encoding = ASCIIEncoding;
+		copts->escape_mode = ASCIIEsc;
 	    } else {
 		rb_raise(rb_eArgError, ":encoding must be :json, :rails, or :ascii.");
 	    }
@@ -462,9 +462,9 @@ oj_parse_options(VALUE ropts, Options copts) {
 	// This is here only for backwards compatibility with the original Oj.
 	v = rb_hash_lookup(ropts, ascii_only_sym);
 	if (Qtrue == v) {
-	    copts->encoding = ASCIIEncoding;
+	    copts->escape_mode = ASCIIEsc;
 	} else if (Qfalse == v) {
-	    copts->encoding = JSONEncoding;
+	    copts->escape_mode = JSONEsc;
 	}
     }
  }
@@ -1130,7 +1130,7 @@ define_mimic_json(int argc, VALUE *argv, VALUE self) {
     symbolize_names_sym = ID2SYM(rb_intern("symbolize_names"));		rb_gc_register_address(&symbolize_names_sym);
 
     oj_default_options.mode = CompatMode;
-    oj_default_options.encoding = ASCIIEncoding;
+    oj_default_options.escape_mode = ASCIIEsc;
 
     return mimic;
 }
@@ -1247,13 +1247,13 @@ void Init_oj() {
     class_cache_sym = ID2SYM(rb_intern("class_cache"));	rb_gc_register_address(&class_cache_sym);
     compat_sym = ID2SYM(rb_intern("compat"));		rb_gc_register_address(&compat_sym);
     create_id_sym = ID2SYM(rb_intern("create_id"));	rb_gc_register_address(&create_id_sym);
-    encoding_sym = ID2SYM(rb_intern("encoding"));	rb_gc_register_address(&encoding_sym);
+    escape_mode_sym = ID2SYM(rb_intern("escape_mode"));	rb_gc_register_address(&escape_mode_sym);
     indent_sym = ID2SYM(rb_intern("indent"));		rb_gc_register_address(&indent_sym);
     json_sym = ID2SYM(rb_intern("json"));		rb_gc_register_address(&json_sym);
     mode_sym = ID2SYM(rb_intern("mode"));		rb_gc_register_address(&mode_sym);
     null_sym = ID2SYM(rb_intern("null"));		rb_gc_register_address(&null_sym);
     object_sym = ID2SYM(rb_intern("object"));		rb_gc_register_address(&object_sym);
-    rails_sym = ID2SYM(rb_intern("rails"));		rb_gc_register_address(&rails_sym);
+    xss_safe_sym = ID2SYM(rb_intern("xss_safe"));	rb_gc_register_address(&xss_safe_sym);
     ruby_sym = ID2SYM(rb_intern("ruby"));		rb_gc_register_address(&ruby_sym);
     sec_prec_sym = ID2SYM(rb_intern("second_precision"));rb_gc_register_address(&sec_prec_sym);
     strict_sym = ID2SYM(rb_intern("strict"));		rb_gc_register_address(&strict_sym);

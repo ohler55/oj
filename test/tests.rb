@@ -129,7 +129,7 @@ class Juice < ::Test::Unit::TestCase
                    :auto_define=>false,
                    :symbol_keys=>false,
                    :class_cache=>true,
-                   :encoding=>:json,
+                   :escape_mode=>:json,
                    :mode=>:object,
                    :time_format=>:unix,
                    :bigdecimal_as_decimal=>true,
@@ -145,7 +145,7 @@ class Juice < ::Test::Unit::TestCase
       :auto_define=>false,
       :symbol_keys=>false,
       :class_cache=>true,
-      :encoding=>:ascii,
+      :escape_mode=>:ascii,
       :mode=>:object,
       :time_format=>:unix,
       :bigdecimal_as_decimal=>true,
@@ -158,7 +158,7 @@ class Juice < ::Test::Unit::TestCase
       :auto_define=>true,
       :symbol_keys=>true,
       :class_cache=>false,
-      :encoding=>:json,
+      :escape_mode=>:json,
       :mode=>:compat,
       :time_format=>:ruby,
       :bigdecimal_as_decimal=>false,
@@ -252,29 +252,29 @@ class Juice < ::Test::Unit::TestCase
 
   # rails encoding tests
   def test_does_not_escape_entities_by_default
-    hash = {'key' => "I <3 this"}
+    hash = {'key' => "I <3 this\u2028space"}
     out = Oj.dump(hash)
-    assert_equal(%{{"key":"I <3 this"}}, out)
+    assert_equal(%{{"key":"I <3 this\\u2028space"}}, out)
   end
   def test_escapes_entities_by_default_when_configured_to_do_so
     hash = {'key' => "I <3 this"}
-    Oj.default_options = {:encoding => :rails}
+    Oj.default_options = {:escape_mode => :xss_safe}
     out = Oj.dump hash
     assert_equal(%{{"key":"I \\u003c3 this"}}, out)
   end
   def test_escapes_entities_when_asked_to
     hash = {'key' => "I <3 this"}
-    out = Oj.dump(hash, :encoding => :rails)
+    out = Oj.dump(hash, :escape_mode => :xss_safe)
     assert_equal(%{{"key":"I \\u003c3 this"}}, out)
   end
   def test_does_not_escape_entities_when_not_asked_to
     hash = {'key' => "I <3 this"}
-    out = Oj.dump(hash, :encoding => :json)
+    out = Oj.dump(hash, :escape_mode => :json)
     assert_equal(%{{"key":"I <3 this"}}, out)
   end
   def test_escapes_common_xss_vectors
     hash = {'key' => "<script>alert(123) && formatHD()</script>"}
-    out = Oj.dump(hash, :encoding => :rails)
+    out = Oj.dump(hash, :escape_mode => :xss_safe)
     assert_equal(%{{"key":"\\u003cscript\\u003ealert(123) \\u0026\\u0026 formatHD()\\u003c\\/script\\u003e"}}, out)
   end
 

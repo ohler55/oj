@@ -26,7 +26,7 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
  - Removed the temporary GC disable and implemented mark strategy instead.
 
- - Added new character encoding mode to support the Rails escape characters of &, <, and >. The :encoding option replaces the :ascii_only option.
+ - Added new character encoding mode to support the Rails 4 escape characters of &, <, and > as xss_safe mode. The :encoding option replaces the :ascii_only option.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
