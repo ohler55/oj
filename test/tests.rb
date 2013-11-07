@@ -252,9 +252,11 @@ class Juice < ::Test::Unit::TestCase
 
   # rails encoding tests
   def test_does_not_escape_entities_by_default
-    hash = {'key' => "I <3 this\u2028space"}
+    # use Oj to create the hash since some Rubies don't deal nicely with unicode.
+    json = %{{"key":"I <3 this\\u2028space"}}
+    hash = Oj.load(json)
     out = Oj.dump(hash)
-    assert_equal(%{{"key":"I <3 this\\u2028space"}}, out)
+    assert_equal(json, out)
   end
   def test_escapes_entities_by_default_when_configured_to_do_so
     hash = {'key' => "I <3 this"}
