@@ -34,8 +34,9 @@
 #include "ruby.h"
 #include "odd.h"
 #include <stdint.h>
+#include <pthread.h>
 
-#define STACK_INC	32
+#define STACK_INC	64
 
 typedef enum {
     NEXT_NONE		= 0,
@@ -50,23 +51,24 @@ typedef enum {
 } ValNext;
 
 typedef struct _Val {
-    VALUE	val;
-    const char	*key;
+    VALUE		val;
+    const char		*key;
     union {
 	const char	*classname;
 	OddArgs		odd_args;
     };
-    uint16_t	klen;
-    uint16_t	clen;
-    char	next; // ValNext
-    char	k1;   // first original character in the key
+    uint16_t		klen;
+    uint16_t		clen;
+    char		next; // ValNext
+    char		k1;   // first original character in the key
 } *Val;
 
 typedef struct _ValStack {
-    struct _Val	base[STACK_INC];
-    Val		head;	// current stack
-    Val		end;	// stack end
-    Val		tail;	// pointer to one past last element name on stack
+    struct _Val		base[STACK_INC];
+    Val			head;	// current stack
+    Val			end;	// stack end
+    Val			tail;	// pointer to one past last element name on stack
+    pthread_mutex_t	mutex;
 } *ValStack;
 
 extern VALUE	oj_stack_init(ValStack stack);
@@ -88,15 +90,21 @@ stack_push(ValStack stack, VALUE val, ValNext next) {
     if (stack->end <= stack->tail) {
 	size_t	len = stack->end - stack->head;
 	size_t	toff = stack->tail - stack->head;
+	Val	head = stack->head;
 
+	// A realloc can trigger a GC so make sure it happens outside the lock
+	// but lock before changing pointers.
 	if (stack->base == stack->head) {
-	    stack->head = ALLOC_N(struct _Val, len + STACK_INC);
-	    memcpy(stack->head, stack->base, sizeof(struct _Val) * len);
+	    head = ALLOC_N(struct _Val, len + STACK_INC);
+	    memcpy(head, stack->base, sizeof(struct _Val) * len);
 	} else {
-	    REALLOC_N(stack->head, struct _Val, len + STACK_INC);
+	    REALLOC_N(head, struct _Val, len + STACK_INC);
 	}
+	pthread_mutex_lock(&stack->mutex);
+	stack->head = head;
 	stack->tail = stack->head + toff;
 	stack->end = stack->head + len + STACK_INC;
+	pthread_mutex_unlock(&stack->mutex);
     }
     stack->tail->val = val;
     stack->tail->next = next;

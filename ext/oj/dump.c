@@ -611,16 +611,14 @@ dump_class_obj(VALUE obj, Out out) {
 
 static void
 dump_array(VALUE a, int depth, Out out) {
-    VALUE	*np;
     size_t	size;
-    int		cnt;
+    int		i, cnt;
     int		d2 = depth + 1;
     long	id = check_circular(a, out);
 
     if (id < 0) {
 	return;
     }
-    np = RARRAY_PTR(a);
     cnt = (int)RARRAY_LEN(a);
     *out->cur++ = '[';
     if (0 < id) {
@@ -650,7 +648,8 @@ dump_array(VALUE a, int depth, Out out) {
 	} else {
 	    size = d2 * out->opts->dump_opts->indent_size + out->opts->dump_opts->array_size + 1;
 	}
-	for (; 0 < cnt; cnt--, np++) {
+	cnt--;
+	for (i = 0; i <= cnt; i++) {
 	    if (out->end - out->cur <= (long)size) {
 		grow(out, size);
 	    }
@@ -669,8 +668,8 @@ dump_array(VALUE a, int depth, Out out) {
 		    }
 		}
 	    }
-	    dump_val(*np, d2, out);
-	    if (1 < cnt) {
+	    dump_val(rb_ary_entry(a, i), d2, out);
+	    if (i < cnt) {
 		*out->cur++ = ',';
 	    }
 	}

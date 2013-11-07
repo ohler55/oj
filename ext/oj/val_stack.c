@@ -36,15 +36,18 @@ mark(void *ptr) {
     ValStack	stack = (ValStack)ptr;
     Val		v;
 
+    pthread_mutex_lock(&stack->mutex);
     for (v = stack->head; v < stack->tail; v++) {
-	if (Qnil != v->val) {
+	if (Qnil != v->val && Qundef != v->val) {
 	    rb_gc_mark(v->val);
 	}
     }
+    pthread_mutex_unlock(&stack->mutex);
 }
 
 VALUE
 oj_stack_init(ValStack stack) {
+    pthread_mutex_init(&stack->mutex, 0);
     stack->head = stack->base;
     stack->end = stack->base + sizeof(stack->base) / sizeof(struct _Val);
     stack->tail = stack->head;
