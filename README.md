@@ -28,6 +28,8 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
  - Added new character encoding mode to support the Rails 4 escape characters of &, <, and > as xss_safe mode. The :encoding option replaces the :ascii_only option.
 
+ - Change parsing of NaN to not use math.h which on older systems does not define NAN.
+
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
 ## <a name="description">Description</a>

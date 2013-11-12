@@ -656,7 +656,7 @@ oj_num_as_value(NumInfo ni) {
 	    rnum = rb_float_new(OJ_INFINITY);
 	}
     } else if (ni->nan) {
-	rnum = rb_float_new(NAN);
+	rnum = rb_float_new(0.0/0.0);
     } else if (1 == ni->div && 0 == ni->exp) { // fixnum
 	if (ni->big) {
 	    if (256 > ni->len) {
