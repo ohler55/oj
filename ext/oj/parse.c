@@ -520,14 +520,14 @@ array_end(ParseInfo pi) {
 
 static void
 hash_start(ParseInfo pi) {
-    VALUE	v = pi->start_hash(pi);
+    volatile VALUE	v = pi->start_hash(pi);
 
     stack_push(&pi->stack, v, NEXT_HASH_NEW);
 }
 
 static void
 hash_end(ParseInfo pi) {
-    Val	hash = stack_peek(&pi->stack);
+    volatile Val	hash = stack_peek(&pi->stack);
 
     // leave hash on stack until just before 
     if (0 == hash) {
@@ -647,7 +647,7 @@ oj_parse2(ParseInfo pi) {
 
 VALUE
 oj_num_as_value(NumInfo ni) {
-    VALUE	rnum = Qnil;
+    volatile VALUE	rnum = Qnil;
 
     if (ni->infinity) {
 	if (ni->neg) {
@@ -720,7 +720,7 @@ protect_parse(VALUE pip) {
 VALUE
 oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json) {
     char		*buf = 0;
-    VALUE		input;
+    volatile VALUE	input;
     volatile VALUE	result = Qnil;
     int			line = 0;
     int			free_json = 0;
@@ -739,8 +739,8 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json) {
     } else if (rb_type(input) == T_STRING) {
 	pi->json = StringValuePtr(input);
     } else {
-	VALUE	clas = rb_obj_class(input);
-	VALUE	s;
+	VALUE		clas = rb_obj_class(input);
+	volatile VALUE	s;
 
 	if (oj_stringio_class == clas) {
 	    s = rb_funcall2(input, oj_string_id, 0, 0);

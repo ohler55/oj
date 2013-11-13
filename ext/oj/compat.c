@@ -52,8 +52,8 @@ hash_set_cstr(ParseInfo pi, const char *key, size_t klen, const char *str, size_
 	}
 	parent->clen = len;
     } else {
-	VALUE	rstr = rb_str_new(str, len);
-	VALUE	rkey = rb_str_new(key, klen);
+	volatile VALUE	rstr = rb_str_new(str, len);
+	volatile VALUE	rkey = rb_str_new(key, klen);
 
 	rstr = oj_encode(rstr);
 	rkey = oj_encode(rkey);

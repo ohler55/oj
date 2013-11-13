@@ -180,14 +180,14 @@ hat_num(ParseInfo pi, Val parent, const char *key, size_t klen, NumInfo ni) {
 }
 
 static int
-hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, VALUE value) {
+hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, volatile VALUE value) {
     if (2 == klen && 'u' == key[1] && T_ARRAY == rb_type(value)) {
 #if HAS_RSTRUCT
-	long		len = RARRAY_LEN(value);
-	VALUE		*a = RARRAY_PTR(value);
-	VALUE		sc;
-	volatile VALUE	s;
-	VALUE		*sv;
+	long			len = RARRAY_LEN(value);
+	volatile VALUE		*a = RARRAY_PTR(value);
+	volatile VALUE		sc;
+	volatile VALUE		s;
+	volatile VALUE		*sv;
 
 	if (0 == len) {
 	    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "Invalid struct data");
@@ -215,8 +215,8 @@ hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, VALUE value) {
 #endif
 	return 1;
     } else if (3 <= klen && '#' == key[1] && T_ARRAY == rb_type(value)) {
-	long	len = RARRAY_LEN(value);
-	VALUE	*a = RARRAY_PTR(value);
+	long		len = RARRAY_LEN(value);
+	volatile VALUE	*a = RARRAY_PTR(value);
 	
 	if (2 != len) {
 	    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "invalid hash pair");
@@ -232,7 +232,7 @@ hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, VALUE value) {
 static void
 copy_ivars(VALUE target, VALUE src) {
     volatile VALUE	vars = rb_funcall(src, oj_instance_variables_id, 0);
-    VALUE		*np = RARRAY_PTR(vars);
+    volatile VALUE	*np = RARRAY_PTR(vars);
     ID			vid;
     int			i, cnt = (int)RARRAY_LEN(vars);
     const char		*attr;
