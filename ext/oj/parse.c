@@ -737,14 +737,14 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json) {
 	pi->json = json;
 	free_json = 1;
     } else if (rb_type(input) == T_STRING) {
-	pi->json = StringValuePtr(input);
+	pi->json = rb_string_value_cstr((VALUE*)&input);
     } else {
 	VALUE		clas = rb_obj_class(input);
 	volatile VALUE	s;
 
 	if (oj_stringio_class == clas) {
 	    s = rb_funcall2(input, oj_string_id, 0, 0);
-	    pi->json = StringValuePtr(s);
+	    pi->json = rb_string_value_cstr((VALUE*)&s);
 #ifndef JRUBY_RUBY
 #if !IS_WINDOWS
 	    // JRuby gets confused with what is the real fileno.
@@ -771,7 +771,7 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json) {
 #endif
 	} else if (rb_respond_to(input, oj_read_id)) {
 	    s = rb_funcall2(input, oj_read_id, 0, 0);
-	    pi->json = StringValuePtr(s);
+	    pi->json = rb_string_value_cstr((VALUE*)&s);
 	} else {
 	    rb_raise(rb_eArgError, "strict_parse() expected a String or IO Object.");
 	}
