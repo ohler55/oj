@@ -40,6 +40,7 @@ mark(void *ptr) {
     pthread_mutex_lock(&stack->mutex);
 #elif USE_RB_MUTEX
     rb_mutex_lock(stack->mutex);
+    rb_gc_mark(stack->mutex);
 #endif
     for (v = stack->head; v < stack->tail; v++) {
 	if (Qnil != v->val && Qundef != v->val) {

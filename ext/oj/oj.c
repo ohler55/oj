@@ -132,7 +132,7 @@ VALUE		oj_utf8_encoding = Qnil;
 #if USE_PTHREAD_MUTEX
 pthread_mutex_t	oj_cache_mutex;
 #elif USE_RB_MUTEX
-VALUE oj_cache_mutex;
+VALUE oj_cache_mutex = Qnil;
 #endif
 static const char	json_class[] = "json_class";
 
@@ -1275,6 +1275,7 @@ void Init_oj() {
     pthread_mutex_init(&oj_cache_mutex, 0);
 #elif USE_RB_MUTEX
     oj_cache_mutex = rb_mutex_new();
+    rb_gc_register_address(&oj_cache_mutex);
 #endif
     oj_init_doc();
 }
