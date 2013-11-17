@@ -46,7 +46,8 @@ extern "C" {
 #endif
 
 #include "stdint.h"
-#if SAFE_CACHE
+
+#if USE_PTHREAD_MUTEX
 #include <pthread.h>
 #endif
 #include "cache8.h"
@@ -224,9 +225,12 @@ extern ID	oj_tv_usec_id;
 extern ID	oj_utc_offset_id;
 extern ID	oj_write_id;
 
-#if SAFE_CACHE
+#if USE_PTHREAD_MUTEX
 extern pthread_mutex_t	oj_cache_mutex;
+#elif USE_RB_MUTEX
+extern VALUE	oj_cache_mutex;
 #endif
+
 #if defined(__cplusplus)
 #if 0
 { /* satisfy cc-mode */

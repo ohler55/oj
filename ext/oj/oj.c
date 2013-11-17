@@ -129,8 +129,10 @@ rb_encoding	*oj_utf8_encoding = 0;
 VALUE		oj_utf8_encoding = Qnil;
 #endif
 
-#if SAFE_CACHE
-pthread_mutex_t	oj_cache_mutex; // only used if SAFE_CACHE defined
+#if USE_PTHREAD_MUTEX
+pthread_mutex_t	oj_cache_mutex;
+#elif USE_RB_MUTEX
+VALUE oj_cache_mutex;
 #endif
 static const char	json_class[] = "json_class";
 
@@ -1269,8 +1271,10 @@ void Init_oj() {
     oj_hash_init();
     oj_odd_init();
 
-#if SAFE_CACHE
+#if USE_PTHREAD_MUTEX
     pthread_mutex_init(&oj_cache_mutex, 0);
+#elif USE_RB_MUTEX
+    oj_cache_mutex = rb_mutex_new();
 #endif
     oj_init_doc();
 }

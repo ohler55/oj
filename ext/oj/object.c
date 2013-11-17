@@ -263,8 +263,10 @@ set_obj_ivar(Val parent, const char *key, size_t klen, VALUE value) {
 	    rb_funcall(parent->val, rb_intern("set_backtrace"), 1, value);
 	}
     }
-#if SAFE_CACHE
+#if USE_PTHREAD_MUTEX
     pthread_mutex_lock(&oj_cache_mutex);
+#elif USE_RB_MUTEX
+    rn_mutex_lock(oj_cache_mutex);
 #endif
     if (0 == (var_id = oj_attr_hash_get(key, klen, &slot))) {
 	char	attr[256];
@@ -295,8 +297,10 @@ set_obj_ivar(Val parent, const char *key, size_t klen, VALUE value) {
 	}
 	*slot = var_id;
     }
-#if SAFE_CACHE
+#if USE_PTHREAD_MUTEX
     pthread_mutex_unlock(&oj_cache_mutex);
+#elif USE_RB_MUTEX
+    rn_mutex_unlock(oj_cache_mutex);
 #endif
     rb_ivar_set(parent->val, var_id, value);
 }

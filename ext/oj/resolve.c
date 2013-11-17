@@ -31,7 +31,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#if SAFE_CACHE
+#if USE_PTHREAD_MUTEX
 #include <pthread.h>
 #endif
 
@@ -102,16 +102,20 @@ oj_name2class(ParseInfo pi, const char *name, size_t len, int auto_define) {
     if (No == pi->options.class_cache) {
 	return resolve_classpath(pi, name, len, auto_define);
     }
-#if SAFE_CACHE
+#if USE_PTHREAD_MUTEX
     pthread_mutex_lock(&oj_cache_mutex);
+#elif USE_RB_MUTEX
+    rb_mutex_lock(oj_cache_mutex);
 #endif
     if (Qnil == (clas = oj_class_hash_get(name, len, &slot))) {
 	if (Qundef != (clas = resolve_classpath(pi, name, len, auto_define))) {
 	    *slot = clas;
 	}
     }
-#if SAFE_CACHE
+#if USE_PTHREAD_MUTEX
     pthread_mutex_unlock(&oj_cache_mutex);
+#elif USE_RB_MUTEX
+    rb_mutex_unlock(oj_cache_mutex);
 #endif
     return clas;
 }
