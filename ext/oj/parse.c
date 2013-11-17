@@ -569,11 +569,8 @@ colon(ParseInfo pi) {
 
 void
 oj_parse2(ParseInfo pi) {
-    volatile VALUE	rstack = Qnil;
-
     pi->cur = pi->json;
     err_init(&pi->err);
-    rstack = oj_stack_init(&pi->stack);
     while (1) {
 	next_non_white(pi);
 	switch (*pi->cur++) {
@@ -722,6 +719,7 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json) {
     char		*buf = 0;
     volatile VALUE	input;
     volatile VALUE	result = Qnil;
+    volatile VALUE	wrapped_stack;
     int			line = 0;
     int			free_json = 0;
 
@@ -782,10 +780,14 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json) {
 	pi->circ_array = 0;
     }
     // GC can run at any time. When it runs any Object created by C will be
-    // freed. This usually only happens with large files but it does happen and
-    // it happens more frequently on Ruby 1.8.7.
+    // freed. We protect against this by wrapping the value stack in a ruby
+    // data object and poviding a mark function for ruby objects on the
+    // value stack (while it is in scope).
+    wrapped_stack = oj_stack_init(&pi->stack);
     rb_protect(protect_parse, (VALUE)pi, &line);
     result = stack_head_val(&pi->stack);
+    DATA_PTR(wrapped_stack) = NULL;
+
     // proceed with cleanup
     if (0 != pi->circ_array) {
 	oj_circ_array_free(pi->circ_array);
