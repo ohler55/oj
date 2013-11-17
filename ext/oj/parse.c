@@ -644,7 +644,7 @@ oj_parse2(ParseInfo pi) {
 
 VALUE
 oj_num_as_value(NumInfo ni) {
-    volatile VALUE	rnum = Qnil;
+    VALUE	rnum = Qnil;
 
     if (ni->infinity) {
 	if (ni->neg) {
@@ -718,8 +718,8 @@ VALUE
 oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json) {
     char		*buf = 0;
     volatile VALUE	input;
-    volatile VALUE	result = Qnil;
     volatile VALUE	wrapped_stack;
+    VALUE		result = Qnil;
     int			line = 0;
     int			free_json = 0;
 
@@ -786,7 +786,7 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json) {
     wrapped_stack = oj_stack_init(&pi->stack);
     rb_protect(protect_parse, (VALUE)pi, &line);
     result = stack_head_val(&pi->stack);
-    DATA_PTR(wrapped_stack) = NULL;
+    DATA_PTR(wrapped_stack) = 0;
 
     // proceed with cleanup
     if (0 != pi->circ_array) {

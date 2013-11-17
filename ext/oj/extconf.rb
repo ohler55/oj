@@ -32,7 +32,7 @@ dflags = {
   'NEEDS_RATIONAL' => ('1' == version[0] && '8' == version[1]) ? 1 : 0,
   'IS_WINDOWS' => is_windows ? 1 : 0,
   'USE_PTHREAD_MUTEX' => is_windows ? 0 : 1,
-  'USE_RB_MUTEX' => (is_windows & !('1' == version[0] && '8' == version[1])) ? 1 : 0,
+  'USE_RB_MUTEX' => (is_windows && !('1' == version[0] && '8' == version[1])) ? 1 : 0,
 }
 # This is a monster hack to get around issues with 1.9.3-p0 on CentOS 5.4. SO
 # some reason math.h and string.h contents are not processed. Might be a

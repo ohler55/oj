@@ -198,6 +198,7 @@ oj_sc_parse(int argc, VALUE *argv, VALUE self) {
     char		*buf = 0;
     VALUE		input;
     VALUE		handler;
+    volatile VALUE	wrapped_stack;
     int			line = 0;
 
     if (argc < 2) {
@@ -252,8 +253,8 @@ oj_sc_parse(int argc, VALUE *argv, VALUE self) {
     if (rb_type(input) == T_STRING) {
 	pi.json = StringValuePtr(input);
     } else {
-	VALUE	clas = rb_obj_class(input);
-	VALUE	s;
+	VALUE		clas = rb_obj_class(input);
+	volatile VALUE	s;
 
 	if (oj_stringio_class == clas) {
 	    s = rb_funcall2(input, oj_string_id, 0, 0);
@@ -285,8 +286,9 @@ oj_sc_parse(int argc, VALUE *argv, VALUE self) {
 	    rb_raise(rb_eArgError, "saj_parse() expected a String or IO Object.");
 	}
     }
+    wrapped_stack = oj_stack_init(&pi.stack);
     rb_protect(protect_parse, (VALUE)&pi, &line);
-    //oj_parse2(&pi);
+    DATA_PTR(wrapped_stack) = NULL;
     if (0 != buf) {
 	xfree(buf);
     }
