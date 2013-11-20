@@ -185,17 +185,22 @@ hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, volatile VALUE
 	int	len = (int)RARRAY_LEN(value);
 
 	if (2 == klen && 'u' == key[1]) {
-	    volatile VALUE	sc;
+            VALUE	sc;
 
 	    if (0 == len) {
 		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "Invalid struct data");
 		return 1;
 	    }
-	    // If struct is not defined of new is not supported on the class then
-	    // let this fail and raise an exception.
+	    // If struct is not defined then we let this fail and raise an exception.
 	    sc = rb_const_get(oj_struct_class, rb_to_id(*RARRAY_PTR(value)));
-	    parent->val = rb_funcall2(sc, oj_new_id, len - 1, RARRAY_PTR(value) + 1);
-
+            // Create a properly initialized struct instance without calling the initialize method.
+            parent->val = rb_obj_alloc(sc);
+            // If the JSON array has more entries than the struct class allows, we record an error.
+            if (len-1 > RSTRUCT_LEN(parent->val)) {
+		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "Invalid struct data");
+            } else {
+                MEMCPY(RSTRUCT_PTR(parent->val), RARRAY_PTR(value)+1, VALUE, len-1);
+            }
 	    return 1;
 	} else if (3 <= klen && '#' == key[1]) {
 	    volatile VALUE	*a;
