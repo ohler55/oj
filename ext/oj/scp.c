@@ -281,7 +281,8 @@ oj_sc_parse(int argc, VALUE *argv, VALUE self) {
 #endif
 	} else if (rb_respond_to(input, oj_read_id)) {
 	    s = rb_funcall2(input, oj_read_id, 0, 0);
-	    pi.json = StringValuePtr(s);
+	    pi.json = rb_string_value_cstr((VALUE*)&s);
+
 	} else {
 	    rb_raise(rb_eArgError, "saj_parse() expected a String or IO Object.");
 	}

@@ -36,8 +36,9 @@ mark(void *ptr) {
     ValStack	stack = (ValStack)ptr;
     Val		v;
 
-    if (ptr == NULL) return;
-
+    if (0 == ptr) {
+	return;
+    }
 #if USE_PTHREAD_MUTEX
     pthread_mutex_lock(&stack->mutex);
 #elif USE_RB_MUTEX

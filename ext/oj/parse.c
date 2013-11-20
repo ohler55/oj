@@ -389,6 +389,7 @@ read_num(ParseInfo pi) {
     ni.infinity = 0;
     ni.nan = 0;
     ni.neg = 0;
+    ni.no_big = (FloatDec == pi->options.bigdec_load);
 
     if ('-' == *pi->cur) {
 	pi->cur++;
@@ -470,7 +471,7 @@ read_num(ParseInfo pi) {
 	ni.dec_cnt -= zero_cnt;
 	ni.len = pi->cur - ni.str;
     }
-    if (Yes == pi->options.bigdec_load) {
+    if (BigDec == pi->options.bigdec_load) {
 	ni.big = 1;
     }
     if (0 == parent) {
@@ -680,6 +681,9 @@ oj_num_as_value(NumInfo ni) {
     } else { // decimal
 	if (ni->big) {
 	    rnum = rb_funcall(oj_bigdecimal_class, oj_new_id, 1, rb_str_new(ni->str, ni->len));
+	    if (ni->no_big) {
+		rnum = rb_funcall(rnum, rb_intern("to_f"), 0);
+	    }
 	} else {
 	    double	d = (double)ni->i + (double)ni->num / (double)ni->div;
 

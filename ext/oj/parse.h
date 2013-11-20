@@ -50,6 +50,7 @@ typedef struct _NumInfo {
     int		infinity;
     int		nan;
     int		neg;
+    int		no_big;
 } *NumInfo;
 
 typedef struct _ParseInfo {

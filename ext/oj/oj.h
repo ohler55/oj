@@ -92,6 +92,12 @@ typedef enum {
     ASCIIEsc	= 'a'
 } Encoding;
 
+typedef enum {
+    BigDec	= 'b',
+    FloatDec	= 'f',
+    AutoDec	= 'a'
+} BigLoad;
+
 typedef struct _DumpOpts {
     const char	*indent;
     const char	*before_sep;
@@ -115,7 +121,7 @@ typedef struct _Options {
     char	class_cache;	// YesNo
     char	time_format;	// TimeFormat
     char	bigdec_as_num;	// YesNo
-    char	bigdec_load;	// YesNo
+    char	bigdec_load;	// BigLoad
     const char	*create_id;	// 0 or string
     size_t	create_id_len;	// length of create_id
     int		sec_prec;	// second precision when dumping time

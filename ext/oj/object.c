@@ -181,50 +181,35 @@ hat_num(ParseInfo pi, Val parent, const char *key, size_t klen, NumInfo ni) {
 
 static int
 hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, volatile VALUE value) {
-    if (2 == klen && 'u' == key[1] && T_ARRAY == rb_type(value)) {
-#if HAS_RSTRUCT
-	long			len = RARRAY_LEN(value);
-	volatile VALUE		*a = RARRAY_PTR(value);
-	volatile VALUE		sc;
-	volatile VALUE		s;
-	volatile VALUE		*sv;
+    if (T_ARRAY == rb_type(value)) {
+	int	len = (int)RARRAY_LEN(value);
 
-	if (0 == len) {
-	    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "Invalid struct data");
+	if (2 == klen && 'u' == key[1]) {
+	    volatile VALUE	sc;
+
+	    if (0 == len) {
+		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "Invalid struct data");
+		return 1;
+	    }
+	    // If struct is not defined of new is not supported on the class then
+	    // let this fail and raise an exception.
+	    sc = rb_const_get(oj_struct_class, rb_to_id(*RARRAY_PTR(value)));
+	    parent->val = rb_funcall2(sc, oj_new_id, len - 1, RARRAY_PTR(value) + 1);
+
 	    return 1;
-	}
-	sc = rb_const_get(oj_struct_class, rb_to_id(*a));
-	//sc = rb_const_get(oj_struct_class, rb_intern_str(*a));
-	// use encoding as the indicator for Ruby 1.8.7 or 1.9.x
-#if HAS_ENCODING_SUPPORT
-	s = rb_struct_alloc_noinit(sc);
-#else
-	s = rb_struct_new(sc, Qnil, Qnil, Qnil, Qnil, Qnil, Qnil, Qnil, Qnil, Qnil, Qnil, Qnil, Qnil, Qnil, Qnil, Qnil, Qnil, Qnil, Qnil, Qnil, Qnil);
-#endif
-	sv = RSTRUCT_PTR(s);
-	if (RSTRUCT_LEN(s) < len - 1) {
-	    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "Too many elements for Struct");
-	    return 1;
-	}
-	for (a++; 0 < len; len--, a++, sv++) {
-	    *sv = *a;
-	}
-	parent->val = s;
-#else
-	oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "Ruby structs not supported with this version of Ruby");
-#endif
-	return 1;
-    } else if (3 <= klen && '#' == key[1] && T_ARRAY == rb_type(value)) {
-	long		len = RARRAY_LEN(value);
-	volatile VALUE	*a = RARRAY_PTR(value);
+	} else if (3 <= klen && '#' == key[1]) {
+	    volatile VALUE	*a;
 	
-	if (2 != len) {
-	    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "invalid hash pair");
+	    if (2 != len) {
+		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "invalid hash pair");
+		return 1;
+	    }
+	    parent->val = rb_hash_new();
+	    a = RARRAY_PTR(value);
+	    rb_hash_aset(parent->val, *a, a[1]);
+
 	    return 1;
 	}
-	parent->val = rb_hash_new();
-	rb_hash_aset(parent->val, *a, a[1]);
-	return 1;
     }
     return 0;
 }

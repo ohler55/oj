@@ -133,7 +133,7 @@ class Juice < ::Test::Unit::TestCase
                    :mode=>:object,
                    :time_format=>:unix,
                    :bigdecimal_as_decimal=>true,
-                   :bigdecimal_load=>false,
+                   :bigdecimal_load=>:auto,
                    :create_id=>'json_class'}, opts)
   end
 
@@ -149,7 +149,7 @@ class Juice < ::Test::Unit::TestCase
       :mode=>:object,
       :time_format=>:unix,
       :bigdecimal_as_decimal=>true,
-      :bigdecimal_load=>false,
+      :bigdecimal_load=>:auto,
       :create_id=>'json_class'}
     o2 = {
       :indent=>4,
@@ -162,7 +162,7 @@ class Juice < ::Test::Unit::TestCase
       :mode=>:compat,
       :time_format=>:ruby,
       :bigdecimal_as_decimal=>false,
-      :bigdecimal_load=>true,
+      :bigdecimal_load=>:bigdecimal,
       :create_id=>nil}
     o3 = { :indent => 4 }
     Oj.default_options = o2
@@ -825,6 +825,13 @@ class Juice < ::Test::Unit::TestCase
     bg = Oj.load(json, :mode => :compat, :bigdecimal_load => true)
     assert_equal(BigDecimal, bg.class)
     assert_equal(orig, bg)
+  end
+  def test_float_load
+    orig = BigDecimal.new('80.51')
+    json = Oj.dump(orig, :mode => :compat, :bigdecimal_as_decimal => true)
+    bg = Oj.load(json, :mode => :compat, :bigdecimal_load => :float)
+    assert_equal(Float, bg.class)
+    assert_equal(orig.to_f, bg)
   end
   def test_bigdecimal_compat_to_json
     orig = BigDecimal.new('80.51')
