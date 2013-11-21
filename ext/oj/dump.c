@@ -84,10 +84,8 @@ static void	dump_data_comp(VALUE obj, int depth, Out out);
 static void	dump_data_obj(VALUE obj, int depth, Out out);
 static void	dump_obj_comp(VALUE obj, int depth, Out out);
 static void	dump_obj_obj(VALUE obj, int depth, Out out);
-#if HAS_RSTRUCT
 static void	dump_struct_comp(VALUE obj, int depth, Out out);
 static void	dump_struct_obj(VALUE obj, int depth, Out out);
-#endif
 #if HAS_IVAR_HELPERS
 static int	dump_attr_cb(ID key, VALUE value, Out out);
 #endif
@@ -1484,7 +1482,6 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
     *out->cur = '\0';
 }
 
-#if HAS_RSTRUCT
 static void
 dump_struct_comp(VALUE obj, int depth, Out out) {
     if (rb_respond_to(obj, oj_to_hash_id)) {
@@ -1515,7 +1512,6 @@ static void
 dump_struct_obj(VALUE obj, int depth, Out out) {
     VALUE	clas = rb_obj_class(obj);
     const char	*class_name = rb_class2name(clas);
-    VALUE	*vp;
     int		i;
     int		d2 = depth + 1;
     int		d3 = d2 + 1;
@@ -1540,20 +1536,38 @@ dump_struct_obj(VALUE obj, int depth, Out out) {
     *out->cur++ = '"';
     *out->cur++ = ',';
     size = d3 * out->indent + 2;
-    for (i = (int)RSTRUCT_LEN(obj), vp = RSTRUCT_PTR(obj); 0 < i; i--, vp++) {
+#if HAVE_RSTRUCT
+    {
+       VALUE	*vp;
+       for (i = (int)RSTRUCT_LEN(obj), vp = RSTRUCT_PTR(obj); 0 < i; i--, vp++) {
 	if (out->end - out->cur <= (long)size) {
 	    grow(out, size);
 	}
 	fill_indent(out, d3);
 	dump_val(*vp, d3, out);
 	*out->cur++ = ',';
-    }
+       }
+    } while(0);
+#else
+    {
+      VALUE sz = rb_funcall2(obj, oj_length_id, 0, 0);
+      int length = FIX2INT(sz);
+
+      for (i = 0; i < length; i++) {
+	if (out->end - out->cur <= (long)size) {
+	    grow(out, size);
+	}
+	fill_indent(out, d3);
+	dump_val(rb_struct_aref(obj, INT2FIX(i)), d3, out);
+	*out->cur++ = ',';
+      }
+    } while(0);
+#endif
     out->cur--;
     *out->cur++ = ']';
     *out->cur++ = '}';
     *out->cur = '\0';
 }
-#endif
 
 static void
 dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
@@ -1669,7 +1683,7 @@ dump_val(VALUE obj, int depth, Out out) {
 	default:		dump_data_obj(obj, depth, out);	break;
 	}
 	break;
-#if HAS_RSTRUCT
+
     case T_STRUCT: // for Range
 	switch (out->opts->mode) {
 	case StrictMode:	raise_strict(obj);		break;
@@ -1679,7 +1693,7 @@ dump_val(VALUE obj, int depth, Out out) {
 	default:		dump_struct_obj(obj, depth, out);	break;
 	}
 	break;
-#endif
+
 #if (defined T_COMPLEX && defined RCOMPLEX)
     case T_COMPLEX:
 #endif
