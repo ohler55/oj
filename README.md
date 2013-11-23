@@ -20,6 +20,13 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
+
+### Current Release 2.2.4
+
+ - JRuby is no longer supported.
+
+ - Thanks to Stefan Kaes the support for structs has been optimized.
+
 ### Current Release 2.2.3
 
  - Fixed struct segfault on load.

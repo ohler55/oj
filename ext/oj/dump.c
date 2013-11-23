@@ -1517,7 +1517,7 @@ dump_struct_obj(VALUE obj, int depth, Out out) {
     int		d3 = d2 + 1;
     size_t	len = strlen(class_name);
     size_t	size = d2 * out->indent + d3 * out->indent + 10 + len;
-	    
+
     if (out->end - out->cur <= (long)size) {
 	grow(out, size);
     }
@@ -1536,32 +1536,34 @@ dump_struct_obj(VALUE obj, int depth, Out out) {
     *out->cur++ = '"';
     *out->cur++ = ',';
     size = d3 * out->indent + 2;
-#if HAVE_RSTRUCT
+#ifdef RSTRUCT_LEN
     {
-       VALUE	*vp;
-       for (i = (int)RSTRUCT_LEN(obj), vp = RSTRUCT_PTR(obj); 0 < i; i--, vp++) {
-	if (out->end - out->cur <= (long)size) {
-	    grow(out, size);
+	VALUE	*vp;
+
+	for (i = (int)RSTRUCT_LEN(obj), vp = RSTRUCT_PTR(obj); 0 < i; i--, vp++) {
+	    if (out->end - out->cur <= (long)size) {
+		grow(out, size);
+	    }
+	    fill_indent(out, d3);
+	    dump_val(*vp, d3, out);
+	    *out->cur++ = ',';
 	}
-	fill_indent(out, d3);
-	dump_val(*vp, d3, out);
-	*out->cur++ = ',';
-       }
-    } while(0);
+    }
 #else
     {
-      VALUE sz = rb_funcall2(obj, oj_length_id, 0, 0);
-      int length = FIX2INT(sz);
+	// This is a bit risky as a struct in C ruby is not the same as a Struct
+	// class in interpreted Ruby so length() may not be defined.
+	int	slen = FIX2INT(rb_funcall2(obj, oj_length_id, 0, 0));
 
-      for (i = 0; i < length; i++) {
-	if (out->end - out->cur <= (long)size) {
-	    grow(out, size);
+	for (i = 0; i < slen; i++) {
+	    if (out->end - out->cur <= (long)size) {
+		grow(out, size);
+	    }
+	    fill_indent(out, d3);
+	    dump_val(rb_struct_aref(obj, INT2FIX(i)), d3, out);
+	    *out->cur++ = ',';
 	}
-	fill_indent(out, d3);
-	dump_val(rb_struct_aref(obj, INT2FIX(i)), d3, out);
-	*out->cur++ = ',';
-      }
-    } while(0);
+    }
 #endif
     out->cur--;
     *out->cur++ = ']';

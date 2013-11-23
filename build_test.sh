@@ -1,11 +1,8 @@
 #!/bin/sh
 
-export JRUBY_OPTS="-Xcext.enabled=true"
-
 for ruby in \
  1.8.7-p334\
  1.9.2-p290\
- jruby-1.6.7\
  rbx-2.0.0-dev\
  ree-1.8.7-2012.02\
  1.9.3-p448\
