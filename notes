@@ -4,8 +4,13 @@
 ^c^s show subtree
 
 
-#117 nested structs segfaults on load
-#120 more options on BigDecimal (force not to use it)
+- dumper
+ - start obj
+ - end obj
+ - start array
+ - end array
+ - set value
+ 
 
 ---------------------------
 Tried a separate thread for the parser and the results were poor. The parsing is 10% to 15% of the total so splitting

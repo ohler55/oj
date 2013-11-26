@@ -1196,14 +1196,23 @@ iconv_rescue(VALUE x) {
 }
 #endif
 
+static VALUE
+protect_require(VALUE x) {
+    rb_require("bigdecimal");
+    return Qnil;
+}
+
 void Init_oj() {
+    int	err = 0;
+
     Oj = rb_define_module("Oj");
 
     oj_cstack_class = rb_define_class_under(Oj, "CStack", rb_cObject);
 
     rb_require("time");
     rb_require("date");
-    rb_require("bigdecimal");
+    // On Rubinius the require fails but can be done from a ruby file.
+    rb_protect(protect_require, Qnil, &err);
 #if NEEDS_RATIONAL
     rb_require("rational");
 #endif

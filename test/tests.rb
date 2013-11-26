@@ -765,8 +765,7 @@ class Juice < ::Test::Unit::TestCase
       Oj.default_options = { :mode => :object }
       json = Oj.dump(1..7, :mode => :object, :indent => 0)
       if 'rubinius' == $ruby
-        assert(%{{"^o":"Range","excl":false,"begin":1,"end":7}} == json ||
-               %{{"^o":"Range","begin":1,"end":7,"excl":false}} == json)
+        assert(%{{"^O":"Range","begin":1,"end":7,"exclude_end?":false}} == json)
       elsif 'jruby' == $ruby
         assert(%{{"^O":"Range","begin":1,"end":7,"exclude_end?":false}} == json)
       else

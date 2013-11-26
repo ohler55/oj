@@ -12,6 +12,7 @@ $: << File.join(File.dirname(__FILE__), "../ext")
 
 require 'test/unit'
 require 'stringio'
+require 'bigdecimal'
 require 'oj'
 
 $ruby = RUBY_DESCRIPTION.split(' ')[0]

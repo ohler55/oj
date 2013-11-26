@@ -27,6 +27,8 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
  - Thanks to Stefan Kaes the support for structs has been optimized.
 
+ - Better support for Rubinous
+
 ### Current Release 2.2.3
 
  - Fixed struct segfault on load.

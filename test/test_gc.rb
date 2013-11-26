@@ -12,6 +12,7 @@ $: << File.join(File.dirname(__FILE__), "../lib")
 $: << File.join(File.dirname(__FILE__), "../ext")
 
 require 'test/unit'
+require 'bigdecimal'
 require 'oj'
 
 class Goo
