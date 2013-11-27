@@ -3,14 +3,28 @@
 ^c^d hide subtree
 ^c^s show subtree
 
+- Writer or builder?
+ - options same as dump
+ - keep track of nesting
+ - calls into a writer
+  - write to string function or write to stream
+  - get string, return nil if stream
 
-- dumper
- - start obj
- - end obj
- - start array
- - end array
- - set value
- 
+ - methods
+  - start_object(key)
+  - end_object
+  - start_array(key)
+  - end_array
+  - add_value(key, value)
+  - close
+   - closes all open objects and arrays
+
+ - StreamWriter
+  - new(stream) optional stream, if nil then write to string buffer
+ - StringWriter
+  - to_s
+   - return string if 
+
 
 ---------------------------
 Tried a separate thread for the parser and the results were poor. The parsing is 10% to 15% of the total so splitting
