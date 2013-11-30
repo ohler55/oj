@@ -21,13 +21,15 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
 
-### Current Release 2.2.4
+### Current Release 2.3.0
 
  - JRuby is no longer supported.
 
  - Thanks to Stefan Kaes the support for structs has been optimized.
 
  - Better support for Rubinous
+
+ - Added option to disable GG during parsing.
 
 ### Current Release 2.2.3
 

@@ -20,6 +20,7 @@ require 'files'
 
 $circular = false
 $indent = 0
+$allow_gc = true
 
 do_sample = false
 do_files = false
@@ -35,6 +36,7 @@ opts = OptionParser.new
 opts.on("-c", "circular options")                           { $circular = true }
 
 opts.on("-x", "use sample instead of files")                { do_sample = true }
+opts.on("-g", "no GC during parsing")                       { $allow_gc = false }
 
 opts.on("-s", "load and dump as sample Ruby object")        { do_sample = true }
 opts.on("-f", "load and dump as files Ruby object")         { do_files = true }
@@ -86,7 +88,7 @@ else
   end
 end
 
-Oj.default_options = { :mode => :object, :indent => $indent, :circular => $circular }
+Oj.default_options = { :mode => :object, :indent => $indent, :circular => $circular, :allow_gc => $allow_gc }
 #puts "json: #{$json.size}"
 #puts "xml: #{$xml.size}"
 #puts "marshal: #{$mars.size}"

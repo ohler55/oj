@@ -91,6 +91,7 @@ VALUE	oj_time_class;
 
 VALUE	oj_slash_string;
 
+static VALUE	allow_gc_sym;
 static VALUE	ascii_only_sym;
 static VALUE	ascii_sym;
 static VALUE	auto_define_sym;
@@ -154,6 +155,7 @@ struct _Options	oj_default_options = {
     json_class,		// create_id
     10,			// create_id_len
     9,			// sec_prec
+    Yes,		// allow_gc
     0,			// dump_opts
 };
 
@@ -174,6 +176,7 @@ static VALUE	define_mimic_json(int argc, VALUE *argv, VALUE self);
  * - bigdecimal_load: [:bigdecimal|:float|:auto] load decimals as BigDecimal instead of as a Float. :auto pick the most precise for the number of digits.
  * - create_id: [String|nil] create id for json compatible object encoding, default is 'json_create'
  * - second_precision: [Fixnum|nil] number of digits after the decimal when dumping the seconds portion of time
+ * - allow_gc: [true|false|nil] allow or prohibit GC during parsing, default is true (allow)
  * @return [Hash] all current option settings.
  */
 static VALUE
@@ -187,6 +190,7 @@ get_def_opts(VALUE self) {
     rb_hash_aset(opts, auto_define_sym, (Yes == oj_default_options.auto_define) ? Qtrue : ((No == oj_default_options.auto_define) ? Qfalse : Qnil));
     rb_hash_aset(opts, symbol_keys_sym, (Yes == oj_default_options.sym_key) ? Qtrue : ((No == oj_default_options.sym_key) ? Qfalse : Qnil));
     rb_hash_aset(opts, bigdecimal_as_decimal_sym, (Yes == oj_default_options.bigdec_as_num) ? Qtrue : ((No == oj_default_options.bigdec_as_num) ? Qfalse : Qnil));
+    rb_hash_aset(opts, allow_gc_sym, (Yes == oj_default_options.allow_gc) ? Qtrue : ((No == oj_default_options.allow_gc) ? Qfalse : Qnil));
     switch (oj_default_options.mode) {
     case StrictMode:	rb_hash_aset(opts, mode_sym, strict_sym);	break;
     case CompatMode:	rb_hash_aset(opts, mode_sym, compat_sym);	break;
@@ -245,6 +249,7 @@ get_def_opts(VALUE self) {
  *        :ruby Time.to_s formatted String
  * @param [String|nil] :create_id create id for json compatible object encoding
  * @param [Fixnum|nil] :second_precision number of digits after the decimal when dumping the seconds portion of time
+ * @param [true|false|nil] :allow_gc allow or prohibit GC during parsing, default is true (allow)
  * @return [nil]
  */
 static VALUE
@@ -255,6 +260,7 @@ set_def_opts(VALUE self, VALUE opts) {
 	{ symbol_keys_sym, &oj_default_options.sym_key },
 	{ class_cache_sym, &oj_default_options.class_cache },
 	{ bigdecimal_as_decimal_sym, &oj_default_options.bigdec_as_num },
+	{ allow_gc_sym, &oj_default_options.allow_gc },
 	{ Qnil, 0 }
     };
     YesNoOpt	o;
@@ -384,6 +390,7 @@ oj_parse_options(VALUE ropts, Options copts) {
 	{ symbol_keys_sym, &copts->sym_key },
 	{ class_cache_sym, &copts->class_cache },
 	{ bigdecimal_as_decimal_sym, &copts->bigdec_as_num },
+	{ allow_gc_sym, &copts->allow_gc },
 	{ Qnil, 0 }
     };
     YesNoOpt	o;
@@ -1282,6 +1289,7 @@ void Init_oj() {
     oj_struct_class = rb_const_get(rb_cObject, rb_intern("Struct"));
     oj_time_class = rb_const_get(rb_cObject, rb_intern("Time"));
 
+    allow_gc_sym = ID2SYM(rb_intern("allow_gc"));	rb_gc_register_address(&allow_gc_sym);
     ascii_only_sym = ID2SYM(rb_intern("ascii_only"));	rb_gc_register_address(&ascii_only_sym);
     ascii_sym = ID2SYM(rb_intern("ascii"));		rb_gc_register_address(&ascii_sym);
     auto_define_sym = ID2SYM(rb_intern("auto_define"));	rb_gc_register_address(&auto_define_sym);

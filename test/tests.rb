@@ -134,6 +134,7 @@ class Juice < ::Test::Unit::TestCase
                    :time_format=>:unix,
                    :bigdecimal_as_decimal=>true,
                    :bigdecimal_load=>:auto,
+                   :allow_gc=>true,
                    :create_id=>'json_class'}, opts)
   end
 
@@ -150,6 +151,7 @@ class Juice < ::Test::Unit::TestCase
       :time_format=>:unix,
       :bigdecimal_as_decimal=>true,
       :bigdecimal_load=>:auto,
+      :allow_gc=>true,
       :create_id=>'json_class'}
     o2 = {
       :indent=>4,
@@ -163,6 +165,7 @@ class Juice < ::Test::Unit::TestCase
       :time_format=>:ruby,
       :bigdecimal_as_decimal=>false,
       :bigdecimal_load=>:bigdecimal,
+      :allow_gc=>false,
       :create_id=>nil}
     o3 = { :indent => 4 }
     Oj.default_options = o2

@@ -747,9 +747,7 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json) {
 	if (oj_stringio_class == clas) {
 	    s = rb_funcall2(input, oj_string_id, 0, 0);
 	    pi->json = rb_string_value_cstr((VALUE*)&s);
-#ifndef JRUBY_RUBY
 #if !IS_WINDOWS
-	    // JRuby gets confused with what is the real fileno.
 	} else if (rb_respond_to(input, oj_fileno_id) && Qnil != (s = rb_funcall(input, oj_fileno_id, 0))) {
 	    int		fd = FIX2INT(s);
 	    ssize_t	cnt;
@@ -770,7 +768,6 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json) {
 		pi->json += 3;
 	    }
 #endif
-#endif
 	} else if (rb_respond_to(input, oj_read_id)) {
 	    s = rb_funcall2(input, oj_read_id, 0, 0);
 	    pi->json = rb_string_value_cstr((VALUE*)&s);
@@ -783,6 +780,9 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json) {
     } else {
 	pi->circ_array = 0;
     }
+    if (No == pi->options.allow_gc) {
+	rb_gc_disable();
+    }
     // GC can run at any time. When it runs any Object created by C will be
     // freed. We protect against this by wrapping the value stack in a ruby
     // data object and poviding a mark function for ruby objects on the
@@ -791,7 +791,9 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json) {
     rb_protect(protect_parse, (VALUE)pi, &line);
     result = stack_head_val(&pi->stack);
     DATA_PTR(wrapped_stack) = 0;
-
+    if (No == pi->options.allow_gc) {
+	rb_gc_enable();
+    }
     // proceed with cleanup
     if (0 != pi->circ_array) {
 	oj_circ_array_free(pi->circ_array);

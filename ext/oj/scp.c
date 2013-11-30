@@ -102,7 +102,7 @@ noop_array_append_value(ParseInfo pi, VALUE value) {
 
 static void
 add_value(ParseInfo pi, VALUE val) {
-     rb_funcall((VALUE)pi->cbc, oj_add_value_id, 1, val);
+    rb_funcall((VALUE)pi->cbc, oj_add_value_id, 1, val);
 }
 
 static void
@@ -110,7 +110,7 @@ add_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
     volatile VALUE	rstr = rb_str_new(str, len);
 
     rstr = oj_encode(rstr);
-     rb_funcall((VALUE)pi->cbc, oj_add_value_id, 1, rstr);
+    rb_funcall((VALUE)pi->cbc, oj_add_value_id, 1, rstr);
 }
 
 static void
