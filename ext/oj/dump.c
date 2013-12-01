@@ -2042,7 +2042,7 @@ key_check(StrWriter sw, const char *key) {
 
 static void
 push_type(StrWriter sw, DumpType type) {
-    if (sw->types_end <= sw->types + sw->depth) {
+    if (sw->types_end <= sw->types + sw->depth + 1) {
 	size_t	size = (sw->types_end - sw->types) * 2;
 
 	REALLOC_N(sw->types, char, size);

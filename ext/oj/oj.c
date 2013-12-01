@@ -1401,7 +1401,7 @@ void Init_oj() {
     rb_define_method(oj_string_writer_class, "reset", str_writer_reset, 0);
     rb_define_method(oj_string_writer_class, "to_s", str_writer_to_s, 0);
 
-    oj_stream_writer_class = rb_define_class_under(Oj, "StreamWriter", rb_cObject);
+    //oj_stream_writer_class = rb_define_class_under(Oj, "StreamWriter", rb_cObject);
 
     rb_require("time");
     rb_require("date");

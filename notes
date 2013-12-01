@@ -3,18 +3,6 @@
 ^c^d hide subtree
 ^c^s show subtree
 
-- Writer
- - methods
-  - new
-   - new() for StringWriter
-   - new(io) for StreamWriter
-  - push_object(key=nil)
-  - push_array(key=nil)
-  - pop
-  - push_value(value, key=nil)
-  - pop_all (closes all open objects or array)
-  - to_s (for StringWiter)
-
  - options same as dump
  - keep track of nesting
  - calls into a writer

@@ -33,12 +33,6 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
  - Added StringWriter that allows building a JSON document one element at a time.
 
-### Current Release 2.2.3
-
- - Fixed struct segfault on load.
-
- - Added option to force float on load if a decimal number.
-
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
 ## <a name="description">Description</a>
