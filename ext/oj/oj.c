@@ -972,6 +972,22 @@ str_writer_pop_all(VALUE self) {
     return Qnil;
 }
 
+/* call-seq: reset()
+ *
+ * Reset the writer back to the empty state.
+ */
+static VALUE
+str_writer_reset(VALUE self) {
+    StrWriter	sw = (StrWriter)DATA_PTR(self);
+
+    sw->depth = 0;
+    *sw->types = '\0';
+    sw->out.cur = sw->out.buf;
+    *sw->out.cur = '\0';
+
+    return Qnil;
+}
+
 /* call-seq: to_s()
  *
  * Returns the JSON document string in what ever state the construction is at.
@@ -1382,6 +1398,7 @@ void Init_oj() {
     rb_define_method(oj_string_writer_class, "push_value", str_writer_push_value, -1);
     rb_define_method(oj_string_writer_class, "pop", str_writer_pop, 0);
     rb_define_method(oj_string_writer_class, "pop_all", str_writer_pop_all, 0);
+    rb_define_method(oj_string_writer_class, "reset", str_writer_reset, 0);
     rb_define_method(oj_string_writer_class, "to_s", str_writer_to_s, 0);
 
     oj_stream_writer_class = rb_define_class_under(Oj, "StreamWriter", rb_cObject);

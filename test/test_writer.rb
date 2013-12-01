@@ -137,4 +137,12 @@ class OjWriter < ::Test::Unit::TestCase
     assert_equal('{"a1":{},"a2":[3,[]]}', w.to_s)
   end
 
+  def test_string_writer_reset
+    w = Oj::StringWriter.new(:indent => 0)
+    w.push_array()
+    w.pop()
+    w.reset()
+    assert_equal('', w.to_s)
+  end
+
 end # OjWriter
