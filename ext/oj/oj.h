@@ -98,6 +98,13 @@ typedef enum {
     AutoDec	= 'a'
 } BigLoad;
 
+typedef enum {
+    ArrayNew	= 'A',
+    ArrayType	= 'a',
+    ObjectNew	= 'O',
+    ObjectType	= 'o',
+} DumpType;
+
 typedef struct _DumpOpts {
     const char	*indent;
     const char	*before_sep;
@@ -142,6 +149,14 @@ typedef struct _Out {
     int		allocated;
 } *Out;
 
+typedef struct _StrWriter {
+    struct _Out		out;
+    struct _Options	opts;
+    int			depth;
+    char		*types;	// DumpType
+    char		*types_end;
+} *StrWriter;
+
 enum {
     STR_VAL  = 0x00,
     COL_VAL  = 0x01,
@@ -183,6 +198,12 @@ extern void	oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts);
 extern void	oj_dump_leaf_to_json(Leaf leaf, Options copts, Out out);
 extern void	oj_write_leaf_to_file(Leaf leaf, const char *path, Options copts);
 
+extern void	oj_str_writer_push_object(StrWriter sw, const char *key);
+extern void	oj_str_writer_push_array(StrWriter sw, const char *key);
+extern void	oj_str_writer_push_value(StrWriter sw, VALUE val, const char *key);
+extern void	oj_str_writer_pop(StrWriter sw);
+extern void	oj_str_writer_pop_all(StrWriter sw);
+
 extern void	oj_init_doc(void);
 
 extern VALUE	Oj;
@@ -199,6 +220,8 @@ extern VALUE	oj_cstack_class;
 extern VALUE	oj_date_class;
 extern VALUE	oj_datetime_class;
 extern VALUE	oj_doc_class;
+extern VALUE	oj_stream_writer_class;
+extern VALUE	oj_string_writer_class;
 extern VALUE	oj_stringio_class;
 extern VALUE	oj_struct_class;
 extern VALUE	oj_time_class;

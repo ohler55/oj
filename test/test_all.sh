@@ -18,3 +18,5 @@ echo "----- SC Parser tests (test_scp.rb) -----"
 ./test_scp.rb
 echo "----- GC tests (test_gc.rb) -----"
 ./test_gc.rb
+echo "----- Writer tests (test_writer.rb) -----"
+./test_writer.rb

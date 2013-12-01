@@ -3,21 +3,24 @@
 ^c^d hide subtree
 ^c^s show subtree
 
-- Writer or builder?
+- Writer
+ - methods
+  - new
+   - new() for StringWriter
+   - new(io) for StreamWriter
+  - push_object(key=nil)
+  - push_array(key=nil)
+  - pop
+  - push_value(value, key=nil)
+  - pop_all (closes all open objects or array)
+  - to_s (for StringWiter)
+
  - options same as dump
  - keep track of nesting
  - calls into a writer
   - write to string function or write to stream
   - get string, return nil if stream
 
- - methods
-  - start_object(key)
-  - end_object
-  - start_array(key)
-  - end_array
-  - add_value(key, value)
-  - close
-   - closes all open objects and arrays
 
  - StreamWriter
   - new(stream) optional stream, if nil then write to string buffer

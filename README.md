@@ -31,6 +31,8 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
  - Added option to disable GG during parsing.
 
+ - Added StringWriter that allows building a JSON document one element at a time.
+
 ### Current Release 2.2.3
 
  - Fixed struct segfault on load.

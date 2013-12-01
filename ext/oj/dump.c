@@ -2026,3 +2026,133 @@ oj_write_leaf_to_file(Leaf leaf, const char *path, Options copts) {
     }
     fclose(f);
 }
+
+// string writer functions
+
+static void
+key_check(StrWriter sw, const char *key) {
+    DumpType	type = sw->types[sw->depth];
+
+    if (0 == key && (ObjectNew == type || ObjectType == type)) {
+	rb_raise(rb_eStandardError, "Can not push onto an Object without a key.");
+    } else if (0 != key && (ArrayNew == type || ArrayType == type)) {
+	rb_raise(rb_eStandardError, "No key is needed to push into an array.");
+    }
+}
+
+static void
+push_type(StrWriter sw, DumpType type) {
+    if (sw->types_end <= sw->types + sw->depth) {
+	size_t	size = (sw->types_end - sw->types) * 2;
+
+	REALLOC_N(sw->types, char, size);
+	sw->types_end = sw->types + size;
+    }
+    sw->depth++;
+    sw->types[sw->depth] = type;
+}
+
+static void
+maybe_comma(StrWriter sw) {
+    switch (sw->types[sw->depth]) {
+    case ObjectNew:
+	sw->types[sw->depth] = ObjectType;
+	break;
+    case ArrayNew:
+	sw->types[sw->depth] = ArrayType;
+	break;
+    case ObjectType:
+    case ArrayType:
+	// Always have a few characters available in the out.buf.
+	*sw->out.cur++ = ',';
+	break;
+    }
+}
+
+void
+oj_str_writer_push_object(StrWriter sw, const char *key) {
+    size_t	size;
+
+    key_check(sw, key);
+    size = sw->depth * sw->out.indent + 3;
+    if (sw->out.end - sw->out.cur <= size) {
+	grow(&sw->out, size);
+    }
+    maybe_comma(sw);
+    fill_indent(&sw->out, sw->depth);
+    if (0 != key) {
+	dump_cstr(key, strlen(key), 0, 0, &sw->out);
+	*sw->out.cur++ = ':';
+    }
+    *sw->out.cur++ = '{';
+    push_type(sw, ObjectNew);
+}
+
+void
+oj_str_writer_push_array(StrWriter sw, const char *key) {
+    size_t	size;
+
+    key_check(sw, key);
+    size = sw->depth * sw->out.indent + 3;
+    if (sw->out.end - sw->out.cur <= size) {
+	grow(&sw->out, size);
+    }
+    maybe_comma(sw);
+    if (0 != key) {
+	dump_cstr(key, strlen(key), 0, 0, &sw->out);
+	*sw->out.cur++ = ':';
+    }
+    *sw->out.cur++ = '[';
+    push_type(sw, ArrayNew);
+}
+
+void
+oj_str_writer_push_value(StrWriter sw, VALUE val, const char *key) {
+    size_t	size;
+
+    key_check(sw, key);
+    size = sw->depth * sw->out.indent + 3;
+    if (sw->out.end - sw->out.cur <= size) {
+	grow(&sw->out, size);
+    }
+    maybe_comma(sw);
+    if (0 != key) {
+	dump_cstr(key, strlen(key), 0, 0, &sw->out);
+	*sw->out.cur++ = ':';
+    }
+    dump_val(val, sw->depth, &sw->out);
+}
+
+void
+oj_str_writer_pop(StrWriter sw) {
+    size_t	size;
+    DumpType	type = sw->types[sw->depth];
+
+    sw->depth--;
+    if (0 > sw->depth) {
+	rb_raise(rb_eStandardError, "Can not pop with no open array or object.");
+    }
+    size = sw->depth * sw->out.indent + 2;
+    if (sw->out.end - sw->out.cur <= size) {
+	grow(&sw->out, size);
+    }
+    fill_indent(&sw->out, sw->depth);
+    switch (type) {
+    case ObjectNew:
+    case ObjectType:
+	*sw->out.cur++ = '}';
+	break;
+    case ArrayNew:
+    case ArrayType:
+	*sw->out.cur++ = ']';
+	break;
+    }
+}
+
+void
+oj_str_writer_pop_all(StrWriter sw) {
+    while (0 < sw->depth) {
+	oj_str_writer_pop(sw);
+    }
+}
+

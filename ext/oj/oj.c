@@ -85,6 +85,8 @@ VALUE	oj_cstack_class;
 VALUE	oj_date_class;
 VALUE	oj_datetime_class;
 VALUE	oj_parse_error_class;
+VALUE	oj_stream_writer_class;
+VALUE	oj_string_writer_class;
 VALUE	oj_stringio_class;
 VALUE	oj_struct_class;
 VALUE	oj_time_class;
@@ -825,6 +827,163 @@ to_stream(int argc, VALUE *argv, VALUE self) {
     return Qnil;
 }
 
+static void
+str_writer_free(void *ptr) {
+    StrWriter	sw;
+
+    if (0 == ptr) {
+	return;
+    }
+    sw = (StrWriter)ptr;
+    xfree(sw->out.buf);
+    xfree(sw->types);
+    xfree(ptr);
+}
+
+/* Document-class: Oj::StringWriter
+ * 
+ * Supports building a JSON document one element at a time. Build the document
+ * by pushing values into the document. Pushing an array or an object will
+ * create that element in the JSON document and subsequent pushes will add the
+ * elements to that array or object until a pop() is called. When complete
+ * calling to_s() will return the JSON document. Note tha calling to_s() before
+ * construction is complete will return the document in it's current state.
+ */
+
+/* call-seq: new(options)
+ *
+ * Creates a new StringWriter.
+ * @param [Hash] options formating options
+ */
+static VALUE
+str_writer_new(int argc, VALUE *argv, VALUE self) {
+    StrWriter	sw = ALLOC(struct _StrWriter);
+    
+    sw->opts = oj_default_options;
+    sw->depth = 0;
+    sw->types = ALLOC_N(char, 256);
+    sw->types_end = sw->types + 256;
+    *sw->types = '\0';
+    sw->out.buf = ALLOC_N(char, 4096);
+    sw->out.end = sw->out.buf + 4086;
+    sw->out.allocated = 1;
+    sw->out.cur = sw->out.buf;
+    *sw->out.cur = '\0';
+    sw->out.circ_cnt = 0;
+    sw->out.hash_cnt = 0;
+    if (1 == argc) {
+	oj_parse_options(argv[0], &sw->opts);
+    }
+    sw->out.opts = &sw->opts;
+    sw->out.indent = sw->opts.indent;
+
+    return Data_Wrap_Struct(oj_string_writer_class, 0, str_writer_free, sw);
+}
+
+/* call-seq: push_object(key=nil)
+ *
+ * Pushes an object onto the JSON document. Future pushes will be to this object
+ * until a pop() is called.
+ * @param [String] key the key if adding to an object in the JSON document
+ */
+static VALUE
+str_writer_push_object(int argc, VALUE *argv, VALUE self) {
+    switch (argc) {
+    case 0:
+	oj_str_writer_push_object((StrWriter)DATA_PTR(self), 0);
+	break;
+    case 1:
+	rb_check_type(argv[0], T_STRING);
+	oj_str_writer_push_object((StrWriter)DATA_PTR(self), StringValuePtr(argv[0]));
+	break;
+    default:
+	rb_raise(rb_eArgError, "Wrong number of argument to 'push_object'.");
+	break;
+    }
+    return Qnil;
+}
+
+/* call-seq: push_array(key=nil)
+ *
+ * Pushes an array onto the JSON document. Future pushes will be to this object
+ * until a pop() is called.
+ * @param [String] key the key if adding to an object in the JSON document
+ */
+static VALUE
+str_writer_push_array(int argc, VALUE *argv, VALUE self) {
+    switch (argc) {
+    case 0:
+	oj_str_writer_push_array((StrWriter)DATA_PTR(self), 0);
+	break;
+    case 1:
+	rb_check_type(argv[0], T_STRING);
+	oj_str_writer_push_array((StrWriter)DATA_PTR(self), StringValuePtr(argv[0]));
+	break;
+    default:
+	rb_raise(rb_eArgError, "Wrong number of argument to 'push_object'.");
+	break;
+    }
+    return Qnil;
+}
+
+/* call-seq: push_value(value, key=nil)
+ *
+ * Pushes a value onto the JSON document.
+ * @param [Object] value value to add to the JSON document
+ * @param [String] key the key if adding to an object in the JSON document
+ */
+static VALUE
+str_writer_push_value(int argc, VALUE *argv, VALUE self) {
+    switch (argc) {
+    case 1:
+	oj_str_writer_push_value((StrWriter)DATA_PTR(self), *argv, 0);
+	break;
+    case 2:
+	rb_check_type(argv[1], T_STRING);
+	oj_str_writer_push_value((StrWriter)DATA_PTR(self), *argv, StringValuePtr(argv[1]));
+	break;
+    default:
+	rb_raise(rb_eArgError, "Wrong number of argument to 'push_value'.");
+	break;
+    }
+    return Qnil;
+}
+
+/* call-seq: pop()
+ *
+ * Pops up a level in the JSON document closing the array or object that is
+ * currently open.
+ */
+static VALUE
+str_writer_pop(VALUE self) {
+    oj_str_writer_pop((StrWriter)DATA_PTR(self));
+    return Qnil;
+}
+
+/* call-seq: pop_all()
+ *
+ * Pops all level in the JSON document closing all the array or object that is
+ * currently open.
+ */
+static VALUE
+str_writer_pop_all(VALUE self) {
+    oj_str_writer_pop_all((StrWriter)DATA_PTR(self));
+
+    return Qnil;
+}
+
+/* call-seq: to_s()
+ *
+ * Returns the JSON document string in what ever state the construction is at.
+ */
+static VALUE
+str_writer_to_s(VALUE self) {
+    StrWriter	sw = (StrWriter)DATA_PTR(self);
+    VALUE	rstr = rb_str_new(sw->out.buf, sw->out.cur - sw->out.buf);
+
+    return oj_encode(rstr);
+}
+
 // Mimic JSON section
 
 static VALUE
@@ -1215,6 +1374,17 @@ void Init_oj() {
     Oj = rb_define_module("Oj");
 
     oj_cstack_class = rb_define_class_under(Oj, "CStack", rb_cObject);
+
+    oj_string_writer_class = rb_define_class_under(Oj, "StringWriter", rb_cObject);
+    rb_define_module_function(oj_string_writer_class, "new", str_writer_new, -1);
+    rb_define_method(oj_string_writer_class, "push_object", str_writer_push_object, -1);
+    rb_define_method(oj_string_writer_class, "push_array", str_writer_push_array, -1);
+    rb_define_method(oj_string_writer_class, "push_value", str_writer_push_value, -1);
+    rb_define_method(oj_string_writer_class, "pop", str_writer_pop, 0);
+    rb_define_method(oj_string_writer_class, "pop_all", str_writer_pop_all, 0);
+    rb_define_method(oj_string_writer_class, "to_s", str_writer_to_s, 0);
+
+    oj_stream_writer_class = rb_define_class_under(Oj, "StreamWriter", rb_cObject);
 
     rb_require("time");
     rb_require("date");
