@@ -215,6 +215,7 @@ class Juice < ::Test::Unit::TestCase
     dump_and_load('abc', false)
     dump_and_load("abc\ndef", false)
     dump_and_load("a\u0041", false)
+    assert_equal("a\u0000a", dump_and_load("a\u0000a", false))
   end
 
   def test_string_object
