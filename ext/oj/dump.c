@@ -1244,9 +1244,12 @@ dump_obj_comp(VALUE obj, int depth, Out out) {
 	}
 	dump_hash(h, depth, out->opts->mode, out);
     } else if (rb_respond_to(obj, oj_as_json_id)) {
-	volatile VALUE	js = rb_funcall(obj, oj_as_json_id, 0);
+	volatile VALUE	js;
 
+	printf("*** as_json called, dumping value\n");
+	js = rb_funcall(obj, oj_as_json_id, 0);
 	dump_val(js, depth, out);
+	printf("*** as_json called, finished dumping value\n");
     } else if (rb_respond_to(obj, oj_to_json_id) && (!oj_rails_hack || last_obj != obj)) {
 	volatile VALUE	rs;
 	const char	*s;
