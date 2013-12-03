@@ -1236,6 +1236,7 @@ dump_data_obj(VALUE obj, int depth, Out out) {
 
 static void
 dump_obj_comp(VALUE obj, int depth, Out out) {
+    printf("*** dump_obj_comp called. depth : %d\n", depth);
     if (rb_respond_to(obj, oj_to_hash_id)) {
 	volatile VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
  

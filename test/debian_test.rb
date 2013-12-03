@@ -49,29 +49,19 @@ class Orange < Jam
   end
 
   def as_json()
+    puts "Orange.as_json called"
     { :json_class => self.class,
       :x => @x,
       :y => @y }
   end
 
   def self.json_create(h)
+    puts "Orange.json_create"
     self.new(h['x'], h['y'])
   end
 end
 
 class DebJuice < ::Test::Unit::TestCase
-
-  # Object with as_json() # contributed by sauliusg
-  def test_as_json_object_strict
-    obj = Orange.new(true, 58)
-    begin
-      puts "dumping strict"
-      Oj.dump(obj, :mode => :strict)
-      assert(false)
-    rescue Exception
-      assert(true)
-    end
-  end
 
   def test_as_json_object_compat_hash
     Oj.default_options = { :mode => :compat }
@@ -79,7 +69,7 @@ class DebJuice < ::Test::Unit::TestCase
     puts "dumping compat"
     json = Oj.dump(obj, :indent => 2)
     assert(!json.nil?)
-    dump_and_load(obj, false)
+    dump_and_load(obj, true)
   end
 
   def dump_and_load(obj, trace=false)

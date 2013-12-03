@@ -68,11 +68,14 @@ static void
 end_hash(struct _ParseInfo *pi) {
     Val	parent = stack_peek(&pi->stack);
 
+    printf("*** end_hash\n");
     if (0 != parent->classname) {
 	VALUE	clas;
 
+	printf("*** end_hash with classname (%d chars) '%s'\n", parent->clen, parent->classname);
 	clas = oj_name2class(pi, parent->classname, parent->clen, 0);
 	if (Qundef != clas) { // else an error
+	    printf("*** end_hash calling json_create, clas: %ld, parent->val: %ld\n", clas, parent->val);
 	    parent->val = rb_funcall(clas, oj_json_create_id, 1, parent->val);
 	}
 	if (parent->classname < pi->json || pi->cur < parent->classname) {
