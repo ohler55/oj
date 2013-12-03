@@ -21,6 +21,10 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
 
+### Current Release 2.3.1
+
+ - Merged in a PR to again allow strings with embedded nulls.
+
 ### Current Release 2.3.0
 
  - JRuby is no longer supported.
