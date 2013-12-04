@@ -1114,12 +1114,10 @@ stream_writer_push_object(int argc, VALUE *argv, VALUE self) {
 	oj_str_writer_push_object(&sw->sw, 0);
 	break;
     case 1:
-	if (Qnil != argv[0]) {
-	    rb_check_type(argv[0], T_STRING);
-	}
-	if (Qnil == argv[1]) {
+	if (Qnil == argv[0]) {
 	    oj_str_writer_push_object(&sw->sw, 0);
 	} else {
+	    rb_check_type(argv[0], T_STRING);
 	    oj_str_writer_push_object(&sw->sw, StringValuePtr(argv[0]));
 	}
 	break;
@@ -1147,10 +1145,12 @@ stream_writer_push_array(int argc, VALUE *argv, VALUE self) {
 	oj_str_writer_push_array(&sw->sw, 0);
 	break;
     case 1:
-	if (Qnil != argv[0]) {
+	if (Qnil == argv[0]) {
+	    oj_str_writer_push_array(&sw->sw, 0);
+	} else {
 	    rb_check_type(argv[0], T_STRING);
+	    oj_str_writer_push_array(&sw->sw, StringValuePtr(argv[0]));
 	}
-	oj_str_writer_push_array(&sw->sw, StringValuePtr(argv[0]));
 	break;
     default:
 	rb_raise(rb_eArgError, "Wrong number of argument to 'push_object'.");
@@ -1176,10 +1176,12 @@ stream_writer_push_value(int argc, VALUE *argv, VALUE self) {
 	oj_str_writer_push_value((StrWriter)DATA_PTR(self), *argv, 0);
 	break;
     case 2:
-	if (Qnil != argv[0]) {
+	if (Qnil == argv[0]) {
+	    oj_str_writer_push_value((StrWriter)DATA_PTR(self), *argv, 0);
+	} else {
 	    rb_check_type(argv[1], T_STRING);
+	    oj_str_writer_push_value((StrWriter)DATA_PTR(self), *argv, StringValuePtr(argv[1]));
 	}
-	oj_str_writer_push_value((StrWriter)DATA_PTR(self), *argv, StringValuePtr(argv[1]));
 	break;
     default:
 	rb_raise(rb_eArgError, "Wrong number of argument to 'push_value'.");

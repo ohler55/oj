@@ -142,4 +142,45 @@ class OjWriter < ::Test::Unit::TestCase
     assert_equal('[]', output.string())
   end
 
+  def test_stream_writer_mixed_stringio
+    output = StringIO.open("", "w+")
+    w = Oj::StreamWriter.new(output, :indent => 0)
+    w.push_object()
+    w.push_object("a1")
+    w.pop()
+    w.push_object("a2")
+    w.push_array("b")
+    w.push_value(7)
+    w.push_value(true)
+    w.push_value("string")
+    w.pop()
+    w.pop()
+    w.push_object("a3")
+    w.pop()
+    w.pop()
+    assert_equal('{"a1":{},"a2":{"b":[7,true,"string"]},"a3":{}}', output.string())
+  end
+
+  def test_stream_writer_mixed_file
+    filename = 'open_file_writer_test.json'
+    File.open(filename, "w") do |f|
+      w = Oj::StreamWriter.new(f, :indent => 0)
+      w.push_object()
+      w.push_object("a1")
+      w.pop()
+      w.push_object("a2")
+      w.push_array("b")
+      w.push_value(7)
+      w.push_value(true)
+      w.push_value("string")
+      w.pop()
+      w.pop()
+      w.push_object("a3")
+      w.pop()
+      w.pop()
+    end
+    content = File.read(filename)
+    assert_equal('{"a1":{},"a2":{"b":[7,true,"string"]},"a3":{}}', content)
+  end
+
 end # OjWriter
