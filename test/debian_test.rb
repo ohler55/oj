@@ -64,9 +64,18 @@ end
 class DebJuice < ::Test::Unit::TestCase
 
   def test_as_json_object_compat_hash
-    Oj.default_options = { :mode => :compat }
+    Oj.default_options = { :mode => :compat, :class_cache => false }
     obj = Orange.new(true, 58)
-    puts "dumping compat"
+    puts "dumping compat without cache"
+    json = Oj.dump(obj, :indent => 2)
+    assert(!json.nil?)
+    dump_and_load(obj, true)
+  end
+
+  def test_as_json_object_compat_hash_cached
+    Oj.default_options = { :mode => :compat, :class_cache => true }
+    obj = Orange.new(true, 58)
+    puts "dumping compat with cache"
     json = Oj.dump(obj, :indent => 2)
     assert(!json.nil?)
     dump_and_load(obj, true)

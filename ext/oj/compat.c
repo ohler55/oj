@@ -74,11 +74,13 @@ end_hash(struct _ParseInfo *pi) {
 
 	printf("*** end_hash with classname (%d chars) '%s'\n", parent->clen, parent->classname);
 	clas = oj_name2class(pi, parent->classname, parent->clen, 0);
+	printf("*** end_hash after name2class, clas: %ld\n", clas);
 	if (Qundef != clas) { // else an error
 	    printf("*** end_hash calling json_create, clas: %ld, parent->val: %ld\n", clas, parent->val);
 	    parent->val = rb_funcall(clas, oj_json_create_id, 1, parent->val);
 	}
-	if (parent->classname < pi->json || pi->cur < parent->classname) {
+	if (parent->classname < pi->json || pi->end < parent->classname) {
+	    printf("*** end_hash free\n");
 	    xfree((char*)parent->classname);
 	    parent->classname = 0;
 	}
@@ -99,11 +101,11 @@ oj_compat_parse(int argc, VALUE *argv, VALUE self) {
     pi.options = oj_default_options;
     oj_set_compat_callbacks(&pi);
 
-    return oj_pi_parse(argc, argv, &pi, 0);
+    return oj_pi_parse(argc, argv, &pi, 0, 0);
 }
 
 VALUE
-oj_compat_parse_cstr(int argc, VALUE *argv, char *json) {
+oj_compat_parse_cstr(int argc, VALUE *argv, char *json, size_t len) {
     struct _ParseInfo	pi;
 
     pi.options = oj_default_options;
@@ -111,5 +113,5 @@ oj_compat_parse_cstr(int argc, VALUE *argv, char *json) {
     pi.end_hash = end_hash;
     pi.hash_set_cstr = hash_set_cstr;
 
-    return oj_pi_parse(argc, argv, &pi, json);
+    return oj_pi_parse(argc, argv, &pi, json, len);
 }
