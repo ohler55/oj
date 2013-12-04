@@ -2035,8 +2035,6 @@ key_check(StrWriter sw, const char *key) {
 
     if (0 == key && (ObjectNew == type || ObjectType == type)) {
 	rb_raise(rb_eStandardError, "Can not push onto an Object without a key.");
-    } else if (0 != key && (ArrayNew == type || ArrayType == type)) {
-	rb_raise(rb_eStandardError, "No key is needed to push into an array.");
     }
 }
 
@@ -2155,4 +2153,3 @@ oj_str_writer_pop_all(StrWriter sw) {
 	oj_str_writer_pop(sw);
     }
 }
-

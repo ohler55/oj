@@ -850,15 +850,8 @@ str_writer_free(void *ptr) {
  * construction is complete will return the document in it's current state.
  */
 
-/* call-seq: new(options)
- *
- * Creates a new StringWriter.
- * @param [Hash] options formating options
- */
-static VALUE
-str_writer_new(int argc, VALUE *argv, VALUE self) {
-    StrWriter	sw = ALLOC(struct _StrWriter);
-    
+static void
+str_writer_init(StrWriter sw) {
     sw->opts = oj_default_options;
     sw->depth = 0;
     sw->types = ALLOC_N(char, 256);
@@ -871,12 +864,23 @@ str_writer_new(int argc, VALUE *argv, VALUE self) {
     *sw->out.cur = '\0';
     sw->out.circ_cnt = 0;
     sw->out.hash_cnt = 0;
+    sw->out.opts = &sw->opts;
+    sw->out.indent = sw->opts.indent;
+}
+
+/* call-seq: new(options)
+ *
+ * Creates a new StringWriter.
+ * @param [Hash] options formating options
+ */
+static VALUE
+str_writer_new(int argc, VALUE *argv, VALUE self) {
+    StrWriter	sw = ALLOC(struct _StrWriter);
+    
+    str_writer_init(sw);
     if (1 == argc) {
 	oj_parse_options(argv[0], &sw->opts);
     }
-    sw->out.opts = &sw->opts;
-    sw->out.indent = sw->opts.indent;
-
     return Data_Wrap_Struct(oj_string_writer_class, 0, str_writer_free, sw);
 }
 
@@ -893,8 +897,12 @@ str_writer_push_object(int argc, VALUE *argv, VALUE self) {
 	oj_str_writer_push_object((StrWriter)DATA_PTR(self), 0);
 	break;
     case 1:
-	rb_check_type(argv[0], T_STRING);
-	oj_str_writer_push_object((StrWriter)DATA_PTR(self), StringValuePtr(argv[0]));
+	if (Qnil == argv[0]) {
+	    oj_str_writer_push_object((StrWriter)DATA_PTR(self), 0);
+	} else {
+	    rb_check_type(argv[0], T_STRING);
+	    oj_str_writer_push_object((StrWriter)DATA_PTR(self), StringValuePtr(argv[0]));
+	}
 	break;
     default:
 	rb_raise(rb_eArgError, "Wrong number of argument to 'push_object'.");
@@ -916,8 +924,12 @@ str_writer_push_array(int argc, VALUE *argv, VALUE self) {
 	oj_str_writer_push_array((StrWriter)DATA_PTR(self), 0);
 	break;
     case 1:
-	rb_check_type(argv[0], T_STRING);
-	oj_str_writer_push_array((StrWriter)DATA_PTR(self), StringValuePtr(argv[0]));
+	if (Qnil == argv[0]) {
+	    oj_str_writer_push_array((StrWriter)DATA_PTR(self), 0);
+	} else {
+	    rb_check_type(argv[0], T_STRING);
+	    oj_str_writer_push_array((StrWriter)DATA_PTR(self), StringValuePtr(argv[0]));
+	}
 	break;
     default:
 	rb_raise(rb_eArgError, "Wrong number of argument to 'push_object'.");
@@ -939,8 +951,12 @@ str_writer_push_value(int argc, VALUE *argv, VALUE self) {
 	oj_str_writer_push_value((StrWriter)DATA_PTR(self), *argv, 0);
 	break;
     case 2:
-	rb_check_type(argv[1], T_STRING);
-	oj_str_writer_push_value((StrWriter)DATA_PTR(self), *argv, StringValuePtr(argv[1]));
+	if (Qnil == argv[1]) {
+	    oj_str_writer_push_value((StrWriter)DATA_PTR(self), *argv, 0);
+	} else {
+	    rb_check_type(argv[1], T_STRING);
+	    oj_str_writer_push_value((StrWriter)DATA_PTR(self), *argv, StringValuePtr(argv[1]));
+	}
 	break;
     default:
 	rb_raise(rb_eArgError, "Wrong number of argument to 'push_value'.");
@@ -998,6 +1014,210 @@ str_writer_to_s(VALUE self) {
     VALUE	rstr = rb_str_new(sw->out.buf, sw->out.cur - sw->out.buf);
 
     return oj_encode(rstr);
+}
+
+// StreamWriter
+
+static void
+stream_writer_free(void *ptr) {
+    StreamWriter	sw;
+
+    if (0 == ptr) {
+	return;
+    }
+    sw = (StreamWriter)ptr;
+    xfree(sw->sw.out.buf);
+    xfree(sw->sw.types);
+    xfree(ptr);
+}
+
+static void
+stream_writer_write(StreamWriter sw) {
+    ssize_t	size = sw->sw.out.cur - sw->sw.out.buf;
+
+    switch (sw->type) {
+    case STRING_IO:
+	rb_funcall(sw->stream, oj_write_id, 1, rb_str_new(sw->sw.out.buf, size));
+	break;
+    case STREAM_IO:
+	rb_funcall(sw->stream, oj_write_id, 1, rb_str_new(sw->sw.out.buf, size));
+	break;
+    case FILE_IO:
+	if (size != write(sw->fd, sw->sw.out.buf, size)) {
+	    rb_raise(rb_eIOError, "Write failed. [%d:%s]\n", errno, strerror(errno));
+	}
+	break;
+    default:
+	rb_raise(rb_eArgError, "expected an IO Object.");
+    }
+}
+
+static void
+stream_writer_reset_buf(StreamWriter sw) {
+    sw->sw.out.cur = sw->sw.out.buf;
+    *sw->sw.out.cur = '\0';
+}
+
+/* call-seq: new(options)
+ *
+ * Creates a new StreamWriter.
+ * @param [Hash] options formating options
+ */
+static VALUE
+stream_writer_new(int argc, VALUE *argv, VALUE self) {
+    StreamWriterType	type;
+    int			fd = 0;
+    VALUE		stream = argv[0];
+    VALUE		clas = rb_obj_class(stream);
+    VALUE		s;
+    StreamWriter	sw;
+    
+    if (oj_stringio_class == clas) {
+	type = STRING_IO;
+#ifndef JRUBY_RUBY
+#if !IS_WINDOWS
+    } else if (rb_respond_to(stream, oj_fileno_id) && Qnil != (s = rb_funcall(stream, oj_fileno_id, 0))) {
+	type = FILE_IO;
+	fd = FIX2INT(s);
+#endif
+#endif
+    } else if (rb_respond_to(stream, oj_write_id)) {
+	type = STREAM_IO;
+    } else {
+	rb_raise(rb_eArgError, "expected an IO Object.");
+    }
+    sw = ALLOC(struct _StreamWriter);
+    str_writer_init(&sw->sw);
+    if (1 == argc) {
+	oj_parse_options(argv[0], &sw->sw.opts);
+    }
+    sw->stream = stream;
+    sw->type = type;
+    sw->fd = fd;
+
+    return Data_Wrap_Struct(oj_stream_writer_class, 0, stream_writer_free, sw);
+}
+
+/* call-seq: push_object(key=nil)
+ *
+ * Pushes an object onto the JSON document. Future pushes will be to this object
+ * until a pop() is called.
+ * @param [String] key the key if adding to an object in the JSON document
+ */
+static VALUE
+stream_writer_push_object(int argc, VALUE *argv, VALUE self) {
+    StreamWriter	sw = (StreamWriter)DATA_PTR(self);
+
+    stream_writer_reset_buf(sw);
+    switch (argc) {
+    case 0:
+	oj_str_writer_push_object(&sw->sw, 0);
+	break;
+    case 1:
+	if (Qnil != argv[0]) {
+	    rb_check_type(argv[0], T_STRING);
+	}
+	if (Qnil == argv[1]) {
+	    oj_str_writer_push_object(&sw->sw, 0);
+	} else {
+	    oj_str_writer_push_object(&sw->sw, StringValuePtr(argv[0]));
+	}
+	break;
+    default:
+	rb_raise(rb_eArgError, "Wrong number of argument to 'push_object'.");
+	break;
+    }
+    stream_writer_write(sw);
+    return Qnil;
+}
+
+/* call-seq: push_array(key=nil)
+ *
+ * Pushes an array onto the JSON document. Future pushes will be to this object
+ * until a pop() is called.
+ * @param [String] key the key if adding to an object in the JSON document
+ */
+static VALUE
+stream_writer_push_array(int argc, VALUE *argv, VALUE self) {
+    StreamWriter	sw = (StreamWriter)DATA_PTR(self);
+
+    stream_writer_reset_buf(sw);
+    switch (argc) {
+    case 0:
+	oj_str_writer_push_array(&sw->sw, 0);
+	break;
+    case 1:
+	if (Qnil != argv[0]) {
+	    rb_check_type(argv[0], T_STRING);
+	}
+	oj_str_writer_push_array(&sw->sw, StringValuePtr(argv[0]));
+	break;
+    default:
+	rb_raise(rb_eArgError, "Wrong number of argument to 'push_object'.");
+	break;
+    }
+    stream_writer_write(sw);
+    return Qnil;
+}
+
+/* call-seq: push_value(value, key=nil)
+ *
+ * Pushes a value onto the JSON document.
+ * @param [Object] value value to add to the JSON document
+ * @param [String] key the key if adding to an object in the JSON document
+ */
+static VALUE
+stream_writer_push_value(int argc, VALUE *argv, VALUE self) {
+    StreamWriter	sw = (StreamWriter)DATA_PTR(self);
+
+    stream_writer_reset_buf(sw);
+    switch (argc) {
+    case 1:
+	oj_str_writer_push_value((StrWriter)DATA_PTR(self), *argv, 0);
+	break;
+    case 2:
+	if (Qnil != argv[0]) {
+	    rb_check_type(argv[1], T_STRING);
+	}
+	oj_str_writer_push_value((StrWriter)DATA_PTR(self), *argv, StringValuePtr(argv[1]));
+	break;
+    default:
+	rb_raise(rb_eArgError, "Wrong number of argument to 'push_value'.");
+	break;
+    }
+    stream_writer_write(sw);
+    return Qnil;
+}
+
+/* call-seq: pop()
+ *
+ * Pops up a level in the JSON document closing the array or object that is
+ * currently open.
+ */
+static VALUE
+stream_writer_pop(VALUE self) {
+    StreamWriter	sw = (StreamWriter)DATA_PTR(self);
+
+    stream_writer_reset_buf(sw);
+    oj_str_writer_pop(&sw->sw);
+    stream_writer_write(sw);
+    return Qnil;
+}
+
+/* call-seq: pop_all()
+ *
+ * Pops all level in the JSON document closing all the array or object that is
+ * currently open.
+ */
+static VALUE
+stream_writer_pop_all(VALUE self) {
+    StreamWriter	sw = (StreamWriter)DATA_PTR(self);
+
+    stream_writer_reset_buf(sw);
+    oj_str_writer_pop_all(&sw->sw);
+    stream_writer_write(sw);
+
+    return Qnil;
 }
 
 // Mimic JSON section
@@ -1401,7 +1621,13 @@ void Init_oj() {
     rb_define_method(oj_string_writer_class, "reset", str_writer_reset, 0);
     rb_define_method(oj_string_writer_class, "to_s", str_writer_to_s, 0);
 
-    //oj_stream_writer_class = rb_define_class_under(Oj, "StreamWriter", rb_cObject);
+    oj_stream_writer_class = rb_define_class_under(Oj, "StreamWriter", rb_cObject);
+    rb_define_module_function(oj_stream_writer_class, "new", stream_writer_new, -1);
+    rb_define_method(oj_stream_writer_class, "push_object", stream_writer_push_object, -1);
+    rb_define_method(oj_stream_writer_class, "push_array", stream_writer_push_array, -1);
+    rb_define_method(oj_stream_writer_class, "push_value", stream_writer_push_value, -1);
+    rb_define_method(oj_stream_writer_class, "pop", stream_writer_pop, 0);
+    rb_define_method(oj_stream_writer_class, "pop_all", stream_writer_pop_all, 0);
 
     rb_require("time");
     rb_require("date");

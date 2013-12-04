@@ -105,6 +105,12 @@ typedef enum {
     ObjectType	= 'o',
 } DumpType;
 
+typedef enum {
+    STRING_IO	= 'c',
+    STREAM_IO	= 's',
+    FILE_IO	= 'f',
+} StreamWriterType;
+
 typedef struct _DumpOpts {
     const char	*indent;
     const char	*before_sep;
@@ -156,6 +162,13 @@ typedef struct _StrWriter {
     char		*types;	// DumpType
     char		*types_end;
 } *StrWriter;
+
+typedef struct _StreamWriter {
+    struct _StrWriter	sw;
+    StreamWriterType	type;
+    VALUE		stream;
+    int			fd;
+} *StreamWriter;
 
 enum {
     STR_VAL  = 0x00,

@@ -23,7 +23,6 @@ class OjWriter < ::Test::Unit::TestCase
     w.push_array()
     w.pop()
     assert_equal('[]', w.to_s)
-
   end
 
   def test_string_writer_nested_array
@@ -100,18 +99,6 @@ class OjWriter < ::Test::Unit::TestCase
     assert(false, "*** expected an exception")
   end
 
-  def test_string_writer_array_with_key
-    w = Oj::StringWriter.new(:indent => 0)
-    w.push_array()
-    begin
-      w.push_value(59, 'x')
-    rescue Exception
-      assert(true)
-      return
-    end
-    assert(false, "*** expected an exception")
-  end
-
   def test_string_writer_deep
     cnt = 1000
     w = Oj::StringWriter.new(:indent => 0)
@@ -143,6 +130,16 @@ class OjWriter < ::Test::Unit::TestCase
     w.pop()
     w.reset()
     assert_equal('', w.to_s)
+  end
+
+  # Stream Writer
+
+  def test_stream_writer_empty_array
+    output = StringIO.open("", "w+")
+    w = Oj::StreamWriter.new(output, :indent => 0)
+    w.push_array()
+    w.pop()
+    assert_equal('[]', output.string())
   end
 
 end # OjWriter
