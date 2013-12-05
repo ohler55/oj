@@ -107,8 +107,11 @@ oj_name2class(ParseInfo pi, const char *name, size_t len, int auto_define) {
 #elif USE_RB_MUTEX
     rb_mutex_lock(oj_cache_mutex);
 #endif
+    printf("**** oj_name2class before resolving name\n");
     if (Qnil == (clas = oj_class_hash_get(name, len, &slot))) {
+	printf("**** oj_name2class class not found in cache\n");
 	if (Qundef != (clas = resolve_classpath(pi, name, len, auto_define))) {
+	    printf("**** oj_name2class resolved class, slot: %p  *slot: %ld\n", slot, *slot);
 	    *slot = clas;
 	}
     }
