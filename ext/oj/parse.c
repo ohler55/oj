@@ -719,7 +719,7 @@ protect_parse(VALUE pip) {
 }
 
 VALUE
-oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json) {
+oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len) {
     char		*buf = 0;
     volatile VALUE	input;
     volatile VALUE	wrapped_stack;
@@ -737,9 +737,11 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json) {
     pi->cbc = (void*)0;
     if (0 != json) {
 	pi->json = json;
+	pi->end = json + len;
 	free_json = 1;
     } else if (rb_type(input) == T_STRING) {
 	pi->json = rb_string_value_cstr((VALUE*)&input);
+	pi->end = pi->json + RSTRING_LEN(input);
     } else {
 	VALUE		clas = rb_obj_class(input);
 	volatile VALUE	s;
@@ -747,6 +749,7 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json) {
 	if (oj_stringio_class == clas) {
 	    s = rb_funcall2(input, oj_string_id, 0, 0);
 	    pi->json = rb_string_value_cstr((VALUE*)&s);
+	    pi->end = pi->json + RSTRING_LEN(s);
 #if !IS_WINDOWS
 	} else if (rb_respond_to(input, oj_fileno_id) && Qnil != (s = rb_funcall(input, oj_fileno_id, 0))) {
 	    int		fd = FIX2INT(s);
@@ -756,6 +759,7 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json) {
 	    lseek(fd, 0, SEEK_SET);
 	    buf = ALLOC_N(char, len + 1);
 	    pi->json = buf;
+	    pi->end = buf + len;
 	    if (0 >= (cnt = read(fd, (char*)pi->json, len)) || cnt != (ssize_t)len) {
 		if (0 != buf) {
 		    xfree(buf);
@@ -771,6 +775,7 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json) {
 	} else if (rb_respond_to(input, oj_read_id)) {
 	    s = rb_funcall2(input, oj_read_id, 0, 0);
 	    pi->json = rb_string_value_cstr((VALUE*)&s);
+	    pi->end = pi->json + RSTRING_LEN(s);
 	} else {
 	    rb_raise(rb_eArgError, "strict_parse() expected a String or IO Object.");
 	}

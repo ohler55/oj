@@ -115,7 +115,7 @@ hash_get(Hash hash, const char *key, size_t len, VALUE **slotp, VALUE def_value)
 	
 	    b->next = 0;
 	    bucket->next = b;
-	
+	    bucket = b;
 	}
 	bucket->key = oj_strndup(key, len);
 	bucket->len = len;

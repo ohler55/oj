@@ -693,15 +693,15 @@ load_file(int argc, VALUE *argv, VALUE self) {
     // The json string is freed in the parser when it is finished with it.
     switch (mode) {
     case StrictMode:
-	return oj_strict_parse_cstr(argc, argv, json);
+	return oj_strict_parse_cstr(argc, argv, json, len);
     case NullMode:
     case CompatMode:
-	return oj_compat_parse_cstr(argc, argv, json);
+	return oj_compat_parse_cstr(argc, argv, json, len);
     case ObjectMode:
     default:
 	break;
     }
-    return oj_object_parse_cstr(argc, argv, json);
+    return oj_object_parse_cstr(argc, argv, json, len);
 }
 
 /* call-seq: safe_load(doc)
@@ -725,7 +725,7 @@ safe_load(VALUE self, VALUE doc) {
     oj_set_strict_callbacks(&pi);
     *args = doc;
 
-    return oj_pi_parse(1, args, &pi, 0);
+    return oj_pi_parse(1, args, &pi, 0, 0);
 }
 
 /* call-seq: saj_parse(handler, io)
@@ -1449,7 +1449,7 @@ mimic_parse(int argc, VALUE *argv, VALUE self) {
     }
     *args = *argv;
 
-    return oj_pi_parse(1, args, &pi, 0);
+    return oj_pi_parse(1, args, &pi, 0, 0);
 }
 
 static VALUE
@@ -1573,7 +1573,6 @@ define_mimic_json(int argc, VALUE *argv, VALUE self) {
     return mimic;
 }
 
-/*
 extern void	oj_hash_test();
 
 static VALUE
@@ -1581,7 +1580,6 @@ hash_test(VALUE self) {
     oj_hash_test();
     return Qnil;
 }
-*/
 
 #if !HAS_ENCODING_SUPPORT
 static VALUE
@@ -1647,7 +1645,7 @@ void Init_oj() {
     oj_utf8_encoding = Qnil;
 #endif
 
-    //rb_define_module_function(Oj, "hash_test", hash_test, 0);
+    rb_define_module_function(Oj, "hash_test", hash_test, 0);
 
     rb_define_module_function(Oj, "default_options", get_def_opts, 0);
     rb_define_module_function(Oj, "default_options=", set_def_opts, 1);

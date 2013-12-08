@@ -511,11 +511,11 @@ oj_object_parse(int argc, VALUE *argv, VALUE self) {
     pi.add_cstr = add_cstr;
     pi.array_append_cstr = array_append_cstr;
 
-    return oj_pi_parse(argc, argv, &pi, 0);
+    return oj_pi_parse(argc, argv, &pi, 0, 0);
 }
 
 VALUE
-oj_object_parse_cstr(int argc, VALUE *argv, char *json) {
+oj_object_parse_cstr(int argc, VALUE *argv, char *json, size_t len) {
     struct _ParseInfo	pi;
 
     pi.options = oj_default_options;
@@ -528,5 +528,5 @@ oj_object_parse_cstr(int argc, VALUE *argv, char *json) {
     pi.add_cstr = add_cstr;
     pi.array_append_cstr = array_append_cstr;
 
-    return oj_pi_parse(argc, argv, &pi, json);
+    return oj_pi_parse(argc, argv, &pi, json, len);
 }

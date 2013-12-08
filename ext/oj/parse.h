@@ -56,6 +56,7 @@ typedef struct _NumInfo {
 typedef struct _ParseInfo {
     const char		*json;
     const char		*cur;
+    const char		*end;
     struct _Err		err;
     struct _Options	options;
     void		*cbc;
@@ -81,7 +82,7 @@ typedef struct _ParseInfo {
 
 extern void	oj_parse2(ParseInfo pi);
 extern void	oj_set_error_at(ParseInfo pi, VALUE err_clas, const char* file, int line, const char *format, ...);
-extern VALUE	oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json);
+extern VALUE	oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len);
 extern VALUE	oj_num_as_value(NumInfo ni);
 
 extern void	oj_set_strict_callbacks(ParseInfo pi);
