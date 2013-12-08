@@ -1063,9 +1063,14 @@ stream_writer_reset_buf(StreamWriter sw) {
  * Creates a new StreamWriter.
  * @param [Hash] options formating options
  */
+/* call-seq: new(options)
+ *
+ * Creates a new StreamWriter.
+ * @param [Hash] options formating options
+ */
 static VALUE
 stream_writer_new(int argc, VALUE *argv, VALUE self) {
-    StreamWriterType	type;
+    StreamWriterType	type = STREAM_IO;
     int			fd = 0;
     VALUE		stream = argv[0];
     VALUE		clas = rb_obj_class(stream);

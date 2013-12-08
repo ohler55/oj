@@ -25,6 +25,10 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
  - Merged in a PR to again allow strings with embedded nulls.
 
+ - Implemented StreamWriter to compliment the StringWriter.
+
+ - Fixed bug in the class cache that showed up under Debian.
+
 ### Current Release 2.3.0
 
  - JRuby is no longer supported.
