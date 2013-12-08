@@ -1351,7 +1351,6 @@ define_mimic_json(int argc, VALUE *argv, VALUE self) {
     return mimic;
 }
 
-/*
 extern void	oj_hash_test();
 
 static VALUE
@@ -1359,7 +1358,6 @@ hash_test(VALUE self) {
     oj_hash_test();
     return Qnil;
 }
-*/
 
 #if !HAS_ENCODING_SUPPORT
 static VALUE
@@ -1419,7 +1417,7 @@ void Init_oj() {
     oj_utf8_encoding = Qnil;
 #endif
 
-    //rb_define_module_function(Oj, "hash_test", hash_test, 0);
+    rb_define_module_function(Oj, "hash_test", hash_test, 0);
 
     rb_define_module_function(Oj, "default_options", get_def_opts, 0);
     rb_define_module_function(Oj, "default_options=", set_def_opts, 1);

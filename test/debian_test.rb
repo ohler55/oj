@@ -63,6 +63,10 @@ end
 
 class DebJuice < ::Test::Unit::TestCase
 
+  def test_class_hash
+    Oj.hash_test()
+  end
+
   def test_as_json_object_compat_hash_cached
     Oj.default_options = { :mode => :compat, :class_cache => true }
     obj = Orange.new(true, 58)

@@ -224,7 +224,6 @@ static struct _StrLen data[] = {
     { "StandardError", 13 },
     { "Interrupt", 9 },
     { "SignalException", 15 },
-    { "#<Class:0x007fb0510c8790>", 25 },
     { "SystemExit", 10 },
     { "Exception", 9 },
     { "Symbol", 6 },
@@ -460,6 +459,7 @@ perf() {
     VALUE	*slot = 0;
     uint64_t	dt, start;
     int		i, iter = 1000000;
+    int		dataCnt = sizeof(data) / sizeof(*data);
 
     oj_hash_init();
     start = micro_time();
@@ -476,9 +476,9 @@ perf() {
     }
     dt = micro_time() - start;
 #if IS_WINDOWS
-    printf("%d iterations took %ld msecs\n", iter, (long)(dt / 1000));
+    printf("%d iterations took %ld msecs, %ld gets/msec\n", iter, (long)(dt / 1000), (long)(iter * dataCnt / (dt / 1000)));
 #else
-    printf("%d iterations took %"PRIu64" msecs\n", iter, dt / 1000);
+    printf("%d iterations took %"PRIu64" msecs, %ld gets/msec\n", iter, dt / 1000, (long)(iter * dataCnt / (dt / 1000)));
 #endif
 }
 
@@ -490,23 +490,25 @@ oj_hash_test() {
 
     oj_hash_init();
     for (d = data; 0 != d->str; d++) {
-	/*printf("*** hash_get on %s\n", *d);*/
+	char	*s = oj_strndup(d->str, d->len);
+	printf("*** hash_get on %s\n", s);
 	v = oj_class_hash_get(d->str, d->len, &slot);
-	if (Qundef == v) {
+	if (Qnil == v) {
 	    if (0 == slot) {
-		/*printf("*** failed to get a slot for %s\n", *d); */
+		printf("*** failed to get a slot for %s\n", s);
 	    } else {
-		/*printf("*** added '%s' to hash\n", *d); */
+		printf("*** added '%s' to hash\n", s);
 		v = ID2SYM(rb_intern(d->str));
 		*slot = v;
 	    }
 	} else {
 	    VALUE	rs = rb_funcall2(v, rb_intern("to_s"), 0, 0);
 
-	    printf("*** get on '%s' returned '%s' (%s)\n", d->str, StringValuePtr(rs), rb_class2name(rb_obj_class(v)));
+	    printf("*** get on '%s' returned '%s' (%s)\n", s, StringValuePtr(rs), rb_class2name(rb_obj_class(v)));
 	}
 	/*oj_hash_print(c);*/
     }
+    printf("*** ---------- hash table ------------\n");
     oj_hash_print();
     perf();
 }
