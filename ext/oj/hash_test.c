@@ -491,13 +491,11 @@ oj_hash_test() {
     oj_hash_init();
     for (d = data; 0 != d->str; d++) {
 	char	*s = oj_strndup(d->str, d->len);
-	printf("*** hash_get on %s\n", s);
 	v = oj_class_hash_get(d->str, d->len, &slot);
 	if (Qnil == v) {
 	    if (0 == slot) {
 		printf("*** failed to get a slot for %s\n", s);
 	    } else {
-		printf("*** added '%s' to hash\n", s);
 		v = ID2SYM(rb_intern(d->str));
 		*slot = v;
 	    }
