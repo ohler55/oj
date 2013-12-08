@@ -56,27 +56,30 @@ struct _Hash	intern_hash;
 
 static uint32_t
 hash_calc(const uint8_t *key, size_t len) {
-    uint32_t	k;
-    uint32_t	*kp = (uint32_t*)key;
-    uint32_t	*end = kp + (len / 4);
-    uint32_t	h = (uint32_t)len;
-    
-    for (; kp < end; kp++) {
-        k = M * *kp;
+    const uint8_t	*end = key + len;
+    const uint8_t	*endless = key + (len / 4 * 4);
+    uint32_t		h = (uint32_t)len;
+    uint32_t		k;
+
+    while (key < endless) {
+	k = (uint32_t)*key++;
+	k |= (uint32_t)*key++ << 8;
+	k |= (uint32_t)*key++ << 16;
+	k |= (uint32_t)*key++ << 24;
+
+        k *= M;
         k ^= k >> 24;
         h *= M;
         h ^= k * M;
     }
-    len = len - (len / 4 * 4);
-    if (1 < len) {
-	h ^= *(uint16_t*)kp << 8;
-	len -= 2;
-	key = (uint8_t*)(((uint16_t*)kp) + 1);
-    } else {
-	key = (uint8_t*)kp;
+    if (1 < end - key) {
+	uint16_t	k16 = (uint16_t)*key++;
+
+	k16 |= (uint16_t)*key++ << 8;
+	h ^= k16 << 8;
     }
-    if (0 < len) {
-	h ^= key[0];
+    if (key < end) {
+	h ^= *key;
     }
     h *= M;
     h ^= h >> 13;

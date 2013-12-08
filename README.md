@@ -21,13 +21,13 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
 
-### Current Release 2.3.1
+### Current Release 2.4.0
 
  - Merged in a PR to again allow strings with embedded nulls.
 
  - Implemented StreamWriter to compliment the StringWriter.
 
- - Fixed bug in the class cache that showed up under Debian.
+ - Fixed bug in the class cache hash function that showed up with the sparc compiler.
 
 ### Current Release 2.3.0
 
