@@ -1774,7 +1774,9 @@ oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
     struct _Out out;
     ssize_t	size;
     VALUE	clas = rb_obj_class(stream);
+#if !IS_WINDOWS
     VALUE	s;
+#endif
 
     out.buf = buf;
     out.end = buf + sizeof(buf) - 10;
@@ -1783,7 +1785,6 @@ oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
     size = out.cur - out.buf;
     if (oj_stringio_class == clas) {
 	rb_funcall(stream, oj_write_id, 1, rb_str_new(out.buf, size));
-#ifndef JRUBY_RUBY
 #if !IS_WINDOWS
     } else if (rb_respond_to(stream, oj_fileno_id) && Qnil != (s = rb_funcall(stream, oj_fileno_id, 0))) {
 	int	fd = FIX2INT(s);
@@ -1794,7 +1795,6 @@ oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
 	    }
 	    rb_raise(rb_eIOError, "Write failed. [%d:%s]\n", errno, strerror(errno));
 	}
-#endif
 #endif
     } else if (rb_respond_to(stream, oj_write_id)) {
 	rb_funcall(stream, oj_write_id, 1, rb_str_new(out.buf, size));
@@ -2067,11 +2067,11 @@ maybe_comma(StrWriter sw) {
 
 void
 oj_str_writer_push_object(StrWriter sw, const char *key) {
-    size_t	size;
+    long	size;
 
     key_check(sw, key);
     size = sw->depth * sw->out.indent + 3;
-    if (sw->out.end - sw->out.cur <= size) {
+    if (sw->out.end - sw->out.cur <= (long)size) {
 	grow(&sw->out, size);
     }
     maybe_comma(sw);
@@ -2086,7 +2086,7 @@ oj_str_writer_push_object(StrWriter sw, const char *key) {
 
 void
 oj_str_writer_push_array(StrWriter sw, const char *key) {
-    size_t	size;
+    long	size;
 
     key_check(sw, key);
     size = sw->depth * sw->out.indent + 3;
@@ -2104,7 +2104,7 @@ oj_str_writer_push_array(StrWriter sw, const char *key) {
 
 void
 oj_str_writer_push_value(StrWriter sw, VALUE val, const char *key) {
-    size_t	size;
+    long	size;
 
     key_check(sw, key);
     size = sw->depth * sw->out.indent + 3;
@@ -2121,7 +2121,7 @@ oj_str_writer_push_value(StrWriter sw, VALUE val, const char *key) {
 
 void
 oj_str_writer_pop(StrWriter sw) {
-    size_t	size;
+    long	size;
     DumpType	type = sw->types[sw->depth];
 
     sw->depth--;

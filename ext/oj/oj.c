@@ -1074,17 +1074,17 @@ stream_writer_new(int argc, VALUE *argv, VALUE self) {
     int			fd = 0;
     VALUE		stream = argv[0];
     VALUE		clas = rb_obj_class(stream);
-    VALUE		s;
     StreamWriter	sw;
+#if !IS_WINDOWS
+    VALUE		s;
+#endif
     
     if (oj_stringio_class == clas) {
 	type = STRING_IO;
-#ifndef JRUBY_RUBY
 #if !IS_WINDOWS
     } else if (rb_respond_to(stream, oj_fileno_id) && Qnil != (s = rb_funcall(stream, oj_fileno_id, 0))) {
 	type = FILE_IO;
 	fd = FIX2INT(s);
-#endif
 #endif
     } else if (rb_respond_to(stream, oj_write_id)) {
 	type = STREAM_IO;
@@ -1578,6 +1578,7 @@ define_mimic_json(int argc, VALUE *argv, VALUE self) {
     return mimic;
 }
 
+/*
 extern void	oj_hash_test();
 
 static VALUE
@@ -1585,6 +1586,7 @@ hash_test(VALUE self) {
     oj_hash_test();
     return Qnil;
 }
+*/
 
 #if !HAS_ENCODING_SUPPORT
 static VALUE
@@ -1650,7 +1652,7 @@ void Init_oj() {
     oj_utf8_encoding = Qnil;
 #endif
 
-    rb_define_module_function(Oj, "hash_test", hash_test, 0);
+    //rb_define_module_function(Oj, "hash_test", hash_test, 0);
 
     rb_define_module_function(Oj, "default_options", get_def_opts, 0);
     rb_define_module_function(Oj, "default_options=", set_def_opts, 1);
