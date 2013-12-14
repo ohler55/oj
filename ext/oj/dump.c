@@ -51,6 +51,9 @@
 // Workaround in case INFINITY is not defined in math.h or if the OS is CentOS
 #define OJ_INFINITY (1.0/0.0)
 
+// Extra padding at end of buffer.
+#define BUFFER_EXTRA 10
+
 typedef unsigned long	ulong;
 
 static void	raise_strict(VALUE obj);
@@ -228,11 +231,11 @@ grow(Out out, size_t len) {
 	size += len;
     }
     if (out->allocated) {
-	buf = REALLOC_N(out->buf, char, (size + 10));
+	buf = REALLOC_N(out->buf, char, (size + BUFFER_EXTRA));
     } else {
-	buf = ALLOC_N(char, (size + 10));
+	buf = ALLOC_N(char, (size + BUFFER_EXTRA));
 	out->allocated = 1;
-	memcpy(buf, out->buf, out->end - out->buf);
+	memcpy(buf, out->buf, out->end - out->buf + BUFFER_EXTRA);
     }
     if (0 == buf) {
 	rb_raise(rb_eNoMemError, "Failed to create string. [%d:%s]\n", ENOSPC, strerror(ENOSPC));
@@ -488,8 +491,8 @@ dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out) {
 	cmap = hibit_friendly_chars;
 	size = hibit_friendly_size((uint8_t*)str, cnt);
     }
-    if (out->end - out->cur <= (long)size + 10) { // extra 10 for escaped first char, quotes, and sym
-	grow(out, size + 10);
+    if (out->end - out->cur <= (long)size + BUFFER_EXTRA) { // extra 10 for escaped first char, quotes, and sym
+	grow(out, size + BUFFER_EXTRA);
     }
     *out->cur++ = '"';
     if (escape1) {
@@ -1717,7 +1720,7 @@ void
 oj_dump_obj_to_json(VALUE obj, Options copts, Out out) {
     if (0 == out->buf) {
 	out->buf = ALLOC_N(char, 4096);
-	out->end = out->buf + 4085; // 1 less than end plus extra for possible errors
+	out->end = out->buf + 4095 - BUFFER_EXTRA; // 1 less than end plus extra for possible errors
 	out->allocated = 1;
     }
     out->cur = out->buf;
@@ -1746,7 +1749,7 @@ oj_write_obj_to_file(VALUE obj, const char *path, Options copts) {
     int		ok;
 
     out.buf = buf;
-    out.end = buf + sizeof(buf) - 10;
+    out.end = buf + sizeof(buf) - BUFFER_EXTRA;
     out.allocated = 0;
     oj_dump_obj_to_json(obj, copts, &out);
     size = out.cur - out.buf;
@@ -1779,7 +1782,7 @@ oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
 #endif
 
     out.buf = buf;
-    out.end = buf + sizeof(buf) - 10;
+    out.end = buf + sizeof(buf) - BUFFER_EXTRA;
     out.allocated = 0;
     oj_dump_obj_to_json(obj, copts, &out);
     size = out.cur - out.buf;
@@ -1988,7 +1991,7 @@ void
 oj_dump_leaf_to_json(Leaf leaf, Options copts, Out out) {
     if (0 == out->buf) {
 	out->buf = ALLOC_N(char, 4096);
-	out->end = out->buf + 4085; // 1 less than end plus extra for possible errors
+	out->end = out->buf + 4095 - BUFFER_EXTRA; // 1 less than end plus extra for possible errors
 	out->allocated = 1;
     }
     out->cur = out->buf;
@@ -2007,7 +2010,7 @@ oj_write_leaf_to_file(Leaf leaf, const char *path, Options copts) {
     FILE	*f;
 
     out.buf = buf;
-    out.end = buf + sizeof(buf) - 10;
+    out.end = buf + sizeof(buf) - BUFFER_EXTRA;
     out.allocated = 0;
     oj_dump_leaf_to_json(leaf, copts, &out);
     size = out.cur - out.buf;
