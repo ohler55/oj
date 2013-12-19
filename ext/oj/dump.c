@@ -2123,6 +2123,23 @@ oj_str_writer_push_value(StrWriter sw, VALUE val, const char *key) {
 }
 
 void
+oj_str_writer_push_json(StrWriter sw, const char *json, const char *key) {
+    long	size;
+
+    key_check(sw, key);
+    size = sw->depth * sw->out.indent + 3;
+    if (sw->out.end - sw->out.cur <= size) {
+	grow(&sw->out, size);
+    }
+    maybe_comma(sw);
+    if (0 != key) {
+	dump_cstr(key, strlen(key), 0, 0, &sw->out);
+	*sw->out.cur++ = ':';
+    }
+    dump_raw(json, strlen(json), &sw->out);
+}
+
+void
 oj_str_writer_pop(StrWriter sw) {
     long	size;
     DumpType	type = sw->types[sw->depth];

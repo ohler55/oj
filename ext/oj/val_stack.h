@@ -34,7 +34,9 @@
 #include "ruby.h"
 #include "odd.h"
 #include <stdint.h>
+#if USE_PTHREAD_MUTEX
 #include <pthread.h>
+#endif
 
 #define STACK_INC	64
 
@@ -68,7 +70,6 @@ typedef struct _ValStack {
     Val			head;	// current stack
     Val			end;	// stack end
     Val			tail;	// pointer to one past last element name on stack
-
 #if USE_PTHREAD_MUTEX
     pthread_mutex_t	mutex;
 #elif USE_RB_MUTEX

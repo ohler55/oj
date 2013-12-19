@@ -76,6 +76,19 @@ class OjWriter < ::Test::Unit::TestCase
     assert_equal('[7,7.3,true,null,"a string",{"a":65},[1,2]]', w.to_s)
   end
 
+  def test_string_writer_json
+    w = Oj::StringWriter.new(:indent => 0)
+    w.push_array()
+    w.push_json('7')
+    w.push_json('true')
+    w.push_json(%|"a string"|)
+    w.push_object()
+    w.push_json('{"a":65}', 'x')
+    w.pop()
+    w.pop()
+    assert_equal('[7,true,"a string",{"x":{"a":65}}]', w.to_s)
+  end
+
   def test_string_writer_pop_excess
     w = Oj::StringWriter.new(:indent => 0)
     begin

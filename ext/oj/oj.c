@@ -965,6 +965,36 @@ str_writer_push_value(int argc, VALUE *argv, VALUE self) {
     return Qnil;
 }
 
+/* call-seq: push_json(value, key=nil)
+ *
+ * Pushes a string onto the JSON document. The String must be a valid JSON
+ * encoded string. No additional checking is done to verify the validity of the
+ * string.
+ * @param [String] value JSON document to add to the JSON document
+ * @param [String] key the key if adding to an object in the JSON document
+ */
+static VALUE
+str_writer_push_json(int argc, VALUE *argv, VALUE self) {
+    rb_check_type(argv[0], T_STRING);
+    switch (argc) {
+    case 1:
+	oj_str_writer_push_json((StrWriter)DATA_PTR(self), StringValuePtr(*argv), 0);
+	break;
+    case 2:
+	if (Qnil == argv[1]) {
+	    oj_str_writer_push_json((StrWriter)DATA_PTR(self), StringValuePtr(*argv), 0);
+	} else {
+	    rb_check_type(argv[1], T_STRING);
+	    oj_str_writer_push_json((StrWriter)DATA_PTR(self), StringValuePtr(*argv), StringValuePtr(argv[1]));
+	}
+	break;
+    default:
+	rb_raise(rb_eArgError, "Wrong number of argument to 'push_json'.");
+	break;
+    }
+    return Qnil;
+}
+
 /* call-seq: pop()
  *
  * Pops up a level in the JSON document closing the array or object that is
@@ -1190,6 +1220,40 @@ stream_writer_push_value(int argc, VALUE *argv, VALUE self) {
 	break;
     default:
 	rb_raise(rb_eArgError, "Wrong number of argument to 'push_value'.");
+	break;
+    }
+    stream_writer_write(sw);
+    return Qnil;
+}
+
+/* call-seq: push_value(value, key=nil)
+ *
+ * Pushes a string onto the JSON document. The String must be a valid JSON
+ * encoded string. No additional checking is done to verify the validity of the
+ * string.
+ * @param [Object] value value to add to the JSON document
+ * @param [String] key the key if adding to an object in the JSON document
+ */
+static VALUE
+stream_writer_push_json(int argc, VALUE *argv, VALUE self) {
+    StreamWriter	sw = (StreamWriter)DATA_PTR(self);
+
+    rb_check_type(argv[0], T_STRING);
+    stream_writer_reset_buf(sw);
+    switch (argc) {
+    case 1:
+	oj_str_writer_push_json((StrWriter)DATA_PTR(self), StringValuePtr(*argv), 0);
+	break;
+    case 2:
+	if (Qnil == argv[0]) {
+	    oj_str_writer_push_json((StrWriter)DATA_PTR(self), StringValuePtr(*argv), 0);
+	} else {
+	    rb_check_type(argv[1], T_STRING);
+	    oj_str_writer_push_json((StrWriter)DATA_PTR(self), StringValuePtr(*argv), StringValuePtr(argv[1]));
+	}
+	break;
+    default:
+	rb_raise(rb_eArgError, "Wrong number of argument to 'push_json'.");
 	break;
     }
     stream_writer_write(sw);
@@ -1623,6 +1687,7 @@ void Init_oj() {
     rb_define_method(oj_string_writer_class, "push_object", str_writer_push_object, -1);
     rb_define_method(oj_string_writer_class, "push_array", str_writer_push_array, -1);
     rb_define_method(oj_string_writer_class, "push_value", str_writer_push_value, -1);
+    rb_define_method(oj_string_writer_class, "push_json", str_writer_push_json, -1);
     rb_define_method(oj_string_writer_class, "pop", str_writer_pop, 0);
     rb_define_method(oj_string_writer_class, "pop_all", str_writer_pop_all, 0);
     rb_define_method(oj_string_writer_class, "reset", str_writer_reset, 0);
@@ -1633,6 +1698,7 @@ void Init_oj() {
     rb_define_method(oj_stream_writer_class, "push_object", stream_writer_push_object, -1);
     rb_define_method(oj_stream_writer_class, "push_array", stream_writer_push_array, -1);
     rb_define_method(oj_stream_writer_class, "push_value", stream_writer_push_value, -1);
+    rb_define_method(oj_stream_writer_class, "push_json", stream_writer_push_json, -1);
     rb_define_method(oj_stream_writer_class, "pop", stream_writer_pop, 0);
     rb_define_method(oj_stream_writer_class, "pop_all", stream_writer_pop_all, 0);
 

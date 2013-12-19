@@ -214,6 +214,7 @@ extern void	oj_write_leaf_to_file(Leaf leaf, const char *path, Options copts);
 extern void	oj_str_writer_push_object(StrWriter sw, const char *key);
 extern void	oj_str_writer_push_array(StrWriter sw, const char *key);
 extern void	oj_str_writer_push_value(StrWriter sw, VALUE val, const char *key);
+extern void	oj_str_writer_push_json(StrWriter sw, const char *json, const char *key);
 extern void	oj_str_writer_pop(StrWriter sw);
 extern void	oj_str_writer_pop_all(StrWriter sw);
 
