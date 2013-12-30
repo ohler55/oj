@@ -20,13 +20,9 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
-### Current Release 2.5.0
+### Current Release 2.5.1
 
  - Added push_json() to the StringWriter and StreamWriter to allow raw JSON to be added to a JSON document being constructed.
-
-### Current Release 2.4.3
-
- - Made include pthread.h conditional for Windows.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
