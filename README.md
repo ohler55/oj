@@ -20,6 +20,10 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
+### Current Release 2.5.2
+
+ - Fixed indent problem with StringWriter so it now indents properly
+
 ### Current Release 2.5.1
 
  - Added push_json() to the StringWriter and StreamWriter to allow raw JSON to be added to a JSON document being constructed.

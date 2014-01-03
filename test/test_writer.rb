@@ -63,7 +63,7 @@ class OjWriter < ::Test::Unit::TestCase
   end
 
   def test_string_writer_value_array
-    w = Oj::StringWriter.new(:indent => 0)
+    w = Oj::StringWriter.new(:indent => 2)
     w.push_array()
     w.push_value(7)
     w.push_value(7.3)
@@ -73,7 +73,21 @@ class OjWriter < ::Test::Unit::TestCase
     w.push_value({'a' => 65})
     w.push_value([1,2])
     w.pop()
-    assert_equal('[7,7.3,true,null,"a string",{"a":65},[1,2]]', w.to_s)
+    assert_equal(%|[
+  7,
+  7.3,
+  true,
+  null,
+  "a string",
+  {
+    "a":65
+  },
+  [
+    1,
+    2
+  ]
+]
+|, w.to_s)
   end
 
   def test_string_writer_json

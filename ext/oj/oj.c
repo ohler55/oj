@@ -866,6 +866,7 @@ str_writer_init(StrWriter sw) {
     sw->out.hash_cnt = 0;
     sw->out.opts = &sw->opts;
     sw->out.indent = sw->opts.indent;
+    sw->out.depth = 0;
 }
 
 /* call-seq: new(options)
@@ -881,6 +882,8 @@ str_writer_new(int argc, VALUE *argv, VALUE self) {
     if (1 == argc) {
 	oj_parse_options(argv[0], &sw->opts);
     }
+    sw->out.indent = sw->opts.indent;
+
     return Data_Wrap_Struct(oj_string_writer_class, 0, str_writer_free, sw);
 }
 

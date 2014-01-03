@@ -2078,7 +2078,9 @@ oj_str_writer_push_object(StrWriter sw, const char *key) {
 	grow(&sw->out, size);
     }
     maybe_comma(sw);
-    fill_indent(&sw->out, sw->depth);
+    if (0 < sw->depth) {
+	fill_indent(&sw->out, sw->depth);
+    }
     if (0 != key) {
 	dump_cstr(key, strlen(key), 0, 0, &sw->out);
 	*sw->out.cur++ = ':';
@@ -2097,6 +2099,9 @@ oj_str_writer_push_array(StrWriter sw, const char *key) {
 	grow(&sw->out, size);
     }
     maybe_comma(sw);
+    if (0 < sw->depth) {
+	fill_indent(&sw->out, sw->depth);
+    }
     if (0 != key) {
 	dump_cstr(key, strlen(key), 0, 0, &sw->out);
 	*sw->out.cur++ = ':';
@@ -2115,6 +2120,9 @@ oj_str_writer_push_value(StrWriter sw, VALUE val, const char *key) {
 	grow(&sw->out, size);
     }
     maybe_comma(sw);
+    if (0 < sw->depth) {
+	fill_indent(&sw->out, sw->depth);
+    }
     if (0 != key) {
 	dump_cstr(key, strlen(key), 0, 0, &sw->out);
 	*sw->out.cur++ = ':';
@@ -2132,6 +2140,9 @@ oj_str_writer_push_json(StrWriter sw, const char *json, const char *key) {
 	grow(&sw->out, size);
     }
     maybe_comma(sw);
+    if (0 < sw->depth) {
+	fill_indent(&sw->out, sw->depth);
+    }
     if (0 != key) {
 	dump_cstr(key, strlen(key), 0, 0, &sw->out);
 	*sw->out.cur++ = ':';
@@ -2162,6 +2173,9 @@ oj_str_writer_pop(StrWriter sw) {
     case ArrayType:
 	*sw->out.cur++ = ']';
 	break;
+    }
+    if (0 == sw->depth && 0 < sw->out.indent) {
+	*sw->out.cur++ = '\n';
     }
 }
 
