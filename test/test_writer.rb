@@ -90,6 +90,20 @@ class OjWriter < ::Test::Unit::TestCase
 |, w.to_s)
   end
 
+  def test_string_writer_block
+    w = Oj::StringWriter.new(:indent => 0)
+    w.push_object() {
+      w.push_object("a1") {
+        w.push_value(7, 'a7')
+      }
+      w.push_array("a2") {
+        w.push_value('x')
+        w.push_value(3)
+      }
+    }
+    assert_equal('{"a1":{"a7":7},"a2":["x",3]}', w.to_s)
+  end
+
   def test_string_writer_json
     w = Oj::StringWriter.new(:indent => 0)
     w.push_array()

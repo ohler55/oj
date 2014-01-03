@@ -895,21 +895,27 @@ str_writer_new(int argc, VALUE *argv, VALUE self) {
  */
 static VALUE
 str_writer_push_object(int argc, VALUE *argv, VALUE self) {
+    StrWriter	sw = (StrWriter)DATA_PTR(self);
+
     switch (argc) {
     case 0:
-	oj_str_writer_push_object((StrWriter)DATA_PTR(self), 0);
+	oj_str_writer_push_object(sw, 0);
 	break;
     case 1:
 	if (Qnil == argv[0]) {
-	    oj_str_writer_push_object((StrWriter)DATA_PTR(self), 0);
+	    oj_str_writer_push_object(sw, 0);
 	} else {
 	    rb_check_type(argv[0], T_STRING);
-	    oj_str_writer_push_object((StrWriter)DATA_PTR(self), StringValuePtr(argv[0]));
+	    oj_str_writer_push_object(sw, StringValuePtr(argv[0]));
 	}
 	break;
     default:
 	rb_raise(rb_eArgError, "Wrong number of argument to 'push_object'.");
 	break;
+    }
+    if (rb_block_given_p()) {
+	rb_yield(Qnil);
+	oj_str_writer_pop(sw);
     }
     return Qnil;
 }
@@ -922,21 +928,27 @@ str_writer_push_object(int argc, VALUE *argv, VALUE self) {
  */
 static VALUE
 str_writer_push_array(int argc, VALUE *argv, VALUE self) {
+    StrWriter	sw = (StrWriter)DATA_PTR(self);
+
     switch (argc) {
     case 0:
-	oj_str_writer_push_array((StrWriter)DATA_PTR(self), 0);
+	oj_str_writer_push_array(sw, 0);
 	break;
     case 1:
 	if (Qnil == argv[0]) {
-	    oj_str_writer_push_array((StrWriter)DATA_PTR(self), 0);
+	    oj_str_writer_push_array(sw, 0);
 	} else {
 	    rb_check_type(argv[0], T_STRING);
-	    oj_str_writer_push_array((StrWriter)DATA_PTR(self), StringValuePtr(argv[0]));
+	    oj_str_writer_push_array(sw, StringValuePtr(argv[0]));
 	}
 	break;
     default:
 	rb_raise(rb_eArgError, "Wrong number of argument to 'push_object'.");
 	break;
+    }
+    if (rb_block_given_p()) {
+	rb_yield(Qnil);
+	oj_str_writer_pop(sw);
     }
     return Qnil;
 }
