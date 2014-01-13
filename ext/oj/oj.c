@@ -1781,6 +1781,12 @@ void Init_oj() {
     oj_utc_offset_id = rb_intern("utc_offset");
     oj_write_id = rb_intern("write");
 
+    rb_require("oj/bag");
+    rb_require("oj/error");
+    rb_require("oj/mimic");
+    rb_require("oj/saj");
+    rb_require("oj/schandler");
+
     oj_bag_class = rb_const_get_at(Oj, rb_intern("Bag"));
     oj_bigdecimal_class = rb_const_get(rb_cObject, rb_intern("BigDecimal"));
     oj_date_class = rb_const_get(rb_cObject, rb_intern("Date"));
