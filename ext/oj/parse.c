@@ -799,6 +799,29 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len) {
     if (No == pi->options.allow_gc) {
 	rb_gc_enable();
     }
+    {
+	// If the stack is not empty then the JSON terminated early.
+	Val	v;
+
+	if (0 != (v = stack_peek(&pi->stack))) {
+	    switch (v->next) {
+	    case NEXT_ARRAY_NEW:
+	    case NEXT_ARRAY_ELEMENT:
+	    case NEXT_ARRAY_COMMA:
+		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "Array not terminated");
+		break;
+	    case NEXT_HASH_NEW:
+	    case NEXT_HASH_KEY:
+	    case NEXT_HASH_COLON:
+	    case NEXT_HASH_VALUE:
+	    case NEXT_HASH_COMMA:
+		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "Hash/Object not terminated");
+		break;
+	    default:
+		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not terminated");
+	    }
+	}
+    }
     // proceed with cleanup
     if (0 != pi->circ_array) {
 	oj_circ_array_free(pi->circ_array);

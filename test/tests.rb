@@ -253,6 +253,15 @@ class Juice < ::Test::Unit::TestCase
     dump_and_load([[nil]], false)
     dump_and_load([[nil], 58], false)
   end
+  def test_array_not_closed
+    begin
+      Oj.load('[')
+    rescue Exception => e
+      assert(true)
+      return
+    end
+    assert(false, "*** expected an exception")
+  end
 
   # rails encoding tests
   def test_does_not_escape_entities_by_default
@@ -314,10 +323,11 @@ class Juice < ::Test::Unit::TestCase
     t = Time.local(2012, 1, 5, 23, 58, 7)
     begin
       Oj.dump(t, :mode => :strict)
-      assert(false)
     rescue Exception
       assert(true)
+      return
     end
+    assert(false, "*** expected an exception")
   end
   def test_time_null
     t = Time.local(2012, 1, 5, 23, 58, 7)
@@ -459,10 +469,11 @@ class Juice < ::Test::Unit::TestCase
   def test_class_strict
     begin
       Oj.dump(Juice, :mode => :strict)
-      assert(false)
     rescue Exception
       assert(true)
+      return
     end
+    assert(false, "*** expected an exception")
   end
   def test_class_null
     json = Oj.dump(Juice, :mode => :null)
@@ -487,18 +498,20 @@ class Juice < ::Test::Unit::TestCase
   def test_non_str_hash_strict
     begin
       Oj.dump({ 1 => true, 0 => false }, :mode => :strict)
-      assert(false)
     rescue Exception
       assert(true)
+      return
     end
+    assert(false, "*** expected an exception")
   end
   def test_non_str_hash_null
     begin
       Oj.dump({ 1 => true, 0 => false }, :mode => :null)
-      assert(false)
     rescue Exception
       assert(true)
+      return
     end
+    assert(false, "*** expected an exception")
   end
   def test_non_str_hash_compat
     json = Oj.dump({ 1 => true, 0 => false }, :mode => :compat)
@@ -521,16 +534,26 @@ class Juice < ::Test::Unit::TestCase
     h = Oj.load(json)
     assert_equal({ 1 => true, 'nil' => nil, :sim => 4 }, h)
   end
+  def test_hash_not_closed
+    begin
+      Oj.load('{')
+    rescue Exception => e
+      assert(true)
+      return
+    end
+    assert(false, "*** expected an exception")
+  end
 
   # Object with to_json()
   def test_json_object_strict
     obj = Jeez.new(true, 58)
     begin
       Oj.dump(obj, :mode => :strict)
-      assert(false)
     rescue Exception
       assert(true)
+      return
     end
+    assert(false, "*** expected an exception")
   end
   def test_json_object_null
     obj = Jeez.new(true, 58)
@@ -575,10 +598,11 @@ class Juice < ::Test::Unit::TestCase
     obj = Jazz.new(true, 58)
     begin
       Oj.dump(obj, :mode => :strict)
-      assert(false)
     rescue Exception
       assert(true)
+      return
     end
+    assert(false, "*** expected an exception")
   end
   def test_to_hash_object_null
     obj = Jazz.new(true, 58)
@@ -613,10 +637,11 @@ class Juice < ::Test::Unit::TestCase
     obj = Orange.new(true, 58)
     begin
       Oj.dump(obj, :mode => :strict)
-      assert(false)
     rescue Exception
       assert(true)
+      return
     end
+    assert(false, "*** expected an exception")
   end
 
   def test_as_json_object_null
@@ -662,10 +687,11 @@ class Juice < ::Test::Unit::TestCase
     obj = Jam.new(true, 58)
     begin
       Oj.dump(obj, :mode => :strict)
-      assert(false)
     rescue Exception
       assert(true)
+      return
     end
+    assert(false, "*** expected an exception")
   end
   def test_object_null
     obj = Jam.new(true, 58)
@@ -723,7 +749,6 @@ class Juice < ::Test::Unit::TestCase
     err = nil
     begin
       raise StandardError.new('A Message')
-      assert(false)
     rescue Exception => e
       err = e
     end
@@ -747,10 +772,11 @@ class Juice < ::Test::Unit::TestCase
   def test_range_strict
     begin
       Oj.dump(1..7, :mode => :strict)
-      assert(false)
     rescue Exception
       assert(true)
+      return
     end
+    assert(false, "*** expected an exception")
   end
   def test_range_null
     json = Oj.dump(1..7, :mode => :null)
@@ -862,10 +888,11 @@ class Juice < ::Test::Unit::TestCase
   def test_date_strict
     begin
       Oj.dump(Date.new(2012, 6, 19), :mode => :strict)
-      assert(false)
     rescue Exception
       assert(true)
+      return
     end
+    assert(false, "*** expected an exception")
   end
   def test_date_null
     json = Oj.dump(Date.new(2012, 6, 19), :mode => :null)
@@ -891,10 +918,11 @@ class Juice < ::Test::Unit::TestCase
   def test_datetime_strict
     begin
       Oj.dump(DateTime.new(2012, 6, 19, 20, 19, 27), :mode => :strict)
-      assert(false)
     rescue Exception
       assert(true)
+      return
     end
+    assert(false, "*** expected an exception")
   end
   def test_datetime_null
     json = Oj.dump(DateTime.new(2012, 6, 19, 20, 19, 27), :mode => :null)
