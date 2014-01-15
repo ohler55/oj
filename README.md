@@ -24,18 +24,6 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
  - Fixed bug where unterminated JSON did not raise an exception.
 
-### Current Release 2.5.3
-
- - Added support for blocks with StringWriter
-
-### Current Release 2.5.2
-
- - Fixed indent problem with StringWriter so it now indents properly
-
-### Current Release 2.5.1
-
- - Added push_json() to the StringWriter and StreamWriter to allow raw JSON to be added to a JSON document being constructed.
-
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
 ## <a name="description">Description</a>
