@@ -13,7 +13,7 @@ module Oj
   #      @hash_cnt = 0
   #    end
   #
-  #    def start_hash(key)
+  #    def hash_start(key)
   #      @hash_cnt += 1
   #    end
   #  end

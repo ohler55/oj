@@ -519,7 +519,7 @@ oj_parse_options(VALUE ropts, Options copts) {
  * true, false, or nil. It parses using a mode that is strict in that it maps
  * each primitive JSON type to a similar Ruby type. The :create_id is not
  * honored in this mode. Note that a Ruby Hash is used to represent the JSON
- * Object type. These two are not the same since teh JSON Object type can have
+ * Object type. These two are not the same since the JSON Object type can have
  * repeating entries with the same key and Ruby Hash can not.
  *
  * Raises an exception if the JSON is malformed or the classes specified are not
