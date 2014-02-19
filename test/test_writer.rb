@@ -13,7 +13,6 @@ $: << File.join(File.dirname(__FILE__), "../ext")
 require 'test/unit'
 require 'stringio'
 require 'date'
-require 'bigdecimal'
 require 'oj'
 
 class OjWriter < ::Test::Unit::TestCase

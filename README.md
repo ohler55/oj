@@ -1,14 +1,14 @@
 # Oj gem
 A fast JSON parser and Object marshaller as a Ruby gem.
 
-## <a name="installation">Installation</a>
+## Installation
     gem install oj
 
-## <a name="documentation">Documentation</a>
+## Documentation
 
 *Documentation*: http://www.ohler.com/oj
 
-## <a name="source">Source</a>
+## Source
 
 *GitHub* *repo*: https://github.com/ohler55/oj
 
@@ -16,9 +16,14 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announcements and news about the Oj gem.
 
-## <a name="build_status">Build Status</a>
+## Build Status
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
+
+### Current Release 2.5.5
+
+ - Worked around the Rubinius failure to load bigdecimal from a require within
+   the C code.
 
 ### Current Release 2.5.4
 
@@ -26,7 +31,7 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
-## <a name="description">Description</a>
+## Description
 
 Optimized JSON (Oj), as the name implies was written to provide speed optimized
 JSON handling. It was designed as a faster alternative to Yajl and other the
@@ -73,7 +78,7 @@ possible. The API is simple to use but does require a different approach than
 the conventional parse followed by access approach used by conventional JSON
 parsing.
 
-## <a name="proper_use">Proper Use</a>
+## Proper Use
 
 Two settings in Oj are useful for parsing but do expose a vunerability if used from an untrusted source. Symbolizing
 keys can be used to cause memory to be filled up since Ruby does not garbage collect Symbols. The same is true for auto
@@ -88,9 +93,7 @@ methods on the Objects created. As in any system, check your inputs before worki
 from a user and evaluating it is never a good idea from an unsecure source. The same is true for Object attributes as
 they are not more than Strings. Always check inputs from untrusted sources.
 
-## <a name="release">Release Notes</a>
-
-### Simple JSON Writing and Parsing:
+## Simple JSON Writing and Parsing:
 
 ```ruby
 require 'oj'
@@ -114,7 +117,7 @@ puts "Same? #{h == h2}"
 
 # Links
 
-## <a name="links">Performance Comparisons</a>
+## Performance Comparisons
 
 [Oj Strict Mode Performance](http://www.ohler.com/dev/oj_misc/performance_strict.html) compares Oj strict mode parser performance to other JSON parsers.
 
@@ -124,7 +127,7 @@ puts "Same? #{h == h2}"
 
 [Oj Callback Performance](http://www.ohler.com/dev/oj_misc/performance_callback.html) compares Oj callback parser performance to other JSON parsers.
 
-## <a name="links">Links of Interest</a>
+## Links of Interest
 
 *Fast XML parser and marshaller on RubyGems*: https://rubygems.org/gems/ox
 
