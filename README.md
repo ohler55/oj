@@ -74,11 +74,11 @@ JRuby has been removed as JRuby no longer supports C extensions and there are
 bugs in the older versions that are not being fixed.
 
 ### Rails
-Although up until 4.1 Rails uses [multi_json](https://github.com/intridea/multi_json), an [issue in Rails](https://github.com/rails/rails/issues/9212) causes ActiveSupport to fail to take use Oj for JSON handling.
-There is a [gem to patch this](https://github.com/GoodLife/rails-patch-json-encode) for now.
+Although up until 4.1 Rails uses [multi_json](https://github.com/intridea/multi_json), an [issue in Rails](https://github.com/rails/rails/issues/9212) causes ActiveSupport to fail to make use Oj for JSON handling.
+There is a [gem to patch this](https://github.com/GoodLife/rails-patch-json-encode) for Rails 3.2 and 4.0.
 
-In version Rails 4.1, multi_json has been removed, and this patch will no longer work.
-Instead, use the `oj_mimic_json` [gem](https://github.com/ohler55/oj_mimic_json) along with `oj` in your `Gemfile` to have Oj mimic the JSON gem and be used in its place:
+In version Rails 4.1, multi_json has been removed, and this patch is unnecessary and will no longer work.
+Instead, use the `oj_mimic_json` [gem](https://github.com/ohler55/oj_mimic_json) along with `oj` in your `Gemfile` to have Oj mimic the JSON gem and be used in its place by `ActiveSupport` JSON handling:
 ```
 gem 'oj'
 gem 'oj_mimic_json'
