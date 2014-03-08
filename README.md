@@ -2,7 +2,13 @@
 A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## Installation
-    gem install oj
+```
+gem install oj
+```
+or in Bundler:
+```
+gem 'oj'
+```
 
 ## Documentation
 
@@ -33,67 +39,67 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 ## Description
 
-Optimized JSON (Oj), as the name implies was written to provide speed optimized
-JSON handling. It was designed as a faster alternative to Yajl and other the
-common Ruby JSON parsers. So far is has achieved that at about 2 time faster
-than any other Ruby JSON parser and 3 or more times faster writing JSON.
+Optimized JSON (Oj), as the name implies, was written to provide speed optimized
+JSON handling. It was designed as a faster alternative to Yajl and other
+common Ruby JSON parsers. So far it has achieved that, and is about 2 times faster
+than any other Ruby JSON parser, and 3 or more times faster at serializing JSON.
 
-Oj has several dump or serialization modes which control how Objects are
-converted to JSON. These modes are set with the :mode option in either the
-default options or as one of the options to the dump() method. The default mode
-is the :object mode.
+Oj has several `dump` or serialization modes which control how Ruby `Object`s are
+converted to JSON. These modes are set with the `:mode` option in either the
+default options or as one of the options to the `dump` method. The default mode
+is the `:object` mode.
 
-- :strict mode will only allow the 7 basic JSON types to be serialized. Any
-  other Object will raise and Exception.
+- `:strict` mode will only allow the 7 basic JSON types to be serialized. Any
+  other `Object` will raise an `Exception`.
 
-- :null mode replaces any Object that is not one of the JSON types is replaced by a JSON null.
+- `:null` mode replaces any `Object` that is not one of the JSON types with a JSON `null`.
 
-- :object mode will dump any Object as a JSON Object with keys that match the
-  Ruby Object's variable names without the '@' character. This is the highest
+- `:object` mode will dump any `Object` as a JSON `Object` with keys that match the
+  Ruby `Object`'s variable names without the '@' prefix character. This is the highest
   performance mode.
 
-- :compat mode is is the compatible with other systems. It will serialize any
-  Object but will check to see if the Object implements a to_hash() or to_json()
-  method. If either exists that method is used for serializing the Object. The
-  to_hash() is more flexible and produces more consistent output so it has a
-  preference over the to_json() method. If neither the to_json() or to_hash()
-  methods exist then the Oj internal Object variable encoding is used.
+- `:compat` mode attempts to be compatible with other systems. It will serialize any
+  `Object`, but will check to see if the `Object` implements an `as_hash` or `to_json`
+  method. If either exists, that method is used for serializing the `Object`.
+  Since `as_json` is more flexible and produces more consistent output, it is
+  preferred over the `to_json` method. If neither the `to_json` or `to_hash`
+  methods exists, then the Oj internal `Object` variable encoding is used.
 
+
+## Compatibility
+
+### Ruby
 Oj is compatible with Ruby 1.8.7, 1.9.2, 1.9.3, 2.0.0, and RBX. Support for
 JRuby has been removed as JRuby no longer supports C extensions and there are
 bugs in the older versions that are not being fixed.
 
-Oj is also compatible with Rails. Just make sure the Oj gem is installed and
-[multi_json](https://github.com/intridea/multi_json) will pick it up and use it.
+### Rails
+Although up until 4.1 Rails uses [multi_json](https://github.com/intridea/multi_json), an [issue in Rails](https://github.com/rails/rails/issues/9212) causes ActiveSupport to fail to make use Oj for JSON handling.
+There is a [gem to patch this](https://github.com/GoodLife/rails-patch-json-encode) for Rails 3.2 and 4.0.
 
-Oj offers a few alternative APIs for processing JSON. The fastest one is the Oj::Doc API. The Oj::Doc API takes a
-completely different approach by opening a JSON document and providing calls to navigate around the JSON while it is
-open. With this approach JSON access can be well over 20 times faster than conventional JSON parsing.
-
-Other parsers, the Oj::Saj and the Oj::ScHandler API are callback parsers that
-walk the JSON document depth first and makes callbacks for each element. Both
-callback parser are useful when only portions of the JSON are of
-interest. Performance up to 20 times faster than conventional JSON are
-possible. The API is simple to use but does require a different approach than
-the conventional parse followed by access approach used by conventional JSON
-parsing.
+In version Rails 4.1, multi_json has been removed, and this patch is unnecessary and will no longer work.
+Instead, use the `oj_mimic_json` [gem](https://github.com/ohler55/oj_mimic_json) along with `oj` in your `Gemfile` to have Oj mimic the JSON gem and be used in its place by `ActiveSupport` JSON handling:
+```
+gem 'oj'
+gem 'oj_mimic_json'
+```
 
 ## Proper Use
 
-Two settings in Oj are useful for parsing but do expose a vunerability if used from an untrusted source. Symbolizing
-keys can be used to cause memory to be filled up since Ruby does not garbage collect Symbols. The same is true for auto
-defining classes. Memory can be exhausted if too many classes are automatically defined. Auto defining is a useful
-feature during development and from trusted sources but it does allow too many classes to be created in the object load
-mode and auto defined is used with an untrusted source. The Oj.strict_load() method sets uses the most strict and safest
-options. It should be used by developers who find it difficult to understand the options available in Oj.
+Two settings in Oj are useful for parsing but do expose a vunerability if used from an untrusted source. Symbolized
+keys can cause memory to be filled since Ruby does not garbage collect Symbols. The same is true for auto
+defining classes; memory will also be exhausted if too many classes are automatically defined. Auto defining is a useful
+feature during development and from trusted sources but it allows too many classes to be created in the object load
+mode and auto defined is used with an untrusted source. The `Oj.strict_load()` method sets and uses the most strict and safest options. It should be used by developers who find it difficult to understand the options available in Oj.
 
 The options in Oj are designed to provide flexibility to the developer. This flexibility allows Objects to be serialized
 and deserialized. No methods are ever called on these created Objects but that does not stop the developer from calling
-methods on the Objects created. As in any system, check your inputs before working with them. Taking an arbitrary String
-from a user and evaluating it is never a good idea from an unsecure source. The same is true for Object attributes as
-they are not more than Strings. Always check inputs from untrusted sources.
+methods on them. As in any system, check your inputs before working with them. Taking an arbitrary `String`
+from a user and evaluating it is never a good idea from an unsecure source. The same is true for `Object` attributes as
+they are not more than `String`s. Always check inputs from untrusted sources.
 
-## Simple JSON Writing and Parsing:
+
+## Simple JSON Writing and Parsing Example
 
 ```ruby
 require 'oj'
@@ -114,6 +120,21 @@ h2 = Oj.load(json)
 puts "Same? #{h == h2}"
 # true
 ```
+
+## Alternative JSON Processing APIs
+
+Oj offers a few alternative APIs for processing JSON. The fastest one is the `Oj::Doc` API. The `Oj::Doc` API takes a
+completely different approach by opening a JSON document and providing calls to navigate around the JSON while it is
+open. With this approach, JSON access can be well over 20 times faster than conventional JSON parsing.
+
+The `Oj::Saj` and `Oj::ScHandler` APIs are callback parsers that
+walk the JSON document depth first and makes callbacks for each element.
+Both callback parser are useful when only portions of the JSON are of
+interest. Performance up to 20 times faster than conventional JSON is
+possible. The API is simple to use but does require a different approach than
+the conventional parse followed by access approach used by conventional JSON
+parsing.
+
 
 # Links
 
