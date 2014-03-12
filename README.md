@@ -28,10 +28,10 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 ### Current Release 2.6.0
 
- - Added the :use_to_json option for Oj.dump(). This option if set to false will
-   not call the to_json() method on objects when dumping. This is the default
-   behavior. The reason behind the option and change is to better support Rails
-   and ActiveSupport. Previous works arounds have been removed.
+ - Added the `:use_to_json` option for Oj.dump(). If this option is set to false
+   the `to_json()` method on objects will not be calledwhen dumping. This is the
+   default behavior. The reason behind the option and change is to better
+   support Rails and ActiveSupport. Previous works arounds have been removed.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
@@ -67,13 +67,17 @@ is the `:object` mode.
 ## Compatibility
 
 ### Ruby
-Oj is compatible with Ruby 1.8.7, 1.9.2, 1.9.3, 2.0.0, and RBX. Support for
+Oj is compatible with Ruby 1.8.7, 1.9.2, 1.9.3, 2.0.0, 2.1.1 and RBX. Support for
 JRuby has been removed as JRuby no longer supports C extensions and there are
 bugs in the older versions that are not being fixed.
 
 ### Rails
 Although up until 4.1 Rails uses [multi_json](https://github.com/intridea/multi_json), an [issue in Rails](https://github.com/rails/rails/issues/9212) causes ActiveSupport to fail to make use Oj for JSON handling.
-There is a [gem to patch this](https://github.com/GoodLife/rails-patch-json-encode) for Rails 3.2 and 4.0.
+There is a
+[gem to patch this](https://github.com/GoodLife/rails-patch-json-encode) for
+Rails 3.2 and 4.0. As of the Oj 2.6.0 release the default behavior is to not use
+the `to_json()` method unless the `:use_to_json` option is set. This provides
+another work around to the rails older and newer behavior.
 
 In version Rails 4.1, multi_json has been removed, and this patch is unnecessary and will no longer work.
 Instead, use the `oj_mimic_json` [gem](https://github.com/ohler55/oj_mimic_json) along with `oj` in your `Gemfile` to have Oj mimic the JSON gem and be used in its place by `ActiveSupport` JSON handling:
