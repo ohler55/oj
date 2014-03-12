@@ -134,6 +134,7 @@ class Juice < ::Test::Unit::TestCase
                    :time_format=>:unix,
                    :bigdecimal_as_decimal=>true,
                    :bigdecimal_load=>:auto,
+                   :use_to_json=>false,
                    :allow_gc=>true,
                    :create_id=>'json_class'}, opts)
   end
@@ -151,6 +152,7 @@ class Juice < ::Test::Unit::TestCase
       :time_format=>:unix,
       :bigdecimal_as_decimal=>true,
       :bigdecimal_load=>:auto,
+      :use_to_json=>true,
       :allow_gc=>true,
       :create_id=>'json_class'}
     o2 = {
@@ -165,6 +167,7 @@ class Juice < ::Test::Unit::TestCase
       :time_format=>:ruby,
       :bigdecimal_as_decimal=>false,
       :bigdecimal_load=>:bigdecimal,
+      :use_to_json=>false,
       :allow_gc=>false,
       :create_id=>nil}
     o3 = { :indent => 4 }
@@ -561,12 +564,13 @@ class Juice < ::Test::Unit::TestCase
     assert_equal('null', json)
   end
   def test_json_object_compat
-    Oj.default_options = { :mode => :compat }
+    Oj.default_options = { :mode => :compat, :use_to_json => true }
     obj = Jeez.new(true, 58)
     json = Oj.dump(obj, :indent => 2)
     assert(%{{"json_class":"Jeez","x":true,"y":58}} == json ||
            %{{"json_class":"Jeez","y":58,"x":true}} == json)
     dump_and_load(obj, false)
+    Oj.default_options = { :mode => :compat, :use_to_json => false }
   end
   def test_json_object_create_id
     Oj.default_options = { :mode => :compat, :create_id => 'kson_class' }
@@ -862,15 +866,15 @@ class Juice < ::Test::Unit::TestCase
     assert_equal(Float, bg.class)
     assert_equal(orig.to_f, bg)
   end
-  def test_bigdecimal_compat_to_json
+  def test_bigdecimal_compat_as_json
     orig = BigDecimal.new('80.51')
-    BigDecimal.send(:define_method, :to_json) do
-      %{"this is big"}
+    BigDecimal.send(:define_method, :as_json) do
+      %{this is big}
     end
     json = Oj.dump(orig, :mode => :compat)
     bg = Oj.load(json, :mode => :compat)
     assert_equal("this is big", bg)
-    BigDecimal.send(:remove_method, :to_json) # cleanup
+    BigDecimal.send(:remove_method, :as_json) # cleanup
   end
   def test_bigdecimal_object
     mode = Oj.default_options[:mode]

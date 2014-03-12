@@ -20,14 +20,12 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
-### Current Release 2.5.5
+### Current Release 2.6.0
 
- - Worked around the Rubinius failure to load bigdecimal from a require within
-   the C code.
-
-### Current Release 2.5.4
-
- - Fixed bug where unterminated JSON did not raise an exception.
+ - Added the :use_to_json option for Oj.dump(). This option if set to false will
+   not call the to_json() method on objects when dumping. This is the default
+   behavior. The reason behind the option and change is to better support Rails
+   and ActiveSupport. Previous works arounds have been removed.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 

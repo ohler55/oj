@@ -118,6 +118,7 @@ static VALUE	strict_sym;
 static VALUE	symbol_keys_sym;
 static VALUE	time_format_sym;
 static VALUE	unix_sym;
+static VALUE	use_to_json_sym;
 static VALUE	xmlschema_sym;
 static VALUE	xss_safe_sym;
 
@@ -154,6 +155,7 @@ struct _Options	oj_default_options = {
     UnixTime,		// time_format
     Yes,		// bigdec_as_num
     AutoDec,		// bigdec_load
+    No,			// to_json
     json_class,		// create_id
     10,			// create_id_len
     9,			// sec_prec
@@ -178,6 +180,7 @@ static VALUE	define_mimic_json(int argc, VALUE *argv, VALUE self);
  * - bigdecimal_load: [:bigdecimal|:float|:auto] load decimals as BigDecimal instead of as a Float. :auto pick the most precise for the number of digits.
  * - create_id: [String|nil] create id for json compatible object encoding, default is 'json_create'
  * - second_precision: [Fixnum|nil] number of digits after the decimal when dumping the seconds portion of time
+ * - use_to_json: [true|false|nil] call to_json() methods on dump, default is false
  * - allow_gc: [true|false|nil] allow or prohibit GC during parsing, default is true (allow)
  * @return [Hash] all current option settings.
  */
@@ -192,6 +195,7 @@ get_def_opts(VALUE self) {
     rb_hash_aset(opts, auto_define_sym, (Yes == oj_default_options.auto_define) ? Qtrue : ((No == oj_default_options.auto_define) ? Qfalse : Qnil));
     rb_hash_aset(opts, symbol_keys_sym, (Yes == oj_default_options.sym_key) ? Qtrue : ((No == oj_default_options.sym_key) ? Qfalse : Qnil));
     rb_hash_aset(opts, bigdecimal_as_decimal_sym, (Yes == oj_default_options.bigdec_as_num) ? Qtrue : ((No == oj_default_options.bigdec_as_num) ? Qfalse : Qnil));
+    rb_hash_aset(opts, use_to_json_sym, (Yes == oj_default_options.to_json) ? Qtrue : ((No == oj_default_options.to_json) ? Qfalse : Qnil));
     rb_hash_aset(opts, allow_gc_sym, (Yes == oj_default_options.allow_gc) ? Qtrue : ((No == oj_default_options.allow_gc) ? Qfalse : Qnil));
     switch (oj_default_options.mode) {
     case StrictMode:	rb_hash_aset(opts, mode_sym, strict_sym);	break;
@@ -251,6 +255,7 @@ get_def_opts(VALUE self) {
  *        :ruby Time.to_s formatted String
  * @param [String|nil] :create_id create id for json compatible object encoding
  * @param [Fixnum|nil] :second_precision number of digits after the decimal when dumping the seconds portion of time
+ * @param [true|false|nil] :use_to_json call to_json() methods on dump, default is false
  * @param [true|false|nil] :allow_gc allow or prohibit GC during parsing, default is true (allow)
  * @return [nil]
  */
@@ -262,6 +267,7 @@ set_def_opts(VALUE self, VALUE opts) {
 	{ symbol_keys_sym, &oj_default_options.sym_key },
 	{ class_cache_sym, &oj_default_options.class_cache },
 	{ bigdecimal_as_decimal_sym, &oj_default_options.bigdec_as_num },
+	{ use_to_json_sym, &oj_default_options.to_json },
 	{ allow_gc_sym, &oj_default_options.allow_gc },
 	{ Qnil, 0 }
     };
@@ -392,6 +398,7 @@ oj_parse_options(VALUE ropts, Options copts) {
 	{ symbol_keys_sym, &copts->sym_key },
 	{ class_cache_sym, &copts->class_cache },
 	{ bigdecimal_as_decimal_sym, &copts->bigdec_as_num },
+	{ use_to_json_sym, &copts->to_json },
 	{ allow_gc_sym, &copts->allow_gc },
 	{ Qnil, 0 }
     };
@@ -1821,6 +1828,7 @@ void Init_oj() {
     symbol_keys_sym = ID2SYM(rb_intern("symbol_keys"));	rb_gc_register_address(&symbol_keys_sym);
     time_format_sym = ID2SYM(rb_intern("time_format"));	rb_gc_register_address(&time_format_sym);
     unix_sym = ID2SYM(rb_intern("unix"));		rb_gc_register_address(&unix_sym);
+    use_to_json_sym = ID2SYM(rb_intern("use_to_json"));	rb_gc_register_address(&use_to_json_sym);
     xmlschema_sym = ID2SYM(rb_intern("xmlschema"));	rb_gc_register_address(&xmlschema_sym);
     xss_safe_sym = ID2SYM(rb_intern("xss_safe"));	rb_gc_register_address(&xss_safe_sym);
 

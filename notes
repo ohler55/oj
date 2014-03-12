@@ -3,6 +3,11 @@
 ^c^d hide subtree
 ^c^s show subtree
 
+- to_json
+ - rails 2.3.3 introduced as_json
+ - ignore_to_json option
+ - remove current rails hack
+
  - options same as dump
  - keep track of nesting
  - calls into a writer

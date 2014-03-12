@@ -135,6 +135,7 @@ typedef struct _Options {
     char	time_format;	// TimeFormat
     char	bigdec_as_num;	// YesNo
     char	bigdec_load;	// BigLoad
+    char	to_json;	// YesNo
     const char	*create_id;	// 0 or string
     size_t	create_id_len;	// length of create_id
     int		sec_prec;	// second precision when dumping time

@@ -31,8 +31,8 @@ class Jam
   end
   alias == eql?
 
-  def to_json()
-    %{{"json_class":"#{self.class}","x":#{@x},"y":#{@y}}}
+  def as_json()
+    {"json_class" => self.class.to_s,"x" => @x,"y" => @y}
   end
 
   def self.json_create(h)
