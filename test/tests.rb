@@ -1023,6 +1023,18 @@ class Juice < ::Test::Unit::TestCase
     end
   end
 
+  def test_deep_nest_dump
+    begin
+      a = []
+      10000.times { a << [a] }
+      Oj.dump(a)
+    rescue Exception => e
+      assert(true)
+      return
+    end
+    assert(false, "*** expected an exception")
+  end
+
 # Stream IO
   def test_io_string
     src = { 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}

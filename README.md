@@ -26,12 +26,11 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
-### Current Release 2.6.0
+### Current Release 2.6.1
 
- - Added the `:use_to_json` option for Oj.dump(). If this option is set to false
-   the `to_json()` method on objects will not be calledwhen dumping. This is the
-   default behavior. The reason behind the option and change is to better
-   support Rails and ActiveSupport. Previous works arounds have been removed.
+ - Set a limit on the maximum nesting depth to 1000. An exception is raised
+   instead of a segfault unless a reduced stack is used which could trigger the
+   segfault due to an out of memory condition.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 

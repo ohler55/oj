@@ -54,6 +54,8 @@
 // Extra padding at end of buffer.
 #define BUFFER_EXTRA 10
 
+#define MAX_DEPTH 1000
+
 typedef unsigned long	ulong;
 
 static void	raise_strict(VALUE obj);
@@ -180,19 +182,6 @@ fill_indent(Out out, int cnt) {
 	    *out->cur++ = ' ';
 	}
     }
-}
-
-inline static const char*
-ulong2str(uint32_t num, char *end) {
-    char	*b;
-
-    *end-- = '\0';
-    for (b = end; 0 < num || b == end; num /= 10, b--) {
-	*b = (num % 10) + '0';
-    }
-    b++;
-
-    return b;
 }
 
 inline static void
@@ -1620,6 +1609,9 @@ raise_strict(VALUE obj) {
 
 static void
 dump_val(VALUE obj, int depth, Out out) {
+    if (MAX_DEPTH < depth) {
+	rb_raise(rb_eNoMemError, "Too deeply nested.\n");
+    }
     switch (rb_type(obj)) {
     case T_NIL:		dump_nil(out);			break;
     case T_TRUE:	dump_true(out);			break;

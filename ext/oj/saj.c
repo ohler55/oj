@@ -121,23 +121,6 @@ next_non_white(ParseInfo pi) {
 }
 
 inline static void
-next_white(ParseInfo pi) {
-    for (; 1; pi->s++) {
-	switch(*pi->s) {
-	case ' ':
-	case '\t':
-	case '\f':
-	case '\n':
-	case '\r':
-	case '\0':
-	    return;
-	default:
-	    break;
-	}
-    }
-}
-
-inline static void
 call_add_value(VALUE handler, VALUE value, const char *key) {
     volatile VALUE	k;
 
