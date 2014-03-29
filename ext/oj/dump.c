@@ -2049,10 +2049,13 @@ maybe_comma(StrWriter sw) {
 }
 
 void
-oj_str_writer_push_object(StrWriter sw, const char *key) {
+oj_str_writer_push_key(StrWriter sw, const char *key) {
+    DumpType	type = sw->types[sw->depth];
     long	size;
 
-    key_check(sw, key);
+    if (ObjectNew != type && ObjectType != type) {
+	rb_raise(rb_eStandardError, "Can only push a key onto an Object.");
+    }
     size = sw->depth * sw->out.indent + 3;
     if (sw->out.end - sw->out.cur <= (long)size) {
 	grow(&sw->out, size);
@@ -2061,9 +2064,31 @@ oj_str_writer_push_object(StrWriter sw, const char *key) {
     if (0 < sw->depth) {
 	fill_indent(&sw->out, sw->depth);
     }
-    if (0 != key) {
-	dump_cstr(key, strlen(key), 0, 0, &sw->out);
-	*sw->out.cur++ = ':';
+    dump_cstr(key, strlen(key), 0, 0, &sw->out);
+    *sw->out.cur++ = ':';
+    sw->keyWritten = 1;
+}
+
+void
+oj_str_writer_push_object(StrWriter sw, const char *key) {
+    if (sw->keyWritten) {
+	sw->keyWritten = 0;
+    } else {
+	long	size;
+
+	key_check(sw, key);
+	size = sw->depth * sw->out.indent + 3;
+	if (sw->out.end - sw->out.cur <= (long)size) {
+	    grow(&sw->out, size);
+	}
+	maybe_comma(sw);
+	if (0 < sw->depth) {
+	    fill_indent(&sw->out, sw->depth);
+	}
+	if (0 != key) {
+	    dump_cstr(key, strlen(key), 0, 0, &sw->out);
+	    *sw->out.cur++ = ':';
+	}
     }
     *sw->out.cur++ = '{';
     push_type(sw, ObjectNew);
@@ -2071,20 +2096,24 @@ oj_str_writer_push_object(StrWriter sw, const char *key) {
 
 void
 oj_str_writer_push_array(StrWriter sw, const char *key) {
-    long	size;
+    if (sw->keyWritten) {
+	sw->keyWritten = 0;
+    } else {
+	long	size;
 
-    key_check(sw, key);
-    size = sw->depth * sw->out.indent + 3;
-    if (sw->out.end - sw->out.cur <= size) {
-	grow(&sw->out, size);
-    }
-    maybe_comma(sw);
-    if (0 < sw->depth) {
-	fill_indent(&sw->out, sw->depth);
-    }
-    if (0 != key) {
-	dump_cstr(key, strlen(key), 0, 0, &sw->out);
-	*sw->out.cur++ = ':';
+	key_check(sw, key);
+	size = sw->depth * sw->out.indent + 3;
+	if (sw->out.end - sw->out.cur <= size) {
+	    grow(&sw->out, size);
+	}
+	maybe_comma(sw);
+	if (0 < sw->depth) {
+	    fill_indent(&sw->out, sw->depth);
+	}
+	if (0 != key) {
+	    dump_cstr(key, strlen(key), 0, 0, &sw->out);
+	    *sw->out.cur++ = ':';
+	}
     }
     *sw->out.cur++ = '[';
     push_type(sw, ArrayNew);
@@ -2092,40 +2121,48 @@ oj_str_writer_push_array(StrWriter sw, const char *key) {
 
 void
 oj_str_writer_push_value(StrWriter sw, VALUE val, const char *key) {
-    long	size;
+    if (sw->keyWritten) {
+	sw->keyWritten = 0;
+    } else {
+	long	size;
 
-    key_check(sw, key);
-    size = sw->depth * sw->out.indent + 3;
-    if (sw->out.end - sw->out.cur <= size) {
-	grow(&sw->out, size);
-    }
-    maybe_comma(sw);
-    if (0 < sw->depth) {
-	fill_indent(&sw->out, sw->depth);
-    }
-    if (0 != key) {
-	dump_cstr(key, strlen(key), 0, 0, &sw->out);
-	*sw->out.cur++ = ':';
+	key_check(sw, key);
+	size = sw->depth * sw->out.indent + 3;
+	if (sw->out.end - sw->out.cur <= size) {
+	    grow(&sw->out, size);
+	}
+	maybe_comma(sw);
+	if (0 < sw->depth) {
+	    fill_indent(&sw->out, sw->depth);
+	}
+	if (0 != key) {
+	    dump_cstr(key, strlen(key), 0, 0, &sw->out);
+	    *sw->out.cur++ = ':';
+	}
     }
     dump_val(val, sw->depth, &sw->out);
 }
 
 void
 oj_str_writer_push_json(StrWriter sw, const char *json, const char *key) {
-    long	size;
+    if (sw->keyWritten) {
+	sw->keyWritten = 0;
+    } else {
+	long	size;
 
-    key_check(sw, key);
-    size = sw->depth * sw->out.indent + 3;
-    if (sw->out.end - sw->out.cur <= size) {
-	grow(&sw->out, size);
-    }
-    maybe_comma(sw);
-    if (0 < sw->depth) {
-	fill_indent(&sw->out, sw->depth);
-    }
-    if (0 != key) {
-	dump_cstr(key, strlen(key), 0, 0, &sw->out);
-	*sw->out.cur++ = ':';
+	key_check(sw, key);
+	size = sw->depth * sw->out.indent + 3;
+	if (sw->out.end - sw->out.cur <= size) {
+	    grow(&sw->out, size);
+	}
+	maybe_comma(sw);
+	if (0 < sw->depth) {
+	    fill_indent(&sw->out, sw->depth);
+	}
+	if (0 != key) {
+	    dump_cstr(key, strlen(key), 0, 0, &sw->out);
+	    *sw->out.cur++ = ':';
+	}
     }
     dump_raw(json, strlen(json), &sw->out);
 }
@@ -2135,6 +2172,10 @@ oj_str_writer_pop(StrWriter sw) {
     long	size;
     DumpType	type = sw->types[sw->depth];
 
+    if (sw->keyWritten) {
+	sw->keyWritten = 0;
+	rb_raise(rb_eStandardError, "Can not pop after writing a key but no value.");
+    }
     sw->depth--;
     if (0 > sw->depth) {
 	rb_raise(rb_eStandardError, "Can not pop with no open array or object.");

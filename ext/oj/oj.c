@@ -864,6 +864,8 @@ str_writer_init(StrWriter sw) {
     sw->types = ALLOC_N(char, 256);
     sw->types_end = sw->types + 256;
     *sw->types = '\0';
+    sw->keyWritten = 0;
+
     sw->out.buf = ALLOC_N(char, 4096);
     sw->out.end = sw->out.buf + 4086;
     sw->out.allocated = 1;
@@ -892,6 +894,23 @@ str_writer_new(int argc, VALUE *argv, VALUE self) {
     sw->out.indent = sw->opts.indent;
 
     return Data_Wrap_Struct(oj_string_writer_class, 0, str_writer_free, sw);
+}
+
+/* call-seq: push_key(key)
+ *
+ * Pushes a key onto the JSON document. The key will be used for the next push
+ * if currently in a JSON object and ignored otherwise. If a key is provided on
+ * the next push then that new key will be ignored.
+ * @param [String] key the key pending for the next push
+ */
+static VALUE
+str_writer_push_key(VALUE self, VALUE key) {
+    StrWriter	sw = (StrWriter)DATA_PTR(self);
+
+    rb_check_type(key, T_STRING);
+    oj_str_writer_push_key(sw, StringValuePtr(key));
+
+    return Qnil;
 }
 
 /* call-seq: push_object(key=nil)
@@ -1050,6 +1069,7 @@ str_writer_reset(VALUE self) {
 
     sw->depth = 0;
     *sw->types = '\0';
+    sw->keyWritten = 0;
     sw->out.cur = sw->out.buf;
     *sw->out.cur = '\0';
 
@@ -1153,6 +1173,23 @@ stream_writer_new(int argc, VALUE *argv, VALUE self) {
     sw->fd = fd;
 
     return Data_Wrap_Struct(oj_stream_writer_class, 0, stream_writer_free, sw);
+}
+
+/* call-seq: push_key(key)
+ *
+ * Pushes a key onto the JSON document. The key will be used for the next push
+ * if currently in a JSON object and ignored otherwise. If a key is provided on
+ * the next push then that new key will be ignored.
+ * @param [String] key the key pending for the next push
+ */
+static VALUE
+stream_writer_push_key(VALUE self, VALUE key) {
+    StreamWriter	sw = (StreamWriter)DATA_PTR(self);
+
+    rb_check_type(key, T_STRING);
+    oj_str_writer_push_key(&sw->sw, StringValuePtr(key));
+    stream_writer_write(sw);
+    return Qnil;
 }
 
 /* call-seq: push_object(key=nil)
@@ -1706,6 +1743,7 @@ void Init_oj() {
 
     oj_string_writer_class = rb_define_class_under(Oj, "StringWriter", rb_cObject);
     rb_define_module_function(oj_string_writer_class, "new", str_writer_new, -1);
+    rb_define_method(oj_string_writer_class, "push_key", str_writer_push_key, 1);
     rb_define_method(oj_string_writer_class, "push_object", str_writer_push_object, -1);
     rb_define_method(oj_string_writer_class, "push_array", str_writer_push_array, -1);
     rb_define_method(oj_string_writer_class, "push_value", str_writer_push_value, -1);
@@ -1717,6 +1755,7 @@ void Init_oj() {
 
     oj_stream_writer_class = rb_define_class_under(Oj, "StreamWriter", rb_cObject);
     rb_define_module_function(oj_stream_writer_class, "new", stream_writer_new, -1);
+    rb_define_method(oj_stream_writer_class, "push_key", stream_writer_push_key, 1);
     rb_define_method(oj_stream_writer_class, "push_object", stream_writer_push_object, -1);
     rb_define_method(oj_stream_writer_class, "push_array", stream_writer_push_array, -1);
     rb_define_method(oj_stream_writer_class, "push_value", stream_writer_push_value, -1);

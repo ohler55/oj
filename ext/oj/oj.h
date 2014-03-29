@@ -162,6 +162,7 @@ typedef struct _StrWriter {
     int			depth;
     char		*types;	// DumpType
     char		*types_end;
+    int			keyWritten;
 } *StrWriter;
 
 typedef struct _StreamWriter {
@@ -212,6 +213,7 @@ extern void	oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts);
 extern void	oj_dump_leaf_to_json(Leaf leaf, Options copts, Out out);
 extern void	oj_write_leaf_to_file(Leaf leaf, const char *path, Options copts);
 
+extern void	oj_str_writer_push_key(StrWriter sw, const char *key);
 extern void	oj_str_writer_push_object(StrWriter sw, const char *key);
 extern void	oj_str_writer_push_array(StrWriter sw, const char *key);
 extern void	oj_str_writer_push_value(StrWriter sw, VALUE val, const char *key);

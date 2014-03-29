@@ -61,6 +61,24 @@ class OjWriter < ::Test::Unit::TestCase
     assert_equal('{"a1":{},"a2":{"b":{}},"a3":{}}', w.to_s)
   end
 
+  def test_string_writer_nested_key_object
+    w = Oj::StringWriter.new(:indent => 0)
+    w.push_object()
+    w.push_key('a1')
+    w.push_object()
+    w.pop()
+    w.push_key('a2')
+    w.push_object('x')
+    w.push_object('b')
+    w.pop()
+    w.pop()
+    w.push_key('a3')
+    w.push_object()
+    w.pop()
+    w.pop()
+    assert_equal('{"a1":{},"a2":{"b":{}},"a3":{}}', w.to_s)
+  end
+
   def test_string_writer_value_array
     w = Oj::StringWriter.new(:indent => 2)
     w.push_array()
@@ -117,6 +135,33 @@ class OjWriter < ::Test::Unit::TestCase
   end
 
   def test_string_writer_pop_excess
+    w = Oj::StringWriter.new(:indent => 0)
+    begin
+      w.push_object() {
+        w.push_key('key')
+      }
+    rescue Exception
+      assert(true)
+      return
+    end
+    assert(false, "*** expected an exception")
+  end
+
+  def test_string_writer_array_key
+    w = Oj::StringWriter.new(:indent => 0)
+    begin
+      w.push_array() {
+        w.push_key('key')
+        w.push_value(7)
+      }
+    rescue Exception
+      assert(true)
+      return
+    end
+    assert(false, "*** expected an exception")
+  end
+
+  def test_string_writer_pop_with_key
     w = Oj::StringWriter.new(:indent => 0)
     begin
       w.pop()
