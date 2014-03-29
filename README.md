@@ -30,12 +30,6 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
  - Added the push_key() method to the StringWriter and StreamWriter classes.
 
-### Current Release 2.6.1
-
- - Set a limit on the maximum nesting depth to 1000. An exception is raised
-   instead of a segfault unless a reduced stack is used which could trigger the
-   segfault due to an out of memory condition.
-
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
 ## Description
