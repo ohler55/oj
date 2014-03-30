@@ -74,9 +74,11 @@ class OjWriter < ::Test::Unit::TestCase
     w.pop()
     w.push_key('a3')
     w.push_object()
+    w.push_key('a4')
+    w.push_value(37)
     w.pop()
     w.pop()
-    assert_equal('{"a1":{},"a2":{"b":{}},"a3":{}}', w.to_s)
+    assert_equal('{"a1":{},"a2":{"b":{}},"a3":{"a4":37}}', w.to_s)
   end
 
   def test_string_writer_value_array
@@ -267,5 +269,28 @@ class OjWriter < ::Test::Unit::TestCase
     content = File.read(filename)
     assert_equal('{"a1":{},"a2":{"b":[7,true,"string"]},"a3":{}}', content)
   end
+
+  def test_stream_writer_nested_key_object
+    output = StringIO.open("", "w+")
+    w = Oj::StreamWriter.new(output, :indent => 0)
+    w.push_object()
+    w.push_key('a1')
+    w.push_object()
+    w.pop()
+    w.push_key('a2')
+    w.push_object('x')
+    w.push_object('b')
+    w.pop()
+    w.pop()
+    w.push_key('a3')
+    w.push_object()
+    w.push_key('a4')
+    w.push_value(37)
+    w.pop()
+    w.pop()
+    assert_equal('{"a1":{},"a2":{"b":{}},"a3":{"a4":37}}', output.string())
+  end
+
+
 
 end # OjWriter
