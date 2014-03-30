@@ -1187,6 +1187,7 @@ stream_writer_push_key(VALUE self, VALUE key) {
     StreamWriter	sw = (StreamWriter)DATA_PTR(self);
 
     rb_check_type(key, T_STRING);
+    stream_writer_reset_buf(sw);
     oj_str_writer_push_key(&sw->sw, StringValuePtr(key));
     stream_writer_write(sw);
     return Qnil;

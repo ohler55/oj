@@ -61,7 +61,7 @@ class OjWriter < ::Test::Unit::TestCase
     assert_equal('{"a1":{},"a2":{"b":{}},"a3":{}}', w.to_s)
   end
 
-  def test_string_writer_nested_key_object
+  def test_string_writer_nested_key
     w = Oj::StringWriter.new(:indent => 0)
     w.push_object()
     w.push_key('a1')
@@ -290,7 +290,5 @@ class OjWriter < ::Test::Unit::TestCase
     w.pop()
     assert_equal('{"a1":{},"a2":{"b":{}},"a3":{"a4":37}}', output.string())
   end
-
-
 
 end # OjWriter

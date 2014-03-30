@@ -2053,6 +2053,9 @@ oj_str_writer_push_key(StrWriter sw, const char *key) {
     DumpType	type = sw->types[sw->depth];
     long	size;
 
+    if (sw->keyWritten) {
+	rb_raise(rb_eStandardError, "Can not push more than one key before pushing a non-key.");
+    }
     if (ObjectNew != type && ObjectType != type) {
 	rb_raise(rb_eStandardError, "Can only push a key onto an Object.");
     }
@@ -2073,6 +2076,9 @@ void
 oj_str_writer_push_object(StrWriter sw, const char *key) {
     if (sw->keyWritten) {
 	sw->keyWritten = 0;
+	if (sw->out.end - sw->out.cur <= 1) {
+	    grow(&sw->out, 1);
+	}
     } else {
 	long	size;
 
@@ -2098,6 +2104,9 @@ void
 oj_str_writer_push_array(StrWriter sw, const char *key) {
     if (sw->keyWritten) {
 	sw->keyWritten = 0;
+	if (sw->out.end - sw->out.cur <= 1) {
+	    grow(&sw->out, 1);
+	}
     } else {
 	long	size;
 
