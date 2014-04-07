@@ -135,6 +135,7 @@ class Juice < ::Test::Unit::TestCase
                    :bigdecimal_as_decimal=>true,
                    :bigdecimal_load=>:auto,
                    :use_to_json=>false,
+                   :nilnil=>false,
                    :allow_gc=>true,
                    :create_id=>'json_class'}, opts)
   end
@@ -153,6 +154,7 @@ class Juice < ::Test::Unit::TestCase
       :bigdecimal_as_decimal=>true,
       :bigdecimal_load=>:auto,
       :use_to_json=>true,
+      :nilnil=>false,
       :allow_gc=>true,
       :create_id=>'json_class'}
     o2 = {
@@ -168,6 +170,7 @@ class Juice < ::Test::Unit::TestCase
       :bigdecimal_as_decimal=>false,
       :bigdecimal_load=>:bigdecimal,
       :use_to_json=>false,
+      :nilnil=>true,
       :allow_gc=>false,
       :create_id=>nil}
     o3 = { :indent => 4 }
@@ -1104,6 +1107,21 @@ class Juice < ::Test::Unit::TestCase
 }
     obj = Oj.load(json, :mode => :strict)
     assert_equal({ 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}, obj)
+  end
+
+  def test_nilnil_false
+    begin
+      Oj.load(nil)
+    rescue Exception => e
+      assert(true)
+      return
+    end
+    assert(false, "*** expected an exception")
+  end
+
+  def test_nilnil_true
+    obj = Oj.load(nil, :nilnil => true)
+    assert_equal(nil, obj)
   end
 
 # Rails re-call test. Active support recalls the json dumper when the to_json

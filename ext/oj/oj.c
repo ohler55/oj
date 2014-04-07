@@ -110,6 +110,7 @@ static VALUE	float_sym;
 static VALUE	indent_sym;
 static VALUE	json_sym;
 static VALUE	mode_sym;
+static VALUE	nilnil_sym;
 static VALUE	null_sym;
 static VALUE	object_sym;
 static VALUE	ruby_sym;
@@ -156,6 +157,7 @@ struct _Options	oj_default_options = {
     Yes,		// bigdec_as_num
     AutoDec,		// bigdec_load
     No,			// to_json
+    No,			// nilnil
     json_class,		// create_id
     10,			// create_id_len
     9,			// sec_prec
@@ -181,6 +183,7 @@ static VALUE	define_mimic_json(int argc, VALUE *argv, VALUE self);
  * - create_id: [String|nil] create id for json compatible object encoding, default is 'json_create'
  * - second_precision: [Fixnum|nil] number of digits after the decimal when dumping the seconds portion of time
  * - use_to_json: [true|false|nil] call to_json() methods on dump, default is false
+ * - nilnil: [true|false|nil] if true a nil input to load will return nil and not raise an Exception
  * - allow_gc: [true|false|nil] allow or prohibit GC during parsing, default is true (allow)
  * @return [Hash] all current option settings.
  */
@@ -196,6 +199,7 @@ get_def_opts(VALUE self) {
     rb_hash_aset(opts, symbol_keys_sym, (Yes == oj_default_options.sym_key) ? Qtrue : ((No == oj_default_options.sym_key) ? Qfalse : Qnil));
     rb_hash_aset(opts, bigdecimal_as_decimal_sym, (Yes == oj_default_options.bigdec_as_num) ? Qtrue : ((No == oj_default_options.bigdec_as_num) ? Qfalse : Qnil));
     rb_hash_aset(opts, use_to_json_sym, (Yes == oj_default_options.to_json) ? Qtrue : ((No == oj_default_options.to_json) ? Qfalse : Qnil));
+    rb_hash_aset(opts, nilnil_sym, (Yes == oj_default_options.nilnil) ? Qtrue : ((No == oj_default_options.nilnil) ? Qfalse : Qnil));
     rb_hash_aset(opts, allow_gc_sym, (Yes == oj_default_options.allow_gc) ? Qtrue : ((No == oj_default_options.allow_gc) ? Qfalse : Qnil));
     switch (oj_default_options.mode) {
     case StrictMode:	rb_hash_aset(opts, mode_sym, strict_sym);	break;
@@ -256,6 +260,7 @@ get_def_opts(VALUE self) {
  * @param [String|nil] :create_id create id for json compatible object encoding
  * @param [Fixnum|nil] :second_precision number of digits after the decimal when dumping the seconds portion of time
  * @param [true|false|nil] :use_to_json call to_json() methods on dump, default is false
+ * @param [true|false|nil] :nilnil if true a nil input to load will return nil and not raise an Exception
  * @param [true|false|nil] :allow_gc allow or prohibit GC during parsing, default is true (allow)
  * @return [nil]
  */
@@ -268,6 +273,7 @@ set_def_opts(VALUE self, VALUE opts) {
 	{ class_cache_sym, &oj_default_options.class_cache },
 	{ bigdecimal_as_decimal_sym, &oj_default_options.bigdec_as_num },
 	{ use_to_json_sym, &oj_default_options.to_json },
+	{ nilnil_sym, &oj_default_options.nilnil },
 	{ allow_gc_sym, &oj_default_options.allow_gc },
 	{ Qnil, 0 }
     };
@@ -399,6 +405,7 @@ oj_parse_options(VALUE ropts, Options copts) {
 	{ class_cache_sym, &copts->class_cache },
 	{ bigdecimal_as_decimal_sym, &copts->bigdec_as_num },
 	{ use_to_json_sym, &copts->to_json },
+	{ nilnil_sym, &copts->nilnil },
 	{ allow_gc_sym, &copts->allow_gc },
 	{ Qnil, 0 }
     };
@@ -517,7 +524,7 @@ oj_parse_options(VALUE ropts, Options copts) {
 	    copts->escape_mode = JSONEsc;
 	}
     }
- }
+}
 
 /* Document-method: strict_load
  *	call-seq: strict_load(json, options) => Hash, Array, String, Fixnum, Float, true, false, or nil
@@ -1698,6 +1705,7 @@ define_mimic_json(int argc, VALUE *argv, VALUE self) {
 
     oj_default_options.mode = CompatMode;
     oj_default_options.escape_mode = ASCIIEsc;
+    oj_default_options.nilnil = Yes;
 
     return mimic;
 }
@@ -1852,6 +1860,7 @@ void Init_oj() {
     bigdecimal_load_sym = ID2SYM(rb_intern("bigdecimal_load"));rb_gc_register_address(&bigdecimal_load_sym);
     bigdecimal_sym = ID2SYM(rb_intern("bigdecimal"));	rb_gc_register_address(&bigdecimal_sym);
     circular_sym = ID2SYM(rb_intern("circular"));	rb_gc_register_address(&circular_sym);
+    nilnil_sym = ID2SYM(rb_intern("nilnil"));		rb_gc_register_address(&nilnil_sym);
     class_cache_sym = ID2SYM(rb_intern("class_cache"));	rb_gc_register_address(&class_cache_sym);
     compat_sym = ID2SYM(rb_intern("compat"));		rb_gc_register_address(&compat_sym);
     create_id_sym = ID2SYM(rb_intern("create_id"));	rb_gc_register_address(&create_id_sym);

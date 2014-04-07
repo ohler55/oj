@@ -26,13 +26,9 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
-### Current Release 2.7.1
+### Current Release 2.7.2
 
- - Fixed bug in new push_key which caused duplicate characters.
-
-### Current Release 2.7.0
-
- - Added the push_key() method to the StringWriter and StreamWriter classes.
+ - Added option return nil if nil is provided as input to load.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 

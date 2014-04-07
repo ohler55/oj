@@ -742,6 +742,8 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len) {
     } else if (rb_type(input) == T_STRING) {
 	pi->json = rb_string_value_cstr((VALUE*)&input);
 	pi->end = pi->json + RSTRING_LEN(input);
+    } else if (Qnil == input && Yes == pi->options.nilnil) {
+	return Qnil;
     } else {
 	VALUE		clas = rb_obj_class(input);
 	volatile VALUE	s;
