@@ -68,6 +68,10 @@ module One
       end # Deep
     end # Three
   end # Two
+
+  class Stuck2 < Struct.new(:a, :b)
+  end
+
 end # One
 
 class Stuck < Struct.new(:a, :b)
@@ -326,6 +330,13 @@ class ObjectJuice < ::Test::Unit::TestCase
   def test_json_struct
     unless 'jruby' == RUBY_DESCRIPTION.split(' ')[0]
       obj = Stuck.new(false, 7)
+      dump_and_load(obj, false)
+    end
+  end
+
+  def test_json_struct2
+    unless 'jruby' == RUBY_DESCRIPTION.split(' ')[0]
+      obj = One::Stuck2.new(false, 7)
       dump_and_load(obj, false)
     end
   end

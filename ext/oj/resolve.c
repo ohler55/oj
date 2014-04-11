@@ -119,3 +119,11 @@ oj_name2class(ParseInfo pi, const char *name, size_t len, int auto_define) {
 #endif
     return clas;
 }
+
+VALUE
+oj_name2struct(ParseInfo pi, VALUE nameVal) {
+    size_t	len = RSTRING_LEN(nameVal);
+    const char	*str = StringValuePtr(nameVal);
+
+    return resolve_classpath(pi, str, len, 0);
+}

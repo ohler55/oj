@@ -34,5 +34,6 @@
 #include "ruby.h"
 
 extern VALUE	oj_name2class(ParseInfo pi, const char *name, size_t len, int auto_define);
+extern VALUE	oj_name2struct(ParseInfo pi, VALUE nameVal);
 
 #endif /* __OJ_RESOLVE_H__ */
