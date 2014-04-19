@@ -3,6 +3,11 @@
 ^c^d hide subtree
 ^c^s show subtree
 
+- register_class
+ - class
+ - array of methods
+ - create function that takes arguments
+  - object and method
 
  - StreamWriter
   - new(stream) optional stream, if nil then write to string buffer
