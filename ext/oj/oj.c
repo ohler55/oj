@@ -841,6 +841,17 @@ to_stream(int argc, VALUE *argv, VALUE self) {
     return Qnil;
 }
 
+/* call-seq: register_odd(clas, create_method, *members)
+ *
+ * Registers a class as special. This is useful for working around subclasses of
+ * primitive types as is done with Rails or ActiveSupport classes.
+ * @param [Class] clas Class to me made special
+ * @param [Symbol] create_method method on the clas that will create a new
+ *                 instance of the clas when given all the member values in the
+ *                 order specified.
+ * @param [Symbol|String] members methods used to get the member values from
+ *                        instances of the clas
+ */
 static VALUE
 register_odd(int argc, VALUE *argv, VALUE self) {
     if (2 > argc) {
