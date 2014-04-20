@@ -32,7 +32,7 @@
 
 #include "odd.h"
 
-static struct _Odd	_odds[5]; // bump up if new Odd classes are added
+static struct _Odd	_odds[4]; // bump up if new initial Odd classes are added
 static struct _Odd	*odds = _odds;
 static int		odd_cnt = 0;
 
@@ -100,17 +100,15 @@ oj_odd_init() {
     *np++ = 0;
     set_class(odd, "Range");
     odd->attr_cnt = 3;
-    // The end. bump up the size of odds if a new class is added.
-    odd++;
-    odd->clas = Qundef;
-    odd_cnt = odd - odds;
+
+    odd_cnt = odd - odds + 1;
 }
 
 Odd
 oj_get_odd(VALUE clas) {
-    Odd	odd = odds;
+    Odd	odd;
 
-    for (; Qundef != odd->clas; odd++) {
+    for (odd = odds + odd_cnt - 1; odds <= odd; odd--) {
 	if (clas == odd->clas) {
 	    return odd;
 	}
@@ -120,9 +118,9 @@ oj_get_odd(VALUE clas) {
 
 Odd
 oj_get_oddc(const char *classname, size_t len) {
-    Odd	odd = odds;
+    Odd	odd;
 
-    for (; Qundef != odd->clas; odd++) {
+    for (odd = odds + odd_cnt - 1; odds <= odd; odd--) {
 	if (len == odd->clen && 0 == strncmp(classname, odd->classname, len)) {
 	    return odd;
 	}
@@ -169,17 +167,14 @@ oj_reg_odd(VALUE clas, VALUE create_method, int mcnt, VALUE *members) {
     const char	**np;
     ID		*ap;
 
-    // TBD mutex
-
     if (_odds == odds) {
-	odds = ALLOC_N(struct _Odd, odd_cnt + 2);
+	odds = ALLOC_N(struct _Odd, odd_cnt + 1);
 
 	memcpy(odds, _odds, sizeof(struct _Odd) * odd_cnt);
     } else {
-	REALLOC_N(odds, struct _Odd, odd_cnt + 2);
+	REALLOC_N(odds, struct _Odd, odd_cnt + 1);
     }
     odd = odds + odd_cnt;
-    odd_cnt++;
     odd->clas = clas;
     odd->classname = strdup(rb_class2name(clas));
     odd->clen = strlen(odd->classname);
@@ -202,7 +197,5 @@ oj_reg_odd(VALUE clas, VALUE create_method, int mcnt, VALUE *members) {
     }
     *np = 0;
     *ap = 0;
-
-    odd++;
-    odd->clas = Qundef;
+    odd_cnt++;
 }

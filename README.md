@@ -33,10 +33,6 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
    safe strings. For an example look at the `test_object.rb` file,
    `test_odd_string` test.
 
-### Current Release 2.7.3
-
- - Fixed bug where load and dump of Structs in modules did not work correctly.
-
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
 ## Description

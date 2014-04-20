@@ -844,7 +844,11 @@ to_stream(int argc, VALUE *argv, VALUE self) {
 /* call-seq: register_odd(clas, create_method, *members)
  *
  * Registers a class as special. This is useful for working around subclasses of
- * primitive types as is done with Rails or ActiveSupport classes.
+ * primitive types as is done with ActiveSupport classes. The use of this
+ * function should be limited to just classes that can not be handled in the
+ * normal way. It is not intended as a hook for changing the output of all
+ * classes as it is not optimized for large numbers of classes.
+ *
  * @param [Class] clas Class to me made special
  * @param [Symbol] create_method method on the clas that will create a new
  *                 instance of the clas when given all the member values in the

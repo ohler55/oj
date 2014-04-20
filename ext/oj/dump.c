@@ -1616,23 +1616,24 @@ raise_strict(VALUE obj) {
 
 static void
 dump_val(VALUE obj, int depth, Out out) {
+    int	type = rb_type(obj);
+
     if (MAX_DEPTH < depth) {
 	rb_raise(rb_eNoMemError, "Too deeply nested.\n");
     }
     switch (rb_type(obj)) {
-    case T_NIL:		dump_nil(out);			break;
-    case T_TRUE:	dump_true(out);			break;
-    case T_FALSE:	dump_false(out);		break;
-    case T_FIXNUM:	dump_fixnum(obj, out);		break;
-    case T_FLOAT:	dump_float(obj, out);		break;
-    case T_BIGNUM:	dump_bignum(obj, out);		break;
-    case T_STRING:
+    case T_NIL:		dump_nil(out);				break;
+    case T_TRUE:	dump_true(out);				break;
+    case T_FALSE:	dump_false(out);			break;
+    case T_FIXNUM:	dump_fixnum(obj, out);			break;
+    case T_FLOAT:	dump_float(obj, out);			break;
+    case T_CLASS:
 	switch (out->opts->mode) {
-	case StrictMode:
-	case NullMode:
-	case CompatMode:	dump_str_comp(obj, out);	break;
+	case StrictMode:	raise_strict(obj);		break;
+	case NullMode:		dump_nil(out);			break;
+	case CompatMode:	dump_class_comp(obj, out);	break;
 	case ObjectMode:
-	default:		dump_str_obj(obj, depth, out);	break;
+	default:		dump_class_obj(obj, out);	break;
 	}
 	break;
     case T_SYMBOL:
@@ -1644,39 +1645,6 @@ dump_val(VALUE obj, int depth, Out out) {
 	default:		dump_sym_obj(obj, out);		break;
 	}
 	break;
-    case T_ARRAY:	dump_array(obj, depth, out);		break;
-    case T_HASH:	dump_hash(obj, depth, out->opts->mode, out);	break;
-    case T_CLASS:
-	switch (out->opts->mode) {
-	case StrictMode:	raise_strict(obj);		break;
-	case NullMode:		dump_nil(out);			break;
-	case CompatMode:	dump_class_comp(obj, out);	break;
-	case ObjectMode:
-	default:		dump_class_obj(obj, out);	break;
-	}
-	break;
-#if (defined T_RATIONAL && defined RRATIONAL)
-    case T_RATIONAL:
-#endif
-    case T_OBJECT:
-	switch (out->opts->mode) {
-	case StrictMode:	dump_data_strict(obj, out);	break;
-	case NullMode:		dump_data_null(obj, out);	break;
-	case CompatMode:	dump_obj_comp(obj, depth, out);	break;
-	case ObjectMode:
-	default:		dump_obj_obj(obj, depth, out);	break;
-	}
-	break;
-    case T_DATA:
-	switch (out->opts->mode) {
-	case StrictMode:	dump_data_strict(obj, out);	break;
-	case NullMode:		dump_data_null(obj, out);	break;
-	case CompatMode:	dump_data_comp(obj, depth, out);break;
-	case ObjectMode:
-	default:		dump_data_obj(obj, depth, out);	break;
-	}
-	break;
-
     case T_STRUCT: // for Range
 	switch (out->opts->mode) {
 	case StrictMode:	raise_strict(obj);		break;
@@ -1686,23 +1654,70 @@ dump_val(VALUE obj, int depth, Out out) {
 	default:		dump_struct_obj(obj, depth, out);	break;
 	}
 	break;
-
-#if (defined T_COMPLEX && defined RCOMPLEX)
-    case T_COMPLEX:
-#endif
-    case T_REGEXP:
-	switch (out->opts->mode) {
-	case StrictMode:	raise_strict(obj);		break;
-	case NullMode:		dump_nil(out);			break;
-	case CompatMode:
-	case ObjectMode:
-	default:		dump_obj_comp(obj, depth, out);	break;
-	}
-	break;
     default:
-	rb_raise(rb_eNotImpError, "Failed to dump '%s' Object (%02x)\n",
-		 rb_class2name(rb_obj_class(obj)), rb_type(obj));
-	break;
+	// Most developers have enough sense not to subclass primitive types but
+	// since these classes could potentially be subclassed a check for odd
+	// classes is performed.
+	{
+	    VALUE	clas = rb_obj_class(obj);
+	    Odd		odd;
+
+	    if (ObjectMode == out->opts->mode && 0 != (odd = oj_get_odd(clas))) {
+		dump_odd(obj, odd, clas, depth + 1, out);
+		return;
+	    }
+	    switch (type) {
+	    case T_BIGNUM:		dump_bignum(obj, out);		break;
+	    case T_STRING:
+		switch (out->opts->mode) {
+		case StrictMode:
+		case NullMode:
+		case CompatMode:	dump_str_comp(obj, out);	break;
+		case ObjectMode:
+		default:		dump_str_obj(obj, depth, out);	break;
+		}
+		break;
+	    case T_ARRAY:		dump_array(obj, depth, out);	break;
+	    case T_HASH:		dump_hash(obj, depth, out->opts->mode, out);	break;
+#if (defined T_RATIONAL && defined RRATIONAL)
+	    case T_RATIONAL:
+#endif
+	    case T_OBJECT:
+		switch (out->opts->mode) {
+		case StrictMode:	dump_data_strict(obj, out);	break;
+		case NullMode:		dump_data_null(obj, out);	break;
+		case CompatMode:	dump_obj_comp(obj, depth, out);	break;
+		case ObjectMode:
+		default:		dump_obj_obj(obj, depth, out);	break;
+		}
+		break;
+	    case T_DATA:
+		switch (out->opts->mode) {
+		case StrictMode:	dump_data_strict(obj, out);	break;
+		case NullMode:		dump_data_null(obj, out);	break;
+		case CompatMode:	dump_data_comp(obj, depth, out);break;
+		case ObjectMode:
+		default:		dump_data_obj(obj, depth, out);	break;
+		}
+		break;
+#if (defined T_COMPLEX && defined RCOMPLEX)
+	    case T_COMPLEX:
+#endif
+	    case T_REGEXP:
+		switch (out->opts->mode) {
+		case StrictMode:	raise_strict(obj);		break;
+		case NullMode:		dump_nil(out);			break;
+		case CompatMode:
+		case ObjectMode:
+		default:		dump_obj_comp(obj, depth, out);	break;
+		}
+		break;
+	    default:
+		rb_raise(rb_eNotImpError, "Failed to dump '%s' Object (%02x)\n",
+			 rb_class2name(rb_obj_class(obj)), rb_type(obj));
+		break;
+	    }
+	}
     }
 }
 
