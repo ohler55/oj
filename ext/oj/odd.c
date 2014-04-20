@@ -28,9 +28,13 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <string.h>
+
 #include "odd.h"
 
-struct _Odd	odds[5]; // bump up if new Odd classes are added
+static struct _Odd	_odds[5]; // bump up if new Odd classes are added
+static struct _Odd	*odds = _odds;
+static int		odd_cnt = 0;
 
 static void
 set_class(Odd odd, const char *classname) {
@@ -99,6 +103,7 @@ oj_odd_init() {
     // The end. bump up the size of odds if a new class is added.
     odd++;
     odd->clas = Qundef;
+    odd_cnt = odd - odds;
 }
 
 Odd
@@ -156,4 +161,48 @@ oj_odd_set_arg(OddArgs args, const char *key, size_t klen, VALUE value) {
 	}
     }
     return -1;
+}
+
+void
+oj_reg_odd(VALUE clas, VALUE create_method, int mcnt, VALUE *members) {
+    Odd		odd;
+    const char	**np;
+    ID		*ap;
+
+    // TBD mutex
+
+    if (_odds == odds) {
+	odds = ALLOC_N(struct _Odd, odd_cnt + 2);
+
+	memcpy(odds, _odds, sizeof(struct _Odd) * odd_cnt);
+    } else {
+	REALLOC_N(odds, struct _Odd, odd_cnt + 2);
+    }
+    odd = odds + odd_cnt;
+    odd_cnt++;
+    odd->clas = clas;
+    odd->classname = strdup(rb_class2name(clas));
+    odd->clen = strlen(odd->classname);
+    odd->create_obj = clas;
+    odd->create_op = SYM2ID(create_method);
+    odd->attr_cnt = mcnt;
+    for (ap = odd->attrs, np = odd->attr_names; 0 < mcnt; mcnt--, ap++, np++, members++) {
+	switch (rb_type(*members)) {
+	case T_STRING:
+	    *np = strdup(rb_string_value_ptr(members));
+	    break;
+	case T_SYMBOL:
+	    *np = rb_id2name(SYM2ID(*members));
+	    break;
+	default:
+	    rb_raise(rb_eArgError, "registered member identifiers must be Strings or Symbols.");
+	    break;
+	}
+	*ap = rb_intern(*np);
+    }
+    *np = 0;
+    *ap = 0;
+
+    odd++;
+    odd->clas = Qundef;
 }

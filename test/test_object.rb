@@ -77,6 +77,31 @@ end # One
 class Stuck < Struct.new(:a, :b)
 end
 
+class Strung < String
+
+  def initialize(str, safe)
+    super(str)
+    @safe = safe
+  end
+
+  def safe?()
+    @safe
+  end
+
+  def self.create(str, safe)
+    new(str, safe)
+  end
+
+  def eql?(o)
+    super && self.class == o.class && @safe == o.safe?
+  end
+  alias == eql?
+
+  def inspect()
+    return super + '(' + @safe + ')'
+  end
+end
+
 def hash_eql(h1, h2)
   return false if h1.size != h2.size
   h1.keys.each do |k|
@@ -388,6 +413,12 @@ class ObjectJuice < ::Test::Unit::TestCase
 
   def test_odd_date
     dump_and_load(Date.new(2012, 6, 19), false)
+  end
+
+  def test_odd_string
+    Oj.register_odd(Strung, :create, :to_s, 'safe?')
+    s = Strung.new("Pete", true)
+    dump_and_load(Strung.new("Pete", true), false)
   end
 
   def dump_and_load(obj, trace=false)

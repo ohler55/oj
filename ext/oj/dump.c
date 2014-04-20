@@ -70,7 +70,7 @@ static void	dump_raw(const char *str, size_t cnt, Out out);
 static void	dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out);
 static void	dump_hex(uint8_t c, Out out);
 static void	dump_str_comp(VALUE obj, Out out);
-static void	dump_str_obj(VALUE obj, Out out);
+static void	dump_str_obj(VALUE obj, int depth, Out out);
 static void	dump_sym_comp(VALUE obj, Out out);
 static void	dump_sym_obj(VALUE obj, Out out);
 static void	dump_class_comp(VALUE obj, Out out);
@@ -545,12 +545,19 @@ dump_str_comp(VALUE obj, Out out) {
 }
 
 static void
-dump_str_obj(VALUE obj, Out out) {
-    const char	*s = rb_string_value_ptr((VALUE*)&obj);
-    size_t	len = RSTRING_LEN(obj);
-    char	s1 = s[1];
+dump_str_obj(VALUE obj, int depth, Out out) {
+    VALUE	clas = rb_obj_class(obj);
+    Odd		odd;
+    
+    if (rb_cString != clas && 0 != (odd = oj_get_odd(clas))) {
+	dump_odd(obj, odd, clas, depth + 1, out);
+    } else {
+	const char	*s = rb_string_value_ptr((VALUE*)&obj);
+	size_t		len = RSTRING_LEN(obj);
+	char		s1 = s[1];
 
-    dump_cstr(s, len, 0, (':' == *s || ('^' == *s && ('r' == s1 || 'i' == s1))), out);
+	dump_cstr(s, len, 0, (':' == *s || ('^' == *s && ('r' == s1 || 'i' == s1))), out);
+    }
 }
 
 static void
@@ -812,7 +819,7 @@ hash_cb_object(VALUE key, VALUE value, Out out) {
     }
     fill_indent(out, depth);
     if (rb_type(key) == T_STRING) {
-	dump_str_obj(key, out);
+	dump_str_obj(key, depth, out);
 	*out->cur++ = ':';
 	dump_val(value, depth, out);
     } else if (rb_type(key) == T_SYMBOL) {
@@ -1625,7 +1632,7 @@ dump_val(VALUE obj, int depth, Out out) {
 	case NullMode:
 	case CompatMode:	dump_str_comp(obj, out);	break;
 	case ObjectMode:
-	default:		dump_str_obj(obj, out);		break;
+	default:		dump_str_obj(obj, depth, out);	break;
 	}
 	break;
     case T_SYMBOL:

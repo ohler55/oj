@@ -4,10 +4,9 @@
 ^c^s show subtree
 
 - register_class
- - class
- - array of methods
- - create function that takes arguments
-  - object and method
+ - change order of odd lookup
+  - start at end and move toward start
+ - change dump_val to alway check odd first
 
  - StreamWriter
   - new(stream) optional stream, if nil then write to string buffer

@@ -57,5 +57,6 @@ extern Odd	oj_get_oddc(const char *classname, size_t len);
 extern OddArgs	oj_odd_alloc_args(Odd odd);
 extern void	oj_odd_free(OddArgs args);
 extern int	oj_odd_set_arg(OddArgs args, const char *key, size_t klen, VALUE value);
+extern void	oj_reg_odd(VALUE clas, VALUE create_method, int mcnt, VALUE *members);
 
 #endif /* __OJ_ODD_H__ */

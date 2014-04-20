@@ -26,6 +26,13 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
+### Current Release 2.8.0
+
+ - Added support for registering special encoding and decoding rules for
+   specific classes. This the ActiveSupport subclass of the String class for
+   safe strings. For an example look at the `test_object.rb` file,
+   `test_odd_string` test.
+
 ### Current Release 2.7.3
 
  - Fixed bug where load and dump of Structs in modules did not work correctly.

@@ -841,6 +841,21 @@ to_stream(int argc, VALUE *argv, VALUE self) {
     return Qnil;
 }
 
+static VALUE
+register_odd(int argc, VALUE *argv, VALUE self) {
+    if (2 > argc) {
+	rb_raise(rb_eArgError, "incorrect number of arguments.");
+    }
+    Check_Type(argv[0], T_CLASS);
+    Check_Type(argv[1], T_SYMBOL);
+    if (MAX_ODD_ARGS < argc - 1) {
+	rb_raise(rb_eArgError, "too many members.");
+    }
+    oj_reg_odd(argv[0], argv[1], argc - 2, argv + 2);
+
+    return Qnil;
+}
+
 static void
 str_writer_free(void *ptr) {
     StrWriter	sw;
@@ -1804,6 +1819,7 @@ void Init_oj() {
     rb_define_module_function(Oj, "dump", dump, -1);
     rb_define_module_function(Oj, "to_file", to_file, -1);
     rb_define_module_function(Oj, "to_stream", to_stream, -1);
+    rb_define_module_function(Oj, "register_odd", register_odd, -1);
 
     rb_define_module_function(Oj, "saj_parse", oj_saj_parse, -1);
     rb_define_module_function(Oj, "sc_parse", oj_sc_parse, -1);
