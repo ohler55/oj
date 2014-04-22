@@ -26,12 +26,11 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
-### Current Release 2.8.0
+### Current Release 2.8.1
 
- - Added support for registering special encoding and decoding rules for
-   specific classes. This the ActiveSupport subclass of the String class for
-   safe strings. For an example look at the `test_object.rb` file,
-   `test_odd_string` test.
+ - Added additional argument to the register_odd function.
+
+ - Fixed bug that failed to load on some uses of STDIN.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 

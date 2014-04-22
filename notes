@@ -15,7 +15,22 @@
    - return string if 
 
 
+- built in support for primitive subclasses
+ - not supported
+  - Bignum subclass
+  - Regexp subclass
+  - Time subclass 
+ - supported
+  - String
+  - Array
+  - Hash
+ - implementation
+  - store primitive value in 'this' element
+   - on load, if this encountered, use :replace to replace contents
+
 ---------------------------
-Tried a separate thread for the parser and the results were poor. The parsing is 10% to 15% of the total so splitting
-ruby calls and c does not help much and the overhead of swapping data was too high. It was not possible to split ruby
-calls into both threads due to not getting a lock on the ruby environment for object creation.
+Tried a separate thread for the parser and the results were poor. The parsing is
+10% to 15% of the total so splitting ruby calls and c does not help much and the
+overhead of swapping data was too high. It was not possible to split ruby calls
+into both threads due to not getting a lock on the ruby environment for object
+creation.

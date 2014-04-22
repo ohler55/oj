@@ -416,7 +416,7 @@ class ObjectJuice < ::Test::Unit::TestCase
   end
 
   def test_odd_string
-    Oj.register_odd(Strung, :create, :to_s, 'safe?')
+    Oj.register_odd(Strung, Strung, :create, :to_s, 'safe?')
     s = Strung.new("Pete", true)
     dump_and_load(Strung.new("Pete", true), false)
   end

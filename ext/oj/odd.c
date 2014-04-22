@@ -162,7 +162,7 @@ oj_odd_set_arg(OddArgs args, const char *key, size_t klen, VALUE value) {
 }
 
 void
-oj_reg_odd(VALUE clas, VALUE create_method, int mcnt, VALUE *members) {
+oj_reg_odd(VALUE clas, VALUE create_object, VALUE create_method, int mcnt, VALUE *members) {
     Odd		odd;
     const char	**np;
     ID		*ap;
@@ -178,7 +178,7 @@ oj_reg_odd(VALUE clas, VALUE create_method, int mcnt, VALUE *members) {
     odd->clas = clas;
     odd->classname = strdup(rb_class2name(clas));
     odd->clen = strlen(odd->classname);
-    odd->create_obj = clas;
+    odd->create_obj = create_object;
     odd->create_op = SYM2ID(create_method);
     odd->attr_cnt = mcnt;
     for (ap = odd->attrs, np = odd->attr_names; 0 < mcnt; mcnt--, ap++, np++, members++) {

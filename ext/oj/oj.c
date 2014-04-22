@@ -841,7 +841,7 @@ to_stream(int argc, VALUE *argv, VALUE self) {
     return Qnil;
 }
 
-/* call-seq: register_odd(clas, create_method, *members)
+/* call-seq: register_odd(clas, create_object, create_method, *members)
  *
  * Registers a class as special. This is useful for working around subclasses of
  * primitive types as is done with ActiveSupport classes. The use of this
@@ -850,6 +850,7 @@ to_stream(int argc, VALUE *argv, VALUE self) {
  * classes as it is not optimized for large numbers of classes.
  *
  * @param [Class] clas Class to me made special
+ * @param [Object] create_object object to call the create method on
  * @param [Symbol] create_method method on the clas that will create a new
  *                 instance of the clas when given all the member values in the
  *                 order specified.
@@ -858,15 +859,15 @@ to_stream(int argc, VALUE *argv, VALUE self) {
  */
 static VALUE
 register_odd(int argc, VALUE *argv, VALUE self) {
-    if (2 > argc) {
+    if (3 > argc) {
 	rb_raise(rb_eArgError, "incorrect number of arguments.");
     }
     Check_Type(argv[0], T_CLASS);
-    Check_Type(argv[1], T_SYMBOL);
-    if (MAX_ODD_ARGS < argc - 1) {
+    Check_Type(argv[2], T_SYMBOL);
+    if (MAX_ODD_ARGS < argc - 2) {
 	rb_raise(rb_eArgError, "too many members.");
     }
-    oj_reg_odd(argv[0], argv[1], argc - 2, argv + 2);
+    oj_reg_odd(argv[0], argv[1], argv[2], argc - 3, argv + 3);
 
     return Qnil;
 }
