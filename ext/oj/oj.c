@@ -1192,9 +1192,10 @@ stream_writer_new(int argc, VALUE *argv, VALUE self) {
     if (oj_stringio_class == clas) {
 	type = STRING_IO;
 #if !IS_WINDOWS
-    } else if (rb_respond_to(stream, oj_fileno_id) && Qnil != (s = rb_funcall(stream, oj_fileno_id, 0))) {
+    } else if (rb_respond_to(stream, oj_fileno_id) &&
+	       Qnil != (s = rb_funcall(stream, oj_fileno_id, 0)) &&
+	       0 != (fd = FIX2INT(s))) {
 	type = FILE_IO;
-	fd = FIX2INT(s);
 #endif
     } else if (rb_respond_to(stream, oj_write_id)) {
 	type = STREAM_IO;

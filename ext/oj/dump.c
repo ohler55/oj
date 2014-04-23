@@ -1779,6 +1779,7 @@ oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
     struct _Out out;
     ssize_t	size;
     VALUE	clas = rb_obj_class(stream);
+    int		fd;
 #if !IS_WINDOWS
     VALUE	s;
 #endif
@@ -1791,9 +1792,9 @@ oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
     if (oj_stringio_class == clas) {
 	rb_funcall(stream, oj_write_id, 1, rb_str_new(out.buf, size));
 #if !IS_WINDOWS
-    } else if (rb_respond_to(stream, oj_fileno_id) && Qnil != (s = rb_funcall(stream, oj_fileno_id, 0))) {
-	int	fd = FIX2INT(s);
-
+    } else if (rb_respond_to(stream, oj_fileno_id) &&
+	       Qnil != (s = rb_funcall(stream, oj_fileno_id, 0)) &&
+	       0 != (fd = FIX2INT(s))) {
 	if (size != write(fd, out.buf, size)) {
 	    if (out.allocated) {
 		xfree(out.buf);
