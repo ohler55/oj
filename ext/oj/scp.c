@@ -255,6 +255,7 @@ oj_sc_parse(int argc, VALUE *argv, VALUE self) {
     } else {
 	VALUE		clas = rb_obj_class(input);
 	volatile VALUE	s;
+	int		fd;
 
 	if (oj_stringio_class == clas) {
 	    s = rb_funcall2(input, oj_string_id, 0, 0);
@@ -262,8 +263,9 @@ oj_sc_parse(int argc, VALUE *argv, VALUE self) {
 #ifndef JRUBY_RUBY
 #if !IS_WINDOWS
 	    // JRuby gets confused with what is the real fileno.
-	} else if (rb_respond_to(input, oj_fileno_id) && Qnil != (s = rb_funcall(input, oj_fileno_id, 0))) {
-	    int		fd = FIX2INT(s);
+	} else if (rb_respond_to(input, oj_fileno_id) &&
+		   Qnil != (s = rb_funcall(input, oj_fileno_id, 0)) &&
+		   0 != (fd = FIX2INT(s))) {
 	    ssize_t	cnt;
 	    size_t	len = lseek(fd, 0, SEEK_END);
 
