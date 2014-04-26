@@ -70,16 +70,16 @@ static void	dump_raw(const char *str, size_t cnt, Out out);
 static void	dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out);
 static void	dump_hex(uint8_t c, Out out);
 static void	dump_str_comp(VALUE obj, Out out);
-static void	dump_str_obj(VALUE obj, int depth, Out out);
+static void	dump_str_obj(VALUE obj, VALUE clas, int depth, Out out);
 static void	dump_sym_comp(VALUE obj, Out out);
 static void	dump_sym_obj(VALUE obj, Out out);
 static void	dump_class_comp(VALUE obj, Out out);
 static void	dump_class_obj(VALUE obj, Out out);
-static void	dump_array(VALUE obj, int depth, Out out);
+static void	dump_array(VALUE obj, VALUE clas, int depth, Out out);
 static int	hash_cb_strict(VALUE key, VALUE value, Out out);
 static int	hash_cb_compat(VALUE key, VALUE value, Out out);
 static int	hash_cb_object(VALUE key, VALUE value, Out out);
-static void	dump_hash(VALUE obj, int depth, int mode, Out out);
+static void	dump_hash(VALUE obj, VALUE clas, int depth, int mode, Out out);
 static void	dump_time(VALUE obj, Out out);
 static void	dump_ruby_time(VALUE obj, Out out);
 static void	dump_xml_time(VALUE obj, Out out);
@@ -545,12 +545,9 @@ dump_str_comp(VALUE obj, Out out) {
 }
 
 static void
-dump_str_obj(VALUE obj, int depth, Out out) {
-    VALUE	clas = rb_obj_class(obj);
-    Odd		odd;
-    
-    if (rb_cString != clas && 0 != (odd = oj_get_odd(clas))) {
-	dump_odd(obj, odd, clas, depth + 1, out);
+dump_str_obj(VALUE obj, VALUE clas, int depth, Out out) {
+    if (0 != clas && rb_cString != clas) {
+	// TBD write special, this plus other attributes
     } else {
 	const char	*s = rb_string_value_ptr((VALUE*)&obj);
 	size_t		len = RSTRING_LEN(obj);
@@ -602,7 +599,7 @@ dump_class_obj(VALUE obj, Out out) {
 }
 
 static void
-dump_array(VALUE a, int depth, Out out) {
+dump_array(VALUE a, VALUE clas, int depth, Out out) {
     size_t	size;
     int		i, cnt;
     int		d2 = depth + 1;
@@ -610,6 +607,9 @@ dump_array(VALUE a, int depth, Out out) {
 
     if (id < 0) {
 	return;
+    }
+    if (0 != clas && rb_cArray != clas) {
+	// TBD check clas and dump special if need be
     }
     cnt = (int)RARRAY_LEN(a);
     *out->cur++ = '[';
@@ -819,7 +819,7 @@ hash_cb_object(VALUE key, VALUE value, Out out) {
     }
     fill_indent(out, depth);
     if (rb_type(key) == T_STRING) {
-	dump_str_obj(key, depth, out);
+	dump_str_obj(key, 0, depth, out);
 	*out->cur++ = ':';
 	dump_val(value, depth, out);
     } else if (rb_type(key) == T_SYMBOL) {
@@ -873,10 +873,13 @@ hash_cb_object(VALUE key, VALUE value, Out out) {
 }
 
 static void
-dump_hash(VALUE obj, int depth, int mode, Out out) {
+dump_hash(VALUE obj, VALUE clas, int depth, int mode, Out out) {
     int		cnt = (int)RHASH_SIZE(obj);
     size_t	size = depth * out->indent + 2;
 
+    if (0 != clas && rb_cHash != clas) {
+	// TBD check clas and dump special if need be
+    }
     if (out->end - out->cur <= 2) {
 	grow(out, 2);
     }
@@ -1144,7 +1147,7 @@ dump_data_comp(VALUE obj, int depth, Out out) {
 	if (T_HASH != rb_type(h)) {
 	    rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
 	}
-	dump_hash(h, depth, out->opts->mode, out);
+	dump_hash(h, Qnil, depth, out->opts->mode, out);
     } else if (rb_respond_to(obj, oj_as_json_id) && obj != (o2 = rb_funcall(obj, oj_as_json_id, 0))) {
 	dump_val(o2, depth, out);
     } else if (Yes == out->opts->to_json && rb_respond_to(obj, oj_to_json_id)) {
@@ -1206,22 +1209,16 @@ dump_data_obj(VALUE obj, int depth, Out out) {
 	*out->cur++ = '}';
 	*out->cur = '\0';
     } else {
-	Odd	odd = oj_get_odd(clas);
-
-	if (0 == odd) {
-	    if (oj_bigdecimal_class == clas) {
-		volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+	if (oj_bigdecimal_class == clas) {
+	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 		
-		if (Yes == out->opts->bigdec_as_num) {
-		    dump_raw(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), out);
-		} else {
-		    dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
-		}
+	    if (Yes == out->opts->bigdec_as_num) {
+		dump_raw(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), out);
 	    } else {
-		dump_nil(out);
+		dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
 	    }
 	} else {
-	    dump_odd(obj, odd, clas, depth + 1, out);
+	    dump_nil(out);
 	}
     }
 }
@@ -1234,7 +1231,7 @@ dump_obj_comp(VALUE obj, int depth, Out out) {
 	if (T_HASH != rb_type(h)) {
 	    rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
 	}
-	dump_hash(h, depth, out->opts->mode, out);
+	dump_hash(h, Qnil, depth, out->opts->mode, out);
     } else if (rb_respond_to(obj, oj_as_json_id)) {
 	dump_val(rb_funcall(obj, oj_as_json_id, 0), depth, out);
     } else if (Yes == out->opts->to_json && rb_respond_to(obj, oj_to_json_id)) {
@@ -1268,13 +1265,7 @@ dump_obj_comp(VALUE obj, int depth, Out out) {
 
 	    dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
 	} else {
-	    Odd	odd = oj_get_odd(clas);
-
-	    if (0 == odd) {
-		dump_obj_attrs(obj, 0, 0, depth, out);
-	    } else {
-		dump_odd(obj, odd, 0, depth + 1, out);
-	    }
+	    dump_obj_attrs(obj, 0, 0, depth, out);
 	}
     }
     *out->cur = '\0';
@@ -1286,18 +1277,13 @@ dump_obj_obj(VALUE obj, int depth, Out out) {
 
     if (0 <= id) {
 	VALUE	clas = rb_obj_class(obj);
-	Odd	odd = oj_get_odd(clas);
 
-	if (0 == odd) {
-	    if (oj_bigdecimal_class == clas) {
-		volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+	if (oj_bigdecimal_class == clas) {
+	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-		dump_raw(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), out);
-	    } else {
-		dump_obj_attrs(obj, clas, id, depth, out);
-	    }
+	    dump_raw(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), out);
 	} else {
-	    dump_odd(obj, odd, clas, depth + 1, out);
+	    dump_obj_attrs(obj, clas, id, depth, out);
 	}
     }
 }
@@ -1478,7 +1464,7 @@ dump_struct_comp(VALUE obj, int depth, Out out) {
 	if (T_HASH != rb_type(h)) {
 	    rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
 	}
-	dump_hash(h, depth, out->opts->mode, out);
+	dump_hash(h, Qnil, depth, out->opts->mode, out);
     } else if (rb_respond_to(obj, oj_to_json_id)) {
 	volatile VALUE	rs = rb_funcall(obj, oj_to_json_id, 0);
 	const char	*s;
@@ -1674,11 +1660,11 @@ dump_val(VALUE obj, int depth, Out out) {
 		case NullMode:
 		case CompatMode:	dump_str_comp(obj, out);	break;
 		case ObjectMode:
-		default:		dump_str_obj(obj, depth, out);	break;
+		default:		dump_str_obj(obj, clas, depth, out);	break;
 		}
 		break;
-	    case T_ARRAY:		dump_array(obj, depth, out);	break;
-	    case T_HASH:		dump_hash(obj, depth, out->opts->mode, out);	break;
+	    case T_ARRAY:		dump_array(obj, clas, depth, out);	break;
+	    case T_HASH:		dump_hash(obj, clas, depth, out->opts->mode, out);	break;
 #if (defined T_RATIONAL && defined RRATIONAL)
 	    case T_RATIONAL:
 #endif

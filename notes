@@ -3,18 +3,6 @@
 ^c^d hide subtree
 ^c^s show subtree
 
-- register_class
- - change order of odd lookup
-  - start at end and move toward start
- - change dump_val to alway check odd first
-
- - StreamWriter
-  - new(stream) optional stream, if nil then write to string buffer
- - StringWriter
-  - to_s
-   - return string if 
-
-
 - built in support for primitive subclasses
  - not supported
   - Bignum subclass
@@ -27,6 +15,19 @@
  - implementation
   - store primitive value in 'this' element
    - on load, if this encountered, use :replace to replace contents
+  - dump changes
+   - for special, check real class
+  - load changes for 'this' only
+
+
+
+ - StreamWriter
+  - new(stream) optional stream, if nil then write to string buffer
+ - StringWriter
+  - to_s
+   - return string if 
+
+
 
 ---------------------------
 Tried a separate thread for the parser and the results were poor. The parsing is
