@@ -547,7 +547,7 @@ dump_str_comp(VALUE obj, Out out) {
 static void
 dump_str_obj(VALUE obj, VALUE clas, int depth, Out out) {
     if (0 != clas && rb_cString != clas) {
-	// TBD write special, this plus other attributes
+	dump_obj_attrs(obj, clas, 0, depth, out);
     } else {
 	const char	*s = rb_string_value_ptr((VALUE*)&obj);
 	size_t		len = RSTRING_LEN(obj);
@@ -1362,6 +1362,29 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	*out->cur++ = '"';
 	*out->cur++ = ':';
 	dump_ulong(id, out);
+    }
+    // TBD 
+    switch (rb_type(obj)) {
+    case T_STRING:
+	size = d2 * out->indent + 14;
+	if (out->end - out->cur <= (long)size) {
+	    grow(out, size);
+	}
+	*out->cur++ = ',';
+	fill_indent(out, d2);
+	*out->cur++ = '"';
+	*out->cur++ = 's';
+	*out->cur++ = 'e';
+	*out->cur++ = 'l';
+	*out->cur++ = 'f';
+	*out->cur++ = '"';
+	*out->cur++ = ':';
+	dump_cstr(rb_string_value_ptr((VALUE*)&obj), RSTRING_LEN(obj), 0, 0, out);
+	break;
+    case T_ARRAY:
+    case T_HASH:
+    default:
+	break;
     }
     {
 	int	cnt;

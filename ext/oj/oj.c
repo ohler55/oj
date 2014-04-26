@@ -67,6 +67,7 @@ ID	oj_json_create_id;
 ID	oj_length_id;
 ID	oj_new_id;
 ID	oj_read_id;
+ID	oj_replace_id;
 ID	oj_string_id;
 ID	oj_to_hash_id;
 ID	oj_to_json_id;
@@ -1857,6 +1858,7 @@ void Init_oj() {
     oj_length_id = rb_intern("length");
     oj_new_id = rb_intern("new");
     oj_read_id = rb_intern("read");
+    oj_replace_id = rb_intern("replace");
     oj_string_id = rb_intern("string");
     oj_to_hash_id = rb_intern("to_hash");
     oj_to_json_id = rb_intern("to_json");

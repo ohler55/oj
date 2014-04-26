@@ -330,6 +330,13 @@ hash_set_cstr(ParseInfo pi, const char *key, size_t klen, const char *str, size_
     case T_HASH:
 	rb_hash_aset(parent->val, hash_key(pi, key, klen, parent->k1), str_to_value(pi, str, len, orig));
 	break;
+    case T_STRING:
+	if (4 == klen && 's' == *key && 'e' == key[1] && 'l' == key[2] && 'f' == key[3]) {
+	    rb_funcall(parent->val, oj_replace_id, 1, str_to_value(pi, str, len, orig));
+	} else {
+	    set_obj_ivar(parent, key, klen, str_to_value(pi, str, len, orig));
+	}
+	break;
     case T_OBJECT:
 	set_obj_ivar(parent, key, klen, str_to_value(pi, str, len, orig));
 	break;
@@ -426,6 +433,7 @@ hash_set_value(ParseInfo pi, const char *key, size_t klen, VALUE value) {
 	    rb_hash_aset(parent->val, hash_key(pi, key, klen, parent->k1), value);
 	}
 	break;
+    case T_STRING: // for subclassed strings
     case T_OBJECT:
 	set_obj_ivar(parent, key, klen, value);
 	break;

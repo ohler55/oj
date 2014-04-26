@@ -803,7 +803,7 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len) {
     if (No == pi->options.allow_gc) {
 	rb_gc_enable();
     }
-    {
+    if (!err_has(&pi->err)) {
 	// If the stack is not empty then the JSON terminated early.
 	Val	v;
 

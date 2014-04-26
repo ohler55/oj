@@ -102,6 +102,13 @@ class Strung < String
   end
 end
 
+class AutoStrung < String
+  def initialize(str, safe)
+    super(str)
+    @safe = safe
+  end
+end
+
 def hash_eql(h1, h2)
   return false if h1.size != h2.size
   h1.keys.each do |k|
@@ -419,6 +426,11 @@ class ObjectJuice < ::Test::Unit::TestCase
     Oj.register_odd(Strung, Strung, :create, :to_s, 'safe?')
     s = Strung.new("Pete", true)
     dump_and_load(Strung.new("Pete", true), false)
+  end
+
+  def test_auto_string
+    s = AutoStrung.new("Pete", true)
+    dump_and_load(AutoStrung.new("Pete", true), false)
   end
 
   def dump_and_load(obj, trace=false)
