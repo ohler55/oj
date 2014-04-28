@@ -875,13 +875,15 @@ hash_cb_object(VALUE key, VALUE value, Out out) {
 
 static void
 dump_hash(VALUE obj, VALUE clas, int depth, int mode, Out out) {
-    int		cnt = (int)RHASH_SIZE(obj);
-    size_t	size = depth * out->indent + 2;
+    int		cnt;
+    size_t	size;
 
     if (Qundef != clas && rb_cHash != clas && ObjectMode == mode) {
 	dump_obj_attrs(obj, clas, 0, depth, out);
 	return;
     }
+    cnt = (int)RHASH_SIZE(obj);
+    size = depth * out->indent + 2;
     if (out->end - out->cur <= 2) {
 	grow(out, 2);
     }
@@ -1290,6 +1292,28 @@ dump_obj_obj(VALUE obj, int depth, Out out) {
     }
 }
 
+#ifdef RUBINIUS_RUBY
+static int
+isRbxHashAttr(const char *attr) {
+    const char	*hashAttrs[] = {
+	"@capacity",
+	"@max_entries",
+	"@state",
+	"@mask",
+	"@size",
+	"@entries",
+	0 };
+    const char	**ap;
+
+    for (ap = hashAttrs; 0 != *ap; ap++) {
+	if (0 == strcmp(attr, *ap)) {
+	    return 1;
+	}
+    }
+    return 0;
+}
+#endif
+
 #if HAS_IVAR_HELPERS
 static int
 dump_attr_cb(ID key, VALUE value, Out out) {
@@ -1330,6 +1354,7 @@ static void
 dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
     size_t	size = 0;
     int		d2 = depth + 1;
+    int		type = rb_type(obj);
 
     if (out->end - out->cur <= 2) {
 	grow(out, 2);
@@ -1365,7 +1390,7 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	*out->cur++ = ':';
 	dump_ulong(id, out);
     }
-    switch (rb_type(obj)) {
+    switch (type) {
     case T_STRING:
 	size = d2 * out->indent + 14;
 	if (out->end - out->cur <= (long)size) {
@@ -1442,12 +1467,17 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 #else
 	size = d2 * out->indent + 1;
 	for (i = cnt; 0 < i; i--, np++) {
+	    vid = rb_to_id(*np);
+	    attr = rb_id2name(vid);
+#ifdef RUBINIUS_RUBY
+	    if (T_HASH == type && isRbxHashAttr(attr)) {
+		continue;
+	    }
+#endif
 	    if (out->end - out->cur <= (long)size) {
 		grow(out, size);
 	    }
-	    vid = rb_to_id(*np);
 	    fill_indent(out, d2);
-	    attr = rb_id2name(vid);
 	    if ('@' == *attr) {
 		attr++;
 		dump_cstr(attr, strlen(attr), 0, 0, out);
