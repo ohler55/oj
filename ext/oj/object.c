@@ -420,17 +420,33 @@ hash_set_value(ParseInfo pi, const char *key, size_t klen, VALUE value) {
 	}
 	break;
     case T_HASH:
-	if (3 <= klen && '#' == key[1] && T_ARRAY == rb_type(value)) {
-	    long	len = RARRAY_LEN(value);
-	    VALUE	*a = RARRAY_PTR(value);
-	
-	    if (2 != len) {
-		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "invalid hash pair");
-		return;
+
+	if (rb_cHash != rb_obj_class(parent->val)) {
+	    if (4 == klen && 's' == *key && 'e' == key[1] && 'l' == key[2] && 'f' == key[3]) {
+		rb_funcall(parent->val, oj_replace_id, 1, value);
+	    } else {
+		set_obj_ivar(parent, key, klen, value);
 	    }
-	    rb_hash_aset(parent->val, *a, a[1]);
 	} else {
-	    rb_hash_aset(parent->val, hash_key(pi, key, klen, parent->k1), value);
+	    if (3 <= klen && '#' == key[1] && T_ARRAY == rb_type(value)) {
+		long	len = RARRAY_LEN(value);
+		VALUE	*a = RARRAY_PTR(value);
+	
+		if (2 != len) {
+		    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "invalid hash pair");
+		    return;
+		}
+		rb_hash_aset(parent->val, *a, a[1]);
+	    } else {
+		rb_hash_aset(parent->val, hash_key(pi, key, klen, parent->k1), value);
+	    }
+	}
+	break;
+    case T_ARRAY:
+	if (4 == klen && 's' == *key && 'e' == key[1] && 'l' == key[2] && 'f' == key[3]) {
+	    rb_funcall(parent->val, oj_replace_id, 1, value);
+	} else {
+	    set_obj_ivar(parent, key, klen, value);
 	}
 	break;
     case T_STRING: // for subclassed strings
@@ -457,7 +473,6 @@ hash_set_value(ParseInfo pi, const char *key, size_t klen, VALUE value) {
 	return;
     }
 }
-
 
 static VALUE
 start_hash(ParseInfo pi) {

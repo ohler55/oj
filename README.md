@@ -28,13 +28,7 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 ### Current Release 2.8.2
 
- - Missed a file on checkin.
-
-### Current Release 2.8.1
-
- - Added additional argument to the register_odd function.
-
- - Fixed bug that failed to load on some uses of STDIN.
+ - Added support for detection and handling of Strng, Array, and Hash subclasses.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 

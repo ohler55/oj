@@ -103,10 +103,45 @@ class Strung < String
 end
 
 class AutoStrung < String
+  attr_accessor :safe
+
   def initialize(str, safe)
     super(str)
     @safe = safe
   end
+
+  def eql?(o)
+    self.class == o.class && super(o) && @safe == o.safe
+  end
+  alias == eql?
+end
+
+class AutoArray < Array
+  attr_accessor :safe
+
+  def initialize(a, safe)
+    super(a)
+    @safe = safe
+  end
+
+  def eql?(o)
+    self.class == o.class && super(o) && @safe == o.safe
+  end
+  alias == eql?
+end
+
+class AutoHash < Hash
+  attr_accessor :safe
+
+  def initialize(h, safe)
+    super(h)
+    @safe = safe
+  end
+
+  def eql?(o)
+    self.class == o.class && super(o) && @safe == o.safe
+  end
+  alias == eql?
 end
 
 def hash_eql(h1, h2)
@@ -425,12 +460,24 @@ class ObjectJuice < ::Test::Unit::TestCase
   def test_odd_string
     Oj.register_odd(Strung, Strung, :create, :to_s, 'safe?')
     s = Strung.new("Pete", true)
-    dump_and_load(Strung.new("Pete", true), false)
+    dump_and_load(s, false)
   end
 
   def test_auto_string
     s = AutoStrung.new("Pete", true)
-    dump_and_load(AutoStrung.new("Pete", true), false)
+    dump_and_load(s, false)
+  end
+
+  def test_auto_array
+    a = AutoArray.new([1, 'abc', nil], true)
+    dump_and_load(a, false)
+  end
+
+  def test_auto_hash
+    h = AutoHash.new(nil, true)
+    h['a'] = 1
+    h['b'] = 2
+    dump_and_load(h, false)
   end
 
   def dump_and_load(obj, trace=false)
