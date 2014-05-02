@@ -3,6 +3,12 @@
 ^c^d hide subtree
 ^c^s show subtree
 
+- parser
+ - if block given then call that after parsing
+  - at bottom of parse2, check for stack empty or something
+  - maybe when stack head replaced and also on return
+
+
 - built in support for primitive subclasses
  - not supported
   - Bignum subclass

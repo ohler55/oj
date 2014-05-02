@@ -640,6 +640,20 @@ oj_parse2(ParseInfo pi) {
 	if (err_has(&pi->err)) {
 	    return;
 	}
+	if (Qundef != pi->proc && stack_empty(&pi->stack)) {
+	    if (Qnil == pi->proc) {
+		rb_yield(stack_head_val(&pi->stack));
+	    } else {
+#if HAS_PROC_WITH_BLOCK
+		VALUE	args[1];
+
+		*args = stack_head_val(&pi->stack);
+		rb_proc_call_with_block(pi->proc, 1, args, Qnil);
+#else
+		rb_raise(rb_eNotImpError, "Calling a Proc with a block not supported in this version. Use func() {|x| } syntax instead.");
+#endif
+	    }
+	}
     }
 }
 
@@ -733,6 +747,11 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len) {
     input = argv[0];
     if (2 == argc) {
 	oj_parse_options(argv[1], &pi->options);
+    }
+    if (rb_block_given_p()) {
+	pi->proc = Qnil;
+    } else {
+	pi->proc = Qundef;
     }
     pi->cbc = (void*)0;
     if (0 != json) {

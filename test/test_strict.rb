@@ -247,6 +247,13 @@ class StrictJuice < ::Test::Unit::TestCase
     assert_equal({ 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}, obj)
   end
 
+  def test_double
+    json = %{{ "x": 1}{ "y": 2}}
+    results = []
+    Oj.load(json, :mode => :strict) { |x| results << x }
+
+    assert_equal([{ 'x' => 1 }, { 'y' => 2 }], results)
+  end
 
   def dump_and_load(obj, trace=false)
     json = Oj.dump(obj, :indent => 2)

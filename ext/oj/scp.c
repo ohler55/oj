@@ -211,6 +211,11 @@ oj_sc_parse(int argc, VALUE *argv, VALUE self) {
     if (3 == argc) {
 	oj_parse_options(argv[2], &pi.options);
     }
+    if (rb_block_given_p()) {
+	pi.proc = Qnil;
+    } else {
+	pi.proc = Qundef;
+    }
     pi.cbc = (void*)handler;
 
     pi.start_hash = respond_to(handler, oj_hash_start_id) ? start_hash : noop_start;

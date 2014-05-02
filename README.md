@@ -26,9 +26,12 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
-### Current Release 2.8.2
+### Current Release 2.9.0
 
- - Added support for detection and handling of Strng, Array, and Hash subclasses.
+ - Added support for detection and handling of String, Array, and Hash subclasses.
+
+ - Oj.load() can now take a block which will be yielded to on every object
+   parsed when used with a file or string with multiple JSON entries.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 

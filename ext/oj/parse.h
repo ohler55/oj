@@ -63,6 +63,7 @@ typedef struct _ParseInfo {
     struct _ValStack	stack;
     CircArray		circ_array;
     int			expect_value;
+    VALUE		proc;
     VALUE		(*start_hash)(struct _ParseInfo *pi);
     void		(*end_hash)(struct _ParseInfo *pi);
     void		(*hash_set_cstr)(struct _ParseInfo *pi, const char *key, size_t klen, const char *str, size_t len, const char *orig);

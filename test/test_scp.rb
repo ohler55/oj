@@ -206,6 +206,22 @@ class ScpTest < ::Test::Unit::TestCase
                   [:add_value, {}]], handler.calls)
   end
 
+  def test_double
+    handler = AllHandler.new()
+    json = %{{"one":true,"two":false}{"three":true,"four":false}}
+    Oj.sc_parse(handler, json)
+    assert_equal([[:hash_start],
+                  [:hash_set, 'one', true],
+                  [:hash_set, 'two', false],
+                  [:hash_end],
+                  [:add_value, {}],
+                  [:hash_start],
+                  [:hash_set, 'three', true],
+                  [:hash_set, 'four', false],
+                  [:hash_end],
+                  [:add_value, {}]], handler.calls)
+  end
+
   def test_none
     handler = NoHandler.new()
     Oj.sc_parse(handler, $json)

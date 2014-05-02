@@ -1,4 +1,4 @@
-/* sajkey.c
+/* saj.c
  * Copyright (c) 2012, Peter Ohler
  * All rights reserved.
  * 
@@ -644,7 +644,7 @@ respond_to(VALUE obj, ID method) {
 }
 
 static void
-sajkey_parse(VALUE handler, char *json) {
+saj_parse(VALUE handler, char *json) {
     volatile VALUE	obj = Qnil;
     struct _ParseInfo	pi;
 
@@ -692,11 +692,11 @@ sajkey_parse(VALUE handler, char *json) {
     }
 }
 
-/* call-seq: sajkey_parse(handler, io)
+/* call-seq: saj_parse(handler, io)
  *
  * Parses an IO stream or file containing an JSON document. Raises an exception
  * if the JSON is malformed.
- * @param [Oj::SajKey] handler SajKey (responds to Oj::SajKey methods) like handler
+ * @param [Oj::Saj] handler Saj (responds to Oj::Saj methods) like handler
  * @param [IO|String] io IO Object to read from
  */
 VALUE
@@ -749,7 +749,7 @@ oj_saj_parse(int argc, VALUE *argv, VALUE self) {
 	    rb_raise(rb_eArgError, "saj_parse() expected a String or IO Object.");
 	}
     }
-    sajkey_parse(*argv, json);
+    saj_parse(*argv, json);
     xfree(json);
 
     return Qnil;
