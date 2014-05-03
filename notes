@@ -4,26 +4,7 @@
 ^c^s show subtree
 
 - parser
- - if block given then call that after parsing
-  - at bottom of parse2, check for stack empty or something
-  - maybe when stack head replaced and also on return
-
-
-- built in support for primitive subclasses
- - not supported
-  - Bignum subclass
-  - Regexp subclass
-  - Time subclass 
- - supported
-  - String
-  - Array
-  - Hash
- - implementation
-  - store primitive value in 'this' element
-   - on load, if this encountered, use :replace to replace contents
-  - dump changes
-   - for special, check real class
-  - load changes for 'this' only
+ - stream parser like Ox
 
 
 
