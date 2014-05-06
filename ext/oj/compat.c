@@ -96,7 +96,7 @@ oj_compat_parse(int argc, VALUE *argv, VALUE self) {
     pi.options = oj_default_options;
     oj_set_compat_callbacks(&pi);
 
-    return oj_pi_parse(argc, argv, &pi, 0, 0);
+    return oj_pi_parse(argc, argv, &pi, 0, 0, 1);
 }
 
 VALUE
@@ -108,5 +108,5 @@ oj_compat_parse_cstr(int argc, VALUE *argv, char *json, size_t len) {
     pi.end_hash = end_hash;
     pi.hash_set_cstr = hash_set_cstr;
 
-    return oj_pi_parse(argc, argv, &pi, json, len);
+    return oj_pi_parse(argc, argv, &pi, json, len, 1);
 }

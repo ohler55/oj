@@ -733,7 +733,7 @@ protect_parse(VALUE pip) {
 }
 
 VALUE
-oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len) {
+oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yieldOk) {
     char		*buf = 0;
     volatile VALUE	input;
     volatile VALUE	wrapped_stack;
@@ -748,7 +748,7 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len) {
     if (2 == argc) {
 	oj_parse_options(argv[1], &pi->options);
     }
-    if (rb_block_given_p()) {
+    if (yieldOk && rb_block_given_p()) {
 	pi->proc = Qnil;
     } else {
 	pi->proc = Qundef;

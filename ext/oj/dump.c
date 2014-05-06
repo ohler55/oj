@@ -1302,6 +1302,7 @@ isRbxHashAttr(const char *attr) {
 	"@mask",
 	"@size",
 	"@entries",
+	"@default_proc",
 	0 };
     const char	**ap;
 
@@ -1452,6 +1453,7 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	ID		vid;
 	const char	*attr;
 	int		i;
+	int		first = 1;
 
 	cnt = (int)RARRAY_LEN(vars);
 #endif
@@ -1474,6 +1476,11 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 		continue;
 	    }
 #endif
+	    if (first) {
+		first = 0;
+	    } else {
+		*out->cur++ = ',';
+	    }
 	    if (out->end - out->cur <= (long)size) {
 		grow(out, size);
 	    }
@@ -1493,9 +1500,6 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	    dump_val(rb_ivar_get(obj, vid), d2, out);
 	    if (out->end - out->cur <= 2) {
 		grow(out, 2);
-	    }
-	    if (1 < i) {
-	      *out->cur++ = ',';
 	    }
 	}
 #endif

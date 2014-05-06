@@ -760,7 +760,7 @@ safe_load(VALUE self, VALUE doc) {
     oj_set_strict_callbacks(&pi);
     *args = doc;
 
-    return oj_pi_parse(1, args, &pi, 0, 0);
+    return oj_pi_parse(1, args, &pi, 0, 0, 1);
 }
 
 /* call-seq: saj_parse(handler, io)
@@ -1452,11 +1452,11 @@ mimic_walk(VALUE key, VALUE obj, VALUE proc) {
 	break;
     case T_ARRAY:
 	{
-	    VALUE	*np = RARRAY_PTR(obj);
 	    size_t	cnt = RARRAY_LEN(obj);
-	
-	    for (; 0 < cnt; cnt--, np++) {
-		mimic_walk(Qnil, *np, proc);
+	    size_t	i;
+
+	    for (i = 0; i < cnt; i++) {
+		mimic_walk(Qnil, rb_ary_entry(obj, i), proc);
 	    }
 	    break;
 	}
@@ -1482,7 +1482,12 @@ mimic_walk(VALUE key, VALUE obj, VALUE proc) {
 
 static VALUE
 mimic_load(int argc, VALUE *argv, VALUE self) {
-    VALUE	obj = load(1, argv, self);
+    struct _ParseInfo	pi;
+
+    pi.options = oj_default_options;
+    oj_set_compat_callbacks(&pi);
+
+    VALUE	obj = oj_pi_parse(argc, argv, &pi, 0, 0, 0);
     VALUE	p = Qnil;
 
     if (2 <= argc) {
@@ -1638,7 +1643,7 @@ mimic_parse(int argc, VALUE *argv, VALUE self) {
     }
     *args = *argv;
 
-    return oj_pi_parse(1, args, &pi, 0, 0);
+    return oj_pi_parse(1, args, &pi, 0, 0, 0);
 }
 
 static VALUE
