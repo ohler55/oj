@@ -687,27 +687,12 @@ load_file(int argc, VALUE *argv, VALUE self) {
     FILE		*f;
     unsigned long	len;
     Mode		mode = oj_default_options.mode;
-
-    Check_Type(*argv, T_STRING);
-    path = StringValuePtr(*argv);
-    if (0 == (f = fopen(path, "r"))) {
-	rb_raise(rb_eIOError, "%s", strerror(errno));
-    }
-    fseek(f, 0, SEEK_END);
-    len = ftell(f);
-    json = ALLOC_N(char, len + 1);
-    fseek(f, 0, SEEK_SET);
-    if (len != fread(json, 1, len, f)) {
-	xfree(json);
-	fclose(f);
-	rb_raise(rb_const_get_at(Oj, rb_intern("LoadError")), "Failed to read %ld bytes from %s.", len, path);
-    }
-    fclose(f);
-    json[len] = '\0';
+    struct _ParseInfo	pi;
 
     if (1 > argc) {
 	rb_raise(rb_eArgError, "Wrong number of arguments to load().");
     }
+    Check_Type(*argv, T_STRING);
     if (2 <= argc) {
 	VALUE	ropts = argv[1];
 	VALUE	v;
@@ -726,10 +711,37 @@ load_file(int argc, VALUE *argv, VALUE self) {
 	    }
 	}
     }
-    // The json string is freed in the parser when it is finished with it.
+    path = StringValuePtr(*argv);
+    if (0 == (f = fopen(path, "r"))) {
+	rb_raise(rb_eIOError, "%s", strerror(errno));
+    }
+    pi.options = oj_default_options;
     switch (mode) {
     case StrictMode:
-	return oj_strict_parse_cstr(argc, argv, json, len);
+	oj_set_strict_callbacks(&pi);
+	return oj_pi_sparse(argc, argv, &pi, f);
+    case NullMode: // TBD
+    case CompatMode: // TBD
+    case ObjectMode: // TBD
+    default:
+	break;
+    }
+    // TBD use stream loading instead
+    fseek(f, 0, SEEK_END);
+    len = ftell(f);
+    json = ALLOC_N(char, len + 1);
+    fseek(f, 0, SEEK_SET);
+    if (len != fread(json, 1, len, f)) {
+	xfree(json);
+	fclose(f);
+	rb_raise(rb_const_get_at(Oj, rb_intern("LoadError")), "Failed to read %ld bytes from %s.", len, path);
+    }
+    fclose(f);
+    json[len] = '\0';
+
+    // TBD use stream parser
+    // The json string is freed in the parser when it is finished with it.
+    switch (mode) {
     case NullMode:
     case CompatMode:
 	return oj_compat_parse_cstr(argc, argv, json, len);

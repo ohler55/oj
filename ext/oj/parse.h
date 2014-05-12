@@ -32,11 +32,13 @@
 #define __OJ_PARSE_H__
 
 #include <stdarg.h>
+#include <stdio.h>
 
 #include "ruby.h"
 #include "oj.h"
 #include "val_stack.h"
 #include "circarray.h"
+#include "reader.h"
 
 typedef struct _NumInfo {
     int64_t	i;
@@ -54,9 +56,13 @@ typedef struct _NumInfo {
 } *NumInfo;
 
 typedef struct _ParseInfo {
+    // used for the string parser
     const char		*json;
     const char		*cur;
     const char		*end;
+    // used for the stream parser
+    struct _Reader	rd;
+
     struct _Err		err;
     struct _Options	options;
     void		*cbc;
@@ -88,5 +94,8 @@ extern VALUE	oj_num_as_value(NumInfo ni);
 
 extern void	oj_set_strict_callbacks(ParseInfo pi);
 extern void	oj_set_compat_callbacks(ParseInfo pi);
+
+extern void	oj_sparse2(ParseInfo pi);
+extern VALUE	oj_pi_sparse(int argc, VALUE *argv, ParseInfo pi, FILE *f);
 
 #endif /* __OJ_PARSE_H__ */

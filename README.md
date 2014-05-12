@@ -31,6 +31,11 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
  - Fixed mimic load when given a block to evalate. It conflicted with the new
    load option.
 
+ - Added a true stream that is used when the input argument to load is an IO
+   object such as a stream or file. This adds about 5% overhead on top of the
+   previous full load but allows reading of huge files that will not fit in
+   memory and is more efficient on even larger files that would fit into memory.
+
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
 ## Description

@@ -4,18 +4,8 @@
 ^c^s show subtree
 
 - parser
- - stream parser like Ox sax_buf
-  - dup parse.c
-   - same signature as parse.c
-   - test by changing func
-
-
-
- - StreamWriter
-  - new(stream) optional stream, if nil then write to string buffer
- - StringWriter
-  - to_s
-   - return string if 
+ - handle compat, null, and object modes
+ - load_file should use sparse only
 
 
 

@@ -145,7 +145,11 @@ oj_strict_parse(int argc, VALUE *argv, VALUE self) {
     pi.options = oj_default_options;
     oj_set_strict_callbacks(&pi);
 
-    return oj_pi_parse(argc, argv, &pi, 0, 0, 1);
+    if (T_STRING == rb_type(*argv)) {
+	return oj_pi_parse(argc, argv, &pi, 0, 0, 1);
+    } else {
+	return oj_pi_sparse(argc, argv, &pi, 0);
+    }
 }
 
 VALUE

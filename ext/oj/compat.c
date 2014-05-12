@@ -45,6 +45,7 @@ hash_set_cstr(ParseInfo pi, const char *key, size_t klen, const char *str, size_
 	*pi->options.create_id == *key &&
 	pi->options.create_id_len == klen &&
 	0 == strncmp(pi->options.create_id, key, klen)) {
+	// TBD don't use json or end
 	if (str < pi->json || pi->cur < str) {
 	    parent->classname = oj_strndup(str, len);
 	} else {
@@ -75,6 +76,7 @@ end_hash(struct _ParseInfo *pi) {
 	if (Qundef != clas) { // else an error
 	    parent->val = rb_funcall(clas, oj_json_create_id, 1, parent->val);
 	}
+	// TBD don't use json or end
 	if (parent->classname < pi->json || pi->end < parent->classname) {
 	    xfree((char*)parent->classname);
 	    parent->classname = 0;

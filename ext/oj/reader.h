@@ -43,6 +43,7 @@ typedef struct _Reader {
     int		col;
     int		pro_line;
     int		pro_col;
+    int		free_head;
     int		(*read_func)(struct _Reader *reader);
     union {
 	int		fd;
@@ -50,15 +51,6 @@ typedef struct _Reader {
 	const char	*in_str;
     };
 } *Reader;
-
-typedef struct _CheckPt {
-    int		pro_dif;
-    int		line;
-    int		col;
-    char	c;
-} *CheckPt;
-
-#define CHECK_PT_INIT { -1, 0, 0, '\0' }
 
 extern void	oj_reader_init(Reader reader, VALUE io);
 extern int	oj_reader_read(Reader reader);
@@ -99,11 +91,15 @@ reader_protect(Reader reader) {
 }
 
 static inline void
+reader_release(Reader reader) {
+    reader->pro = 0;
+}
+
+static inline void
 reader_reset(Reader reader) {
     reader->tail = reader->pro;
     reader->line = reader->pro_line;
     reader->col = reader->pro_col;
-    reader->pro = 0;
 }
 
 /* Starts by reading a character so it is safe to use with an empty or
@@ -163,9 +159,10 @@ reader_expect(Reader reader, const char *s) {
 
 static inline void
 reader_cleanup(Reader reader) {
-    if (reader->base != reader->head && 0 != reader->head) {
+    if (reader->free_head && 0 != reader->head) {
 	xfree(reader->head);
 	reader->head = 0;
+	reader->free_head = 0;
     }
 }
 
@@ -184,30 +181,9 @@ is_white(char c) {
     return 0;
 }
 
-static inline void
-reader_checkpoint(Reader reader, CheckPt cp) {
-    cp->pro_dif = (int)(reader->tail - reader->pro);
-    cp->line = reader->line;
-    cp->col = reader->col;
-    cp->c = *(reader->tail - 1);
-}
-
 static inline int
-reader_checkset(CheckPt cp) {
-    return (0 <= cp->pro_dif);
-}
-
-static inline char
-reader_checkback(Reader reader, CheckPt cp) {
-    reader->tail = reader->pro + cp->pro_dif;
-    reader->line = cp->line;
-    reader->col = cp->col;
-    return cp->c;
-}
-
-static inline int
-reader_ptr_in_pro(Reader reader, const char *ptr) {
-    return (reader->pro <= ptr && ptr < reader->read_end);
+reader_ptr_in_buf(Reader reader, const char *ptr) {
+    return (reader->head <= ptr && ptr < reader->read_end);
 }
 
 #endif /* __OJ_READER_H__ */

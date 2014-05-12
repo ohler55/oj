@@ -722,7 +722,11 @@ oj_set_error_at(ParseInfo pi, VALUE err_clas, const char* file, int line, const 
     vsnprintf(msg, sizeof(msg) - 1, format, ap);
     va_end(ap);
     pi->err.clas = err_clas;
-    _oj_err_set_with_location(&pi->err, err_clas, msg, pi->json, pi->cur - 1, file, line);
+    if (0 == pi->json) {
+	oj_err_set(&pi->err, err_clas, "%s at line %d, column %d [%s:%d]", msg, pi->rd.line, pi->rd.col, file, line);
+    } else {
+	_oj_err_set_with_location(&pi->err, err_clas, msg, pi->json, pi->cur - 1, file, line);
+    }
 }
 
 static VALUE
@@ -758,7 +762,7 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
 	pi->json = json;
 	pi->end = json + len;
 	free_json = 1;
-    } else if (rb_type(input) == T_STRING) {
+    } else if (T_STRING == rb_type(input)) {
 	pi->json = rb_string_value_cstr((VALUE*)&input);
 	pi->end = pi->json + RSTRING_LEN(input);
     } else if (Qnil == input && Yes == pi->options.nilnil) {
