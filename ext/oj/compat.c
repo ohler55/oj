@@ -45,12 +45,7 @@ hash_set_cstr(ParseInfo pi, const char *key, size_t klen, const char *str, size_
 	*pi->options.create_id == *key &&
 	pi->options.create_id_len == klen &&
 	0 == strncmp(pi->options.create_id, key, klen)) {
-	// TBD don't use json or end
-	if (str < pi->json || pi->cur < str) {
-	    parent->classname = oj_strndup(str, len);
-	} else {
-	    parent->classname = str;
-	}
+	parent->classname = oj_strndup(str, len);
 	parent->clen = len;
     } else {
 	volatile VALUE	rstr = rb_str_new(str, len);
@@ -76,8 +71,7 @@ end_hash(struct _ParseInfo *pi) {
 	if (Qundef != clas) { // else an error
 	    parent->val = rb_funcall(clas, oj_json_create_id, 1, parent->val);
 	}
-	// TBD don't use json or end
-	if (parent->classname < pi->json || pi->end < parent->classname) {
+	if (0 != parent->classname) {
 	    xfree((char*)parent->classname);
 	    parent->classname = 0;
 	}
@@ -98,7 +92,11 @@ oj_compat_parse(int argc, VALUE *argv, VALUE self) {
     pi.options = oj_default_options;
     oj_set_compat_callbacks(&pi);
 
-    return oj_pi_parse(argc, argv, &pi, 0, 0, 1);
+    if (T_STRING == rb_type(*argv)) {
+	return oj_pi_parse(argc, argv, &pi, 0, 0, 1);
+    } else {
+	return oj_pi_sparse(argc, argv, &pi, 0);
+    }
 }
 
 VALUE

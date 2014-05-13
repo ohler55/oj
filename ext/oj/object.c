@@ -522,21 +522,30 @@ add_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
     pi->stack.head->val = str_to_value(pi, str, len, orig);
 }
 
+void
+oj_set_object_callbacks(ParseInfo pi) {
+    oj_set_strict_callbacks(pi);
+    pi->end_hash = end_hash;
+    pi->start_hash = start_hash;
+    pi->hash_set_cstr = hash_set_cstr;
+    pi->hash_set_num = hash_set_num;
+    pi->hash_set_value = hash_set_value;
+    pi->add_cstr = add_cstr;
+    pi->array_append_cstr = array_append_cstr;
+}
+
 VALUE
 oj_object_parse(int argc, VALUE *argv, VALUE self) {
     struct _ParseInfo	pi;
 
     pi.options = oj_default_options;
-    oj_set_strict_callbacks(&pi);
-    pi.end_hash = end_hash;
-    pi.start_hash = start_hash;
-    pi.hash_set_cstr = hash_set_cstr;
-    pi.hash_set_num = hash_set_num;
-    pi.hash_set_value = hash_set_value;
-    pi.add_cstr = add_cstr;
-    pi.array_append_cstr = array_append_cstr;
+    oj_set_object_callbacks(&pi);
 
-    return oj_pi_parse(argc, argv, &pi, 0, 0, 1);
+    if (T_STRING == rb_type(*argv)) {
+	return oj_pi_parse(argc, argv, &pi, 0, 0, 1);
+    } else {
+	return oj_pi_sparse(argc, argv, &pi, 0);
+    }
 }
 
 VALUE

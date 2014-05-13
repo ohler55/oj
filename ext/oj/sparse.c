@@ -299,7 +299,6 @@ read_escaped_str(ParseInfo pi) {
 	    break;
 	case NEXT_HASH_NEW:
 	case NEXT_HASH_KEY:
-	    // key will not be between pi->json and pi->cur.
 	    parent->key = strdup(buf.head);
 	    parent->klen = buf_len(&buf);
 	    parent->k1 = *pi->rd.str;
@@ -336,6 +335,7 @@ read_str(ParseInfo pi) {
 	    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "quoted string not terminated");
 	    return;
 	} else if ('\\' == c) {
+	    reader_backup(&pi->rd);
 	    read_escaped_str(pi);
 	    reader_release(&pi->rd);
 	    return;
@@ -352,8 +352,8 @@ read_str(ParseInfo pi) {
 	    break;
 	case NEXT_HASH_NEW:
 	case NEXT_HASH_KEY:
-	    parent->key = pi->rd.str;
 	    parent->klen = pi->rd.tail - pi->rd.str - 1;
+	    parent->key = strndup(pi->rd.str, parent->klen);
 	    parent->k1 = *pi->rd.str;
 	    parent->next = NEXT_HASH_COLON;
 	    break;
@@ -384,8 +384,6 @@ read_num(ParseInfo pi) {
     char		c;
 
     reader_protect(&pi->rd);
-    c = reader_get(&pi->rd);
-    ni.str = pi->rd.str;
     ni.i = 0;
     ni.num = 0;
     ni.div = 1;
@@ -397,7 +395,7 @@ read_num(ParseInfo pi) {
     ni.nan = 0;
     ni.neg = 0;
     ni.no_big = (FloatDec == pi->options.bigdec_load);
-
+    c = reader_get(&pi->rd);
     if ('-' == c) {
 	c = reader_get(&pi->rd);
 	ni.neg = 1;
@@ -469,11 +467,13 @@ read_num(ParseInfo pi) {
 	}
 	ni.dec_cnt -= zero_cnt;
 	ni.len = pi->rd.tail - pi->rd.str;
+	reader_backup(&pi->rd);
     }
     if (BigDec == pi->options.bigdec_load) {
 	ni.big = 1;
     }
-    reader_backup(&pi->rd);
+    ni.str = pi->rd.str;
+    ni.len = pi->rd.tail - pi->rd.str;
     add_num_value(pi, &ni);
     reader_release(&pi->rd);
 }
@@ -705,7 +705,7 @@ protect_parse(VALUE pip) {
 }
 
 VALUE
-oj_pi_sparse(int argc, VALUE *argv, ParseInfo pi, FILE *f) {
+oj_pi_sparse(int argc, VALUE *argv, ParseInfo pi, int fd) {
     char		*buf = 0;
     volatile VALUE	input;
     volatile VALUE	wrapped_stack;
@@ -719,6 +719,9 @@ oj_pi_sparse(int argc, VALUE *argv, ParseInfo pi, FILE *f) {
     if (2 == argc) {
 	oj_parse_options(argv[1], &pi->options);
     }
+    if (Qnil == input && Yes == pi->options.nilnil) {
+	return Qnil;
+    }
     if (rb_block_given_p()) {
 	pi->proc = Qnil;
     } else {
@@ -726,7 +729,7 @@ oj_pi_sparse(int argc, VALUE *argv, ParseInfo pi, FILE *f) {
     }
     pi->cbc = (void*)0;
 
-    oj_reader_init(&pi->rd, input);
+    oj_reader_init(&pi->rd, input, fd);
     pi->json = 0; // indicates reader is in use
 
     if (Yes == pi->options.circular) {
@@ -779,10 +782,9 @@ oj_pi_sparse(int argc, VALUE *argv, ParseInfo pi, FILE *f) {
 	xfree(buf);
     }
     stack_cleanup(&pi->stack);
-    if (0 != f) {
-	fclose(f);
+    if (0 != fd) {
+	close(fd);
     }
-    // TBD close stream is opened by this 
     if (0 != line) {
 	rb_jump_tag(line);
     }

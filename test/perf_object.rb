@@ -118,7 +118,7 @@ if do_read
   puts '-' * 80
   puts "Read from file Performance"
   perf = Perf.new()
-  perf.add('Oj', 'load') { Oj.load_file('sample.json') }
+  perf.add('Oj', 'load') { Oj.load_file('sample.json', :mode => :object) }
   perf.add('Ox', 'load_file') { Ox.load_file('sample.xml', :mode => :object) }
   perf.add('Marshal', 'load') { Marshal.load(File.new('sample.marshal')) }
   perf.run($iter)

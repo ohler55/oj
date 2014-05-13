@@ -54,7 +54,7 @@ static int		read_from_io_partial(Reader reader);
 static int		read_from_str(Reader reader);
 
 void
-oj_reader_init(Reader reader, VALUE io) {
+oj_reader_init(Reader reader, VALUE io, int fd) {
     reader->head = reader->base;
     *((char*)reader->head) = '\0';
     reader->end = reader->head + sizeof(reader->base) - BUF_PAD;
@@ -68,7 +68,10 @@ oj_reader_init(Reader reader, VALUE io) {
     reader->pro_col = 0;
     reader->free_head = 0;
 
-    if (rb_cString == rb_obj_class(io)) {
+    if (0 != fd) {
+	reader->read_func = read_from_fd;
+	reader->fd = fd;
+    } else if (rb_cString == rb_obj_class(io)) {
 	reader->read_func = read_from_str;
 	reader->in_str = StringValuePtr(io);
 	reader->head = (char*)reader->in_str;
@@ -120,7 +123,7 @@ oj_reader_read(Reader reader) {
 	if (0 == reader->pro) {
 	    shift = reader->tail - reader->head;
 	} else {
-	    shift = reader->pro - reader->head - 1; // leave one character so we cab backup one
+	    shift = reader->pro - reader->head - 1; // leave one character so we can backup one
 	}
 	if (0 >= shift) { /* no space left so allocate more */
 	    char	*old = reader->head;

@@ -20,3 +20,5 @@ echo "----- GC tests (test_gc.rb) -----"
 ./test_gc.rb
 echo "----- Writer tests (test_writer.rb) -----"
 ./test_writer.rb
+echo "----- File loading tests (test_file.rb) -----"
+./test_file.rb

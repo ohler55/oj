@@ -35,6 +35,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #include "oj.h"
 #include "parse.h"
@@ -683,9 +684,7 @@ load(int argc, VALUE *argv, VALUE self) {
 static VALUE
 load_file(int argc, VALUE *argv, VALUE self) {
     char		*path;
-    char		*json;
-    FILE		*f;
-    unsigned long	len;
+    int			fd;
     Mode		mode = oj_default_options.mode;
     struct _ParseInfo	pi;
 
@@ -693,6 +692,7 @@ load_file(int argc, VALUE *argv, VALUE self) {
 	rb_raise(rb_eArgError, "Wrong number of arguments to load().");
     }
     Check_Type(*argv, T_STRING);
+    pi.options = oj_default_options;
     if (2 <= argc) {
 	VALUE	ropts = argv[1];
 	VALUE	v;
@@ -712,44 +712,24 @@ load_file(int argc, VALUE *argv, VALUE self) {
 	}
     }
     path = StringValuePtr(*argv);
-    if (0 == (f = fopen(path, "r"))) {
+    if (0 == (fd = open(path, O_RDONLY))) {
 	rb_raise(rb_eIOError, "%s", strerror(errno));
     }
-    pi.options = oj_default_options;
     switch (mode) {
     case StrictMode:
 	oj_set_strict_callbacks(&pi);
-	return oj_pi_sparse(argc, argv, &pi, f);
-    case NullMode: // TBD
-    case CompatMode: // TBD
-    case ObjectMode: // TBD
-    default:
-	break;
-    }
-    // TBD use stream loading instead
-    fseek(f, 0, SEEK_END);
-    len = ftell(f);
-    json = ALLOC_N(char, len + 1);
-    fseek(f, 0, SEEK_SET);
-    if (len != fread(json, 1, len, f)) {
-	xfree(json);
-	fclose(f);
-	rb_raise(rb_const_get_at(Oj, rb_intern("LoadError")), "Failed to read %ld bytes from %s.", len, path);
-    }
-    fclose(f);
-    json[len] = '\0';
-
-    // TBD use stream parser
-    // The json string is freed in the parser when it is finished with it.
-    switch (mode) {
+	return oj_pi_sparse(argc, argv, &pi, fd);
     case NullMode:
     case CompatMode:
-	return oj_compat_parse_cstr(argc, argv, json, len);
+	oj_set_compat_callbacks(&pi);
+	return oj_pi_sparse(argc, argv, &pi, fd);
     case ObjectMode:
     default:
 	break;
     }
-    return oj_object_parse_cstr(argc, argv, json, len);
+    oj_set_object_callbacks(&pi);
+
+    return oj_pi_sparse(argc, argv, &pi, fd);
 }
 
 /* call-seq: safe_load(doc)
