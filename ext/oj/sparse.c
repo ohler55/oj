@@ -99,10 +99,11 @@ add_value(ParseInfo pi, VALUE rval) {
 	    break;
 	case NEXT_HASH_VALUE:
 	    pi->hash_set_value(pi, parent->key, parent->klen, rval);
-	    if (0 != parent->key && !reader_ptr_in_buf(&pi->rd, parent->key)) {
+	    if (parent->kalloc) {
 		xfree((char*)parent->key);
-		parent->key = 0;
 	    }
+	    parent->key = 0;
+	    parent->kalloc = 0;
 	    parent->next = NEXT_HASH_COMMA;
 	    break;
 	case NEXT_HASH_NEW:
@@ -133,10 +134,11 @@ add_num_value(ParseInfo pi, NumInfo ni) {
 	    break;
 	case NEXT_HASH_VALUE:
 	    pi->hash_set_num(pi, parent->key, parent->klen, ni);
-	    if (0 != parent->key && !reader_ptr_in_buf(&pi->rd, parent->key)) {
+	    if (parent->kalloc) {
 		xfree((char*)parent->key);
-		parent->key = 0;
 	    }
+	    parent->key = 0;
+	    parent->kalloc = 0;
 	    parent->next = NEXT_HASH_COMMA;
 	    break;
 	default:
@@ -306,10 +308,11 @@ read_escaped_str(ParseInfo pi) {
 	    break;
 	case NEXT_HASH_VALUE:
 	    pi->hash_set_cstr(pi, parent->key, parent->klen, buf.head, buf_len(&buf), pi->rd.str);
-	    if (0 != parent->key && !reader_ptr_in_buf(&pi->rd, parent->key)) {
+	    if (parent->kalloc) {
 		xfree((char*)parent->key);
-		parent->key = 0;
 	    }
+	    parent->key = 0;
+	    parent->kalloc = 0;
 	    parent->next = NEXT_HASH_COMMA;
 	    break;
 	case NEXT_HASH_COMMA:
@@ -353,16 +356,25 @@ read_str(ParseInfo pi) {
 	case NEXT_HASH_NEW:
 	case NEXT_HASH_KEY:
 	    parent->klen = pi->rd.tail - pi->rd.str - 1;
-	    parent->key = strndup(pi->rd.str, parent->klen);
+	    if (sizeof(parent->karray) <= parent->klen) {
+		parent->key = strndup(pi->rd.str, parent->klen);
+		parent->kalloc = 1;
+	    } else {
+		memcpy(parent->karray, pi->rd.str, parent->klen);
+		parent->karray[parent->klen] = '\0';
+		parent->key = parent->karray;
+		parent->kalloc = 0;
+	    }
 	    parent->k1 = *pi->rd.str;
 	    parent->next = NEXT_HASH_COLON;
 	    break;
 	case NEXT_HASH_VALUE:
 	    pi->hash_set_cstr(pi, parent->key, parent->klen, pi->rd.str, pi->rd.tail - pi->rd.str - 1, pi->rd.str);
-	    if (0 != parent->key && !reader_ptr_in_buf(&pi->rd, parent->key)) {
+	    if (parent->kalloc) {
 		xfree((char*)parent->key);
-		parent->key = 0;
 	    }
+	    parent->key = 0;
+	    parent->kalloc = 0;
 	    parent->next = NEXT_HASH_COMMA;
 	    break;
 	case NEXT_HASH_COMMA:
@@ -706,7 +718,6 @@ protect_parse(VALUE pip) {
 
 VALUE
 oj_pi_sparse(int argc, VALUE *argv, ParseInfo pi, int fd) {
-    char		*buf = 0;
     volatile VALUE	input;
     volatile VALUE	wrapped_stack;
     VALUE		result = Qnil;
@@ -777,9 +788,6 @@ oj_pi_sparse(int argc, VALUE *argv, ParseInfo pi, int fd) {
     // proceed with cleanup
     if (0 != pi->circ_array) {
 	oj_circ_array_free(pi->circ_array);
-    }
-    if (0 != buf) {
-	xfree(buf);
     }
     stack_cleanup(&pi->stack);
     if (0 != fd) {

@@ -41,8 +41,6 @@ typedef struct _Reader {
     char	*str;		/* start of current string being read */
     int		line;
     int		col;
-    int		pro_line;
-    int		pro_col;
     int		free_head;
     int		(*read_func)(struct _Reader *reader);
     union {
@@ -86,20 +84,11 @@ static inline void
 reader_protect(Reader reader) {
     reader->pro = reader->tail;
     reader->str = reader->tail; // can't have str before pro
-    reader->pro_line = reader->line;
-    reader->pro_col = reader->col;
 }
 
 static inline void
 reader_release(Reader reader) {
     reader->pro = 0;
-}
-
-static inline void
-reader_reset(Reader reader) {
-    reader->tail = reader->pro;
-    reader->line = reader->pro_line;
-    reader->col = reader->pro_col;
 }
 
 /* Starts by reading a character so it is safe to use with an empty or
@@ -179,11 +168,6 @@ is_white(char c) {
 	break;
     }
     return 0;
-}
-
-static inline int
-reader_ptr_in_buf(Reader reader, const char *ptr) {
-    return (reader->head <= ptr && ptr < reader->read_end);
 }
 
 #endif /* __OJ_READER_H__ */

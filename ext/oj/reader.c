@@ -64,8 +64,6 @@ oj_reader_init(Reader reader, VALUE io, int fd) {
     reader->str = 0;
     reader->line = 1;
     reader->col = 0;
-    reader->pro_line = 1;
-    reader->pro_col = 0;
     reader->free_head = 0;
 
     if (0 != fd) {

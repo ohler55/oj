@@ -55,6 +55,7 @@ typedef enum {
 typedef struct _Val {
     VALUE		val;
     const char		*key;
+    char		karray[32];
     union {
 	const char	*classname;
 	OddArgs		odd_args;
@@ -63,6 +64,7 @@ typedef struct _Val {
     uint16_t		clen;
     char		next; // ValNext
     char		k1;   // first original character in the key
+    char		kalloc;
 } *Val;
 
 typedef struct _ValStack {
@@ -127,6 +129,7 @@ stack_push(ValStack stack, VALUE val, ValNext next) {
     stack->tail->key = 0;
     stack->tail->clen = 0;
     stack->tail->klen = 0;
+    stack->tail->kalloc = 0;
     stack->tail++;
 }
 

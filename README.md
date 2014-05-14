@@ -32,9 +32,11 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
    load option.
 
  - Added a true stream that is used when the input argument to load is an IO
-   object such as a stream or file. This adds about 5% overhead on top of the
-   previous full load but allows reading of huge files that will not fit in
-   memory and is more efficient on even larger files that would fit into memory.
+   object such as a stream or file. This is slightly slower for smaller files
+   but allows reading of huge files that will not fit in memory and is more
+   efficient on even larger files that would fit into memory. The load_file()
+   method uses the new stream parser so multiple GB files can be processed
+   without used execessive memory.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 

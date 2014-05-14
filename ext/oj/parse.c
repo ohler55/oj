@@ -800,9 +800,8 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
 	    }
 #endif
 	} else if (rb_respond_to(input, oj_read_id)) {
-	    s = rb_funcall2(input, oj_read_id, 0, 0);
-	    pi->json = rb_string_value_cstr((VALUE*)&s);
-	    pi->end = pi->json + RSTRING_LEN(s);
+	    // use stream parser instead
+	    return oj_pi_sparse(argc, argv, pi, 0);
 	} else {
 	    rb_raise(rb_eArgError, "strict_parse() expected a String or IO Object.");
 	}

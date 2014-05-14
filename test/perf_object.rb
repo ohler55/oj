@@ -74,7 +74,7 @@ if files.empty?
 
   $mars = Marshal.dump($obj)
   $xml = Ox.dump($obj, :indent => $indent, :circular => $circular)
-  $json = Oj.dump($obj, :indent => $indent, :circular => $circular)
+  $json = Oj.dump($obj, :indent => $indent, :circular => $circular, :mode => :object)
   File.open('sample.xml', 'w') { |f| f.write($xml) }
   File.open('sample.json', 'w') { |f| f.write($json) }
   File.open('sample.marshal', 'w') { |f| f.write($mars) }
@@ -118,7 +118,8 @@ if do_read
   puts '-' * 80
   puts "Read from file Performance"
   perf = Perf.new()
-  perf.add('Oj', 'load') { Oj.load_file('sample.json', :mode => :object) }
+  perf.add('Oj', 'load') { Oj.load_file('sample.json') }
+  #perf.add('Oj', 'load') { Oj.load(File.read('sample.json')) }
   perf.add('Ox', 'load_file') { Ox.load_file('sample.xml', :mode => :object) }
   perf.add('Marshal', 'load') { Marshal.load(File.new('sample.marshal')) }
   perf.run($iter)
