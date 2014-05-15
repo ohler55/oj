@@ -260,12 +260,12 @@ oj_sc_parse(int argc, VALUE *argv, VALUE self) {
     } else {
 	VALUE		clas = rb_obj_class(input);
 	volatile VALUE	s;
+#if !IS_WINDOWS
 	int		fd;
-
+#endif
 	if (oj_stringio_class == clas) {
 	    s = rb_funcall2(input, oj_string_id, 0, 0);
 	    pi.json = StringValuePtr(input);
-#ifndef JRUBY_RUBY
 #if !IS_WINDOWS
 	    // JRuby gets confused with what is the real fileno.
 	} else if (rb_respond_to(input, oj_fileno_id) &&
@@ -284,7 +284,6 @@ oj_sc_parse(int argc, VALUE *argv, VALUE self) {
 		rb_raise(rb_eIOError, "failed to read from IO Object.");
 	    }
 	    ((char*)pi.json)[len] = '\0';
-#endif
 #endif
 	} else if (rb_respond_to(input, oj_read_id)) {
 	    s = rb_funcall2(input, oj_read_id, 0, 0);

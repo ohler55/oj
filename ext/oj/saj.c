@@ -716,16 +716,16 @@ oj_saj_parse(int argc, VALUE *argv, VALUE self) {
     } else {
 	VALUE		clas = rb_obj_class(input);
 	volatile VALUE	s;
+#if !IS_WINDOWS
 	int		fd;
+#endif
 	
 	if (oj_stringio_class == clas) {
 	    s = rb_funcall2(input, oj_string_id, 0, 0);
 	    len = RSTRING_LEN(s) + 1;
 	    json = ALLOC_N(char, len);
 	    strcpy(json, rb_string_value_cstr((VALUE*)&s));
-#ifndef JRUBY_RUBY
 #if !IS_WINDOWS
-	    // JRuby gets confused with what is the real fileno.
 	} else if (rb_respond_to(input, oj_fileno_id) &&
 		   Qnil != (s = rb_funcall(input, oj_fileno_id, 0)) &&
 		   0 != (fd = FIX2INT(s))) {
@@ -738,7 +738,6 @@ oj_saj_parse(int argc, VALUE *argv, VALUE self) {
 		rb_raise(rb_eIOError, "failed to read from IO Object.");
 	    }
 	    json[len] = '\0';
-#endif
 #endif
 	} else if (rb_respond_to(input, oj_read_id)) {
 	    s = rb_funcall2(input, oj_read_id, 0, 0);

@@ -770,7 +770,9 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
     } else {
 	VALUE		clas = rb_obj_class(input);
 	volatile VALUE	s;
+#if !IS_WINDOWS
 	int		fd;
+#endif
 
 	if (oj_stringio_class == clas) {
 	    s = rb_funcall2(input, oj_string_id, 0, 0);
