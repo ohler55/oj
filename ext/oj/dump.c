@@ -1812,8 +1812,15 @@ oj_dump_obj_to_json(VALUE obj, Options copts, Out out) {
     out->indent = copts->indent;
     dump_val(obj, 0, out);
     if (0 < out->indent) {
-	grow(out, 1);
-	*out->cur++ = '\n';
+	switch (*(out->cur - 1)) {
+	case ']':
+	case '}':
+	    grow(out, 1);
+	    *out->cur++ = '\n';
+	    *out->cur = '\0';
+	default:
+	    break;
+	}
     }
     if (Yes == copts->circular) {
 	oj_cache8_delete(out->circ_cache);
@@ -1857,8 +1864,8 @@ oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
     struct _Out out;
     ssize_t	size;
     VALUE	clas = rb_obj_class(stream);
-    int		fd;
 #if !IS_WINDOWS
+    int		fd;
     VALUE	s;
 #endif
 

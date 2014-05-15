@@ -26,6 +26,10 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
+### Current Release 2.9.2
+
+ - Fixed link error with Windows.
+
 ### Current Release 2.9.1
 
  - Fixed mimic load when given a block to evalate. It conflicted with the new

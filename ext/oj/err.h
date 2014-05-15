@@ -45,7 +45,7 @@ extern VALUE	oj_parse_error_class;
 extern void	oj_err_set(Err e, VALUE clas, const char *format, ...);
 extern void	_oj_err_set_with_location(Err err, VALUE eclas, const char *msg, const char *json, const char *current, const char* file, int line);
 extern void	oj_err_raise(Err e);
-// TBD remove
+
 #define raise_error(msg, json, current) _oj_raise_error(msg, json, current, __FILE__, __LINE__)
 extern void	_oj_raise_error(const char *msg, const char *json, const char *current, const char* file, int line);
 

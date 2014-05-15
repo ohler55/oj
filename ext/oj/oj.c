@@ -621,6 +621,10 @@ oj_parse_options(VALUE ropts, Options copts) {
  * any, will be yielded to. If no block then the last element read will be
  * returned.
  *
+ * This parser operates on string and will attempt to load files into memory if
+ * a file object is passed as the first argument. A stream input will be parsed
+ * using a stream parser but others use the slightly faster string parser.
+ *
  * @param [String|IO] json JSON String or an Object that responds to read()
  * @param [Hash] options load options (same as default_options)
  */
@@ -677,6 +681,9 @@ load(int argc, VALUE *argv, VALUE self) {
  *
  * If the input file is not a valid JSON document (an empty file is not a valid
  * JSON document) an exception is raised.
+ *
+ * This is a stream based parser which allows a large or huge file to be loaded
+ * without pulling the whole file into memory.
  *
  * @param [String] path path to a file containing a JSON document
  * @param [Hash] options load options (same as default_options)
@@ -1476,13 +1483,13 @@ mimic_walk(VALUE key, VALUE obj, VALUE proc) {
 static VALUE
 mimic_load(int argc, VALUE *argv, VALUE self) {
     struct _ParseInfo	pi;
+    VALUE		obj;
+    VALUE		p = Qnil;
 
     pi.options = oj_default_options;
     oj_set_compat_callbacks(&pi);
 
-    VALUE	obj = oj_pi_parse(argc, argv, &pi, 0, 0, 0);
-    VALUE	p = Qnil;
-
+    obj = oj_pi_parse(argc, argv, &pi, 0, 0, 0);
     if (2 <= argc) {
 	p = argv[1];
     }

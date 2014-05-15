@@ -570,8 +570,10 @@ class Juice < ::Test::Unit::TestCase
     Oj.default_options = { :mode => :compat, :use_to_json => true }
     obj = Jeez.new(true, 58)
     json = Oj.dump(obj, :indent => 2)
-    assert(%{{"json_class":"Jeez","x":true,"y":58}} == json ||
-           %{{"json_class":"Jeez","y":58,"x":true}} == json)
+    assert(%{{"json_class":"Jeez","x":true,"y":58}
+} == json ||
+           %{{"json_class":"Jeez","y":58,"x":true}
+} == json)
     dump_and_load(obj, false)
     Oj.default_options = { :mode => :compat, :use_to_json => false }
   end
@@ -590,12 +592,14 @@ class Juice < ::Test::Unit::TestCase
   "^o":"Jeez",
   "x":true,
   "y":58
-}} == json ||
+}
+} == json ||
 %{{
   "^o":"Jeez",
   "y":58,
   "x":true
-}} == json)
+}
+} == json)
     obj2 = Oj.load(json, :mode => :object)
     assert_equal(obj, obj2)
   end
@@ -629,12 +633,14 @@ class Juice < ::Test::Unit::TestCase
   "^o":"Jazz",
   "x":true,
   "y":58
-}} == json ||
+}
+} == json ||
 %{{
   "^o":"Jazz",
   "y":58,
   "x":true
-}} == json)
+}
+} == json)
     obj2 = Oj.load(json, :mode => :object)
     assert_equal(obj, obj2)
   end
@@ -679,12 +685,14 @@ class Juice < ::Test::Unit::TestCase
   "^o":"Orange",
   "x":true,
   "y":58
-}} == json ||
+}
+} == json ||
 %{{
   "^o":"Orange",
   "y":58,
   "x":true
-}} == json)
+}
+} == json)
     obj2 = Oj.load(json, :mode => :object)
     assert_equal(obj, obj2)
   end
@@ -711,11 +719,13 @@ class Juice < ::Test::Unit::TestCase
     assert(%{{
   "x":true,
   "y":58
-}} == json ||
+}
+} == json ||
 %{{
   "y":58,
   "x":true
-}} == json)
+}
+} == json)
   end
   def test_object_object
     obj = Jam.new(true, 58)
@@ -724,12 +734,14 @@ class Juice < ::Test::Unit::TestCase
   "^o":"Jam",
   "x":true,
   "y":58
-}} == json ||
+}
+} == json ||
 %{{
   "^o":"Jam",
   "y":58,
   "x":true
-}} == json)
+}
+} == json)
     obj2 = Oj.load(json, :mode => :object)
     assert_equal(obj, obj2)
   end
@@ -741,12 +753,14 @@ class Juice < ::Test::Unit::TestCase
   "^o":"Jam",
   "x":true,
   "y":58
-}} == json ||
+}
+} == json ||
 %{{
   "^o":"Jam",
   "y":58,
   "x":true
-}} == json)
+}
+} == json)
     obj2 = Oj.load(json, :mode => :object, :class_cache => false)
     assert_equal(obj, obj2)
   end
@@ -969,13 +983,15 @@ class Juice < ::Test::Unit::TestCase
   "^i":1,
   "x":"^r1",
   "y":58
-}} == json ||
+}
+} == json ||
 %{{
   "^o":"Jam",
   "^i":1,
   "y":58,
   "x":"^r1"
-}} == json)
+}
+} == json)
     obj2 = Oj.load(json, :mode => :object, :circular => true)
     assert_equal(obj2.x.__id__, obj2.__id__)
   end
@@ -998,7 +1014,8 @@ class Juice < ::Test::Unit::TestCase
   "^i1",
   7,
   "^r1"
-]}, json)
+]
+}, json)
     a2 = Oj.load(json, :mode => :object, :circular => true)
     assert_equal(a2[1].__id__, a2.__id__)
   end

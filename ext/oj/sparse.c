@@ -37,6 +37,7 @@
 #include "oj.h"
 #include "parse.h"
 #include "buf.h"
+#include "hash.h" // for oj_strndup()
 #include "val_stack.h"
 
 // Workaround in case INFINITY is not defined in math.h or if the OS is CentOS
@@ -357,7 +358,7 @@ read_str(ParseInfo pi) {
 	case NEXT_HASH_KEY:
 	    parent->klen = pi->rd.tail - pi->rd.str - 1;
 	    if (sizeof(parent->karray) <= parent->klen) {
-		parent->key = strndup(pi->rd.str, parent->klen);
+		parent->key = oj_strndup(pi->rd.str, parent->klen);
 		parent->kalloc = 1;
 	    } else {
 		memcpy(parent->karray, pi->rd.str, parent->klen);

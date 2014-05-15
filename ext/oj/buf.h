@@ -97,7 +97,7 @@ buf_append(Buf buf, char c) {
     }
     *buf->tail = c;
     buf->tail++;
-    *buf->tail = '\0'; // TBD temp for debugging
+    //*buf->tail = '\0'; // for debugging
 }
 
 #endif /* __OJ_BUF_H__ */

@@ -155,8 +155,10 @@ class FileJuice < ::Test::Unit::TestCase
     Oj.default_options = { :mode => :compat, :use_to_json => true }
     obj = Jeez.new(true, 58)
     json = Oj.dump(obj, :indent => 2)
-    assert(%{{"json_class":"Jeez","x":true,"y":58}} == json ||
-           %{{"json_class":"Jeez","y":58,"x":true}} == json)
+    assert(%{{"json_class":"Jeez","x":true,"y":58}
+} == json ||
+           %{{"json_class":"Jeez","y":58,"x":true}
+} == json)
     dump_and_load(obj, false)
     Oj.default_options = { :mode => :compat, :use_to_json => false }
   end

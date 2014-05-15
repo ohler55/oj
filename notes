@@ -3,13 +3,6 @@
 ^c^d hide subtree
 ^c^s show subtree
 
-- parser
- - perf_object
-  - why so slow? maybe bump up buffer for reader?
-   - for -m 100 Oj is faster
-    - xfree?
-
-
 
 - standalone C parser
  - also use for "true" json parsing (not hash)
