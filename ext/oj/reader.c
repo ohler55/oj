@@ -163,11 +163,7 @@ oj_reader_read(Reader reader) {
 
 static VALUE
 rescue_cb(VALUE rbuf, VALUE err) {
-#if (defined(RUBINIUS_RUBY) || (1 == RUBY_VERSION_MAJOR && 8 == RUBY_VERSION_MINOR))
-    if (rb_obj_class(err) != rb_eTypeError) {
-#else
-    if (rb_obj_class(err) != rb_eEOFError) {
-#endif
+    if (rb_eTypeError != rb_obj_class(err)) {
 	Reader	reader = (Reader)rbuf;
 
 	rb_raise(err, "at line %d, column %d\n", reader->line, reader->col);
@@ -185,8 +181,11 @@ partial_io_cb(VALUE rbuf) {
 
     args[0] = ULONG2NUM(reader->end - reader->tail);
     rstr = rb_funcall2(reader->io, oj_readpartial_id, 1, args);
+    if (Qnil == rstr) {
+	return Qfalse;
+    }
     str = StringValuePtr(rstr);
-    cnt = strlen(str);
+    cnt = RSTRING_LEN(rstr);
     //printf("*** read %lu bytes, str: '%s'\n", cnt, str);
     strcpy(reader->tail, str);
     reader->read_end = reader->tail + cnt;
@@ -204,8 +203,11 @@ io_cb(VALUE rbuf) {
 
     args[0] = ULONG2NUM(reader->end - reader->tail);
     rstr = rb_funcall2(reader->io, oj_read_id, 1, args);
+    if (Qnil == rstr) {
+	return Qfalse;
+    }
     str = StringValuePtr(rstr);
-    cnt = strlen(str);
+    cnt = RSTRING_LEN(rstr);
     //printf("*** read %lu bytes, str: '%s'\n", cnt, str);
     strcpy(reader->tail, str);
     reader->read_end = reader->tail + cnt;

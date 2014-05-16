@@ -26,21 +26,10 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
-### Current Release 2.9.2
+### Current Release 2.9.3
 
- - Fixed link error with Windows.
-
-### Current Release 2.9.1
-
- - Fixed mimic load when given a block to evalate. It conflicted with the new
-   load option.
-
- - Added a true stream that is used when the input argument to load is an IO
-   object such as a stream or file. This is slightly slower for smaller files
-   but allows reading of huge files that will not fit in memory and is more
-   efficient on even larger files that would fit into memory. The load_file()
-   method uses the new stream parser so multiple GB files can be processed
-   without used execessive memory.
+ - Fixed IO read error that showed up in IO objects that return nil instead of
+   raising an EOF error when read is done.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
