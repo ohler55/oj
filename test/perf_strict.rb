@@ -64,6 +64,7 @@ end
 $json = Oj.dump($obj)
 $obj_json = Oj.dump($obj, :mode => :object)
 #puts "*** size: #{$obj_json.size}"
+#puts "*** #{$obj_json}"
 $failed = {} # key is same as String used in tests later
 
 def capture_error(tag, orig, load_key, dump_key, &blk)

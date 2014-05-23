@@ -4,59 +4,6 @@
 ^c^s show subtree
 
 
-- standalone C parser
- - also use for "true" json parsing (not hash)
- - make C struct for navigation
-  - optimize for navigation and retrieval
-  - not for writing as binary
- - use paths to get at values or sub-json
-  - same as fast.c (maybe extend)
-
- - fields approach
-  - type - 1
-   - key/value entry is also a type
-  - [length] - 4
-   - can it be read directly or alway align on 4 or 8 byte bondaries
-  - [value] - length
-  - use a stack to point back to length block and fill in when at end
- - separate structs approach
-  - how much is malloc overhead? (could use cache)
-  - Node
-   - type
-   - hash - linked list of entries
-   - array - linked list
-   - string - allocate string portion as well
-   - same node used for all except extra string allocation
-    - keep 8 bytes for int64_t
-    - strings under 8 chars long don't need allocation
-
-typedef struct _Node {
-    struct _Node	*next;
-    union {
-	char		*key;
-	char		karray[8];
-    };
-    union {
-	char		*str;
-	struct _Node	*elements;
-	int64_t		fixnum;
-	double		dub;
-	char		carray[8];
-    };
-    uint8_t		key_type;
-    uint8_t		type;
-} *Node;
-
-
- - multiple threads
-  - node cache needs mutex
-  - could have free thread to put nodes back in cache
-  - could have parsing in background
-   - block if node has not been read yet
-    - need flag indicating still being read
-  - could parse in one thread and have callback build nodes
-
-
 ---------------------------
 Tried a separate thread for the parser and the results were poor. The parsing is
 10% to 15% of the total so splitting ruby calls and c does not help much and the
