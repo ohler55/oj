@@ -26,10 +26,9 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
-### Current Release 2.9.3
+### Current Release 2.9.4
 
- - Fixed IO read error that showed up in IO objects that return nil instead of
-   raising an EOF error when read is done.
+ - In mimic mode parse errors not match the JSON::ParserError.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
@@ -157,6 +156,8 @@ parsing.
 [Oj Object Encoding Format](http://www.ohler.com/dev/oj_misc/encoding_format.html) describes the OJ Object JSON encoding format.
 
 [Need for Speed](http://www.ohler.com/dev/need_for_speed/need_for_speed.html) for an overview of how Oj::Doc was designed.
+
+*OjC, a C JSON parser*: https://www.ohler.com/ojc also at https://github.com/ohler55/ojc
 
 ### License:
 

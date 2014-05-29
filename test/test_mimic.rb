@@ -203,4 +203,17 @@ class Mimic < ::Test::Unit::TestCase
     end
   end
 
+  # exception check
+  def test_exception
+    json = %{["a":1]}
+    begin
+      obj = JSON.parse(json)
+      
+    rescue JSON::ParserError => je
+      assert(true)
+      return
+    end
+    assert(false, "*** expected an JSON::ParserError")
+  end
+
 end # Mimic
