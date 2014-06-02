@@ -11,27 +11,22 @@ $: << File.join(File.dirname(__FILE__), "../lib")
 $: << File.join(File.dirname(__FILE__), "../ext")
 
 require 'test/unit'
-require 'stringio'
 require 'oj'
+Oj.mimic_JSON
 require 'json'
 
-class MimicAfter < ::Test::Unit::TestCase
+class MimicBefore < ::Test::Unit::TestCase
 
-  def test0_mimic_json
-    assert(!defined?(JSON).nil?)
-    Oj.mimic_JSON
-  end
-
-  # dump
-  def test_dump_string
-    Oj.default_options= {:indent => 2} # JSON this will not change anything
-    json = JSON.dump([1, true, nil])
-    assert_equal(%{[
-  1,
-  true,
-  null
-]
-}, json)
+  # correct exception
+  def test_mimic_exception
+    begin
+      JSON.parse("{")
+      puts "Failed"
+    rescue JSON::ParserError
+      assert(true)
+    rescue Exception
+      assert(false, 'Expected a JSON::ParserError')
+    end
   end
 
 end # MimicAfter
