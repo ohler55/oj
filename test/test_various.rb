@@ -76,12 +76,6 @@ class Juice < Minitest::Test
     end
   end# Jazz
 
-  class Range
-    def to_hash()
-      { 'begin' => self.begin, 'end' => self.end, 'exclude_end' => self.exclude_end? }
-    end
-  end # Range
-
   def around
     opts = Oj.default_options
     yield
@@ -238,6 +232,7 @@ class Juice < Minitest::Test
 
   # rails encoding tests
   def test_does_not_escape_entities_by_default
+    Oj.default_options = { :escape_mode => :ascii }
     # use Oj to create the hash since some Rubies don't deal nicely with unicode.
     json = %{{"key":"I <3 this\\u2028space"}}
     hash = Oj.load(json)
@@ -783,9 +778,9 @@ class Juice < Minitest::Test
       Oj.default_options = { :mode => :object }
       json = Oj.dump(1..7, :mode => :object, :indent => 0)
       if 'rubinius' == $ruby
-        assert(%{{"^O":"Juice::Range","begin":1,"end":7,"exclude_end?":false}} == json)
+        assert(%{{"^O":"Range","begin":1,"end":7,"exclude_end?":false}} == json)
       elsif 'jruby' == $ruby
-        assert(%{{"^O":"Juice::Range","begin":1,"end":7,"exclude_end?":false}} == json)
+        assert(%{{"^O":"Range","begin":1,"end":7,"exclude_end?":false}} == json)
       else
         assert_equal(%{{"^u":["Range",1,7,false]}}, json)
       end

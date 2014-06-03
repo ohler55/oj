@@ -48,12 +48,6 @@ class FileJuice < Minitest::Test
     end
   end
 
-  class Range
-    def to_hash()
-      { 'begin' => self.begin, 'end' => self.end, 'exclude_end' => self.exclude_end? }
-    end
-  end # Range
-
   def around
     opts = Oj.default_options
     yield

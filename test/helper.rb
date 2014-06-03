@@ -3,9 +3,8 @@
 # export RUBYOPT=-w
 
 $VERBOSE = true
-
-$: << File.join(File.dirname(__FILE__), "../lib")
-$: << File.join(File.dirname(__FILE__), "../ext")
+$LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
+$LOAD_PATH.unshift File.expand_path('../../test', __FILE__)
 
 require 'minitest/autorun'
 require 'minitest/around/unit'
@@ -18,10 +17,8 @@ require 'oj'
 $ruby = RUBY_DESCRIPTION.split(' ')[0]
 $ruby = 'ree' if 'ruby' == $ruby && RUBY_DESCRIPTION.include?('Ruby Enterprise Edition')
 
-def hash_eql(h1, h2)
-  return false if h1.size != h2.size
-  h1.keys.each do |k|
-    return false unless h1[k] == h2[k]
+class Range
+  def to_hash()
+    { 'begin' => self.begin, 'end' => self.end, 'exclude_end' => self.exclude_end? }
   end
-  true
 end

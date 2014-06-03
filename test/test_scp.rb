@@ -227,7 +227,7 @@ class ScpTest < Minitest::Test
     begin
       Oj.sc_parse(handler, json)
     rescue Exception => e
-      assert_equal("unexpected character at line 1, column 6 [parse.c:637]", e.message)
+      assert_equal("unexpected character at line 1, column 6 [../../../../ext/oj/parse.c:637]", e.message)
     end
   end
 
