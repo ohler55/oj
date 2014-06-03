@@ -1,21 +1,14 @@
-#!/usr/bin/env ruby
 # encoding: UTF-8
 
-# Ubuntu does not accept arguments to ruby when called using env. To get warnings to show up the -w options is
-# required. That can be set in the RUBYOPT environment variable.
-# export RUBYOPT=-w
+require 'helper'
 
-$VERBOSE = true
+class OjWriter < Minitest::Test
 
-$: << File.join(File.dirname(__FILE__), "../lib")
-$: << File.join(File.dirname(__FILE__), "../ext")
-
-require 'test/unit'
-require 'stringio'
-require 'date'
-require 'oj'
-
-class OjWriter < ::Test::Unit::TestCase
+  def around
+    opts = Oj.default_options
+    yield
+    Oj.default_options = opts
+  end
 
   def test_string_writer_empty_array
     w = Oj::StringWriter.new(:indent => 0)
@@ -249,7 +242,7 @@ class OjWriter < ::Test::Unit::TestCase
   end
 
   def test_stream_writer_mixed_file
-    filename = 'open_file_writer_test.json'
+    filename = File.join('test', 'open_file_writer_test.json')
     File.open(filename, "w") do |f|
       w = Oj::StreamWriter.new(f, :indent => 0)
       w.push_object()

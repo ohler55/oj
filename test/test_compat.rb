@@ -1,84 +1,65 @@
-#!/usr/bin/env ruby
 # encoding: UTF-8
 
-# Ubuntu does not accept arguments to ruby when called using env. To get warnings to show up the -w options is
-# required. That can be set in the RUBYOPT environment variable.
-# export RUBYOPT=-w
+require 'helper'
 
-$VERBOSE = true
+class CompatJuice < Minitest::Test
 
-$: << File.join(File.dirname(__FILE__), "../lib")
-$: << File.join(File.dirname(__FILE__), "../ext")
+  class Jeez
+    attr_accessor :x, :y
 
-require 'test/unit'
-require 'stringio'
-require 'date'
-require 'bigdecimal'
-require 'oj'
+    def initialize(x, y)
+      @x = x
+      @y = y
+    end
 
-$ruby = RUBY_DESCRIPTION.split(' ')[0]
-$ruby = 'ree' if 'ruby' == $ruby && RUBY_DESCRIPTION.include?('Ruby Enterprise Edition')
+    def eql?(o)
+      self.class == o.class && @x == o.x && @y == o.y
+    end
+    alias == eql?
 
-class Jeez
-  attr_accessor :x, :y
+    def as_json()
+      {"json_class" => self.class.to_s,"x" => @x,"y" => @y}
+    end
 
-  def initialize(x, y)
-    @x = x
-    @y = y
+    def self.json_create(h)
+      self.new(h['x'], h['y'])
+    end
+  end # Jeez
+
+  module One
+    module Two
+      module Three
+        class Deep
+
+          def initialize()
+          end
+
+          def eql?(o)
+            self.class == o.class
+          end
+          alias == eql?
+
+          def to_hash()
+            {'json_class' => "#{self.class.name}"}
+          end
+
+          def to_json(*a)
+            %{{"json_class":"#{self.class.name}"}}
+          end
+
+          def self.json_create(h)
+            self.new()
+          end
+        end # Deep
+      end # Three
+    end # Two
+  end # One
+
+  def around
+    opts = Oj.default_options
+    yield
+    Oj.default_options = opts
   end
-
-  def eql?(o)
-    self.class == o.class && @x == o.x && @y == o.y
-  end
-  alias == eql?
-  
-  def as_json()
-    {"json_class" => self.class.to_s,"x" => @x,"y" => @y}
-  end
-
-  def self.json_create(h)
-    self.new(h['x'], h['y'])
-  end
-end # Jeez
-
-module One
-  module Two
-    module Three
-      class Deep
-
-        def initialize()
-        end
-
-        def eql?(o)
-          self.class == o.class
-        end
-        alias == eql?
-
-        def to_hash()
-          {'json_class' => "#{self.class.name}"}
-        end
-
-        def to_json(*a)
-          %{{"json_class":"#{self.class.name}"}}
-        end
-
-        def self.json_create(h)
-          self.new()
-        end
-      end # Deep
-    end # Three
-  end # Two
-end # One
-
-def hash_eql(h1, h2)
-  return false if h1.size != h2.size
-  h1.keys.each do |k|
-    return false unless h1[k] == h2[k]
-  end
-  true
-end
-
-class CompatJuice < ::Test::Unit::TestCase
 
   def test_nil
     dump_and_load(nil, false)
@@ -218,7 +199,7 @@ class CompatJuice < ::Test::Unit::TestCase
   end
 
   def test_io_file
-    filename = 'open_file_test.json'
+    filename = File.join('test', 'open_file_test.json')
     File.open(filename, 'w') { |f| f.write(%{{
   "x":true,
   "y":58,
@@ -297,7 +278,7 @@ class CompatJuice < ::Test::Unit::TestCase
   end
 
   def test_json_object_bad
-    json = %{{"json_class":"Junk","x":true}}
+    json = %{{"json_class":"CompatJuice::Junk","x":true}}
     begin
       Oj.compat_load(json)
     rescue Exception => e

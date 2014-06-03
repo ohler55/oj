@@ -5,8 +5,7 @@ rvm:
   - rbx-2.2.6
 
 script:
+  - bundle
   - gem build oj.gemspec
   - gem install oj-*
-#  - ruby test/tests.rb
-#  - ruby test/test_fast.rb
-#  - ruby test/test_mimic.rb
+  - rake

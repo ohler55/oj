@@ -1,18 +1,6 @@
-#!/usr/bin/env ruby
 # encoding: UTF-8
 
-# Ubuntu does not accept arguments to ruby when called using env. To get warnings to show up the -w options is
-# required. That can be set in the RUBYOPT environment variable.
-# export RUBYOPT=-w
-
-$VERBOSE = true
-
-$: << File.join(File.dirname(__FILE__), "../lib")
-$: << File.join(File.dirname(__FILE__), "../ext")
-
-require 'test/unit'
-require 'oj'
-require 'pp'
+require 'helper'
 
 $json = %{{
   "array": [
@@ -66,14 +54,20 @@ class AllHandler < Oj::ScHandler
   def hash_set(h, key, value)
     @calls << [:hash_set, key, value]
   end
-  
+
   def array_append(a, value)
     @calls << [:array_append, value]
   end
 
 end # AllHandler
 
-class ScpTest < ::Test::Unit::TestCase
+class ScpTest < Minitest::Test
+
+  def around
+    opts = Oj.default_options
+    yield
+    Oj.default_options = opts
+  end
 
   def test_nil
     handler = AllHandler.new()
