@@ -70,11 +70,11 @@ static void
 skip_comment(ParseInfo pi) {
     if ('*' == *pi->cur) {
 	pi->cur++;
-	for (; '\0' != *pi->cur; pi->cur++) {
+	for (; pi->end != pi->cur; pi->cur++) {
 	    if ('*' == *pi->cur && '/' == *(pi->cur + 1)) {
 		pi->cur += 2;
 		return;
-	    } else if ('\0' == *pi->cur) {
+	    } else if (pi->end == pi->cur) {
 		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "comment not terminated");
 		return;
 	    }
@@ -226,7 +226,7 @@ read_escaped_str(ParseInfo pi, const char *start) {
 	buf_append_string(&buf, start, cnt);
     }
     for (s = pi->cur; '"' != *s; s++) {
-	if ('\0' == *s) {
+	if (pi->end == s) {
 	    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "quoted string not terminated");
 	    buf_cleanup(&buf);
 	    return;
@@ -328,7 +328,7 @@ read_str(ParseInfo pi) {
     Val		parent = stack_peek(&pi->stack);
 
     for (; '"' != *pi->cur; pi->cur++) {
-	if ('\0' == *pi->cur) {
+	if (pi->end == pi->cur) {
 	    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "quoted string not terminated");
 	    return;
 	} else if ('\\' == *pi->cur) {
@@ -763,7 +763,7 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
 	pi->end = json + len;
 	free_json = 1;
     } else if (T_STRING == rb_type(input)) {
-	pi->json = rb_string_value_cstr((VALUE*)&input);
+	pi->json = rb_string_value_ptr((VALUE*)&input);
 	pi->end = pi->json + RSTRING_LEN(input);
     } else if (Qnil == input && Yes == pi->options.nilnil) {
 	return Qnil;
@@ -776,7 +776,7 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
 
 	if (oj_stringio_class == clas) {
 	    s = rb_funcall2(input, oj_string_id, 0, 0);
-	    pi->json = rb_string_value_cstr((VALUE*)&s);
+	    pi->json = rb_string_value_ptr((VALUE*)&s);
 	    pi->end = pi->json + RSTRING_LEN(s);
 #if !IS_WINDOWS
 	} else if (rb_respond_to(input, oj_fileno_id) &&
