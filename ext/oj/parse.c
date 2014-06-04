@@ -331,6 +331,9 @@ read_str(ParseInfo pi) {
 	if (pi->end == pi->cur) {
 	    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "quoted string not terminated");
 	    return;
+	} else if ('\0' == *pi->cur) {
+	    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "NULL byte in string");
+	    return;
 	} else if ('\\' == *pi->cur) {
 	    read_escaped_str(pi, str);
 	    return;
