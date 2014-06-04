@@ -3,8 +3,10 @@
 # export RUBYOPT=-w
 
 $VERBOSE = true
-$LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
-$LOAD_PATH.unshift File.expand_path('../../test', __FILE__)
+
+%w(lib ext test).each do |dir|
+  $LOAD_PATH.unshift File.expand_path("../../#{dir}", __FILE__)
+end
 
 require 'minitest/autorun'
 require 'minitest/around/unit'
