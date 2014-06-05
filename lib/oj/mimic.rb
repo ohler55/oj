@@ -10,5 +10,11 @@ module Oj
     end
     mimic_paths.each { |p| $LOADED_FEATURES << p }
     $LOADED_FEATURES << 'json' unless $LOADED_FEATURES.include?('json')
+
+    # Monkey-patch JSON::ParserError
+    old_verbose = $VERBOSE
+    $VERBOSE = nil
+    JSON.const_set(:ParserError, ParseError)
+    $VERBOSE = old_verbose
   end
 end
