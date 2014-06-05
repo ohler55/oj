@@ -70,11 +70,11 @@ static void
 skip_comment(ParseInfo pi) {
     if ('*' == *pi->cur) {
 	pi->cur++;
-	for (; pi->end != pi->cur; pi->cur++) {
+	for (; pi->cur < pi->end; pi->cur++) {
 	    if ('*' == *pi->cur && '/' == *(pi->cur + 1)) {
 		pi->cur += 2;
 		return;
-	    } else if (pi->end == pi->cur) {
+	    } else if (pi->end <= pi->cur) {
 		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "comment not terminated");
 		return;
 	    }
@@ -226,7 +226,7 @@ read_escaped_str(ParseInfo pi, const char *start) {
 	buf_append_string(&buf, start, cnt);
     }
     for (s = pi->cur; '"' != *s; s++) {
-	if (pi->end == s) {
+	if (s >= pi->end) {
 	    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "quoted string not terminated");
 	    buf_cleanup(&buf);
 	    return;
@@ -328,7 +328,7 @@ read_str(ParseInfo pi) {
     Val		parent = stack_peek(&pi->stack);
 
     for (; '"' != *pi->cur; pi->cur++) {
-	if (pi->end == pi->cur) {
+	if (pi->end <= pi->cur) {
 	    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "quoted string not terminated");
 	    return;
 	} else if ('\0' == *pi->cur) {
