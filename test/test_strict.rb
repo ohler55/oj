@@ -1,33 +1,14 @@
-#!/usr/bin/env ruby
 # encoding: UTF-8
 
-# Ubuntu does not accept arguments to ruby when called using env. To get warnings to show up the -w options is
-# required. That can be set in the RUBYOPT environment variable.
-# export RUBYOPT=-w
+require 'helper'
 
-$VERBOSE = true
+class StrictJuice < Minitest::Test
 
-$: << File.join(File.dirname(__FILE__), "../lib")
-$: << File.join(File.dirname(__FILE__), "../ext")
-
-require 'test/unit'
-require 'stringio'
-require 'date'
-require 'bigdecimal'
-require 'oj'
-
-$ruby = RUBY_DESCRIPTION.split(' ')[0]
-$ruby = 'ree' if 'ruby' == $ruby && RUBY_DESCRIPTION.include?('Ruby Enterprise Edition')
-
-def hash_eql(h1, h2)
-  return false if h1.size != h2.size
-  h1.keys.each do |k|
-    return false unless h1[k] == h2[k]
+  def around
+    opts = Oj.default_options
+    yield
+    Oj.default_options = opts
   end
-  true
-end
-
-class StrictJuice < ::Test::Unit::TestCase
 
   def test_nil
     dump_and_load(nil, false)
@@ -175,7 +156,7 @@ class StrictJuice < ::Test::Unit::TestCase
   end
 
   def test_io_file
-    filename = 'open_file_test.json'
+    filename = File.join('test', 'open_file_test.json')
     File.open(filename, 'w') { |f| f.write(%{{
   "x":true,
   "y":58,

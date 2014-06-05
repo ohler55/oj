@@ -1,158 +1,138 @@
-#!/usr/bin/env ruby
 # encoding: UTF-8
 
-# Ubuntu does not accept arguments to ruby when called using env. To get warnings to show up the -w options is
-# required. That can be set in the RUBYOPT environment variable.
-# export RUBYOPT=-w
+require 'helper'
 
-$VERBOSE = true
+class ObjectJuice < Minitest::Test
+  class Jeez
+    attr_accessor :x, :y
 
-$: << File.join(File.dirname(__FILE__), "../lib")
-$: << File.join(File.dirname(__FILE__), "../ext")
+    def initialize(x, y)
+      @x = x
+      @y = y
+    end
 
-require 'test/unit'
-require 'stringio'
-require 'date'
-require 'bigdecimal'
-require 'oj'
+    def eql?(o)
+      self.class == o.class && @x == o.x && @y == o.y
+    end
+    alias == eql?
 
-$ruby = RUBY_DESCRIPTION.split(' ')[0]
-$ruby = 'ree' if 'ruby' == $ruby && RUBY_DESCRIPTION.include?('Ruby Enterprise Edition')
+    def to_json(*a)
+      %{{"json_class":"#{self.class}","x":#{@x},"y":#{@y}}}
+    end
 
-class Jeez
-  attr_accessor :x, :y
+    def self.json_create(h)
+      self.new(h['x'], h['y'])
+    end
+  end # Jeez
 
-  def initialize(x, y)
-    @x = x
-    @y = y
+  module One
+    module Two
+      module Three
+        class Deep
+
+          def initialize()
+          end
+
+          def eql?(o)
+            self.class == o.class
+          end
+          alias == eql?
+
+          def to_hash()
+            {'json_class' => "#{self.class.name}"}
+          end
+
+          def to_json(*a)
+            %{{"json_class":"#{self.class.name}"}}
+          end
+
+          def self.json_create(h)
+            self.new()
+          end
+        end # Deep
+      end # Three
+    end # Two
+
+    class Stuck2 < Struct.new(:a, :b)
+    end
+
+  end # One
+
+  class Stuck < Struct.new(:a, :b)
   end
 
-  def eql?(o)
-    self.class == o.class && @x == o.x && @y == o.y
-  end
-  alias == eql?
-  
-  def to_json(*a)
-    %{{"json_class":"#{self.class}","x":#{@x},"y":#{@y}}}
-  end
+  class Strung < String
 
-  def self.json_create(h)
-    self.new(h['x'], h['y'])
-  end
-end # Jeez
+    def initialize(str, safe)
+      super(str)
+      @safe = safe
+    end
 
-module One
-  module Two
-    module Three
-      class Deep
+    def safe?()
+      @safe
+    end
 
-        def initialize()
-        end
+    def self.create(str, safe)
+      new(str, safe)
+    end
 
-        def eql?(o)
-          self.class == o.class
-        end
-        alias == eql?
+    def eql?(o)
+      super && self.class == o.class && @safe == o.safe?
+    end
+    alias == eql?
 
-        def to_hash()
-          {'json_class' => "#{self.class.name}"}
-        end
-
-        def to_json(*a)
-          %{{"json_class":"#{self.class.name}"}}
-        end
-
-        def self.json_create(h)
-          self.new()
-        end
-      end # Deep
-    end # Three
-  end # Two
-
-  class Stuck2 < Struct.new(:a, :b)
+    def inspect()
+      return super + '(' + @safe + ')'
+    end
   end
 
-end # One
+  class AutoStrung < String
+    attr_accessor :safe
 
-class Stuck < Struct.new(:a, :b)
-end
+    def initialize(str, safe)
+      super(str)
+      @safe = safe
+    end
 
-class Strung < String
-
-  def initialize(str, safe)
-    super(str)
-    @safe = safe
+    def eql?(o)
+      self.class == o.class && super(o) && @safe == o.safe
+    end
+    alias == eql?
   end
 
-  def safe?()
-    @safe
+  class AutoArray < Array
+    attr_accessor :safe
+
+    def initialize(a, safe)
+      super(a)
+      @safe = safe
+    end
+
+    def eql?(o)
+      self.class == o.class && super(o) && @safe == o.safe
+    end
+    alias == eql?
   end
 
-  def self.create(str, safe)
-    new(str, safe)
+  class AutoHash < Hash
+    attr_accessor :safe
+
+    def initialize(h, safe)
+      super(h)
+      @safe = safe
+    end
+
+    def eql?(o)
+      self.class == o.class && super(o) && @safe == o.safe
+    end
+    alias == eql?
   end
 
-  def eql?(o)
-    super && self.class == o.class && @safe == o.safe?
+  def around
+    opts = Oj.default_options
+    yield
+    Oj.default_options = opts
   end
-  alias == eql?
-
-  def inspect()
-    return super + '(' + @safe + ')'
-  end
-end
-
-class AutoStrung < String
-  attr_accessor :safe
-
-  def initialize(str, safe)
-    super(str)
-    @safe = safe
-  end
-
-  def eql?(o)
-    self.class == o.class && super(o) && @safe == o.safe
-  end
-  alias == eql?
-end
-
-class AutoArray < Array
-  attr_accessor :safe
-
-  def initialize(a, safe)
-    super(a)
-    @safe = safe
-  end
-
-  def eql?(o)
-    self.class == o.class && super(o) && @safe == o.safe
-  end
-  alias == eql?
-end
-
-class AutoHash < Hash
-  attr_accessor :safe
-
-  def initialize(h, safe)
-    super(h)
-    @safe = safe
-  end
-
-  def eql?(o)
-    self.class == o.class && super(o) && @safe == o.safe
-  end
-  alias == eql?
-end
-
-def hash_eql(h1, h2)
-  return false if h1.size != h2.size
-  h1.keys.each do |k|
-    return false unless h1[k] == h2[k]
-  end
-  true
-end
-
-class ObjectJuice < ::Test::Unit::TestCase
 
   def test_nil
     dump_and_load(nil, false)
@@ -297,7 +277,7 @@ class ObjectJuice < ::Test::Unit::TestCase
   end
 
   def test_io_file
-    filename = 'open_file_test.json'
+    filename = File.join('test', 'open_file_test.json')
     File.open(filename, 'w') { |f| f.write(%{{
   "x":true,
   "y":58,

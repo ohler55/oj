@@ -1,75 +1,58 @@
-#!/usr/bin/env ruby
 # encoding: UTF-8
 
-# Ubuntu does not accept arguments to ruby when called using env. To get warnings to show up the -w options is
-# required. That can be set in the RUBYOPT environment variable.
-# export RUBYOPT=-w
+require 'helper'
 
-$VERBOSE = true
+class FileJuice < Minitest::Test
+  class Jam
+    attr_accessor :x, :y
 
-$: << File.join(File.dirname(__FILE__), "../lib")
-$: << File.join(File.dirname(__FILE__), "../ext")
+    def initialize(x, y)
+      @x = x
+      @y = y
+    end
 
-require 'test/unit'
-require 'date'
-require 'bigdecimal'
-require 'oj'
+    def eql?(o)
+      self.class == o.class && @x == o.x && @y == o.y
+    end
+    alias == eql?
 
-$ruby = RUBY_DESCRIPTION.split(' ')[0]
-$ruby = 'ree' if 'ruby' == $ruby && RUBY_DESCRIPTION.include?('Ruby Enterprise Edition')
+  end# Jam
 
-class Jam
-  attr_accessor :x, :y
+  class Jeez < Jam
+    def initialize(x, y)
+      super
+    end
 
-  def initialize(x, y)
-    @x = x
-    @y = y
+    def to_json()
+      %{{"json_class":"#{self.class}","x":#{@x},"y":#{@y}}}
+    end
+
+    def self.json_create(h)
+      self.new(h['x'], h['y'])
+    end
+  end# Jeez
+
+  class Orange < Jam
+    def initialize(x, y)
+      super
+    end
+
+    def as_json()
+      { :json_class => self.class,
+        :x => @x,
+        :y => @y }
+    end
+
+    def self.json_create(h)
+      self.new(h['x'], h['y'])
+    end
   end
 
-  def eql?(o)
-    self.class == o.class && @x == o.x && @y == o.y
+  def around
+    opts = Oj.default_options
+    yield
+    Oj.default_options = opts
   end
-  alias == eql?
-
-end# Jam
-
-class Jeez < Jam
-  def initialize(x, y)
-    super
-  end
-
-  def to_json()
-    %{{"json_class":"#{self.class}","x":#{@x},"y":#{@y}}}
-  end
-
-  def self.json_create(h)
-    self.new(h['x'], h['y'])
-  end
-end# Jeez
-
-class Orange < Jam
-  def initialize(x, y)
-    super
-  end
-
-  def as_json()
-    { :json_class => self.class,
-      :x => @x,
-      :y => @y }
-  end
-
-  def self.json_create(h)
-    self.new(h['x'], h['y'])
-  end
-end
-
-class Range
-  def to_hash()
-    { 'begin' => self.begin, 'end' => self.end, 'exclude_end' => self.exclude_end? }
-  end
-end # Range
-
-class FileJuice < ::Test::Unit::TestCase
 
   def test_nil
     dump_and_load(nil, false)
@@ -100,7 +83,7 @@ class FileJuice < ::Test::Unit::TestCase
     dump_and_load(-2.48e100 * 1.0e10, false)
     dump_and_load(1/0.0, false)
   end
-  
+
   def test_string
     dump_and_load('', false)
     dump_and_load('abc', false)
@@ -155,9 +138,9 @@ class FileJuice < ::Test::Unit::TestCase
     Oj.default_options = { :mode => :compat, :use_to_json => true }
     obj = Jeez.new(true, 58)
     json = Oj.dump(obj, :indent => 2)
-    assert(%{{"json_class":"Jeez","x":true,"y":58}
+    assert(%{{"json_class":"FileJuice::Jeez","x":true,"y":58}
 } == json ||
-           %{{"json_class":"Jeez","y":58,"x":true}
+           %{{"json_class":"FileJuice::Jeez","y":58,"x":true}
 } == json)
     dump_and_load(obj, false)
     Oj.default_options = { :mode => :compat, :use_to_json => false }
@@ -211,7 +194,6 @@ class FileJuice < ::Test::Unit::TestCase
   end
 
   def test_bigdecimal_object
-    mode = Oj.default_options[:mode]
     Oj.default_options = {:mode => :object}
     dump_and_load(BigDecimal.new('3.14159265358979323846'), false)
   end
@@ -229,7 +211,7 @@ class FileJuice < ::Test::Unit::TestCase
   end
 
   def dump_and_load(obj, trace=false)
-    filename = 'file_test.json'
+    filename = File.join('test', 'file_test.json')
     File.open(filename, "w") { |f|
       Oj.to_stream(f, obj, :indent => 2)
     }

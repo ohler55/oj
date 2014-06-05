@@ -1,38 +1,31 @@
-#!/usr/bin/env ruby
 # encoding: UTF-8
 
-# Ubuntu does not accept arguments to ruby when called using env. To get
-# warnings to show up the -w options is required. That can be set in the RUBYOPT
-# environment variable.
-# export RUBYOPT=-w
+require 'helper'
 
-$VERBOSE = true
+class GCTest < Minitest::Test
+  class Goo
+    attr_accessor :x, :child
 
-$: << File.join(File.dirname(__FILE__), "../lib")
-$: << File.join(File.dirname(__FILE__), "../ext")
+    def initialize(x, child)
+      @x = x
+      @child = child
+    end
 
-require 'test/unit'
-require 'oj'
+    def to_hash()
+      { 'json_class' => "#{self.class}", 'x' => x, 'child' => child }
+    end
 
-class Goo
-  attr_accessor :x, :child
+    def self.json_create(h)
+      GC.start
+      self.new(h['x'], h['child'])
+    end
+  end # Goo
 
-  def initialize(x, child)
-    @x = x
-    @child = child
+  def around
+    opts = Oj.default_options
+    yield
+    Oj.default_options = opts
   end
-  
-  def to_hash()
-    { 'json_class' => "#{self.class}", 'x' => x, 'child' => child }
-  end
-
-  def self.json_create(h)
-    GC.start
-    self.new(h['x'], h['child'])
-  end
-end # Goo
-
-class GCTest < ::Test::Unit::TestCase
 
   # if no crash then the GC marking is working
   def test_parse_compat_gc

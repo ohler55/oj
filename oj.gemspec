@@ -16,13 +16,17 @@ Gem::Specification.new do |s|
   s.files = Dir["{lib,ext,test}/**/*.{rb,h,c}"] + ['LICENSE', 'README.md']
 
   s.extensions = ["ext/oj/extconf.rb"]
-  # s.executables = []
 
   s.require_paths = ["lib", "ext"]
 
   s.has_rdoc = true
   s.extra_rdoc_files = ['README.md']
   s.rdoc_options = ['--main', 'README.md']
-  
+
   s.rubyforge_project = 'oj'
+
+  s.add_development_dependency 'rake-compiler', '~> 0.9'
+  s.add_development_dependency 'minitest', '~> 5'
+  s.add_development_dependency 'minitest-around', '~> 0.2'
+  s.add_development_dependency 'rails', RUBY_VERSION <= '1.8.7' ? '~> 3' : '~> 4'
 end

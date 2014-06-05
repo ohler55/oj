@@ -1,125 +1,86 @@
-#!/usr/bin/env ruby
 # encoding: UTF-8
 
-# Ubuntu does not accept arguments to ruby when called using env. To get warnings to show up the -w options is
-# required. That can be set in the RUBYOPT environment variable.
-# export RUBYOPT=-w
+require 'helper'
 
-$VERBOSE = true
+class Juice < Minitest::Test
 
-$: << File.join(File.dirname(__FILE__), "../lib")
-$: << File.join(File.dirname(__FILE__), "../ext")
+  class Jam
+    attr_accessor :x, :y
 
-require 'test/unit'
-require 'stringio'
-require 'date'
-require 'bigdecimal'
-require 'oj'
+    def initialize(x, y)
+      @x = x
+      @y = y
+    end
 
-$ruby = RUBY_DESCRIPTION.split(' ')[0]
-$ruby = 'ree' if 'ruby' == $ruby && RUBY_DESCRIPTION.include?('Ruby Enterprise Edition')
+    def eql?(o)
+      self.class == o.class && @x == o.x && @y == o.y
+    end
+    alias == eql?
 
-def hash_eql(h1, h2)
-  return false if h1.size != h2.size
-  h1.keys.each do |k|
-    return false unless h1[k] == h2[k]
-  end
-  true
-end
+  end# Jam
 
-class Jam
-  attr_accessor :x, :y
+  class Jeez < Jam
+    def initialize(x, y)
+      super
+    end
 
-  def initialize(x, y)
-    @x = x
-    @y = y
-  end
+    def to_json()
+      %{{"json_class":"#{self.class}","x":#{@x},"y":#{@y}}}
+    end
 
-  def eql?(o)
-    self.class == o.class && @x == o.x && @y == o.y
-  end
-  alias == eql?
+    def self.json_create(h)
+      self.new(h['x'], h['y'])
+    end
+  end# Jeez
 
-end# Jam
+  # contributed by sauliusg to fix as_json
+  class Orange < Jam
+    def initialize(x, y)
+      super
+    end
 
-class Jeez < Jam
-  def initialize(x, y)
-    super
-  end
+    def as_json()
+      { :json_class => self.class,
+        :x => @x,
+        :y => @y }
+    end
 
-  def to_json()
-    %{{"json_class":"#{self.class}","x":#{@x},"y":#{@y}}}
-  end
-
-  def self.json_create(h)
-    self.new(h['x'], h['y'])
-  end
-end# Jeez
-
-# contributed by sauliusg to fix as_json
-class Orange < Jam
-  def initialize(x, y)
-    super
+    def self.json_create(h)
+      self.new(h['x'], h['y'])
+    end
   end
 
-  def as_json()
-    { :json_class => self.class,
-      :x => @x,
-      :y => @y }
+  class Melon < Jam
+    def initialize(x, y)
+      super
+    end
+
+    def as_json()
+      "#{x} #{y}"
+    end
+
+    def self.json_create(h)
+      self.new(h['x'], h['y'])
+    end
   end
 
-  def self.json_create(h)
-    self.new(h['x'], h['y'])
-  end
-end
+  class Jazz < Jam
+    def initialize(x, y)
+      super
+    end
+    def to_hash()
+      { 'json_class' => self.class.to_s, 'x' => @x, 'y' => @y }
+    end
+    def self.json_create(h)
+      self.new(h['x'], h['y'])
+    end
+  end# Jazz
 
-class Melon < Jam
-  def initialize(x, y)
-    super
+  def around
+    opts = Oj.default_options
+    yield
+    Oj.default_options = opts
   end
-
-  def as_json()
-    "#{x} #{y}"
-  end
-
-  def self.json_create(h)
-    self.new(h['x'], h['y'])
-  end
-end
-
-class Jazz < Jam
-  def initialize(x, y)
-    super
-  end
-  def to_hash()
-    { 'json_class' => self.class.to_s, 'x' => @x, 'y' => @y }
-  end
-  def self.json_create(h)
-    self.new(h['x'], h['y'])
-  end
-end# Jazz
-
-class Range
-  def to_hash()
-    { 'begin' => self.begin, 'end' => self.end, 'exclude_end' => self.exclude_end? }
-  end
-end # Range
-
-# define the symbol
-class ActiveSupport
-end
-
-class RailsLike
-  attr_accessor :x
-  def initialize(x)
-    @x = x
-  end
-  def to_json(options = nil)
-    Oj.dump(self, :mode => :compat)
-  end
-end # RailsLike
-
-class Juice < ::Test::Unit::TestCase
 
   def test0_get_options
     opts = Oj.default_options()
@@ -262,7 +223,7 @@ class Juice < ::Test::Unit::TestCase
   def test_array_not_closed
     begin
       Oj.load('[')
-    rescue Exception => e
+    rescue Exception
       assert(true)
       return
     end
@@ -271,6 +232,7 @@ class Juice < ::Test::Unit::TestCase
 
   # rails encoding tests
   def test_does_not_escape_entities_by_default
+    Oj.default_options = { :escape_mode => :ascii }
     # use Oj to create the hash since some Rubies don't deal nicely with unicode.
     json = %{{"key":"I <3 this\\u2028space"}}
     hash = Oj.load(json)
@@ -543,7 +505,7 @@ class Juice < ::Test::Unit::TestCase
   def test_hash_not_closed
     begin
       Oj.load('{')
-    rescue Exception => e
+    rescue Exception
       assert(true)
       return
     end
@@ -570,9 +532,9 @@ class Juice < ::Test::Unit::TestCase
     Oj.default_options = { :mode => :compat, :use_to_json => true }
     obj = Jeez.new(true, 58)
     json = Oj.dump(obj, :indent => 2)
-    assert(%{{"json_class":"Jeez","x":true,"y":58}
+    assert(%{{"json_class":"Juice::Jeez","x":true,"y":58}
 } == json ||
-           %{{"json_class":"Jeez","y":58,"x":true}
+           %{{"json_class":"Juice::Jeez","y":58,"x":true}
 } == json)
     dump_and_load(obj, false)
     Oj.default_options = { :mode => :compat, :use_to_json => false }
@@ -580,7 +542,7 @@ class Juice < ::Test::Unit::TestCase
   def test_json_object_create_id
     Oj.default_options = { :mode => :compat, :create_id => 'kson_class' }
     expected = Jeez.new(true, 58)
-    json = %{{"kson_class":"Jeez","x":true,"y":58}}
+    json = %{{"kson_class":"Juice::Jeez","x":true,"y":58}}
     obj = Oj.load(json)
     assert_equal(expected, obj)
     Oj.default_options = { :create_id => 'json_class' }
@@ -589,13 +551,13 @@ class Juice < ::Test::Unit::TestCase
     obj = Jeez.new(true, 58)
     json = Oj.dump(obj, :mode => :object, :indent => 2)
     assert(%{{
-  "^o":"Jeez",
+  "^o":"Juice::Jeez",
   "x":true,
   "y":58
 }
 } == json ||
 %{{
-  "^o":"Jeez",
+  "^o":"Juice::Jeez",
   "y":58,
   "x":true
 }
@@ -630,13 +592,13 @@ class Juice < ::Test::Unit::TestCase
     obj = Jazz.new(true, 58)
     json = Oj.dump(obj, :mode => :object, :indent => 2)
     assert(%{{
-  "^o":"Jazz",
+  "^o":"Juice::Jazz",
   "x":true,
   "y":58
 }
 } == json ||
 %{{
-  "^o":"Jazz",
+  "^o":"Juice::Jazz",
   "y":58,
   "x":true
 }
@@ -682,13 +644,13 @@ class Juice < ::Test::Unit::TestCase
     obj = Orange.new(true, 58)
     json = Oj.dump(obj, :mode => :object, :indent => 2)
     assert(%{{
-  "^o":"Orange",
+  "^o":"Juice::Orange",
   "x":true,
   "y":58
 }
 } == json ||
 %{{
-  "^o":"Orange",
+  "^o":"Juice::Orange",
   "y":58,
   "x":true
 }
@@ -731,13 +693,13 @@ class Juice < ::Test::Unit::TestCase
     obj = Jam.new(true, 58)
     json = Oj.dump(obj, :mode => :object, :indent => 2)
     assert(%{{
-  "^o":"Jam",
+  "^o":"Juice::Jam",
   "x":true,
   "y":58
 }
 } == json ||
 %{{
-  "^o":"Jam",
+  "^o":"Juice::Jam",
   "y":58,
   "x":true
 }
@@ -750,13 +712,13 @@ class Juice < ::Test::Unit::TestCase
     obj = Jam.new(true, 58)
     json = Oj.dump(obj, :mode => :object, :indent => 2)
     assert(%{{
-  "^o":"Jam",
+  "^o":"Juice::Jam",
   "x":true,
   "y":58
 }
 } == json ||
 %{{
-  "^o":"Jam",
+  "^o":"Juice::Jam",
   "y":58,
   "x":true
 }
@@ -964,11 +926,11 @@ class Juice < ::Test::Unit::TestCase
   # autodefine Oj::Bag
   def test_bag
     json = %{{
-  "^o":"Jem",
+  "^o":"Juice::Jem",
   "x":true,
   "y":58 }}
     obj = Oj.load(json, :mode => :object, :auto_define => true)
-    assert_equal('Jem', obj.class.name)
+    assert_equal('Juice::Jem', obj.class.name)
     assert_equal(true, obj.x)
     assert_equal(58, obj.y)
   end
@@ -979,14 +941,14 @@ class Juice < ::Test::Unit::TestCase
     obj.x = obj
     json = Oj.dump(obj, :mode => :object, :indent => 2, :circular => true)
     assert(%{{
-  "^o":"Jam",
+  "^o":"Juice::Jam",
   "^i":1,
   "x":"^r1",
   "y":58
 }
 } == json ||
 %{{
-  "^o":"Jam",
+  "^o":"Juice::Jam",
   "^i":1,
   "y":58,
   "x":"^r1"
@@ -1026,7 +988,7 @@ class Juice < ::Test::Unit::TestCase
     obj.x['b'] = obj
     json = Oj.dump(obj, :mode => :object, :indent => 2, :circular => true)
     ha = Oj.load(json, :mode => :strict)
-    assert_equal({'^o' => 'Jam', '^i' => 1, 'x' => { '^i' => 2, 'a' => 7, 'b' => '^r1' }, 'y' => 58 }, ha)
+    assert_equal({'^o' => 'Juice::Jam', '^i' => 1, 'x' => { '^i' => 2, 'a' => 7, 'b' => '^r1' }, 'y' => 58 }, ha)
     Oj.load(json, :mode => :object, :circular => true)
     assert_equal(obj.x.__id__, h.__id__)
     assert_equal(h['b'].__id__, obj.__id__)
@@ -1048,7 +1010,7 @@ class Juice < ::Test::Unit::TestCase
       a = []
       10000.times { a << [a] }
       Oj.dump(a)
-    rescue Exception => e
+    rescue Exception
       assert(true)
       return
     end
@@ -1068,7 +1030,7 @@ class Juice < ::Test::Unit::TestCase
 
   def test_io_file
     src = { 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}
-    filename = 'open_file_test.json'
+    filename = File.join('test', 'open_file_test.json')
     File.open(filename, "w") { |f|
       Oj.to_stream(f, src)
     }
@@ -1129,7 +1091,7 @@ class Juice < ::Test::Unit::TestCase
   def test_nilnil_false
     begin
       Oj.load(nil)
-    rescue Exception => e
+    rescue Exception
       assert(true)
       return
     end
@@ -1141,18 +1103,10 @@ class Juice < ::Test::Unit::TestCase
     assert_equal(nil, obj)
   end
 
-# Rails re-call test. Active support recalls the json dumper when the to_json
-# method is called. This mimics that and verifies Oj detects it.
-  def test_rails_like
-    obj = RailsLike.new(3)
-    json = Oj.dump(obj, :mode => :compat)
-    assert_equal('{"x":3}', json)
-  end
-
   def dump_and_load(obj, trace=false)
     json = Oj.dump(obj, :indent => 2)
     puts json if trace
-    loaded = Oj.load(json);
+    loaded = Oj.load(json)
     assert_equal(obj, loaded)
     loaded
   end

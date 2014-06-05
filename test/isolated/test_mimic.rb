@@ -1,53 +1,31 @@
-#!/usr/bin/env ruby
 # encoding: UTF-8
 
-# Ubuntu does not accept arguments to ruby when called using env. To get warnings to show up the -w options is
-# required. That can be set in the RUBYOPT environment variable.
-# export RUBYOPT=-w
+require 'helper'
+Oj.mimic_JSON
 
-$VERBOSE = true
+class Mimic < Minitest::Test
+  class Jam
+    attr_accessor :x, :y
 
-$: << File.join(File.dirname(__FILE__), "../lib")
-$: << File.join(File.dirname(__FILE__), "../ext")
+    def initialize(x, y)
+      @x = x
+      @y = y
+    end
 
-require 'test/unit'
-require 'stringio'
-require 'bigdecimal'
-require 'oj'
+    def eql?(o)
+      self.class == o.class && @x == o.x && @y == o.y
+    end
+    alias == eql?
 
-$ruby = RUBY_DESCRIPTION.split(' ')[0]
-$ruby = 'ree' if 'ruby' == $ruby && RUBY_DESCRIPTION.include?('Ruby Enterprise Edition')
+    def as_json()
+      {"json_class" => self.class.to_s,"x" => @x,"y" => @y}
+    end
 
-class Jam
-  attr_accessor :x, :y
+    def self.json_create(h)
+      self.new(h['x'], h['y'])
+    end
 
-  def initialize(x, y)
-    @x = x
-    @y = y
-  end
-
-  def eql?(o)
-    self.class == o.class && @x == o.x && @y == o.y
-  end
-  alias == eql?
-
-  def as_json()
-    {"json_class" => self.class.to_s,"x" => @x,"y" => @y}
-  end
-
-  def self.json_create(h)
-    self.new(h['x'], h['y'])
-  end
-
-end # Jam
-
-class Mimic < ::Test::Unit::TestCase
-
-  def test0_mimic_json
-    assert(defined?(JSON).nil?)
-    Oj.mimic_JSON
-    assert(!defined?(JSON).nil?)
-  end
+  end # Jam
 
 # dump
   def test_dump_string
@@ -179,7 +157,7 @@ class Mimic < ::Test::Unit::TestCase
     obj = JSON.parse(json, :create_additions => true)
     assert_equal(jam, obj)
     obj = JSON.parse(json, :create_additions => false)
-    assert_equal({'json_class' => 'Jam', 'x' => true, 'y' => 58}, obj)
+    assert_equal({'json_class' => 'Mimic::Jam', 'x' => true, 'y' => 58}, obj)
     json.gsub!('json_class', 'kson_class')
     JSON.create_id = 'kson_class'
     obj = JSON.parse(json, :create_additions => true)
@@ -208,7 +186,7 @@ class Mimic < ::Test::Unit::TestCase
     json = %{["a":1]}
     begin
       obj = JSON.parse(json)
-      
+
     rescue JSON::ParserError => je
       assert(true)
       return
