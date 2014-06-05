@@ -1761,9 +1761,6 @@ define_mimic_json(int argc, VALUE *argv, VALUE self) {
     space_sym = ID2SYM(rb_intern("space"));				rb_gc_register_address(&space_sym);
     symbolize_names_sym = ID2SYM(rb_intern("symbolize_names"));		rb_gc_register_address(&symbolize_names_sym);
 
-    if (!rb_const_defined_at(mimic, rb_intern("ParserError"))) {
-	rb_define_const(mimic, "ParserError", oj_parse_error_class);
-    }
     oj_default_options.mode = CompatMode;
     oj_default_options.escape_mode = ASCIIEsc;
     oj_default_options.nilnil = Yes;
