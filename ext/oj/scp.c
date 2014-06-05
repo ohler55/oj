@@ -256,8 +256,7 @@ oj_sc_parse(int argc, VALUE *argv, VALUE self) {
 	pi.expect_value = 0;
     }
     if (rb_type(input) == T_STRING) {
-	pi.json = StringValuePtr(input);
-	pi.end = pi.json + RSTRING_LEN(input);
+	oj_pi_set_input_str(&pi, input);
     } else {
 	VALUE		clas = rb_obj_class(input);
 	volatile VALUE	s;
@@ -266,8 +265,7 @@ oj_sc_parse(int argc, VALUE *argv, VALUE self) {
 #endif
 	if (oj_stringio_class == clas) {
 	    s = rb_funcall2(input, oj_string_id, 0, 0);
-	    pi.json = StringValuePtr(input);
-	    pi.end = pi.json + RSTRING_LEN(input);
+	    oj_pi_set_input_str(&pi, input);
 #if !IS_WINDOWS
 	    // JRuby gets confused with what is the real fileno.
 	} else if (rb_respond_to(input, oj_fileno_id) &&
@@ -289,9 +287,7 @@ oj_sc_parse(int argc, VALUE *argv, VALUE self) {
 #endif
 	} else if (rb_respond_to(input, oj_read_id)) {
 	    s = rb_funcall2(input, oj_read_id, 0, 0);
-	    pi.json = rb_string_value_ptr((VALUE*)&s);
-	    pi.end = pi.json + RSTRING_LEN(s);
-
+	    oj_pi_set_input_str(&pi, s);
 	} else {
 	    rb_raise(rb_eArgError, "saj_parse() expected a String or IO Object.");
 	}

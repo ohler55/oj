@@ -739,6 +739,12 @@ protect_parse(VALUE pip) {
     return Qnil;
 }
 
+void
+oj_pi_set_input_str(ParseInfo pi, volatile VALUE input) {
+    pi->json = rb_string_value_ptr((VALUE*)&input);
+    pi->end = pi->json + RSTRING_LEN(input);
+}
+
 VALUE
 oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yieldOk) {
     char		*buf = 0;
@@ -766,8 +772,7 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
 	pi->end = json + len;
 	free_json = 1;
     } else if (T_STRING == rb_type(input)) {
-	pi->json = rb_string_value_ptr((VALUE*)&input);
-	pi->end = pi->json + RSTRING_LEN(input);
+	oj_pi_set_input_str(pi, input);
     } else if (Qnil == input && Yes == pi->options.nilnil) {
 	return Qnil;
     } else {
@@ -779,8 +784,7 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
 
 	if (oj_stringio_class == clas) {
 	    s = rb_funcall2(input, oj_string_id, 0, 0);
-	    pi->json = rb_string_value_ptr((VALUE*)&s);
-	    pi->end = pi->json + RSTRING_LEN(s);
+	    oj_pi_set_input_str(pi, s);
 #if !IS_WINDOWS
 	} else if (rb_respond_to(input, oj_fileno_id) &&
 		   Qnil != (s = rb_funcall(input, oj_fileno_id, 0)) &&
