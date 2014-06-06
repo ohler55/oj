@@ -24,5 +24,9 @@ class MimicSingle < Minitest::Test
       return
     end
     assert(false, '** should raise LoadError')
+
+    # Make sure to_json is define for object.
+    {'a' => 1}.to_json()
+    Object.new().to_json()
   end
 end # MimicSingle
