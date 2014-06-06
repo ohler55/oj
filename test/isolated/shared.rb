@@ -1,12 +1,6 @@
-#!/usr/bin/env ruby
 # encoding: UTF-8
 
-$: << File.join(File.dirname(__FILE__), '..')
-
-require 'helper'
-Oj.mimic_JSON
-
-class Mimic < Minitest::Test
+class SharedMimicTest < Minitest::Test
   class Jam
     attr_accessor :x, :y
 
@@ -30,10 +24,41 @@ class Mimic < Minitest::Test
 
   end # Jam
 
+  def setup
+    @default_options = Oj.default_options
+  end
+
+  def teardown
+    Oj.default_options = @default_options
+  end
+
+# exception
+  def test_exception
+    begin
+      JSON.parse("{")
+      puts "Failed"
+    rescue JSON::ParserError
+      assert(true)
+    rescue Exception
+      assert(false, 'Expected a JSON::ParserError')
+    end
+  end
+
 # dump
   def test_dump_string
     json = JSON.dump([1, true, nil])
     assert_equal(%{[1,true,null]}, json)
+  end
+
+  def test_dump_with_options
+    Oj.default_options= {:indent => 2} # JSON this will not change anything
+    json = JSON.dump([1, true, nil])
+    assert_equal(%{[
+  1,
+  true,
+  null
+]
+}, json)
   end
 
   def test_dump_io
@@ -160,7 +185,7 @@ class Mimic < Minitest::Test
     obj = JSON.parse(json, :create_additions => true)
     assert_equal(jam, obj)
     obj = JSON.parse(json, :create_additions => false)
-    assert_equal({'json_class' => 'Mimic::Jam', 'x' => true, 'y' => 58}, obj)
+    assert_equal({'json_class' => 'SharedMimicTest::Jam', 'x' => true, 'y' => 58}, obj)
     json.gsub!('json_class', 'kson_class')
     JSON.create_id = 'kson_class'
     obj = JSON.parse(json, :create_additions => true)
@@ -184,17 +209,35 @@ class Mimic < Minitest::Test
     end
   end
 
-  # exception check
-  def test_exception
-    json = %{["a":1]}
-    begin
-      obj = JSON.parse(json)
-
-    rescue JSON::ParserError => je
-      assert(true)
-      return
-    end
-    assert(false, "*** expected an JSON::ParserError")
+# make sure to_json is defined for object.
+  def test_mimic_to_json
+    {'a' => 1}.to_json()
+    Object.new().to_json()
   end
+end # SharedMimicTest
 
-end # Mimic
+if defined?(ActiveSupport)
+  class SharedMimicRailsTest < SharedMimicTest
+    def test_activesupport_exception
+      begin
+        ActiveSupport::JSON.decode("{")
+        puts "Failed"
+      rescue ActiveSupport::JSON.parse_error
+        assert(true)
+      rescue Exception
+        assert(false, 'Expected a JSON::ParserError')
+      end
+    end
+
+    def test_activesupport_encode
+      Oj.default_options= {:indent => 2} # JSON this will not change anything
+      json = ActiveSupport::JSON.encode([1, true, nil])
+      assert_equal(%{[
+  1,
+  true,
+  null
+]
+}, json)
+    end
+  end # SharedMimicRailsTest
+end

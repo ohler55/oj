@@ -4,10 +4,11 @@
 $: << File.join(File.dirname(__FILE__), '..')
 
 require 'helper'
+
+Oj.mimic_JSON
+require 'rails/all'
+
 require 'isolated/shared'
 
-require 'json'
-Oj.mimic_JSON
-
-class MimicAfter < SharedMimicTest
-end # MimicAfter
+class MimicRailsBefore < SharedMimicRailsTest
+end # MimicRailsBefore

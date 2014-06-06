@@ -79,10 +79,12 @@ class Juice < Minitest::Test
     end
   end# Jazz
 
-  def around
-    opts = Oj.default_options
-    yield
-    Oj.default_options = opts
+  def setup
+    @default_options = Oj.default_options
+  end
+
+  def teardown
+    Oj.default_options = @default_options
   end
 
   def test0_get_options

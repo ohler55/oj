@@ -131,10 +131,12 @@ class ObjectJuice < Minitest::Test
     alias == eql?
   end
 
-  def around
-    opts = Oj.default_options
-    yield
-    Oj.default_options = opts
+  def setup
+    @default_options = Oj.default_options
+  end
+
+  def teardown
+    Oj.default_options = @default_options
   end
 
   def test_nil
@@ -397,6 +399,7 @@ class ObjectJuice < Minitest::Test
   end
 
   def test_mixed_hash_object
+    Oj.default_options = { :mode => :object }
     json = Oj.dump({ 1 => true, 'nil' => nil, :sim => 4 })
     h = Oj.object_load(json)
     assert_equal({ 1 => true, 'nil' => nil, :sim => 4 }, h)
