@@ -17,10 +17,9 @@ do
     make
 
     echo "\nRunning tests for $ruby"
-    cd ../../test
     rbenv local $ruby
-    ./test_all.sh
-    cd ..
+    cd ../..
+    ./test/test_all.sh
 
     echo "\n"
 done
@@ -33,8 +32,7 @@ ruby extconf.rb
 make
 
 echo "\nRunning tests for OS X Ruby"
-cd ../../test
-./test_all.sh
-cd ..
+cd ../..
+./test/test_all.sh
 
 echo "\n"

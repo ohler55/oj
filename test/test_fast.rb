@@ -1,17 +1,6 @@
-#!/usr/bin/env ruby
 # encoding: UTF-8
 
-# Ubuntu does not accept arguments to ruby when called using env. To get warnings to show up the -w options is
-# required. That can be set in the RUBYOPT environment variable.
-# export RUBYOPT=-w
-
-$VERBOSE = true
-
-$: << File.join(File.dirname(__FILE__), "../lib")
-$: << File.join(File.dirname(__FILE__), "../ext")
-
-require 'test/unit'
-require 'oj'
+require 'helper'
 
 $json1 = %{{
   "array": [
@@ -28,7 +17,13 @@ $json1 = %{{
   "boolean" : true
 }}
 
-class DocTest < ::Test::Unit::TestCase
+class DocTest < Minitest::Test
+  def around
+    opts = Oj.default_options
+    yield
+    Oj.default_options = opts
+  end
+
   def test_nil
     json = %{null}
     Oj::Doc.open(json) do |doc|
@@ -310,7 +305,7 @@ class DocTest < ::Test::Unit::TestCase
   end
 
   def test_open_file
-    filename = 'open_file_test.json'
+    filename = File.join('test', 'open_file_test.json')
     File.open(filename, 'w') { |f| f.write('{"a":[1,2,3]}') }
     Oj::Doc.open_file(filename) do |doc|
       assert_equal(5, doc.size)
@@ -336,7 +331,7 @@ class DocTest < ::Test::Unit::TestCase
   end
 
   def test_file_open_close
-    filename = 'open_file_test.json'
+    filename = File.join('test', 'open_file_test.json')
     File.open(filename, 'w') { |f| f.write('{"a":[1,2,3]}') }
     doc = Oj::Doc.open_file(filename)
     assert_equal(Oj::Doc, doc.class)

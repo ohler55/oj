@@ -12,3 +12,4 @@ Makefile
 .rbx
 doc
 .yardoc
+Gemfile.lock
