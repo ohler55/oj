@@ -15,9 +15,9 @@ end
 task :test_all => [:compile] do
   exitcode = 0
 
-  Dir.glob(File.join('test', 'isolated', '*.rb')).each do |isolated|
+  Dir.glob(File.join('test', 'isolated', 'test_*.rb')).each do |isolated|
     rout, wout = IO.pipe
-    puts "File: #{isolated}"
+    puts "\n" + "-"*10 + " File: #{isolated} " + "-"*10
     status = system("ruby -Itest #{isolated}")
     exitcode = 1 unless status
   end

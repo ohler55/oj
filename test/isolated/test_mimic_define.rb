@@ -5,14 +5,15 @@ $: << File.join(File.dirname(__FILE__), '..')
 
 require 'helper'
 
-class MimicSingle < Minitest::Test
-  def test_mimic_single
+class MimicDefine < Minitest::Test
+  def test_mimic_define
     assert(defined?(JSON).nil?)
     Oj.mimic_JSON
 
     # Test constants
     assert(!defined?(JSON).nil?)
     assert(!defined?(JSON::ParserError).nil?)
+    assert(Object.respond_to?(:to_json))
 
     # Test loaded features
     assert(!require('json'))
@@ -23,9 +24,5 @@ class MimicSingle < Minitest::Test
     rescue LoadError
       assert(true)
     end
-
-    # Make sure to_json is define for object.
-    {'a' => 1}.to_json()
-    Object.new().to_json()
   end
 end # MimicSingle
