@@ -19,11 +19,10 @@ class MimicSingle < Minitest::Test
 
     begin
       require('json_spec')
+      assert(false, '** should raise LoadError')
     rescue LoadError
       assert(true)
-      return
     end
-    assert(false, '** should raise LoadError')
 
     # Make sure to_json is define for object.
     {'a' => 1}.to_json()
