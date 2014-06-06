@@ -1,4 +1,7 @@
+#!/usr/bin/env ruby
 # encoding: UTF-8
+
+$: << File.dirname(__FILE__)
 
 require 'helper'
 
@@ -305,7 +308,7 @@ class DocTest < Minitest::Test
   end
 
   def test_open_file
-    filename = File.join('test', 'open_file_test.json')
+    filename = File.join(File.dirname(__FILE__), 'open_file_test.json')
     File.open(filename, 'w') { |f| f.write('{"a":[1,2,3]}') }
     Oj::Doc.open_file(filename) do |doc|
       assert_equal(5, doc.size)
@@ -331,7 +334,7 @@ class DocTest < Minitest::Test
   end
 
   def test_file_open_close
-    filename = File.join('test', 'open_file_test.json')
+    filename = File.join(File.dirname(__FILE__), 'open_file_test.json')
     File.open(filename, 'w') { |f| f.write('{"a":[1,2,3]}') }
     doc = Oj::Doc.open_file(filename)
     assert_equal(Oj::Doc, doc.class)

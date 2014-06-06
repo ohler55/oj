@@ -1,4 +1,7 @@
+#!/usr/bin/env ruby
 # encoding: UTF-8
+
+$: << File.join(File.dirname(__FILE__), '..')
 
 require 'helper'
 Oj.mimic_JSON
@@ -16,6 +19,12 @@ class MimicBefore < Minitest::Test
     rescue Exception
       assert(false, 'Expected a JSON::ParserError')
     end
+  end
+
+  # Make sure to_json is define for object.
+  def test_mimic_to_json
+    {'a' => 1}.to_json()
+    Object.new().to_json()
   end
 
   # dump

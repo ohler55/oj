@@ -1,4 +1,7 @@
+#!/usr/bin/env ruby
 # encoding: UTF-8
+
+$: << File.dirname(__FILE__)
 
 require 'helper'
 
@@ -186,6 +189,7 @@ class Juice < Minitest::Test
   end
 
   def test_string_object
+    Oj.default_options = {:mode => :object}
     dump_and_load('abc', false)
     dump_and_load(':abc', false)
   end
@@ -894,6 +898,7 @@ class Juice < Minitest::Test
     end
   end
   def test_date_object
+    Oj.default_options = {:mode => :object}
     dump_and_load(Date.new(2012, 6, 19), false)
   end
 
@@ -920,6 +925,7 @@ class Juice < Minitest::Test
     assert_equal(orig.to_s, x)
   end
   def test_datetime_object
+    Oj.default_options = {:mode => :object}
     dump_and_load(DateTime.new(2012, 6, 19), false)
   end
 
@@ -1030,7 +1036,7 @@ class Juice < Minitest::Test
 
   def test_io_file
     src = { 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}
-    filename = File.join('test', 'open_file_test.json')
+    filename = File.join(File.dirname(__FILE__), 'open_file_test.json')
     File.open(filename, "w") { |f|
       Oj.to_stream(f, src)
     }

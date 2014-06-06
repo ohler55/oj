@@ -1680,6 +1680,48 @@ mimic_create_id(VALUE self, VALUE id) {
     return id;
 }
 
+static struct _Options	mimic_object_to_json_options = {
+    0,			// indent
+    No,			// circular
+    No,			// auto_define
+    No,			// sym_key
+    JSONEsc,		// escape_mode
+    CompatMode,		// mode
+    No,			// class_cache
+    UnixTime,		// time_format
+    Yes,		// bigdec_as_num
+    AutoDec,		// bigdec_load
+    No,			// to_json
+    Yes,		// nilnil
+    json_class,		// create_id
+    10,			// create_id_len
+    9,			// sec_prec
+    Yes,		// allow_gc
+    0,			// dump_opts
+};
+
+static VALUE
+mimic_object_to_json(int argc, VALUE *argv, VALUE self) {
+    char		buf[4096];
+    struct _Out		out;
+    VALUE		rstr;
+    
+    out.buf = buf;
+    out.end = buf + sizeof(buf) - 10;
+    out.allocated = 0;
+    oj_dump_obj_to_json(self, &mimic_object_to_json_options, &out);
+    if (0 == out.buf) {
+	rb_raise(rb_eNoMemError, "Not enough memory.");
+    }
+    rstr = rb_str_new2(out.buf);
+    rstr = oj_encode(rstr);
+    if (out.allocated) {
+	xfree(out.buf);
+    }
+    return rstr;
+}
+
+
 /* Document-method: mimic_JSON
  *    call-seq: mimic_JSON() => Module
  *
@@ -1761,9 +1803,14 @@ define_mimic_json(int argc, VALUE *argv, VALUE self) {
     space_sym = ID2SYM(rb_intern("space"));				rb_gc_register_address(&space_sym);
     symbolize_names_sym = ID2SYM(rb_intern("symbolize_names"));		rb_gc_register_address(&symbolize_names_sym);
 
-    if (!rb_const_defined_at(mimic, rb_intern("ParserError"))) {
-	rb_define_const(mimic, "ParserError", oj_parse_error_class);
+    
+    if (rb_const_defined_at(mimic, rb_intern("ParserError"))) {
+	rb_funcall(mimic, rb_intern("remove_const"), 1, ID2SYM(rb_intern("ParserError")));
     }
+    rb_define_const(mimic, "ParserError", oj_parse_error_class);
+
+    rb_define_method(rb_cObject, "to_json", mimic_object_to_json, -1);
+
     oj_default_options.mode = CompatMode;
     oj_default_options.escape_mode = ASCIIEsc;
     oj_default_options.nilnil = Yes;

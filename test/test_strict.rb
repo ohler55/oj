@@ -1,4 +1,7 @@
+#!/usr/bin/env ruby
 # encoding: UTF-8
+
+$: << File.dirname(__FILE__)
 
 require 'helper'
 
@@ -156,7 +159,7 @@ class StrictJuice < Minitest::Test
   end
 
   def test_io_file
-    filename = File.join('test', 'open_file_test.json')
+    filename = File.join(File.dirname(__FILE__), 'open_file_test.json')
     File.open(filename, 'w') { |f| f.write(%{{
   "x":true,
   "y":58,
