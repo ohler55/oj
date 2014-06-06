@@ -399,6 +399,7 @@ class ObjectJuice < Minitest::Test
   end
 
   def test_mixed_hash_object
+    Oj.default_options = { :mode => :object }
     json = Oj.dump({ 1 => true, 'nil' => nil, :sim => 4 })
     h = Oj.object_load(json)
     assert_equal({ 1 => true, 'nil' => nil, :sim => 4 }, h)

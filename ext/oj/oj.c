@@ -1794,6 +1794,9 @@ define_mimic_json(int argc, VALUE *argv, VALUE self) {
 
     rb_define_module_function(mimic, "parse", mimic_parse, -1);
     rb_define_module_function(mimic, "parse!", mimic_parse, -1);
+
+    rb_define_method(rb_cObject, "to_json", mimic_object_to_json, -1);
+
     rb_gv_set("$VERBOSE", dummy);
 
     array_nl_sym = ID2SYM(rb_intern("array_nl"));			rb_gc_register_address(&array_nl_sym);
@@ -1809,7 +1812,9 @@ define_mimic_json(int argc, VALUE *argv, VALUE self) {
     }
     rb_define_const(mimic, "ParserError", oj_parse_error_class);
 
-    rb_define_method(rb_cObject, "to_json", mimic_object_to_json, -1);
+    if (!rb_const_defined_at(mimic, rb_intern("State"))) {
+        rb_define_class_under(mimic, "State", rb_cObject);
+    }
 
     oj_default_options.mode = CompatMode;
     oj_default_options.escape_mode = ASCIIEsc;
