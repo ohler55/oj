@@ -271,6 +271,7 @@ class Juice < ::Test::Unit::TestCase
 
   # rails encoding tests
   def test_does_not_escape_entities_by_default
+    Oj.default_options = { :escape_mode => :ascii } # set in mimic mode
     # use Oj to create the hash since some Rubies don't deal nicely with unicode.
     json = %{{"key":"I <3 this\\u2028space"}}
     hash = Oj.load(json)

@@ -177,7 +177,7 @@ static VALUE	define_mimic_json(int argc, VALUE *argv, VALUE self);
  * - circular: [true|false|nil] support circular references while dumping
  * - auto_define: [true|false|nil] automatically define classes if they do not exist
  * - symbol_keys: [true|false|nil] use symbols instead of strings for hash keys
- * - escape_mode: [:json|:xss_safe|:ascii|nil] use symbols instead of strings for hash keys
+ * - escape_mode: [:json|:xss_safe|:ascii|nil] determines the characters to escape
  * - class_cache: [true|false|nil] cache classes for faster parsing (if dynamically modifying classes or reloading classes then don't use this)
  * - mode: [:object|:strict|:compat|:null] load and dump modes to use for JSON
  * - time_format: [:unix|:xmlschema|:ruby] time format when dumping in :compat mode

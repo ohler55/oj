@@ -113,7 +113,7 @@ static const char	hex_chars[17] = "0123456789abcdef";
 
 static char	hibit_friendly_chars[256] = "\
 66666666222622666666666666666666\
-11211111111111111111111111111111\
+11211111111111121111111111111111\
 11111111111111111111111111112111\
 11111111111111111111111111111111\
 11111111111111111111111111111111\
@@ -512,6 +512,7 @@ dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out) {
 	    case '2':
 		*out->cur++ = '\\';
 		switch (*str) {
+		case '\\':	*out->cur++ = '\\';	break;
 		case '\b':	*out->cur++ = 'b';	break;
 		case '\t':	*out->cur++ = 't';	break;
 		case '\n':	*out->cur++ = 'n';	break;

@@ -12,7 +12,8 @@ $: << File.join(File.dirname(__FILE__), "../ext")
 
 require 'test/unit'
 require 'oj'
-Oj.mimic_JSON
+require 'oj_mimic_json'
+#Oj.mimic_JSON
 require 'json'
 
 class MimicBefore < ::Test::Unit::TestCase
