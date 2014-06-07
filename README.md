@@ -70,6 +70,10 @@ is the `:object` mode.
   preferred over the `to_json` method. If neither the `to_json` or `to_hash`
   methods exists, then the Oj internal `Object` variable encoding is used.
 
+To change default serialization mode:
+```ruby
+Oj.default_options[:mode] = :compat
+```
 
 ## Compatibility
 
