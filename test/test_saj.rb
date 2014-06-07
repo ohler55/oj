@@ -178,11 +178,9 @@ class SajTest < Minitest::Test
     json = %{12345xyz}
     Oj.saj_parse(handler, json)
     assert_equal([:add_value, 12345, nil], handler.calls.first)
-    assert(
-      [:error, "invalid format, extra characters at line 1, column 6 [saj.c:688]", 1, 6] == handler.calls.last ||
-      [:error, "invalid format, extra characters at line 1, column 6 [../../../../ext/oj/saj.c:688]", 1, 6] == handler.calls.last
-    )
-
+    type, message, line, column = handler.calls.last
+    assert_equal([:error, 1, 6], [type, line, column])
+    assert_match(%r{invalid format, extra characters at line 1, column 6 \[(?:[a-z\.]+/)*saj\.c:\d+\]}, message)
   end
 
 end

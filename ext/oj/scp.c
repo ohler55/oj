@@ -256,7 +256,7 @@ oj_sc_parse(int argc, VALUE *argv, VALUE self) {
 	pi.expect_value = 0;
     }
     if (rb_type(input) == T_STRING) {
-	pi.json = StringValuePtr(input);
+	oj_pi_set_input_str(&pi, input);
     } else {
 	VALUE		clas = rb_obj_class(input);
 	volatile VALUE	s;
@@ -265,7 +265,7 @@ oj_sc_parse(int argc, VALUE *argv, VALUE self) {
 #endif
 	if (oj_stringio_class == clas) {
 	    s = rb_funcall2(input, oj_string_id, 0, 0);
-	    pi.json = StringValuePtr(input);
+	    oj_pi_set_input_str(&pi, input);
 #if !IS_WINDOWS
 	    // JRuby gets confused with what is the real fileno.
 	} else if (rb_respond_to(input, oj_fileno_id) &&
@@ -275,20 +275,19 @@ oj_sc_parse(int argc, VALUE *argv, VALUE self) {
 	    size_t	len = lseek(fd, 0, SEEK_END);
 
 	    lseek(fd, 0, SEEK_SET);
-	    buf = ALLOC_N(char, len + 1);
+	    buf = ALLOC_N(char, len);
 	    pi.json = buf;
+	    pi.end = buf + len;
 	    if (0 >= (cnt = read(fd, (char*)pi.json, len)) || cnt != (ssize_t)len) {
 		if (0 != buf) {
 		    xfree(buf);
 		}
 		rb_raise(rb_eIOError, "failed to read from IO Object.");
 	    }
-	    ((char*)pi.json)[len] = '\0';
 #endif
 	} else if (rb_respond_to(input, oj_read_id)) {
 	    s = rb_funcall2(input, oj_read_id, 0, 0);
-	    pi.json = rb_string_value_cstr((VALUE*)&s);
-
+	    oj_pi_set_input_str(&pi, s);
 	} else {
 	    rb_raise(rb_eArgError, "saj_parse() expected a String or IO Object.");
 	}

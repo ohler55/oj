@@ -219,6 +219,11 @@ class Juice < Minitest::Test
     assert_equal(json, json2)
   end
 
+  def test_null_char
+    assert_raises(Oj::ParseError) { Oj.load("\"\0\"") }
+    assert_raises(Oj::ParseError) { Oj.load("\"\\\0\"") }
+  end
+
   def test_array
     dump_and_load([], false)
     dump_and_load([true, false], false)
