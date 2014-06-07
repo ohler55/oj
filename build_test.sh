@@ -6,7 +6,6 @@ for ruby in \
  ree-1.8.7-2012.02\
  1.9.3-p484\
  2.0.0-p353\
- 2.1.1\
  2.1.2
 do
     echo "\n********************************************************************************"
@@ -17,9 +16,13 @@ do
     make
 
     echo "\nRunning tests for $ruby"
+    cd ../../test
     rbenv local $ruby
-    cd ../..
-    ./test/test_all.sh
+    cd isolated
+    rbenv local $ruby
+    cd ..
+    ./test_all.sh
+    cd ..
 
     echo "\n"
 done
@@ -32,7 +35,8 @@ ruby extconf.rb
 make
 
 echo "\nRunning tests for OS X Ruby"
-cd ../..
-./test/test_all.sh
+cd ../../test
+./test_all.sh
+cd ..
 
 echo "\n"

@@ -8,8 +8,6 @@ echo "----- Compat parser tests (test_compat.rb) -----"
 ruby test_compat.rb
 echo "----- Object parser tests (test_object.rb) -----"
 ruby test_object.rb
-echo "----- Mimic tests (isolated/test_mimic.rb) -----"
-ruby isolated/test_mimic.rb
 echo "----- Fast tests (test_fast.rb) -----"
 ruby test_fast.rb
 echo "----- SAJ parser tests (test_saj.rb) -----"
@@ -22,3 +20,16 @@ echo "----- Writer tests (test_writer.rb) -----"
 ruby test_writer.rb
 echo "----- File loading tests (test_file.rb) -----"
 ruby test_file.rb
+# only run if <= 1.9.3
+echo "----- Mimic tests (isolated/test_mimic_after.rb) -----"
+ruby isolated/test_mimic_after.rb
+echo "----- Mimic tests (isolated/test_mimic_alone.rb) -----"
+ruby isolated/test_mimic_alone.rb
+echo "----- Mimic tests (isolated/test_mimic_before.rb) -----"
+ruby isolated/test_mimic_before.rb
+echo "----- Mimic tests (isolated/test_mimic_define.rb) -----"
+ruby isolated/test_mimic_define.rb
+echo "----- Mimic tests (isolated/test_mimic_rails_after.rb) -----"
+ruby isolated/test_mimic_rails_after.rb
+echo "----- Mimic tests (isolated/test_mimic_rails_before.rb) -----"
+ruby isolated/test_mimic_rails_before.rb

@@ -36,6 +36,8 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
  - Another thanks goes out to lautis for a pull request that provided some
    optimization and fixed the return exception for an embedded null in a string.
 
+ - Fixed a bug with zip reader streams where EOF was not handled nicely.
+
 ### Current Release 2.9.4
 
  - In mimic mode parse errors now match the JSON::ParserError.

@@ -163,7 +163,9 @@ oj_reader_read(Reader reader) {
 
 static VALUE
 rescue_cb(VALUE rbuf, VALUE err) {
-    if (rb_eTypeError != rb_obj_class(err)) {
+    VALUE	clas = rb_obj_class(err);
+
+    if (rb_eTypeError != clas && rb_eEOFError != clas) {
 	Reader	reader = (Reader)rbuf;
 
 	rb_raise(err, "at line %d, column %d\n", reader->line, reader->col);
@@ -186,7 +188,6 @@ partial_io_cb(VALUE rbuf) {
     }
     str = StringValuePtr(rstr);
     cnt = RSTRING_LEN(rstr);
-    //printf("*** read %lu bytes, str: '%s'\n", cnt, str);
     strcpy(reader->tail, str);
     reader->read_end = reader->tail + cnt;
 

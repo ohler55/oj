@@ -5,7 +5,12 @@ $: << File.join(File.dirname(__FILE__), '..')
 
 require 'helper'
 
-require 'rails/all'
+begin
+  require 'rails/all'
+rescue Exception
+  Process.exit!(true)
+end
+
 Oj.mimic_JSON
 
 require 'isolated/shared'

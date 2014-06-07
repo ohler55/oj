@@ -1806,7 +1806,6 @@ define_mimic_json(int argc, VALUE *argv, VALUE self) {
     space_sym = ID2SYM(rb_intern("space"));				rb_gc_register_address(&space_sym);
     symbolize_names_sym = ID2SYM(rb_intern("symbolize_names"));		rb_gc_register_address(&symbolize_names_sym);
 
-    
     if (rb_const_defined_at(mimic, rb_intern("ParserError"))) {
 	rb_funcall(mimic, rb_intern("remove_const"), 1, ID2SYM(rb_intern("ParserError")));
     }
