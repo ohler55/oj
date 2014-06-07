@@ -230,7 +230,7 @@ if defined?(ActiveSupport)
     end
 
     def test_activesupport_encode
-      Oj.default_options= {:indent => 2} # JSON this should not change anything
+      Oj.default_options= {:indent => 0}
       json = ActiveSupport::JSON.encode([1, true, nil])
       assert_equal(%{[1,true,null]}, json)
     end
