@@ -10,6 +10,7 @@ end
 Rake::TestTask.new(:test) do |test|
   test.libs << 'test'
   test.pattern = 'test/test_*.rb'
+  test.options = "-v"
 end
 
 task :test_all => [:compile] do
