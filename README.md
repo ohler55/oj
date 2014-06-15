@@ -26,21 +26,12 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
-### Current Release 2.9.5
+### Current Release 2.9.6
 
- - Mimic mode now monkey patches Object like JSON.
+ - Fixed bug using StringIO with SCParser.
 
- - A big thanks to krasnoukhov for reorganizing test and helping get Oj more
-   rails compatible.
-
- - Another thanks goes out to lautis for a pull request that provided some
-   optimization and fixed the return exception for an embedded null in a string.
-
- - Fixed a bug with zip reader streams where EOF was not handled nicely.
-
-### Current Release 2.9.4
-
- - In mimic mode parse errors now match the JSON::ParserError.
+ - Tightened up JSON mimic to raise an exception if JSON.parse is called on
+   a JSON documents that returns a primitive type.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 

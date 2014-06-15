@@ -265,7 +265,7 @@ oj_sc_parse(int argc, VALUE *argv, VALUE self) {
 #endif
 	if (oj_stringio_class == clas) {
 	    s = rb_funcall2(input, oj_string_id, 0, 0);
-	    oj_pi_set_input_str(&pi, input);
+	    oj_pi_set_input_str(&pi, s);
 #if !IS_WINDOWS
 	    // JRuby gets confused with what is the real fileno.
 	} else if (rb_respond_to(input, oj_fileno_id) &&

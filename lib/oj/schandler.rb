@@ -28,14 +28,58 @@ module Oj
   # be made public in the subclasses. If the methods remain private they will
   # not be called during parsing.
   #
-  #    def hash_start(); end                 # called on start of a JSON object
-  #    def hash_end(); end                   # called on closing a JSON object
-  #    def array_start(); end                # called on starting an Array
-  #    def array_end(); end                  # called on closing and Array
-  #    def add_value(value); end             # called on finishing a top level JSON value
-  #    def hash_set(h, key, value); end      # called on reading an object key value pair
-  #    def array_append(a, value); end       # called on reading a value in an array
-  #    def error(message, line, column); end # called on an error
+  #    def hash_start(); end
+  #    def hash_end(); end
+  #    def hash_set(h, key, value); end
+  #    def array_start(); end
+  #    def array_end(); end
+  #    def array_append(a, value); end
+  #    def add_value(value); end
+  #
+  # As certain elements of a JSON document are reached during parsing the
+  # callbacks are called. The parser helps by keeping track of objects created
+  # by the callbacks but does not create those objects itself.
+  #
+  #    hash_start
+  #
+  # When a JSON object element starts the hash_start() callback is called if
+  # public. It should return what ever Ruby Object is to be used as the element
+  # that will later be included in the hash_set() callback.
+  # 
+  #    hash_end
+  # 
+  # At the end of a JSON object element the hash_end() callback is called if public.
+  # 
+  #    hash_set
+  # 
+  # When a key value pair is encountered during parsing the hash_set() callback
+  # is called if public. The first element will be the object returned from the
+  # enclosing hash_start() callback. The second argument is the key and the last
+  # is the value.
+  # 
+  #    array_start
+  # 
+  # When a JSON array element is started the array_start() callback is called if
+  # public. It should return what ever Ruby Object is to be used as the element
+  # that will later be included in the array_append() callback.
+  # 
+  #    array_end
+  # 
+  # At the end of a JSON array element the array_end() callback is called if public.
+  # 
+  #    array_append
+  # 
+  # When a element is encountered that is an element of an array the
+  # array_append() callback is called if public. The first argument to the
+  # callback is the Ruby object returned from the enclosing array_start()
+  # callback.
+  # 
+  #    add_value
+  # 
+  # The handler is expected to handle multiple JSON elements in one stream,
+  # file, or string. When a top level JSON has been read completely the
+  # add_value() callback is called. Even if only one element was ready this
+  # callback returns the Ruby object that was constructed during the parsing.
   #
   class ScHandler
     # Create a new instance of the ScHandler class.
@@ -53,6 +97,9 @@ module Oj
     def hash_end()
     end
 
+    def hash_set(h, key, value)
+    end
+    
     def array_start()
     end
 
@@ -62,11 +109,8 @@ module Oj
     def add_value(value)
     end
     
-    def hash_set(h, key, value)
-    end
-    
     def array_append(a, value)
     end
-    
+
   end # ScHandler
 end # Oj

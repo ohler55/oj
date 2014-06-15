@@ -1614,6 +1614,7 @@ static VALUE
 mimic_parse(int argc, VALUE *argv, VALUE self) {
     struct _ParseInfo	pi;
     VALUE		args[1];
+    VALUE		result;
 
     if (argc < 1) {
 	rb_raise(rb_eArgError, "Wrong number of arguments to parse.");
@@ -1643,7 +1644,22 @@ mimic_parse(int argc, VALUE *argv, VALUE self) {
     }
     *args = *argv;
 
-    return oj_pi_parse(1, args, &pi, 0, 0, 0);
+    result = oj_pi_parse(1, args, &pi, 0, 0, 0);
+    switch (rb_type(result)) {
+    case T_NIL:
+    case T_TRUE:
+    case T_FALSE:
+    case T_FIXNUM:
+    case T_FLOAT:
+    case T_CLASS:
+    case T_SYMBOL:
+	rb_raise(oj_parse_error_class, "parse is only allowed to return data structure.");
+	break;
+    default:
+	// okay
+	break;
+    }
+    return result;
 }
 
 static VALUE
