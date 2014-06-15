@@ -28,12 +28,14 @@ module Oj
   # be made public in the subclasses. If the methods remain private they will
   # not be called during parsing.
   #
-  #    def hash_start(); end
-  #    def hash_end(); end
-  #    def array_start(); end
-  #    def array_end(); end
-  #    def add_value(value); end
-  #    def error(message, line, column); end
+  #    def hash_start(); end                 # called on start of a JSON object
+  #    def hash_end(); end                   # called on closing a JSON object
+  #    def array_start(); end                # called on starting an Array
+  #    def array_end(); end                  # called on closing and Array
+  #    def add_value(value); end             # called on finishing a top level JSON value
+  #    def hash_set(h, key, value); end      # called on reading an object key value pair
+  #    def array_append(a, value); end       # called on reading a value in an array
+  #    def error(message, line, column); end # called on an error
   #
   class ScHandler
     # Create a new instance of the ScHandler class.
