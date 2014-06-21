@@ -26,7 +26,15 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
-### Current Release 2.9.6
+### Current Release 2.9.7
+
+ - Changed dump to use raw / and raw \n in output instead of escaping.
+
+ - TBD Worked around the file.gets look ahead caching as long as it is not
+   called while parsing (of course).
+   
+
+### Release 2.9.6
 
  - Fixed bug using StringIO with SCParser.
 

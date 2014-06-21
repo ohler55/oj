@@ -86,7 +86,9 @@ oj_reader_init(Reader reader, VALUE io, int fd) {
     } else if (rb_respond_to(io, oj_readpartial_id)) {
 	VALUE	rfd;
 
-	if (rb_respond_to(io, oj_fileno_id) && Qnil != (rfd = rb_funcall(io, oj_fileno_id, 0))) {
+	if (rb_respond_to(io, oj_fileno_id) && Qnil != (rfd = rb_funcall(io, oj_fileno_id, 0)) &&
+	    rb_respond_to(io, oj_pos_id) && 0 == FIX2INT(rb_funcall(io, oj_pos_id, 0))) {
+
 	    reader->read_func = read_from_fd;
 	    reader->fd = FIX2INT(rfd);
 	} else {
@@ -96,7 +98,9 @@ oj_reader_init(Reader reader, VALUE io, int fd) {
     } else if (rb_respond_to(io, oj_read_id)) {
 	VALUE	rfd;
 
-	if (rb_respond_to(io, oj_fileno_id) && Qnil != (rfd = rb_funcall(io, oj_fileno_id, 0))) {
+	if (rb_respond_to(io, oj_fileno_id) && Qnil != (rfd = rb_funcall(io, oj_fileno_id, 0)) &&
+	    rb_respond_to(io, oj_pos_id) && 0 == FIX2INT(rb_funcall(io, oj_pos_id, 0))) {
+
 	    reader->read_func = read_from_fd;
 	    reader->fd = FIX2INT(rfd);
 	} else {

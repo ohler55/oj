@@ -262,6 +262,7 @@ extern ID	oj_instance_variables_id;
 extern ID	oj_json_create_id;
 extern ID	oj_length_id;
 extern ID	oj_new_id;
+extern ID	oj_pos_id;
 extern ID	oj_read_id;
 extern ID	oj_readpartial_id;
 extern ID	oj_replace_id;

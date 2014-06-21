@@ -3,6 +3,8 @@
 ^c^d hide subtree
 ^c^s show subtree
 
+when reading file, only use file io if at front of file
+
 
 ---------------------------
 Tried a separate thread for the parser and the results were poor. The parsing is
