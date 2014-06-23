@@ -873,5 +873,23 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
     if (err_has(&pi->err)) {
 	oj_err_raise(&pi->err);
     }
+
+    if (pi->options.quirks_mode == No) {
+	switch (rb_type(result)) {
+            case T_NIL:
+	    case T_TRUE:
+	    case T_FALSE:
+	    case T_FIXNUM:
+	    case T_FLOAT:
+	    case T_CLASS:
+	    case T_SYMBOL:
+		rb_raise(oj_parse_error_class, "unexpected non-document value");
+		break;
+	    default:
+		// okay
+		break;
+	}
+    }
+
     return result;
 }
