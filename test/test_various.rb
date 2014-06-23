@@ -1116,6 +1116,11 @@ class Juice < Minitest::Test
     assert_equal(nil, obj)
   end
 
+  def test_quirks_mode
+    assert_raises(Oj::ParseError) { Oj.load("null", :quirks_mode => false) }
+    assert_equal nil, Oj.load("null", :quirks_mode => true)
+  end
+
   def dump_and_load(obj, trace=false)
     json = Oj.dump(obj, :indent => 2)
     puts json if trace

@@ -117,6 +117,7 @@ static VALUE	mode_sym;
 static VALUE	nilnil_sym;
 static VALUE	null_sym;
 static VALUE	object_sym;
+static VALUE	quirks_mode_sym;
 static VALUE	ruby_sym;
 static VALUE	sec_prec_sym;
 static VALUE	strict_sym;
@@ -166,6 +167,7 @@ struct _Options	oj_default_options = {
     10,			// create_id_len
     9,			// sec_prec
     Yes,		// allow_gc
+    Yes,		// quirks_mode
     0,			// dump_opts
 };
 
@@ -189,6 +191,7 @@ static VALUE	define_mimic_json(int argc, VALUE *argv, VALUE self);
  * - use_to_json: [true|false|nil] call to_json() methods on dump, default is false
  * - nilnil: [true|false|nil] if true a nil input to load will return nil and not raise an Exception
  * - allow_gc: [true|false|nil] allow or prohibit GC during parsing, default is true (allow)
+ * - quirks_mode: [true,|false|nil] Allow single JSON values instead of documents, default is true (allow)
  * @return [Hash] all current option settings.
  */
 static VALUE
@@ -205,6 +208,7 @@ get_def_opts(VALUE self) {
     rb_hash_aset(opts, use_to_json_sym, (Yes == oj_default_options.to_json) ? Qtrue : ((No == oj_default_options.to_json) ? Qfalse : Qnil));
     rb_hash_aset(opts, nilnil_sym, (Yes == oj_default_options.nilnil) ? Qtrue : ((No == oj_default_options.nilnil) ? Qfalse : Qnil));
     rb_hash_aset(opts, allow_gc_sym, (Yes == oj_default_options.allow_gc) ? Qtrue : ((No == oj_default_options.allow_gc) ? Qfalse : Qnil));
+    rb_hash_aset(opts, quirks_mode_sym, (Yes == oj_default_options.quirks_mode) ? Qtrue : ((No == oj_default_options.quirks_mode) ? Qfalse : Qnil));
     switch (oj_default_options.mode) {
     case StrictMode:	rb_hash_aset(opts, mode_sym, strict_sym);	break;
     case CompatMode:	rb_hash_aset(opts, mode_sym, compat_sym);	break;
@@ -266,6 +270,7 @@ get_def_opts(VALUE self) {
  * @param [true|false|nil] :use_to_json call to_json() methods on dump, default is false
  * @param [true|false|nil] :nilnil if true a nil input to load will return nil and not raise an Exception
  * @param [true|false|nil] :allow_gc allow or prohibit GC during parsing, default is true (allow)
+ * @param [true|false|nil] :quirks_mode allow single JSON values instead of documents, default is true (allow)
  * @return [nil]
  */
 static VALUE
@@ -279,6 +284,7 @@ set_def_opts(VALUE self, VALUE opts) {
 	{ use_to_json_sym, &oj_default_options.to_json },
 	{ nilnil_sym, &oj_default_options.nilnil },
 	{ allow_gc_sym, &oj_default_options.allow_gc },
+	{ quirks_mode_sym, &oj_default_options.quirks_mode },
 	{ Qnil, 0 }
     };
     YesNoOpt	o;
@@ -411,6 +417,7 @@ oj_parse_options(VALUE ropts, Options copts) {
 	{ use_to_json_sym, &copts->to_json },
 	{ nilnil_sym, &copts->nilnil },
 	{ allow_gc_sym, &copts->allow_gc },
+	{ quirks_mode_sym, &copts->quirks_mode },
 	{ Qnil, 0 }
     };
     YesNoOpt	o;
@@ -1615,7 +1622,6 @@ static VALUE
 mimic_parse(int argc, VALUE *argv, VALUE self) {
     struct _ParseInfo	pi;
     VALUE		args[1];
-    VALUE		result;
 
     if (argc < 1) {
 	rb_raise(rb_eArgError, "Wrong number of arguments to parse.");
@@ -1623,6 +1629,8 @@ mimic_parse(int argc, VALUE *argv, VALUE self) {
     oj_set_compat_callbacks(&pi);
     pi.options = oj_default_options;
     pi.options.auto_define = No;
+    pi.options.quirks_mode = No;
+
     if (2 <= argc) {
 	VALUE	ropts = argv[1];
 	VALUE	v;
@@ -1633,6 +1641,11 @@ mimic_parse(int argc, VALUE *argv, VALUE self) {
 	if (Qnil != (v = rb_hash_lookup(ropts, symbolize_names_sym))) {
 	    pi.options.sym_key = (Qtrue == v) ? Yes : No;
 	}
+
+	if (Qnil != (v = rb_hash_lookup(ropts, quirks_mode_sym))) {
+	    pi.options.quirks_mode = (Qtrue == v) ? Yes : No;
+	}
+
 	if (Qnil != (v = rb_hash_lookup(ropts, create_additions_sym))) {
 	    if (Qfalse == v) {
 		oj_set_strict_callbacks(&pi);
@@ -1645,22 +1658,7 @@ mimic_parse(int argc, VALUE *argv, VALUE self) {
     }
     *args = *argv;
 
-    result = oj_pi_parse(1, args, &pi, 0, 0, 0);
-    switch (rb_type(result)) {
-    case T_NIL:
-    case T_TRUE:
-    case T_FALSE:
-    case T_FIXNUM:
-    case T_FLOAT:
-    case T_CLASS:
-    case T_SYMBOL:
-	rb_raise(oj_parse_error_class, "parse is only allowed to return data structure.");
-	break;
-    default:
-	// okay
-	break;
-    }
-    return result;
+    return oj_pi_parse(1, args, &pi, 0, 0, 0);
 }
 
 static VALUE
@@ -1714,6 +1712,7 @@ static struct _Options	mimic_object_to_json_options = {
     10,			// create_id_len
     9,			// sec_prec
     Yes,		// allow_gc
+    Yes,		// quirks_mode
     0,			// dump_opts
 };
 
@@ -2004,6 +2003,7 @@ void Init_oj() {
     mode_sym = ID2SYM(rb_intern("mode"));		rb_gc_register_address(&mode_sym);
     null_sym = ID2SYM(rb_intern("null"));		rb_gc_register_address(&null_sym);
     object_sym = ID2SYM(rb_intern("object"));		rb_gc_register_address(&object_sym);
+    quirks_mode_sym = ID2SYM(rb_intern("quirks_mode"));	rb_gc_register_address(&quirks_mode_sym);
     ruby_sym = ID2SYM(rb_intern("ruby"));		rb_gc_register_address(&ruby_sym);
     sec_prec_sym = ID2SYM(rb_intern("second_precision"));rb_gc_register_address(&sec_prec_sym);
     strict_sym = ID2SYM(rb_intern("strict"));		rb_gc_register_address(&strict_sym);
