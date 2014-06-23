@@ -1226,9 +1226,10 @@ stream_writer_new(int argc, VALUE *argv, VALUE self) {
     }
     sw = ALLOC(struct _StreamWriter);
     str_writer_init(&sw->sw);
-    if (1 == argc) {
-	oj_parse_options(argv[0], &sw->sw.opts);
+    if (2 == argc) {
+	oj_parse_options(argv[1], &sw->sw.opts);
     }
+    sw->sw.out.indent = sw->sw.opts.indent;
     sw->stream = stream;
     sw->type = type;
     sw->fd = fd;
