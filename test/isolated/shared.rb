@@ -98,6 +98,13 @@ class SharedMimicTest < Minitest::Test
            "children don't match")
   end
 
+  def test_parse_with_quirks_mode
+    json = %{null}
+    assert_equal(nil, JSON.parse(json, quirks_mode: true))
+    assert_raises(JSON::ParserError) { JSON.parse(json, quirks_mode: false) }
+    assert_raises(JSON::ParserError) { JSON.parse(json) }
+  end
+
 # []
   def test_bracket_load
     json = %{{"a":1,"b":[true,false]}}
