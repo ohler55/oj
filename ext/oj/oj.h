@@ -141,7 +141,7 @@ typedef struct _Options {
     size_t	create_id_len;	// length of create_id
     int		sec_prec;	// second precision when dumping time
     char	allow_gc;	// allow GC during parse
-    char    quirks_mode; // allow single JSON values instead of documents
+    char	quirks_mode;	// allow single JSON values instead of documents
     DumpOpts	dump_opts;
 } *Options;
 

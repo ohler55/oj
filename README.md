@@ -32,6 +32,11 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
  - TBD Worked around the file.gets look ahead caching as long as it is not
    called while parsing (of course).
+
+ - Thanks to lautis for a new parse option. quirks_mode allows Oj to behave
+   quirky like the JSON gem. Actually the JSON gem has it backwards with quirky
+   mode supporting the JSON spec and non-quirky limiting parsing to objects and
+   arrays. Oj stays consistent with the JSON gem to avoid confusion.
    
 
 ### Release 2.9.6

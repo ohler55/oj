@@ -19,7 +19,7 @@ class OjWriter < Minitest::Test
     w = Oj::StringWriter.new(:indent => 0)
     w.push_array()
     w.pop()
-    assert_equal('[]', w.to_s)
+    assert_equal("[]\n", w.to_s)
   end
 
   def test_string_writer_nested_array
@@ -34,14 +34,14 @@ class OjWriter < Minitest::Test
     w.push_array()
     w.pop()
     w.pop()
-    assert_equal('[[],[[]],[]]', w.to_s)
+    assert_equal("[[],[[]],[]]\n", w.to_s)
   end
 
   def test_string_writer_empty_object
     w = Oj::StringWriter.new(:indent => 0)
     w.push_object()
     w.pop()
-    assert_equal('{}', w.to_s)
+    assert_equal("{}\n", w.to_s)
   end
 
   def test_string_writer_nested_object
@@ -56,7 +56,7 @@ class OjWriter < Minitest::Test
     w.push_object("a3")
     w.pop()
     w.pop()
-    assert_equal('{"a1":{},"a2":{"b":{}},"a3":{}}', w.to_s)
+    assert_equal(%|{"a1":{},"a2":{"b":{}},"a3":{}}\n|, w.to_s)
   end
 
   def test_string_writer_nested_key
@@ -76,7 +76,7 @@ class OjWriter < Minitest::Test
     w.push_value(37)
     w.pop()
     w.pop()
-    assert_equal('{"a1":{},"a2":{"b":{}},"a3":{"a4":37}}', w.to_s)
+    assert_equal(%|{"a1":{},"a2":{"b":{}},"a3":{"a4":37}}\n|, w.to_s)
   end
 
   def test_string_writer_value_array
@@ -118,7 +118,7 @@ class OjWriter < Minitest::Test
         w.push_value(3)
       }
     }
-    assert_equal('{"a1":{"a7":7},"a2":["x",3]}', w.to_s)
+    assert_equal(%|{"a1":{"a7":7},"a2":["x",3]}\n|, w.to_s)
   end
 
   def test_string_writer_json
@@ -131,7 +131,7 @@ class OjWriter < Minitest::Test
     w.push_json('{"a":65}', 'x')
     w.pop()
     w.pop()
-    assert_equal('[7,true,"a string",{"x":{"a":65}}]', w.to_s)
+    assert_equal(%|[7,true,"a string",{"x":{"a":65}}]\n|, w.to_s)
   end
 
   def test_string_writer_pop_excess
@@ -206,7 +206,7 @@ class OjWriter < Minitest::Test
     w.push_value(3)
     w.push_array()
     w.pop_all()
-    assert_equal('{"a1":{},"a2":[3,[]]}', w.to_s)
+    assert_equal(%|{"a1":{},"a2":[3,[]]}\n|, w.to_s)
   end
 
   def test_string_writer_reset
@@ -224,7 +224,7 @@ class OjWriter < Minitest::Test
     w = Oj::StreamWriter.new(output, :indent => 0)
     w.push_array()
     w.pop()
-    assert_equal('[]', output.string())
+    assert_equal("[]\n", output.string())
   end
 
   def test_stream_writer_mixed_stringio
@@ -243,7 +243,7 @@ class OjWriter < Minitest::Test
     w.push_object("a3")
     w.pop()
     w.pop()
-    assert_equal('{"a1":{},"a2":{"b":[7,true,"string"]},"a3":{}}', output.string())
+    assert_equal(%|{"a1":{},"a2":{"b":[7,true,"string"]},"a3":{}}\n|, output.string())
   end
 
   def test_stream_writer_mixed_file
@@ -265,7 +265,7 @@ class OjWriter < Minitest::Test
       w.pop()
     end
     content = File.read(filename)
-    assert_equal('{"a1":{},"a2":{"b":[7,true,"string"]},"a3":{}}', content)
+    assert_equal(%|{"a1":{},"a2":{"b":[7,true,"string"]},"a3":{}}\n|, content)
   end
 
   def test_stream_writer_nested_key_object
@@ -286,7 +286,7 @@ class OjWriter < Minitest::Test
     w.push_value(37)
     w.pop()
     w.pop()
-    assert_equal('{"a1":{},"a2":{"b":{}},"a3":{"a4":37}}', output.string())
+    assert_equal(%|{"a1":{},"a2":{"b":{}},"a3":{"a4":37}}\n|, output.string())
   end
 
 end # OjWriter
