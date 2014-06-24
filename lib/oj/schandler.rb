@@ -6,22 +6,37 @@ module Oj
   # methods.
   #
   # @example
-  # 
+  #
   #  require 'oj'
   #
   #  class MyHandler < ::Oj::ScHandler
-  #    def initialize()
-  #      @hash_cnt = 0
+  #    def hash_start
+  #      {}
   #    end
   #
-  #    def hash_start()
-  #      @hash_cnt += 1
+  #    def hash_set(h,k,v)
+  #      h[k] = v
+  #    end
+  #
+  #    def array_start
+  #      []
+  #    end
+  #
+  #    def array_append(a,v)
+  #      a << v
+  #    end
+  #
+  #    def add_value(v)
+  #      p v
+  #    end
+  #
+  #    def error(message, line, column)
+  #      p "ERROR: #{message}"
   #    end
   #  end
   #
-  #  cnt = MyHandler.new()
   #  File.open('any.json', 'r') do |f|
-  #    Oj.sc_parse(cnt, f)
+  #    Oj.sc_parse(MyHandler.new, f)
   #  end
   #
   # To make the desired methods active while parsing the desired method should
@@ -45,37 +60,37 @@ module Oj
   # When a JSON object element starts the hash_start() callback is called if
   # public. It should return what ever Ruby Object is to be used as the element
   # that will later be included in the hash_set() callback.
-  # 
+  #
   #    hash_end
-  # 
+  #
   # At the end of a JSON object element the hash_end() callback is called if public.
-  # 
+  #
   #    hash_set
-  # 
+  #
   # When a key value pair is encountered during parsing the hash_set() callback
   # is called if public. The first element will be the object returned from the
   # enclosing hash_start() callback. The second argument is the key and the last
   # is the value.
-  # 
+  #
   #    array_start
-  # 
+  #
   # When a JSON array element is started the array_start() callback is called if
   # public. It should return what ever Ruby Object is to be used as the element
   # that will later be included in the array_append() callback.
-  # 
+  #
   #    array_end
-  # 
+  #
   # At the end of a JSON array element the array_end() callback is called if public.
-  # 
+  #
   #    array_append
-  # 
+  #
   # When a element is encountered that is an element of an array the
   # array_append() callback is called if public. The first argument to the
   # callback is the Ruby object returned from the enclosing array_start()
   # callback.
-  # 
+  #
   #    add_value
-  # 
+  #
   # The handler is expected to handle multiple JSON elements in one stream,
   # file, or string. When a top level JSON has been read completely the
   # add_value() callback is called. Even if only one element was ready this
@@ -99,7 +114,7 @@ module Oj
 
     def hash_set(h, key, value)
     end
-    
+
     def array_start()
     end
 
@@ -108,7 +123,7 @@ module Oj
 
     def add_value(value)
     end
-    
+
     def array_append(a, value)
     end
 
