@@ -275,7 +275,8 @@ oj_sc_parse(int argc, VALUE *argv, VALUE self) {
 	    size_t	len = lseek(fd, 0, SEEK_END);
 
 	    lseek(fd, 0, SEEK_SET);
-	    buf = ALLOC_N(char, len);
+	    buf = ALLOC_N(char, len + 1);
+	    buf[len] = '\0';
 	    pi.json = buf;
 	    pi.end = buf + len;
 	    if (0 >= (cnt = read(fd, (char*)pi.json, len)) || cnt != (ssize_t)len) {

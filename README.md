@@ -30,6 +30,9 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
  - Changed dump to use raw / and raw \n in output instead of escaping.
 
+ - Changed the writer to always put a new line at the end of a top level JSON
+   object. It makes output easier to view and edit with minimal impact on size.
+
  - TBD Worked around the file.gets look ahead caching as long as it is not
    called while parsing (of course).
 
@@ -37,7 +40,10 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
    quirky like the JSON gem. Actually the JSON gem has it backwards with quirky
    mode supporting the JSON spec and non-quirky limiting parsing to objects and
    arrays. Oj stays consistent with the JSON gem to avoid confusion.
-   
+
+ - Fixed problem with sc_parse not terminating the string when loaded from a file.
+
+ - Thanks go to dchelimsky for expanding the code sample for the ScHandler.
 
 ### Release 2.9.6
 
