@@ -45,13 +45,6 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
  - Thanks go to dchelimsky for expanding the code sample for the ScHandler.
 
-### Release 2.9.6
-
- - Fixed bug using StringIO with SCParser.
-
- - Tightened up JSON mimic to raise an exception if JSON.parse is called on
-   a JSON documents that returns a primitive type.
-
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
 ## Description
