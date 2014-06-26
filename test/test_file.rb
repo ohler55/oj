@@ -79,6 +79,8 @@ class FileJuice < Minitest::Test
   end
 
   def test_float
+    mode = opts = Oj.default_options()[:mode]
+    Oj.default_options = {:mode => :object}
     dump_and_load(0.0, false)
     dump_and_load(12345.6789, false)
     dump_and_load(70.35, false)
@@ -87,6 +89,7 @@ class FileJuice < Minitest::Test
     dump_and_load(2.48e100 * 1.0e10, false)
     dump_and_load(-2.48e100 * 1.0e10, false)
     dump_and_load(1/0.0, false)
+    Oj.default_options = {:mode => mode}
   end
 
   def test_string

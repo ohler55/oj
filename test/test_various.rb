@@ -167,6 +167,8 @@ class Juice < Minitest::Test
   end
 
   def test_float
+    mode = opts = Oj.default_options()[:mode]
+    Oj.default_options = {:mode => :object}
     dump_and_load(0.0, false)
     dump_and_load(12345.6789, false)
     dump_and_load(70.35, false)
@@ -180,6 +182,7 @@ class Juice < Minitest::Test
     assert_equal('NaN', json)
     loaded = Oj.load(json);
     assert_equal(true, loaded.nan?)
+    Oj.default_options = {:mode => mode}
   end
 
   def test_string
