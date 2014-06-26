@@ -518,8 +518,18 @@ array_append_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
 }
 
 static void
+array_append_num(ParseInfo pi, NumInfo ni) {
+    rb_ary_push(stack_peek(&pi->stack)->val, oj_num_as_value(ni));
+}
+
+static void
 add_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
     pi->stack.head->val = str_to_value(pi, str, len, orig);
+}
+
+static void
+add_num(ParseInfo pi, NumInfo ni) {
+    pi->stack.head->val = oj_num_as_value(ni);
 }
 
 void
@@ -531,7 +541,9 @@ oj_set_object_callbacks(ParseInfo pi) {
     pi->hash_set_num = hash_set_num;
     pi->hash_set_value = hash_set_value;
     pi->add_cstr = add_cstr;
+    pi->add_num = add_num;
     pi->array_append_cstr = array_append_cstr;
+    pi->array_append_num = array_append_num;
 }
 
 VALUE
@@ -560,7 +572,9 @@ oj_object_parse_cstr(int argc, VALUE *argv, char *json, size_t len) {
     pi.hash_set_num = hash_set_num;
     pi.hash_set_value = hash_set_value;
     pi.add_cstr = add_cstr;
+    pi.add_num = add_num;
     pi.array_append_cstr = array_append_cstr;
+    pi.array_append_num = array_append_num;
 
     return oj_pi_parse(argc, argv, &pi, json, len, 1);
 }

@@ -241,7 +241,7 @@ class Juice < Minitest::Test
     assert(false, "*** expected an exception")
   end
 
-  # rails encoding tests
+  # encoding tests
   def test_does_not_escape_entities_by_default
     Oj.default_options = { :escape_mode => :ascii } # set in mimic mode
     # use Oj to create the hash since some Rubies don't deal nicely with unicode.
@@ -270,6 +270,20 @@ class Juice < Minitest::Test
     hash = {'key' => "<script>alert(123) && formatHD()</script>"}
     out = Oj.dump(hash, :escape_mode => :xss_safe)
     assert_equal(%{{"key":"\\u003cscript\\u003ealert(123) \\u0026\\u0026 formatHD()\\u003c\\/script\\u003e"}}, out)
+  end
+  def test_escape_newline_by_default
+    Oj.default_options = { :escape_mode => :json }
+    json = %{["one","two\\n2"]}
+    x = Oj.load(json)
+    out = Oj.dump(x)
+    assert_equal(json, out)
+  end
+  def test_does_not_escape_newline
+    Oj.default_options = { :escape_mode => :newline }
+    json = %{["one","two\n2"]}
+    x = Oj.load(json)
+    out = Oj.dump(x)
+    assert_equal(json, out)
   end
 
   # Symbol
@@ -876,6 +890,24 @@ class Juice < Minitest::Test
     assert_equal('Infinity', json)
     json = Oj.dump(BigDecimal.new('-Infinity'), :mode => :object)
     assert_equal('-Infinity', json)
+  end
+
+  def test_infinity
+    n = Oj.load('Infinity', :mode => :object)
+    assert_equal(Float::INFINITY, n);
+    begin
+      Oj.load('Infinity', :mode => :strict)
+      fail()
+    rescue Oj::ParseError
+      assert(true)
+    end
+    begin
+      Oj.load('Infinity', :mode => :compat)
+      fail()
+    rescue Oj::ParseError
+      assert(true)
+    end
+
   end
 
   # Date

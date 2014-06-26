@@ -38,9 +38,6 @@
 #include "parse.h"
 #include "encode.h"
 
-// Workaround in case INFINITY is not defined in math.h or if the OS is CentOS
-#define OJ_INFINITY (1.0/0.0)
-
 static void
 noop_end(struct _ParseInfo *pi) {
 }
@@ -60,6 +57,9 @@ add_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
 
 static void
 add_num(ParseInfo pi, NumInfo ni) {
+    if (ni->infinity || ni->nan) {
+	oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number or other value");
+    }
     pi->stack.head->val = oj_num_as_value(ni);
 }
 
@@ -89,6 +89,9 @@ hash_set_cstr(ParseInfo pi, const char *key, size_t klen, const char *str, size_
 
 static void
 hash_set_num(struct _ParseInfo *pi, const char *key, size_t klen, NumInfo ni) {
+    if (ni->infinity || ni->nan) {
+	oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number or other value");
+    }
     rb_hash_aset(stack_peek(&pi->stack)->val, hash_key(pi, key, klen), oj_num_as_value(ni));
 }
 
@@ -112,6 +115,9 @@ array_append_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
 
 static void
 array_append_num(ParseInfo pi, NumInfo ni) {
+    if (ni->infinity || ni->nan) {
+	oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number or other value");
+    }
     rb_ary_push(stack_peek(&pi->stack)->val, oj_num_as_value(ni));
 }
 

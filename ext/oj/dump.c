@@ -111,8 +111,20 @@ static void	dump_leaf_hash(Leaf leaf, int depth, Out out);
 
 static const char	hex_chars[17] = "0123456789abcdef";
 
-static char	hibit_friendly_chars[256] = "\
+// JSON standard except newlines are no escaped
+static char	newline_friendly_chars[256] = "\
 66666666221622666666666666666666\
+11211111111111111111111111111111\
+11111111111111111111111111112111\
+11111111111111111111111111111111\
+11111111111111111111111111111111\
+11111111111111111111111111111111\
+11111111111111111111111111111111\
+11111111111111111111111111111111";
+
+// JSON standard
+static char	hibit_friendly_chars[256] = "\
+66666666222622666666666666666666\
 11211111111111111111111111111111\
 11111111111111111111111111112111\
 11111111111111111111111111111111\
@@ -133,6 +145,7 @@ static char	ascii_friendly_chars[256] = "\
 33333333333333333333333333333333\
 33333333333333333333333333333333";
 
+// XSS safe mode
 static char	xss_friendly_chars[256] = "\
 66666666222622666666666666666666\
 11211161111111121111111111116161\
@@ -142,6 +155,16 @@ static char	xss_friendly_chars[256] = "\
 33333333333333333333333333333333\
 33333333333333333333333333333333\
 33333333333333333333333333333333";
+
+inline static size_t
+newline_friendly_size(const uint8_t *str, size_t len) {
+    size_t	size = 0;
+
+    for (; 0 < len; str++, len--) {
+	size += newline_friendly_chars[*str];
+    }
+    return size - len * (size_t)'0';
+}
 
 inline static size_t
 hibit_friendly_size(const uint8_t *str, size_t len) {
@@ -462,6 +485,10 @@ dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out) {
     char	*cmap;
 
     switch (out->opts->escape_mode) {
+    case NLEsc:
+	cmap = newline_friendly_chars;
+	size = newline_friendly_size((uint8_t*)str, cnt);
+	break;
     case ASCIIEsc:
 	cmap = ascii_friendly_chars;
 	size = ascii_friendly_size((uint8_t*)str, cnt);

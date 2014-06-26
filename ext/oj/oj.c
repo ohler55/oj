@@ -114,6 +114,7 @@ static VALUE	float_sym;
 static VALUE	indent_sym;
 static VALUE	json_sym;
 static VALUE	mode_sym;
+static VALUE	newline_sym;
 static VALUE	nilnil_sym;
 static VALUE	null_sym;
 static VALUE	object_sym;
@@ -180,7 +181,7 @@ static VALUE	define_mimic_json(int argc, VALUE *argv, VALUE self);
  * - circular: [true|false|nil] support circular references while dumping
  * - auto_define: [true|false|nil] automatically define classes if they do not exist
  * - symbol_keys: [true|false|nil] use symbols instead of strings for hash keys
- * - escape_mode: [:json|:xss_safe|:ascii|nil] determines the characters to escape
+ * - escape_mode: [:newline|:json|:xss_safe|:ascii|nil] determines the characters to escape
  * - class_cache: [true|false|nil] cache classes for faster parsing (if dynamically modifying classes or reloading classes then don't use this)
  * - mode: [:object|:strict|:compat|:null] load and dump modes to use for JSON
  * - time_format: [:unix|:xmlschema|:ruby] time format when dumping in :compat mode
@@ -217,6 +218,7 @@ get_def_opts(VALUE self) {
     default:		rb_hash_aset(opts, mode_sym, object_sym);	break;
     }
     switch (oj_default_options.escape_mode) {
+    case NLEsc:		rb_hash_aset(opts, escape_mode_sym, newline_sym);	break;
     case JSONEsc:	rb_hash_aset(opts, escape_mode_sym, json_sym);		break;
     case XSSEsc:	rb_hash_aset(opts, escape_mode_sym, xss_safe_sym);	break;
     case ASCIIEsc:	rb_hash_aset(opts, escape_mode_sym, ascii_sym);		break;
@@ -248,8 +250,9 @@ get_def_opts(VALUE self) {
  * @param [true|false|nil] :auto_define automatically define classes if they do not exist
  * @param [true|false|nil] :symbol_keys convert hash keys to symbols
  * @param [true|false|nil] :class_cache cache classes for faster parsing
- * @param [:json|:xss_safe|:ascii|nil] :escape mode encodes all high-bit characters as
+ * @param [:newline|:json|:xss_safe|:ascii|nil] :escape mode encodes all high-bit characters as
  *        escaped sequences if :ascii, :json is standand UTF-8 JSON encoding,
+ *        :newline is the same as :json but newlines are not escaped,
  *        and :xss_safe escapes &, <, and >, and some others.
  * @param [true|false|nil] :bigdecimal_as_decimal dump BigDecimal as a decimal number or as a String
  * @param [:bigdecimal|:float|:auto|nil] :bigdecimal_load load decimals as BigDecimal instead of as a Float. :auto pick the most precise for the number of digits.
@@ -341,6 +344,8 @@ set_def_opts(VALUE self, VALUE opts) {
     v = rb_hash_lookup(opts, escape_mode_sym);
     if (Qnil == v) {
 	// ignore
+    } else if (newline_sym == v) {
+	oj_default_options.escape_mode = NLEsc;
     } else if (json_sym == v) {
 	oj_default_options.escape_mode = JSONEsc;
     } else if (xss_safe_sym == v) {
@@ -471,14 +476,16 @@ oj_parse_options(VALUE ropts, Options copts) {
 	}
 
 	if (Qnil != (v = rb_hash_lookup(ropts, escape_mode_sym))) {
-	    if (json_sym == v) {
+	    if (newline_sym == v) {
+		copts->escape_mode = NLEsc;
+	    } else if (json_sym == v) {
 		copts->escape_mode = JSONEsc;
 	    } else if (xss_safe_sym == v) {
 		copts->escape_mode = XSSEsc;
 	    } else if (ascii_sym == v) {
 		copts->escape_mode = ASCIIEsc;
 	    } else {
-		rb_raise(rb_eArgError, ":encoding must be :json, :rails, or :ascii.");
+		rb_raise(rb_eArgError, ":encoding must be :newline, :json, :xss_safe, or :ascii.");
 	    }
 	}
 
@@ -1993,7 +2000,6 @@ void Init_oj() {
     bigdecimal_load_sym = ID2SYM(rb_intern("bigdecimal_load"));rb_gc_register_address(&bigdecimal_load_sym);
     bigdecimal_sym = ID2SYM(rb_intern("bigdecimal"));	rb_gc_register_address(&bigdecimal_sym);
     circular_sym = ID2SYM(rb_intern("circular"));	rb_gc_register_address(&circular_sym);
-    nilnil_sym = ID2SYM(rb_intern("nilnil"));		rb_gc_register_address(&nilnil_sym);
     class_cache_sym = ID2SYM(rb_intern("class_cache"));	rb_gc_register_address(&class_cache_sym);
     compat_sym = ID2SYM(rb_intern("compat"));		rb_gc_register_address(&compat_sym);
     create_id_sym = ID2SYM(rb_intern("create_id"));	rb_gc_register_address(&create_id_sym);
@@ -2002,6 +2008,8 @@ void Init_oj() {
     indent_sym = ID2SYM(rb_intern("indent"));		rb_gc_register_address(&indent_sym);
     json_sym = ID2SYM(rb_intern("json"));		rb_gc_register_address(&json_sym);
     mode_sym = ID2SYM(rb_intern("mode"));		rb_gc_register_address(&mode_sym);
+    newline_sym = ID2SYM(rb_intern("newline"));		rb_gc_register_address(&newline_sym);
+    nilnil_sym = ID2SYM(rb_intern("nilnil"));		rb_gc_register_address(&nilnil_sym);
     null_sym = ID2SYM(rb_intern("null"));		rb_gc_register_address(&null_sym);
     object_sym = ID2SYM(rb_intern("object"));		rb_gc_register_address(&object_sym);
     quirks_mode_sym = ID2SYM(rb_intern("quirks_mode"));	rb_gc_register_address(&quirks_mode_sym);

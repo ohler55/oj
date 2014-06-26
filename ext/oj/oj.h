@@ -87,6 +87,7 @@ typedef enum {
 } TimeFormat;
 
 typedef enum {
+    NLEsc	= 'n',
     JSONEsc	= 'j',
     XSSEsc	= 'x',
     ASCIIEsc	= 'a'

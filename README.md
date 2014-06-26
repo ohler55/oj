@@ -26,24 +26,12 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
-### Current Release 2.9.7
+### Current Release 2.9.8
 
- - Changed dump to use raw / and raw \n in output instead of escaping.
+ - Changed escaping back to previous release and added a new escape mode.
 
- - Changed the writer to always put a new line at the end of a top level JSON
-   object. It makes output easier to view and edit with minimal impact on size.
-
- - TBD Worked around the file.gets look ahead caching as long as it is not
-   called while parsing (of course).
-
- - Thanks to lautis for a new parse option. quirks_mode allows Oj to behave
-   quirky like the JSON gem. Actually the JSON gem has it backwards with quirky
-   mode supporting the JSON spec and non-quirky limiting parsing to objects and
-   arrays. Oj stays consistent with the JSON gem to avoid confusion.
-
- - Fixed problem with sc_parse not terminating the string when loaded from a file.
-
- - Thanks go to dchelimsky for expanding the code sample for the ScHandler.
+ - Strict mode and compat mode no longer parse Infinity or NaN as a valid
+   number. Both are valid in object mode still.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
