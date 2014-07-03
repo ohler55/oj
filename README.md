@@ -26,7 +26,11 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
-### Current Release 2.9.8
+### Current Release 2.9.9
+
+ - Missed a character map entry. / in ascii mode is now output as / and not \/
+ 
+### Release 2.9.8
 
  - Changed escaping back to previous release and added a new escape mode.
 

@@ -353,7 +353,7 @@ set_def_opts(VALUE self, VALUE opts) {
     } else if (ascii_sym == v) {
 	oj_default_options.escape_mode = ASCIIEsc;
     } else {
-	rb_raise(rb_eArgError, ":encoding must be :json, :rails, or :ascii.");
+	rb_raise(rb_eArgError, ":encoding must be :json, :xss_safe, or :ascii.");
     }
 
     v = rb_hash_lookup(opts, bigdecimal_load_sym);
