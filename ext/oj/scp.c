@@ -267,8 +267,9 @@ oj_sc_parse(int argc, VALUE *argv, VALUE self) {
 	    s = rb_funcall2(input, oj_string_id, 0, 0);
 	    oj_pi_set_input_str(&pi, s);
 #if !IS_WINDOWS
-	    // JRuby gets confused with what is the real fileno.
-	} else if (rb_respond_to(input, oj_fileno_id) &&
+	} else if (rb_respond_to(input, oj_stat_id) &&
+		   Qnil != (s = rb_funcall(input, oj_stat_id, 0)) &&
+		   Qtrue == rb_funcall(s, oj_file_id, 0) &&
 		   Qnil != (s = rb_funcall(input, oj_fileno_id, 0)) &&
 		   0 != (fd = FIX2INT(s))) {
 	    ssize_t	cnt;
@@ -283,7 +284,7 @@ oj_sc_parse(int argc, VALUE *argv, VALUE self) {
 		if (0 != buf) {
 		    xfree(buf);
 		}
-		rb_raise(rb_eIOError, "failed to read from IO Object.");
+		rb_raise(rb_eIOError, "failed to read from File Object.");
 	    }
 #endif
 	} else if (rb_respond_to(input, oj_read_id)) {

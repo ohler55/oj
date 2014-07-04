@@ -29,6 +29,9 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 ### Current Release 2.9.9
 
  - Missed a character map entry. / in ascii mode is now output as / and not \/
+
+ - Fixed SC parser to not treat all IO that respond to fileno as a file. It not
+   checks stat and asks if it is a file.
  
 ### Release 2.9.8
 
