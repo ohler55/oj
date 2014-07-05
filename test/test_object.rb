@@ -379,6 +379,16 @@ class ObjectJuice < Minitest::Test
     assert(false, "*** expected an exception")
   end
 
+  def test_json_object_not_hat_hash
+    json = %{{"^#x":[1,2]}}
+    h = Oj.object_load(json)
+    assert_equal({1 => 2}, h);
+
+    json = %{{"~#x":[1,2]}}
+    h = Oj.object_load(json)
+    assert_equal({'~#x' => [1,2]}, h);
+  end
+
   def test_json_struct
     unless 'jruby' == RUBY_DESCRIPTION.split(' ')[0]
       obj = Stuck.new(false, 7)

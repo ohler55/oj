@@ -420,7 +420,6 @@ hash_set_value(ParseInfo pi, const char *key, size_t klen, VALUE value) {
 	}
 	break;
     case T_HASH:
-
 	if (rb_cHash != rb_obj_class(parent->val)) {
 	    if (4 == klen && 's' == *key && 'e' == key[1] && 'l' == key[2] && 'f' == key[3]) {
 		rb_funcall(parent->val, oj_replace_id, 1, value);
@@ -428,7 +427,7 @@ hash_set_value(ParseInfo pi, const char *key, size_t klen, VALUE value) {
 		set_obj_ivar(parent, key, klen, value);
 	    }
 	} else {
-	    if (3 <= klen && '#' == key[1] && T_ARRAY == rb_type(value)) {
+	    if (3 <= klen && '^' == *key && '#' == key[1] && T_ARRAY == rb_type(value)) {
 		long	len = RARRAY_LEN(value);
 		VALUE	*a = RARRAY_PTR(value);
 	

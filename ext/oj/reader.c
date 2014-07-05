@@ -55,6 +55,8 @@ static int		read_from_str(Reader reader);
 
 void
 oj_reader_init(Reader reader, VALUE io, int fd) {
+    VALUE	io_class = rb_obj_class(io);
+
     reader->head = reader->base;
     *((char*)reader->head) = '\0';
     reader->end = reader->head + sizeof(reader->base) - BUF_PAD;
@@ -69,13 +71,13 @@ oj_reader_init(Reader reader, VALUE io, int fd) {
     if (0 != fd) {
 	reader->read_func = read_from_fd;
 	reader->fd = fd;
-    } else if (rb_cString == rb_obj_class(io)) {
+    } else if (rb_cString == io_class) {
 	reader->read_func = read_from_str;
 	reader->in_str = StringValuePtr(io);
 	reader->head = (char*)reader->in_str;
 	reader->tail = reader->head;
 	reader->read_end = reader->head + RSTRING_LEN(io);
-    } else if (oj_stringio_class == rb_obj_class(io)) {
+    } else if (oj_stringio_class == io_class) {
 	VALUE	s = rb_funcall2(io, oj_string_id, 0, 0);
 
 	reader->read_func = read_from_str;
@@ -83,30 +85,15 @@ oj_reader_init(Reader reader, VALUE io, int fd) {
 	reader->head = (char*)reader->in_str;
 	reader->tail = reader->head;
 	reader->read_end = reader->head + RSTRING_LEN(s);
+    } else if (rb_cFile == io_class && 0 == FIX2INT(rb_funcall(io, oj_pos_id, 0))) {
+	reader->read_func = read_from_fd;
+	reader->fd = FIX2INT(rb_funcall(io, oj_fileno_id, 0));
     } else if (rb_respond_to(io, oj_readpartial_id)) {
-	VALUE	rfd;
-
-	if (rb_respond_to(io, oj_fileno_id) && Qnil != (rfd = rb_funcall(io, oj_fileno_id, 0)) &&
-	    rb_respond_to(io, oj_pos_id) && 0 == FIX2INT(rb_funcall(io, oj_pos_id, 0))) {
-
-	    reader->read_func = read_from_fd;
-	    reader->fd = FIX2INT(rfd);
-	} else {
-	    reader->read_func = read_from_io_partial;
-	    reader->io = io;
-	}
+	reader->read_func = read_from_io_partial;
+	reader->io = io;
     } else if (rb_respond_to(io, oj_read_id)) {
-	VALUE	rfd;
-
-	if (rb_respond_to(io, oj_fileno_id) && Qnil != (rfd = rb_funcall(io, oj_fileno_id, 0)) &&
-	    rb_respond_to(io, oj_pos_id) && 0 == FIX2INT(rb_funcall(io, oj_pos_id, 0))) {
-
-	    reader->read_func = read_from_fd;
-	    reader->fd = FIX2INT(rfd);
-	} else {
-	    reader->read_func = read_from_io;
-	    reader->io = io;
-	}
+	reader->read_func = read_from_io;
+	reader->io = io;
     } else {
 	rb_raise(rb_eException, "parser io argument must respond to readpartial() or read().\n");
     }

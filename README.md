@@ -32,6 +32,12 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
  - Fixed SC parser to not treat all IO that respond to fileno as a file. It not
    checks stat and asks if it is a file.
+
+ - Tightened object parsing of non-string hash keys so that just "^#x" is parsed
+   as a hash pair and not "~#x".
+
+ - Using echo to STDIN as an IO input works around the exception raised when
+   asking the IO for it's position (IO.pos).
  
 ### Release 2.9.8
 
