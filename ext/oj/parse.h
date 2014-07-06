@@ -65,7 +65,7 @@ typedef struct _ParseInfo {
 
     struct _Err		err;
     struct _Options	options;
-    void		*cbc;
+    VALUE		handler;
     struct _ValStack	stack;
     CircArray		circ_array;
     int			expect_value;

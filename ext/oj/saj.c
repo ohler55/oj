@@ -627,22 +627,6 @@ read_quoted_value(ParseInfo pi) {
     return value;
 }
 
-inline static int
-respond_to(VALUE obj, ID method) {
-#ifdef JRUBY_RUBY
-    /* There is a bug in JRuby where rb_respond_to() returns true (1) even if
-     * a method is private. */
-    {
-	VALUE	args[1];
-
-	*args = ID2SYM(method);
-	return (Qtrue == rb_funcall2(obj, rb_intern("respond_to?"), 1, args));
-    }
-#else
-    return rb_respond_to(obj, method);
-#endif
-}
-
 static void
 saj_parse(VALUE handler, char *json) {
     volatile VALUE	obj = Qnil;
@@ -675,12 +659,12 @@ saj_parse(VALUE handler, char *json) {
     }
 #endif
     pi.handler = handler;
-    pi.has_hash_start = respond_to(handler, oj_hash_start_id);
-    pi.has_hash_end = respond_to(handler, oj_hash_end_id);
-    pi.has_array_start = respond_to(handler, oj_array_start_id);
-    pi.has_array_end = respond_to(handler, oj_array_end_id);
-    pi.has_add_value = respond_to(handler, oj_add_value_id);
-    pi.has_error = respond_to(handler, oj_error_id);
+    pi.has_hash_start = rb_respond_to(handler, oj_hash_start_id);
+    pi.has_hash_end = rb_respond_to(handler, oj_hash_end_id);
+    pi.has_array_start = rb_respond_to(handler, oj_array_start_id);
+    pi.has_array_end = rb_respond_to(handler, oj_array_end_id);
+    pi.has_add_value = rb_respond_to(handler, oj_add_value_id);
+    pi.has_error = rb_respond_to(handler, oj_error_id);
     read_next(&pi, 0);
     next_non_white(&pi);
     if ('\0' != *pi.s) {

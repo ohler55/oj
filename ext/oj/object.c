@@ -550,6 +550,7 @@ oj_object_parse(int argc, VALUE *argv, VALUE self) {
     struct _ParseInfo	pi;
 
     pi.options = oj_default_options;
+    pi.handler = Qnil;
     oj_set_object_callbacks(&pi);
 
     if (T_STRING == rb_type(*argv)) {
@@ -564,6 +565,7 @@ oj_object_parse_cstr(int argc, VALUE *argv, char *json, size_t len) {
     struct _ParseInfo	pi;
 
     pi.options = oj_default_options;
+    pi.handler = Qnil;
     oj_set_strict_callbacks(&pi);
     pi.end_hash = end_hash;
     pi.start_hash = start_hash;

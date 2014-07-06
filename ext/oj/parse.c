@@ -766,7 +766,6 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
     } else {
 	pi->proc = Qundef;
     }
-    pi->cbc = (void*)0;
     if (0 != json) {
 	pi->json = json;
 	pi->end = json + len;

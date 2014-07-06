@@ -39,22 +39,6 @@
 #include "parse.h"
 #include "encode.h"
 
-inline static int
-respond_to(VALUE obj, ID method) {
-#ifdef JRUBY_RUBY
-    /* There is a bug in JRuby where rb_respond_to() returns true (1) even if
-     * a method is private. */
-    {
-	VALUE	args[1];
-
-	*args = ID2SYM(method);
-	return (Qtrue == rb_funcall2(obj, rb_intern("respond_to?"), 1, args));
-    }
-#else
-    return rb_respond_to(obj, method);
-#endif
-}
-
 static VALUE
 noop_start(ParseInfo pi) {
     return Qnil;
@@ -102,7 +86,7 @@ noop_array_append_value(ParseInfo pi, VALUE value) {
 
 static void
 add_value(ParseInfo pi, VALUE val) {
-    rb_funcall((VALUE)pi->cbc, oj_add_value_id, 1, val);
+    rb_funcall(pi->handler, oj_add_value_id, 1, val);
 }
 
 static void
@@ -110,32 +94,32 @@ add_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
     volatile VALUE	rstr = rb_str_new(str, len);
 
     rstr = oj_encode(rstr);
-    rb_funcall((VALUE)pi->cbc, oj_add_value_id, 1, rstr);
+    rb_funcall(pi->handler, oj_add_value_id, 1, rstr);
 }
 
 static void
 add_num(ParseInfo pi, NumInfo ni) {
-    rb_funcall((VALUE)pi->cbc, oj_add_value_id, 1, oj_num_as_value(ni));
+    rb_funcall(pi->handler, oj_add_value_id, 1, oj_num_as_value(ni));
 }
 
 static VALUE
 start_hash(ParseInfo pi) {
-    return rb_funcall((VALUE)pi->cbc, oj_hash_start_id, 0);
+    return rb_funcall(pi->handler, oj_hash_start_id, 0);
 }
 
 static void
 end_hash(ParseInfo pi) {
-    rb_funcall((VALUE)pi->cbc, oj_hash_end_id, 0);
+    rb_funcall(pi->handler, oj_hash_end_id, 0);
 }
 
 static VALUE
 start_array(ParseInfo pi) {
-    return rb_funcall((VALUE)pi->cbc, oj_array_start_id, 0);
+    return rb_funcall(pi->handler, oj_array_start_id, 0);
 }
 
 static void
 end_array(ParseInfo pi) {
-    rb_funcall((VALUE)pi->cbc, oj_array_end_id, 0);
+    rb_funcall(pi->handler, oj_array_end_id, 0);
 }
 
 static VALUE
@@ -154,17 +138,17 @@ hash_set_cstr(ParseInfo pi, const char *key, size_t klen, const char *str, size_
     volatile VALUE	rstr = rb_str_new(str, len);
 
     rstr = oj_encode(rstr);
-    rb_funcall((VALUE)pi->cbc, oj_hash_set_id, 3, stack_peek(&pi->stack)->val, hash_key(pi, key, klen), rstr);
+    rb_funcall(pi->handler, oj_hash_set_id, 3, stack_peek(&pi->stack)->val, hash_key(pi, key, klen), rstr);
 }
 
 static void
 hash_set_num(ParseInfo pi, const char *key, size_t klen, NumInfo ni) {
-    rb_funcall((VALUE)pi->cbc, oj_hash_set_id, 3, stack_peek(&pi->stack)->val, hash_key(pi, key, klen), oj_num_as_value(ni));
+    rb_funcall(pi->handler, oj_hash_set_id, 3, stack_peek(&pi->stack)->val, hash_key(pi, key, klen), oj_num_as_value(ni));
 }
 
 static void
 hash_set_value(ParseInfo pi, const char *key, size_t klen, VALUE value) {
-    rb_funcall((VALUE)pi->cbc, oj_hash_set_id, 3, stack_peek(&pi->stack)->val, hash_key(pi, key, klen), value);
+    rb_funcall(pi->handler, oj_hash_set_id, 3, stack_peek(&pi->stack)->val, hash_key(pi, key, klen), value);
 }
 
 static void
@@ -172,41 +156,24 @@ array_append_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
     volatile VALUE	rstr = rb_str_new(str, len);
 
     rstr = oj_encode(rstr);
-    rb_funcall((VALUE)pi->cbc, oj_array_append_id, 2, stack_peek(&pi->stack)->val, rstr);
+    rb_funcall(pi->handler, oj_array_append_id, 2, stack_peek(&pi->stack)->val, rstr);
 }
 
 static void
 array_append_num(ParseInfo pi, NumInfo ni) {
-    rb_funcall((VALUE)pi->cbc, oj_array_append_id, 2, stack_peek(&pi->stack)->val, oj_num_as_value(ni));
+    rb_funcall(pi->handler, oj_array_append_id, 2, stack_peek(&pi->stack)->val, oj_num_as_value(ni));
 }
 
 static void
 array_append_value(ParseInfo pi, VALUE value) {
-    rb_funcall((VALUE)pi->cbc, oj_array_append_id, 2, stack_peek(&pi->stack)->val, value);
-}
-
-static VALUE
-protect_parse(VALUE pip) {
-    oj_parse2((ParseInfo)pip);
-
-    return Qnil;
+    rb_funcall(pi->handler, oj_array_append_id, 2, stack_peek(&pi->stack)->val, value);
 }
 
 VALUE
 oj_sc_parse(int argc, VALUE *argv, VALUE self) {
     struct _ParseInfo	pi;
-    char		*buf = 0;
-    VALUE		input;
-    VALUE		handler;
-    volatile VALUE	wrapped_stack;
-    int			line = 0;
+    VALUE		input = argv[1];
 
-    if (argc < 2) {
-	rb_raise(rb_eArgError, "Wrong number of arguments to saj_parse.");
-    }
-    handler = *argv;;
-    input = argv[1];
-    pi.json = 0;
     pi.options = oj_default_options;
     if (3 == argc) {
 	oj_parse_options(argv[2], &pi.options);
@@ -216,13 +183,13 @@ oj_sc_parse(int argc, VALUE *argv, VALUE self) {
     } else {
 	pi.proc = Qundef;
     }
-    pi.cbc = (void*)handler;
+    pi.handler = *argv;
 
-    pi.start_hash = respond_to(handler, oj_hash_start_id) ? start_hash : noop_start;
-    pi.end_hash = respond_to(handler, oj_hash_end_id) ? end_hash : noop_end;
-    pi.start_array = respond_to(handler, oj_array_start_id) ? start_array : noop_start;
-    pi.end_array = respond_to(handler, oj_array_end_id) ? end_array : noop_end;
-    if (respond_to(handler, oj_hash_set_id)) {
+    pi.start_hash = rb_respond_to(pi.handler, oj_hash_start_id) ? start_hash : noop_start;
+    pi.end_hash = rb_respond_to(pi.handler, oj_hash_end_id) ? end_hash : noop_end;
+    pi.start_array = rb_respond_to(pi.handler, oj_array_start_id) ? start_array : noop_start;
+    pi.end_array = rb_respond_to(pi.handler, oj_array_end_id) ? end_array : noop_end;
+    if (rb_respond_to(pi.handler, oj_hash_set_id)) {
 	pi.hash_set_value = hash_set_value;
 	pi.hash_set_cstr = hash_set_cstr;
 	pi.hash_set_num = hash_set_num;
@@ -233,7 +200,7 @@ oj_sc_parse(int argc, VALUE *argv, VALUE self) {
 	pi.hash_set_num = noop_hash_set_num;
 	pi.expect_value = 0;
     }
-    if (respond_to(handler, oj_array_append_id)) {
+    if (rb_respond_to(pi.handler, oj_array_append_id)) {
 	pi.array_append_value = array_append_value;
 	pi.array_append_cstr = array_append_cstr;
 	pi.array_append_num = array_append_num;
@@ -244,7 +211,7 @@ oj_sc_parse(int argc, VALUE *argv, VALUE self) {
 	pi.array_append_num = noop_array_append_num;
 	pi.expect_value = 0;
     }
-    if (respond_to(handler, oj_add_value_id)) {
+    if (rb_respond_to(pi.handler, oj_add_value_id)) {
 	pi.add_cstr = add_cstr;
 	pi.add_num = add_num;
 	pi.add_value = add_value;
@@ -255,52 +222,10 @@ oj_sc_parse(int argc, VALUE *argv, VALUE self) {
 	pi.add_value = noop_add_value;
 	pi.expect_value = 0;
     }
-    if (rb_type(input) == T_STRING) {
-	oj_pi_set_input_str(&pi, input);
+
+    if (T_STRING == rb_type(input)) {
+	return oj_pi_parse(argc - 1, argv + 1, &pi, 0, 0, 1);
     } else {
-	VALUE		clas = rb_obj_class(input);
-	volatile VALUE	s;
-
-	if (oj_stringio_class == clas) {
-	    s = rb_funcall2(input, oj_string_id, 0, 0);
-	    oj_pi_set_input_str(&pi, s);
-#if !IS_WINDOWS
-	} else if (rb_cFile == clas && 0 == FIX2INT(rb_funcall(input, oj_pos_id, 0))) {
-	    int		fd = FIX2INT(s);
-	    ssize_t	cnt;
-	    size_t	len = lseek(fd, 0, SEEK_END);
-
-	    lseek(fd, 0, SEEK_SET);
-	    buf = ALLOC_N(char, len + 1);
-	    buf[len] = '\0';
-	    pi.json = buf;
-	    pi.end = buf + len;
-	    if (0 >= (cnt = read(fd, (char*)pi.json, len)) || cnt != (ssize_t)len) {
-		if (0 != buf) {
-		    xfree(buf);
-		}
-		rb_raise(rb_eIOError, "failed to read from File Object.");
-	    }
-#endif
-	} else if (rb_respond_to(input, oj_read_id)) {
-	    s = rb_funcall2(input, oj_read_id, 0, 0);
-	    oj_pi_set_input_str(&pi, s);
-	} else {
-	    rb_raise(rb_eArgError, "saj_parse() expected a String or IO Object.");
-	}
+	return oj_pi_sparse(argc - 1, argv + 1, &pi, 0);
     }
-    wrapped_stack = oj_stack_init(&pi.stack);
-    rb_protect(protect_parse, (VALUE)&pi, &line);
-    DATA_PTR(wrapped_stack) = NULL;
-    if (0 != buf) {
-	xfree(buf);
-    }
-    stack_cleanup(&pi.stack);
-    if (0 != line) {
-	rb_jump_tag(line);
-    }
-    if (err_has(&pi.err)) {
-	oj_err_raise(&pi.err);
-    }
-    return Qnil;
 }

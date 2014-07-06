@@ -38,6 +38,10 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
  - Using echo to STDIN as an IO input works around the exception raised when
    asking the IO for it's position (IO.pos).
+
+ - Simple Callback Parser now uses the new stream parser for handling files and
+   IO so that larger files are handled more efficiently and streams are read as
+   data arrives instead of on close.
  
 ### Release 2.9.8
 

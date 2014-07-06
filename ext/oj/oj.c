@@ -717,6 +717,7 @@ load_file(int argc, VALUE *argv, VALUE self) {
     }
     Check_Type(*argv, T_STRING);
     pi.options = oj_default_options;
+    pi.handler = Qnil;
     if (2 <= argc) {
 	VALUE	ropts = argv[1];
 	VALUE	v;
