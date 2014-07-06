@@ -6,13 +6,7 @@
 - debian
 
 - use File class in reader, and other parsers
-
-- ~# should be okay
-
- echo "[-1,0,1]" | ruby -r oj -e 'p Oj.load(STDIN)'
--e:1:in `pos': Illegal seek @ rb_io_tell - <STDIN> (Errno::ESPIPE)
-
-- maybe check class for io, if File then ..., else pipe
+ - 
 - streaming parser for scp and saj
 
 
