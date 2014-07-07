@@ -56,6 +56,8 @@ static int		read_from_str(Reader reader);
 void
 oj_reader_init(Reader reader, VALUE io, int fd) {
     VALUE	io_class = rb_obj_class(io);
+    VALUE	stat;
+    VALUE	ftype;
 
     reader->head = reader->base;
     *((char*)reader->head) = '\0';
@@ -85,7 +87,11 @@ oj_reader_init(Reader reader, VALUE io, int fd) {
 	reader->head = (char*)reader->in_str;
 	reader->tail = reader->head;
 	reader->read_end = reader->head + RSTRING_LEN(s);
-    } else if (rb_cFile == io_class && 0 == FIX2INT(rb_funcall(io, oj_pos_id, 0))) {
+    } else if (rb_cFile == io_class &&
+	       Qnil != (stat = rb_funcall(io, oj_stat_id, 0)) &&
+	       Qnil != (ftype = rb_funcall(stat, oj_ftype_id, 0)) &&
+	       0 == strcmp("file", StringValuePtr(ftype)) &&
+	       0 == FIX2INT(rb_funcall(io, oj_pos_id, 0))) {
 	reader->read_func = read_from_fd;
 	reader->fd = FIX2INT(rb_funcall(io, oj_fileno_id, 0));
     } else if (rb_respond_to(io, oj_readpartial_id)) {

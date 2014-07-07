@@ -42,6 +42,8 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
  - Simple Callback Parser now uses the new stream parser for handling files and
    IO so that larger files are handled more efficiently and streams are read as
    data arrives instead of on close.
+
+ - Handles file FIFO pipes correctly now.
  
 ### Release 2.9.8
 
