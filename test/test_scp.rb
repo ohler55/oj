@@ -244,4 +244,26 @@ class ScpTest < Minitest::Test
     end
   end
 
+  def test_pipe
+    handler = AllHandler.new()
+    json = %{{"one":true,"two":false}}
+    IO.pipe do |read_io, write_io|
+      if fork
+        write_io.close
+        Oj.sc_parse(handler, read_io) {|v| p v}
+        read_io.close
+        assert_equal([[:hash_start],
+                      [:hash_set, 'one', true],
+                      [:hash_set, 'two', false],
+                      [:hash_end],
+                      [:add_value, {}]], handler.calls)
+      else
+        read_io.close
+        write_io.write json
+        write_io.close
+        Process.exit(0)
+      end
+    end
+  end
+
 end

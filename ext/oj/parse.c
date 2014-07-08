@@ -783,7 +783,7 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
 	    oj_pi_set_input_str(pi, s);
 #if !IS_WINDOWS
 	} else if (rb_cFile == clas && 0 == FIX2INT(rb_funcall(input, oj_pos_id, 0))) {
-	    int		fd = FIX2INT(s);
+	    int		fd = FIX2INT(rb_funcall(input, oj_fileno_id, 0));
 	    ssize_t	cnt;
 	    size_t	len = lseek(fd, 0, SEEK_END);
 

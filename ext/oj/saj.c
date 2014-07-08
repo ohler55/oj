@@ -708,7 +708,7 @@ oj_saj_parse(int argc, VALUE *argv, VALUE self) {
 	    strcpy(json, rb_string_value_cstr((VALUE*)&s));
 #if !IS_WINDOWS
 	} else if (rb_cFile == clas && 0 == FIX2INT(rb_funcall(input, oj_pos_id, 0))) {
-	    int		fd = FIX2INT(s);
+	    int		fd = FIX2INT(rb_funcall(input, oj_fileno_id, 0));
 	    ssize_t	cnt;
 
 	    len = lseek(fd, 0, SEEK_END);

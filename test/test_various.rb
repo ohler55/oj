@@ -897,7 +897,7 @@ class Juice < Minitest::Test
 
   def test_infinity
     n = Oj.load('Infinity', :mode => :object)
-    assert_equal(Float::INFINITY, n);
+    assert_equal(BigDecimal.new('Infinity').to_f, n);
     begin
       Oj.load('Infinity', :mode => :strict)
       fail()
