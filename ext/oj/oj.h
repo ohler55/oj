@@ -257,6 +257,7 @@ extern ID	oj_as_json_id;
 extern ID	oj_error_id;
 extern ID	oj_file_id;
 extern ID	oj_fileno_id;
+extern ID	oj_ftype_id;
 extern ID	oj_hash_end_id;
 extern ID	oj_hash_set_id;
 extern ID	oj_hash_start_id;

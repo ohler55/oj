@@ -60,6 +60,7 @@ ID	oj_as_json_id;
 ID	oj_error_id;
 ID	oj_file_id;
 ID	oj_fileno_id;
+ID	oj_ftype_id;
 ID	oj_hash_end_id;
 ID	oj_hash_set_id;
 ID	oj_hash_start_id;
@@ -1956,6 +1957,7 @@ void Init_oj() {
     oj_error_id = rb_intern("error");
     oj_file_id = rb_intern("file?");
     oj_fileno_id = rb_intern("fileno");
+    oj_ftype_id = rb_intern("ftype");
     oj_hash_end_id = rb_intern("hash_end");
     oj_hash_set_id = rb_intern("hash_set");
     oj_hash_start_id = rb_intern("hash_start");

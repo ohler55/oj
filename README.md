@@ -12,7 +12,7 @@ gem 'oj'
 
 ## Documentation
 
-*Documentation*: http://www.ohler.com/oj
+*Documentation*: http://www.ohler.com/oj, http://rubydoc.info/gems/oj
 
 ## Source
 
