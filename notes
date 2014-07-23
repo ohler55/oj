@@ -5,8 +5,10 @@
 
 - debian
 
-- use File class in reader, and other parsers
- - 
+- make \n after write an option
+- add prepare_key or alter_key to scp
+
+
 - streaming parser for scp and saj
 
 

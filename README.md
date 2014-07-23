@@ -26,29 +26,15 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
-### Current Release 2.9.9
+### Current Release 2.9.10
 
- - Missed a character map entry. / in ascii mode is now output as / and not \/
+ - Using an indent of less than zero will not place newline characters between
+   JSON elements when using the string or stream writer.
 
- - Fixed SC parser to not treat all IO that respond to fileno as a file. It not
-   checks stat and asks if it is a file.
-
- - Tightened object parsing of non-string hash keys so that just "^#x" is parsed
-   as a hash pair and not "~#x".
-
- - Using echo to STDIN as an IO input works around the exception raised when
-   asking the IO for it's position (IO.pos).
-
- - Simple Callback Parser now uses the new stream parser for handling files and
-   IO so that larger files are handled more efficiently and streams are read as
-   data arrives instead of on close.
- 
-### Release 2.9.8
-
- - Changed escaping back to previous release and added a new escape mode.
-
- - Strict mode and compat mode no longer parse Infinity or NaN as a valid
-   number. Both are valid in object mode still.
+ - new options callback method was added to the Simple Callback Parser. If
+   defined the prepare_key() method will be called when an JSON object ket is
+   first encountered. The return value is then used as the key in the key-value
+   pair.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 

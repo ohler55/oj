@@ -2340,7 +2340,7 @@ oj_str_writer_pop(StrWriter sw) {
 	*sw->out.cur++ = ']';
 	break;
     }
-    if (0 == sw->depth) {
+    if (0 == sw->depth && 0 <= sw->out.indent) {
 	*sw->out.cur++ = '\n';
     }
 }

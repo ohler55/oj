@@ -179,7 +179,7 @@ static VALUE	define_mimic_json(int argc, VALUE *argv, VALUE self);
 /* call-seq: default_options() => Hash
  *
  * Returns the default load and dump options as a Hash. The options are
- * - indent: [Fixnum] number of spaces to indent each element in an JSON document
+ * - indent: [Fixnum] number of spaces to indent each element in an JSON document, zero is no newline between JSON elements, negative indicates no newline between top level JSON elements in a stream
  * - circular: [true|false|nil] support circular references while dumping
  * - auto_define: [true|false|nil] automatically define classes if they do not exist
  * - symbol_keys: [true|false|nil] use symbols instead of strings for hash keys
