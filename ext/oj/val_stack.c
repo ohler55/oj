@@ -69,6 +69,7 @@ oj_stack_init(ValStack stack) {
     stack->tail = stack->head;
     stack->head->val = Qundef;
     stack->head->key = 0;
+    stack->head->key_val = Qundef;
     stack->head->classname = 0;
     stack->head->klen = 0;
     stack->head->clen = 0;

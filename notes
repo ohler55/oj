@@ -7,8 +7,8 @@
 
 - add hash_key to scp
  - call from sparse and parse
- - scp.c - implement
- - val.h add key_val to val struct
+ - scp.c - implement hash_key()
+  - call hash_key and set key_val, don't set key
 
 
 - streaming parser for scp and saj
