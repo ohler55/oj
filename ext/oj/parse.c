@@ -295,6 +295,7 @@ read_escaped_str(ParseInfo pi, const char *start) {
 	    break;
 	case NEXT_HASH_NEW:
 	case NEXT_HASH_KEY:
+	    // TBD use hash_key() if defined and set key_val on stack
 	    // key will not be between pi->json and pi->cur.
 	    parent->key = strdup(buf.head);
 	    parent->klen = buf_len(&buf);
@@ -350,6 +351,7 @@ read_str(ParseInfo pi) {
 	    break;
 	case NEXT_HASH_NEW:
 	case NEXT_HASH_KEY:
+	    // TBD use hash_key() if defined and set key_val on stack
 	    parent->key = str;
 	    parent->klen = pi->cur - str;
 	    parent->k1 = *str;

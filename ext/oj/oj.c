@@ -62,6 +62,7 @@ ID	oj_file_id;
 ID	oj_fileno_id;
 ID	oj_ftype_id;
 ID	oj_hash_end_id;
+ID	oj_hash_key_id;
 ID	oj_hash_set_id;
 ID	oj_hash_start_id;
 ID	oj_iconv_id;
@@ -1959,6 +1960,7 @@ void Init_oj() {
     oj_fileno_id = rb_intern("fileno");
     oj_ftype_id = rb_intern("ftype");
     oj_hash_end_id = rb_intern("hash_end");
+    oj_hash_key_id = rb_intern("hash_key");
     oj_hash_set_id = rb_intern("hash_set");
     oj_hash_start_id = rb_intern("hash_start");
     oj_iconv_id = rb_intern("iconv");

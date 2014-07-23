@@ -5,8 +5,10 @@
 
 - debian
 
-- make \n after write an option
-- add prepare_key or alter_key to scp
+- add hash_key to scp
+ - call from sparse and parse
+ - scp.c - implement
+ - val.h add key_val to val struct
 
 
 - streaming parser for scp and saj

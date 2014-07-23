@@ -61,6 +61,10 @@ noop_add_num(ParseInfo pi, NumInfo ni) {
 }
 
 static void
+noop_hash_key(struct _ParseInfo *pi, const char *key, size_t klen) {
+}
+
+static void
 noop_hash_set_cstr(ParseInfo pi, const char *key, size_t klen, const char *str, size_t len, const char *orig) {
 }
 
@@ -123,7 +127,7 @@ end_array(ParseInfo pi) {
 }
 
 static VALUE
-hash_key(ParseInfo pi, const char *key, size_t klen) {
+calc_hash_key(ParseInfo pi, const char *key, size_t klen) {
     volatile VALUE	rkey = rb_str_new(key, klen);
 
     rkey = oj_encode(rkey);
@@ -134,21 +138,27 @@ hash_key(ParseInfo pi, const char *key, size_t klen) {
 }
 
 static void
+hash_key(struct _ParseInfo *pi, const char *key, size_t klen) {
+    printf("*** hash_key is not implemented yet\n");
+    // TBD
+}
+
+static void
 hash_set_cstr(ParseInfo pi, const char *key, size_t klen, const char *str, size_t len, const char *orig) {
     volatile VALUE	rstr = rb_str_new(str, len);
 
     rstr = oj_encode(rstr);
-    rb_funcall(pi->handler, oj_hash_set_id, 3, stack_peek(&pi->stack)->val, hash_key(pi, key, klen), rstr);
+    rb_funcall(pi->handler, oj_hash_set_id, 3, stack_peek(&pi->stack)->val, calc_hash_key(pi, key, klen), rstr);
 }
 
 static void
 hash_set_num(ParseInfo pi, const char *key, size_t klen, NumInfo ni) {
-    rb_funcall(pi->handler, oj_hash_set_id, 3, stack_peek(&pi->stack)->val, hash_key(pi, key, klen), oj_num_as_value(ni));
+    rb_funcall(pi->handler, oj_hash_set_id, 3, stack_peek(&pi->stack)->val, calc_hash_key(pi, key, klen), oj_num_as_value(ni));
 }
 
 static void
 hash_set_value(ParseInfo pi, const char *key, size_t klen, VALUE value) {
-    rb_funcall(pi->handler, oj_hash_set_id, 3, stack_peek(&pi->stack)->val, hash_key(pi, key, klen), value);
+    rb_funcall(pi->handler, oj_hash_set_id, 3, stack_peek(&pi->stack)->val, calc_hash_key(pi, key, klen), value);
 }
 
 static void
@@ -187,6 +197,7 @@ oj_sc_parse(int argc, VALUE *argv, VALUE self) {
 
     pi.start_hash = rb_respond_to(pi.handler, oj_hash_start_id) ? start_hash : noop_start;
     pi.end_hash = rb_respond_to(pi.handler, oj_hash_end_id) ? end_hash : noop_end;
+    pi.hash_key = rb_respond_to(pi.handler, oj_hash_key_id) ? hash_key : noop_hash_key;
     pi.start_array = rb_respond_to(pi.handler, oj_array_start_id) ? start_array : noop_start;
     pi.end_array = rb_respond_to(pi.handler, oj_array_end_id) ? end_array : noop_end;
     if (rb_respond_to(pi.handler, oj_hash_set_id)) {

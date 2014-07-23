@@ -41,6 +41,11 @@ class AllHandler < Oj::ScHandler
     @calls << [:hash_end]
   end
 
+  def hash_key(key)
+    @calls << [:hash_key, key]
+    key
+  end
+
   def array_start()
     @calls << [:array_start]
     []

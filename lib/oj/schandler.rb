@@ -45,6 +45,7 @@ module Oj
   #
   #    def hash_start(); end
   #    def hash_end(); end
+  #    def hash_key(key); end
   #    def hash_set(h, key, value); end
   #    def array_start(); end
   #    def array_end(); end
@@ -62,6 +63,12 @@ module Oj
   # that will later be included in the hash_set() callback.
   #
   #    hash_end
+  #
+  # When a hash key is encountered the hash_key method is called with the parsed
+  # hash value key. The return value from the call is then used as the key in
+  # the key-value pair that follows.
+  #
+  #    hash_key
   #
   # At the end of a JSON object element the hash_end() callback is called if public.
   #
@@ -110,6 +117,10 @@ module Oj
     end
 
     def hash_end()
+    end
+
+    def hash_key(key)
+      key
     end
 
     def hash_set(h, key, value)

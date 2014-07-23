@@ -43,6 +43,10 @@ noop_end(struct _ParseInfo *pi) {
 }
 
 static void
+noop_hash_key(struct _ParseInfo *pi, const char *key, size_t klen) {
+}
+
+static void
 add_value(ParseInfo pi, VALUE val) {
     pi->stack.head->val = val;
 }
@@ -130,6 +134,7 @@ void
 oj_set_strict_callbacks(ParseInfo pi) {
     pi->start_hash = start_hash;
     pi->end_hash = noop_end;
+    pi->hash_key = noop_hash_key;
     pi->hash_set_cstr = hash_set_cstr;
     pi->hash_set_num = hash_set_num;
     pi->hash_set_value = hash_set_value;
