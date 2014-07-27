@@ -48,7 +48,7 @@
 #define NUM_MAX		(FIXNUM_MAX >> 8)
 #endif
 #define EXP_MAX		1023
-#define DEC_MAX		14
+#define DEC_MAX		15
 
 static void
 next_non_white(ParseInfo pi) {

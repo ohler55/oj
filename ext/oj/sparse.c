@@ -49,7 +49,7 @@
 #define NUM_MAX		(FIXNUM_MAX >> 8)
 #endif
 #define EXP_MAX		1023
-#define DEC_MAX		14
+#define DEC_MAX		15
 
 static void
 skip_comment(ParseInfo pi) {
@@ -302,8 +302,13 @@ read_escaped_str(ParseInfo pi) {
 	    break;
 	case NEXT_HASH_NEW:
 	case NEXT_HASH_KEY:
-	    parent->key = strdup(buf.head);
-	    parent->klen = buf_len(&buf);
+	    if (Qundef == (parent->key_val = pi->hash_key(pi, buf.head, buf_len(&buf)))) {
+		parent->key = strdup(buf.head);
+		parent->klen = buf_len(&buf);
+	    } else {
+		parent->key = "";
+		parent->klen = 0;
+	    }
 	    parent->k1 = *pi->rd.str;
 	    parent->next = NEXT_HASH_COLON;
 	    break;
@@ -366,6 +371,7 @@ read_str(ParseInfo pi) {
 		parent->key = parent->karray;
 		parent->kalloc = 0;
 	    }
+	    parent->key_val = pi->hash_key(pi, parent->key, parent->klen);
 	    parent->k1 = *pi->rd.str;
 	    parent->next = NEXT_HASH_COLON;
 	    break;

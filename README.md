@@ -36,6 +36,9 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
    first encountered. The return value is then used as the key in the key-value
    pair.
 
+ - Increased significants digits to 16 from 15. On occasion there may be
+   unexpected round off results. Tou avoid those use the bigdecimal options.
+
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
 ## Description
