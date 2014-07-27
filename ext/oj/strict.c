@@ -42,8 +42,9 @@ static void
 noop_end(struct _ParseInfo *pi) {
 }
 
-static void
+static VALUE
 noop_hash_key(struct _ParseInfo *pi, const char *key, size_t klen) {
+    return Qundef;
 }
 
 static void
@@ -73,9 +74,12 @@ start_hash(ParseInfo pi) {
 }
 
 static VALUE
-hash_key(ParseInfo pi, const char *key, size_t klen) {
-    volatile VALUE	rkey = rb_str_new(key, klen);
+hash_key(ParseInfo pi, Val parent) {
+    volatile VALUE	rkey = parent->key_val;
 
+    if (Qundef == rkey) {
+	rkey = rb_str_new(parent->key, parent->klen);
+    }
     rkey = oj_encode(rkey);
     if (Yes == pi->options.sym_key) {
 	rkey = rb_str_intern(rkey);
@@ -84,24 +88,24 @@ hash_key(ParseInfo pi, const char *key, size_t klen) {
 }
 
 static void
-hash_set_cstr(ParseInfo pi, const char *key, size_t klen, const char *str, size_t len, const char *orig) {
+hash_set_cstr(ParseInfo pi, Val parent, const char *str, size_t len, const char *orig) {
     volatile VALUE	rstr = rb_str_new(str, len);
 
     rstr = oj_encode(rstr);
-    rb_hash_aset(stack_peek(&pi->stack)->val, hash_key(pi, key, klen), rstr);
+    rb_hash_aset(stack_peek(&pi->stack)->val, hash_key(pi, parent), rstr);
 }
 
 static void
-hash_set_num(struct _ParseInfo *pi, const char *key, size_t klen, NumInfo ni) {
+hash_set_num(struct _ParseInfo *pi, Val parent, NumInfo ni) {
     if (ni->infinity || ni->nan) {
 	oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number or other value");
     }
-    rb_hash_aset(stack_peek(&pi->stack)->val, hash_key(pi, key, klen), oj_num_as_value(ni));
+    rb_hash_aset(stack_peek(&pi->stack)->val, hash_key(pi, parent), oj_num_as_value(ni));
 }
 
 static void
-hash_set_value(ParseInfo pi, const char *key, size_t klen, VALUE value) {
-    rb_hash_aset(stack_peek(&pi->stack)->val, hash_key(pi, key, klen), value);
+hash_set_value(ParseInfo pi, Val parent, VALUE value) {
+    rb_hash_aset(stack_peek(&pi->stack)->val, hash_key(pi, parent), value);
 }
 
 static VALUE

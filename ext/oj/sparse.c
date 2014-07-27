@@ -99,7 +99,7 @@ add_value(ParseInfo pi, VALUE rval) {
 	    parent->next = NEXT_ARRAY_COMMA;
 	    break;
 	case NEXT_HASH_VALUE:
-	    pi->hash_set_value(pi, parent->key, parent->klen, rval);
+	    pi->hash_set_value(pi, parent, rval);
 	    if (parent->kalloc) {
 		xfree((char*)parent->key);
 	    }
@@ -134,7 +134,7 @@ add_num_value(ParseInfo pi, NumInfo ni) {
 	    parent->next = NEXT_ARRAY_COMMA;
 	    break;
 	case NEXT_HASH_VALUE:
-	    pi->hash_set_num(pi, parent->key, parent->klen, ni);
+	    pi->hash_set_num(pi, parent, ni);
 	    if (parent->kalloc) {
 		xfree((char*)parent->key);
 	    }
@@ -308,7 +308,7 @@ read_escaped_str(ParseInfo pi) {
 	    parent->next = NEXT_HASH_COLON;
 	    break;
 	case NEXT_HASH_VALUE:
-	    pi->hash_set_cstr(pi, parent->key, parent->klen, buf.head, buf_len(&buf), pi->rd.str);
+	    pi->hash_set_cstr(pi, parent, buf.head, buf_len(&buf), pi->rd.str);
 	    if (parent->kalloc) {
 		xfree((char*)parent->key);
 	    }
@@ -370,7 +370,7 @@ read_str(ParseInfo pi) {
 	    parent->next = NEXT_HASH_COLON;
 	    break;
 	case NEXT_HASH_VALUE:
-	    pi->hash_set_cstr(pi, parent->key, parent->klen, pi->rd.str, pi->rd.tail - pi->rd.str - 1, pi->rd.str);
+	    pi->hash_set_cstr(pi, parent, pi->rd.str, pi->rd.tail - pi->rd.str - 1, pi->rd.str);
 	    if (parent->kalloc) {
 		xfree((char*)parent->key);
 	    }

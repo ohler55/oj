@@ -53,15 +53,15 @@ read_long(const char *str, size_t len) {
 }
 
 static VALUE
-hash_key(ParseInfo pi, const char *key, size_t klen, char k1) {
+calc_hash_key(ParseInfo pi, Val kval, char k1) {
     VALUE	rkey;
 
     if (':' == k1) {
-	rkey = rb_str_new(key + 1, klen - 1);
+	rkey = rb_str_new(kval->key + 1, kval->klen - 1);
 	rkey = oj_encode(rkey);
 	rkey = rb_funcall(rkey, oj_to_sym_id, 0);
     } else {
-	rkey = rb_str_new(key, klen);
+	rkey = rb_str_new(kval->key, kval->klen);
 	rkey = oj_encode(rkey);
 	if (Yes == pi->options.sym_key) {
 	    rkey = rb_str_intern(rkey);
@@ -94,9 +94,9 @@ str_to_value(ParseInfo pi, const char *str, size_t len, const char *orig) {
 }
 
 static int
-hat_cstr(ParseInfo pi, Val parent, const char *key, size_t klen, const char *str, size_t len) {
-    if (2 == klen) {
-	switch (key[1]) {
+hat_cstr(ParseInfo pi, Val parent, const char *str, size_t len) {
+    if (2 == parent->klen) {
+	switch (parent->key[1]) {
 	case 'o': // object
 	    {	// name2class sets and error if the class is not found or created
 		VALUE	clas = oj_name2class(pi, str, len, Yes == pi->options.auto_define);
@@ -139,9 +139,9 @@ hat_cstr(ParseInfo pi, Val parent, const char *key, size_t klen, const char *str
 }
 
 static int
-hat_num(ParseInfo pi, Val parent, const char *key, size_t klen, NumInfo ni) {
-    if (2 == klen) {
-	switch (key[1]) {
+hat_num(ParseInfo pi, Val parent, Val kval, NumInfo ni) {
+    if (2 == kval->klen) {
+	switch (kval->key[1]) {
 	case 't': // time as a float
 	    {
 		int64_t	nsec = ni->num * 1000000000LL / ni->div;
@@ -256,9 +256,11 @@ copy_ivars(VALUE target, VALUE src) {
 }
 
 static void
-set_obj_ivar(Val parent, const char *key, size_t klen, VALUE value) {
-    ID	var_id;
-    ID	*slot;
+set_obj_ivar(Val parent, Val kval, VALUE value) {
+    const char	*key = kval->key;
+    int		klen = kval->klen;
+    ID		var_id;
+    ID		*slot;
 
     if ('~' == *key && Qtrue == rb_obj_is_kind_of(parent->val, rb_eException)) {
 	if (5 == klen && 0 == strncmp("~mesg", key, klen)) {
@@ -315,36 +317,38 @@ set_obj_ivar(Val parent, const char *key, size_t klen, VALUE value) {
 }
 
 static void
-hash_set_cstr(ParseInfo pi, const char *key, size_t klen, const char *str, size_t len, const char *orig) {
-    Val	parent = stack_peek(&pi->stack);
+hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *orig) {
+    const char	*key = kval->key;
+    int		klen = kval->klen;
+    Val		parent = stack_peek(&pi->stack);
 
  WHICH_TYPE:
     switch (rb_type(parent->val)) {
     case T_NIL:
 	parent->odd_args = 0; // make sure it is 0 in case not odd
-	if ('^' != *key || !hat_cstr(pi, parent, key, klen, str, len)) {
+	if ('^' != *parent->key || !hat_cstr(pi, parent, str, len)) {
 	    parent->val = rb_hash_new();
 	    goto WHICH_TYPE;
 	}
 	break;
     case T_HASH:
-	rb_hash_aset(parent->val, hash_key(pi, key, klen, parent->k1), str_to_value(pi, str, len, orig));
+	rb_hash_aset(parent->val, calc_hash_key(pi, kval, parent->k1), str_to_value(pi, str, len, orig));
 	break;
     case T_STRING:
 	if (4 == klen && 's' == *key && 'e' == key[1] && 'l' == key[2] && 'f' == key[3]) {
 	    rb_funcall(parent->val, oj_replace_id, 1, str_to_value(pi, str, len, orig));
 	} else {
-	    set_obj_ivar(parent, key, klen, str_to_value(pi, str, len, orig));
+	    set_obj_ivar(parent, kval, str_to_value(pi, str, len, orig));
 	}
 	break;
     case T_OBJECT:
-	set_obj_ivar(parent, key, klen, str_to_value(pi, str, len, orig));
+	set_obj_ivar(parent, kval, str_to_value(pi, str, len, orig));
 	break;
     case T_CLASS:
 	if (0 == parent->odd_args) {
 	    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "%s is not an odd class", rb_class2name(rb_obj_class(parent->val)));
 	    return;
-	} else if (0 != oj_odd_set_arg(parent->odd_args, key, klen, str_to_value(pi, str, len, orig))) {
+	} else if (0 != oj_odd_set_arg(parent->odd_args, kval->key, kval->klen, str_to_value(pi, str, len, orig))) {
 	    char	buf[256];
 
 	    if (sizeof(buf) - 1 <= klen) {
@@ -362,27 +366,29 @@ hash_set_cstr(ParseInfo pi, const char *key, size_t klen, const char *str, size_
 }
 
 static void
-hash_set_num(ParseInfo pi, const char *key, size_t klen, NumInfo ni) {
-    Val	parent = stack_peek(&pi->stack);
+hash_set_num(ParseInfo pi, Val kval, NumInfo ni) {
+    const char	*key = kval->key;
+    int		klen = kval->klen;
+    Val		parent = stack_peek(&pi->stack);
 
  WHICH_TYPE:
     switch (rb_type(parent->val)) {
     case T_NIL:
 	parent->odd_args = 0; // make sure it is 0 in case not odd
-	if ('^' != *key || !hat_num(pi, parent, key, klen, ni)) {
+	if ('^' != *key || !hat_num(pi, parent, kval, ni)) {
 	    parent->val = rb_hash_new();
 	    goto WHICH_TYPE;
 	}
 	break;
     case T_HASH:
-	rb_hash_aset(parent->val, hash_key(pi, key, klen, parent->k1), oj_num_as_value(ni));
+	rb_hash_aset(parent->val, calc_hash_key(pi, kval, parent->k1), oj_num_as_value(ni));
 	break;
     case T_OBJECT:
 	if (2 == klen && '^' == *key && 'i' == key[1] &&
 	    !ni->infinity && !ni->neg && 1 == ni->div && 0 == ni->exp && 0 != pi->circ_array) { // fixnum
 	    oj_circ_array_set(pi->circ_array, parent->val, ni->i);
 	} else {
-	    set_obj_ivar(parent, key, klen, oj_num_as_value(ni));
+	    set_obj_ivar(parent, kval, oj_num_as_value(ni));
 	}
 	break;
     case T_CLASS:
@@ -407,8 +413,10 @@ hash_set_num(ParseInfo pi, const char *key, size_t klen, NumInfo ni) {
 }
 
 static void
-hash_set_value(ParseInfo pi, const char *key, size_t klen, VALUE value) {
-    Val	parent = stack_peek(&pi->stack);
+hash_set_value(ParseInfo pi, Val kval, VALUE value) {
+    const char	*key = kval->key;
+    int		klen = kval->klen;
+    Val		parent = stack_peek(&pi->stack);
 
  WHICH_TYPE:
     switch (rb_type(parent->val)) {
@@ -424,7 +432,7 @@ hash_set_value(ParseInfo pi, const char *key, size_t klen, VALUE value) {
 	    if (4 == klen && 's' == *key && 'e' == key[1] && 'l' == key[2] && 'f' == key[3]) {
 		rb_funcall(parent->val, oj_replace_id, 1, value);
 	    } else {
-		set_obj_ivar(parent, key, klen, value);
+		set_obj_ivar(parent, kval, value);
 	    }
 	} else {
 	    if (3 <= klen && '^' == *key && '#' == key[1] && T_ARRAY == rb_type(value)) {
@@ -437,7 +445,7 @@ hash_set_value(ParseInfo pi, const char *key, size_t klen, VALUE value) {
 		}
 		rb_hash_aset(parent->val, *a, a[1]);
 	    } else {
-		rb_hash_aset(parent->val, hash_key(pi, key, klen, parent->k1), value);
+		rb_hash_aset(parent->val, calc_hash_key(pi, kval, parent->k1), value);
 	    }
 	}
 	break;
@@ -445,12 +453,12 @@ hash_set_value(ParseInfo pi, const char *key, size_t klen, VALUE value) {
 	if (4 == klen && 's' == *key && 'e' == key[1] && 'l' == key[2] && 'f' == key[3]) {
 	    rb_funcall(parent->val, oj_replace_id, 1, value);
 	} else {
-	    set_obj_ivar(parent, key, klen, value);
+	    set_obj_ivar(parent, kval, value);
 	}
 	break;
     case T_STRING: // for subclassed strings
     case T_OBJECT:
-	set_obj_ivar(parent, key, klen, value);
+	set_obj_ivar(parent, kval, value);
 	break;
     case T_CLASS:
 	if (0 == parent->odd_args) {

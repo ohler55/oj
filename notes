@@ -6,6 +6,8 @@
 - debian
 
 - add hash_key to scp
+ - update sparse
+
  - call from sparse and parse
  - scp.c - implement hash_key()
   - call hash_key and set key_val, don't set key

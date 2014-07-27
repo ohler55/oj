@@ -53,10 +53,10 @@ typedef enum {
 } ValNext;
 
 typedef struct _Val {
-    VALUE		val;
+    volatile VALUE	val;
     const char		*key;
     char		karray[32];
-    VALUE		key_val;
+    volatile VALUE	key_val;
     union {
 	const char	*classname;
 	OddArgs		odd_args;

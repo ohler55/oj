@@ -60,20 +60,21 @@ static void
 noop_add_num(ParseInfo pi, NumInfo ni) {
 }
 
-static void
+static VALUE
 noop_hash_key(struct _ParseInfo *pi, const char *key, size_t klen) {
+    return Qundef;
 }
 
 static void
-noop_hash_set_cstr(ParseInfo pi, const char *key, size_t klen, const char *str, size_t len, const char *orig) {
+noop_hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *orig) {
 }
 
 static void
-noop_hash_set_num(ParseInfo pi, const char *key, size_t klen, NumInfo ni) {
+noop_hash_set_num(ParseInfo pi, Val kval, NumInfo ni) {
 }
 
 static void
-noop_hash_set_value(ParseInfo pi, const char *key, size_t klen, VALUE value) {
+noop_hash_set_value(ParseInfo pi, Val kval, VALUE value) {
 }
 
 static void
@@ -127,8 +128,12 @@ end_array(ParseInfo pi) {
 }
 
 static VALUE
-calc_hash_key(ParseInfo pi, const char *key, size_t klen) {
-    volatile VALUE	rkey = rb_str_new(key, klen);
+calc_hash_key(ParseInfo pi, Val kval) {
+    volatile VALUE	rkey = kval->key_val;
+
+    if (Qundef == rkey) {
+	rkey = rb_str_new(kval->key, kval->klen);
+    }
 
     rkey = oj_encode(rkey);
     if (Yes == pi->options.sym_key) {
@@ -137,28 +142,27 @@ calc_hash_key(ParseInfo pi, const char *key, size_t klen) {
     return rkey;
 }
 
-static void
+static VALUE
 hash_key(struct _ParseInfo *pi, const char *key, size_t klen) {
-    printf("*** hash_key is not implemented yet\n");
-    // TBD
+    return rb_funcall(pi->handler, oj_hash_key_id, 1, rb_str_new(key, klen));
 }
 
 static void
-hash_set_cstr(ParseInfo pi, const char *key, size_t klen, const char *str, size_t len, const char *orig) {
+hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *orig) {
     volatile VALUE	rstr = rb_str_new(str, len);
 
     rstr = oj_encode(rstr);
-    rb_funcall(pi->handler, oj_hash_set_id, 3, stack_peek(&pi->stack)->val, calc_hash_key(pi, key, klen), rstr);
+    rb_funcall(pi->handler, oj_hash_set_id, 3, stack_peek(&pi->stack)->val, calc_hash_key(pi, kval), rstr);
 }
 
 static void
-hash_set_num(ParseInfo pi, const char *key, size_t klen, NumInfo ni) {
-    rb_funcall(pi->handler, oj_hash_set_id, 3, stack_peek(&pi->stack)->val, calc_hash_key(pi, key, klen), oj_num_as_value(ni));
+hash_set_num(ParseInfo pi, Val kval, NumInfo ni) {
+    rb_funcall(pi->handler, oj_hash_set_id, 3, stack_peek(&pi->stack)->val, calc_hash_key(pi, kval), oj_num_as_value(ni));
 }
 
 static void
-hash_set_value(ParseInfo pi, const char *key, size_t klen, VALUE value) {
-    rb_funcall(pi->handler, oj_hash_set_id, 3, stack_peek(&pi->stack)->val, calc_hash_key(pi, key, klen), value);
+hash_set_value(ParseInfo pi, Val kval, VALUE value) {
+    rb_funcall(pi->handler, oj_hash_set_id, 3, stack_peek(&pi->stack)->val, calc_hash_key(pi, kval), value);
 }
 
 static void

@@ -43,6 +43,7 @@ class AllHandler < Oj::ScHandler
 
   def hash_key(key)
     @calls << [:hash_key, key]
+    return 'too' if 'two' == key
     key
   end
 
@@ -164,8 +165,10 @@ class ScpTest < Minitest::Test
     json = %{{"one":true,"two":false}}
     Oj.sc_parse(handler, json)
     assert_equal([[:hash_start],
+                  [:hash_key, 'one'],
                   [:hash_set, 'one', true],
-                  [:hash_set, 'two', false],
+                  [:hash_key, 'two'],
+                  [:hash_set, 'too', false],
                   [:hash_end],
                   [:add_value, {}]], handler.calls)
   end
@@ -175,8 +178,10 @@ class ScpTest < Minitest::Test
     json = %{{"one":true,"two":false}}
     Oj.sc_parse(handler, json, :symbol_keys => true)
     assert_equal([[:hash_start],
+                  [:hash_key, 'one'],
                   [:hash_set, :one, true],
-                  [:hash_set, :two, false],
+                  [:hash_key, 'two'],
+                  [:hash_set, :too, false],
                   [:hash_end],
                   [:add_value, {}]], handler.calls)
   end
@@ -185,12 +190,18 @@ class ScpTest < Minitest::Test
     handler = AllHandler.new()
     Oj.sc_parse(handler, $json)
     assert_equal([[:hash_start],
+                  [:hash_key, 'array'],
                   [:array_start],
                   [:hash_start],
+                  [:hash_key, 'num'],
                   [:hash_set, "num", 3],
+                  [:hash_key, 'string'],
                   [:hash_set, "string", "message"],
+                  [:hash_key, 'hash'],
                   [:hash_start],
+                  [:hash_key, 'h2'],
                   [:hash_start],
+                  [:hash_key, 'a'],
                   [:array_start],
                   [:array_append, 1],
                   [:array_append, 2],
@@ -205,6 +216,7 @@ class ScpTest < Minitest::Test
                   [:array_append, {}],
                   [:array_end],
                   [:hash_set, "array", []],
+                  [:hash_key, 'boolean'],
                   [:hash_set, "boolean", true],
                   [:hash_end],
                   [:add_value, {}]], handler.calls)
@@ -215,12 +227,16 @@ class ScpTest < Minitest::Test
     json = %{{"one":true,"two":false}{"three":true,"four":false}}
     Oj.sc_parse(handler, json)
     assert_equal([[:hash_start],
+                  [:hash_key, 'one'],
                   [:hash_set, 'one', true],
-                  [:hash_set, 'two', false],
+                  [:hash_key, 'two'],
+                  [:hash_set, 'too', false],
                   [:hash_end],
                   [:add_value, {}],
                   [:hash_start],
+                  [:hash_key, 'three'],
                   [:hash_set, 'three', true],
+                  [:hash_key, 'four'],
                   [:hash_set, 'four', false],
                   [:hash_end],
                   [:add_value, {}]], handler.calls)
@@ -258,8 +274,10 @@ class ScpTest < Minitest::Test
         Oj.sc_parse(handler, read_io) {|v| p v}
         read_io.close
         assert_equal([[:hash_start],
+                      [:hash_key, 'one'],
                       [:hash_set, 'one', true],
-                      [:hash_set, 'two', false],
+                      [:hash_key, 'two'],
+                      [:hash_set, 'too', false],
                       [:hash_end],
                       [:add_value, {}]], handler.calls)
       else

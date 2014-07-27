@@ -110,8 +110,8 @@ add_value(ParseInfo pi, VALUE rval) {
 	    parent->next = NEXT_ARRAY_COMMA;
 	    break;
 	case NEXT_HASH_VALUE:
-	    pi->hash_set_value(pi, parent->key, parent->klen, rval);
-	    if (0 != parent->key && (parent->key < pi->json || pi->cur < parent->key)) {
+	    pi->hash_set_value(pi, parent, rval);
+	    if (0 != parent->key && 0 < parent->klen && (parent->key < pi->json || pi->cur < parent->key)) {
 		xfree((char*)parent->key);
 		parent->key = 0;
 	    }
@@ -295,16 +295,19 @@ read_escaped_str(ParseInfo pi, const char *start) {
 	    break;
 	case NEXT_HASH_NEW:
 	case NEXT_HASH_KEY:
-	    // TBD use hash_key() if defined and set key_val on stack
-	    // key will not be between pi->json and pi->cur.
-	    parent->key = strdup(buf.head);
-	    parent->klen = buf_len(&buf);
+	    if (Qundef == (parent->key_val = pi->hash_key(pi, buf.head, buf_len(&buf)))) {
+		parent->key = strdup(buf.head);
+		parent->klen = buf_len(&buf);
+	    } else {
+		parent->key = "";
+		parent->klen = 0;
+	    }
 	    parent->k1 = *start;
 	    parent->next = NEXT_HASH_COLON;
 	    break;
 	case NEXT_HASH_VALUE:
-	    pi->hash_set_cstr(pi, parent->key, parent->klen, buf.head, buf_len(&buf), start);
-	    if (0 != parent->key && (parent->key < pi->json || pi->cur < parent->key)) {
+	    pi->hash_set_cstr(pi, parent, buf.head, buf_len(&buf), start);
+	    if (0 != parent->key && 0 < parent->klen && (parent->key < pi->json || pi->cur < parent->key)) {
 		xfree((char*)parent->key);
 		parent->key = 0;
 	    }
@@ -351,15 +354,19 @@ read_str(ParseInfo pi) {
 	    break;
 	case NEXT_HASH_NEW:
 	case NEXT_HASH_KEY:
-	    // TBD use hash_key() if defined and set key_val on stack
-	    parent->key = str;
-	    parent->klen = pi->cur - str;
+	    if (Qundef == (parent->key_val = pi->hash_key(pi, str, pi->cur - str))) {
+		parent->key = str;
+		parent->klen = pi->cur - str;
+	    } else {
+		parent->key = "";
+		parent->klen = 0;
+	    }
 	    parent->k1 = *str;
 	    parent->next = NEXT_HASH_COLON;
 	    break;
 	case NEXT_HASH_VALUE:
-	    pi->hash_set_cstr(pi, parent->key, parent->klen, str, pi->cur - str, str);
-	    if (0 != parent->key && (parent->key < pi->json || pi->cur < parent->key)) {
+	    pi->hash_set_cstr(pi, parent, str, pi->cur - str, str);
+	    if (0 != parent->key && 0 < parent->klen && (parent->key < pi->json || pi->cur < parent->key)) {
 		xfree((char*)parent->key);
 		parent->key = 0;
 	    }
@@ -489,8 +496,8 @@ read_num(ParseInfo pi) {
 	    parent->next = NEXT_ARRAY_COMMA;
 	    break;
 	case NEXT_HASH_VALUE:
-	    pi->hash_set_num(pi, parent->key, parent->klen, &ni);
-	    if (0 != parent->key && (parent->key < pi->json || pi->cur < parent->key)) {
+	    pi->hash_set_num(pi, parent, &ni);
+	    if (0 != parent->key && 0 < parent->klen && (parent->key < pi->json || pi->cur < parent->key)) {
 		xfree((char*)parent->key);
 		parent->key = 0;
 	    }
