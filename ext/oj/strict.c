@@ -74,7 +74,7 @@ start_hash(ParseInfo pi) {
 }
 
 static VALUE
-hash_key(ParseInfo pi, Val parent) {
+calc_hash_key(ParseInfo pi, Val parent) {
     volatile VALUE	rkey = parent->key_val;
 
     if (Qundef == rkey) {
@@ -92,7 +92,7 @@ hash_set_cstr(ParseInfo pi, Val parent, const char *str, size_t len, const char 
     volatile VALUE	rstr = rb_str_new(str, len);
 
     rstr = oj_encode(rstr);
-    rb_hash_aset(stack_peek(&pi->stack)->val, hash_key(pi, parent), rstr);
+    rb_hash_aset(stack_peek(&pi->stack)->val, calc_hash_key(pi, parent), rstr);
 }
 
 static void
@@ -100,12 +100,12 @@ hash_set_num(struct _ParseInfo *pi, Val parent, NumInfo ni) {
     if (ni->infinity || ni->nan) {
 	oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number or other value");
     }
-    rb_hash_aset(stack_peek(&pi->stack)->val, hash_key(pi, parent), oj_num_as_value(ni));
+    rb_hash_aset(stack_peek(&pi->stack)->val, calc_hash_key(pi, parent), oj_num_as_value(ni));
 }
 
 static void
 hash_set_value(ParseInfo pi, Val parent, VALUE value) {
-    rb_hash_aset(stack_peek(&pi->stack)->val, hash_key(pi, parent), value);
+    rb_hash_aset(stack_peek(&pi->stack)->val, calc_hash_key(pi, parent), value);
 }
 
 static VALUE

@@ -39,27 +39,28 @@
 
 static void
 hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *orig) {
+    const char		*key = kval->key;
+    int			klen = kval->klen;
     Val			parent = stack_peek(&pi->stack);
     volatile VALUE	rkey = kval->key_val;
 
-
-    if (Qundef != rkey &&
+    if (Qundef == rkey &&
 	0 != pi->options.create_id &&
-	*pi->options.create_id == *parent->key &&
-	pi->options.create_id_len == parent->klen &&
-	0 == strncmp(pi->options.create_id, parent->key, parent->klen)) {
+	*pi->options.create_id == *key &&
+	pi->options.create_id_len == klen &&
+	0 == strncmp(pi->options.create_id, key, klen)) {
 	parent->classname = oj_strndup(str, len);
 	parent->clen = len;
     } else {
 	volatile VALUE	rstr = rb_str_new(str, len);
 
 	if (Qundef == rkey) {
-	    rkey = rb_str_new(kval->key, kval->klen);
-	}
-	rstr = oj_encode(rstr);
-	rkey = oj_encode(rkey);
-	if (Yes == pi->options.sym_key) {
-	    rkey = rb_str_intern(rkey);
+	    rkey = rb_str_new(key, klen);
+	    rstr = oj_encode(rstr);
+	    rkey = oj_encode(rkey);
+	    if (Yes == pi->options.sym_key) {
+		rkey = rb_str_intern(rkey);
+	    }
 	}
 	rb_hash_aset(parent->val, rkey, rstr);
     }

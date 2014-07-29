@@ -94,9 +94,12 @@ str_to_value(ParseInfo pi, const char *str, size_t len, const char *orig) {
 }
 
 static int
-hat_cstr(ParseInfo pi, Val parent, const char *str, size_t len) {
-    if (2 == parent->klen) {
-	switch (parent->key[1]) {
+hat_cstr(ParseInfo pi, Val parent, Val kval, const char *str, size_t len) {
+    const char	*key = kval->key;
+    int		klen = kval->klen;
+
+    if (2 == klen) {
+	switch (key[1]) {
 	case 'o': // object
 	    {	// name2class sets and error if the class is not found or created
 		VALUE	clas = oj_name2class(pi, str, len, Yes == pi->options.auto_define);
@@ -326,7 +329,7 @@ hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *o
     switch (rb_type(parent->val)) {
     case T_NIL:
 	parent->odd_args = 0; // make sure it is 0 in case not odd
-	if ('^' != *parent->key || !hat_cstr(pi, parent, str, len)) {
+	if ('^' != *key || !hat_cstr(pi, parent, kval, str, len)) {
 	    parent->val = rb_hash_new();
 	    goto WHICH_TYPE;
 	}
