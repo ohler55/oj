@@ -44,6 +44,7 @@ class AllHandler < Oj::ScHandler
   def hash_key(key)
     @calls << [:hash_key, key]
     return 'too' if 'two' == key
+    return :symbol if 'symbol' == key
     key
   end
 
@@ -182,6 +183,19 @@ class ScpTest < Minitest::Test
                   [:hash_set, :one, true],
                   [:hash_key, 'two'],
                   [:hash_set, :too, false],
+                  [:hash_end],
+                  [:add_value, {}]], handler.calls)
+  end
+
+  def test_symbol_hash_key_without_symbol_keys
+    handler = AllHandler.new()
+    json = %{{"one":true,"symbol":false}}
+    Oj.sc_parse(handler, json)
+    assert_equal([[:hash_start],
+                  [:hash_key, 'one'],
+                  [:hash_set, 'one', true],
+                  [:hash_key, 'symbol'],
+                  [:hash_set, :symbol, false],
                   [:hash_end],
                   [:add_value, {}]], handler.calls)
   end
