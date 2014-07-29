@@ -85,6 +85,8 @@ class FileJuice < Minitest::Test
     dump_and_load(12345.6789, false)
     dump_and_load(70.35, false)
     dump_and_load(-54321.012, false)
+    dump_and_load(1.7775, false)
+    dump_and_load(2.5024, false)
     dump_and_load(2.48e16, false)
     dump_and_load(2.48e100 * 1.0e10, false)
     dump_and_load(-2.48e100 * 1.0e10, false)

@@ -711,7 +711,7 @@ oj_num_as_value(NumInfo ni) {
 		rnum = rb_funcall(rnum, rb_intern("to_f"), 0);
 	    }
 	} else {
-	    double	d = (double)ni->i + (double)ni->num / (double)ni->div;
+	    double	d = (double)ni->i + (double)ni->num * (1.0 / ni->div);
 
 	    if (ni->neg) {
 		d = -d;
