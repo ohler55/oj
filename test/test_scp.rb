@@ -180,9 +180,9 @@ class ScpTest < Minitest::Test
     Oj.sc_parse(handler, json, :symbol_keys => true)
     assert_equal([[:hash_start],
                   [:hash_key, 'one'],
-                  [:hash_set, :one, true],
+                  [:hash_set, 'one', true],
                   [:hash_key, 'two'],
-                  [:hash_set, :too, false],
+                  [:hash_set, 'too', false],
                   [:hash_end],
                   [:add_value, {}]], handler.calls)
   end

@@ -133,11 +133,10 @@ calc_hash_key(ParseInfo pi, Val kval) {
 
     if (Qundef == rkey) {
 	rkey = rb_str_new(kval->key, kval->klen);
-    }
-
-    rkey = oj_encode(rkey);
-    if (Yes == pi->options.sym_key) {
-	rkey = rb_str_intern(rkey);
+	rkey = oj_encode(rkey);
+	if (Yes == pi->options.sym_key) {
+	    rkey = rb_str_intern(rkey);
+	}
     }
     return rkey;
 }
