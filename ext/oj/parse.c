@@ -711,13 +711,13 @@ oj_num_as_value(NumInfo ni) {
 		rnum = rb_funcall(rnum, rb_intern("to_f"), 0);
 	    }
 	} else {
-	    double	d = (double)ni->i + (double)ni->num * (1.0 / ni->div);
+	    double	d = (double)ni->i + (double)ni->num * (1.0L / ni->div);
 
 	    if (ni->neg) {
 		d = -d;
 	    }
 	    if (0 != ni->exp) {
-		d *= pow(10.0, ni->exp);
+		d *= pow(10.0L, ni->exp);
 	    }
 	    rnum = rb_float_new(d);
 	}
