@@ -71,7 +71,7 @@ is the `:object` mode.
 
 To change default serialization mode:
 ```ruby
-Oj.default_options[:mode] = :compat
+Oj.default_options = {:mode => :compat }
 ```
 
 ## Compatibility
