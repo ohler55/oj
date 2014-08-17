@@ -101,7 +101,7 @@ oj_reader_init(Reader reader, VALUE io, int fd) {
 	reader->read_func = read_from_io;
 	reader->io = io;
     } else {
-	rb_raise(rb_eException, "parser io argument must respond to readpartial() or read().\n");
+	rb_raise(rb_eArgError, "parser io argument must be a String or respond to readpartial() or read().\n");
     }
 }
 
