@@ -30,19 +30,6 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
  - Changed parse argument error to be a Ruby ArgError instead of a general Exception.
 
-### Release 2.10.0
-
- - Using an indent of less than zero will not place newline characters between
-   JSON elements when using the string or stream writer.
-
- - new options callback method was added to the Simple Callback Parser. If
-   defined the prepare_key() method will be called when an JSON object ket is
-   first encountered. The return value is then used as the key in the key-value
-   pair.
-
- - Increased significants digits to 16 from 15. On occasion there may be
-   unexpected round off results. Tou avoid those use the bigdecimal options.
-
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
 ## Description
