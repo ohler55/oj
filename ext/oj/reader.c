@@ -51,7 +51,7 @@ static VALUE		partial_io_cb(VALUE rdr);
 static int		read_from_io(Reader reader);
 static int		read_from_fd(Reader reader);
 static int		read_from_io_partial(Reader reader);
-static int		read_from_str(Reader reader);
+//static int		read_from_str(Reader reader);
 
 void
 oj_reader_init(Reader reader, VALUE io, int fd) {
@@ -74,7 +74,7 @@ oj_reader_init(Reader reader, VALUE io, int fd) {
 	reader->read_func = read_from_fd;
 	reader->fd = fd;
     } else if (rb_cString == io_class) {
-	reader->read_func = read_from_str;
+	reader->read_func = 0;
 	reader->in_str = StringValuePtr(io);
 	reader->head = (char*)reader->in_str;
 	reader->tail = reader->head;
@@ -82,7 +82,7 @@ oj_reader_init(Reader reader, VALUE io, int fd) {
     } else if (oj_stringio_class == io_class) {
 	VALUE	s = rb_funcall2(io, oj_string_id, 0, 0);
 
-	reader->read_func = read_from_str;
+	reader->read_func = 0;
 	reader->in_str = StringValuePtr(s);
 	reader->head = (char*)reader->in_str;
 	reader->tail = reader->head;
@@ -153,8 +153,7 @@ oj_reader_read(Reader reader) {
 	}
     }
     err = reader->read_func(reader);
-    // Debug only, this corrupts the string being read if a string or stringio.
-    //*reader->read_end = '\0';
+    *(char*)reader->read_end = '\0';
 
     return err;
 }
@@ -186,7 +185,7 @@ partial_io_cb(VALUE rbuf) {
     }
     str = StringValuePtr(rstr);
     cnt = RSTRING_LEN(rstr);
-    strcpy((char*)reader->tail, str);
+    strcpy(reader->tail, str);
     reader->read_end = reader->tail + cnt;
 
     return Qtrue;
@@ -208,7 +207,7 @@ io_cb(VALUE rbuf) {
     str = StringValuePtr(rstr);
     cnt = RSTRING_LEN(rstr);
     //printf("*** read %lu bytes, str: '%s'\n", cnt, str);
-    strcpy((char*)reader->tail, str);
+    strcpy(reader->tail, str);
     reader->read_end = reader->tail + cnt;
 
     return Qtrue;
@@ -229,7 +228,7 @@ read_from_fd(Reader reader) {
     ssize_t	cnt;
     size_t	max = reader->end - reader->tail;
 
-    cnt = read(reader->fd, (char*)reader->tail, max);
+    cnt = read(reader->fd, reader->tail, max);
     if (cnt < 0) {
 	return -1;
     } else if (0 != cnt) {
@@ -239,7 +238,9 @@ read_from_fd(Reader reader) {
 }
 
 // This is only called when the end of the string is reached so just return -1.
+/*
 static int
 read_from_str(Reader reader) {
     return -1;
 }
+*/
