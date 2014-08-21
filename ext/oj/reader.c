@@ -121,12 +121,12 @@ oj_reader_read(Reader reader) {
 	    shift = reader->pro - reader->head - 1; // leave one character so we can backup one
 	}
 	if (0 >= shift) { /* no space left so allocate more */
-	    char	*old = reader->head;
+	    const char	*old = reader->head;
 	    size_t	size = reader->end - reader->head + BUF_PAD;
 	
 	    if (reader->head == reader->base) {
 		reader->head = ALLOC_N(char, size * 2);
-		memcpy(reader->head, old, size);
+		memcpy((char*)reader->head, old, size);
 	    } else {
 		REALLOC_N(reader->head, char, size * 2);
 	    }
@@ -141,7 +141,7 @@ oj_reader_read(Reader reader) {
 		reader->str = reader->head + (reader->str - old);
 	    }
 	} else {
-	    memmove(reader->head, reader->head + shift, reader->read_end - (reader->head + shift));
+	    memmove((char*)reader->head, reader->head + shift, reader->read_end - (reader->head + shift));
 	    reader->tail -= shift;
 	    reader->read_end -= shift;
 	    if (0 != reader->pro) {
@@ -153,7 +153,8 @@ oj_reader_read(Reader reader) {
 	}
     }
     err = reader->read_func(reader);
-    *reader->read_end = '\0';
+    // Debug only, this corrupts the string being read if a string or stringio.
+    //*reader->read_end = '\0';
 
     return err;
 }
@@ -185,7 +186,7 @@ partial_io_cb(VALUE rbuf) {
     }
     str = StringValuePtr(rstr);
     cnt = RSTRING_LEN(rstr);
-    strcpy(reader->tail, str);
+    strcpy((char*)reader->tail, str);
     reader->read_end = reader->tail + cnt;
 
     return Qtrue;
@@ -207,7 +208,7 @@ io_cb(VALUE rbuf) {
     str = StringValuePtr(rstr);
     cnt = RSTRING_LEN(rstr);
     //printf("*** read %lu bytes, str: '%s'\n", cnt, str);
-    strcpy(reader->tail, str);
+    strcpy((char*)reader->tail, str);
     reader->read_end = reader->tail + cnt;
 
     return Qtrue;
@@ -228,7 +229,7 @@ read_from_fd(Reader reader) {
     ssize_t	cnt;
     size_t	max = reader->end - reader->tail;
 
-    cnt = read(reader->fd, reader->tail, max);
+    cnt = read(reader->fd, (char*)reader->tail, max);
     if (cnt < 0) {
 	return -1;
     } else if (0 != cnt) {

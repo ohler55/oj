@@ -33,12 +33,12 @@
 
 typedef struct _Reader {
     char	base[0x00001000];
-    char	*head;
-    char	*end;
-    char	*tail;
-    char	*read_end;	/* one past last character read */
-    char	*pro;		/* protection start, buffer can not slide past this point */
-    char	*str;		/* start of current string being read */
+    const char	*head;
+    const char	*end;
+    const char	*tail;
+    const char	*read_end;	/* one past last character read */
+    const char	*pro;		/* protection start, buffer can not slide past this point */
+    const char	*str;		/* start of current string being read */
     int		line;
     int		col;
     int		free_head;
@@ -149,7 +149,7 @@ reader_expect(Reader reader, const char *s) {
 static inline void
 reader_cleanup(Reader reader) {
     if (reader->free_head && 0 != reader->head) {
-	xfree(reader->head);
+	xfree((char*)reader->head);
 	reader->head = 0;
 	reader->free_head = 0;
     }
