@@ -47,7 +47,7 @@ hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *o
     if (Qundef == rkey &&
 	0 != pi->options.create_id &&
 	*pi->options.create_id == *key &&
-	pi->options.create_id_len == klen &&
+	(int)pi->options.create_id_len == klen &&
 	0 == strncmp(pi->options.create_id, key, klen)) {
 	parent->classname = oj_strndup(str, len);
 	parent->clen = len;

@@ -285,7 +285,7 @@ set_obj_ivar(Val parent, Val kval, VALUE value) {
     if (0 == (var_id = oj_attr_hash_get(key, klen, &slot))) {
 	char	attr[256];
 
-	if (sizeof(attr) <= klen + 2) {
+	if ((int)sizeof(attr) <= klen + 2) {
 	    char	*buf = ALLOC_N(char, klen + 2);
 
 	    if ('~' == *key) {
@@ -354,7 +354,7 @@ hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *o
 	} else if (0 != oj_odd_set_arg(parent->odd_args, kval->key, kval->klen, str_to_value(pi, str, len, orig))) {
 	    char	buf[256];
 
-	    if (sizeof(buf) - 1 <= klen) {
+	    if ((int)sizeof(buf) - 1 <= klen) {
 		klen = sizeof(buf) - 2;
 	    }
 	    memcpy(buf, key, klen);
@@ -401,7 +401,7 @@ hash_set_num(ParseInfo pi, Val kval, NumInfo ni) {
 	} else if (0 != oj_odd_set_arg(parent->odd_args, key, klen, oj_num_as_value(ni))) {
 	    char	buf[256];
 
-	    if (sizeof(buf) - 1 <= klen) {
+	    if ((int)sizeof(buf) - 1 <= klen) {
 		klen = sizeof(buf) - 2;
 	    }
 	    memcpy(buf, key, klen);
@@ -470,7 +470,7 @@ hash_set_value(ParseInfo pi, Val kval, VALUE value) {
 	} else if (0 !=	oj_odd_set_arg(parent->odd_args, key, klen, value)) {
 	    char	buf[256];
 
-	    if (sizeof(buf) - 1 <= klen) {
+	    if ((int)sizeof(buf) - 1 <= klen) {
 		klen = sizeof(buf) - 2;
 	    }
 	    memcpy(buf, key, klen);
