@@ -66,6 +66,7 @@ static void	dump_false(Out out);
 static void	dump_fixnum(VALUE obj, Out out);
 static void	dump_bignum(VALUE obj, Out out);
 static void	dump_float(VALUE obj, Out out);
+static void	dump_rational(VALUE obj, Out out);
 static void	dump_raw(const char *str, size_t cnt, Out out);
 static void	dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out);
 static void	dump_hex(uint8_t c, Out out);
@@ -477,6 +478,13 @@ dump_float(VALUE obj, Out out) {
 	*out->cur++ = *b;
     }
     *out->cur = '\0';
+}
+
+static void
+dump_rational(VALUE obj, Out out) {
+    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+
+    dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
 }
 
 static void
@@ -1782,7 +1790,7 @@ dump_val(VALUE obj, int depth, Out out) {
 	    case T_ARRAY:		dump_array(obj, clas, depth, out);	break;
 	    case T_HASH:		dump_hash(obj, clas, depth, out->opts->mode, out);	break;
 #if (defined T_RATIONAL && defined RRATIONAL)
-	    case T_RATIONAL:
+	    case T_RATIONAL: 	dump_rational(obj, out); break;
 #endif
 	    case T_OBJECT:
 		switch (out->opts->mode) {
