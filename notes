@@ -3,6 +3,16 @@
 ^c^d hide subtree
 ^c^s show subtree
 
+- support timezone
+ - use e (1234.567e50)
+  - timezone divied by 10
+
+- rbx test
+ - get latest
+- timezone in object time
+ - object.c
+  - hat_num
+
 - debian
 
 - add hash_key to scp
