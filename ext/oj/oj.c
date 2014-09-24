@@ -1880,6 +1880,7 @@ iconv_rescue(VALUE x) {
 
 static VALUE
 protect_require(VALUE x) {
+    rb_require("time");
     rb_require("bigdecimal");
     return Qnil;
 }
