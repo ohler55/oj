@@ -356,15 +356,21 @@ class ObjectJuice < Minitest::Test
   end
 
   def test_xml_time
-    Oj.default_options = { :time_format => :xmlschema }
+    Oj.default_options = { :mode => :object, :time_format => :xmlschema }
     t = Time.now()
     dump_and_load(t, false)
   end
 
   def test_utc_time
-    Oj.default_options = { :time_format => :xmlschema }
+    Oj.default_options = { :mode => :object, :time_format => :xmlschema }
     t = Time.now().utc
-    dump_and_load(t, falsee)
+    dump_and_load(t, false)
+  end
+
+  def test_ruby_time
+    Oj.default_options = { :mode => :object, :time_format => :ruby }
+    t = Time.now()
+    dump_and_load(t, false)
   end
 
   def test_time_early

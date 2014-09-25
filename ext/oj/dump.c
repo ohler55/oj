@@ -1236,7 +1236,7 @@ dump_data_obj(VALUE obj, int depth, Out out) {
 	*out->cur++ = '"';
 	*out->cur++ = ':';
 	switch (out->opts->time_format) {
-	case RubyTime:
+	case RubyTime: // Does not output fractional seconds
 	case XmlTime:
 	    dump_xml_time(obj, out);
 	    break;
