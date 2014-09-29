@@ -19,11 +19,12 @@ class MimicRails < Minitest::Test
 
   def test_dump_string
     Oj.default_options= {:indent => 2} # JSON this will not change anything
-    json = ActiveSupport::JSON.encode([1, true, nil])
+    json = ActiveSupport::JSON.encode([1, true, nil, Rational(1)])
     assert_equal(%{[
   1,
   true,
-  null
+  null,
+  "1/1"
 ]
 }, json)
   end
