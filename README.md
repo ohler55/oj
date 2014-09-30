@@ -57,7 +57,7 @@ is the `:object` mode.
   performance mode.
 
 - `:compat` mode attempts to be compatible with other systems. It will serialize any
-  `Object`, but will check to see if the `Object` implements an `as_hash` or `to_json`
+  `Object`, but will check to see if the `Object` implements an `to_hash` or `to_json`
   method. If either exists, that method is used for serializing the `Object`.
   Since `as_json` is more flexible and produces more consistent output, it is
   preferred over the `to_json` method. If neither the `to_json` or `to_hash`
