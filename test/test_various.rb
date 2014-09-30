@@ -656,7 +656,7 @@ class Juice < Minitest::Test
   end
 
   def test_as_json_object_compat_hash
-    Oj.default_options = { :mode => :compat }
+    Oj.default_options = { :mode => :compat, :use_to_json => true }
     obj = Orange.new(true, 58)
     json = Oj.dump(obj, :indent => 2)
     assert(!json.nil?)
@@ -664,7 +664,7 @@ class Juice < Minitest::Test
   end
 
   def test_as_json_object_compat_non_hash
-    Oj.default_options = { :mode => :compat }
+    Oj.default_options = { :mode => :compat, :use_to_json => true }
     obj = Melon.new(true, 58)
     json = Oj.dump(obj, :indent => 2)
     assert_equal(%{"true 58"}, json)

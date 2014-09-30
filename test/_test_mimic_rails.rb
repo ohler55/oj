@@ -1,4 +1,7 @@
+#!/usr/bin/env ruby
 # encoding: UTF-8
+
+$: << File.dirname(__FILE__)
 
 require 'helper'
 Oj.mimic_JSON
@@ -24,6 +27,17 @@ class MimicRails < Minitest::Test
   1,
   true,
   null
+]
+}, json)
+  end
+
+  def test_dump_rational
+    Oj.default_options= {:indent => 2} # JSON this will not change anything
+    json = ActiveSupport::JSON.encode([1, true, Rational(1)])
+    assert_equal(%{[
+  1,
+  true,
+  "1/1"
 ]
 }, json)
   end

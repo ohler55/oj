@@ -1264,7 +1264,7 @@ dump_obj_comp(VALUE obj, int depth, Out out) {
 	    rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
 	}
 	dump_hash(h, Qundef, depth, out->opts->mode, out);
-    } else if (rb_respond_to(obj, oj_as_json_id)) {
+    } else if (Yes == out->opts->to_json && rb_respond_to(obj, oj_as_json_id)) {
 	dump_val(rb_funcall(obj, oj_as_json_id, 0), depth, out);
     } else if (Yes == out->opts->to_json && rb_respond_to(obj, oj_to_json_id)) {
 	volatile VALUE	rs;
@@ -1292,7 +1292,11 @@ dump_obj_comp(VALUE obj, int depth, Out out) {
 	    } else {
 		dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
 	    }
+#if (defined T_RATIONAL && defined RRATIONAL)
+	} else if (oj_datetime_class == clas || oj_date_class == clas || rb_cRational == clas) {
+#else
 	} else if (oj_datetime_class == clas || oj_date_class == clas) {
+#endif
 	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
 	    dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
