@@ -997,15 +997,13 @@ dump_time(VALUE obj, Out out) {
     long		nsec = NUM2LONG(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
 #endif
 #endif
-
+    
     if (0 > sec) {
 	neg = 1;
 	sec = -sec;
 	if (0 < nsec) {
 	    nsec = 1000000000 - nsec;
-#ifndef JRUBY_RUBY
 	    sec--;
-#endif
 	}
     }
     *b-- = '\0';
@@ -1237,7 +1235,16 @@ dump_data_obj(VALUE obj, int depth, Out out) {
 	*out->cur++ = 't';
 	*out->cur++ = '"';
 	*out->cur++ = ':';
-	dump_time(obj, out);
+	switch (out->opts->time_format) {
+	case RubyTime: // Does not output fractional seconds
+	case XmlTime:
+	    dump_xml_time(obj, out);
+	    break;
+	case UnixTime:
+	default:
+	    dump_time(obj, out);
+	    break;
+	}
 	*out->cur++ = '}';
 	*out->cur = '\0';
     } else {

@@ -26,9 +26,12 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
-### Current Release 2.10.2
+### Current Release 2.10.3
 
- - Fixed string corruption bug due to an uncommented assignment used for debugging.
+ - Using the xmlschema option with :object mode now saves time as a string and
+   preserves the timezone.
+
+ - TBD Rational loop in active support fix
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 

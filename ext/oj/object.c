@@ -132,6 +132,9 @@ hat_cstr(ParseInfo pi, Val parent, Val kval, const char *str, size_t len) {
 	case 'c': // class
 	    parent->val = oj_name2class(pi, str, len, Yes == pi->options.auto_define);
 	    break;
+	case 't': // time
+	    parent->val = rb_funcall(oj_time_class, rb_intern("parse"), 1, rb_str_new(str, len));
+	    break;
 	default:
 	    return 0;
 	    break;
@@ -161,6 +164,9 @@ hat_num(ParseInfo pi, Val parent, Val kval, NumInfo ni) {
 #else
 		parent->val = rb_time_new(ni->i, (long)(nsec / 1000));
 #endif
+		// TBD if there is an exponent then if not gmt_offset
+		// add gmt_offset and then getgmt()
+		// if not 0 then getlocal(offset)
 	    }
 	    break;
 	case 'i': // circular index
