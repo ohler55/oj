@@ -269,6 +269,7 @@ class CompatJuice < Minitest::Test
 
   def test_json_object_compat
     obj = Jeez.new(true, 58)
+    Oj.default_options = { :mode => :compat, :use_to_json => true }
     dump_and_load(obj, false)
   end
 
@@ -279,7 +280,7 @@ class CompatJuice < Minitest::Test
 
   def test_json_object_create_id
     expected = Jeez.new(true, 58)
-    json = Oj.dump(expected, :indent => 2, :mode => :compat)
+    json = Oj.dump(expected, :indent => 2, :mode => :compat, :use_to_json => true)
     obj = Oj.compat_load(json)
     assert_equal(expected, obj)
   end
@@ -297,7 +298,7 @@ class CompatJuice < Minitest::Test
 
   def test_json_object_create_cache
     expected = Jeez.new(true, 58)
-    json = Oj.dump(expected, :indent => 2, :mode => :compat)
+    json = Oj.dump(expected, :indent => 2, :mode => :compat, :use_to_json => true)
     obj = Oj.compat_load(json, :class_cache => true)
     assert_equal(expected, obj)
     obj = Oj.compat_load(json, :class_cache => false)
@@ -306,7 +307,7 @@ class CompatJuice < Minitest::Test
 
   def test_json_object_create_id_other
     expected = Jeez.new(true, 58)
-    json = Oj.dump(expected, :indent => 2, :mode => :compat)
+    json = Oj.dump(expected, :indent => 2, :mode => :compat, :use_to_json => true)
     json.gsub!('json_class', '_class_')
     obj = Oj.compat_load(json, :create_id => "_class_")
     assert_equal(expected, obj)

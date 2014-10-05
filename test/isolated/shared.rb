@@ -186,7 +186,7 @@ class SharedMimicTest < Minitest::Test
   end
   def test_parse_additions
     jam = Jam.new(true, 58)
-    json = Oj.dump(jam, :mode => :compat)
+    json = Oj.dump(jam, :mode => :compat, :use_to_json => true)
     obj = JSON.parse(json)
     assert_equal(jam, obj)
     obj = JSON.parse(json, :create_additions => true)
@@ -209,7 +209,7 @@ class SharedMimicTest < Minitest::Test
   def test_recurse_proc
     children = []
     JSON.recurse_proc({ 'a' => 1, 'b' => [true, false]}) { |x| children << x }
-    # JRuby 1.7.0 rb_yield() is broken and converts the [true, falser] array into true
+    # JRuby 1.7.0 rb_yield() is broken and converts the [true, false] array into true
     unless 'jruby' == $ruby && '1.9.3' == RUBY_VERSION
       assert([1, true, false, [true, false], { 'a' => 1, 'b' => [true, false]}] == children ||
              [true, false, [true, false], 1, { 'b' => [true, false], 'a' => 1}] == children)

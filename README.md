@@ -31,7 +31,9 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
  - Using the xmlschema option with :object mode now saves time as a string and
    preserves the timezone.
 
- - TBD Rational loop in active support fix
+ - Rational recursive loop caused by active support fixed.
+
+ - Time in mimic_JSON mode are now the ruby string representation of a date.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 

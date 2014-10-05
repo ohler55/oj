@@ -1716,7 +1716,7 @@ static struct _Options	mimic_object_to_json_options = {
     JSONEsc,		// escape_mode
     CompatMode,		// mode
     No,			// class_cache
-    UnixTime,		// time_format
+    RubyTime,		// time_format
     Yes,		// bigdec_as_num
     AutoDec,		// bigdec_load
     No,			// to_json
@@ -1844,9 +1844,7 @@ define_mimic_json(int argc, VALUE *argv, VALUE self) {
         rb_define_class_under(mimic, "State", rb_cObject);
     }
 
-    oj_default_options.mode = CompatMode;
-    oj_default_options.escape_mode = ASCIIEsc;
-    oj_default_options.nilnil = Yes;
+    oj_default_options = mimic_object_to_json_options;
 
     return mimic;
 }
