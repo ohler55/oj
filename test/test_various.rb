@@ -167,7 +167,7 @@ class Juice < Minitest::Test
   end
 
   def test_float
-    mode = opts = Oj.default_options()[:mode]
+    mode = Oj.default_options()[:mode]
     Oj.default_options = {:mode => :object}
     dump_and_load(0.0, false)
     dump_and_load(12345.6789, false)
