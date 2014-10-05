@@ -1738,7 +1738,8 @@ mimic_object_to_json(int argc, VALUE *argv, VALUE self) {
     out.buf = buf;
     out.end = buf + sizeof(buf) - 10;
     out.allocated = 0;
-    oj_dump_obj_to_json(self, &mimic_object_to_json_options, &out);
+    //oj_dump_obj_to_json(self, &mimic_object_to_json_options, &out);
+    oj_dump_obj_to_json(self, &oj_default_options, &out);
     if (0 == out.buf) {
 	rb_raise(rb_eNoMemError, "Not enough memory.");
     }
