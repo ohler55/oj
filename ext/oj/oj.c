@@ -1846,6 +1846,7 @@ define_mimic_json(int argc, VALUE *argv, VALUE self) {
     }
 
     oj_default_options = mimic_object_to_json_options;
+    oj_default_options.to_json = Yes;
 
     return mimic;
 }
