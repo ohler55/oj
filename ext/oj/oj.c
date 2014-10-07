@@ -1734,12 +1734,17 @@ mimic_object_to_json(int argc, VALUE *argv, VALUE self) {
     char		buf[4096];
     struct _Out		out;
     VALUE		rstr;
-    
+    struct _Options	copts = oj_default_options;
+
     out.buf = buf;
     out.end = buf + sizeof(buf) - 10;
     out.allocated = 0;
+    // Have to turn off to_json to avoid the Active Support recursion problem.
+    copts.to_json = No;
+    // To be strict the mimic_object_to_json_options should be used but people
+    // seem to prefer the option of changing that.
     //oj_dump_obj_to_json(self, &mimic_object_to_json_options, &out);
-    oj_dump_obj_to_json(self, &oj_default_options, &out);
+    oj_dump_obj_to_json(self, &copts, &out);
     if (0 == out.buf) {
 	rb_raise(rb_eNoMemError, "Not enough memory.");
     }
