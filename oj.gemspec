@@ -11,9 +11,9 @@ Gem::Specification.new do |s|
   s.homepage = "http://www.ohler.com/oj"
   s.summary = "A fast JSON parser and serializer."
   s.description = %{The fastest JSON parser and object serializer. }
-  s.licenses = ['MIT', 'GPL-3.0']
+  s.licenses = ['MIT']
 
-  s.files = Dir["{lib,ext,test}/**/*.{rb,h,c}"] + ['LICENSE', 'README.md']
+  s.files = Dir["{lib,ext,test}/**/*.{rb,h,c}"] + ['README.md']
 
   s.extensions = ["ext/oj/extconf.rb"]
 
