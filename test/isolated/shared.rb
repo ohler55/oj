@@ -26,6 +26,13 @@ class SharedMimicTest < Minitest::Test
 
   def setup
     @default_options = Oj.default_options
+    @time = Time.at(1400000000).utc
+    @expected_time_string =
+      if defined?(Rails)
+        %{"2014-05-13T16:53:20.000Z"}
+      else
+        %{"2014-05-13 16:53:20 UTC"}
+      end
   end
 
   def teardown
@@ -46,26 +53,27 @@ class SharedMimicTest < Minitest::Test
 
 # dump
   def test_dump_string
-    json = JSON.dump([1, true, nil])
-    assert_equal(%{[1,true,null]}, json)
+    json = JSON.dump([1, true, nil, @time])
+    assert_equal(%{[1,true,null,#{@expected_time_string}]}, json)
   end
 
   def test_dump_with_options
     Oj.default_options= {:indent => 2} # JSON this will not change anything
-    json = JSON.dump([1, true, nil])
+    json = JSON.dump([1, true, nil, @time])
     assert_equal(%{[
   1,
   true,
-  null
+  null,
+  #{@expected_time_string}
 ]
 }, json)
   end
 
   def test_dump_io
     s = StringIO.new()
-    json = JSON.dump([1, true, nil], s)
+    json = JSON.dump([1, true, nil, @time], s)
     assert_equal(s, json)
-    assert_equal(%{[1,true,null]}, s.string)
+    assert_equal(%{[1,true,null,#{@expected_time_string}]}, s.string)
   end
   # TBD options
 

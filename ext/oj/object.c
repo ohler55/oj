@@ -164,9 +164,6 @@ hat_num(ParseInfo pi, Val parent, Val kval, NumInfo ni) {
 #else
 		parent->val = rb_time_new(ni->i, (long)(nsec / 1000));
 #endif
-		// TBD if there is an exponent then if not gmt_offset
-		// add gmt_offset and then getgmt()
-		// if not 0 then getlocal(offset)
 	    }
 	    break;
 	case 'i': // circular index

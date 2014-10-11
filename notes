@@ -3,9 +3,11 @@
 ^c^d hide subtree
 ^c^s show subtree
 
-- support timezone
- - use e (1234.567e50)
-  - timezone divied by 10
+- mimic_JSON
+ - decide on default use_to_json
+  - true
+
+
 
 - rbx test
  - get latest
