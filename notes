@@ -6,8 +6,15 @@
 - mimic_JSON
  - decide on default use_to_json
   - true
+ - fixes #192
 
+- NaN
+ - strict - raise
+ - compat - parse
 
+- range dump
+
+- make dump for float
 
 - rbx test
  - get latest
