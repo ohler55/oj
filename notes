@@ -3,18 +3,18 @@
 ^c^d hide subtree
 ^c^s show subtree
 
-- mimic_JSON
- - decide on default use_to_json
-  - true
++ mimic_JSON
  - fixes #192
 
 - NaN
  - strict - raise
  - compat - parse
 
-- range dump
++ range dump- #194
 
-- make dump for float
+- #195 NaN
+
+- #193 make dump for float
 
 - rbx test
  - get latest

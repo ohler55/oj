@@ -29,6 +29,9 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 ### Current Release 2.10.4
 
  - Fixed Range encoding in compat mode to not use the object mode encoding.
+
+ - Fixed serialization problem with timestamps.
+ 
  
 ### Release 2.10.3
 

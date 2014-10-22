@@ -53,7 +53,6 @@ class MimicRails < Minitest::Test
 
   def test_dump_rational
     Oj.default_options= {:indent => 2} # JSON this will not change anything
-    Oj.default_options= {:use_to_json => true}
     json = ActiveSupport::JSON.encode([1, true, Rational(1)])
     assert_equal(%{[
   1,
@@ -63,18 +62,25 @@ class MimicRails < Minitest::Test
 }, json)
   end
 
+  def test_dump_range
+    Oj.default_options= {:indent => 2} # JSON this will not change anything
+    json = ActiveSupport::JSON.encode([1, true, '01'..'12'])
+    assert_equal(%{[
+  1,
+  true,
+  "01..12"
+]
+}, json)
+  end
+
   def test_dump_object
     Oj.default_options= {:indent => 2}
-    Oj.default_options= {:use_to_json => true}
     category = Category.new(1, 'test')
     serializer = CategorySerializer.new(category)
 
     json = serializer.to_json()
-    puts "*** to_json (#{json.class})#{json}"
     json = serializer.as_json()
-    puts "*** as_json (#{json.class})#{json}"
     json = JSON.dump(serializer)
-    puts "*** dump (#{json.class})#{json}"
   end
 
 

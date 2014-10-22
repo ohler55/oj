@@ -1753,7 +1753,7 @@ dump_val(VALUE obj, int depth, Out out) {
     if (MAX_DEPTH < depth) {
 	rb_raise(rb_eNoMemError, "Too deeply nested.\n");
     }
-    switch (rb_type(obj)) {
+    switch (type) {
     case T_NIL:		dump_nil(out);				break;
     case T_TRUE:	dump_true(out);				break;
     case T_FALSE:	dump_false(out);			break;
@@ -1875,11 +1875,11 @@ oj_dump_obj_to_json(VALUE obj, Options copts, Out out) {
 	case '}':
 	    grow(out, 1);
 	    *out->cur++ = '\n';
-	    *out->cur = '\0';
 	default:
 	    break;
 	}
     }
+    *out->cur = '\0';
     if (Yes == copts->circular) {
 	oj_cache8_delete(out->circ_cache);
     }

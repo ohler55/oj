@@ -166,7 +166,7 @@ struct _Options	oj_default_options = {
     UnixTime,		// time_format
     Yes,		// bigdec_as_num
     AutoDec,		// bigdec_load
-    No,			// to_json
+    Yes,		// to_json
     No,			// nilnil
     json_class,		// create_id
     10,			// create_id_len
