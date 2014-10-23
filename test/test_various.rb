@@ -398,11 +398,7 @@ class Juice < Minitest::Test
         sign = '-'
         tz = -tz
       end
-      if RUBY_VERSION.start_with?('1.8')
-        assert_equal(%{"2012-01-05T23:58:07%sZ"} % [sign], json)
-      else
-        assert_equal(%{"2012-01-05T23:58:07%s%02d:%02d"} % [sign, tz / 3600, tz / 60 % 60], json)
-      end
+      assert_equal(%{"2012-01-05T23:58:07%s%02d:%02d"} % [sign, tz / 3600, tz / 60 % 60], json)
     end
   end
   def test_xml_time_compat_precision
@@ -440,11 +436,7 @@ class Juice < Minitest::Test
         sign = '-'
         tz = -tz
       end
-      if RUBY_VERSION.start_with?('1.8')
-        assert_equal(%{"2012-01-05T23:58:08%sZ"} % [sign], json)
-      else
-        assert_equal(%{"2012-01-05T23:58:08%s%02d:%02d"} % [sign, tz / 3600, tz / 60 % 60], json)
-      end
+      assert_equal(%{"2012-01-05T23:58:08%s%02d:%02d"} % [sign, tz / 3600, tz / 60 % 60], json)
     end
   end
   def test_xml_time_compat_zulu

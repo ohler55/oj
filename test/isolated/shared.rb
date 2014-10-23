@@ -30,6 +30,8 @@ class SharedMimicTest < Minitest::Test
     @expected_time_string =
       if defined?(Rails)
         %{"2014-05-13T16:53:20.000Z"}
+      elsif RUBY_VERSION.start_with?('1.8')
+        %{"Tue May 13 16:53:20 UTC 2014"}
       else
         %{"2014-05-13 16:53:20 UTC"}
       end
