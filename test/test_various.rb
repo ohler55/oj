@@ -914,12 +914,8 @@ class Juice < Minitest::Test
     rescue Oj::ParseError
       assert(true)
     end
-    begin
-      Oj.load('Infinity', :mode => :compat)
-      fail()
-    rescue Oj::ParseError
-      assert(true)
-    end
+    x = Oj.load('Infinity', :mode => :compat)
+    assert_equal('Infinity', x.to_s)
 
   end
 

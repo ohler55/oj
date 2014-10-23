@@ -84,11 +84,44 @@ end_hash(struct _ParseInfo *pi) {
     }
 }
 
+static VALUE
+calc_hash_key(ParseInfo pi, Val parent) {
+    volatile VALUE	rkey = parent->key_val;
+
+    if (Qundef == rkey) {
+	rkey = rb_str_new(parent->key, parent->klen);
+    }
+    rkey = oj_encode(rkey);
+    if (Yes == pi->options.sym_key) {
+	rkey = rb_str_intern(rkey);
+    }
+    return rkey;
+}
+
+static void
+add_num(ParseInfo pi, NumInfo ni) {
+    pi->stack.head->val = oj_num_as_value(ni);
+}
+
+static void
+hash_set_num(struct _ParseInfo *pi, Val parent, NumInfo ni) {
+    rb_hash_aset(stack_peek(&pi->stack)->val, calc_hash_key(pi, parent), oj_num_as_value(ni));
+}
+
+static void
+array_append_num(ParseInfo pi, NumInfo ni) {
+    rb_ary_push(stack_peek(&pi->stack)->val, oj_num_as_value(ni));
+}
+
+
 void
 oj_set_compat_callbacks(ParseInfo pi) {
     oj_set_strict_callbacks(pi);
     pi->end_hash = end_hash;
     pi->hash_set_cstr = hash_set_cstr;
+    pi->add_num = add_num;
+    pi->hash_set_num = hash_set_num;
+    pi->array_append_num = array_append_num;
 }
 
 VALUE

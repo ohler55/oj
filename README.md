@@ -31,7 +31,8 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
  - Fixed Range encoding in compat mode to not use the object mode encoding.
 
  - Fixed serialization problem with timestamps.
- 
+
+ - Fixed compat parser to accept NaN and Infinity.
  
 ### Release 2.10.3
 
