@@ -457,12 +457,21 @@ dump_float(VALUE obj, Out out) {
 	*b++ = '\0';
 	cnt = 3;
     } else if (OJ_INFINITY == d) {
+	if (StrictMode == out->opts->mode) {
+	    raise_strict(obj);
+	}
 	strcpy(buf, "Infinity");
 	cnt = 8;
     } else if (-OJ_INFINITY == d) {
+	if (StrictMode == out->opts->mode) {
+	    raise_strict(obj);
+	}
 	strcpy(buf, "-Infinity");
 	cnt = 9;
     } else if (isnan(d)) {
+	if (StrictMode == out->opts->mode) {
+	    raise_strict(obj);
+	}
 	strcpy(buf, "NaN");
 	cnt = 3;
     } else if (d == (double)(long long int)d) {

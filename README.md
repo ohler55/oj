@@ -26,7 +26,11 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
-### Current Release 2.10.4
+### Current Release 2.10.5
+
+ - Restricted dump to not dump NaN nor Infinity but instead raise an exception.
+ 
+### Release 2.10.4
 
  - Fixed Range encoding in compat mode to not use the object mode encoding.
 
@@ -34,15 +38,6 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
  - Fixed compat parser to accept NaN and Infinity.
  
-### Release 2.10.3
-
- - Using the xmlschema option with :object mode now saves time as a string and
-   preserves the timezone.
-
- - Rational recursive loop caused by active support fixed.
-
- - Time in mimic_JSON mode are now the ruby string representation of a date.
-
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
 ## Description
