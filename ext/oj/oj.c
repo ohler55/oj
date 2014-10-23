@@ -1717,7 +1717,7 @@ static struct _Options	mimic_object_to_json_options = {
     CompatMode,		// mode
     No,			// class_cache
     RubyTime,		// time_format
-    Yes,		// bigdec_as_num
+    No,			// bigdec_as_num
     AutoDec,		// bigdec_load
     No,			// to_json
     Yes,		// nilnil

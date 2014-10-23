@@ -29,6 +29,10 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 ### Current Release 2.10.5
 
  - Restricted dump to not dump NaN nor Infinity but instead raise an exception.
+
+ - Changed compat mode so that the :bigdecimal_as_decimal option over-rides the
+   to_json method if the option is true. The default for mimic_JSON is to leave
+   the option off.
  
 ### Release 2.10.4
 

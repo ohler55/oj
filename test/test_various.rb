@@ -880,7 +880,7 @@ class Juice < Minitest::Test
     BigDecimal.send(:define_method, :as_json) do
       %{this is big}
     end
-    json = Oj.dump(orig, :mode => :compat)
+    json = Oj.dump(orig, :mode => :compat, :bigdecimal_as_decimal => false)
     bg = Oj.load(json, :mode => :compat)
     assert_equal("this is big", bg)
     BigDecimal.send(:remove_method, :as_json) # cleanup
