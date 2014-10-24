@@ -97,7 +97,7 @@ gem 'oj_mimic_json'
 
 ## Proper Use
 
-Two settings in Oj are useful for parsing but do expose a vunerability if used from an untrusted source. Symbolized
+Two settings in Oj are useful for parsing but do expose a vulnerability if used from an untrusted source. Symbolized
 keys can cause memory to be filled since Ruby does not garbage collect Symbols. The same is true for auto
 defining classes; memory will also be exhausted if too many classes are automatically defined. Auto defining is a useful
 feature during development and from trusted sources but it allows too many classes to be created in the object load
