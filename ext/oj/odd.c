@@ -34,7 +34,7 @@
 
 static struct _Odd	_odds[4]; // bump up if new initial Odd classes are added
 static struct _Odd	*odds = _odds;
-static int		odd_cnt = 0;
+static long		odd_cnt = 0;
 
 static void
 set_class(Odd odd, const char *classname) {
