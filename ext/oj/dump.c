@@ -1768,6 +1768,7 @@ dump_val(VALUE obj, int depth, Out out) {
     case T_FALSE:	dump_false(out);			break;
     case T_FIXNUM:	dump_fixnum(obj, out);			break;
     case T_FLOAT:	dump_float(obj, out);			break;
+    case T_MODULE: dump_class_comp(obj, out);	break;
     case T_CLASS:
 	switch (out->opts->mode) {
 	case StrictMode:	raise_strict(obj);		break;

@@ -7,6 +7,9 @@ require 'helper'
 
 class Juice < Minitest::Test
 
+  module TestModule
+  end
+
   class Jam
     attr_accessor :x, :y
 
@@ -461,6 +464,12 @@ class Juice < Minitest::Test
     t = Time.xmlschema("1954-01-05T00:00:00.123456")
     Oj.default_options = { :mode => :object }
     dump_and_load(t, false)
+  end
+
+  # Module
+  def test_module_object
+    json = Oj.dump(TestModule)
+    assert_equal("\"Juice::TestModule\"", json)
   end
 
   # Class
