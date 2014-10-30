@@ -450,11 +450,7 @@ dump_float(VALUE obj, Out out) {
     int		cnt;
 
     if (0.0 == d) {
-	b = buf;
-	*b++ = '0';
-	*b++ = '.';
-	*b++ = '0';
-	*b++ = '\0';
+	strcpy(buf, "0.0");
 	cnt = 3;
     } else if (OJ_INFINITY == d) {
 	if (StrictMode == out->opts->mode) {
@@ -475,9 +471,9 @@ dump_float(VALUE obj, Out out) {
 	strcpy(buf, "NaN");
 	cnt = 3;
     } else if (d == (double)(long long int)d) {
-	cnt = sprintf(buf, "%.1f", d); // used sprintf due to bug in snprintf
+	cnt = sprintf(buf, "%.1f", d);
     } else {
-	cnt = sprintf(buf, "%0.16g", d); // used sprintf due to bug in snprintf
+	cnt = sprintf(buf, "%0.15g", d);
     }
     if (out->end - out->cur <= (long)cnt) {
 	grow(out, cnt);

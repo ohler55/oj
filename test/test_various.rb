@@ -190,6 +190,22 @@ class Juice < Minitest::Test
     Oj.default_options = {:mode => mode}
   end
 
+  def test_float_dump
+    assert_equal('0.56', Oj.dump(0.56))
+    assert_equal('0.5773', Oj.dump(0.5773))
+    assert_equal('0.6768', Oj.dump(0.6768))
+    assert_equal('0.685', Oj.dump(0.685))
+    assert_equal('0.7032', Oj.dump(0.7032))
+    assert_equal('0.7051', Oj.dump(0.7051))
+    assert_equal('0.8274', Oj.dump(0.8274))
+    assert_equal('0.9149', Oj.dump(0.9149))
+    assert_equal('64.4', Oj.dump(64.4))
+    assert_equal('71.6', Oj.dump(71.6))
+    assert_equal('73.4', Oj.dump(73.4))
+    assert_equal('80.6', Oj.dump(80.6))
+    assert_equal('-95.640172', Oj.dump(-95.640172))
+  end
+
   def test_string
     dump_and_load('', false)
     dump_and_load('abc', false)
