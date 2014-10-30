@@ -7,6 +7,9 @@ require 'helper'
 
 class Juice < Minitest::Test
 
+  module TestModule
+  end
+
   class Jam
     attr_accessor :x, :y
 
@@ -484,6 +487,29 @@ class Juice < Minitest::Test
   def test_class_object
     Oj.default_options = { :mode => :object }
     dump_and_load(Juice, false)
+  end
+
+  # Module
+  def test_module_strict
+    begin
+      Oj.dump(TestModule, :mode => :strict)
+    rescue Exception
+      assert(true)
+      return
+    end
+    assert(false, "*** expected an exception")
+  end
+  def test_module_null
+    json = Oj.dump(TestModule, :mode => :null)
+    assert_equal('null', json)
+  end
+  def test_module_compat
+    json = Oj.dump(TestModule, :mode => :compat)
+    assert_equal(%{"Juice::TestModule"}, json)
+  end
+  def test_module_object
+    Oj.default_options = { :mode => :object }
+    dump_and_load(TestModule, false)
   end
 
   # Hash
