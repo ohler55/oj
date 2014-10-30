@@ -33,6 +33,8 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
  - Changed compat mode so that the :bigdecimal_as_decimal option over-rides the
    to_json method if the option is true. The default for mimic_JSON is to leave
    the option off.
+
+ - Added support for Module encoding in compat mode.
  
 ### Release 2.10.4
 
