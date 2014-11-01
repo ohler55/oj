@@ -1736,7 +1736,22 @@ dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
 	    grow(out, size);
 	}
 	name = rb_id2name(*idp);
-	v = rb_funcall(obj, *idp, 0);
+	if (0 == strchr(name, '.')) {
+	    v = rb_funcall(obj, *idp, 0);
+	} else {
+	    const char	*n = name;
+	    const char	*end;
+	    ID		i;
+	    
+	    v = obj;
+	    while (0 != (end = strchr(n, '.'))) {
+		i = rb_intern2(n, end - n);
+		v = rb_funcall(v, i, 0);
+		n = end + 1;
+	    }
+	    i = rb_intern(n);
+	    v = rb_funcall(v, i, 0);
+	}
 	fill_indent(out, d2);
 	dump_cstr(name, strlen(name), 0, 0, out);
 	*out->cur++ = ':';

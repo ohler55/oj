@@ -7,13 +7,10 @@
  - add option with default of 15
   - sprintf into a dbl_fmt[8] "%0.%dg" (need 6 chars plus terminator)
   - limit to 1 to 20 (or 17?)
+  - 0 or less indicated use ruby
 
 + mimic_JSON
  - fixes #192, #190
-
-+ range dump- #194
-
-+ #195 NaN
 
 - #193 make dump for float to fix roundoff errors
 

@@ -890,7 +890,7 @@ to_stream(int argc, VALUE *argv, VALUE self) {
  * normal way. It is not intended as a hook for changing the output of all
  * classes as it is not optimized for large numbers of classes.
  *
- * @param [Class] clas Class to me made special
+ * @param [Class] clas Class to be made special
  * @param [Object] create_object object to call the create method on
  * @param [Symbol] create_method method on the clas that will create a new
  *                 instance of the clas when given all the member values in the

@@ -10,6 +10,11 @@ require 'rails/all'
 require 'active_model'
 require 'active_model_serializers'
 require 'active_support/json'
+require 'active_support/time'
+
+require 'oj/active_support_helper'
+
+#Oj.mimic_JSON
 
 class Category
   include ActiveModel::Model
@@ -41,7 +46,7 @@ class MimicRails < Minitest::Test
   end
 
   def test_dump_string
-    Oj.default_options= {:indent => 2} # JSON this will not change anything
+    Oj.default_options= {:indent => 2}
     json = ActiveSupport::JSON.encode([1, true, nil])
     assert_equal(%{[
   1,
@@ -52,7 +57,7 @@ class MimicRails < Minitest::Test
   end
 
   def test_dump_rational
-    Oj.default_options= {:indent => 2} # JSON this will not change anything
+    Oj.default_options= {:indent => 2}
     json = ActiveSupport::JSON.encode([1, true, Rational(1)])
     assert_equal(%{[
   1,
@@ -63,7 +68,7 @@ class MimicRails < Minitest::Test
   end
 
   def test_dump_range
-    Oj.default_options= {:indent => 2} # JSON this will not change anything
+    Oj.default_options= {:indent => 2}
     json = ActiveSupport::JSON.encode([1, true, '01'..'12'])
     assert_equal(%{[
   1,
@@ -79,9 +84,22 @@ class MimicRails < Minitest::Test
     serializer = CategorySerializer.new(category)
 
     json = serializer.to_json()
+    puts "*** serializer.to_json() #{serializer.to_json()}"
     json = serializer.as_json()
+    puts "*** serializer.as_json() #{serializer.as_json()}"
     json = JSON.dump(serializer)
+    puts "*** JSON.dump(serializer) #{JSON.dump(serializer)}"
   end
 
+  def test_dump_time
+    Oj.default_options= {:indent => 2}
+    now = ActiveSupport::TimeZone['America/Chicago'].parse("2014-11-01 13:20:47")
+    json = Oj.dump(now, mode: :object, time_format: :xmlschema)
+    #puts "*** json: #{json}"
+
+    oj_dump = Oj.load(json, mode: :object, time_format: :xmlschema)
+    #puts "Now: #{now}\n Oj: #{oj_dump}"
+    assert_equal("2014-11-01T13:20:47-05:00", oj_dump.xmlschema)
+  end
 
 end # MimicRails
