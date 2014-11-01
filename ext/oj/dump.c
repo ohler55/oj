@@ -475,9 +475,9 @@ dump_float(VALUE obj, Out out) {
 	strcpy(buf, "NaN");
 	cnt = 3;
     } else if (d == (double)(long long int)d) {
-	cnt = sprintf(buf, "%.1f", d); // used sprintf due to bug in snprintf
+	cnt = snprintf(buf, sizeof(buf), "%.1f", d);
     } else {
-	cnt = sprintf(buf, "%0.16g", d); // used sprintf due to bug in snprintf
+	cnt = snprintf(buf, sizeof(buf), "%0.15g", d);
     }
     if (out->end - out->cur <= (long)cnt) {
 	grow(out, cnt);

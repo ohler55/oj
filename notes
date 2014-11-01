@@ -3,6 +3,11 @@
 ^c^d hide subtree
 ^c^s show subtree
 
+- precision of float dump
+ - add option with default of 15
+  - sprintf into a dbl_fmt[8] "%0.%dg" (need 6 chars plus terminator)
+  - limit to 1 to 20 (or 17?)
+
 + mimic_JSON
  - fixes #192, #190
 
