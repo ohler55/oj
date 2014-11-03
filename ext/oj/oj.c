@@ -114,6 +114,7 @@ static VALUE	class_cache_sym;
 static VALUE	compat_sym;
 static VALUE	create_id_sym;
 static VALUE	escape_mode_sym;
+static VALUE	float_prec_sym;
 static VALUE	float_sym;
 static VALUE	indent_sym;
 static VALUE	json_sym;
@@ -168,12 +169,14 @@ struct _Options	oj_default_options = {
     AutoDec,		// bigdec_load
     Yes,		// to_json
     No,			// nilnil
+    Yes,		// allow_gc
+    Yes,		// quirks_mode
     json_class,		// create_id
     10,			// create_id_len
     9,			// sec_prec
-    Yes,		// allow_gc
-    Yes,		// quirks_mode
     0,			// dump_opts
+    15,			// float_prec
+    "%0.15g",		// float_fmt
 };
 
 static VALUE	define_mimic_json(int argc, VALUE *argv, VALUE self);
@@ -193,6 +196,7 @@ static VALUE	define_mimic_json(int argc, VALUE *argv, VALUE self);
  * - bigdecimal_load: [:bigdecimal|:float|:auto] load decimals as BigDecimal instead of as a Float. :auto pick the most precise for the number of digits.
  * - create_id: [String|nil] create id for json compatible object encoding, default is 'json_create'
  * - second_precision: [Fixnum|nil] number of digits after the decimal when dumping the seconds portion of time
+ * - float_precision: [Fixnum|nil] number of digits of precision when dumping floats, 0 indicates use Ruby
  * - use_to_json: [true|false|nil] call to_json() methods on dump, default is false
  * - nilnil: [true|false|nil] if true a nil input to load will return nil and not raise an Exception
  * - allow_gc: [true|false|nil] allow or prohibit GC during parsing, default is true (allow)
@@ -214,6 +218,7 @@ get_def_opts(VALUE self) {
     rb_hash_aset(opts, nilnil_sym, (Yes == oj_default_options.nilnil) ? Qtrue : ((No == oj_default_options.nilnil) ? Qfalse : Qnil));
     rb_hash_aset(opts, allow_gc_sym, (Yes == oj_default_options.allow_gc) ? Qtrue : ((No == oj_default_options.allow_gc) ? Qfalse : Qnil));
     rb_hash_aset(opts, quirks_mode_sym, (Yes == oj_default_options.quirks_mode) ? Qtrue : ((No == oj_default_options.quirks_mode) ? Qfalse : Qnil));
+    rb_hash_aset(opts, float_prec_sym, INT2FIX(oj_default_options.float_prec));
     switch (oj_default_options.mode) {
     case StrictMode:	rb_hash_aset(opts, mode_sym, strict_sym);	break;
     case CompatMode:	rb_hash_aset(opts, mode_sym, compat_sym);	break;
@@ -235,7 +240,7 @@ get_def_opts(VALUE self) {
     default:		rb_hash_aset(opts, time_format_sym, unix_sym);		break;
     }
     switch (oj_default_options.bigdec_load) {
-    case BigDec:	rb_hash_aset(opts, bigdecimal_load_sym, bigdecimal_sym);	break;
+    case BigDec:	rb_hash_aset(opts, bigdecimal_load_sym, bigdecimal_sym);break;
     case FloatDec:	rb_hash_aset(opts, bigdecimal_load_sym, float_sym);	break;
     case AutoDec:
     default:		rb_hash_aset(opts, bigdecimal_load_sym, auto_sym);	break;
@@ -274,6 +279,7 @@ get_def_opts(VALUE self) {
  *        :ruby Time.to_s formatted String
  * @param [String|nil] :create_id create id for json compatible object encoding
  * @param [Fixnum|nil] :second_precision number of digits after the decimal when dumping the seconds portion of time
+ * @param [Fixnum|nil] :float_precision number of digits of precision when dumping floats, 0 indicates use Ruby
  * @param [true|false|nil] :use_to_json call to_json() methods on dump, default is false
  * @param [true|false|nil] :nilnil if true a nil input to load will return nil and not raise an Exception
  * @param [true|false|nil] :allow_gc allow or prohibit GC during parsing, default is true (allow)
@@ -302,6 +308,23 @@ set_def_opts(VALUE self, VALUE opts) {
     if (Qnil != v) {
 	Check_Type(v, T_FIXNUM);
 	oj_default_options.indent = FIX2INT(v);
+    }
+    v = rb_hash_aref(opts, float_prec_sym);
+    if (Qnil != v) {
+	int	n;
+
+	Check_Type(v, T_FIXNUM);
+	n = FIX2INT(v);
+	if (0 >= n) {
+	    *oj_default_options.float_fmt = '\0';
+	    oj_default_options.float_prec = 0;
+	} else {
+	    if (20 < n) {
+		n = 20;
+	    }
+	    sprintf(oj_default_options.float_fmt, "%%0.%dg", n);
+	    oj_default_options.float_prec = n;
+	}
     }
     v = rb_hash_aref(opts, sec_prec_sym);
     if (Qnil != v) {
@@ -439,6 +462,25 @@ oj_parse_options(VALUE ropts, Options copts) {
 		rb_raise(rb_eArgError, ":indent must be a Fixnum.");
 	    }
 	    copts->indent = NUM2INT(v);
+	}
+	if (Qnil != (v = rb_hash_lookup(ropts, float_prec_sym))) {
+	    int	n;
+
+	    if (rb_cFixnum != rb_obj_class(v)) {
+		rb_raise(rb_eArgError, ":float_precision must be a Fixnum.");
+	    }
+	    Check_Type(v, T_FIXNUM);
+	    n = FIX2INT(v);
+	    if (0 >= n) {
+		*copts->float_fmt = '\0';
+		copts->float_prec = 0;
+	    } else {
+		if (20 < n) {
+		    n = 20;
+		}
+		sprintf(copts->float_fmt, "%%0.%dg", n);
+		copts->float_prec = n;
+	    }
 	}
 	if (Qnil != (v = rb_hash_lookup(ropts, sec_prec_sym))) {
 	    int	n;
@@ -1721,12 +1763,14 @@ static struct _Options	mimic_object_to_json_options = {
     AutoDec,		// bigdec_load
     No,			// to_json
     Yes,		// nilnil
+    Yes,		// allow_gc
+    Yes,		// quirks_mode
     json_class,		// create_id
     10,			// create_id_len
     9,			// sec_prec
-    Yes,		// allow_gc
-    Yes,		// quirks_mode
     0,			// dump_opts
+    15,			// float_prec
+    "%0.15g",		// float_fmt
 };
 
 static VALUE
@@ -2019,6 +2063,7 @@ void Init_oj() {
     compat_sym = ID2SYM(rb_intern("compat"));		rb_gc_register_address(&compat_sym);
     create_id_sym = ID2SYM(rb_intern("create_id"));	rb_gc_register_address(&create_id_sym);
     escape_mode_sym = ID2SYM(rb_intern("escape_mode"));	rb_gc_register_address(&escape_mode_sym);
+    float_prec_sym = ID2SYM(rb_intern("float_precision"));rb_gc_register_address(&float_prec_sym);
     float_sym = ID2SYM(rb_intern("float"));		rb_gc_register_address(&float_sym);
     indent_sym = ID2SYM(rb_intern("indent"));		rb_gc_register_address(&indent_sym);
     json_sym = ID2SYM(rb_intern("json"));		rb_gc_register_address(&json_sym);

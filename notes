@@ -9,10 +9,10 @@
   - limit to 1 to 20 (or 17?)
   - 0 or less indicated use ruby
 
+- #193 make dump for float to fix roundoff errors 
+
 + mimic_JSON
  - fixes #192, #190
-
-- #193 make dump for float to fix roundoff errors
 
 - #183 should be closed 
 - #187 should be closed 
@@ -23,7 +23,6 @@
  - object.c
   - hat_num
 
-- debian
 
 - add hash_key to scp
  - update sparse

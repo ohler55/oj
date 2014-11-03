@@ -138,12 +138,14 @@ typedef struct _Options {
     char	bigdec_load;	// BigLoad
     char	to_json;	// YesNo
     char	nilnil;		// YesNo
+    char	allow_gc;	// allow GC during parse
+    char	quirks_mode;	// allow single JSON values instead of documents
     const char	*create_id;	// 0 or string
     size_t	create_id_len;	// length of create_id
     int		sec_prec;	// second precision when dumping time
-    char	allow_gc;	// allow GC during parse
-    char	quirks_mode;	// allow single JSON values instead of documents
     DumpOpts	dump_opts;
+    char	float_prec;	// float precision, linked to float_fmt
+    char	float_fmt[7];	// float format for dumping, if empty use Ruby
 } *Options;
 
 typedef struct _Out {

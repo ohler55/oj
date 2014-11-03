@@ -26,7 +26,7 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
-### Current Release 2.10.5
+### Current Release 2.11.0
 
  - Restricted strict dump to not dump NaN nor Infinity but instead raise an exception.
 
@@ -38,6 +38,9 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
  - Added ActiveSupportHelper so that require 'active_support_helper' will added
    a helper for serializing ActiveSupport::TimeWithZone.
+
+ - Added float_precision option to control the number of digits used for floats
+   when dumping.
  
 ### Release 2.10.4
 

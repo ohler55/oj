@@ -476,8 +476,17 @@ dump_float(VALUE obj, Out out) {
 	cnt = 3;
     } else if (d == (double)(long long int)d) {
 	cnt = snprintf(buf, sizeof(buf), "%.1f", d);
+    } else if (0 == out->opts->float_prec) {
+	volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+
+	cnt = RSTRING_LEN(rstr);
+	if (sizeof(buf) <= cnt) {
+	    cnt = sizeof(buf) - 1;
+	}
+	strncpy(buf, rb_string_value_ptr((VALUE*)&rstr), cnt);
+	buf[cnt] = '\0';
     } else {
-	cnt = snprintf(buf, sizeof(buf), "%0.15g", d);
+	cnt = snprintf(buf, sizeof(buf), out->opts->float_fmt, d);
     }
     if (out->end - out->cur <= (long)cnt) {
 	grow(out, cnt);
@@ -1732,28 +1741,41 @@ dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
     }
     size = d2 * out->indent + 1;
     for (idp = odd->attrs; 0 != *idp; idp++) {
+	size_t	nlen;
+
 	if (out->end - out->cur <= (long)size) {
 	    grow(out, size);
 	}
 	name = rb_id2name(*idp);
+	nlen = strlen(name);
 	if (0 == strchr(name, '.')) {
 	    v = rb_funcall(obj, *idp, 0);
 	} else {
-	    const char	*n = name;
-	    const char	*end;
+	    char	nbuf[256];
+	    char	*n2 = nbuf;
+	    char	*n;
+	    char	*end;
 	    ID		i;
 	    
+	    if (sizeof(nbuf) <= nlen) {
+		n2 = strdup(name);
+	    }
+	    n = n2;
 	    v = obj;
 	    while (0 != (end = strchr(n, '.'))) {
-		i = rb_intern2(n, end - n);
+		*end = '\0';
+		i = rb_intern(n);
 		v = rb_funcall(v, i, 0);
 		n = end + 1;
 	    }
 	    i = rb_intern(n);
 	    v = rb_funcall(v, i, 0);
+	    if (nbuf != n2) {
+		free(n2);
+	    }
 	}
 	fill_indent(out, d2);
-	dump_cstr(name, strlen(name), 0, 0, out);
+	dump_cstr(name, nlen, 0, 0, out);
 	*out->cur++ = ':';
 	dump_val(v, d2, out);
 	if (out->end - out->cur <= 2) {
