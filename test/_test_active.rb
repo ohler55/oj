@@ -6,13 +6,11 @@ $: << File.dirname(__FILE__)
   $LOAD_PATH.unshift File.expand_path("../../#{dir}", __FILE__)
 end
 
-gem "activerecord"
-gem "sqlite3"
-
+require 'sqlite3'
 require 'active_record'
 require 'oj'
 
-#Oj.mimic_JSON()
+Oj.mimic_JSON()
 Oj.default_options = {mode: :compat, indent: 2}
 
 #ActiveRecord::Base.logger = Logger.new(STDERR)
@@ -37,6 +35,8 @@ User.find_or_create_by(first_name: "John", last_name: "Smith", email: "john@exam
 User.find_or_create_by(first_name: "Joan", last_name: "Smith", email: "joan@example.com")
 
 puts "as_json - #{User.first.as_json}"
+
+puts "to_json - #{User.first.to_json}"
 
 puts "Oj.dump - #{Oj.dump(User.first)}"
 
