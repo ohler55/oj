@@ -1201,7 +1201,8 @@ dump_data_comp(VALUE obj, int depth, Out out) {
 	volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
 	dump_raw(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), out);
-    } else if (Yes == out->opts->to_json && rb_respond_to(obj, oj_as_json_id)) {
+	//} else if (Yes == out->opts->to_json && rb_respond_to(obj, oj_as_json_id)) {
+    } else if (rb_respond_to(obj, oj_as_json_id)) {
 	volatile VALUE	aj = rb_funcall(obj, oj_as_json_id, 0);
 
 	// Catch the obvious brain damaged recursive dumping.
@@ -1298,7 +1299,7 @@ dump_obj_comp(VALUE obj, int depth, Out out) {
 	    rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
 	}
 	dump_hash(h, Qundef, depth, out->opts->mode, out);
-    } else if (Yes == out->opts->to_json && rb_respond_to(obj, oj_as_json_id)) {
+    } else if (rb_respond_to(obj, oj_as_json_id)) {
 	volatile VALUE	aj = rb_funcall(obj, oj_as_json_id, 0);
 
 	// Catch the obvious brain damaged recursive dumping.
@@ -1759,6 +1760,8 @@ dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
 	    
 	    if (sizeof(nbuf) <= nlen) {
 		n2 = strdup(name);
+	    } else {
+		strcpy(n2, name);
 	    }
 	    n = n2;
 	    v = obj;

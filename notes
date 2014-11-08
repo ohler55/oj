@@ -3,6 +3,16 @@
 ^c^d hide subtree
 ^c^s show subtree
 
+- as_json
+ - as_json on hash and array
+  - as_json for members
+ - to_json once called should always be use_to_json off
+  - how can this be done without overriding?
+   - maybe overide but still call as_json
+
+ - as_json should not call as_json on primitives
+ - tests
+
 - precision of float dump
  - add option with default of 15
   - sprintf into a dbl_fmt[8] "%0.%dg" (need 6 chars plus terminator)

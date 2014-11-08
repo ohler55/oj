@@ -11,6 +11,7 @@ require 'active_model'
 require 'active_model_serializers'
 require 'active_support/json'
 require 'active_support/time'
+require 'active_support/all'
 
 require 'oj/active_support_helper'
 
@@ -89,6 +90,26 @@ class MimicRails < Minitest::Test
     puts "*** serializer.as_json() #{serializer.as_json()}"
     json = JSON.dump(serializer)
     puts "*** JSON.dump(serializer) #{JSON.dump(serializer)}"
+
+    puts "*** category.to_json() #{category.to_json()}"
+    puts "*** category.as_json() #{category.as_json()}"
+    puts "*** JSON.dump(serializer) #{JSON.dump(category)}"
+    puts "*** Oj.dump(serializer) #{Oj.dump(category)}"
+
+  end
+
+  def test_dump_object_array
+    Oj.default_options= {:indent => 2}
+    cat1 = Category.new(1, 'test')
+    cat2 = Category.new(2, 'test')
+    a = Array.wrap([cat1, cat2])
+
+    #serializer = CategorySerializer.new(a)
+
+    puts "*** a.to_json() #{a.to_json()}"
+    puts "*** a.as_json() #{a.as_json()}"
+    puts "*** JSON.dump(a) #{JSON.dump(a)}"
+    puts "*** Oj.dump(a) #{Oj.dump(a)}"
   end
 
   def test_dump_time

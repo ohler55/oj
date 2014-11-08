@@ -42,14 +42,6 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
  - Added float_precision option to control the number of digits used for floats
    when dumping.
  
-### Release 2.10.4
-
- - Fixed Range encoding in compat mode to not use the object mode encoding.
-
- - Fixed serialization problem with timestamps.
-
- - Fixed compat parser to accept NaN and Infinity.
- 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
 ## Description
