@@ -26,22 +26,10 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
-### Current Release 2.11.0
+### Current Release 2.11.1
 
- - Restricted strict dump to not dump NaN nor Infinity but instead raise an exception.
+ - Changed the use_to_json option to still allow as_json even when set to false.
 
- - Changed compat mode so that the :bigdecimal_as_decimal option over-rides the
-   to_json method if the option is true. The default for mimic_JSON is to leave
-   the option off.
-
- - Added support for Module encoding in compat mode.
-
- - Added ActiveSupportHelper so that require 'active_support_helper' will added
-   a helper for serializing ActiveSupport::TimeWithZone.
-
- - Added float_precision option to control the number of digits used for floats
-   when dumping.
- 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
 ## Description
