@@ -480,7 +480,7 @@ dump_float(VALUE obj, Out out) {
 	volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
 	cnt = RSTRING_LEN(rstr);
-	if (sizeof(buf) <= cnt) {
+	if ((int)sizeof(buf) <= cnt) {
 	    cnt = sizeof(buf) - 1;
 	}
 	strncpy(buf, rb_string_value_ptr((VALUE*)&rstr), cnt);
@@ -1201,7 +1201,6 @@ dump_data_comp(VALUE obj, int depth, Out out) {
 	volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
 	dump_raw(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), out);
-	//} else if (Yes == out->opts->to_json && rb_respond_to(obj, oj_as_json_id)) {
     } else if (rb_respond_to(obj, oj_as_json_id)) {
 	volatile VALUE	aj = rb_funcall(obj, oj_as_json_id, 0);
 
