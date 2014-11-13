@@ -1760,7 +1760,7 @@ static struct _Options	mimic_object_to_json_options = {
     No,			// class_cache
     RubyTime,		// time_format
     No,			// bigdec_as_num
-    AutoDec,		// bigdec_load
+    FloatDec,		// bigdec_load
     No,			// to_json
     Yes,		// nilnil
     Yes,		// allow_gc
@@ -1769,8 +1769,8 @@ static struct _Options	mimic_object_to_json_options = {
     10,			// create_id_len
     9,			// sec_prec
     0,			// dump_opts
-    15,			// float_prec
-    "%0.15g",		// float_fmt
+    16,			// float_prec
+    "%0.16g",		// float_fmt
 };
 
 static VALUE

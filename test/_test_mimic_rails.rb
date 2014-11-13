@@ -4,7 +4,7 @@
 $: << File.dirname(__FILE__)
 
 require 'helper'
-Oj.mimic_JSON
+#Oj.mimic_JSON
 require 'rails/all'
 
 require 'active_model'
@@ -15,7 +15,7 @@ require 'active_support/all'
 
 require 'oj/active_support_helper'
 
-#Oj.mimic_JSON
+Oj.mimic_JSON
 
 class Category
   include ActiveModel::Model
