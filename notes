@@ -3,30 +3,6 @@
 ^c^d hide subtree
 ^c^s show subtree
 
-- as_json
- - as_json on hash and array
-  - as_json for members
- - to_json once called should always be use_to_json off
-  - how can this be done without overriding?
-   - maybe overide but still call as_json
-
- - as_json should not call as_json on primitives
- - tests
-
-- precision of float dump
- - add option with default of 15
-  - sprintf into a dbl_fmt[8] "%0.%dg" (need 6 chars plus terminator)
-  - limit to 1 to 20 (or 17?)
-  - 0 or less indicated use ruby
-
-- #193 make dump for float to fix roundoff errors 
-
-+ mimic_JSON
- - fixes #192, #190
-
-- #183 should be closed 
-- #187 should be closed 
-
 - rbx test
  - get latest
 - timezone in object time

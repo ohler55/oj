@@ -71,6 +71,25 @@ class AllHandler < Oj::ScHandler
 
 end # AllHandler
 
+class Closer < AllHandler
+  def initialize(pipe)
+    super()
+    @pipe = pipe
+  end
+
+  def hash_start()
+    @calls << [:hash_start]
+    @pipe.close
+    {}
+  end
+
+  def hash_set(h, key, value)
+    @calls << [:hash_set, key, value]
+    @pipe.close
+  end
+
+end # Closer
+
 class ScpTest < Minitest::Test
 
   def setup
@@ -294,6 +313,32 @@ class ScpTest < Minitest::Test
                       [:hash_set, 'too', false],
                       [:hash_end],
                       [:add_value, {}]], handler.calls)
+      else
+        read_io.close
+        write_io.write json
+        write_io.close
+        Process.exit(0)
+      end
+    end
+  end
+
+  def test_pipe_close
+    json = %{{"one":true,"two":false}}
+    IO.pipe do |read_io, write_io|
+      if fork
+        write_io.close
+        handler = Closer.new(read_io)
+        err = nil
+        begin
+          Oj.sc_parse(handler, read_io) {|v| puts "\n*** #{v}"; read_io.close}
+          read_io.close
+        rescue Exception => e
+          err = e.class.to_s
+        end
+        assert_equal("IOError", err)
+        assert_equal([[:hash_start],
+                      [:hash_key, 'one'],
+                      [:hash_set, 'one', true]], handler.calls)
       else
         read_io.close
         write_io.write json
