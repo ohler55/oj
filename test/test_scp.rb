@@ -4,6 +4,7 @@
 $: << File.dirname(__FILE__)
 
 require 'helper'
+require 'socket'
 
 $json = %{{
   "array": [
@@ -72,20 +73,20 @@ class AllHandler < Oj::ScHandler
 end # AllHandler
 
 class Closer < AllHandler
-  def initialize(pipe)
+  def initialize(io)
     super()
-    @pipe = pipe
+    @io = io
   end
 
   def hash_start()
     @calls << [:hash_start]
-    @pipe.close
+    @io.close
     {}
   end
 
   def hash_set(h, key, value)
     @calls << [:hash_set, key, value]
-    @pipe.close
+    @io.close
   end
 
 end # Closer
@@ -346,6 +347,30 @@ class ScpTest < Minitest::Test
         Process.exit(0)
       end
     end
+  end
+
+  def test_socket_close
+    json = %{{"one":true,"two":false}}
+    socket = TCPSocket.new 'localhost', 8080
+    if fork
+      handler = Closer.new(socket)
+      err = nil
+      begin
+        Oj.sc_parse(handler, socket) {|v| puts "\n*** #{v}"; socket.close}
+        socket.close
+      rescue Exception => e
+        err = e.class.to_s
+      end
+      assert_equal("IOError", err)
+      assert_equal([[:hash_start],
+                    [:hash_key, 'one'],
+                    [:hash_set, 'one', true]], handler.calls)
+    else
+      socket.write json
+      socket.close
+      Process.exit(0)
+    end
+
   end
 
 end
