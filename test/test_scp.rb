@@ -331,7 +331,7 @@ class ScpTest < Minitest::Test
         handler = Closer.new(read_io)
         err = nil
         begin
-          Oj.sc_parse(handler, read_io) {|v| puts "\n*** #{v}"; read_io.close}
+          Oj.sc_parse(handler, read_io)
           read_io.close
         rescue Exception => e
           err = e.class.to_s
@@ -351,26 +351,24 @@ class ScpTest < Minitest::Test
 
   def test_socket_close
     json = %{{"one":true,"two":false}}
-    socket = TCPSocket.new 'localhost', 8080
-    if fork
-      handler = Closer.new(socket)
-      err = nil
-      begin
-        Oj.sc_parse(handler, socket) {|v| puts "\n*** #{v}"; socket.close}
-        socket.close
-      rescue Exception => e
-        err = e.class.to_s
-      end
-      assert_equal("IOError", err)
-      assert_equal([[:hash_start],
-                    [:hash_key, 'one'],
-                    [:hash_set, 'one', true]], handler.calls)
-    else
-      socket.write json
-      socket.close
-      Process.exit(0)
+    Thread.start(json) do |j|
+      server = TCPServer.new(6969)
+      c = server.accept()
+      c.puts json
+      c.close
     end
-
+    sock = TCPSocket.new('localhost', 6969)
+    handler = Closer.new(sock)
+    err = nil
+    begin
+      Oj.sc_parse(handler, sock)
+    rescue Exception => e
+      err = e.class.to_s
+    end
+    assert_equal("IOError", err)
+    assert_equal([[:hash_start],
+                  [:hash_key, 'one'],
+                  [:hash_set, 'one', true]], handler.calls)
   end
 
 end
