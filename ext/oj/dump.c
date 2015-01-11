@@ -654,7 +654,7 @@ dump_array(VALUE a, VALUE clas, int depth, Out out) {
     if (id < 0) {
 	return;
     }
-    if (Qundef != clas && rb_cArray != clas) {
+    if (Qundef != clas && rb_cArray != clas && ObjectMode == out->opts->mode) {
 	dump_obj_attrs(a, clas, 0, depth, out);
 	return;
     }
