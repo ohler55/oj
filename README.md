@@ -26,6 +26,10 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
+## Future Release 2.11.3
+
+ - DateTime encoding now includes nanoseconds.
+
 ## Current Release 2.11.2
 
  - Changed the defaults for mimic_JSON to use 16 significant digits instead of
@@ -33,10 +37,6 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
  - Fixed bug where a subclass of Array would be serialized as if in object mode
    instead of compat when in compat mode.
-
-### Release 2.11.1
-
- - Changed the use_to_json option to still allow as_json even when set to false.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 

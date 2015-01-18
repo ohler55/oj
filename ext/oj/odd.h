@@ -35,6 +35,8 @@
 
 #define MAX_ODD_ARGS	10
 
+typedef VALUE	(*AttrGetFunc)(VALUE obj);
+
 typedef struct _Odd {
     const char	*classname;
     size_t	clen;
@@ -44,6 +46,7 @@ typedef struct _Odd {
     int		attr_cnt;
     const char	*attr_names[MAX_ODD_ARGS];	// 0 terminated attr IDs
     ID		attrs[MAX_ODD_ARGS];	// 0 terminated attr IDs
+    AttrGetFunc	attrFuncs[MAX_ODD_ARGS];
 } *Odd;
 
 typedef struct _OddArgs {

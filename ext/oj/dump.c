@@ -1713,6 +1713,7 @@ dump_struct_obj(VALUE obj, int depth, Out out) {
 static void
 dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
     ID			*idp;
+    AttrGetFunc		*fp;
     volatile VALUE	v;
     const char		*name;
     size_t		size;
@@ -1740,7 +1741,7 @@ dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
 	*out->cur++ = ',';
     }
     size = d2 * out->indent + 1;
-    for (idp = odd->attrs; 0 != *idp; idp++) {
+    for (idp = odd->attrs, fp = odd->attrFuncs; 0 != *idp; idp++, fp++) {
 	size_t	nlen;
 
 	if (out->end - out->cur <= (long)size) {
@@ -1748,7 +1749,9 @@ dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
 	}
 	name = rb_id2name(*idp);
 	nlen = strlen(name);
-	if (0 == strchr(name, '.')) {
+	if (0 != *fp) {
+	    v = (*fp)(obj);
+	} else if (0 == strchr(name, '.')) {
 	    v = rb_funcall(obj, *idp, 0);
 	} else {
 	    char	nbuf[256];

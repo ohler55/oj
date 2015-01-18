@@ -473,6 +473,10 @@ class ObjectJuice < Minitest::Test
     dump_and_load(Date.new(2012, 6, 19), false)
   end
 
+  def test_odd_datetime
+    dump_and_load(DateTime.new(2012, 6, 19, 13, 5, Rational(7123456789, 1000000000)), false)
+  end
+
   def test_odd_string
     Oj.register_odd(Strung, Strung, :create, :to_s, 'safe?')
     s = Strung.new("Pete", true)

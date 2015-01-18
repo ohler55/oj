@@ -35,6 +35,10 @@
 static struct _Odd	_odds[4]; // bump up if new initial Odd classes are added
 static struct _Odd	*odds = _odds;
 static long		odd_cnt = 0;
+static ID		sec_id;
+static ID		sec_fraction_id;
+static ID		to_f_id;
+static ID		rational_id;
 
 static void
 set_class(Odd odd, const char *classname) {
@@ -52,11 +56,35 @@ set_class(Odd odd, const char *classname) {
     *idp = 0;
 }
 
+static VALUE
+get_datetime_secs(VALUE obj) {
+    VALUE	rsecs = rb_funcall(obj, sec_id, 0);
+    VALUE	rfrac = rb_funcall(obj, sec_fraction_id, 0);
+    double	secs = NUM2DBL(rb_funcall(rfrac, to_f_id, 0));
+
+#if DATETIME_1_8
+    secs *= 86400.0;
+#endif
+    secs += NUM2DBL(rb_funcall(rsecs, to_f_id, 0));
+ 
+#if DATETIME_1_8
+    return rb_funcall(rb_cObject, rational_id, 2, LONG2FIX((long)(secs * 1000000000)), LONG2FIX(1000000000));
+#else
+    return rb_float_new(secs);
+#endif
+}
+
 void
 oj_odd_init() {
     Odd		odd;
     const char	**np;
 
+    sec_id = rb_intern("sec");
+    sec_fraction_id = rb_intern("sec_fraction");
+    to_f_id = rb_intern("to_f");
+    rational_id = rb_intern("Rational");
+
+    memset(_odds, 0, sizeof(_odds));
     odd = odds;
     // Rational
     np = odd->attr_names;
@@ -65,7 +93,7 @@ oj_odd_init() {
     *np = 0;
     set_class(odd, "Rational");
     odd->create_obj = rb_cObject;
-    odd->create_op = rb_intern("Rational");
+    odd->create_op = rational_id;
     odd->attr_cnt = 2;
     // Date
     odd++;
@@ -91,6 +119,7 @@ oj_odd_init() {
     *np++ = 0;
     set_class(odd, "DateTime");
     odd->attr_cnt = 8;
+    odd->attrFuncs[5] = get_datetime_secs;
     // Range
     odd++;
     np = odd->attr_names;
@@ -166,6 +195,7 @@ oj_reg_odd(VALUE clas, VALUE create_object, VALUE create_method, int mcnt, VALUE
     Odd		odd;
     const char	**np;
     ID		*ap;
+    AttrGetFunc	*fp;
 
     if (_odds == odds) {
 	odds = ALLOC_N(struct _Odd, odd_cnt + 1);
@@ -181,7 +211,8 @@ oj_reg_odd(VALUE clas, VALUE create_object, VALUE create_method, int mcnt, VALUE
     odd->create_obj = create_object;
     odd->create_op = SYM2ID(create_method);
     odd->attr_cnt = mcnt;
-    for (ap = odd->attrs, np = odd->attr_names; 0 < mcnt; mcnt--, ap++, np++, members++) {
+    for (ap = odd->attrs, np = odd->attr_names, fp = odd->attrFuncs; 0 < mcnt; mcnt--, ap++, np++, members++, fp++) {
+	*fp = 0;
 	switch (rb_type(*members)) {
 	case T_STRING:
 	    *np = strdup(rb_string_value_ptr(members));
