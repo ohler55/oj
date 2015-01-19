@@ -3,12 +3,6 @@
 ^c^d hide subtree
 ^c^s show subtree
 
-- odd
- - add array of C function pointers
-  - use those to get the value from the object
-   - for DateTime.sec
-    - get sec and add to sec_fraction.to_f
-
 - rbx test
  - get latest
 - timezone in object time

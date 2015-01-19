@@ -26,17 +26,9 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
-## Future Release 2.11.3
+## Current Release 2.11.3
 
  - DateTime encoding now includes nanoseconds.
-
-## Current Release 2.11.2
-
- - Changed the defaults for mimic_JSON to use 16 significant digits instead of
-   the default 15.
-
- - Fixed bug where a subclass of Array would be serialized as if in object mode
-   instead of compat when in compat mode.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
