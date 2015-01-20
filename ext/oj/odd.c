@@ -38,7 +38,10 @@ static long		odd_cnt = 0;
 static ID		sec_id;
 static ID		sec_fraction_id;
 static ID		to_f_id;
+static ID		numerator_id;
+static ID		denominator_id;
 static ID		rational_id;
+static VALUE		rational_class;
 
 static void
 set_class(Odd odd, const char *classname) {
@@ -60,18 +63,16 @@ static VALUE
 get_datetime_secs(VALUE obj) {
     VALUE	rsecs = rb_funcall(obj, sec_id, 0);
     VALUE	rfrac = rb_funcall(obj, sec_fraction_id, 0);
-    double	secs = NUM2DBL(rb_funcall(rfrac, to_f_id, 0));
+    long	sec = NUM2LONG(rsecs);
+    long	num = NUM2LONG(rb_funcall(rfrac, numerator_id, 0));
+    long	den = NUM2LONG(rb_funcall(rfrac, denominator_id, 0));
 
 #if DATETIME_1_8
-    secs *= 86400.0;
+	num *= 86400;
 #endif
-    secs += NUM2DBL(rb_funcall(rsecs, to_f_id, 0));
- 
-#if DATETIME_1_8
-    return rb_funcall(rb_cObject, rational_id, 2, LONG2FIX((long)(secs * 1000000000)), LONG2FIX(1000000000));
-#else
-    return rb_float_new(secs);
-#endif
+    num += sec * den;
+
+    return rb_funcall(rb_cObject, rational_id, 2, LONG2FIX(num), LONG2FIX(den));
 }
 
 void
@@ -82,7 +83,10 @@ oj_odd_init() {
     sec_id = rb_intern("sec");
     sec_fraction_id = rb_intern("sec_fraction");
     to_f_id = rb_intern("to_f");
+    numerator_id = rb_intern("numerator");
+    denominator_id = rb_intern("denominator");
     rational_id = rb_intern("Rational");
+    rational_class = rb_const_get(rb_cObject, rational_id);
 
     memset(_odds, 0, sizeof(_odds));
     odd = odds;

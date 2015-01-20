@@ -474,6 +474,7 @@ class ObjectJuice < Minitest::Test
   end
 
   def test_odd_datetime
+    dump_and_load(DateTime.new(2012, 6, 19, 13, 5, Rational(4, 3)), false)
     dump_and_load(DateTime.new(2012, 6, 19, 13, 5, Rational(7123456789, 1000000000)), false)
   end
 

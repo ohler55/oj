@@ -26,6 +26,10 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
+## Future Release 2.11.4
+
+ - DateTime second encoding is now always a Rational to preserve accuracy.
+
 ## Current Release 2.11.3
 
  - DateTime encoding now includes nanoseconds.
