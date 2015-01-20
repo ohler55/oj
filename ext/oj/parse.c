@@ -817,7 +817,7 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
 	    return oj_pi_sparse(argc, argv, pi, 0);
 	} else {
 	    rb_raise(rb_eArgError, "strict_parse() expected a String or IO Object.");
-	}
+}
     }
     if (Yes == pi->options.circular) {
 	pi->circ_array = oj_circ_array_new();
@@ -877,7 +877,6 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
     if (err_has(&pi->err)) {
 	oj_err_raise(&pi->err);
     }
-
     if (pi->options.quirks_mode == No) {
 	switch (rb_type(result)) {
             case T_NIL:
@@ -894,6 +893,5 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
 		break;
 	}
     }
-
     return result;
 }

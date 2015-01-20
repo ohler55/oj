@@ -486,7 +486,9 @@ read_num(ParseInfo pi) {
 	}
 	ni.dec_cnt -= zero_cnt;
 	ni.len = pi->rd.tail - pi->rd.str;
-	reader_backup(&pi->rd);
+	if (0 != c) {
+	    reader_backup(&pi->rd);
+	}
     }
     if (BigDec == pi->options.bigdec_load) {
 	ni.big = 1;

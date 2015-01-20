@@ -30,6 +30,9 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
  - DateTime second encoding is now always a Rational to preserve accuracy.
 
+ - Fixed buf in the Oj.load() callback feature that caused an endless loop when
+   a StringIO was used with a JSON that was a number.
+
 ## Current Release 2.11.3
 
  - DateTime encoding now includes nanoseconds.
