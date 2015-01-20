@@ -229,7 +229,7 @@ read_from_fd(Reader reader) {
     size_t	max = reader->end - reader->tail;
 
     cnt = read(reader->fd, reader->tail, max);
-    if (cnt < 0) {
+    if (cnt <= 0) {
 	return -1;
     } else if (0 != cnt) {
 	reader->read_end = reader->tail + cnt;
