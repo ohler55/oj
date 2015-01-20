@@ -608,6 +608,10 @@ oj_parse_options(VALUE ropts, Options copts) {
  * valid. If the input is not a valid JSON document (an empty string is not a
  * valid JSON document) an exception is raised.
  *
+ * A block can also be provided with a single argument. That argument will be
+ * the parsed JSON document. This is useful when parsing a string that includes
+ * multiple JSON documents.
+ *
  * @param [String|IO] json JSON String or an Object that responds to read()
  * @param [Hash] options load options (same as default_options)
  */
@@ -628,6 +632,10 @@ oj_parse_options(VALUE ropts, Options copts) {
  * Raises an exception if the JSON is malformed or the classes specified are not
  * valid. If the input is not a valid JSON document (an empty string is not a
  * valid JSON document) an exception is raised.
+ *
+ * A block can also be provided with a single argument. That argument will be
+ * the parsed JSON document. This is useful when parsing a string that includes
+ * multiple JSON documents.
  *
  * @param [String|IO] json JSON String or an Object that responds to read()
  * @param [Hash] options load options (same as default_options)
@@ -666,6 +674,10 @@ oj_parse_options(VALUE ropts, Options copts) {
  * different initializer can not be automatically decoded. A way around this is
  * to use a create function but this example shows an alternative.
  *
+ * A block can also be provided with a single argument. That argument will be
+ * the parsed JSON document. This is useful when parsing a string that includes
+ * multiple JSON documents.
+ *
  * @param [String|IO] json JSON String or an Object that responds to read()
  * @param [Hash] options load options (same as default_options)
  */
@@ -685,6 +697,10 @@ oj_parse_options(VALUE ropts, Options copts) {
  * This parser operates on string and will attempt to load files into memory if
  * a file object is passed as the first argument. A stream input will be parsed
  * using a stream parser but others use the slightly faster string parser.
+ *
+ * A block can also be provided with a single argument. That argument will be
+ * the parsed JSON document. This is useful when parsing a string that includes
+ * multiple JSON documents.
  *
  * @param [String|IO] json JSON String or an Object that responds to read()
  * @param [Hash] options load options (same as default_options)
@@ -745,6 +761,10 @@ load(int argc, VALUE *argv, VALUE self) {
  *
  * This is a stream based parser which allows a large or huge file to be loaded
  * without pulling the whole file into memory.
+ *
+ * A block can also be provided with a single argument. That argument will be
+ * the parsed JSON document. This is useful when parsing a string that includes
+ * multiple JSON documents.
  *
  * @param [String] path path to a file containing a JSON document
  * @param [Hash] options load options (same as default_options)
