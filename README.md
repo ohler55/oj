@@ -75,9 +75,9 @@ Oj.default_options = {:mode => :compat }
 ## Compatibility
 
 ### Ruby
-Oj is compatible with Ruby 1.8.7, 1.9.2, 1.9.3, 2.0.0, 2.1.1 and RBX. Support for
-JRuby has been removed as JRuby no longer supports C extensions and there are
-bugs in the older versions that are not being fixed.
+Oj is compatible with Ruby 1.8.7, 1.9.2, 1.9.3, 2.0.0, 2.1, 2.2 and RBX.
+Support for JRuby has been removed as JRuby no longer supports C extensions and
+there are bugs in the older versions that are not being fixed.
 
 ### Rails
 Although up until 4.1 Rails uses [multi_json](https://github.com/intridea/multi_json), an [issue in Rails](https://github.com/rails/rails/issues/9212) causes ActiveSupport to fail to make use Oj for JSON handling.
@@ -113,7 +113,7 @@ they are not more than `String`s. Always check inputs from untrusted sources.
 
 ```ruby
 require 'oj'
-    
+
 h = { 'one' => 1, 'array' => [ true, false ] }
 json = Oj.dump(h)
 
