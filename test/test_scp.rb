@@ -352,12 +352,12 @@ class ScpTest < Minitest::Test
   def test_socket_close
     json = %{{"one":true,"two":false}}
     Thread.start(json) do |j|
-      server = TCPServer.new(6969)
+      server = TCPServer.new(8080)
       c = server.accept()
       c.puts json
       c.close
     end
-    sock = TCPSocket.new('localhost', 6969)
+    sock = TCPSocket.new('localhost', 8080)
     handler = Closer.new(sock)
     err = nil
     begin
