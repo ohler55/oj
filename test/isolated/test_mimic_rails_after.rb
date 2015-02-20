@@ -7,9 +7,9 @@ require 'helper'
 
 begin
   require 'rails/all'
-rescue Exception
-  puts "*** require of rails failed"
-  Process.exit!(true)
+rescue Exception => e
+  puts "*** #{e.class}: #{e.message}"
+  Process.exit!(false)
 end
 
 Oj.mimic_JSON

@@ -88,7 +88,8 @@ class SharedMimicTest < Minitest::Test
     if o.respond_to?(:as_json)
       assert_equal(%|{"a":1,"b":"two","c":[true,false]}|, json)
     else
-      assert_equal(%|"#<struct a=1, b=\\"two\\", c=[true, false]>"|, json)
+      j = '"' + o.to_s.gsub('"', '\\"') + '"'
+      assert_equal(j, json)
     end
   end
 

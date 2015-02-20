@@ -1231,6 +1231,14 @@ str_writer_to_s(VALUE self) {
 
 // StreamWriter
 
+/* Document-class: Oj::StreamWriter
+ * 
+ * Supports building a JSON document one element at a time. Build the IO stream
+ * document by pushing values into the document. Pushing an array or an object
+ * will create that element in the JSON document and subsequent pushes will add
+ * the elements to that array or object until a pop() is called.
+ */
+
 static void
 stream_writer_free(void *ptr) {
     StreamWriter	sw;
@@ -1271,14 +1279,10 @@ stream_writer_reset_buf(StreamWriter sw) {
     *sw->sw.out.cur = '\0';
 }
 
-/* call-seq: new(options)
+/* call-seq: new(io, options)
  *
  * Creates a new StreamWriter.
- * @param [Hash] options formating options
- */
-/* call-seq: new(options)
- *
- * Creates a new StreamWriter.
+ * @param [IO] io stream to write to
  * @param [Hash] options formating options
  */
 static VALUE
