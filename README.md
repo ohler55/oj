@@ -26,6 +26,13 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
+## Future Release 2.11.5
+
+ - Fixed issue with rails as_json not being called for Structs.
+
+ - Added support for anonymous Structs with object mode encoding. Note that this
+   will result in a new anonymous Struct for each instance.
+
 ## Current Release 2.11.4
 
  - DateTime second encoding is now always a Rational to preserve accuracy.

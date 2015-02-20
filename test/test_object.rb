@@ -185,15 +185,11 @@ class ObjectJuice < Minitest::Test
   def test_encode
     opts = Oj.default_options
     Oj.default_options = { :ascii_only => false }
-    unless 'jruby' == $ruby
-      dump_and_load("ぴーたー", false)
-    end
+    dump_and_load("ぴーたー", false)
     Oj.default_options = { :ascii_only => true }
     json = Oj.dump("ぴーたー")
     assert_equal(%{"\\u3074\\u30fc\\u305f\\u30fc"}, json)
-    unless 'jruby' == $ruby
-      dump_and_load("ぴーたー", false)
-    end
+    dump_and_load("ぴーたー", false)
     Oj.default_options = opts
   end
 
@@ -410,17 +406,23 @@ class ObjectJuice < Minitest::Test
   end
 
   def test_json_struct
-    unless 'jruby' == RUBY_DESCRIPTION.split(' ')[0]
-      obj = Stuck.new(false, 7)
-      dump_and_load(obj, false)
-    end
+    obj = Stuck.new(false, 7)
+    dump_and_load(obj, false)
   end
 
   def test_json_struct2
-    unless 'jruby' == RUBY_DESCRIPTION.split(' ')[0]
-      obj = One::Stuck2.new(false, 7)
-      dump_and_load(obj, false)
-    end
+    obj = One::Stuck2.new(false, 7)
+    dump_and_load(obj, false)
+  end
+
+  def test_json_anonymous_struct
+    s = Struct.new(:x, :y)
+    obj = s.new(1, 2)
+    json = Oj.dump(obj, :indent => 2, :mode => :object)
+    #puts json
+    loaded = Oj.object_load(json);
+    assert_equal(obj.members, loaded.members)
+    assert_equal(obj.values, loaded.values)
   end
 
   def test_json_non_str_hash

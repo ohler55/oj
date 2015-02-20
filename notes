@@ -3,20 +3,12 @@
 ^c^d hide subtree
 ^c^s show subtree
 
-- rbx test
- - get latest
-- timezone in object time
- - object.c
-  - hat_num
-
-
-- add hash_key to scp
- - update sparse
-
- - call from sparse and parse
- - scp.c - implement hash_key()
-  - call hash_key and set key_val, don't set key
-
+- struct
+ - test as_jsonwith rails
+ - handle no name structs
+  - how to capture the element names?
+   - is a object needed instead of an array?
+   - maybe if no name then use array of names as the name
 
 - streaming parser for scp and saj
 

@@ -1212,7 +1212,6 @@ dump_data_comp(VALUE obj, int depth, Out out) {
 	} else {
 	    dump_val(aj, depth, out);
 	}
-
     } else if (Yes == out->opts->to_json && rb_respond_to(obj, oj_to_json_id)) {
 	volatile VALUE	rs;
 	const char	*s;
@@ -1628,6 +1627,17 @@ dump_struct_comp(VALUE obj, int depth, Out out) {
 	    rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
 	}
 	dump_hash(h, Qundef, depth, out->opts->mode, out);
+    } else if (rb_respond_to(obj, oj_as_json_id)) {
+	volatile VALUE	aj = rb_funcall(obj, oj_as_json_id, 0);
+
+	// Catch the obvious brain damaged recursive dumping.
+	if (aj == obj) {
+	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+
+	    dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
+	} else {
+	    dump_val(aj, depth, out);
+	}
     } else if (Yes == out->opts->to_json && rb_respond_to(obj, oj_to_json_id)) {
 	volatile VALUE	rs = rb_funcall(obj, oj_to_json_id, 0);
 	const char	*s;
@@ -1668,11 +1678,35 @@ dump_struct_obj(VALUE obj, int depth, Out out) {
     *out->cur++ = '"';
     *out->cur++ = ':';
     *out->cur++ = '[';
-    fill_indent(out, d3);
-    *out->cur++ = '"';
-    memcpy(out->cur, class_name, len);
-    out->cur += len;
-    *out->cur++ = '"';
+    if ('#' == *class_name) {
+	VALUE		ma = rb_struct_s_members(clas);
+	const char	*name;
+	int		cnt = (int)RARRAY_LEN(ma);
+
+	*out->cur++ = '[';
+	for (i = 0; i < cnt; i++) {
+	    name = rb_id2name(SYM2ID(rb_ary_entry(ma, i)));
+	    len = strlen(name);
+	    size = len + 3;
+	    if (out->end - out->cur <= (long)size) {
+		grow(out, size);
+	    }
+	    if (0 < i) {
+		*out->cur++ = ',';
+	    }
+	    *out->cur++ = '"';
+	    memcpy(out->cur, name, len);
+	    out->cur += len;
+	    *out->cur++ = '"';
+	}
+	*out->cur++ = ']';
+    } else {
+	fill_indent(out, d3);
+	*out->cur++ = '"';
+	memcpy(out->cur, class_name, len);
+	out->cur += len;
+	*out->cur++ = '"';
+    }
     *out->cur++ = ',';
     size = d3 * out->indent + 2;
 #ifdef RSTRUCT_LEN

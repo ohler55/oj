@@ -8,6 +8,7 @@ require 'helper'
 begin
   require 'rails/all'
 rescue Exception
+  puts "*** require of rails failed"
   Process.exit!(true)
 end
 

@@ -79,6 +79,19 @@ class SharedMimicTest < Minitest::Test
   end
   # TBD options
 
+  def test_dump_struct
+    # anonymous Struct
+    s = Struct.new(:a, :b, :c)
+    o = s.new(1, 'two', [true, false])
+    json = JSON.dump(o)
+    # Rails add the as_json method and changes the behavior.
+    if o.respond_to?(:as_json)
+      assert_equal(%|{"a":1,"b":"two","c":[true,false]}|, json)
+    else
+      assert_equal(%|"#<struct a=1, b=\\"two\\", c=[true, false]>"|, json)
+    end
+  end
+
 # load
   def test_load_string
     json = %{{"a":1,"b":[true,false]}}
