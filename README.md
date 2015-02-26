@@ -26,23 +26,19 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
-## Future Release 2.11.5
+## Release 2.11.5
 
  - Fixed issue with rails as_json not being called for Structs.
 
  - Added support for anonymous Structs with object mode encoding. Note that this
    will result in a new anonymous Struct for each instance.
 
-## Current Release 2.11.4
+## Release 2.11.4
 
  - DateTime second encoding is now always a Rational to preserve accuracy.
 
  - Fixed bug in the Oj.load() callback feature that caused an endless loop when
    a StringIO was used with a JSON that was a number.
-
-## Release 2.11.3
-
- - DateTime encoding now includes nanoseconds.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 

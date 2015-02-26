@@ -3,12 +3,11 @@
 ^c^d hide subtree
 ^c^s show subtree
 
-- struct
- - test as_jsonwith rails
- - handle no name structs
-  - how to capture the element names?
-   - is a object needed instead of an array?
-   - maybe if no name then use array of names as the name
+- time
+ - add :unix_zone time_format option
+  - time with zone as exponent
+   - have to increase EXP_MAX to 86400
+   - handle out of range in routine to create doubles
 
 - streaming parser for scp and saj
 
