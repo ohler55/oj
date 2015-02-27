@@ -26,19 +26,23 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
-## Release 2.11.5
+## Future Release 2.12.0
+
+ - String formats for UTC time are now explitly UTC instead of offset of
+   zero. This fixes a problem with pre-2.2.0 Rubies that automatically convert
+   zero offset times to local times.
+
+ - TBD Added :unix_zone time_format option for formating numeric time. This
+   option is the same as the :unix time option but the UTC offset is included as
+   an exponent to the number time value. A value of 86400 is an indication of
+   UTC time.
+
+## Current Release 2.11.5
 
  - Fixed issue with rails as_json not being called for Structs.
 
  - Added support for anonymous Structs with object mode encoding. Note that this
    will result in a new anonymous Struct for each instance.
-
-## Release 2.11.4
-
- - DateTime second encoding is now always a Rational to preserve accuracy.
-
- - Fixed bug in the Oj.load() callback feature that caused an endless loop when
-   a StringIO was used with a JSON that was a number.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 

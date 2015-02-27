@@ -284,6 +284,7 @@ extern ID	oj_tv_nsec_id;
 extern ID	oj_tv_sec_id;
 extern ID	oj_tv_usec_id;
 extern ID	oj_utc_offset_id;
+extern ID	oj_utcq_id;
 extern ID	oj_write_id;
 
 #if USE_PTHREAD_MUTEX

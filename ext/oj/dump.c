@@ -1131,7 +1131,7 @@ dump_xml_time(VALUE obj, Out out) {
     }
 #endif
     if (0 == nsec || 0 == out->opts->sec_prec) {
-	if (0 == tzhour && 0 == tzmin) {
+	if (0 == tz_secs && Qtrue == rb_funcall2(obj, oj_utcq_id, 0, 0)) {
 	    sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02dZ",
 		    tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
 		    tm->tm_hour, tm->tm_min, tm->tm_sec);
@@ -1143,6 +1143,18 @@ dump_xml_time(VALUE obj, Out out) {
 		    tzsign, tzhour, tzmin);
 	    dump_cstr(buf, 25, 0, 0, out);
 	}
+    } else if (0 == tz_secs && Qtrue == rb_funcall2(obj, oj_utcq_id, 0, 0)) {
+	char	format[64] = "%04d-%02d-%02dT%02d:%02d:%02d.%09ldZ";
+	int	len = 30;
+
+	if (9 > out->opts->sec_prec) {
+	    format[32] = '0' + out->opts->sec_prec;
+	    len -= 9 - out->opts->sec_prec;
+	}
+	sprintf(buf, format,
+		tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
+		tm->tm_hour, tm->tm_min, tm->tm_sec, nsec);
+	dump_cstr(buf, len, 0, 0, out);
     } else {
 	char	format[64] = "%04d-%02d-%02dT%02d:%02d:%02d.%09ld%c%02d:%02d";
 	int	len = 35;
