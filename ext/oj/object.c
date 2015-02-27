@@ -29,6 +29,7 @@
  */
 
 #include <stdio.h>
+#include <time.h>
 
 #include "oj.h"
 #include "err.h"
@@ -159,11 +160,40 @@ hat_num(ParseInfo pi, Val parent, Val kval, NumInfo ni) {
 			nsec = 1000000000LL - nsec;
 		    }
 		}
+		if (86400 == ni->exp) { // UTC time
+		    time_t	now = time(0);
+		    struct tm	*st = localtime(&now);
+
+		    ni->i += st->tm_gmtoff;
 #if HAS_NANO_TIME
-		parent->val = rb_time_nano_new(ni->i, (long)nsec);
+		    parent->val = rb_time_nano_new(ni->i, (long)nsec);
 #else
-		parent->val = rb_time_new(ni->i, (long)(nsec / 1000));
+		    parent->val = rb_time_new(ni->i, (long)(nsec / 1000));
 #endif
+		    // Since the ruby C routines alway create local time, the
+		    // offset and then a convertion to UTC keeps makes the time
+		    // match the expected value.
+		    parent->val = rb_funcall2(parent->val, oj_utc_id, 0, 0);
+		} else if (ni->hasExp) {
+		    time_t	t = (time_t)ni->i;
+		    struct tm	*st = localtime(&t);
+		    VALUE	args[8];
+
+		    args[0] = LONG2NUM(1900 + st->tm_year);
+		    args[1] = LONG2NUM(1 + st->tm_mon);
+		    args[2] = LONG2NUM(st->tm_mday);
+		    args[3] = LONG2NUM(st->tm_hour);
+		    args[4] = LONG2NUM(st->tm_min);
+		    args[5] = DBL2NUM((double)st->tm_sec + (double)nsec / 1000000000.0);
+		    args[6] = LONG2NUM(ni->exp);
+		    parent->val = rb_funcall2(rb_cTime, oj_new_id, 7, args);
+		} else {
+#if HAS_NANO_TIME
+		    parent->val = rb_time_nano_new(ni->i, (long)nsec);
+#else
+		    parent->val = rb_time_new(ni->i, (long)(nsec / 1000));
+#endif
+		}
 	    }
 	    break;
 	case 'i': // circular index

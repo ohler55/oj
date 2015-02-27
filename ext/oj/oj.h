@@ -82,6 +82,7 @@ typedef enum {
 
 typedef enum {
     UnixTime	= 'u',
+    UnixZTime	= 'z',
     XmlTime	= 'x',
     RubyTime	= 'r'
 } TimeFormat;
@@ -283,6 +284,7 @@ extern ID	oj_to_time_id;
 extern ID	oj_tv_nsec_id;
 extern ID	oj_tv_sec_id;
 extern ID	oj_tv_usec_id;
+extern ID	oj_utc_id;
 extern ID	oj_utc_offset_id;
 extern ID	oj_utcq_id;
 extern ID	oj_write_id;

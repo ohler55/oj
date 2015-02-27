@@ -80,7 +80,7 @@ static int	hash_cb_strict(VALUE key, VALUE value, Out out);
 static int	hash_cb_compat(VALUE key, VALUE value, Out out);
 static int	hash_cb_object(VALUE key, VALUE value, Out out);
 static void	dump_hash(VALUE obj, VALUE clas, int depth, int mode, Out out);
-static void	dump_time(VALUE obj, Out out);
+static void	dump_time(VALUE obj, Out out, int withZone);
 static void	dump_ruby_time(VALUE obj, Out out);
 static void	dump_xml_time(VALUE obj, Out out);
 static void	dump_data_strict(VALUE obj, Out out);
@@ -996,7 +996,7 @@ dump_hash(VALUE obj, VALUE clas, int depth, int mode, Out out) {
 }
 
 static void
-dump_time(VALUE obj, Out out) {
+dump_time(VALUE obj, Out out, int withZone) {
     char		buf[64];
     char		*b = buf + sizeof(buf) - 1;
     long		size;
@@ -1025,6 +1025,27 @@ dump_time(VALUE obj, Out out) {
 	}
     }
     *b-- = '\0';
+    if (withZone) {
+	long	tzsecs = NUM2LONG(rb_funcall2(obj, oj_utc_offset_id, 0, 0));
+	int	neg = (0 > tzsecs);
+
+	if (neg) {
+	    tzsecs = -tzsecs;
+	} else if (0 == tzsecs && Qtrue == rb_funcall2(obj, oj_utcq_id, 0, 0)) {
+	    tzsecs = 86400;
+	}
+	if (0 == tzsecs) {
+	    *b-- = '0';
+	} else {
+	    for (; 0 < tzsecs; b--, tzsecs /= 10) {
+		*b = '0' + (tzsecs % 10);
+	    }
+	    if (neg) {
+		*b-- = '-';
+	    }
+	}
+	*b-- = 'e';
+    }
     if (0 < out->opts->sec_prec) {
 	if (9 > out->opts->sec_prec) {
 	    int	i;
@@ -1088,7 +1109,7 @@ dump_xml_time(VALUE obj, Out out) {
     long		nsec = NUM2LONG(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
 #endif
 #endif
-    long		tz_secs = NUM2LONG(rb_funcall2(obj, oj_utc_offset_id, 0, 0));
+    long		tzsecs = NUM2LONG(rb_funcall2(obj, oj_utc_offset_id, 0, 0));
     int			tzhour, tzmin;
     char		tzsign = '+';
 
@@ -1109,16 +1130,16 @@ dump_xml_time(VALUE obj, Out out) {
     }
     // 2012-01-05T23:58:07.123456000+09:00
     //tm = localtime(&sec);
-    sec += tz_secs;
+    sec += tzsecs;
     tm = gmtime(&sec);
 #if 1
-    if (0 > tz_secs) {
+    if (0 > tzsecs) {
         tzsign = '-';
-        tzhour = (int)(tz_secs / -3600);
-        tzmin = (int)(tz_secs / -60) - (tzhour * 60);
+        tzhour = (int)(tzsecs / -3600);
+        tzmin = (int)(tzsecs / -60) - (tzhour * 60);
     } else {
-        tzhour = (int)(tz_secs / 3600);
-        tzmin = (int)(tz_secs / 60) - (tzhour * 60);
+        tzhour = (int)(tzsecs / 3600);
+        tzmin = (int)(tzsecs / 60) - (tzhour * 60);
     }
 #else
     if (0 > tm->tm_gmtoff) {
@@ -1131,7 +1152,7 @@ dump_xml_time(VALUE obj, Out out) {
     }
 #endif
     if (0 == nsec || 0 == out->opts->sec_prec) {
-	if (0 == tz_secs && Qtrue == rb_funcall2(obj, oj_utcq_id, 0, 0)) {
+	if (0 == tzsecs && Qtrue == rb_funcall2(obj, oj_utcq_id, 0, 0)) {
 	    sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02dZ",
 		    tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
 		    tm->tm_hour, tm->tm_min, tm->tm_sec);
@@ -1143,7 +1164,7 @@ dump_xml_time(VALUE obj, Out out) {
 		    tzsign, tzhour, tzmin);
 	    dump_cstr(buf, 25, 0, 0, out);
 	}
-    } else if (0 == tz_secs && Qtrue == rb_funcall2(obj, oj_utcq_id, 0, 0)) {
+    } else if (0 == tzsecs && Qtrue == rb_funcall2(obj, oj_utcq_id, 0, 0)) {
 	char	format[64] = "%04d-%02d-%02dT%02d:%02d:%02d.%09ldZ";
 	int	len = 30;
 
@@ -1244,8 +1265,9 @@ dump_data_comp(VALUE obj, int depth, Out out) {
 	    switch (out->opts->time_format) {
 	    case RubyTime:	dump_ruby_time(obj, out);	break;
 	    case XmlTime:	dump_xml_time(obj, out);	break;
+	    case UnixZTime:	dump_time(obj, out, 1);		break;
 	    case UnixTime:
-	    default:		dump_time(obj, out);		break;
+	    default:		dump_time(obj, out, 0);		break;
 	    }
 	} else if (oj_bigdecimal_class == clas) {
 	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
@@ -1278,9 +1300,12 @@ dump_data_obj(VALUE obj, int depth, Out out) {
 	case XmlTime:
 	    dump_xml_time(obj, out);
 	    break;
+	case UnixZTime:
+	    dump_time(obj, out, 1);
+	    break;
 	case UnixTime:
 	default:
-	    dump_time(obj, out);
+	    dump_time(obj, out, 0);
 	    break;
 	}
 	*out->cur++ = '}';

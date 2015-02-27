@@ -84,6 +84,7 @@ ID	oj_to_time_id;
 ID	oj_tv_nsec_id;
 ID	oj_tv_sec_id;
 ID	oj_tv_usec_id;
+ID	oj_utc_id;
 ID	oj_utc_offset_id;
 ID	oj_utcq_id;
 ID	oj_write_id;
@@ -131,6 +132,7 @@ static VALUE	strict_sym;
 static VALUE	symbol_keys_sym;
 static VALUE	time_format_sym;
 static VALUE	unix_sym;
+static VALUE	unix_zone_sym;
 static VALUE	use_to_json_sym;
 static VALUE	xmlschema_sym;
 static VALUE	xss_safe_sym;
@@ -192,7 +194,7 @@ static VALUE	define_mimic_json(int argc, VALUE *argv, VALUE self);
  * - escape_mode: [:newline|:json|:xss_safe|:ascii|nil] determines the characters to escape
  * - class_cache: [true|false|nil] cache classes for faster parsing (if dynamically modifying classes or reloading classes then don't use this)
  * - mode: [:object|:strict|:compat|:null] load and dump modes to use for JSON
- * - time_format: [:unix|:xmlschema|:ruby] time format when dumping in :compat mode
+ * - time_format: [:unix|:unix_zone|:xmlschema|:ruby] time format when dumping in :compat and :object mode
  * - bigdecimal_as_decimal: [true|false|nil] dump BigDecimal as a decimal number or as a String
  * - bigdecimal_load: [:bigdecimal|:float|:auto] load decimals as BigDecimal instead of as a Float. :auto pick the most precise for the number of digits.
  * - create_id: [String|nil] create id for json compatible object encoding, default is 'json_create'
@@ -237,6 +239,7 @@ get_def_opts(VALUE self) {
     switch (oj_default_options.time_format) {
     case XmlTime:	rb_hash_aset(opts, time_format_sym, xmlschema_sym);	break;
     case RubyTime:	rb_hash_aset(opts, time_format_sym, ruby_sym);		break;
+    case UnixZTime:	rb_hash_aset(opts, time_format_sym, unix_zone_sym);	break;
     case UnixTime:
     default:		rb_hash_aset(opts, time_format_sym, unix_sym);		break;
     }
@@ -276,6 +279,7 @@ get_def_opts(VALUE self) {
  *	  replaces them with a null.
  * @param [:unix|:xmlschema|:ruby] time format when dumping in :compat mode
  *        :unix decimal number denoting the number of seconds since 1/1/1970,
+ *        :unix_zone decimal number denoting the number of seconds since 1/1/1970 plus the utc_offset in the exponent ,
  *        :xmlschema date-time format taken from XML Schema as a String,
  *        :ruby Time.to_s formatted String
  * @param [String|nil] :create_id create id for json compatible object encoding
@@ -361,12 +365,14 @@ set_def_opts(VALUE self, VALUE opts) {
 	// ignore
     } else if (unix_sym == v) {
 	oj_default_options.time_format = UnixTime;
+    } else if (unix_zone_sym == v) {
+	oj_default_options.time_format = UnixZTime;
     } else if (xmlschema_sym == v) {
 	oj_default_options.time_format = XmlTime;
     } else if (ruby_sym == v) {
 	oj_default_options.time_format = RubyTime;
     } else {
-	rb_raise(rb_eArgError, ":time_format must be :unix, :xmlschema, or :ruby.");
+	rb_raise(rb_eArgError, ":time_format must be :unix, :unix_zone, :xmlschema, or :ruby.");
     }
 
     v = rb_hash_lookup(opts, escape_mode_sym);
@@ -513,12 +519,14 @@ oj_parse_options(VALUE ropts, Options copts) {
 	if (Qnil != (v = rb_hash_lookup(ropts, time_format_sym))) {
 	    if (unix_sym == v) {
 		copts->time_format = UnixTime;
+	    } else if (unix_zone_sym == v) {
+		copts->time_format = UnixZTime;
 	    } else if (xmlschema_sym == v) {
 		copts->time_format = XmlTime;
 	    } else if (ruby_sym == v) {
 		copts->time_format = RubyTime;
 	    } else {
-		rb_raise(rb_eArgError, ":time_format must be :unix, :xmlschema, or :ruby.");
+		rb_raise(rb_eArgError, ":time_format must be :unix, :unix_zone, :xmlschema, or :ruby.");
 	    }
 	}
 
@@ -2057,6 +2065,7 @@ void Init_oj() {
     oj_tv_nsec_id = rb_intern("tv_nsec");
     oj_tv_sec_id = rb_intern("tv_sec");
     oj_tv_usec_id = rb_intern("tv_usec");
+    oj_utc_id = rb_intern("utc");
     oj_utc_offset_id = rb_intern("utc_offset");
     oj_utcq_id = rb_intern("utc?");
     oj_write_id = rb_intern("write");
@@ -2105,6 +2114,7 @@ void Init_oj() {
     symbol_keys_sym = ID2SYM(rb_intern("symbol_keys"));	rb_gc_register_address(&symbol_keys_sym);
     time_format_sym = ID2SYM(rb_intern("time_format"));	rb_gc_register_address(&time_format_sym);
     unix_sym = ID2SYM(rb_intern("unix"));		rb_gc_register_address(&unix_sym);
+    unix_zone_sym = ID2SYM(rb_intern("unix_zone"));	rb_gc_register_address(&unix_zone_sym);
     use_to_json_sym = ID2SYM(rb_intern("use_to_json"));	rb_gc_register_address(&use_to_json_sym);
     xmlschema_sym = ID2SYM(rb_intern("xmlschema"));	rb_gc_register_address(&xmlschema_sym);
     xss_safe_sym = ID2SYM(rb_intern("xss_safe"));	rb_gc_register_address(&xss_safe_sym);
