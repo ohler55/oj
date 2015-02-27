@@ -192,6 +192,29 @@ class CompatJuice < Minitest::Test
     assert_equal(orig, bg)
   end
 
+  # Time
+  def test_time_ruby
+    t = Time.parse('2015-01-05 21:37:07.123456 -0800')
+    expect = '"' + t.to_s + '"'
+    json = Oj.dump(t, :mode => :compat, :time_format => :ruby)
+    assert_equal(expect, json)
+  end
+  def test_time_xml
+    t = Time.parse('2015-01-05 21:37:07.123456 -0800')
+    json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema, :second_precision => 6)
+    assert_equal('"2015-01-05T21:37:07.123456-08:00"', json)
+  end
+  def test_time_unix
+    t = Time.parse('2015-01-05 21:37:07.123456 -0800')
+    json = Oj.dump(t, :mode => :compat, :time_format => :unix, :second_precision => 6)
+    assert_equal('1420522627.123456', json)
+  end
+  def test_time_unix_zone
+    t = Time.parse('2015-01-05 21:37:07.123456 -0800')
+    json = Oj.dump(t, :mode => :compat, :time_format => :unix_zone, :second_precision => 6)
+    assert_equal('1420522627.123456e-28800', json)
+  end
+
   # Stream IO
   def test_io_string
     json = %{{

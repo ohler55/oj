@@ -374,6 +374,16 @@ class ObjectJuice < Minitest::Test
     dump_and_load(t, false)
   end
 
+  def test_time_unix_zone
+    t = Time.parse('2015-01-05 21:37:07.123456789 -0800')
+    dump_and_load(t, false)
+  end
+
+  def test_time_unix_zone_utc
+    t = Time.parse('2015-01-05 21:37:07.123456789Z')
+    dump_and_load(t, false)
+  end
+
   def test_json_object
     obj = Jeez.new(true, 58)
     dump_and_load(obj, false)

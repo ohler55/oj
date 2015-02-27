@@ -4,10 +4,10 @@
 ^c^s show subtree
 
 - time
- - add :unix_zone time_format option
-  - time with zone as exponent
-   - have to increase EXP_MAX to 86400
-   - handle out of range in routine to create doubles
+ - test
+  - check number parsing for big exp
+  - times with different zones - check string also
+
 
 - streaming parser for scp and saj
 

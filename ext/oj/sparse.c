@@ -48,7 +48,7 @@
 #else
 #define NUM_MAX		(FIXNUM_MAX >> 8)
 #endif
-#define EXP_MAX		1023
+#define EXP_MAX		100000
 #define DEC_MAX		15
 
 static void
@@ -413,6 +413,7 @@ read_num(ParseInfo pi) {
     ni.infinity = 0;
     ni.nan = 0;
     ni.neg = 0;
+    ni.hasExp = 0;
     ni.no_big = (FloatDec == pi->options.bigdec_load);
     c = reader_get(&pi->rd);
     if ('-' == c) {
@@ -467,6 +468,7 @@ read_num(ParseInfo pi) {
 	if ('e' == c || 'E' == c) {
 	    int	eneg = 0;
 
+	    ni.hasExp = 1;
 	    c = reader_get(&pi->rd);
 	    if ('-' == c) {
 		c = reader_get(&pi->rd);

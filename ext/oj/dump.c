@@ -1000,7 +1000,7 @@ dump_time(VALUE obj, Out out, int withZone) {
     char		buf[64];
     char		*b = buf + sizeof(buf) - 1;
     long		size;
-    char		*dot = b - 10;
+    char		*dot;
     int			neg = 0;
     long		one = 1000000000;
 #if HAS_RB_TIME_TIMESPEC
@@ -1046,6 +1046,7 @@ dump_time(VALUE obj, Out out, int withZone) {
 	}
 	*b-- = 'e';
     }
+    dot = b - 9;
     if (0 < out->opts->sec_prec) {
 	if (9 > out->opts->sec_prec) {
 	    int	i;

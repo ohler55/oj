@@ -32,10 +32,10 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
    zero. This fixes a problem with pre-2.2.0 Rubies that automatically convert
    zero offset times to local times.
 
- - TBD Added :unix_zone time_format option for formating numeric time. This
-   option is the same as the :unix time option but the UTC offset is included as
-   an exponent to the number time value. A value of 86400 is an indication of
-   UTC time.
+ - Added :unix_zone time_format option for formating numeric time. This option
+   is the same as the :unix time option but the UTC offset is included as an
+   exponent to the number time value. A value of 86400 is an indication of UTC
+   time.
 
 ## Current Release 2.11.5
 
