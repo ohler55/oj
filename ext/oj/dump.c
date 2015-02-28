@@ -1114,8 +1114,6 @@ dump_xml_time(VALUE obj, Out out) {
     int			tzhour, tzmin;
     char		tzsign = '+';
 
-    printf("*** HAS_RB_TIME_TIMESPEC: %d utc_offset: %ld gmt_offset: %ld\n", HAS_RB_TIME_TIMESPEC, tzsecs, NUM2LONG(rb_funcall2(obj, rb_intern("gmt_offset"), 0, 0)));
-
     if (out->end - out->cur <= 36) {
 	grow(out, 36);
     }
