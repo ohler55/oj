@@ -202,6 +202,8 @@ class CompatJuice < Minitest::Test
   def test_time_xml
     t = Time.xmlschema("2015-01-05T21:37:07.123456000-08:00")
     puts "*** utc_offset: #{t.utc_offset} in test_time_xml"
+    puts "*** gmt_offset: #{t.gmt_offset} in test_time_xml"
+    puts "*** utc - local: #{t.getutc - t.getlocal} in test_time_xml"
     json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema, :second_precision => 6)
     assert_equal('"2015-01-05T21:37:07.123456-08:00"', json)
   end
