@@ -1114,6 +1114,8 @@ dump_xml_time(VALUE obj, Out out) {
     int			tzhour, tzmin;
     char		tzsign = '+';
 
+    printf("*** HAS_RB_TIME_TIMESPEC: %d offset: %ld\n", HAS_RB_TIME_TIMESPEC, tzsecs);
+
     if (out->end - out->cur <= 36) {
 	grow(out, 36);
     }
