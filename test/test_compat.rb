@@ -194,29 +194,23 @@ class CompatJuice < Minitest::Test
 
   # Time
   def test_time_ruby
-    t = Time.parse('2015-01-05 21:37:07.123456 -0800')
+    t = Time.new(2015, 1, 5, 21, 37, 7.123456, -28800)
     expect = '"' + t.to_s + '"'
     json = Oj.dump(t, :mode => :compat, :time_format => :ruby)
     assert_equal(expect, json)
   end
   def test_time_xml
-    #t = Time.xmlschema("2015-01-05T21:37:07.123456000-08:00")
     t = Time.new(2015, 1, 5, 21, 37, 7.123456, -28800)
-    puts "*** time is: #{t.to_s} in test_time_xml"
-    puts "*** utc? is: #{t.utc?} in test_time_xml"
-    puts "*** utc_offset: #{t.utc_offset} in test_time_xml"
-    puts "*** gmt_offset: #{t.gmt_offset} in test_time_xml"
-    puts "*** utc - local: #{t.getutc - t.getlocal} in test_time_xml"
     json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema, :second_precision => 6)
     assert_equal('"2015-01-05T21:37:07.123456-08:00"', json)
   end
   def test_time_unix
-    t = Time.parse('2015-01-05 21:37:07.123456 -0800')
+    t = Time.new(2015, 1, 5, 21, 37, 7.123456, -28800)
     json = Oj.dump(t, :mode => :compat, :time_format => :unix, :second_precision => 6)
     assert_equal('1420522627.123456', json)
   end
   def test_time_unix_zone
-    t = Time.parse('2015-01-05 21:37:07.123456 -0800')
+    t = Time.new(2015, 1, 5, 21, 37, 7.123456, -28800)
     json = Oj.dump(t, :mode => :compat, :time_format => :unix_zone, :second_precision => 6)
     assert_equal('1420522627.123456e-28800', json)
   end
