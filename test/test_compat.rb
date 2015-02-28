@@ -200,7 +200,7 @@ class CompatJuice < Minitest::Test
     assert_equal(expect, json)
   end
   def test_time_xml
-    t = Time.parse('2015-01-05 21:37:07.123456 -0800')
+    t = Time.xmlschema("2015-01-05T21:37:07.123456000-08:00")
     json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema, :second_precision => 6)
     assert_equal('"2015-01-05T21:37:07.123456-08:00"', json)
   end

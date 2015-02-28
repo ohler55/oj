@@ -359,13 +359,13 @@ class ObjectJuice < Minitest::Test
 
   def test_utc_time
     Oj.default_options = { :mode => :object, :time_format => :xmlschema }
-    t = Time.now().utc
+    t = Time.parse('2015-01-05 21:37:07.123456789Z')
     dump_and_load(t, false)
   end
 
   def test_ruby_time
     Oj.default_options = { :mode => :object, :time_format => :ruby }
-    t = Time.now()
+    t = Time.parse('2015-01-05 21:37:07.123456789 -0700')
     dump_and_load(t, false)
   end
 
