@@ -384,9 +384,7 @@ class ObjectJuice < Minitest::Test
     # mismatch so instead the seconds, nsecs, and gmt_offset are checked
     # separately along with utc.
     json = Oj.dump(t, :mode => :object, :time_format => :xmlschema)
-    puts "*** json for test_xml_time_utc '#{json}'"
     loaded = Oj.object_load(json);
-    puts "*** loaded time for test_xml_time_utc '#{loaded.xmlschema}'"
     assert_equal(t.tv_sec, loaded.tv_sec)
     if t.respond_to?(:tv_nsec)
       assert_equal(t.tv_nsec, loaded.tv_nsec)
@@ -399,15 +397,16 @@ class ObjectJuice < Minitest::Test
 
   def test_ruby_time
     if RUBY_VERSION.start_with?('1.8')
-      t = Time.parse('2015-01-05T21:37:07-08:00')
+      t = Time.parse('2015-01-05T21:37:07.123456789-08:00')
     else
-      t = Time.new(2015, 1, 5, 21, 37, 7, -8 * 3600)
+      t = Time.new(2015, 1, 5, 21, 37, 7.123456789, -8 * 3600)
     end
     # The fractional seconds are not always recreated exactly which cacuses a
     # mismatch so instead the seconds, nsecs, and gmt_offset are checked
     # separately along with utc.
     json = Oj.dump(t, :mode => :object, :time_format => :ruby)
     puts "*** json for test_ruby_time '#{json}'"
+    puts "*** json parsed from json test_ruby_time '#{Time.parse(json[6..-3]).xmlschema}'"
     loaded = Oj.object_load(json);
     puts "*** loaded time for test_ruby_time '#{loaded.xmlschema}'"
     assert_equal(t.tv_sec, loaded.tv_sec)
