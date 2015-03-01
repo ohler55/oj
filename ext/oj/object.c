@@ -161,10 +161,6 @@ hat_num(ParseInfo pi, Val parent, Val kval, NumInfo ni) {
 		    }
 		}
 		if (86400 == ni->exp) { // UTC time
-		    time_t	now = time(0);
-		    struct tm	*st = localtime(&now);
-
-		    ni->i += st->tm_gmtoff;
 #if HAS_NANO_TIME
 		    parent->val = rb_time_nano_new(ni->i, (long)nsec);
 #else
@@ -176,7 +172,24 @@ hat_num(ParseInfo pi, Val parent, Val kval, NumInfo ni) {
 		    parent->val = rb_funcall2(parent->val, oj_utc_id, 0, 0);
 		} else if (ni->hasExp) {
 		    time_t	t = (time_t)ni->i;
-		    struct tm	*st = localtime(&t);
+		    struct tm	*st = gmtime(&t);
+#if RUBY_VERSION_MAJOR == 1 && RUBY_VERSION_MINOR == 8
+		    // The only methods that allow the UTC offset to be set in
+		    // 1.8.7 is the parse() and xmlschema() methods. The
+		    // xmlschema() method always returns a Time instance that is
+		    // UTC time. (true on some platforms anyway)
+		    char	buf[64];
+		    int		z = (0 > ni->exp ? -ni->exp : ni->exp);
+		    int		tzhour = z / 3600;
+		    int		tzsecs = z - tzhour * 3600;
+		    int		cnt;
+
+		    cnt = sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02d.%09ld%c%02d:%02d",
+				  1900 + st->tm_year, 1 + st->tm_mon, st->tm_mday,
+				  st->tm_hour, st->tm_min, st->tm_sec, (long)nsec,
+				  (0 > ni->exp ? '-' : '+'), tzhour, tzsecs);
+		    parent->val = rb_funcall(oj_time_class, rb_intern("parse"), 1, rb_str_new(buf, cnt));
+#else
 		    VALUE	args[8];
 
 		    args[0] = LONG2NUM(1900 + st->tm_year);
@@ -187,6 +200,7 @@ hat_num(ParseInfo pi, Val parent, Val kval, NumInfo ni) {
 		    args[5] = rb_float_new((double)st->tm_sec + (double)nsec / 1000000000.0);
 		    args[6] = LONG2NUM(ni->exp);
 		    parent->val = rb_funcall2(rb_cTime, oj_new_id, 7, args);
+#endif
 		} else {
 #if HAS_NANO_TIME
 		    parent->val = rb_time_nano_new(ni->i, (long)nsec);

@@ -1016,14 +1016,6 @@ dump_time(VALUE obj, Out out, int withZone) {
 #endif
 #endif
     
-    if (0 > sec) {
-	neg = 1;
-	sec = -sec;
-	if (0 < nsec) {
-	    nsec = 1000000000 - nsec;
-	    sec--;
-	}
-    }
     *b-- = '\0';
     if (withZone) {
 	long	tzsecs = NUM2LONG(rb_funcall2(obj, oj_utc_offset_id, 0, 0));
@@ -1031,8 +1023,11 @@ dump_time(VALUE obj, Out out, int withZone) {
 
 	if (neg) {
 	    tzsecs = -tzsecs;
+	    sec -= tzsecs;
 	} else if (0 == tzsecs && Qtrue == rb_funcall2(obj, oj_utcq_id, 0, 0)) {
 	    tzsecs = 86400;
+	} else {
+	    sec -= tzsecs;
 	}
 	if (0 == tzsecs) {
 	    *b-- = '0';
@@ -1045,6 +1040,14 @@ dump_time(VALUE obj, Out out, int withZone) {
 	    }
 	}
 	*b-- = 'e';
+    }
+    if (0 > sec) {
+	neg = 1;
+	sec = -sec;
+	if (0 < nsec) {
+	    nsec = 1000000000 - nsec;
+	    sec--;
+	}
     }
     dot = b - 9;
     if (0 < out->opts->sec_prec) {
