@@ -400,11 +400,13 @@ class ObjectJuice < Minitest::Test
     if RUBY_VERSION.start_with?('1.8')
       t = Time.parse('2015-01-05T21:37:07.123456789-08:00')
     else
-      t = Time.new(2015, 1, 5, 21, 37, 7.123456789, -8 * 3600)
+      t = Time.parse('2015-01-05T21:37:07.123456789-08:00')
+      #t = Time.new(2015, 1, 5, 21, 37, 7.123456789, -8 * 3600)
     end
     # The fractional seconds are not always recreated exactly which cacuses a
     # mismatch so instead the seconds, nsecs, and gmt_offset are checked
     # separately along with utc.
+    puts "*** orig xmlschema '#{t.xmlschema}' offset: #{t.utc_offset}"
     json = Oj.dump(t, :mode => :object, :time_format => :ruby)
     puts "*** json for test_ruby_time '#{json}'"
     puts "*** same? #{x == json[7..-3]} #{x} #{json[7..-3]}"
