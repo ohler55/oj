@@ -134,6 +134,7 @@ hat_cstr(ParseInfo pi, Val parent, Val kval, const char *str, size_t len) {
 	    parent->val = oj_name2class(pi, str, len, Yes == pi->options.auto_define);
 	    break;
 	case 't': // time
+	    printf("*** parse from C '%s' len: %lu  strlen: %ld\n", str, len, strlen(str));
 	    parent->val = rb_funcall(oj_time_class, oj_parse_id, 1, rb_str_new(str, len));
 	    break;
 	default:
