@@ -228,7 +228,7 @@ class CompatJuice < Minitest::Test
       t = Time.new(2015, 1, 5, 21, 37, 7.123456, -8 * 3600)
     end
     json = Oj.dump(t, :mode => :compat, :time_format => :unix_zone, :second_precision => 6)
-    assert_equal('1420493827.123456e-28800', json)
+    assert_equal('1420493827.123456e-480', json)
   end
   def test_time_unix_zone_early
     if RUBY_VERSION.start_with?('1.8')
@@ -237,7 +237,7 @@ class CompatJuice < Minitest::Test
       t = Time.new(1954, 1, 5, 21, 37, 7.123456, -8 * 3600)
     end
     json = Oj.dump(t, :mode => :compat, :time_format => :unix_zone, :second_precision => 6)
-    assert_equal('-504498172.876544e-28800', json)
+    assert_equal('-504498172.876544e-480', json)
   end
 
   # Stream IO

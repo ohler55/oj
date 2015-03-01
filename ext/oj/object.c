@@ -299,7 +299,7 @@ hat_num(ParseInfo pi, Val parent, Val kval, NumInfo ni) {
 			nsec = 1000000000LL - nsec;
 		    }
 		}
-		if (86400 == ni->exp) { // UTC time
+		if (1440 == ni->exp) { // UTC time
 #if HAS_NANO_TIME
 		    parent->val = rb_time_nano_new(ni->i, (long)nsec);
 #else
@@ -320,14 +320,14 @@ hat_num(ParseInfo pi, Val parent, Val kval, NumInfo ni) {
 		    // fails on other Ruby versions until 2.2.0.
 		    char	buf[64];
 		    int		z = (0 > ni->exp ? -ni->exp : ni->exp);
-		    int		tzhour = z / 3600;
-		    int		tzsecs = z - tzhour * 3600;
+		    int		tzhour = z / 60;
+		    int		tzmin = z - tzhour * 60;
 		    int		cnt;
 
 		    cnt = sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02d.%09ld%c%02d:%02d",
 				  1900 + st->tm_year, 1 + st->tm_mon, st->tm_mday,
 				  st->tm_hour, st->tm_min, st->tm_sec, (long)nsec,
-				  (0 > ni->exp ? '-' : '+'), tzhour, tzsecs);
+				  (0 > ni->exp ? '-' : '+'), tzhour, tzmin);
 		    parent->val = rb_funcall(rb_cTime, oj_parse_id, 1, rb_str_new(buf, cnt));
 #else
 		    VALUE	args[8];
@@ -338,7 +338,7 @@ hat_num(ParseInfo pi, Val parent, Val kval, NumInfo ni) {
 		    args[3] = LONG2NUM(st->tm_hour);
 		    args[4] = LONG2NUM(st->tm_min);
 		    args[5] = rb_float_new((double)st->tm_sec + (double)nsec / 1000000000.0);
-		    args[6] = LONG2NUM(ni->exp);
+		    args[6] = LONG2NUM(ni->exp * 60);
 		    parent->val = rb_funcall2(rb_cTime, oj_new_id, 7, args);
 #endif
 		} else {
