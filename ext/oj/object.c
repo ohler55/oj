@@ -104,8 +104,9 @@ static int
 parse_num(const char *str, const char *end, int cnt) {
     int		n = 0;
     char	c;
+    int		i;
 
-    for (int i = cnt; 0 < i; i--, str++) {
+    for (i = cnt; 0 < i; i--, str++) {
 	c = *str;
 	if (end <= str || c < '0' || '9' < c) {
 	    return -1;
