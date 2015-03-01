@@ -94,6 +94,144 @@ str_to_value(ParseInfo pi, const char *str, size_t len, const char *orig) {
     return rstr;
 }
 
+#if (RUBY_VERSION_MAJOR == 1 && RUBY_VERSION_MINOR == 8) || (RUBY_VERSION_MAJOR == 2 && RUBY_VERSION_MINOR >= 2)
+static VALUE
+parse_xml_time(const char *str, int len) {
+    return rb_funcall(rb_cTime, oj_parse_id, 1, rb_str_new(str, len));
+}
+#else
+static int
+parse_num(const char *str, const char *end, int cnt) {
+    int		n = 0;
+    char	c;
+
+    for (int i = cnt; 0 < i; i--, str++) {
+	c = *str;
+	if (end <= str || c < '0' || '9' < c) {
+	    return -1;
+	}
+	n = n * 10 + (c - '0');
+    }
+    return n;
+}
+
+static VALUE
+parse_xml_time(const char *str, int len) {
+    VALUE	args[8];
+    const char	*end = str + len;
+    int		n;
+
+    // year
+    if (0 > (n = parse_num(str, end, 4))) {
+	return Qnil;
+    }
+    str += 4;
+    args[0] = LONG2NUM(n);
+    if ('-' != *str++) {
+	return Qnil;
+    }
+    // month
+    if (0 > (n = parse_num(str, end, 2))) {
+	return Qnil;
+    }
+    str += 2;
+    args[1] = LONG2NUM(n);
+    if ('-' != *str++) {
+	return Qnil;
+    }
+    // day
+    if (0 > (n = parse_num(str, end, 2))) {
+	return Qnil;
+    }
+    str += 2;
+    args[2] = LONG2NUM(n);
+    if ('T' != *str++) {
+	return Qnil;
+    }
+    // hour
+    if (0 > (n = parse_num(str, end, 2))) {
+	return Qnil;
+    }
+    str += 2;
+    args[3] = LONG2NUM(n);
+    if (':' != *str++) {
+	return Qnil;
+    }
+    // minute
+    if (0 > (n = parse_num(str, end, 2))) {
+	return Qnil;
+    }
+    str += 2;
+    args[4] = LONG2NUM(n);
+    if (':' != *str++) {
+	return Qnil;
+    }
+    // second
+    if (0 > (n = parse_num(str, end, 2))) {
+	return Qnil;
+    }
+    str += 2;
+    if (str == end) {
+	args[5] = LONG2NUM(n);
+	args[6] = LONG2NUM(0);
+    } else {
+	char	c = *str++;
+
+	if ('.' == c) {
+	    long	nsec = 0;
+
+	    for (; str < end; str++) {
+		c = *str;
+		if (c < '0' || '9' < c) {
+		    str++;
+		    break;
+		}
+		nsec = nsec * 10 + (c - '0');
+	    }
+	    args[5] = rb_float_new((double)n + (double)nsec /  1000000000.0);
+	} else {
+	    args[5] = LONG2NUM(n);
+	}
+	if (end < str) {
+	    args[6] = LONG2NUM(0);
+	} else {
+	    if ('Z' == c) {
+		return rb_funcall2(rb_cTime, oj_utc_id, 6, args);
+	    } else if ('+' == c) {
+		int	hr = parse_num(str, end, 2);
+		int	min;
+
+		str += 2;
+		if (0 > hr || ':' != *str++) {
+		    return Qnil;
+		}
+		min = parse_num(str, end, 2);
+		if (0 > min) {
+		    return Qnil;
+		}
+		args[6] = LONG2NUM(hr * 3600 + min);
+	    } else if ('-' == c) {
+		int	hr = parse_num(str, end, 2);
+		int	min;
+
+		str += 2;
+		if (0 > hr || ':' != *str++) {
+		    return Qnil;
+		}
+		min = parse_num(str, end, 2);
+		if (0 > min) {
+		    return Qnil;
+		}
+		args[6] = LONG2NUM(-(hr * 3600 + min));
+	    } else {
+		args[6] = LONG2NUM(0);
+	    }
+	}
+    }
+    return rb_funcall2(rb_cTime, oj_new_id, 7, args);
+}
+#endif
+
 static int
 hat_cstr(ParseInfo pi, Val parent, Val kval, const char *str, size_t len) {
     const char	*key = kval->key;
@@ -134,8 +272,7 @@ hat_cstr(ParseInfo pi, Val parent, Val kval, const char *str, size_t len) {
 	    parent->val = oj_name2class(pi, str, len, Yes == pi->options.auto_define);
 	    break;
 	case 't': // time
-	    printf("*** parse from C '%s' len: %lu  strlen: %ld\n", str, len, strlen(str));
-	    parent->val = rb_funcall(rb_cTime, oj_parse_id, 1, rb_str_new(str, len));
+	    parent->val = parse_xml_time(str, len);
 	    break;
 	default:
 	    return 0;
@@ -178,7 +315,8 @@ hat_num(ParseInfo pi, Val parent, Val kval, NumInfo ni) {
 		    // The only methods that allow the UTC offset to be set in
 		    // 1.8.7 is the parse() and xmlschema() methods. The
 		    // xmlschema() method always returns a Time instance that is
-		    // UTC time. (true on some platforms anyway)
+		    // UTC time. (true on some platforms anyway) Time.parse()
+		    // fails on other Ruby versions until 2.2.0.
 		    char	buf[64];
 		    int		z = (0 > ni->exp ? -ni->exp : ni->exp);
 		    int		tzhour = z / 3600;
