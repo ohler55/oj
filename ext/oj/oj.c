@@ -100,7 +100,6 @@ VALUE	oj_stream_writer_class;
 VALUE	oj_string_writer_class;
 VALUE	oj_stringio_class;
 VALUE	oj_struct_class;
-VALUE	oj_time_class;
 
 VALUE	oj_slash_string;
 
@@ -2085,7 +2084,6 @@ void Init_oj() {
     oj_parse_error_class = rb_const_get_at(Oj, rb_intern("ParseError"));
     oj_stringio_class = rb_const_get(rb_cObject, rb_intern("StringIO"));
     oj_struct_class = rb_const_get(rb_cObject, rb_intern("Struct"));
-    oj_time_class = rb_const_get(rb_cObject, rb_intern("Time"));
 
     allow_gc_sym = ID2SYM(rb_intern("allow_gc"));	rb_gc_register_address(&allow_gc_sym);
     ascii_only_sym = ID2SYM(rb_intern("ascii_only"));	rb_gc_register_address(&ascii_only_sym);

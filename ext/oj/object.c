@@ -135,7 +135,7 @@ hat_cstr(ParseInfo pi, Val parent, Val kval, const char *str, size_t len) {
 	    break;
 	case 't': // time
 	    printf("*** parse from C '%s' len: %lu  strlen: %ld\n", str, len, strlen(str));
-	    parent->val = rb_funcall(oj_time_class, oj_parse_id, 1, rb_str_new(str, len));
+	    parent->val = rb_funcall(rb_cTime, oj_parse_id, 1, rb_str_new(str, len));
 	    break;
 	default:
 	    return 0;
@@ -189,7 +189,7 @@ hat_num(ParseInfo pi, Val parent, Val kval, NumInfo ni) {
 				  1900 + st->tm_year, 1 + st->tm_mon, st->tm_mday,
 				  st->tm_hour, st->tm_min, st->tm_sec, (long)nsec,
 				  (0 > ni->exp ? '-' : '+'), tzhour, tzsecs);
-		    parent->val = rb_funcall(oj_time_class, oj_parse_id, 1, rb_str_new(buf, cnt));
+		    parent->val = rb_funcall(rb_cTime, oj_parse_id, 1, rb_str_new(buf, cnt));
 #else
 		    VALUE	args[8];
 

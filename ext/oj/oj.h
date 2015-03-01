@@ -248,7 +248,6 @@ extern VALUE	oj_stream_writer_class;
 extern VALUE	oj_string_writer_class;
 extern VALUE	oj_stringio_class;
 extern VALUE	oj_struct_class;
-extern VALUE	oj_time_class;
 
 extern VALUE	oj_slash_string;
 
