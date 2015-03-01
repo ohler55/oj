@@ -399,9 +399,9 @@ class ObjectJuice < Minitest::Test
 
   def test_ruby_time
     if RUBY_VERSION.start_with?('1.8')
-      t = Time.parse('2015-01-05T21:37:07.123456-08:00')
+      t = Time.parse('2015-01-05T21:37:07-08:00')
     else
-      t = Time.new(2015, 1, 5, 21, 37, 7.123456, -8 * 3600)
+      t = Time.new(2015, 1, 5, 21, 37, 7, -8 * 3600)
     end
     # The fractional seconds are not always recreated exactly which cacuses a
     # mismatch so instead the seconds, nsecs, and gmt_offset are checked
