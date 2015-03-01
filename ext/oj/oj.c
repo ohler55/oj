@@ -70,6 +70,7 @@ ID	oj_instance_variables_id;
 ID	oj_json_create_id;
 ID	oj_length_id;
 ID	oj_new_id;
+ID	oj_parse_id;
 ID	oj_pos_id;
 ID	oj_read_id;
 ID	oj_readpartial_id;
@@ -2051,6 +2052,7 @@ void Init_oj() {
     oj_json_create_id = rb_intern("json_create");
     oj_length_id = rb_intern("length");
     oj_new_id = rb_intern("new");
+    oj_parse_id = rb_intern("parse");
     oj_pos_id = rb_intern("pos");
     oj_read_id = rb_intern("read");
     oj_readpartial_id = rb_intern("readpartial");

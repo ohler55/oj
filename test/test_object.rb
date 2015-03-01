@@ -361,7 +361,7 @@ class ObjectJuice < Minitest::Test
     # mismatch so instead the seconds, nsecs, and gmt_offset are checked
     # separately along with utc.
     json = Oj.dump(t, :mode => :object, :time_format => :xmlschema)
-    #puts json
+    puts json
     loaded = Oj.object_load(json);
     assert_equal(t.tv_sec, loaded.tv_sec)
     if t.respond_to?(:tv_nsec)
@@ -405,7 +405,7 @@ class ObjectJuice < Minitest::Test
     # mismatch so instead the seconds, nsecs, and gmt_offset are checked
     # separately along with utc.
     json = Oj.dump(t, :mode => :object, :time_format => :ruby)
-    #puts json
+    puts json
     loaded = Oj.object_load(json);
     assert_equal(t.tv_sec, loaded.tv_sec)
     if t.respond_to?(:tv_nsec)
