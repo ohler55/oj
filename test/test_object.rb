@@ -396,6 +396,7 @@ class ObjectJuice < Minitest::Test
   end
 
   def test_ruby_time
+    x = '2015-01-05T21:37:07.123456788-08:00'
     if RUBY_VERSION.start_with?('1.8')
       t = Time.parse('2015-01-05T21:37:07.123456789-08:00')
     else
@@ -406,9 +407,10 @@ class ObjectJuice < Minitest::Test
     # separately along with utc.
     json = Oj.dump(t, :mode => :object, :time_format => :ruby)
     puts "*** json for test_ruby_time '#{json}'"
-    puts "*** json parsed from json test_ruby_time '#{Time.parse(json[6..-3]).xmlschema}'"
+    puts "*** same? #{x == json[7..-3]} #{x} #{json[7..-3]}"
+    puts "*** json parsed from json test_ruby_time '#{Time.parse(json[7..-3]).xmlschema}'"
     loaded = Oj.object_load(json);
-    puts "*** loaded time for test_ruby_time '#{loaded.xmlschema}'"
+    puts "*** loaded time for test_ruby_time '#{loaded.xmlschema}' offset: #{loaded.utc_offset}"
     assert_equal(t.tv_sec, loaded.tv_sec)
     if t.respond_to?(:tv_nsec)
       assert_equal(t.tv_nsec, loaded.tv_nsec)
