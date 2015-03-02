@@ -1018,24 +1018,25 @@ dump_time(VALUE obj, Out out, int withZone) {
     
     *b-- = '\0';
     if (withZone) {
-	long	tzmin = NUM2LONG(rb_funcall2(obj, oj_utc_offset_id, 0, 0)) / 60;
-	int	neg = (0 > tzmin);
+	long	tzmin = NUM2LONG(rb_funcall2(obj, oj_utc_offset_id, 0, 0));
+	int	zneg = (0 > tzmin);
 
-	if (neg) {
-	    tzmin = -tzmin;
-	    sec -= tzmin * 60;
-	} else if (0 == tzmin && Qtrue == rb_funcall2(obj, oj_utcq_id, 0, 0)) {
-	    tzmin = 1440;
+	if (0 == tzmin && Qtrue == rb_funcall2(obj, oj_utcq_id, 0, 0)) {
+	    tzmin = 86400;
 	} else {
-	    sec -= tzmin * 60;
+	    sec += tzmin;
 	}
+	if (zneg) {
+	    tzmin = -tzmin;
+	}
+	tzmin /= 60;
 	if (0 == tzmin) {
 	    *b-- = '0';
 	} else {
 	    for (; 0 < tzmin; b--, tzmin /= 10) {
 		*b = '0' + (tzmin % 10);
 	    }
-	    if (neg) {
+	    if (zneg) {
 		*b-- = '-';
 	    }
 	}
