@@ -212,6 +212,13 @@ class CompatJuice < Minitest::Test
     json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema, :second_precision => 6)
     assert_equal('"2015-01-05T21:37:07.123456-08:00"', json)
   end
+  unless RUBY_VERSION.start_with?('1.8')
+    def test_time_xml_12345
+      t = Time.new(2015, 1, 5, 21, 37, 7.123456, 12345)
+      json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema, :second_precision => 6)
+      assert_equal('"2015-01-05T21:37:07.123456+03:25"', json)
+    end
+  end
   def test_time_unix
     if RUBY_VERSION.start_with?('1.8')
       t = Time.parse('2015-01-05T21:37:07.123456-08:00')
@@ -228,7 +235,14 @@ class CompatJuice < Minitest::Test
       t = Time.new(2015, 1, 5, 21, 37, 7.123456, -8 * 3600)
     end
     json = Oj.dump(t, :mode => :compat, :time_format => :unix_zone, :second_precision => 6)
-    assert_equal('1420493827.123456e-480', json)
+    assert_equal('1420493827.123456e-28800', json)
+  end
+  unless RUBY_VERSION.start_with?('1.8')
+    def test_time_unix_zone_12345
+      t = Time.new(2015, 1, 5, 21, 37, 7.123456, 12345)
+      json = Oj.dump(t, :mode => :compat, :time_format => :unix_zone, :second_precision => 6)
+      assert_equal('1420493827.123456e12345', json)
+    end
   end
   def test_time_unix_zone_early
     if RUBY_VERSION.start_with?('1.8')
@@ -237,7 +251,7 @@ class CompatJuice < Minitest::Test
       t = Time.new(1954, 1, 5, 21, 37, 7.123456, -8 * 3600)
     end
     json = Oj.dump(t, :mode => :compat, :time_format => :unix_zone, :second_precision => 6)
-    assert_equal('-504498172.876544e-480', json)
+    assert_equal('-504498172.876544e-28800', json)
   end
 
   # Stream IO

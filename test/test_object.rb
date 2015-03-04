@@ -357,7 +357,7 @@ class ObjectJuice < Minitest::Test
     else
       t = Time.new(2015, 1, 5, 21, 37, 7.123456789, -8 * 3600)
     end
-    # The fractional seconds are not always recreated exactly which cacuses a
+    # The fractional seconds are not always recreated exactly which causes a
     # mismatch so instead the seconds, nsecs, and gmt_offset are checked
     # separately along with utc.
     json = Oj.dump(t, :mode => :object, :time_format => :xmlschema)
@@ -379,7 +379,7 @@ class ObjectJuice < Minitest::Test
     else
       t = Time.utc(2015, 1, 5, 21, 37, 7.123456789)
     end
-    # The fractional seconds are not always recreated exactly which cacuses a
+    # The fractional seconds are not always recreated exactly which causes a
     # mismatch so instead the seconds, nsecs, and gmt_offset are checked
     # separately along with utc.
     json = Oj.dump(t, :mode => :object, :time_format => :xmlschema)
@@ -400,12 +400,35 @@ class ObjectJuice < Minitest::Test
     else
       t = Time.new(2015, 1, 5, 21, 37, 7.123456789, -8 * 3600)
     end
-    # The fractional seconds are not always recreated exactly which cacuses a
+    # The fractional seconds are not always recreated exactly which causes a
     # mismatch so instead the seconds, nsecs, and gmt_offset are checked
     # separately along with utc.
     json = Oj.dump(t, :mode => :object, :time_format => :ruby)
     #puts "*** json for test_ruby_time '#{json}'"
     loaded = Oj.object_load(json);
+    assert_equal(t.tv_sec, loaded.tv_sec)
+    if t.respond_to?(:tv_nsec)
+      assert_equal(t.tv_nsec, loaded.tv_nsec)
+    else
+      assert_equal(t.tv_usec, loaded.tv_usec)
+    end
+    assert_equal(t.utc?, loaded.utc?)
+    assert_equal(t.utc_offset, loaded.utc_offset)
+  end
+
+  def test_ruby_time_12345
+    if RUBY_VERSION.start_with?('1.8')
+      t = Time.parse('2015-01-05T21:37:07.123456789+03:25')
+    else
+      t = Time.new(2015, 1, 5, 21, 37, 7.123456789, 12345/60*60)
+    end
+    # The fractional seconds are not always recreated exactly which causes a
+    # mismatch so instead the seconds, nsecs, and gmt_offset are checked
+    # separately along with utc.
+    json = Oj.dump(t, :mode => :object, :time_format => :ruby)
+    #puts "*** json for test_ruby_time '#{json}'"
+    loaded = Oj.object_load(json);
+    #puts "*** loaded: #{loaded}"
     assert_equal(t.tv_sec, loaded.tv_sec)
     if t.respond_to?(:tv_nsec)
       assert_equal(t.tv_nsec, loaded.tv_nsec)
@@ -422,7 +445,7 @@ class ObjectJuice < Minitest::Test
     else
       t = Time.utc(2015, 1, 5, 21, 37, 7.123456789)
     end
-    # The fractional seconds are not always recreated exactly which cacuses a
+    # The fractional seconds are not always recreated exactly which causes a
     # mismatch so instead the seconds, nsecs, and gmt_offset are checked
     # separately along with utc.
     json = Oj.dump(t, :mode => :object, :time_format => :ruby)
@@ -444,7 +467,7 @@ class ObjectJuice < Minitest::Test
     else
       t = Time.new(1954, 1, 5, 21, 37, 7.123456789, -8 * 3600)
     end
-    # The fractional seconds are not always recreated exactly which cacuses a
+    # The fractional seconds are not always recreated exactly which causes a
     # mismatch so instead the seconds, nsecs, and gmt_offset are checked
     # separately along with utc.
     json = Oj.dump(t, :mode => :object, :time_format => :unix_zone)
@@ -466,7 +489,7 @@ class ObjectJuice < Minitest::Test
     else
       t = Time.new(2015, 1, 5, 21, 37, 7.123456789, -8 * 3600)
     end
-    # The fractional seconds are not always recreated exactly which cacuses a
+    # The fractional seconds are not always recreated exactly which causes a
     # mismatch so instead the seconds, nsecs, and gmt_offset are checked
     # separately along with utc.
     json = Oj.dump(t, :mode => :object, :time_format => :unix_zone)
@@ -482,13 +505,33 @@ class ObjectJuice < Minitest::Test
     assert_equal(t.utc_offset, loaded.utc_offset)
   end
 
+  unless RUBY_VERSION.start_with?('1.8')
+    def test_time_unix_zone_12345
+      t = Time.new(2015, 1, 5, 21, 37, 7.123456789, 12345)
+      # The fractional seconds are not always recreated exactly which causes a
+      # mismatch so instead the seconds, nsecs, and gmt_offset are checked
+      # separately along with utc.
+      json = Oj.dump(t, :mode => :object, :time_format => :unix_zone)
+      #puts json
+      loaded = Oj.object_load(json);
+      assert_equal(t.tv_sec, loaded.tv_sec)
+      if t.respond_to?(:tv_nsec)
+        assert_equal(t.tv_nsec, loaded.tv_nsec)
+      else
+        assert_equal(t.tv_usec, loaded.tv_usec)
+      end
+      assert_equal(t.utc?, loaded.utc?)
+      assert_equal(t.utc_offset, loaded.utc_offset)
+    end
+  end
+
   def test_time_unix_zone_utc
     if RUBY_VERSION.start_with?('1.8')
       t = Time.parse('2015-01-05T21:37:07.123456789Z')
     else
       t = Time.utc(2015, 1, 5, 21, 37, 7.123456789)
     end
-    # The fractional seconds are not always recreated exactly which cacuses a
+    # The fractional seconds are not always recreated exactly which causes a
     # mismatch so instead the seconds, nsecs, and gmt_offset are checked
     # separately along with utc.
     json = Oj.dump(t, :mode => :object, :time_format => :unix_zone)
