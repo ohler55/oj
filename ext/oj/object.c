@@ -94,12 +94,13 @@ str_to_value(ParseInfo pi, const char *str, size_t len, const char *orig) {
     return rstr;
 }
 
-#if (RUBY_VERSION_MAJOR == 1 && RUBY_VERSION_MINOR == 8) || (RUBY_VERSION_MAJOR == 2 && RUBY_VERSION_MINOR >= 2)
+#if (RUBY_VERSION_MAJOR == 1 && RUBY_VERSION_MINOR == 8)
 static VALUE
 parse_xml_time(const char *str, int len) {
     return rb_funcall(rb_cTime, oj_parse_id, 1, rb_str_new(str, len));
 }
 #else
+// The much faster approach (4x faster)
 static int
 parse_num(const char *str, const char *end, int cnt) {
     int		n = 0;
@@ -210,7 +211,7 @@ parse_xml_time(const char *str, int len) {
 		if (0 > min) {
 		    return Qnil;
 		}
-		args[6] = LONG2NUM(hr * 3600 + min);
+		args[6] = LONG2NUM(hr * 3600 + min * 60);
 	    } else if ('-' == c) {
 		int	hr = parse_num(str, end, 2);
 		int	min;
@@ -223,7 +224,7 @@ parse_xml_time(const char *str, int len) {
 		if (0 > min) {
 		    return Qnil;
 		}
-		args[6] = LONG2NUM(-(hr * 3600 + min));
+		args[6] = LONG2NUM(-(hr * 3600 + min * 60));
 	    } else {
 		args[6] = LONG2NUM(0);
 	    }
