@@ -386,26 +386,26 @@ class Juice < Minitest::Test
   def test_unix_time_compat
     t = Time.xmlschema("2012-01-05T23:58:07.123456000+09:00")
     #t = Time.local(2012, 1, 5, 23, 58, 7, 123456)
-    json = Oj.dump(t, :mode => :compat)
+    json = Oj.dump(t, :mode => :compat, :time_format => :unix)
     assert_equal(%{1325775487.123456000}, json)
   end
   def test_unix_time_compat_precision
     t = Time.xmlschema("2012-01-05T23:58:07.123456789+09:00")
     #t = Time.local(2012, 1, 5, 23, 58, 7, 123456)
-    json = Oj.dump(t, :mode => :compat, :second_precision => 5)
+    json = Oj.dump(t, :mode => :compat, :second_precision => 5, :time_format => :unix)
     assert_equal(%{1325775487.12346}, json)
     t = Time.xmlschema("2012-01-05T23:58:07.999600+09:00")
-    json = Oj.dump(t, :mode => :compat, :second_precision => 3)
+    json = Oj.dump(t, :mode => :compat, :second_precision => 3, :time_format => :unix)
     assert_equal(%{1325775488.000}, json)
   end
   def test_unix_time_compat_early
     t = Time.xmlschema("1954-01-05T00:00:00.123456789+00:00")
-    json = Oj.dump(t, :mode => :compat, :second_precision => 5)
+    json = Oj.dump(t, :mode => :compat, :second_precision => 5, :time_format => :unix)
     assert_equal(%{-504575999.87654}, json)
   end
   def test_unix_time_compat_1970
     t = Time.xmlschema("1970-01-01T00:00:00.123456789+00:00")
-    json = Oj.dump(t, :mode => :compat, :second_precision => 5)
+    json = Oj.dump(t, :mode => :compat, :second_precision => 5, :time_format => :unix)
     assert_equal(%{0.12346}, json)
   end
   def test_ruby_time_compat
@@ -502,16 +502,6 @@ class Juice < Minitest::Test
       #tz = t.utc_offset
       assert_equal(%{"2012-01-05T23:58:07Z"}, json)
     end
-  end
-  def test_time_object
-    t = Time.now()
-    Oj.default_options = { :mode => :object }
-    dump_and_load(t, false)
-  end
-  def test_time_object_early
-    t = Time.xmlschema("1954-01-05T00:00:00.123456")
-    Oj.default_options = { :mode => :object }
-    dump_and_load(t, false)
   end
 
   # Class

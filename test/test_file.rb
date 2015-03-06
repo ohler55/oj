@@ -126,12 +126,12 @@ class FileJuice < Minitest::Test
   # Time
   def test_time_object
     t = Time.now()
-    Oj.default_options = { :mode => :object }
+    Oj.default_options = { :mode => :object, :time_format => :unix_zone }
     dump_and_load(t, false)
   end
   def test_time_object_early
     t = Time.xmlschema("1954-01-05T00:00:00.123456")
-    Oj.default_options = { :mode => :object }
+    Oj.default_options = { :mode => :object, :time_format => :unix_zone }
     dump_and_load(t, false)
   end
 
@@ -227,7 +227,18 @@ class FileJuice < Minitest::Test
     }
     puts "\n*** file: '#{File.read(filename)}'" if trace
     loaded = Oj.load_file(filename)
-    assert_equal(obj, loaded)
+    if obj.is_a?(Time) && loaded.is_a?(Time)
+      assert_equal(obj.tv_sec, loaded.tv_sec)
+      if obj.respond_to?(:tv_nsec)
+        assert_equal(obj.tv_nsec, loaded.tv_nsec)
+      else
+        assert_equal(obj.tv_usec, loaded.tv_usec)
+      end
+      assert_equal(obj.utc?, loaded.utc?)
+      assert_equal(obj.utc_offset, loaded.utc_offset)
+    else
+      assert_equal(obj, loaded)
+    end
     loaded
   end
 

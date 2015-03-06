@@ -346,11 +346,6 @@ class ObjectJuice < Minitest::Test
     dump_and_load(obj, false)
   end
 
-  def test_time
-    t = Time.now()
-    dump_and_load(t, false)
-  end
-
   def test_xml_time
     if RUBY_VERSION.start_with?('1.8')
       t = Time.parse('2015-01-05T21:37:07.123456789-08:00')
