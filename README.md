@@ -37,13 +37,6 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
    exponent to the number time value. A value of 86400 is an indication of UTC
    time.
 
-## Current Release 2.11.5
-
- - Fixed issue with rails as_json not being called for Structs.
-
- - Added support for anonymous Structs with object mode encoding. Note that this
-   will result in a new anonymous Struct for each instance.
-
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
 ## Description

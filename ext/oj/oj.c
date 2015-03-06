@@ -167,7 +167,7 @@ struct _Options	oj_default_options = {
     JSONEsc,		// escape_mode
     ObjectMode,		// mode
     Yes,		// class_cache
-    UnixTime,		// time_format
+    UnixZTime,		// time_format
     Yes,		// bigdec_as_num
     AutoDec,		// bigdec_load
     Yes,		// to_json
