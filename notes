@@ -3,14 +3,6 @@
 ^c^d hide subtree
 ^c^s show subtree
 
-- time
- - object.c hat_num()
-  - for 1.8.7 have to create string and then call parse, not xmlschema (xmlschema always makes UTC)
-  - for 1.9 and above use Time.new()
-  - use oj_parse_id, not intern
- - test
-  - check number parsing for big exp
-  - times with different zones - check string also
 
 
 - streaming parser for scp and saj

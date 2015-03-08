@@ -654,6 +654,13 @@ class ObjectJuice < Minitest::Test
     dump_and_load(s, false)
   end
 
+  def test_odd_date_replaced
+    Oj.register_odd(Date, Date, :jd, :jd)
+    json = Oj.dump(Date.new(2015, 3, 7), :mode => :object)
+    assert_equal(%|{"^O":"Date","jd":2457089}|, json)
+    dump_and_load(Date.new(2012, 6, 19), false)
+  end
+
   def test_auto_string
     s = AutoStrung.new("Pete", true)
     dump_and_load(s, false)
