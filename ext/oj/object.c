@@ -311,7 +311,7 @@ hat_num(ParseInfo pi, Val parent, Val kval, NumInfo ni) {
 		    // match the expected value.
 		    parent->val = rb_funcall2(parent->val, oj_utc_id, 0, 0);
 		} else if (ni->hasExp) {
-		    time_t	t = (time_t)ni->i;
+		    time_t	t = (time_t)(ni->i + ni->exp);
 		    struct tm	*st = gmtime(&t);
 #if RUBY_VERSION_MAJOR == 1 && RUBY_VERSION_MINOR == 8
 		    // The only methods that allow the UTC offset to be set in

@@ -26,7 +26,11 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
-## Curent Release 2.12.0 
+## Future Release 2.12.1
+
+ - Changed the unix_zone encoded format to be the utc epoch.
+
+## Curent Release 2.12.0
 
  - String formats for UTC time are now explitly UTC instead of offset of
    zero. This fixes a problem with pre-2.2.0 Rubies that automatically convert

@@ -1023,8 +1023,6 @@ dump_time(VALUE obj, Out out, int withZone) {
 
 	if (0 == tzsecs && Qtrue == rb_funcall2(obj, oj_utcq_id, 0, 0)) {
 	    tzsecs = 86400;
-	} else {
-	    sec += tzsecs;
 	}
 	if (zneg) {
 	    tzsecs = -tzsecs;
