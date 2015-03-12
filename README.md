@@ -26,20 +26,9 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
-## Future Release 2.12.1
+## Current Release 2.12.1
 
  - Changed the unix_zone encoded format to be the utc epoch.
-
-## Curent Release 2.12.0
-
- - String formats for UTC time are now explitly UTC instead of offset of
-   zero. This fixes a problem with pre-2.2.0 Rubies that automatically convert
-   zero offset times to local times.
-
- - Added :unix_zone time_format option for formating numeric time. This option
-   is the same as the :unix time option but the UTC offset is included as an
-   exponent to the number time value. A value of 86400 is an indication of UTC
-   time.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
