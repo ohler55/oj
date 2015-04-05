@@ -80,6 +80,11 @@ Rails 3.2 and 4.0. As of the Oj 2.6.0 release the default behavior is to not use
 the `to_json()` method unless the `:use_to_json` option is set. This provides
 another work around to the rails older and newer behavior.
 
+The latest ActiveRecord is able to work with Oj by simply using the line:
+```
+serialize :my_attr, Oj
+```
+
 In version Rails 4.1, multi_json has been removed, and this patch is unnecessary and will no longer work.
 Instead, use the `oj_mimic_json` [gem](https://github.com/ohler55/oj_mimic_json) along with `oj` in your `Gemfile` to have Oj mimic the JSON gem and be used in its place by `ActiveSupport` JSON handling:
 ```
