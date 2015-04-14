@@ -30,7 +30,7 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
  - Fixed Oj::Doc bug that causes a crash on local name lookups.
 
- - TBD Fixed Oj::Doc unicode parsing.
+ - Fixed Oj::Doc unicode parsing.
 
 ## Current Release 2.12.1
 

@@ -609,33 +609,59 @@ read_nil(ParseInfo pi) {
     return leaf;
 }
 
-static char
-read_hex(ParseInfo pi, char *h) {
-    uint8_t	b = 0;
+static uint32_t
+read_4hex(ParseInfo pi, const char *h) {
+    uint32_t	b = 0;
+    int		i;
 
-    if ('0' <= *h && *h <= '9') {
-	b = *h - '0';
-    } else if ('A' <= *h && *h <= 'F') {
-	b = *h - 'A' + 10;
-    } else if ('a' <= *h && *h <= 'f') {
-	b = *h - 'a' + 10;
-    } else {
-	pi->s = h;
-	raise_error("invalid hex character", pi->str, pi->s);
+    for (i = 0; i < 4; i++, h++) {
+	b = b << 4;
+	if ('0' <= *h && *h <= '9') {
+	    b += *h - '0';
+	} else if ('A' <= *h && *h <= 'F') {
+	    b += *h - 'A' + 10;
+	} else if ('a' <= *h && *h <= 'f') {
+	    b += *h - 'a' + 10;
+	} else {
+	    raise_error("invalid hex character", pi->str, pi->s);
+	}
     }
-    h++;
-    b = b << 4;
-    if ('0' <= *h && *h <= '9') {
-	b += *h - '0';
-    } else if ('A' <= *h && *h <= 'F') {
-	b += *h - 'A' + 10;
-    } else if ('a' <= *h && *h <= 'f') {
-	b += *h - 'a' + 10;
+    return b;
+}
+
+static char*
+unicode_to_chars(ParseInfo pi, char *t, uint32_t code) {
+    if (0x0000007F >= code) {
+	*t++ = (char)code;
+    } else if (0x000007FF >= code) {
+	*t++ = 0xC0 | (code >> 6);
+	*t++ = 0x80 | (0x3F & code);
+    } else if (0x0000FFFF >= code) {
+	*t++ = 0xE0 | (code >> 12);
+	*t++ = 0x80 | ((code >> 6) & 0x3F);
+	*t++ = 0x80 | (0x3F & code);
+    } else if (0x001FFFFF >= code) {
+	*t++ = 0xF0 | (code >> 18);
+	*t++ = 0x80 | ((code >> 12) & 0x3F);
+	*t++ = 0x80 | ((code >> 6) & 0x3F);
+	*t++ = 0x80 | (0x3F & code);
+    } else if (0x03FFFFFF >= code) {
+	*t++ = 0xF8 | (code >> 24);
+	*t++ = 0x80 | ((code >> 18) & 0x3F);
+	*t++ = 0x80 | ((code >> 12) & 0x3F);
+	*t++ = 0x80 | ((code >> 6) & 0x3F);
+	*t++ = 0x80 | (0x3F & code);
+    } else if (0x7FFFFFFF >= code) {
+	*t++ = 0xFC | (code >> 30);
+	*t++ = 0x80 | ((code >> 24) & 0x3F);
+	*t++ = 0x80 | ((code >> 18) & 0x3F);
+	*t++ = 0x80 | ((code >> 12) & 0x3F);
+	*t++ = 0x80 | ((code >> 6) & 0x3F);
+	*t++ = 0x80 | (0x3F & code);
     } else {
-	pi->s = h;
-	raise_error("invalid hex character", pi->str, pi->s);
+	raise_error("invalid Unicode character", pi->str, pi->s);
     }
-    return (char)b;
+    return t;
 }
 
 /* Assume the value starts immediately and goes until the quote character is
@@ -665,17 +691,31 @@ read_quoted_value(ParseInfo pi) {
 	    case '"':	*t = '"';	break;
 	    case '/':	*t = '/';	break;
 	    case '\\':	*t = '\\';	break;
-	    case 'u':
-		// TBD like parse.c, can use up to 6 characters
+	    case 'u': {
+		uint32_t	code;
+
 		h++;
-		*t = read_hex(pi, h);
-		h += 2;
-		if ('\0' != *t) {
-		    t++;
+		code = read_4hex(pi, h);
+		h += 3;
+		if (0x0000D800 <= code && code <= 0x0000DFFF) {
+		    uint32_t	c1 = (code - 0x0000D800) & 0x000003FF;
+		    uint32_t	c2;
+
+		    h++;
+		    if ('\\' != *h || 'u' != *(h + 1)) {
+			pi->s = h;
+			raise_error("invalid escaped character", pi->str, pi->s);
+		    }
+		    h += 2;
+		    c2 = read_4hex(pi, h);
+		    h += 3;
+		    c2 = (c2 - 0x0000DC00) & 0x000003FF;
+		    code = ((c1 << 10) | c2) + 0x00010000;
 		}
-		*t = read_hex(pi, h);
-		h++;
+		t = unicode_to_chars(pi, t, code);
+		t--;
 		break;
+	    }
 	    default:
 		pi->s = h;
 		raise_error("invalid escaped character", pi->str, pi->s);
