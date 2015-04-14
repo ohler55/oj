@@ -3,7 +3,9 @@
 ^c^d hide subtree
 ^c^s show subtree
 
-
+- Oj::Doc
+ - make sure encoding handles encoding
+  - if \\u then create buf allocate
 
 - streaming parser for scp and saj
 

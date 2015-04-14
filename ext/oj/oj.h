@@ -179,9 +179,10 @@ typedef struct _StreamWriter {
 } *StreamWriter;
 
 enum {
-    STR_VAL  = 0x00,
-    COL_VAL  = 0x01,
-    RUBY_VAL = 0x02
+    NO_VAL   = 0x00,
+    STR_VAL  = 0x01,
+    COL_VAL  = 0x02,
+    RUBY_VAL = 0x03
 };
     
 typedef struct _Leaf {
@@ -191,11 +192,11 @@ typedef struct _Leaf {
 	size_t		index;	   // array index, 0 is not set
     };
     union {
-	char		*str;	   // pointer to location in json string
+	char		*str;	   // pointer to location in json string or allocated
 	struct _Leaf	*elements; // array and hash elements
 	VALUE		value;
     };
-    uint8_t		type;
+    uint8_t		rtype;
     uint8_t		parent_type;
     uint8_t		value_type;
 } *Leaf;

@@ -170,7 +170,7 @@ ulong_fill(char *s, size_t num) {
 inline static void
 leaf_init(Leaf leaf, int type) {
     leaf->next = 0;
-    leaf->type = type;
+    leaf->rtype = type;
     leaf->parent_type = T_NONE;
     switch (type) {
     case T_ARRAY:
@@ -206,6 +206,8 @@ leaf_new(Doc doc, int type) {
     if (0 == doc->batches || BATCH_SIZE == doc->batches->next_avail) {
 	Batch	b = ALLOC(struct _Batch);
 
+	// Initializes all leaves with a NO_VAL value_type
+	memset(b, 0, sizeof(struct _Batch));
 	b->next = doc->batches;
 	doc->batches = b;
 	b->next_avail = 0;
@@ -232,7 +234,7 @@ leaf_append_element(Leaf parent, Leaf element) {
 static VALUE
 leaf_value(Doc doc, Leaf leaf) {
     if (RUBY_VAL != leaf->value_type) {
-	switch (leaf->type) {
+	switch (leaf->rtype) {
 	case T_NIL:
 	    leaf->value = Qnil;
 	    break;
@@ -260,7 +262,7 @@ leaf_value(Doc doc, Leaf leaf) {
 	    return leaf_hash_value(doc, leaf);
 	    break;
 	default:
-	    rb_raise(rb_const_get_at(Oj, rb_intern("Error")), "Unexpected type %02x.", leaf->type);
+	    rb_raise(rb_const_get_at(Oj, rb_intern("Error")), "Unexpected type %02x.", leaf->rtype);
 	    break;
 	}
     }
@@ -348,79 +350,11 @@ leaf_fixnum_value(Leaf leaf) {
     leaf->value_type = RUBY_VAL;
 }
 
-#ifdef JRUBY_RUBY
-static void
-leaf_float_value(Leaf leaf) {
-    char	*s = leaf->str;
-    int64_t	n = 0;
-    long	a = 0;
-    long	div = 1;
-    long	e = 0;
-    int		neg = 0;
-    int		eneg = 0;
-    int		big = 0;
-
-    if ('-' == *s) {
-	s++;
-	neg = 1;
-    } else if ('+' == *s) {
-	s++;
-    }
-    for (; '0' <= *s && *s <= '9'; s++) {
-	n = n * 10 + (*s - '0');
-	if (NUM_MAX <= n) {
-	    big = 1;
-	}
-    }
-    if (big) {
-	char	c = *s;
-	
-	*s = '\0';
-	leaf->value = rb_cstr_to_inum(leaf->str, 10, 0);
-	*s = c;
-    } else {
-	double	d;
-
-	if ('.' == *s) {
-	    s++;
-	    for (; '0' <= *s && *s <= '9'; s++) {
-		a = a * 10 + (*s - '0');
-		div *= 10;
-	    }
-	}
-	if ('e' == *s || 'E' == *s) {
-	    s++;
-	    if ('-' == *s) {
-		s++;
-		eneg = 1;
-	    } else if ('+' == *s) {
-		s++;
-	    }
-	    for (; '0' <= *s && *s <= '9'; s++) {
-		e = e * 10 + (*s - '0');
-	    }
-	}
-	d = (double)n + (double)a / (double)div;
-	if (neg) {
-	    d = -d;
-	}
-	if (0 != e) {
-	    if (eneg) {
-		e = -e;
-	    }
-	    d *= pow(10.0, e);
-	}
-	leaf->value = rb_float_new(d);
-    }
-    leaf->value_type = RUBY_VAL;
-}
-#else
 static void
 leaf_float_value(Leaf leaf) {
     leaf->value = rb_float_new(rb_cstr_to_dbl(leaf->str, 1));
     leaf->value_type = RUBY_VAL;
 }
-#endif
 
 static VALUE
 leaf_array_value(Doc doc, Leaf leaf) {
@@ -732,6 +666,7 @@ read_quoted_value(ParseInfo pi) {
 	    case '/':	*t = '/';	break;
 	    case '\\':	*t = '\\';	break;
 	    case 'u':
+		// TBD like parse.c, can use up to 6 characters
 		h++;
 		*t = read_hex(pi, h);
 		h += 2;
@@ -759,15 +694,10 @@ read_quoted_value(ParseInfo pi) {
 // doc support functions
 inline static void
 doc_init(Doc doc) {
+    memset(doc, 0, sizeof(struct _Doc));
     doc->where = doc->where_path;
-    *doc->where = 0;
-    doc->data = 0;
     doc->self = Qundef;
-    doc->size = 0;
-    doc->json = 0;
     doc->batches = &doc->batch0;
-    doc->batch0.next = 0;
-    doc->batch0.next_avail = 0;
 }
 
 static void
@@ -885,7 +815,7 @@ get_doc_leaf(Doc doc, const char *path) {
 	    if (MAX_STACK <= cnt) {
 		rb_raise(rb_const_get_at(Oj, rb_intern("DepthError")), "Path too deep. Limit is %d levels.", MAX_STACK);
 	    }
-	    memcpy(stack, doc->where_path, sizeof(Leaf) * cnt);
+	    memcpy(stack, doc->where_path, sizeof(Leaf) * (cnt + 1));
 	    lp = stack + cnt;
 	}
 	return get_leaf(stack, lp, path);
@@ -914,7 +844,7 @@ get_leaf(Leaf *stack, Leaf *lp, const char *path) {
 	} else if (COL_VAL == leaf->value_type && 0 != leaf->elements) {
 	    Leaf	first = leaf->elements->next;
 	    Leaf	e = first;
-	    int		type = leaf->type;
+	    int		type = leaf->rtype;
 
 	    leaf = 0;
 	    if (T_ARRAY == type) {
@@ -1021,7 +951,7 @@ move_step(Doc doc, const char *path, int loc) {
 	    Leaf	first = leaf->elements->next;
 	    Leaf	e = first;
 
-	    if (T_ARRAY == leaf->type) {
+	    if (T_ARRAY == leaf->rtype) {
 		int	cnt = 0;
 
 		for (; '0' <= *path && *path <= '9'; path++) {
@@ -1046,7 +976,7 @@ move_step(Doc doc, const char *path, int loc) {
 		    cnt--;
 		    e = e->next;
 		} while (e != first);
-	    } else if (T_HASH == leaf->type) {
+	    } else if (T_HASH == leaf->rtype) {
 		const char	*key = path;
 		const char	*slash = strchr(path, '/');
 		int		klen;
@@ -1302,7 +1232,7 @@ doc_type(int argc, VALUE *argv, VALUE self) {
 	path = StringValuePtr(*argv);
     }
     if (0 != (leaf = get_doc_leaf(doc, path))) {
-	switch (leaf->type) {
+	switch (leaf->rtype) {
 	case T_NIL:	type = rb_cNilClass;	break;
 	case T_TRUE:	type = rb_cTrueClass;	break;
 	case T_FALSE:	type = rb_cFalseClass;	break;
@@ -1375,7 +1305,7 @@ doc_each_leaf(int argc, VALUE *argv, VALUE self) {
 
 	wlen = doc->where - doc->where_path;
 	if (0 < wlen) {
-	    memcpy(save_path, doc->where_path, sizeof(Leaf) * wlen);
+	    memcpy(save_path, doc->where_path, sizeof(Leaf) * (wlen + 1));
 	}
 	if (1 <= argc) {
 	    Check_Type(*argv, T_STRING);
@@ -1386,14 +1316,14 @@ doc_each_leaf(int argc, VALUE *argv, VALUE self) {
 	    }
 	    if (0 != move_step(doc, path, 1)) {
 		if (0 < wlen) {
-		    memcpy(doc->where_path, save_path, sizeof(Leaf) * wlen);
+		    memcpy(doc->where_path, save_path, sizeof(Leaf) * (wlen + 1));
 		}
 		return Qnil;
 	    }
 	}
 	each_leaf(doc, self);
 	if (0 < wlen) {
-	    memcpy(doc->where_path, save_path, sizeof(Leaf) * wlen);
+	    memcpy(doc->where_path, save_path, sizeof(Leaf) * (wlen + 1));
 	}
     }
     return Qnil;
@@ -1451,7 +1381,7 @@ doc_each_child(int argc, VALUE *argv, VALUE self) {
 
 	wlen = doc->where - doc->where_path;
 	if (0 < wlen) {
-	    memcpy(save_path, doc->where_path, sizeof(Leaf) * wlen);
+	    memcpy(save_path, doc->where_path, sizeof(Leaf) * (wlen + 1));
 	}
 	if (1 <= argc) {
 	    Check_Type(*argv, T_STRING);
@@ -1462,7 +1392,7 @@ doc_each_child(int argc, VALUE *argv, VALUE self) {
 	    }
 	    if (0 != move_step(doc, path, 1)) {
 		if (0 < wlen) {
-		    memcpy(doc->where_path, save_path, sizeof(Leaf) * wlen);
+		    memcpy(doc->where_path, save_path, sizeof(Leaf) * (wlen + 1));
 		}
 		return Qnil;
 	    }
@@ -1479,7 +1409,7 @@ doc_each_child(int argc, VALUE *argv, VALUE self) {
 	    } while (e != first);
 	}
 	if (0 < wlen) {
-	    memcpy(doc->where_path, save_path, sizeof(Leaf) * wlen);
+	    memcpy(doc->where_path, save_path, sizeof(Leaf) * (wlen + 1));
 	}
     }
     return Qnil;

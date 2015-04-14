@@ -26,6 +26,12 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
+## Future Release 2.12.2
+
+ - Fixed Oj::Doc bug that causes a crash on local name lookups.
+
+ - TBD Fixed Oj::Doc unicode parsing.
+
 ## Current Release 2.12.1
 
  - Changed the unix_zone encoded format to be the utc epoch.

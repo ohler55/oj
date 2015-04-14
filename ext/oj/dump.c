@@ -2228,7 +2228,7 @@ dump_leaf_hash(Leaf leaf, int depth, Out out) {
 
 static void
 dump_leaf(Leaf leaf, int depth, Out out) {
-    switch (leaf->type) {
+    switch (leaf->rtype) {
     case T_NIL:
 	dump_nil(out);
 	break;
@@ -2254,7 +2254,7 @@ dump_leaf(Leaf leaf, int depth, Out out) {
 	dump_leaf_hash(leaf, depth, out);
 	break;
     default:
-	rb_raise(rb_eTypeError, "Unexpected type %02x.\n", leaf->type);
+	rb_raise(rb_eTypeError, "Unexpected type %02x.\n", leaf->rtype);
 	break;
     }
 }

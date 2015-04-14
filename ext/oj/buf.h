@@ -49,7 +49,7 @@ buf_init(Buf buf) {
 
 inline static void
 buf_cleanup(Buf buf) {
-    if (buf->base != buf->head) {
+    if (buf->base != buf->head || 0 != buf->head) {
         xfree(buf->head);
     }
 }
@@ -57,6 +57,20 @@ buf_cleanup(Buf buf) {
 inline static size_t
 buf_len(Buf buf) {
     return buf->tail - buf->head;
+}
+
+// allocates is necessary, return must be freed.
+inline static char*
+buf_take_str(Buf buf) {
+    char	*s = buf->head;
+
+    if (buf->base != buf->head) {
+	s = buf->head;
+	buf->head = 0;
+    } else {
+	s = strdup(buf->head);
+    }
+    return s;
 }
 
 inline static void

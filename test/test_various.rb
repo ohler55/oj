@@ -244,15 +244,12 @@ class Juice < Minitest::Test
   def test_encode
     opts = Oj.default_options
     Oj.default_options = { :ascii_only => false }
-    unless 'jruby' == $ruby
-      dump_and_load("ぴーたー", false)
-    end
+    dump_and_load("ぴーたー", false)
+
     Oj.default_options = { :ascii_only => true }
     json = Oj.dump("ぴーたー")
     assert_equal(%{"\\u3074\\u30fc\\u305f\\u30fc"}, json)
-    unless 'jruby' == $ruby
-      dump_and_load("ぴーたー", false)
-    end
+    dump_and_load("ぴーたー", false)
     Oj.default_options = opts
   end
 
@@ -873,8 +870,6 @@ class Juice < Minitest::Test
       json = Oj.dump(1..7, :mode => :object, :indent => 0)
       if 'rubinius' == $ruby
         assert(%{{"^O":"Range","begin":1,"end":7,"exclude_end?":false}} == json)
-      elsif 'jruby' == $ruby
-        assert(%{{"^O":"Range","begin":1,"end":7,"exclude_end?":false}} == json)
       else
         assert_equal(%{{"^u":["Range",1,7,false]}}, json)
       end
@@ -1106,7 +1101,6 @@ class Juice < Minitest::Test
 
 # Stream Deeply Nested
   def test_deep_nest
-    #unless 'jruby' == RUBY_DESCRIPTION.split(' ')[0]
     begin
       n = 10000
       Oj.strict_load('[' * n + ']' * n)
