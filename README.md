@@ -30,12 +30,6 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
  - Fixed bug when trying to resolve an invalid class path in object mode load.
 
-## Current Release 2.12.2
-
- - Fixed Oj::Doc bug that causes a crash on local name lookups.
-
- - Fixed Oj::Doc unicode parsing. 
-
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
 ## Description
