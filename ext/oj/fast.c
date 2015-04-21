@@ -1580,6 +1580,7 @@ doc_close(VALUE self) {
     if (0 != doc) {
 	xfree(doc->json);
 	doc_free(doc);
+	xfree(doc);
     }
     return Qnil;
 }
