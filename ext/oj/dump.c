@@ -457,23 +457,44 @@ dump_float(VALUE obj, Out out) {
 	*b++ = '\0';
 	cnt = 3;
     } else if (OJ_INFINITY == d) {
-	if (StrictMode == out->opts->mode) {
+	switch (out->opts->mode) {
+	case StrictMode:
 	    raise_strict(obj);
+	case NullMode:
+	    strcpy(buf, "null");
+	    cnt = 4;
+	    break;
+	default:
+	    strcpy(buf, "Infinity");
+	    cnt = 8;
+	    break;
 	}
-	strcpy(buf, "Infinity");
-	cnt = 8;
     } else if (-OJ_INFINITY == d) {
-	if (StrictMode == out->opts->mode) {
+	switch (out->opts->mode) {
+	case StrictMode:
 	    raise_strict(obj);
+	case NullMode:
+	    strcpy(buf, "null");
+	    cnt = 4;
+	    break;
+	default:
+	    strcpy(buf, "-Infinity");
+	    cnt = 9;
+	    break;
 	}
-	strcpy(buf, "-Infinity");
-	cnt = 9;
     } else if (isnan(d)) {
-	if (StrictMode == out->opts->mode) {
+	switch (out->opts->mode) {
+	case StrictMode:
 	    raise_strict(obj);
+	case NullMode:
+	    strcpy(buf, "null");
+	    cnt = 4;
+	    break;
+	default:
+	    strcpy(buf, "NaN");
+	    cnt = 3;
+	    break;
 	}
-	strcpy(buf, "NaN");
-	cnt = 3;
     } else if (d == (double)(long long int)d) {
 	cnt = snprintf(buf, sizeof(buf), "%.1f", d);
     } else if (0 == out->opts->float_prec) {
