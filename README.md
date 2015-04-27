@@ -26,13 +26,9 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
-## Future Release 2.12.5
+## Release 2.12.5
 
  - In :null mode Oj now dumps Infinity and NaN as null.
-
-## Current Release 2.12.4
-
- - Fixed memory leak in Oj::Doc when not using a given proc.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
