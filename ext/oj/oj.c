@@ -1442,7 +1442,7 @@ stream_writer_push_value(int argc, VALUE *argv, VALUE self) {
     return Qnil;
 }
 
-/* call-seq: push_value(value, key=nil)
+/* call-seq: push_json(value, key=nil)
  *
  * Pushes a string onto the JSON document. The String must be a valid JSON
  * encoded string. No additional checking is done to verify the validity of the
