@@ -1,0 +1,27 @@
+
+Oj Design notes
+---------------
+
+Oj follows a modular design that follows an object orient pattern. At the core is the parser. The parser is a single pass callback parser. For historical and performance reasons there are currently two parsers. The raw string parser and the more generic sparser. If performance can be made the same the older string parser will be removed in favor of the sparser.
+
+The parser in sparse.c is represented by the ParseInfo struct in parser.h. Key elements of that struct are the reader, options, and the callbacks. The options and reader are inputs to the parser while the callbacks are effectively the outputs.
+
+The options are simply flags and parameters that modify the parse output or behavior. They are constructed from the default options and the arguments to the Ruby calls.
+
+The Reader is defined in reader.h and is struct that represented an object that is able to read bytes from some source and provide those bytes to the parser. The single method on the Reader is the 'read_func' which is a pointer to a function. The function pointed to by this member is selected based on the input type. The psuedo subclasses of the Reader are readers for files, general IO, IO that supports partial reads, and strings. A mentioned earlier the string version does not performa as well as direct string access so the original parser is used instead.
+
+On the output side the callback functions such as 'start_hash' represent the method of the parser. By assigning different functions to those members the parser is effectively subclassed to be either the object, compat, strict, or SCP parsers. In a future release those callbacks and the specifics of each parser may be pulled out to become the handlers.
+
+                 options
+                    v     +------------+
+    +--------  +--------+ | handler    |
+    | reader \ \ parser ( O start_hash |
+    |        / /        ( O end_hash   |
+    +--------  |        ( O hash_key   |
+               +--------+ +------------+
+
+The SCP parser functions are set in scp.c. This is the simplest handler. The functions are set when the oj_sc_parse() function is called. The functions themselves simply call a Ruby handler. An optimization used for this and other parsers is that if the Ruby handler does not implement a specific method then the callback to the Ruby handler is not called. The overhead of even calling a Ruby method has a significant impact on performance.
+
+The object, compat, and strict parsers are all similar in that they build a stack of Ruby objects. This stack is build as parsing continues and is collapsed as JSON elements are closed. The Ruby objects are pushed onto the parent objects as the child is closed so that modification can be made before adding the chaild to the parent. This occurs when converting a hash to an object.
+
+The Ruby functions pull all the pieces together according to the function and options so that a reader/parser/handler is ready to process an input.

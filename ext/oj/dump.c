@@ -457,23 +457,44 @@ dump_float(VALUE obj, Out out) {
 	*b++ = '\0';
 	cnt = 3;
     } else if (OJ_INFINITY == d) {
-	if (StrictMode == out->opts->mode) {
+	switch (out->opts->mode) {
+	case StrictMode:
 	    raise_strict(obj);
+	case NullMode:
+	    strcpy(buf, "null");
+	    cnt = 4;
+	    break;
+	default:
+	    strcpy(buf, "Infinity");
+	    cnt = 8;
+	    break;
 	}
-	strcpy(buf, "Infinity");
-	cnt = 8;
     } else if (-OJ_INFINITY == d) {
-	if (StrictMode == out->opts->mode) {
+	switch (out->opts->mode) {
+	case StrictMode:
 	    raise_strict(obj);
+	case NullMode:
+	    strcpy(buf, "null");
+	    cnt = 4;
+	    break;
+	default:
+	    strcpy(buf, "-Infinity");
+	    cnt = 9;
+	    break;
 	}
-	strcpy(buf, "-Infinity");
-	cnt = 9;
     } else if (isnan(d)) {
-	if (StrictMode == out->opts->mode) {
+	switch (out->opts->mode) {
+	case StrictMode:
 	    raise_strict(obj);
+	case NullMode:
+	    strcpy(buf, "null");
+	    cnt = 4;
+	    break;
+	default:
+	    strcpy(buf, "NaN");
+	    cnt = 3;
+	    break;
 	}
-	strcpy(buf, "NaN");
-	cnt = 3;
     } else if (d == (double)(long long int)d) {
 	cnt = snprintf(buf, sizeof(buf), "%.1f", d);
     } else if (0 == out->opts->float_prec) {
@@ -2228,7 +2249,7 @@ dump_leaf_hash(Leaf leaf, int depth, Out out) {
 
 static void
 dump_leaf(Leaf leaf, int depth, Out out) {
-    switch (leaf->type) {
+    switch (leaf->rtype) {
     case T_NIL:
 	dump_nil(out);
 	break;
@@ -2254,7 +2275,7 @@ dump_leaf(Leaf leaf, int depth, Out out) {
 	dump_leaf_hash(leaf, depth, out);
 	break;
     default:
-	rb_raise(rb_eTypeError, "Unexpected type %02x.\n", leaf->type);
+	rb_raise(rb_eTypeError, "Unexpected type %02x.\n", leaf->rtype);
 	break;
     }
 }

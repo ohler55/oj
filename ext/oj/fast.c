@@ -170,7 +170,7 @@ ulong_fill(char *s, size_t num) {
 inline static void
 leaf_init(Leaf leaf, int type) {
     leaf->next = 0;
-    leaf->type = type;
+    leaf->rtype = type;
     leaf->parent_type = T_NONE;
     switch (type) {
     case T_ARRAY:
@@ -206,6 +206,8 @@ leaf_new(Doc doc, int type) {
     if (0 == doc->batches || BATCH_SIZE == doc->batches->next_avail) {
 	Batch	b = ALLOC(struct _Batch);
 
+	// Initializes all leaves with a NO_VAL value_type
+	memset(b, 0, sizeof(struct _Batch));
 	b->next = doc->batches;
 	doc->batches = b;
 	b->next_avail = 0;
@@ -232,7 +234,7 @@ leaf_append_element(Leaf parent, Leaf element) {
 static VALUE
 leaf_value(Doc doc, Leaf leaf) {
     if (RUBY_VAL != leaf->value_type) {
-	switch (leaf->type) {
+	switch (leaf->rtype) {
 	case T_NIL:
 	    leaf->value = Qnil;
 	    break;
@@ -260,7 +262,7 @@ leaf_value(Doc doc, Leaf leaf) {
 	    return leaf_hash_value(doc, leaf);
 	    break;
 	default:
-	    rb_raise(rb_const_get_at(Oj, rb_intern("Error")), "Unexpected type %02x.", leaf->type);
+	    rb_raise(rb_const_get_at(Oj, rb_intern("Error")), "Unexpected type %02x.", leaf->rtype);
 	    break;
 	}
     }
@@ -348,79 +350,11 @@ leaf_fixnum_value(Leaf leaf) {
     leaf->value_type = RUBY_VAL;
 }
 
-#ifdef JRUBY_RUBY
-static void
-leaf_float_value(Leaf leaf) {
-    char	*s = leaf->str;
-    int64_t	n = 0;
-    long	a = 0;
-    long	div = 1;
-    long	e = 0;
-    int		neg = 0;
-    int		eneg = 0;
-    int		big = 0;
-
-    if ('-' == *s) {
-	s++;
-	neg = 1;
-    } else if ('+' == *s) {
-	s++;
-    }
-    for (; '0' <= *s && *s <= '9'; s++) {
-	n = n * 10 + (*s - '0');
-	if (NUM_MAX <= n) {
-	    big = 1;
-	}
-    }
-    if (big) {
-	char	c = *s;
-	
-	*s = '\0';
-	leaf->value = rb_cstr_to_inum(leaf->str, 10, 0);
-	*s = c;
-    } else {
-	double	d;
-
-	if ('.' == *s) {
-	    s++;
-	    for (; '0' <= *s && *s <= '9'; s++) {
-		a = a * 10 + (*s - '0');
-		div *= 10;
-	    }
-	}
-	if ('e' == *s || 'E' == *s) {
-	    s++;
-	    if ('-' == *s) {
-		s++;
-		eneg = 1;
-	    } else if ('+' == *s) {
-		s++;
-	    }
-	    for (; '0' <= *s && *s <= '9'; s++) {
-		e = e * 10 + (*s - '0');
-	    }
-	}
-	d = (double)n + (double)a / (double)div;
-	if (neg) {
-	    d = -d;
-	}
-	if (0 != e) {
-	    if (eneg) {
-		e = -e;
-	    }
-	    d *= pow(10.0, e);
-	}
-	leaf->value = rb_float_new(d);
-    }
-    leaf->value_type = RUBY_VAL;
-}
-#else
 static void
 leaf_float_value(Leaf leaf) {
     leaf->value = rb_float_new(rb_cstr_to_dbl(leaf->str, 1));
     leaf->value_type = RUBY_VAL;
 }
-#endif
 
 static VALUE
 leaf_array_value(Doc doc, Leaf leaf) {
@@ -675,33 +609,59 @@ read_nil(ParseInfo pi) {
     return leaf;
 }
 
-static char
-read_hex(ParseInfo pi, char *h) {
-    uint8_t	b = 0;
+static uint32_t
+read_4hex(ParseInfo pi, const char *h) {
+    uint32_t	b = 0;
+    int		i;
 
-    if ('0' <= *h && *h <= '9') {
-	b = *h - '0';
-    } else if ('A' <= *h && *h <= 'F') {
-	b = *h - 'A' + 10;
-    } else if ('a' <= *h && *h <= 'f') {
-	b = *h - 'a' + 10;
-    } else {
-	pi->s = h;
-	raise_error("invalid hex character", pi->str, pi->s);
+    for (i = 0; i < 4; i++, h++) {
+	b = b << 4;
+	if ('0' <= *h && *h <= '9') {
+	    b += *h - '0';
+	} else if ('A' <= *h && *h <= 'F') {
+	    b += *h - 'A' + 10;
+	} else if ('a' <= *h && *h <= 'f') {
+	    b += *h - 'a' + 10;
+	} else {
+	    raise_error("invalid hex character", pi->str, pi->s);
+	}
     }
-    h++;
-    b = b << 4;
-    if ('0' <= *h && *h <= '9') {
-	b += *h - '0';
-    } else if ('A' <= *h && *h <= 'F') {
-	b += *h - 'A' + 10;
-    } else if ('a' <= *h && *h <= 'f') {
-	b += *h - 'a' + 10;
+    return b;
+}
+
+static char*
+unicode_to_chars(ParseInfo pi, char *t, uint32_t code) {
+    if (0x0000007F >= code) {
+	*t++ = (char)code;
+    } else if (0x000007FF >= code) {
+	*t++ = 0xC0 | (code >> 6);
+	*t++ = 0x80 | (0x3F & code);
+    } else if (0x0000FFFF >= code) {
+	*t++ = 0xE0 | (code >> 12);
+	*t++ = 0x80 | ((code >> 6) & 0x3F);
+	*t++ = 0x80 | (0x3F & code);
+    } else if (0x001FFFFF >= code) {
+	*t++ = 0xF0 | (code >> 18);
+	*t++ = 0x80 | ((code >> 12) & 0x3F);
+	*t++ = 0x80 | ((code >> 6) & 0x3F);
+	*t++ = 0x80 | (0x3F & code);
+    } else if (0x03FFFFFF >= code) {
+	*t++ = 0xF8 | (code >> 24);
+	*t++ = 0x80 | ((code >> 18) & 0x3F);
+	*t++ = 0x80 | ((code >> 12) & 0x3F);
+	*t++ = 0x80 | ((code >> 6) & 0x3F);
+	*t++ = 0x80 | (0x3F & code);
+    } else if (0x7FFFFFFF >= code) {
+	*t++ = 0xFC | (code >> 30);
+	*t++ = 0x80 | ((code >> 24) & 0x3F);
+	*t++ = 0x80 | ((code >> 18) & 0x3F);
+	*t++ = 0x80 | ((code >> 12) & 0x3F);
+	*t++ = 0x80 | ((code >> 6) & 0x3F);
+	*t++ = 0x80 | (0x3F & code);
     } else {
-	pi->s = h;
-	raise_error("invalid hex character", pi->str, pi->s);
+	raise_error("invalid Unicode character", pi->str, pi->s);
     }
-    return (char)b;
+    return t;
 }
 
 /* Assume the value starts immediately and goes until the quote character is
@@ -731,16 +691,31 @@ read_quoted_value(ParseInfo pi) {
 	    case '"':	*t = '"';	break;
 	    case '/':	*t = '/';	break;
 	    case '\\':	*t = '\\';	break;
-	    case 'u':
+	    case 'u': {
+		uint32_t	code;
+
 		h++;
-		*t = read_hex(pi, h);
-		h += 2;
-		if ('\0' != *t) {
-		    t++;
+		code = read_4hex(pi, h);
+		h += 3;
+		if (0x0000D800 <= code && code <= 0x0000DFFF) {
+		    uint32_t	c1 = (code - 0x0000D800) & 0x000003FF;
+		    uint32_t	c2;
+
+		    h++;
+		    if ('\\' != *h || 'u' != *(h + 1)) {
+			pi->s = h;
+			raise_error("invalid escaped character", pi->str, pi->s);
+		    }
+		    h += 2;
+		    c2 = read_4hex(pi, h);
+		    h += 3;
+		    c2 = (c2 - 0x0000DC00) & 0x000003FF;
+		    code = ((c1 << 10) | c2) + 0x00010000;
 		}
-		*t = read_hex(pi, h);
-		h++;
+		t = unicode_to_chars(pi, t, code);
+		t--;
 		break;
+	    }
 	    default:
 		pi->s = h;
 		raise_error("invalid escaped character", pi->str, pi->s);
@@ -759,15 +734,10 @@ read_quoted_value(ParseInfo pi) {
 // doc support functions
 inline static void
 doc_init(Doc doc) {
+    memset(doc, 0, sizeof(struct _Doc));
     doc->where = doc->where_path;
-    *doc->where = 0;
-    doc->data = 0;
     doc->self = Qundef;
-    doc->size = 0;
-    doc->json = 0;
     doc->batches = &doc->batch0;
-    doc->batch0.next = 0;
-    doc->batch0.next_avail = 0;
 }
 
 static void
@@ -885,7 +855,7 @@ get_doc_leaf(Doc doc, const char *path) {
 	    if (MAX_STACK <= cnt) {
 		rb_raise(rb_const_get_at(Oj, rb_intern("DepthError")), "Path too deep. Limit is %d levels.", MAX_STACK);
 	    }
-	    memcpy(stack, doc->where_path, sizeof(Leaf) * cnt);
+	    memcpy(stack, doc->where_path, sizeof(Leaf) * (cnt + 1));
 	    lp = stack + cnt;
 	}
 	return get_leaf(stack, lp, path);
@@ -914,7 +884,7 @@ get_leaf(Leaf *stack, Leaf *lp, const char *path) {
 	} else if (COL_VAL == leaf->value_type && 0 != leaf->elements) {
 	    Leaf	first = leaf->elements->next;
 	    Leaf	e = first;
-	    int		type = leaf->type;
+	    int		type = leaf->rtype;
 
 	    leaf = 0;
 	    if (T_ARRAY == type) {
@@ -1021,7 +991,7 @@ move_step(Doc doc, const char *path, int loc) {
 	    Leaf	first = leaf->elements->next;
 	    Leaf	e = first;
 
-	    if (T_ARRAY == leaf->type) {
+	    if (T_ARRAY == leaf->rtype) {
 		int	cnt = 0;
 
 		for (; '0' <= *path && *path <= '9'; path++) {
@@ -1046,7 +1016,7 @@ move_step(Doc doc, const char *path, int loc) {
 		    cnt--;
 		    e = e->next;
 		} while (e != first);
-	    } else if (T_HASH == leaf->type) {
+	    } else if (T_HASH == leaf->rtype) {
 		const char	*key = path;
 		const char	*slash = strchr(path, '/');
 		int		klen;
@@ -1302,7 +1272,7 @@ doc_type(int argc, VALUE *argv, VALUE self) {
 	path = StringValuePtr(*argv);
     }
     if (0 != (leaf = get_doc_leaf(doc, path))) {
-	switch (leaf->type) {
+	switch (leaf->rtype) {
 	case T_NIL:	type = rb_cNilClass;	break;
 	case T_TRUE:	type = rb_cTrueClass;	break;
 	case T_FALSE:	type = rb_cFalseClass;	break;
@@ -1375,7 +1345,7 @@ doc_each_leaf(int argc, VALUE *argv, VALUE self) {
 
 	wlen = doc->where - doc->where_path;
 	if (0 < wlen) {
-	    memcpy(save_path, doc->where_path, sizeof(Leaf) * wlen);
+	    memcpy(save_path, doc->where_path, sizeof(Leaf) * (wlen + 1));
 	}
 	if (1 <= argc) {
 	    Check_Type(*argv, T_STRING);
@@ -1386,14 +1356,14 @@ doc_each_leaf(int argc, VALUE *argv, VALUE self) {
 	    }
 	    if (0 != move_step(doc, path, 1)) {
 		if (0 < wlen) {
-		    memcpy(doc->where_path, save_path, sizeof(Leaf) * wlen);
+		    memcpy(doc->where_path, save_path, sizeof(Leaf) * (wlen + 1));
 		}
 		return Qnil;
 	    }
 	}
 	each_leaf(doc, self);
 	if (0 < wlen) {
-	    memcpy(doc->where_path, save_path, sizeof(Leaf) * wlen);
+	    memcpy(doc->where_path, save_path, sizeof(Leaf) * (wlen + 1));
 	}
     }
     return Qnil;
@@ -1451,7 +1421,7 @@ doc_each_child(int argc, VALUE *argv, VALUE self) {
 
 	wlen = doc->where - doc->where_path;
 	if (0 < wlen) {
-	    memcpy(save_path, doc->where_path, sizeof(Leaf) * wlen);
+	    memcpy(save_path, doc->where_path, sizeof(Leaf) * (wlen + 1));
 	}
 	if (1 <= argc) {
 	    Check_Type(*argv, T_STRING);
@@ -1462,7 +1432,7 @@ doc_each_child(int argc, VALUE *argv, VALUE self) {
 	    }
 	    if (0 != move_step(doc, path, 1)) {
 		if (0 < wlen) {
-		    memcpy(doc->where_path, save_path, sizeof(Leaf) * wlen);
+		    memcpy(doc->where_path, save_path, sizeof(Leaf) * (wlen + 1));
 		}
 		return Qnil;
 	    }
@@ -1479,7 +1449,7 @@ doc_each_child(int argc, VALUE *argv, VALUE self) {
 	    } while (e != first);
 	}
 	if (0 < wlen) {
-	    memcpy(doc->where_path, save_path, sizeof(Leaf) * wlen);
+	    memcpy(doc->where_path, save_path, sizeof(Leaf) * (wlen + 1));
 	}
     }
     return Qnil;
@@ -1610,6 +1580,7 @@ doc_close(VALUE self) {
     if (0 != doc) {
 	xfree(doc->json);
 	doc_free(doc);
+	xfree(doc);
     }
     return Qnil;
 }

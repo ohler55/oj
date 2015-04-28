@@ -271,7 +271,15 @@ hat_cstr(ParseInfo pi, Val parent, Val kval, const char *str, size_t len) {
 	    parent->val = oj_encode(parent->val);
 	    break;
 	case 'c': // class
-	    parent->val = oj_name2class(pi, str, len, Yes == pi->options.auto_define);
+	    {
+		VALUE	clas = oj_name2class(pi, str, len, Yes == pi->options.auto_define);
+
+		if (Qundef == clas) {
+		    return 0;
+		} else {
+		    parent->val = clas;
+		}
+	    }
 	    break;
 	case 't': // time
 	    parent->val = parse_xml_time(str, len);

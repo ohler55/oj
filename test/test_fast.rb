@@ -5,7 +5,7 @@ $: << File.dirname(__FILE__)
 
 require 'helper'
 
-$json1 = %{{
+$json1 = %|{
   "array": [
     {
       "num"   : 3,
@@ -18,7 +18,7 @@ $json1 = %{{
     }
   ],
   "boolean" : true
-}}
+}|
 
 class DocTest < Minitest::Test
   def setup
@@ -58,6 +58,22 @@ class DocTest < Minitest::Test
     Oj::Doc.open(json) do |doc|
       assert_equal(String, doc.type)
       assert_equal('a string', doc.fetch())
+    end
+  end
+
+  def test_encoding
+    json = %{"ぴーたー"}
+    Oj::Doc.open(json) do |doc|
+      assert_equal(String, doc.type)
+      assert_equal("ぴーたー", doc.fetch())
+    end
+  end
+
+  def test_encoding_escaped
+    json = %{"\\u3074\\u30fc\\u305f\\u30fc"}
+    Oj::Doc.open(json) do |doc|
+      assert_equal(String, doc.type)
+      assert_equal("ぴーたー", doc.fetch())
     end
   end
 
@@ -239,6 +255,18 @@ class DocTest < Minitest::Test
        ['/', {'array' => [{'num' => 3, 'string' => 'message', 'hash' => {'h2' => {'a' => [1, 2, 3]}}}], 'boolean' => true}],
       ].each do |path,val|
         assert_equal(val, doc.fetch(path))
+      end
+    end
+  end
+
+  def test_move_fetch_path
+    Oj::Doc.open($json1) do |doc|
+      [['/array/1', 'num', 3],
+       ['/array/1', 'string', 'message'],
+       ['/array/1/hash', 'h2/a', [1, 2, 3]],
+      ].each do |path,fetch_path,val|
+        doc.move(path)
+        assert_equal(val, doc.fetch(fetch_path))
       end
     end
   end

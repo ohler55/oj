@@ -26,20 +26,9 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
-## Future Release 2.12.1
+## Release 2.12.5
 
- - Changed the unix_zone encoded format to be the utc epoch.
-
-## Curent Release 2.12.0
-
- - String formats for UTC time are now explitly UTC instead of offset of
-   zero. This fixes a problem with pre-2.2.0 Rubies that automatically convert
-   zero offset times to local times.
-
- - Added :unix_zone time_format option for formating numeric time. This option
-   is the same as the :unix time option but the UTC offset is included as an
-   exponent to the number time value. A value of 86400 is an indication of UTC
-   time.
+ - In :null mode Oj now dumps Infinity and NaN as null.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
@@ -90,6 +79,11 @@ There is a
 Rails 3.2 and 4.0. As of the Oj 2.6.0 release the default behavior is to not use
 the `to_json()` method unless the `:use_to_json` option is set. This provides
 another work around to the rails older and newer behavior.
+
+The latest ActiveRecord is able to work with Oj by simply using the line:
+```
+serialize :my_attr, Oj
+```
 
 In version Rails 4.1, multi_json has been removed, and this patch is unnecessary and will no longer work.
 Instead, use the `oj_mimic_json` [gem](https://github.com/ohler55/oj_mimic_json) along with `oj` in your `Gemfile` to have Oj mimic the JSON gem and be used in its place by `ActiveSupport` JSON handling:
