@@ -5,6 +5,10 @@
 
 - streaming parser for scp and saj
 
+- use these instead of num2long
+ LONG_LONG rb_num2ll _((VALUE));
+ unsigned LONG_LONG rb_num2ull _((VALUE));
+
 
 ---------------------------
 Tried a separate thread for the parser and the results were poor. The parsing is

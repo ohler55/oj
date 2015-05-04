@@ -399,7 +399,7 @@ static void
 dump_fixnum(VALUE obj, Out out) {
     char	buf[32];
     char	*b = buf + sizeof(buf) - 1;
-    long	num = NUM2LONG(obj);
+    long long	num = rb_num2ll(obj);
     int		neg = 0;
 
     if (0 > num) {
