@@ -26,9 +26,9 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
-## Release 2.12.5
+## Release 2.12.6
 
- - In :null mode Oj now dumps Infinity and NaN as null.
+ - Fixed a number of 32bit related bugs.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
