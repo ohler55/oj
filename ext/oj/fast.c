@@ -345,7 +345,7 @@ leaf_fixnum_value(Leaf leaf) {
 	if (neg) {
 	    n = -n;
 	}
-	leaf->value = LONG2NUM(n);
+	leaf->value = rb_ll2inum(n);
     }
     leaf->value_type = RUBY_VAL;
 }

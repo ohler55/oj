@@ -64,15 +64,15 @@ get_datetime_secs(VALUE obj) {
     VALUE	rsecs = rb_funcall(obj, sec_id, 0);
     VALUE	rfrac = rb_funcall(obj, sec_fraction_id, 0);
     long	sec = NUM2LONG(rsecs);
-    long	num = NUM2LONG(rb_funcall(rfrac, numerator_id, 0));
-    long	den = NUM2LONG(rb_funcall(rfrac, denominator_id, 0));
+    long long	num = rb_num2ll(rb_funcall(rfrac, numerator_id, 0));
+    long long	den = rb_num2ll(rb_funcall(rfrac, denominator_id, 0));
 
 #if DATETIME_1_8
-	num *= 86400;
+    num *= 86400;
 #endif
     num += sec * den;
 
-    return rb_funcall(rb_cObject, rational_id, 2, LONG2FIX(num), LONG2FIX(den));
+    return rb_funcall(rb_cObject, rational_id, 2, rb_ll2inum(num), rb_ll2inum(den));
 }
 
 void

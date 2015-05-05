@@ -180,7 +180,7 @@ parse_xml_time(const char *str, int len) {
 	char	c = *str++;
 
 	if ('.' == c) {
-	    long	nsec = 0;
+	    long long	nsec = 0;
 
 	    for (; str < end; str++) {
 		c = *str;
@@ -192,7 +192,7 @@ parse_xml_time(const char *str, int len) {
 	    }
 	    args[5] = rb_float_new((double)n + ((double)nsec + 0.5) / 1000000000.0);
 	} else {
-	    args[5] = LONG2NUM(n);
+	    args[5] = rb_ll2inum(n);
 	}
 	if (end < str) {
 	    args[6] = LONG2NUM(0);

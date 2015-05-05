@@ -438,6 +438,7 @@ read_num(ParseInfo pi) {
 		} else {
 		    zero_cnt = 0;
 		}
+		// TBD move size check here
 		ni.i = ni.i * 10 + d;
 		if (LONG_MAX <= ni.i || DEC_MAX < ni.dec_cnt - zero_cnt) {
 		    ni.big = 1;
@@ -455,6 +456,7 @@ read_num(ParseInfo pi) {
 		    zero_cnt = 0;
 		}
 		ni.dec_cnt++;
+		// TBD move size check here
 		ni.num = ni.num * 10 + d;
 		ni.div *= 10;
 		if (LONG_MAX <= ni.div || DEC_MAX < ni.dec_cnt - zero_cnt) {
@@ -702,9 +704,9 @@ oj_num_as_value(NumInfo ni) {
 	    }
 	} else {
 	    if (ni->neg) {
-		rnum = LONG2NUM(-ni->i);
+		rnum = rb_ll2inum(-ni->i);
 	    } else {
-		rnum = LONG2NUM(ni->i);
+		rnum = rb_ll2inum(ni->i);
 	    }
 	}
     } else { // decimal
