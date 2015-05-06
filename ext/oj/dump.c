@@ -1031,7 +1031,7 @@ dump_time(VALUE obj, Out out, int withZone) {
 #else
     time_t		sec = NUM2LONG(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
 #if HAS_NANO_TIME
-    long long		nsec = rb_num2ll((rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+    long long		nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
 #else
     long long		nsec = rb_num2ll(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
 #endif
