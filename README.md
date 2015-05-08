@@ -26,9 +26,9 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
-## Release 2.12.6
+## Release 2.12.7
 
- - Fixed a number of 32bit related bugs.
+ - Fixed compile error with 32 bit HAS_NANO_TIME extra paren bug.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 

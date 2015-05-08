@@ -22,6 +22,6 @@ On the output side the callback functions such as 'start_hash' represent the met
 
 The SCP parser functions are set in scp.c. This is the simplest handler. The functions are set when the oj_sc_parse() function is called. The functions themselves simply call a Ruby handler. An optimization used for this and other parsers is that if the Ruby handler does not implement a specific method then the callback to the Ruby handler is not called. The overhead of even calling a Ruby method has a significant impact on performance.
 
-The object, compat, and strict parsers are all similar in that they build a stack of Ruby objects. This stack is build as parsing continues and is collapsed as JSON elements are closed. The Ruby objects are pushed onto the parent objects as the child is closed so that modification can be made before adding the chaild to the parent. This occurs when converting a hash to an object.
+The object, compat, and strict parsers are all similar in that they build a stack of Ruby objects. This stack is build as parsing continues and is collapsed as JSON elements are closed. The Ruby objects are pushed onto the parent objects as the child is closed so that modification can be made before adding the child to the parent. This occurs when converting a hash to an object.
 
 The Ruby functions pull all the pieces together according to the function and options so that a reader/parser/handler is ready to process an input.
