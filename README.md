@@ -26,9 +26,10 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
-## Release 2.12.7
+## Release 2.12.8
 
- - Fixed compile error with 32 bit HAS_NANO_TIME extra paren bug.
+ - mimic_JSON now supports the global/kernel JSON function that will either
+   parse a string argument or dump an array or object argument.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
