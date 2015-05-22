@@ -346,7 +346,7 @@ hat_num(ParseInfo pi, Val parent, Val kval, NumInfo ni) {
 		    args[2] = LONG2NUM(st->tm_mday);
 		    args[3] = LONG2NUM(st->tm_hour);
 		    args[4] = LONG2NUM(st->tm_min);
-		    args[5] = rb_float_new((double)st->tm_sec + ((double)nsec + 0.5) / 1000000000.0);
+		    args[5] = rb_float_new((double)st->tm_sec + ((double)nsec + 0.499999) / 1000000000.0);
 		    args[6] = LONG2NUM(ni->exp);
 		    parent->val = rb_funcall2(rb_cTime, oj_new_id, 7, args);
 #endif
