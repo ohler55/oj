@@ -1859,8 +1859,8 @@ define_mimic_json(int argc, VALUE *argv, VALUE self) {
 	mimic = rb_const_get_at(rb_cObject, rb_intern("JSON"));
     } else {
 	mimic = rb_define_module("JSON");
-	rb_define_module_function(rb_cObject, "JSON", mimic_dump_load, -1);
     }
+    rb_define_module_function(rb_cObject, "JSON", mimic_dump_load, -1);
     if (rb_const_defined_at(mimic, rb_intern("Ext"))) {
 	ext = rb_const_get_at(mimic, rb_intern("Ext"));
      } else {

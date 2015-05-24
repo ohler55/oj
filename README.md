@@ -26,6 +26,13 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
+## Future Release 2.12.9
+
+ - Fixed failing test when using Rubinius.
+
+ - Changed mimic_JSON to support the global/kernel function JSON even when the
+   json gem is loaded first.
+
 ## Release 2.12.8
 
  - mimic_JSON now supports the global/kernel JSON function that will either
