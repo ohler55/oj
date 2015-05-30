@@ -33,11 +33,6 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
  - Changed mimic_JSON to support the global/kernel function JSON even when the
    json gem is loaded first.
 
-## Release 2.12.8
-
- - mimic_JSON now supports the global/kernel JSON function that will either
-   parse a string argument or dump an array or object argument.
-
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
 ## Description
