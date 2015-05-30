@@ -26,7 +26,7 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
-## Future Release 2.12.9
+## Release 2.12.9
 
  - Fixed failing test when using Rubinius.
 
