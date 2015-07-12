@@ -587,10 +587,15 @@ colon(ParseInfo pi) {
 
 void
 oj_parse2(ParseInfo pi) {
+    int	first = 1;
+
     pi->cur = pi->json;
     err_init(&pi->err);
     while (1) {
 	next_non_white(pi);
+	if (!first && '\0' != *pi->cur) {
+	    rb_raise(rb_eSyntaxError, "Extra characters after the JSON document.");
+	}
 	switch (*pi->cur++) {
 	case '{':
 	    hash_start(pi);
@@ -657,18 +662,23 @@ oj_parse2(ParseInfo pi) {
 	if (err_has(&pi->err)) {
 	    return;
 	}
-	if (Qundef != pi->proc && stack_empty(&pi->stack)) {
-	    if (Qnil == pi->proc) {
-		rb_yield(stack_head_val(&pi->stack));
-	    } else {
+	if (stack_empty(&pi->stack)) {
+	    if (Qundef != pi->proc) {
+		if (Qnil == pi->proc) {
+		    rb_yield(stack_head_val(&pi->stack));
+		} else {
 #if HAS_PROC_WITH_BLOCK
-		VALUE	args[1];
+		    VALUE	args[1];
 
-		*args = stack_head_val(&pi->stack);
-		rb_proc_call_with_block(pi->proc, 1, args, Qnil);
+		    *args = stack_head_val(&pi->stack);
+		    rb_proc_call_with_block(pi->proc, 1, args, Qnil);
 #else
-		rb_raise(rb_eNotImpError, "Calling a Proc with a block not supported in this version. Use func() {|x| } syntax instead.");
+		    rb_raise(rb_eNotImpError,
+			     "Calling a Proc with a block not supported in this version. Use func() {|x| } syntax instead.");
 #endif
+		}
+	    } else {
+		first = 0;
 	    }
 	}
     }

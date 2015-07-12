@@ -26,6 +26,11 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
+## Future Release 2.12.10
+
+ - An exception is now raised if there are multiple JSON documents in a string
+   or file if there is no proc or block associated with the parse call.
+
 ## Release 2.12.9
 
  - Fixed failing test when using Rubinius.

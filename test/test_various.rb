@@ -294,6 +294,20 @@ class Juice < Minitest::Test
     assert_equal([{"a"=>1}, [1,2], [3,4], {"b"=>2}], results)
   end
 
+  def test_multiple_json_no_callback
+    json = %{{"a":1}
+[1,2][3,4]
+{"b":2}
+}
+    begin
+      Oj.load(json)
+    rescue Exception
+      assert(true)
+      return
+    end
+    assert(false, "*** expected an exception")
+  end
+
   # encoding tests
   def test_does_not_escape_entities_by_default
     Oj.default_options = { :escape_mode => :ascii } # set in mimic mode
