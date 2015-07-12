@@ -103,8 +103,8 @@ gem 'oj_mimic_json'
 ## Proper Use
 
 Two settings in Oj are useful for parsing but do expose a vulnerability if used from an untrusted source. Symbolized
-keys can cause memory to be filled since Ruby does not garbage collect Symbols. The same is true for auto
-defining classes; memory will also be exhausted if too many classes are automatically defined. Auto defining is a useful
+keys can cause memory to be filled with previous versions of ruby. Ruby 2.1 and below does not garbage collect Symbols. The same is true for auto
+defining classes in all versions of ruby; memory will also be exhausted if too many classes are automatically defined. Auto defining is a useful
 feature during development and from trusted sources but it allows too many classes to be created in the object load
 mode and auto defined is used with an untrusted source. The `Oj.strict_load()` method sets and uses the most strict and safest options. It should be used by developers who find it difficult to understand the options available in Oj.
 
