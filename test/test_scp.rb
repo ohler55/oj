@@ -259,7 +259,7 @@ class ScpTest < Minitest::Test
   def test_double
     handler = AllHandler.new()
     json = %{{"one":true,"two":false}{"three":true,"four":false}}
-    Oj.sc_parse(handler, json)
+    Oj.sc_parse(handler, json) { |j| j }
     assert_equal([[:hash_start],
                   [:hash_key, 'one'],
                   [:hash_set, 'one', true],
@@ -284,10 +284,8 @@ class ScpTest < Minitest::Test
   def test_fixnum_bad
     handler = AllHandler.new()
     json = %{12345xyz}
-    begin
+    assert_raises SyntaxError do
       Oj.sc_parse(handler, json)
-    rescue Exception => e
-      assert_match(%r{unexpected character at line 1, column 6 \[(?:[a-z\.]+/)*parse\.c:\d+\]}, e.message)
     end
   end
 
