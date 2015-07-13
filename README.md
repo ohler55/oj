@@ -31,13 +31,6 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
  - An exception is now raised if there are multiple JSON documents in a string
    or file if there is no proc or block associated with the parse call.
 
-## Release 2.12.9
-
- - Fixed failing test when using Rubinius.
-
- - Changed mimic_JSON to support the global/kernel function JSON even when the
-   json gem is loaded first.
-
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
 ## Description
