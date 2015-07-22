@@ -26,6 +26,12 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
+## Future Release 2.12.11
+
+ - Oj::ParseError is now thrown instead of SyntaxError when there are multiple 
+   JSON documents in a string or file and there is no proc or block associated
+   with the parse call. 
+
 ## Future Release 2.12.10
 
  - An exception is now raised if there are multiple JSON documents in a string

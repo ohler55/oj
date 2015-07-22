@@ -1,21 +1,21 @@
 /* parse.c
  * Copyright (c) 2013, Peter Ohler
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  *  - Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  *  - Neither the name of Peter Ohler nor the names of its contributors may be
  *    used to endorse or promote products derived from this software without
  *    specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -547,7 +547,7 @@ static void
 hash_end(ParseInfo pi) {
     volatile Val	hash = stack_peek(&pi->stack);
 
-    // leave hash on stack until just before 
+    // leave hash on stack until just before
     if (0 == hash) {
 	oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "unexpected hash close");
     } else if (NEXT_HASH_COMMA != hash->next && NEXT_HASH_NEW != hash->next) {
@@ -594,7 +594,7 @@ oj_parse2(ParseInfo pi) {
     while (1) {
 	next_non_white(pi);
 	if (!first && '\0' != *pi->cur) {
-	    rb_raise(rb_eSyntaxError, "Extra characters after the JSON document.");
+	    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "unexpected characters after the JSON document");
 	}
 	switch (*pi->cur++) {
 	case '{':

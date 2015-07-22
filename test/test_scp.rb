@@ -284,7 +284,7 @@ class ScpTest < Minitest::Test
   def test_fixnum_bad
     handler = AllHandler.new()
     json = %{12345xyz}
-    assert_raises SyntaxError do
+    assert_raises Oj::ParseError do
       Oj.sc_parse(handler, json)
     end
   end

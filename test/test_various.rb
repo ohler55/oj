@@ -299,13 +299,7 @@ class Juice < Minitest::Test
 [1,2][3,4]
 {"b":2}
 }
-    begin
-      Oj.load(json)
-    rescue Exception
-      assert(true)
-      return
-    end
-    assert(false, "*** expected an exception")
+    assert_raises(Oj::ParseError) { Oj.load(json) }
   end
 
   # encoding tests
