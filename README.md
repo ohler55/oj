@@ -32,7 +32,7 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
    JSON documents in a string or file and there is no proc or block associated
    with the parse call. 
 
-## Future Release 2.12.10
+## Current Release 2.12.10
 
  - An exception is now raised if there are multiple JSON documents in a string
    or file if there is no proc or block associated with the parse call.

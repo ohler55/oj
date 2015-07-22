@@ -1,5 +1,4 @@
-sudo:
-  required
+sudo: false
 
 cache:
   bundler
