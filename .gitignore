@@ -13,3 +13,4 @@ Makefile
 doc
 .yardoc
 Gemfile.lock
+*.so
