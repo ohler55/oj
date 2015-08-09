@@ -60,6 +60,7 @@ typedef unsigned long	ulong;
 
 static void	raise_strict(VALUE obj);
 static void	dump_val(VALUE obj, int depth, Out out);
+static void	dump_val_using_params(VALUE obj, int depth, Out out, int argc, VALUE *argv);
 static void	dump_nil(Out out);
 static void	dump_true(Out out);
 static void	dump_false(Out out);
@@ -88,6 +89,7 @@ static void	dump_data_null(VALUE obj, Out out);
 static void	dump_data_comp(VALUE obj, int depth, Out out);
 static void	dump_data_obj(VALUE obj, int depth, Out out);
 static void	dump_obj_comp(VALUE obj, int depth, Out out);
+static void	dump_obj_comp_using_params(VALUE obj, int depth, Out out, int argc, VALUE *argv);
 static void	dump_obj_obj(VALUE obj, int depth, Out out);
 static void	dump_struct_comp(VALUE obj, int depth, Out out);
 static void	dump_struct_obj(VALUE obj, int depth, Out out);
@@ -1350,6 +1352,11 @@ dump_data_obj(VALUE obj, int depth, Out out) {
 
 static void
 dump_obj_comp(VALUE obj, int depth, Out out) {
+    dump_obj_comp_using_params(obj, depth, out, 0, 0);
+}
+
+static void
+dump_obj_comp_using_params(VALUE obj, int depth, Out out, int argc, VALUE *argv) {
     if (rb_respond_to(obj, oj_to_hash_id)) {
 	volatile VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
  
@@ -1358,7 +1365,7 @@ dump_obj_comp(VALUE obj, int depth, Out out) {
 	}
 	dump_hash(h, Qundef, depth, out->opts->mode, out);
     } else if (rb_respond_to(obj, oj_as_json_id)) {
-	volatile VALUE	aj = rb_funcall(obj, oj_as_json_id, 0);
+	volatile VALUE	aj = rb_funcall2(obj, oj_as_json_id, argc, argv);
 
 	// Catch the obvious brain damaged recursive dumping.
 	if (aj == obj) {
@@ -1894,8 +1901,12 @@ raise_strict(VALUE obj) {
 
 static void
 dump_val(VALUE obj, int depth, Out out) {
-    int	type = rb_type(obj);
+    dump_val_using_params(obj, depth, out, 0, 0);
+}
 
+static void
+dump_val_using_params(VALUE obj, int depth, Out out, int argc, VALUE *argv) {
+    int	type = rb_type(obj);
     if (MAX_DEPTH < depth) {
 	rb_raise(rb_eNoMemError, "Too deeply nested.\n");
     }
@@ -1965,7 +1976,7 @@ dump_val(VALUE obj, int depth, Out out) {
 		switch (out->opts->mode) {
 		case StrictMode:	dump_data_strict(obj, out);	break;
 		case NullMode:		dump_data_null(obj, out);	break;
-		case CompatMode:	dump_obj_comp(obj, depth, out);	break;
+		case CompatMode:	dump_obj_comp_using_params(obj, depth, out, argc, argv);	break;
 		case ObjectMode:
 		default:		dump_obj_obj(obj, depth, out);	break;
 		}
@@ -1988,7 +1999,7 @@ dump_val(VALUE obj, int depth, Out out) {
 		case NullMode:		dump_nil(out);			break;
 		case CompatMode:
 		case ObjectMode:
-		default:		dump_obj_comp(obj, depth, out);	break;
+		default:		dump_obj_comp_using_params(obj, depth, out, argc, argv);	break;
 		}
 		break;
 	    default:
@@ -2002,6 +2013,11 @@ dump_val(VALUE obj, int depth, Out out) {
 
 void
 oj_dump_obj_to_json(VALUE obj, Options copts, Out out) {
+    oj_dump_obj_to_json_using_params(obj, copts, out, 0, 0);
+}
+
+void
+oj_dump_obj_to_json_using_params(VALUE obj, Options copts, Out out, int argc, VALUE *argv) {
     if (0 == out->buf) {
 	out->buf = ALLOC_N(char, 4096);
 	out->end = out->buf + 4095 - BUFFER_EXTRA; // 1 less than end plus extra for possible errors
@@ -2015,7 +2031,7 @@ oj_dump_obj_to_json(VALUE obj, Options copts, Out out) {
 	oj_cache8_new(&out->circ_cache);
     }
     out->indent = copts->indent;
-    dump_val(obj, 0, out);
+    dump_val_using_params(obj, 0, out, argc, argv);
     if (0 < out->indent) {
 	switch (*(out->cur - 1)) {
 	case ']':

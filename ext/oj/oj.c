@@ -1821,7 +1821,7 @@ mimic_object_to_json(int argc, VALUE *argv, VALUE self) {
     // To be strict the mimic_object_to_json_options should be used but people
     // seem to prefer the option of changing that.
     //oj_dump_obj_to_json(self, &mimic_object_to_json_options, &out);
-    oj_dump_obj_to_json(self, &copts, &out);
+    oj_dump_obj_to_json_using_params(self, &copts, &out, argc, argv);
     if (0 == out.buf) {
 	rb_raise(rb_eNoMemError, "Not enough memory.");
     }
