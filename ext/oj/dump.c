@@ -59,8 +59,7 @@
 typedef unsigned long	ulong;
 
 static void	raise_strict(VALUE obj);
-static void	dump_val(VALUE obj, int depth, Out out);
-static void	dump_val_using_params(VALUE obj, int depth, Out out, int argc, VALUE *argv);
+static void	dump_val(VALUE obj, int depth, Out out, int argc, VALUE *argv);
 static void	dump_nil(Out out);
 static void	dump_true(Out out);
 static void	dump_false(Out out);
@@ -88,8 +87,7 @@ static void	dump_data_strict(VALUE obj, Out out);
 static void	dump_data_null(VALUE obj, Out out);
 static void	dump_data_comp(VALUE obj, int depth, Out out);
 static void	dump_data_obj(VALUE obj, int depth, Out out);
-static void	dump_obj_comp(VALUE obj, int depth, Out out);
-static void	dump_obj_comp_using_params(VALUE obj, int depth, Out out, int argc, VALUE *argv);
+static void	dump_obj_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv);
 static void	dump_obj_obj(VALUE obj, int depth, Out out);
 static void	dump_struct_comp(VALUE obj, int depth, Out out);
 static void	dump_struct_obj(VALUE obj, int depth, Out out);
@@ -730,7 +728,7 @@ dump_array(VALUE a, VALUE clas, int depth, Out out) {
 		    }
 		}
 	    }
-	    dump_val(rb_ary_entry(a, i), d2, out);
+	    dump_val(rb_ary_entry(a, i), d2, out, 0, 0);
 	    if (i < cnt) {
 		*out->cur++ = ',';
 	    }
@@ -808,7 +806,7 @@ hash_cb_strict(VALUE key, VALUE value, Out out) {
 	    out->cur += out->opts->dump_opts->after_size;
 	}
     }
-    dump_val(value, depth, out);
+    dump_val(value, depth, out, 0, 0);
     out->depth = depth;
     *out->cur++ = ',';
 
@@ -872,7 +870,7 @@ hash_cb_compat(VALUE key, VALUE value, Out out) {
 	    out->cur += out->opts->dump_opts->after_size;
 	}
     }
-    dump_val(value, depth, out);
+    dump_val(value, depth, out, 0, 0);
     out->depth = depth;
     *out->cur++ = ',';
 
@@ -891,11 +889,11 @@ hash_cb_object(VALUE key, VALUE value, Out out) {
     if (rb_type(key) == T_STRING) {
 	dump_str_obj(key, Qundef, depth, out);
 	*out->cur++ = ':';
-	dump_val(value, depth, out);
+	dump_val(value, depth, out, 0, 0);
     } else if (rb_type(key) == T_SYMBOL) {
 	dump_sym_obj(key, out);
 	*out->cur++ = ':';
-	dump_val(value, depth, out);
+	dump_val(value, depth, out, 0, 0);
     } else {
 	int	d2 = depth + 1;
 	long	s2 = size + out->indent + 1;
@@ -923,13 +921,13 @@ hash_cb_object(VALUE key, VALUE value, Out out) {
 	*out->cur++ = ':';
 	*out->cur++ = '[';
 	fill_indent(out, d2);
-	dump_val(key, d2, out);
+	dump_val(key, d2, out, 0, 0);
 	if (out->end - out->cur <= (long)s2) {
 	    grow(out, s2);
 	}
 	*out->cur++ = ',';
 	fill_indent(out, d2);
-	dump_val(value, d2, out);
+	dump_val(value, d2, out, 0, 0);
 	if (out->end - out->cur <= (long)size) {
 	    grow(out, size);
 	}
@@ -1268,7 +1266,7 @@ dump_data_comp(VALUE obj, int depth, Out out) {
 
 	    dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
 	} else {
-	    dump_val(aj, depth, out);
+	    dump_val(aj, depth, out, 0, 0);
 	}
     } else if (Yes == out->opts->to_json && rb_respond_to(obj, oj_to_json_id)) {
 	volatile VALUE	rs;
@@ -1351,12 +1349,7 @@ dump_data_obj(VALUE obj, int depth, Out out) {
 }
 
 static void
-dump_obj_comp(VALUE obj, int depth, Out out) {
-    dump_obj_comp_using_params(obj, depth, out, 0, 0);
-}
-
-static void
-dump_obj_comp_using_params(VALUE obj, int depth, Out out, int argc, VALUE *argv) {
+dump_obj_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv) {
     if (rb_respond_to(obj, oj_to_hash_id)) {
 	volatile VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
  
@@ -1373,7 +1366,7 @@ dump_obj_comp_using_params(VALUE obj, int depth, Out out, int argc, VALUE *argv)
 
 	    dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
 	} else {
-	    dump_val(aj, depth, out);
+	    dump_val(aj, depth, out, 0, 0);
 	}
     } else if (Yes == out->opts->to_json && rb_respond_to(obj, oj_to_json_id)) {
 	volatile VALUE	rs;
@@ -1484,7 +1477,7 @@ dump_attr_cb(ID key, VALUE value, Out out) {
 	dump_cstr(buf, strlen(buf), 0, 0, out);
     }
     *out->cur++ = ':';
-    dump_val(value, depth, out);
+    dump_val(value, depth, out, 0, 0);
     out->depth = depth;
     *out->cur++ = ',';
     
@@ -1638,7 +1631,7 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 		dump_cstr(buf, strlen(attr) + 1, 0, 0, out);
 	    }
 	    *out->cur++ = ':';
-	    dump_val(rb_ivar_get(obj, vid), d2, out);
+	    dump_val(rb_ivar_get(obj, vid), d2, out, 0, 0);
 	    if (out->end - out->cur <= 2) {
 		grow(out, 2);
 	    }
@@ -1659,7 +1652,7 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	    dump_cstr("~mesg", 5, 0, 0, out);
 	    *out->cur++ = ':';
 	    rv = rb_funcall2(obj, rb_intern("message"), 0, 0);
-	    dump_val(rv, d2, out);
+	    dump_val(rv, d2, out, 0, 0);
 	    if (out->end - out->cur <= 2) {
 		grow(out, 2);
 	    }
@@ -1672,7 +1665,7 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	    dump_cstr("~bt", 3, 0, 0, out);
 	    *out->cur++ = ':';
 	    rv = rb_funcall2(obj, rb_intern("backtrace"), 0, 0);
-	    dump_val(rv, d2, out);
+	    dump_val(rv, d2, out, 0, 0);
 	    if (out->end - out->cur <= 2) {
 		grow(out, 2);
 	    }
@@ -1703,7 +1696,7 @@ dump_struct_comp(VALUE obj, int depth, Out out) {
 
 	    dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
 	} else {
-	    dump_val(aj, depth, out);
+	    dump_val(aj, depth, out, 0, 0);
 	}
     } else if (Yes == out->opts->to_json && rb_respond_to(obj, oj_to_json_id)) {
 	volatile VALUE	rs = rb_funcall(obj, oj_to_json_id, 0);
@@ -1785,7 +1778,7 @@ dump_struct_obj(VALUE obj, int depth, Out out) {
 		grow(out, size);
 	    }
 	    fill_indent(out, d3);
-	    dump_val(*vp, d3, out);
+	    dump_val(*vp, d3, out, 0, 0);
 	    *out->cur++ = ',';
 	}
     }
@@ -1800,7 +1793,7 @@ dump_struct_obj(VALUE obj, int depth, Out out) {
 		grow(out, size);
 	    }
 	    fill_indent(out, d3);
-	    dump_val(rb_struct_aref(obj, INT2FIX(i)), d3, out);
+	    dump_val(rb_struct_aref(obj, INT2FIX(i)), d3, out, 0, 0);
 	    *out->cur++ = ',';
 	}
     }
@@ -1883,7 +1876,7 @@ dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
 	fill_indent(out, d2);
 	dump_cstr(name, nlen, 0, 0, out);
 	*out->cur++ = ':';
-	dump_val(v, d2, out);
+	dump_val(v, d2, out, 0, 0);
 	if (out->end - out->cur <= 2) {
 	    grow(out, 2);
 	}
@@ -1900,13 +1893,9 @@ raise_strict(VALUE obj) {
 }
 
 static void
-dump_val(VALUE obj, int depth, Out out) {
-    dump_val_using_params(obj, depth, out, 0, 0);
-}
-
-static void
-dump_val_using_params(VALUE obj, int depth, Out out, int argc, VALUE *argv) {
+dump_val(VALUE obj, int depth, Out out, int argc, VALUE *argv) {
     int	type = rb_type(obj);
+
     if (MAX_DEPTH < depth) {
 	rb_raise(rb_eNoMemError, "Too deeply nested.\n");
     }
@@ -1976,7 +1965,7 @@ dump_val_using_params(VALUE obj, int depth, Out out, int argc, VALUE *argv) {
 		switch (out->opts->mode) {
 		case StrictMode:	dump_data_strict(obj, out);	break;
 		case NullMode:		dump_data_null(obj, out);	break;
-		case CompatMode:	dump_obj_comp_using_params(obj, depth, out, argc, argv);	break;
+		case CompatMode:	dump_obj_comp(obj, depth, out, argc, argv);	break;
 		case ObjectMode:
 		default:		dump_obj_obj(obj, depth, out);	break;
 		}
@@ -1999,7 +1988,7 @@ dump_val_using_params(VALUE obj, int depth, Out out, int argc, VALUE *argv) {
 		case NullMode:		dump_nil(out);			break;
 		case CompatMode:
 		case ObjectMode:
-		default:		dump_obj_comp_using_params(obj, depth, out, argc, argv);	break;
+		default:		dump_obj_comp(obj, depth, out, argc, argv);	break;
 		}
 		break;
 	    default:
@@ -2031,7 +2020,7 @@ oj_dump_obj_to_json_using_params(VALUE obj, Options copts, Out out, int argc, VA
 	oj_cache8_new(&out->circ_cache);
     }
     out->indent = copts->indent;
-    dump_val_using_params(obj, 0, out, argc, argv);
+    dump_val(obj, 0, out, argc, argv);
     if (0 < out->indent) {
 	switch (*(out->cur - 1)) {
 	case ']':
@@ -2478,7 +2467,7 @@ oj_str_writer_push_value(StrWriter sw, VALUE val, const char *key) {
 	    *sw->out.cur++ = ':';
 	}
     }
-    dump_val(val, sw->depth, &sw->out);
+    dump_val(val, sw->depth, &sw->out, 0, 0);
 }
 
 void

@@ -26,7 +26,11 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
-## Current Release 2.12.11
+## Current Release 2.12.12
+
+ - Thanks to asurin for adding support for arguments to to_json() that rails uses.
+
+## Release 2.12.11
 
  - Oj::ParseError is now thrown instead of SyntaxError when there are multiple 
    JSON documents in a string or file and there is no proc or block associated

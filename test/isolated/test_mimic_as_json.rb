@@ -15,7 +15,7 @@ class ObjectFolder < Minitest::Test
     end
 
     def as_json(options={})
-      {name: @name}.merge(options)
+      {:name => @name}.merge(options)
     end
   end
 
@@ -30,10 +30,16 @@ class ObjectFolder < Minitest::Test
   def test_as_json_options
     Oj.mimic_JSON()
     raccoon = Raccoon.new('Rocket')
-    obj = Oj.dump(raccoon.to_json)
-    assert_equal(obj, '"{\"name\":\"Rocket\"}"')
-    obj = Oj.dump(raccoon.to_json(occupation: 'bounty hunter'))
-    assert_equal(obj, '"{\"name\":\"Rocket\",\"occupation\":\"bounty hunter\"}"')
+    json = raccoon.to_json()
+    assert_equal(json, '{"name":"Rocket"}')
+
+    json = raccoon.to_json(:occupation => 'bounty hunter')
+    # depending on the ruby version the order of the hash members maybe different.
+    if (json.start_with?('{"name'))
+        assert_equal(json, '{"name":"Rocket","occupation":"bounty hunter"}')
+    else
+        assert_equal(json, '{"occupation":"bounty hunter","name":"Rocket"}')
+    end
   end
 
 end
