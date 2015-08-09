@@ -8,7 +8,6 @@ require 'oj'
 
 class ObjectFolder < Minitest::Test
   class Raccoon
-
     attr_accessor :name
 
     def initialize(name)
