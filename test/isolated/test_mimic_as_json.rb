@@ -28,6 +28,7 @@ class ObjectFolder < Minitest::Test
   end
 
   def test_as_json_options
+    Oj.mimic_JSON()
     raccoon = Raccoon.new('Rocket')
     obj = Oj.dump(raccoon.to_json)
     assert_equal(obj, '"{\"name\":\"Rocket\"}"')
