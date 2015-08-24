@@ -14,10 +14,8 @@ Gem::Specification.new do |s|
   s.licenses = ['MIT']
 
   s.files = Dir["{lib,ext,test}/**/*.{rb,h,c}"] + ['LICENSE', 'README.md']
-
+  s.test_files = Dir["test/**/*.rb"]
   s.extensions = ["ext/oj/extconf.rb"]
-
-  s.require_paths = ["lib", "ext"]
 
   s.has_rdoc = true
   s.extra_rdoc_files = ['README.md']
