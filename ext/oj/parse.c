@@ -395,6 +395,7 @@ read_num(ParseInfo pi) {
     ni.i = 0;
     ni.num = 0;
     ni.div = 1;
+    ni.di = 0;
     ni.len = 0;
     ni.exp = 0;
     ni.dec_cnt = 0;
@@ -459,6 +460,7 @@ read_num(ParseInfo pi) {
 		// TBD move size check here
 		ni.num = ni.num * 10 + d;
 		ni.div *= 10;
+		ni.di++;
 		if (LONG_MAX <= ni.div || DEC_MAX < ni.dec_cnt - zero_cnt) {
 		    ni.big = 1;
 		}
@@ -726,13 +728,18 @@ oj_num_as_value(NumInfo ni) {
 		rnum = rb_funcall(rnum, rb_intern("to_f"), 0);
 	    }
 	} else {
-	    double	d = (double)ni->i + (double)ni->num * (1.0L / ni->div);
+	    // All these machinations are to get rounding to work better.
+	    double	d = (double)ni->i * (double)ni->div + (double)ni->num;
+	    int		x = ni->exp - ni->di;
 
+	    d = round(d);
+	    if (0 < x) {
+		d *= pow(10.0L, x);
+	    } else if (0 > x) {
+		d /= pow(10.0L, -x);
+	    }
 	    if (ni->neg) {
 		d = -d;
-	    }
-	    if (0 != ni->exp) {
-		d *= pow(10.0L, ni->exp);
 	    }
 	    rnum = rb_float_new(d);
 	}

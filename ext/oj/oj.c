@@ -725,6 +725,7 @@ load(int argc, VALUE *argv, VALUE self) {
 	VALUE	ropts = argv[1];
 	VALUE	v;
 
+	Check_Type(ropts, T_HASH);
 	if (Qnil != (v = rb_hash_lookup(ropts, mode_sym))) {
 	    if (object_sym == v) {
 		mode = ObjectMode;
@@ -795,6 +796,7 @@ load_file(int argc, VALUE *argv, VALUE self) {
 	VALUE	ropts = argv[1];
 	VALUE	v;
 
+	Check_Type(ropts, T_HASH);
 	if (Qnil != (v = rb_hash_lookup(ropts, mode_sym))) {
 	    if (object_sym == v) {
 		mode = ObjectMode;

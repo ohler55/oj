@@ -44,6 +44,7 @@ typedef struct _NumInfo {
     int64_t	i;
     int64_t	num;
     int64_t	div;
+    int64_t	di;
     const char	*str;
     size_t	len;
     long	exp;
