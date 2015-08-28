@@ -32,6 +32,8 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
  - Yet another attempt to make floating point numbers display better.
 
+ - Thanks to mkillianey for getting the extconf.rb and gemspec file updated.
+
 ## Current Release 2.12.12
 
  - Thanks to asurin for adding support for arguments to to_json() that rails uses.
