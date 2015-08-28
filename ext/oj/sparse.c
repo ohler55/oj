@@ -406,6 +406,7 @@ read_num(ParseInfo pi) {
     ni.i = 0;
     ni.num = 0;
     ni.div = 1;
+    ni.di = 0;
     ni.len = 0;
     ni.exp = 0;
     ni.dec_cnt = 0;
@@ -460,6 +461,7 @@ read_num(ParseInfo pi) {
 		ni.dec_cnt++;
 		ni.num = ni.num * 10 + d;
 		ni.div *= 10;
+		ni.di++;
 		if (LONG_MAX <= ni.div || DEC_MAX < ni.dec_cnt - zero_cnt) {
 		    ni.big = 1;
 		}
@@ -510,6 +512,7 @@ read_nan(ParseInfo pi) {
     ni.i = 0;
     ni.num = 0;
     ni.div = 1;
+    ni.di = 0;
     ni.len = 0;
     ni.exp = 0;
     ni.dec_cnt = 0;
@@ -679,6 +682,7 @@ oj_sparse2(ParseInfo pi) {
 		ni.i = 0;
 		ni.num = 0;
 		ni.div = 1;
+		ni.di = 0;
 		ni.len = 0;
 		ni.exp = 0;
 		ni.dec_cnt = 0;
