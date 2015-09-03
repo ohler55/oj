@@ -1804,8 +1804,8 @@ static struct _Options	mimic_object_to_json_options = {
     10,			// create_id_len
     9,			// sec_prec
     0,			// dump_opts
-    16,			// float_prec
-    "%0.16g",		// float_fmt
+    15,			// float_prec
+    "%0.15g",		// float_fmt
 };
 
 static VALUE
