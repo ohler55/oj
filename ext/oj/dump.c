@@ -1992,8 +1992,20 @@ dump_val(VALUE obj, int depth, Out out, int argc, VALUE *argv) {
 		}
 		break;
 	    default:
-		rb_raise(rb_eNotImpError, "Failed to dump '%s' Object (%02x)\n",
-			 rb_class2name(rb_obj_class(obj)), rb_type(obj));
+		switch (out->opts->mode) {
+		case StrictMode:	raise_strict(obj);		break;
+		case NullMode:		dump_nil(out);			break;
+		case CompatMode: {
+		    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+		    dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
+		    break;
+		}
+		case ObjectMode:
+		default:
+		    rb_raise(rb_eNotImpError, "Failed to dump '%s' Object (%02x)\n",
+			     rb_class2name(rb_obj_class(obj)), rb_type(obj));
+		    break;
+		}
 		break;
 	    }
 	}
