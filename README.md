@@ -26,19 +26,11 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
-## Future Release 2.12.14
+## Release 2.12.14
 
  - Change the failure mode for objects that can not be serialized such as a
    socket. Now in compat mode the to_s of the object is placed in the output
    instead of raising an exception.
-
-## Release 2.12.13
-
- - Added a check for the second argument to load() is a Hash.
-
- - Yet another attempt to make floating point numbers display better.
-
- - Thanks to mkillianey for getting the extconf.rb and gemspec file updated.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
