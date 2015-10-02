@@ -519,7 +519,7 @@ read_num(ParseInfo pi) {
 
 static void
 array_start(ParseInfo pi) {
-    VALUE	v = pi->start_array(pi);
+    volatile VALUE	v = pi->start_array(pi);
 
     stack_push(&pi->stack, v, NEXT_ARRAY_NEW);
 }
@@ -688,7 +688,7 @@ oj_parse2(ParseInfo pi) {
 
 VALUE
 oj_num_as_value(NumInfo ni) {
-    VALUE	rnum = Qnil;
+    volatile VALUE	rnum = Qnil;
 
     if (ni->infinity) {
 	if (ni->neg) {
@@ -781,7 +781,7 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
     char		*buf = 0;
     volatile VALUE	input;
     volatile VALUE	wrapped_stack;
-    VALUE		result = Qnil;
+    volatile VALUE	result = Qnil;
     int			line = 0;
     int			free_json = 0;
 
