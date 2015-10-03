@@ -1249,7 +1249,12 @@ dump_data_comp(VALUE obj, int depth, Out out) {
 	volatile VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
  
 	if (T_HASH != rb_type(h)) {
-	    rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
+	    // It seems that ActiveRecord implemented to_hash so that it returns
+	    // an Array and not a Hash. To get around that any value returned
+	    // will be dumped.
+
+	    //rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
+	    dump_val(h, depth, out, 0, 0);
 	}
 	dump_hash(h, Qundef, depth, out->opts->mode, out);
 
@@ -1354,7 +1359,12 @@ dump_obj_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv) {
 	volatile VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
  
 	if (T_HASH != rb_type(h)) {
-	    rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
+	    // It seems that ActiveRecord implemented to_hash so that it returns
+	    // an Array and not a Hash. To get around that any value returned
+	    // will be dumped.
+
+	    //rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
+	    dump_val(h, depth, out, 0, 0);
 	}
 	dump_hash(h, Qundef, depth, out->opts->mode, out);
     } else if (rb_respond_to(obj, oj_as_json_id)) {
@@ -1684,7 +1694,12 @@ dump_struct_comp(VALUE obj, int depth, Out out) {
 	volatile VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
  
 	if (T_HASH != rb_type(h)) {
-	    rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
+	    // It seems that ActiveRecord implemented to_hash so that it returns
+	    // an Array and not a Hash. To get around that any value returned
+	    // will be dumped.
+
+	    //rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
+	    dump_val(h, depth, out, 0, 0);
 	}
 	dump_hash(h, Qundef, depth, out->opts->mode, out);
     } else if (rb_respond_to(obj, oj_as_json_id)) {

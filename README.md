@@ -26,6 +26,12 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
 
+## Future Release 2.12.15
+
+ - Oj no longer raises an exception if the to_hash method of an object does not
+   return a Hash. ActiveRecord has decided that to_hash should return an Array
+   instead so Oj now encodes what ever is returned.
+
 ## Release 2.12.14
 
  - Change the failure mode for objects that can not be serialized such as a
