@@ -676,6 +676,7 @@ hash_set_value(ParseInfo pi, Val kval, VALUE value) {
     case T_OBJECT:
 	set_obj_ivar(parent, kval, value);
 	break;
+    case T_MODULE:
     case T_CLASS:
 	if (0 == parent->odd_args) {
 	    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "%s is not an odd class", rb_class2name(rb_obj_class(parent->val)));

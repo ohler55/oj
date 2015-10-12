@@ -976,7 +976,14 @@ register_odd(int argc, VALUE *argv, VALUE self) {
     if (3 > argc) {
 	rb_raise(rb_eArgError, "incorrect number of arguments.");
     }
-    Check_Type(argv[0], T_CLASS);
+    switch (rb_type(*argv)) {
+    case T_CLASS:
+    case T_MODULE:
+	break;
+    default:
+	rb_raise(rb_eTypeError, "expected a class or module.");
+	break;
+    }
     Check_Type(argv[2], T_SYMBOL);
     if (MAX_ODD_ARGS < argc - 2) {
 	rb_raise(rb_eArgError, "too many members.");
@@ -1009,7 +1016,14 @@ register_odd_raw(int argc, VALUE *argv, VALUE self) {
     if (3 > argc) {
 	rb_raise(rb_eArgError, "incorrect number of arguments.");
     }
-    Check_Type(argv[0], T_CLASS);
+    switch (rb_type(*argv)) {
+    case T_CLASS:
+    case T_MODULE:
+	break;
+    default:
+	rb_raise(rb_eTypeError, "expected a class or module.");
+	break;
+    }
     Check_Type(argv[2], T_SYMBOL);
     if (MAX_ODD_ARGS < argc - 2) {
 	rb_raise(rb_eArgError, "too many members.");

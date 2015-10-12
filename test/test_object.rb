@@ -131,6 +131,46 @@ class ObjectJuice < Minitest::Test
     alias == eql?
   end
 
+  class Raw
+    attr_accessor :json
+
+    def initialize(j)
+      @json = j
+    end
+
+    def to_json(*a)
+      @json
+    end
+
+    def self.create(h)
+      h
+    end
+  end # Raw
+
+  module Ichi
+    module Ni
+      def self.direct(h)
+        h
+      end
+
+      module San
+        class Shi
+
+          attr_accessor :hash
+
+          def initialize(h)
+            @hash = h
+          end
+
+          def dump()
+            @hash
+          end
+
+        end # Shi
+      end # San
+    end # Ni
+  end # Ichi
+
   def setup
     @default_options = Oj.default_options
   end
@@ -659,6 +699,22 @@ class ObjectJuice < Minitest::Test
     json = Oj.dump(Date.new(2015, 3, 7), :mode => :object)
     assert_equal(%|{"^O":"Date","jd":2457089}|, json)
     dump_and_load(Date.new(2012, 6, 19), false)
+  end
+
+  def test_odd_raw
+    Oj.register_odd_raw(Raw, Raw, :create, :to_json)
+    json = Oj.dump(Raw.new(%|{"a":1}|), :mode => :object)
+    assert_equal(%|{"^O":"ObjectJuice::Raw","to_json":{"a":1}}|, json)
+    h = Oj.load(json, :mode => :object)
+    assert_equal({'a' => 1}, h)
+  end
+
+  def test_odd_mod
+    Oj.register_odd(Ichi::Ni, Ichi::Ni, :direct, :dump)
+    json = Oj.dump(Ichi::Ni::San::Shi.new({'a' => 1}), :mode => :object)
+    assert_equal(%|{"^O":"ObjectJuice::Ichi::Ni::San::Shi","dump":{"a":1}}|, json)
+    h = Oj.load(json, :mode => :object)
+    assert_equal({'a' => 1}, h)
   end
 
   def test_auto_string

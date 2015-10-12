@@ -1851,17 +1851,26 @@ dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
     }
     if (odd->raw) {
 	v = rb_funcall(obj, *odd->attrs, 0);
-	if (Qundef != v || T_STRING != rb_type(v)) {
+	if (Qundef == v || T_STRING != rb_type(v)) {
 	    rb_raise(rb_eEncodingError, "Invalid type for raw JSON.\n");
 	} else {	    
 	    const char	*s = rb_string_value_ptr((VALUE*)&v);
+	    int		len = RSTRING_LEN(v);
+	    const char	*name = rb_id2name(*odd->attrs);
+	    size_t	nlen = strlen(name);
 
-	    size = RSTRING_LEN(v);
+	    size = len + d2 * out->indent + nlen + 10;
 	    if (out->end - out->cur <= (long)size) {
 		grow(out, size);
 	    }
-	    memcpy(out->cur, s, size);
-	    out->cur += size;
+	    fill_indent(out, d2);
+	    *out->cur++ = '"';
+	    memcpy(out->cur, name, nlen);
+	    out->cur += nlen;
+	    *out->cur++ = '"';
+	    *out->cur++ = ':';
+	    memcpy(out->cur, s, len);
+	    out->cur += len;
 	    *out->cur = '\0';
 	}
     } else {
