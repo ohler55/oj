@@ -53,6 +53,8 @@ set_class(Odd odd, const char *classname) {
     odd->clas = rb_const_get(rb_cObject, rb_intern(classname));
     odd->create_obj = odd->clas;
     odd->create_op = rb_intern("new");
+    odd->is_module = (T_MODULE == rb_type(odd->clas));
+    odd->raw = 0;
     for (np = odd->attr_names, idp = odd->attrs; 0 != *np; np++, idp++) {
 	*idp = rb_intern(*np);
     }
@@ -139,14 +141,24 @@ oj_odd_init() {
 
 Odd
 oj_get_odd(VALUE clas) {
-    Odd	odd;
+    Odd		odd;
+    const char	*classname = NULL;
 
     for (odd = odds + odd_cnt - 1; odds <= odd; odd--) {
 	if (clas == odd->clas) {
 	    return odd;
 	}
+	if (odd->is_module) {
+	    if (NULL == classname) {
+		classname = rb_class2name(clas);
+	    }
+	    if (0 == strncmp(odd->classname, classname, odd->clen) &&
+		':' == classname[odd->clen]) {
+		return odd;
+	    }
+	}
     }
-    return 0;
+    return NULL;
 }
 
 Odd
@@ -155,6 +167,11 @@ oj_get_oddc(const char *classname, size_t len) {
 
     for (odd = odds + odd_cnt - 1; odds <= odd; odd--) {
 	if (len == odd->clen && 0 == strncmp(classname, odd->classname, len)) {
+	    return odd;
+	}
+	if (odd->is_module &&
+	    0 == strncmp(odd->classname, classname, odd->clen) &&
+	    ':' == classname[odd->clen]) {
 	    return odd;
 	}
     }
@@ -195,7 +212,7 @@ oj_odd_set_arg(OddArgs args, const char *key, size_t klen, VALUE value) {
 }
 
 void
-oj_reg_odd(VALUE clas, VALUE create_object, VALUE create_method, int mcnt, VALUE *members) {
+oj_reg_odd(VALUE clas, VALUE create_object, VALUE create_method, int mcnt, VALUE *members, bool raw) {
     Odd		odd;
     const char	**np;
     ID		*ap;
@@ -215,6 +232,8 @@ oj_reg_odd(VALUE clas, VALUE create_object, VALUE create_method, int mcnt, VALUE
     odd->create_obj = create_object;
     odd->create_op = SYM2ID(create_method);
     odd->attr_cnt = mcnt;
+    odd->is_module = (T_MODULE == rb_type(clas));
+    odd->raw = raw;
     for (ap = odd->attrs, np = odd->attr_names, fp = odd->attrFuncs; 0 < mcnt; mcnt--, ap++, np++, members++, fp++) {
 	*fp = 0;
 	switch (rb_type(*members)) {

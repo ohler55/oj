@@ -1849,55 +1849,72 @@ dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
 	dump_cstr(class_name, clen, 0, 0, out);
 	*out->cur++ = ',';
     }
-    size = d2 * out->indent + 1;
-    for (idp = odd->attrs, fp = odd->attrFuncs; 0 != *idp; idp++, fp++) {
-	size_t	nlen;
+    if (odd->raw) {
+	v = rb_funcall(obj, *odd->attrs, 0);
+	if (Qundef != v || T_STRING != rb_type(v)) {
+	    rb_raise(rb_eEncodingError, "Invalid type for raw JSON.\n");
+	} else {	    
+	    const char	*s = rb_string_value_ptr((VALUE*)&v);
 
-	if (out->end - out->cur <= (long)size) {
-	    grow(out, size);
-	}
-	name = rb_id2name(*idp);
-	nlen = strlen(name);
-	if (0 != *fp) {
-	    v = (*fp)(obj);
-	} else if (0 == strchr(name, '.')) {
-	    v = rb_funcall(obj, *idp, 0);
-	} else {
-	    char	nbuf[256];
-	    char	*n2 = nbuf;
-	    char	*n;
-	    char	*end;
-	    ID		i;
-	    
-	    if (sizeof(nbuf) <= nlen) {
-		n2 = strdup(name);
-	    } else {
-		strcpy(n2, name);
+	    size = RSTRING_LEN(v);
+	    if (out->end - out->cur <= (long)size) {
+		grow(out, size);
 	    }
-	    n = n2;
-	    v = obj;
-	    while (0 != (end = strchr(n, '.'))) {
-		*end = '\0';
+	    memcpy(out->cur, s, size);
+	    out->cur += size;
+	    *out->cur = '\0';
+	}
+    } else {
+	size = d2 * out->indent + 1;
+	for (idp = odd->attrs, fp = odd->attrFuncs; 0 != *idp; idp++, fp++) {
+	    size_t	nlen;
+
+	    if (out->end - out->cur <= (long)size) {
+		grow(out, size);
+	    }
+	    name = rb_id2name(*idp);
+	    nlen = strlen(name);
+	    if (0 != *fp) {
+		v = (*fp)(obj);
+	    } else if (0 == strchr(name, '.')) {
+		v = rb_funcall(obj, *idp, 0);
+	    } else {
+		char	nbuf[256];
+		char	*n2 = nbuf;
+		char	*n;
+		char	*end;
+		ID		i;
+	    
+		if (sizeof(nbuf) <= nlen) {
+		    n2 = strdup(name);
+		} else {
+		    strcpy(n2, name);
+		}
+		n = n2;
+		v = obj;
+		while (0 != (end = strchr(n, '.'))) {
+		    *end = '\0';
+		    i = rb_intern(n);
+		    v = rb_funcall(v, i, 0);
+		    n = end + 1;
+		}
 		i = rb_intern(n);
 		v = rb_funcall(v, i, 0);
-		n = end + 1;
+		if (nbuf != n2) {
+		    free(n2);
+		}
 	    }
-	    i = rb_intern(n);
-	    v = rb_funcall(v, i, 0);
-	    if (nbuf != n2) {
-		free(n2);
+	    fill_indent(out, d2);
+	    dump_cstr(name, nlen, 0, 0, out);
+	    *out->cur++ = ':';
+	    dump_val(v, d2, out, 0, 0);
+	    if (out->end - out->cur <= 2) {
+		grow(out, 2);
 	    }
+	    *out->cur++ = ',';
 	}
-	fill_indent(out, d2);
-	dump_cstr(name, nlen, 0, 0, out);
-	*out->cur++ = ':';
-	dump_val(v, d2, out, 0, 0);
-	if (out->end - out->cur <= 2) {
-	    grow(out, 2);
-	}
-	*out->cur++ = ',';
+	out->cur--;
     }
-    out->cur--;
     *out->cur++ = '}';
     *out->cur = '\0';
 }

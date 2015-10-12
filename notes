@@ -4,8 +4,9 @@
 ^c^s show subtree
 
 - odd
- - register module
-  - immediate children use odd func
+ - test raw
+ - test module
+
 
 
 - streaming parser for scp and saj

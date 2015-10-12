@@ -963,7 +963,7 @@ to_stream(int argc, VALUE *argv, VALUE self) {
  * normal way. It is not intended as a hook for changing the output of all
  * classes as it is not optimized for large numbers of classes.
  *
- * @param [Class] clas Class to be made special
+ * @param [Class|Module] clas Class or Module to be made special
  * @param [Object] create_object object to call the create method on
  * @param [Symbol] create_method method on the clas that will create a new
  *                 instance of the clas when given all the member values in the
@@ -981,7 +981,40 @@ register_odd(int argc, VALUE *argv, VALUE self) {
     if (MAX_ODD_ARGS < argc - 2) {
 	rb_raise(rb_eArgError, "too many members.");
     }
-    oj_reg_odd(argv[0], argv[1], argv[2], argc - 3, argv + 3);
+    oj_reg_odd(argv[0], argv[1], argv[2], argc - 3, argv + 3, false);
+
+    return Qnil;
+}
+
+/* call-seq: register_odd_raw(clas, create_object, create_method, dump_method)
+ *
+ * Registers a class as special and expect the output to be a string that can be
+ * included in the dumped JSON directly. This is useful for working around
+ * subclasses of primitive types as is done with ActiveSupport classes. The use
+ * of this function should be limited to just classes that can not be handled in
+ * the normal way. It is not intended as a hook for changing the output of all
+ * classes as it is not optimized for large numbers of classes. Be careful with
+ * this option as the JSON may be incorrect if invalid JSON is returned.
+ *
+ * @param [Class|Module] clas Class or Module to be made special
+ * @param [Object] create_object object to call the create method on
+ * @param [Symbol] create_method method on the clas that will create a new
+ *                 instance of the clas when given all the member values in the
+ *                 order specified.
+ * @param [Symbol|String] dump_method method to call on the object being
+ *                        serialized to generate the raw JSON.
+ */
+static VALUE
+register_odd_raw(int argc, VALUE *argv, VALUE self) {
+    if (3 > argc) {
+	rb_raise(rb_eArgError, "incorrect number of arguments.");
+    }
+    Check_Type(argv[0], T_CLASS);
+    Check_Type(argv[2], T_SYMBOL);
+    if (MAX_ODD_ARGS < argc - 2) {
+	rb_raise(rb_eArgError, "too many members.");
+    }
+    oj_reg_odd(argv[0], argv[1], argv[2], 1, argv + 3, true);
 
     return Qnil;
 }
@@ -2032,6 +2065,7 @@ void Init_oj() {
     rb_define_module_function(Oj, "to_file", to_file, -1);
     rb_define_module_function(Oj, "to_stream", to_stream, -1);
     rb_define_module_function(Oj, "register_odd", register_odd, -1);
+    rb_define_module_function(Oj, "register_odd_raw", register_odd_raw, -1);
 
     rb_define_module_function(Oj, "saj_parse", oj_saj_parse, -1);
     rb_define_module_function(Oj, "sc_parse", oj_sc_parse, -1);

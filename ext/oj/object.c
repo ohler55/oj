@@ -55,7 +55,7 @@ read_long(const char *str, size_t len) {
 
 static VALUE
 calc_hash_key(ParseInfo pi, Val kval, char k1) {
-    VALUE	rkey;
+    volatile VALUE	rkey;
 
     if (':' == k1) {
 	rkey = rb_str_new(kval->key + 1, kval->klen - 1);
@@ -388,8 +388,8 @@ hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, volatile VALUE
 	int	len = (int)RARRAY_LEN(value);
 
 	if (2 == klen && 'u' == key[1]) {
-            VALUE	sc;
-	    VALUE	e1;
+            volatile VALUE	sc;
+	    volatile VALUE	e1;
 
 	    if (0 == len) {
 		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "Invalid struct data");
@@ -398,9 +398,9 @@ hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, volatile VALUE
 	    e1 = *RARRAY_PTR(value);
 	    // check for anonymous Struct
 	    if (T_ARRAY == rb_type(e1)) {
-		VALUE	args[1024];
-		VALUE	rstr;
-		int	i, cnt = (int)RARRAY_LEN(e1);
+		VALUE		args[1024];
+		volatile VALUE	rstr;
+		int		i, cnt = (int)RARRAY_LEN(e1);
 
 		for (i = 0; i < cnt; i++) {
 		    rstr = rb_ary_entry(e1, i);
@@ -480,8 +480,8 @@ set_obj_ivar(Val parent, Val kval, VALUE value) {
 
     if ('~' == *key && Qtrue == rb_obj_is_kind_of(parent->val, rb_eException)) {
 	if (5 == klen && 0 == strncmp("~mesg", key, klen)) {
-	    VALUE	args[1];
-	    VALUE	prev = parent->val;
+	    VALUE		args[1];
+	    volatile VALUE	prev = parent->val;
 
 	    args[0] = value;
 	    parent->val = rb_class_new_instance(1, args, rb_class_of(parent->val));
@@ -652,8 +652,8 @@ hash_set_value(ParseInfo pi, Val kval, VALUE value) {
 	    }
 	} else {
 	    if (3 <= klen && '^' == *key && '#' == key[1] && T_ARRAY == rb_type(value)) {
-		long	len = RARRAY_LEN(value);
-		VALUE	*a = RARRAY_PTR(value);
+		long		len = RARRAY_LEN(value);
+		volatile VALUE	*a = RARRAY_PTR(value);
 	
 		if (2 != len) {
 		    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "invalid hash pair");
