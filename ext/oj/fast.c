@@ -1589,6 +1589,12 @@ doc_close(VALUE self) {
 Oj = rb_define_module("Oj");
 #endif
 
+static VALUE
+doc_not_implemented(VALUE self) {
+    rb_raise(rb_eNotImpError, "Not implemented.");
+    return Qnil;
+}
+
 /* Document-class: Oj::Doc
  *
  * The Doc class is used to parse and navigate a JSON document. The model it
@@ -1653,4 +1659,7 @@ oj_init_doc() {
     rb_define_method(oj_doc_class, "dump", doc_dump, -1);
     rb_define_method(oj_doc_class, "size", doc_size, 0);
     rb_define_method(oj_doc_class, "close", doc_close, 0);
+
+    rb_define_method(oj_doc_class, "clone", doc_not_implemented, 0);
+    rb_define_method(oj_doc_class, "dup", doc_not_implemented, 0);
 }
