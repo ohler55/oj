@@ -27,7 +27,7 @@ native == Oj.load(json)
 There are some extra options you can use:
 
 ``` ruby
-Oj.default_options.merge({
+Oj.default_options.merge!({
   indent: Fixnum,
   # number of spaces to indent each element in an JSON document, zero is no newline between JSON elements, negative indicates no newline between top level JSON elements in a stream
   
