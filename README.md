@@ -1,6 +1,87 @@
 # Oj gem
 A fast JSON parser and Object marshaller as a Ruby gem.
 
+## Using
+
+To use oj as a standalone piece you'll probably just use these functions:
+
+``` ruby
+native = {
+  "person" => {
+    "name" => "President Commancho",
+    "age" => 23
+    "likes" => [
+      "guns",
+      "america",
+      "motorcycles"
+      "not sure"
+    ]
+  }
+}
+json = Oj.dump(native)
+# => (json dump)
+
+native == Oj.load(json)
+```
+
+There are some extra options you can use:
+
+``` ruby
+Oj.default_options.merge({
+  indent: Fixnum,
+  # number of spaces to indent each element in an JSON document, zero is no newline between JSON elements, negative indicates no newline between top level JSON elements in a stream
+  
+  circular: Boolean || nil,
+  # support circular references while dumping
+  
+  auto_define: Boolean || nil,
+  # automatically define classes if they do not exist
+  
+  symbol_keys: Boolean || nil,
+  # use symbols instead of strings for hash keys
+  
+  escape_mode: :newline || :json || :xss_safe || :ascii || nil,
+  # determines the characters to escape
+  
+  class_cache: Boolean || nil,
+  # cache classes for faster parsing (if dynamically modifying classes or reloading classes then don't use this)
+  
+  mode: :object || :strict || :compat || :null,
+  # load and dump modes to use for JSON
+  
+  time_format: :unix || :unix_zone || :xmlschema || :ruby,
+  # time format when dumping in :compat and :object mode
+  
+  bigdecimal_as_decimal: Boolean || nil,
+  # dump BigDecimal as a decimal number or as a String
+  
+  bigdecimal_load: :bigdecimal || :float || :auto,
+  # load decimals as BigDecimal instead of as a Float. :auto pick the most precise for the number of digits.
+  
+  create_id: String || nil,
+  # create id for json compatible object encoding, default is 'json_create'
+  
+  second_precision: Fixnum || nil,
+  # number of digits after the decimal when dumping the seconds portion of time
+  
+  float_precision: Fixnum || nil,
+  # number of digits of precision when dumping floats, 0 indicates use Ruby
+  
+  use_to_json: Boolean || nil,
+  # call to_json() methods on dump, default is false
+  
+  nilnil: Boolean || nil,
+  # if true a nil input to load will return nil and not raise an Exception
+  
+  allow_gc: Boolean || nil,
+  # allow or prohibit GC during parsing, default is true (allow)
+  
+  quirks_mode: Boolean || nil
+  # Allow single JSON values instead of documents, default is true (allow)
+})
+```
+
+
 ## Installation
 ```
 gem install oj
