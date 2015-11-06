@@ -3,28 +3,7 @@ A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## Using
 
-To use oj as a standalone piece you'll probably just use these functions:
-
-``` ruby
-native = {
-  "person" => {
-    "name" => "President Commancho",
-    "age" => 23
-    "likes" => [
-      "guns",
-      "america",
-      "motorcycles"
-      "not sure"
-    ]
-  }
-}
-json = Oj.dump(native)
-# => (json dump)
-
-native == Oj.load(json)
-```
-
-There are some extra options you can use:
+There are the options you can change:
 
 ``` ruby
 Oj.default_options.merge!({
