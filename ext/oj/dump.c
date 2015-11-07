@@ -1786,9 +1786,9 @@ dump_struct_obj(VALUE obj, int depth, Out out) {
     size = d3 * out->indent + 2;
 #ifdef RSTRUCT_LEN
     {
-	VALUE	*vp;
+	const VALUE	*vp;
 
-	for (i = (int)RSTRUCT_LEN(obj), vp = RSTRUCT_PTR(obj); 0 < i; i--, vp++) {
+	for (i = (int)RSTRUCT_LEN(obj), vp = RSTRUCT_CONST_PTR(obj); 0 < i; i--, vp++) {
 	    if (out->end - out->cur <= (long)size) {
 		grow(out, size);
 	    }
