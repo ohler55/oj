@@ -1,5 +1,7 @@
 # Oj gem
 
+[![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
+
 A fast JSON parser and Object marshaller as a Ruby gem.
 
 ## Using
@@ -126,6 +128,46 @@ from a user and evaluating it is never a good idea from an unsecure source. The 
 they are not more than `String`s. Always check inputs from untrusted sources.
 
 
+**Rails**
+
+Although up until 4.1 Rails uses [multi_json](https://github.com/intridea/multi_json), an [issue in Rails](https://github.com/rails/rails/issues/9212) causes ActiveSupport to fail to make use Oj for JSON handling.
+There is a
+[gem to patch this](https://github.com/GoodLife/rails-patch-json-encode) for
+Rails 3.2 and 4.0. As of the Oj 2.6.0 release the default behavior is to not use
+the `to_json()` method unless the `:use_to_json` option is set. This provides
+another work around to the rails older and newer behavior.
+
+The latest ActiveRecord is able to work with Oj by simply using the line:
+
+``` ruby
+serialize :metadata, Oj
+```
+
+
+## Installation
+
+``` shell
+gem install oj
+```
+
+or in Bundler:
+
+``` ruby
+gem 'oj'
+```
+
+In version Rails 4.1, multi_json has been removed, and this patch is unnecessary and will no longer work.
+Instead, use the `oj_mimic_json` [gem](https://github.com/ohler55/oj_mimic_json) along with `oj` in your `Gemfile` to have Oj mimic the JSON gem and be used in its place by `ActiveSupport` JSON handling:
+
+```
+gem 'oj'
+gem 'oj_mimic_json'
+```
+
+## Documentation
+
+*Documentation*: http://www.ohler.com/oj, http://rubydoc.info/gems/oj
+
 **Alternative JSON Processing APIs**
 
 Oj offers a few alternative APIs for processing JSON. The fastest one is the `Oj::Doc` API. The `Oj::Doc` API takes a
@@ -147,57 +189,7 @@ Oj is compatible with Ruby 1.8.7, 1.9.2, 1.9.3, 2.0.0, 2.1, 2.2 and RBX.
 Support for JRuby has been removed as JRuby no longer supports C extensions and
 there are bugs in the older versions that are not being fixed.
 
-
-**Rails**
-
-Although up until 4.1 Rails uses [multi_json](https://github.com/intridea/multi_json), an [issue in Rails](https://github.com/rails/rails/issues/9212) causes ActiveSupport to fail to make use Oj for JSON handling.
-There is a
-[gem to patch this](https://github.com/GoodLife/rails-patch-json-encode) for
-Rails 3.2 and 4.0. As of the Oj 2.6.0 release the default behavior is to not use
-the `to_json()` method unless the `:use_to_json` option is set. This provides
-another work around to the rails older and newer behavior.
-
-The latest ActiveRecord is able to work with Oj by simply using the line:
-
-```
-serialize :my_attr, Oj
-```
-
-In version Rails 4.1, multi_json has been removed, and this patch is unnecessary and will no longer work.
-Instead, use the `oj_mimic_json` [gem](https://github.com/ohler55/oj_mimic_json) along with `oj` in your `Gemfile` to have Oj mimic the JSON gem and be used in its place by `ActiveSupport` JSON handling:
-
-```
-gem 'oj'
-gem 'oj_mimic_json'
-```
-
-
-## Installation
-```
-gem install oj
-```
-or in Bundler:
-```
-gem 'oj'
-```
-
-## Documentation
-
-*Documentation*: http://www.ohler.com/oj, http://rubydoc.info/gems/oj
-
-## Source
-
-*GitHub* *repo*: https://github.com/ohler55/oj
-
-*RubyGems* *repo*: https://rubygems.org/gems/oj
-
-Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announcements and news about the Oj gem.
-
-## Build Status
-
-[![Build Status](https://secure.travis-ci.org/ohler55/oj.png?branch=master)](http://travis-ci.org/ohler55/oj)
-
-## Release 2.13.0
+**Release 2.13.0**
 
  - Oj no longer raises an exception if the to_hash method of an object does not
    return a Hash. ActiveRecord has decided that to_hash should return an Array
@@ -210,9 +202,19 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
-# Links
 
-## Performance Comparisons
+## Source
+
+*GitHub* *repo*: https://github.com/ohler55/oj
+
+*RubyGems* *repo*: https://rubygems.org/gems/oj
+
+Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announcements and news about the Oj gem.
+
+
+## Links
+
+**Performance Comparisons**
 
 [Oj Strict Mode Performance](http://www.ohler.com/dev/oj_misc/performance_strict.html) compares Oj strict mode parser performance to other JSON parsers.
 
@@ -222,7 +224,8 @@ Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announceme
 
 [Oj Callback Performance](http://www.ohler.com/dev/oj_misc/performance_callback.html) compares Oj callback parser performance to other JSON parsers.
 
-## Links of Interest
+
+**Links of Interest**
 
 *Fast XML parser and marshaller on RubyGems*: https://rubygems.org/gems/ox
 
