@@ -899,8 +899,10 @@ class Juice < Minitest::Test
     b = Oj.load(json, :mode => :strict)
     assert_equal(30226801971775055948247051683954096612865741943, b)
   end
+
   def test_bignum_object
     dump_and_load(7 ** 55, false)
+    dump_and_load(10 ** 19, false)
   end
 
   # BigDecimal
