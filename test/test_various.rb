@@ -90,7 +90,6 @@ class Juice < Minitest::Test
     Oj.default_options = @default_options
   end
 
-=begin
   # Depending on the order the values may have changed. The set_options sets
   # should cover the function itself.
   def test_get_options
@@ -109,11 +108,10 @@ class Juice < Minitest::Test
                    :float_precision=>15,
                    :mode=>:object,
                    :escape_mode=>:json,
-                   :time_format=>:unix,
+                   :time_format=>:unix_zone,
                    :bigdecimal_load=>:auto,
                    :create_id=>'json_class'}, opts)
   end
-=end
 
   def test_set_options
     orig ={
