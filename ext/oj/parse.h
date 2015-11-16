@@ -48,7 +48,7 @@ typedef struct _NumInfo {
     const char	*str;
     size_t	len;
     long	exp;
-    int		dec_cnt;
+    //int		dec_cnt;
     int		big;
     int		infinity;
     int		nan;

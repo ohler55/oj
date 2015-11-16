@@ -389,7 +389,6 @@ static void
 read_num(ParseInfo pi) {
     struct _NumInfo	ni;
     Val			parent = stack_peek(&pi->stack);
-    int			zero_cnt = 0;
 
     ni.str = pi->cur;
     ni.i = 0;
@@ -398,7 +397,6 @@ read_num(ParseInfo pi) {
     ni.di = 0;
     ni.len = 0;
     ni.exp = 0;
-    ni.dec_cnt = 0;
     ni.big = 0;
     ni.infinity = 0;
     ni.nan = 0;
@@ -427,41 +425,32 @@ read_num(ParseInfo pi) {
 	pi->cur += 3;
 	ni.nan = 1;
     } else {
+	int	dec_cnt = 0;
+
 	for (; '0' <= *pi->cur && *pi->cur <= '9'; pi->cur++) {
-	    ni.dec_cnt++;
+	    dec_cnt++;
 	    if (ni.big) {
 		ni.big++;
 	    } else {
 		int	d = (*pi->cur - '0');
 
-		if (0 == d) {
-		    zero_cnt++;
-		} else {
-		    zero_cnt = 0;
-		}
-		// TBD move size check here
 		ni.i = ni.i * 10 + d;
-		if (LONG_MAX <= ni.i || DEC_MAX < ni.dec_cnt) {
+		if (LONG_MAX <= ni.i || DEC_MAX < dec_cnt) {
 		    ni.big = 1;
 		}
 	    }
 	}
 	if ('.' == *pi->cur) {
+	    dec_cnt = 0;
 	    pi->cur++;
 	    for (; '0' <= *pi->cur && *pi->cur <= '9'; pi->cur++) {
 		int	d = (*pi->cur - '0');
 
-		if (0 == d) {
-		    zero_cnt++;
-		} else {
-		    zero_cnt = 0;
-		}
-		ni.dec_cnt++;
-		// TBD move size check here
+		dec_cnt++;
 		ni.num = ni.num * 10 + d;
 		ni.div *= 10;
 		ni.di++;
-		if (LONG_MAX <= ni.div || DEC_MAX < ni.dec_cnt - zero_cnt) {
+		if (LONG_MAX <= ni.div || DEC_MAX < dec_cnt) {
 		    ni.big = 1;
 		}
 	    }
@@ -487,7 +476,6 @@ read_num(ParseInfo pi) {
 		ni.exp = -ni.exp;
 	    }
 	}
-	ni.dec_cnt -= zero_cnt;
 	ni.len = pi->cur - ni.str;
     }
     if (BigDec == pi->options.bigdec_load) {

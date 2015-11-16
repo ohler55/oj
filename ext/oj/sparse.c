@@ -399,7 +399,6 @@ read_str(ParseInfo pi) {
 static void
 read_num(ParseInfo pi) {
     struct _NumInfo	ni;
-    int			zero_cnt = 0;
     char		c;
 
     reader_protect(&pi->rd);
@@ -409,7 +408,6 @@ read_num(ParseInfo pi) {
     ni.di = 0;
     ni.len = 0;
     ni.exp = 0;
-    ni.dec_cnt = 0;
     ni.big = 0;
     ni.infinity = 0;
     ni.nan = 0;
@@ -430,39 +428,32 @@ read_num(ParseInfo pi) {
 	}
 	ni.infinity = 1;
     } else {
+	int	dec_cnt = 0;
+
 	for (; '0' <= c && c <= '9'; c = reader_get(&pi->rd)) {
-	    ni.dec_cnt++;
+	    dec_cnt++;
 	    if (ni.big) {
 		ni.big++;
 	    } else {
 		int	d = (c - '0');
 
-		if (0 == d) {
-		    zero_cnt++;
-		} else {
-		    zero_cnt = 0;
-		}
 		ni.i = ni.i * 10 + d;
-		if (LONG_MAX <= ni.i || DEC_MAX < ni.dec_cnt - zero_cnt) {
+		if (LONG_MAX <= ni.i || DEC_MAX < dec_cnt) {
 		    ni.big = 1;
 		}
 	    }
 	}
 	if ('.' == c) {
+	    dec_cnt = 0;
 	    c = reader_get(&pi->rd);
 	    for (; '0' <= c && c <= '9'; c = reader_get(&pi->rd)) {
 		int	d = (c - '0');
 
-		if (0 == d) {
-		    zero_cnt++;
-		} else {
-		    zero_cnt = 0;
-		}
-		ni.dec_cnt++;
+		dec_cnt++;
 		ni.num = ni.num * 10 + d;
 		ni.div *= 10;
 		ni.di++;
-		if (LONG_MAX <= ni.div || DEC_MAX < ni.dec_cnt - zero_cnt) {
+		if (LONG_MAX <= ni.div || DEC_MAX < dec_cnt) {
 		    ni.big = 1;
 		}
 	    }
@@ -488,7 +479,6 @@ read_num(ParseInfo pi) {
 		ni.exp = -ni.exp;
 	    }
 	}
-	ni.dec_cnt -= zero_cnt;
 	ni.len = pi->rd.tail - pi->rd.str;
 	if (0 != c) {
 	    reader_backup(&pi->rd);
@@ -515,7 +505,6 @@ read_nan(ParseInfo pi) {
     ni.di = 0;
     ni.len = 0;
     ni.exp = 0;
-    ni.dec_cnt = 0;
     ni.big = 0;
     ni.infinity = 0;
     ni.nan = 1;
@@ -685,7 +674,6 @@ oj_sparse2(ParseInfo pi) {
 		ni.di = 0;
 		ni.len = 0;
 		ni.exp = 0;
-		ni.dec_cnt = 0;
 		ni.big = 0;
 		ni.infinity = 0;
 		ni.nan = 1;
