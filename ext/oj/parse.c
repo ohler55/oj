@@ -441,7 +441,7 @@ read_num(ParseInfo pi) {
 		}
 		// TBD move size check here
 		ni.i = ni.i * 10 + d;
-		if (LONG_MAX <= ni.i || DEC_MAX < ni.dec_cnt - zero_cnt) {
+		if (LONG_MAX <= ni.i || DEC_MAX < ni.dec_cnt) {
 		    ni.big = 1;
 		}
 	    }
