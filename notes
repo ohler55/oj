@@ -3,12 +3,6 @@
 ^c^d hide subtree
 ^c^s show subtree
 
-- odd
- - test raw
- - test module
-
-
-
 - streaming parser for scp and saj
 
 - use these instead of num2long
