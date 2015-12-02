@@ -90,6 +90,8 @@ ID	oj_utc_offset_id;
 ID	oj_utcq_id;
 ID	oj_write_id;
 
+static ID	has_key_id;
+
 VALUE	oj_bag_class;
 VALUE	oj_bigdecimal_class;
 VALUE	oj_cstack_class;
@@ -119,7 +121,6 @@ static VALUE	escape_mode_sym;
 static VALUE	float_prec_sym;
 static VALUE	float_sym;
 static VALUE	indent_sym;
-static VALUE	indent_str_sym;
 static VALUE	json_sym;
 static VALUE	mode_sym;
 static VALUE	newline_sym;
@@ -200,7 +201,7 @@ static VALUE	define_mimic_json(int argc, VALUE *argv, VALUE self);
 /* call-seq: default_options() => Hash
  *
  * Returns the default load and dump options as a Hash. The options are
- * - indent: [Fixnum] number of spaces to indent each element in an JSON document, zero is no newline between JSON elements, negative indicates no newline between top level JSON elements in a stream
+ * - indent: [Fixnum|String|nil] number of spaces to indent each element in an JSON document, zero or nil is no newline between JSON elements, negative indicates no newline between top level JSON elements in a stream, a String indicates the string should be used for indentation
  * - circular: [true|false|nil] support circular references while dumping
  * - auto_define: [true|false|nil] automatically define classes if they do not exist
  * - symbol_keys: [true|false|nil] use symbols instead of strings for hash keys
@@ -227,8 +228,12 @@ static VALUE	define_mimic_json(int argc, VALUE *argv, VALUE self);
 static VALUE
 get_def_opts(VALUE self) {
     VALUE	opts = rb_hash_new();
-    
-    rb_hash_aset(opts, indent_sym, INT2FIX(oj_default_options.indent));
+
+    if (0 == oj_default_options.dump_opts.indent_size) {
+	rb_hash_aset(opts, indent_sym, INT2FIX(oj_default_options.indent));
+    } else {
+	rb_hash_aset(opts, indent_sym, rb_str_new2(oj_default_options.dump_opts.indent_str));
+    }
     rb_hash_aset(opts, sec_prec_sym, INT2FIX(oj_default_options.sec_prec));
     rb_hash_aset(opts, circular_sym, (Yes == oj_default_options.circular) ? Qtrue : ((No == oj_default_options.circular) ? Qfalse : Qnil));
     rb_hash_aset(opts, class_cache_sym, (Yes == oj_default_options.class_cache) ? Qtrue : ((No == oj_default_options.class_cache) ? Qfalse : Qnil));
@@ -268,7 +273,6 @@ get_def_opts(VALUE self) {
     default:		rb_hash_aset(opts, bigdecimal_load_sym, auto_sym);	break;
     }
     rb_hash_aset(opts, create_id_sym, (0 == oj_default_options.create_id) ? Qnil : rb_str_new2(oj_default_options.create_id));
-    rb_hash_aset(opts, indent_str_sym, (0 == oj_default_options.dump_opts.indent_size) ? Qnil : rb_str_new2(oj_default_options.dump_opts.indent_str));
     rb_hash_aset(opts, space_sym, (0 == oj_default_options.dump_opts.after_size) ? Qnil : rb_str_new2(oj_default_options.dump_opts.after_sep));
     rb_hash_aset(opts, space_before_sym, (0 == oj_default_options.dump_opts.before_size) ? Qnil : rb_str_new2(oj_default_options.dump_opts.before_sep));
     rb_hash_aset(opts, object_nl_sym, (0 == oj_default_options.dump_opts.hash_size) ? Qnil : rb_str_new2(oj_default_options.dump_opts.hash_nl));
@@ -281,7 +285,7 @@ get_def_opts(VALUE self) {
  *
  * Sets the default options for load and dump.
  * @param [Hash] opts options to change
- * @param [Fixnum] :indent number of spaces to indent each element in an JSON document
+ * @param [Fixnum|String|nil] :indent number of spaces to indent each element in a JSON document or the String to use for identation.
  * @param [true|false|nil] :circular support circular references while dumping
  * @param [true|false|nil] :auto_define automatically define classes if they do not exist
  * @param [true|false|nil] :symbol_keys convert hash keys to symbols
@@ -312,7 +316,6 @@ get_def_opts(VALUE self) {
  * @param [true|false|nil] :nilnil if true a nil input to load will return nil and not raise an Exception
  * @param [true|false|nil] :allow_gc allow or prohibit GC during parsing, default is true (allow)
  * @param [true|false|nil] :quirks_mode allow single JSON values instead of documents, default is true (allow)
- * @param [String|nil] :indent_str String to use for indentation, overriding the indent option is not nil
  * @param [String|nil] :space String to use for the space after the colon in JSON object fields
  * @param [String|nil] :space_before String to use before the colon separator in JSON object fields
  * @param [String|nil] :object_nl String to use after a JSON object field value
@@ -321,226 +324,9 @@ get_def_opts(VALUE self) {
  */
 static VALUE
 set_def_opts(VALUE self, VALUE opts) {
-    struct _YesNoOpt	ynos[] = {
-	{ circular_sym, &oj_default_options.circular },
-	{ auto_define_sym, &oj_default_options.auto_define },
-	{ symbol_keys_sym, &oj_default_options.sym_key },
-	{ class_cache_sym, &oj_default_options.class_cache },
-	{ bigdecimal_as_decimal_sym, &oj_default_options.bigdec_as_num },
-	{ use_to_json_sym, &oj_default_options.to_json },
-	{ nilnil_sym, &oj_default_options.nilnil },
-	{ allow_gc_sym, &oj_default_options.allow_gc },
-	{ quirks_mode_sym, &oj_default_options.quirks_mode },
-	{ Qnil, 0 }
-    };
-    YesNoOpt		o;
-    volatile VALUE	v;
-    ID			has_key_id = rb_intern("has_key?");
-    size_t		len;
-    
     Check_Type(opts, T_HASH);
-    v = rb_hash_aref(opts, indent_sym);
-    if (Qnil != v) {
-	Check_Type(v, T_FIXNUM);
-	oj_default_options.indent = FIX2INT(v);
-    }
-    v = rb_hash_aref(opts, float_prec_sym);
-    if (Qnil != v) {
-	int	n;
+    oj_parse_options(opts, &oj_default_options);
 
-	Check_Type(v, T_FIXNUM);
-	n = FIX2INT(v);
-	if (0 >= n) {
-	    *oj_default_options.float_fmt = '\0';
-	    oj_default_options.float_prec = 0;
-	} else {
-	    if (20 < n) {
-		n = 20;
-	    }
-	    sprintf(oj_default_options.float_fmt, "%%0.%dg", n);
-	    oj_default_options.float_prec = n;
-	}
-    }
-    v = rb_hash_aref(opts, sec_prec_sym);
-    if (Qnil != v) {
-	int	n;
-
-	Check_Type(v, T_FIXNUM);
-	n = FIX2INT(v);
-	if (0 > n) {
-	    n = 0;
-	} else if (9 < n) {
-	    n = 9;
-	}
-	oj_default_options.sec_prec = n;
-    }
-
-    v = rb_hash_lookup(opts, mode_sym);
-    if (Qnil == v) {
-	// ignore
-    } else if (object_sym == v) {
-	oj_default_options.mode = ObjectMode;
-    } else if (strict_sym == v) {
-	oj_default_options.mode = StrictMode;
-    } else if (compat_sym == v) {
-	oj_default_options.mode = CompatMode;
-    } else if (null_sym == v) {
-	oj_default_options.mode = NullMode;
-    } else {
-	rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, or :null.");
-    }
-
-    v = rb_hash_lookup(opts, time_format_sym);
-    if (Qnil == v) {
-	// ignore
-    } else if (unix_sym == v) {
-	oj_default_options.time_format = UnixTime;
-    } else if (unix_zone_sym == v) {
-	oj_default_options.time_format = UnixZTime;
-    } else if (xmlschema_sym == v) {
-	oj_default_options.time_format = XmlTime;
-    } else if (ruby_sym == v) {
-	oj_default_options.time_format = RubyTime;
-    } else {
-	rb_raise(rb_eArgError, ":time_format must be :unix, :unix_zone, :xmlschema, or :ruby.");
-    }
-
-    v = rb_hash_lookup(opts, escape_mode_sym);
-    if (Qnil == v) {
-	// ignore
-    } else if (newline_sym == v) {
-	oj_default_options.escape_mode = NLEsc;
-    } else if (json_sym == v) {
-	oj_default_options.escape_mode = JSONEsc;
-    } else if (xss_safe_sym == v) {
-	oj_default_options.escape_mode = XSSEsc;
-    } else if (ascii_sym == v) {
-	oj_default_options.escape_mode = ASCIIEsc;
-    } else {
-	rb_raise(rb_eArgError, ":escape_mode must be :newline, :json, :xss_safe, or :ascii.");
-    }
-
-    v = rb_hash_lookup(opts, bigdecimal_load_sym);
-    if (Qnil == v) {
-	// ignore
-    } else if (bigdecimal_sym == v || Qtrue == v) {
-	oj_default_options.bigdec_load = BigDec;
-    } else if (float_sym == v) {
-	oj_default_options.bigdec_load = FloatDec;
-    } else if (auto_sym == v || Qfalse == v) {
-	oj_default_options.bigdec_load = AutoDec;
-    } else {
-	rb_raise(rb_eArgError, ":bigdecimal_load must be :bigdecimal, :float, or :auto.");
-    }
-
-    if (Qtrue == rb_funcall(opts, has_key_id, 1, create_id_sym)) {
-	if (NULL != oj_default_options.create_id) {
-	    if (json_class != oj_default_options.create_id) {
-		xfree((char*)oj_default_options.create_id);
-	    }
-	    oj_default_options.create_id = 0;
-	    oj_default_options.create_id_len = 0;
-	}
-	v = rb_hash_lookup(opts, create_id_sym);
-	if (Qnil != v) {
-	    len = RSTRING_LEN(v) + 1;
-	    oj_default_options.create_id = ALLOC_N(char, len);
-	    strcpy((char*)oj_default_options.create_id, StringValuePtr(v));
-	    oj_default_options.create_id_len = len - 1;
-	}
-    }
-
-    for (o = ynos; 0 != o->attr; o++) {
-	if (Qtrue != rb_funcall(opts, has_key_id, 1, o->sym)) {
-	    continue;
-	}
-	if (Qnil != (v = rb_hash_lookup(opts, o->sym))) {
-	    if (Qtrue == v) {
-		*o->attr = Yes;
-	    } else if (Qfalse == v) {
-		*o->attr = No;
-	    } else {
-		rb_raise(rb_eArgError, "%s must be true, false, or nil.", rb_id2name(SYM2ID(o->sym)));
-	    }
-	}
-    }
-    // This is here only for backwards compatibility with the original Oj.
-    v = rb_hash_lookup(opts, ascii_only_sym);
-    if (Qtrue == v) {
-	oj_default_options.escape_mode = ASCIIEsc;
-    } else if (Qfalse == v) {
-	oj_default_options.escape_mode = JSONEsc;
-    }
-    if (Qtrue == rb_funcall(opts, has_key_id, 1, indent_str_sym)) {
-	if (Qnil == (v = rb_hash_lookup(opts, indent_str_sym))) {
-	    oj_default_options.dump_opts.indent_size = 0;
-	    *oj_default_options.dump_opts.indent_str = '\0';
-	} else {
-	    rb_check_type(v, T_STRING);
-	    if (sizeof(oj_default_options.dump_opts.indent_str) <= (len = RSTRING_LEN(v))) {
-		rb_raise(rb_eArgError, "indent string is limited to %lu characters.", sizeof(oj_default_options.dump_opts.indent_str));
-	    }
-	    strcpy(oj_default_options.dump_opts.indent_str, StringValuePtr(v));
-	    oj_default_options.dump_opts.indent_size = (uint8_t)len;
-	}
-    }
-    if (Qtrue == rb_funcall(opts, has_key_id, 1, space_sym)) {
-	if (Qnil == (v = rb_hash_lookup(opts, space_sym))) {
-	    oj_default_options.dump_opts.after_size = 0;
-	    *oj_default_options.dump_opts.after_sep = '\0';
-	} else {
-	    rb_check_type(v, T_STRING);
-	    if (sizeof(oj_default_options.dump_opts.after_sep) <= (len = RSTRING_LEN(v))) {
-		rb_raise(rb_eArgError, "space string is limited to %lu characters.", sizeof(oj_default_options.dump_opts.after_sep));
-	    }
-	    strcpy(oj_default_options.dump_opts.after_sep, StringValuePtr(v));
-	    oj_default_options.dump_opts.after_size = (uint8_t)len;
-	}
-    }
-    if (Qtrue == rb_funcall(opts, has_key_id, 1, space_before_sym)) {
-	if (Qnil == (v = rb_hash_lookup(opts, space_before_sym))) {
-	    oj_default_options.dump_opts.before_size = 0;
-	    *oj_default_options.dump_opts.before_sep = '\0';
-	} else {
-	    rb_check_type(v, T_STRING);
-	    if (sizeof(oj_default_options.dump_opts.before_sep) <= (len = RSTRING_LEN(v))) {
-		rb_raise(rb_eArgError, "sapce_before string is limited to %lu characters.", sizeof(oj_default_options.dump_opts.before_sep));
-	    }
-	    strcpy(oj_default_options.dump_opts.before_sep, StringValuePtr(v));
-	    oj_default_options.dump_opts.before_size = (uint8_t)len;
-	}
-    }
-    if (Qtrue == rb_funcall(opts, has_key_id, 1, object_nl_sym)) {
-	if (Qnil == (v = rb_hash_lookup(opts, object_nl_sym))) {
-	    oj_default_options.dump_opts.hash_size = 0;
-	    *oj_default_options.dump_opts.hash_nl = '\0';
-	} else {
-	    rb_check_type(v, T_STRING);
-	    if (sizeof(oj_default_options.dump_opts.hash_nl) <= (len = RSTRING_LEN(v))) {
-		rb_raise(rb_eArgError, "object_nl string is limited to %lu characters.", sizeof(oj_default_options.dump_opts.hash_nl));
-	    }
-	    strcpy(oj_default_options.dump_opts.hash_nl, StringValuePtr(v));
-	    oj_default_options.dump_opts.hash_size = (uint8_t)len;
-	}
-    }
-    if (Qtrue == rb_funcall(opts, has_key_id, 1, array_nl_sym)) {
-	if (Qnil == (v = rb_hash_lookup(opts, array_nl_sym))) {
-	    oj_default_options.dump_opts.array_size = 0;
-	    *oj_default_options.dump_opts.array_nl = '\0';
-	} else {
-	    rb_check_type(v, T_STRING);
-	    if (sizeof(oj_default_options.dump_opts.array_nl) <= (len = RSTRING_LEN(v))) {
-		rb_raise(rb_eArgError, "array_nl string is limited to %lu characters.", sizeof(oj_default_options.dump_opts.array_nl));
-	    }
-	    strcpy(oj_default_options.dump_opts.array_nl, StringValuePtr(v));
-	    oj_default_options.dump_opts.array_size = (uint8_t)len;
-	}
-    }
-    oj_default_options.dump_opts.use = (0 < oj_default_options.dump_opts.indent_size ||
-					0 < oj_default_options.dump_opts.after_size ||
-					0 < oj_default_options.dump_opts.before_size ||
-					0 < oj_default_options.dump_opts.hash_size ||
-					0 < oj_default_options.dump_opts.array_size);
     return Qnil;
 }
 
@@ -558,143 +344,218 @@ oj_parse_options(VALUE ropts, Options copts) {
 	{ quirks_mode_sym, &copts->quirks_mode },
 	{ Qnil, 0 }
     };
-    YesNoOpt	o;
+    YesNoOpt		o;
+    volatile VALUE	v;
+    size_t		len;
     
-    if (rb_cHash == rb_obj_class(ropts)) {
-	VALUE	v;
-	
-	if (Qnil != (v = rb_hash_lookup(ropts, indent_sym))) {
-	    if (rb_cFixnum != rb_obj_class(v)) {
-		rb_raise(rb_eArgError, ":indent must be a Fixnum.");
+    if (T_HASH != rb_type(ropts)) {
+	return;
+    }
+    if (Qtrue == rb_funcall(ropts, has_key_id, 1, indent_sym)) {
+	v = rb_hash_lookup(ropts, indent_sym);
+	switch (rb_type(v)) {
+	case T_NIL:
+	    copts->dump_opts.indent_size = 0;
+	    *copts->dump_opts.indent_str = '\0';
+	    copts->indent = 0;
+	    break;
+	case T_FIXNUM:
+	    copts->dump_opts.indent_size = 0;
+	    *copts->dump_opts.indent_str = '\0';
+	    copts->indent = FIX2INT(v);
+	    break;
+	case T_STRING:
+	    if (sizeof(copts->dump_opts.indent_str) <= (len = RSTRING_LEN(v))) {
+		rb_raise(rb_eArgError, "indent string is limited to %lu characters.", sizeof(copts->dump_opts.indent_str));
 	    }
-	    copts->indent = NUM2INT(v);
+	    strcpy(copts->dump_opts.indent_str, StringValuePtr(v));
+	    copts->dump_opts.indent_size = (uint8_t)len;
+	    copts->indent = 0;
+	    break;
+	default:
+	    rb_raise(rb_eTypeError, "indent must be a Fixnum, String, or nil.");
+	    break;
 	}
-	if (Qnil != (v = rb_hash_lookup(ropts, float_prec_sym))) {
-	    int	n;
+    }
+    if (Qnil != (v = rb_hash_lookup(ropts, float_prec_sym))) {
+	int	n;
 
-	    if (rb_cFixnum != rb_obj_class(v)) {
-		rb_raise(rb_eArgError, ":float_precision must be a Fixnum.");
-	    }
-	    Check_Type(v, T_FIXNUM);
-	    n = FIX2INT(v);
-	    if (0 >= n) {
-		*copts->float_fmt = '\0';
-		copts->float_prec = 0;
-	    } else {
-		if (20 < n) {
-		    n = 20;
-		}
-		sprintf(copts->float_fmt, "%%0.%dg", n);
-		copts->float_prec = n;
-	    }
+	if (rb_cFixnum != rb_obj_class(v)) {
+	    rb_raise(rb_eArgError, ":float_precision must be a Fixnum.");
 	}
-	if (Qnil != (v = rb_hash_lookup(ropts, sec_prec_sym))) {
-	    int	n;
+	Check_Type(v, T_FIXNUM);
+	n = FIX2INT(v);
+	if (0 >= n) {
+	    *copts->float_fmt = '\0';
+	    copts->float_prec = 0;
+	} else {
+	    if (20 < n) {
+		n = 20;
+	    }
+	    sprintf(copts->float_fmt, "%%0.%dg", n);
+	    copts->float_prec = n;
+	}
+    }
+    if (Qnil != (v = rb_hash_lookup(ropts, sec_prec_sym))) {
+	int	n;
 
-	    if (rb_cFixnum != rb_obj_class(v)) {
-		rb_raise(rb_eArgError, ":second_precision must be a Fixnum.");
-	    }
-	    n = NUM2INT(v);
-	    if (0 > n) {
-		n = 0;
-	    } else if (9 < n) {
-		n = 9;
-	    }
-	    copts->sec_prec = n;
+	if (rb_cFixnum != rb_obj_class(v)) {
+	    rb_raise(rb_eArgError, ":second_precision must be a Fixnum.");
 	}
-	if (Qnil != (v = rb_hash_lookup(ropts, mode_sym))) {
-	    if (object_sym == v) {
-		copts->mode = ObjectMode;
-	    } else if (strict_sym == v) {
-		copts->mode = StrictMode;
-	    } else if (compat_sym == v) {
-		copts->mode = CompatMode;
-	    } else if (null_sym == v) {
-		copts->mode = NullMode;
-	    } else {
-		rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, or :null.");
-	    }
+	n = NUM2INT(v);
+	if (0 > n) {
+	    n = 0;
+	} else if (9 < n) {
+	    n = 9;
 	}
-	if (Qnil != (v = rb_hash_lookup(ropts, time_format_sym))) {
-	    if (unix_sym == v) {
-		copts->time_format = UnixTime;
-	    } else if (unix_zone_sym == v) {
-		copts->time_format = UnixZTime;
-	    } else if (xmlschema_sym == v) {
-		copts->time_format = XmlTime;
-	    } else if (ruby_sym == v) {
-		copts->time_format = RubyTime;
-	    } else {
-		rb_raise(rb_eArgError, ":time_format must be :unix, :unix_zone, :xmlschema, or :ruby.");
-	    }
+	copts->sec_prec = n;
+    }
+    if (Qnil != (v = rb_hash_lookup(ropts, mode_sym))) {
+	if (object_sym == v) {
+	    copts->mode = ObjectMode;
+	} else if (strict_sym == v) {
+	    copts->mode = StrictMode;
+	} else if (compat_sym == v) {
+	    copts->mode = CompatMode;
+	} else if (null_sym == v) {
+	    copts->mode = NullMode;
+	} else {
+	    rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, or :null.");
 	}
-
-	if (Qnil != (v = rb_hash_lookup(ropts, escape_mode_sym))) {
-	    if (newline_sym == v) {
-		copts->escape_mode = NLEsc;
-	    } else if (json_sym == v) {
-		copts->escape_mode = JSONEsc;
-	    } else if (xss_safe_sym == v) {
-		copts->escape_mode = XSSEsc;
-	    } else if (ascii_sym == v) {
-		copts->escape_mode = ASCIIEsc;
-	    } else {
-		rb_raise(rb_eArgError, ":encoding must be :newline, :json, :xss_safe, or :ascii.");
-	    }
+    }
+    if (Qnil != (v = rb_hash_lookup(ropts, time_format_sym))) {
+	if (unix_sym == v) {
+	    copts->time_format = UnixTime;
+	} else if (unix_zone_sym == v) {
+	    copts->time_format = UnixZTime;
+	} else if (xmlschema_sym == v) {
+	    copts->time_format = XmlTime;
+	} else if (ruby_sym == v) {
+	    copts->time_format = RubyTime;
+	} else {
+	    rb_raise(rb_eArgError, ":time_format must be :unix, :unix_zone, :xmlschema, or :ruby.");
 	}
-
-	if (Qnil != (v = rb_hash_lookup(ropts, bigdecimal_load_sym))) {
-	    if (bigdecimal_sym == v || Qtrue == v) {
-		copts->bigdec_load = BigDec;
-	    } else if (float_sym == v) {
-		copts->bigdec_load = FloatDec;
-	    } else if (auto_sym == v || Qfalse == v) {
-		copts->bigdec_load = AutoDec;
-	    } else {
-		rb_raise(rb_eArgError, ":bigdecimal_load must be :bigdecimal, :float, or :auto.");
-	    }
-	}
-
-	if (Qtrue == rb_funcall(ropts, rb_intern("has_key?"), 1, create_id_sym)) {
-	    v = rb_hash_lookup(ropts, create_id_sym);
-	    if (Qnil == v) {
-		if (json_class != oj_default_options.create_id) {
-		    xfree((char*)oj_default_options.create_id);
-		}
-		copts->create_id = 0;
-		copts->create_id_len = 0;
-	    } else if (T_STRING == rb_type(v)) {
-		size_t		len = RSTRING_LEN(v);
-		const char	*str = StringValuePtr(v);
-
-		if (len != copts->create_id_len ||
-		    0 != strcmp(copts->create_id, str)) {
-		    copts->create_id = ALLOC_N(char, len + 1);
-		    strcpy((char*)copts->create_id, str);
-		    copts->create_id_len = len;
-		}
-	    } else {
-		rb_raise(rb_eArgError, ":create_id must be string.");
-	    }
-	}
-	for (o = ynos; 0 != o->attr; o++) {
-	    if (Qnil != (v = rb_hash_lookup(ropts, o->sym))) {
-		if (Qtrue == v) {
-		    *o->attr = Yes;
-		} else if (Qfalse == v) {
-		    *o->attr = No;
-		} else {
-		    rb_raise(rb_eArgError, "%s must be true or false.", rb_id2name(SYM2ID(o->sym)));
-		}
-	    }
-	}
-	// This is here only for backwards compatibility with the original Oj.
-	v = rb_hash_lookup(ropts, ascii_only_sym);
-	if (Qtrue == v) {
-	    copts->escape_mode = ASCIIEsc;
-	} else if (Qfalse == v) {
+    }
+    if (Qnil != (v = rb_hash_lookup(ropts, escape_mode_sym))) {
+	if (newline_sym == v) {
+	    copts->escape_mode = NLEsc;
+	} else if (json_sym == v) {
 	    copts->escape_mode = JSONEsc;
+	} else if (xss_safe_sym == v) {
+	    copts->escape_mode = XSSEsc;
+	} else if (ascii_sym == v) {
+	    copts->escape_mode = ASCIIEsc;
+	} else {
+	    rb_raise(rb_eArgError, ":encoding must be :newline, :json, :xss_safe, or :ascii.");
 	}
+    }
+    if (Qnil != (v = rb_hash_lookup(ropts, bigdecimal_load_sym))) {
+	if (bigdecimal_sym == v || Qtrue == v) {
+	    copts->bigdec_load = BigDec;
+	} else if (float_sym == v) {
+	    copts->bigdec_load = FloatDec;
+	} else if (auto_sym == v || Qfalse == v) {
+	    copts->bigdec_load = AutoDec;
+	} else {
+	    rb_raise(rb_eArgError, ":bigdecimal_load must be :bigdecimal, :float, or :auto.");
+	}
+    }
+    if (Qtrue == rb_funcall(ropts, has_key_id, 1, create_id_sym)) {
+	v = rb_hash_lookup(ropts, create_id_sym);
+	if (Qnil == v) {
+	    if (json_class != oj_default_options.create_id) {
+		xfree((char*)oj_default_options.create_id);
+	    }
+	    copts->create_id = NULL;
+	    copts->create_id_len = 0;
+	} else if (T_STRING == rb_type(v)) {
+	    const char	*str = StringValuePtr(v);
+
+	    len = RSTRING_LEN(v);
+	    if (len != copts->create_id_len ||
+		0 != strcmp(copts->create_id, str)) {
+		copts->create_id = ALLOC_N(char, len + 1);
+		strcpy((char*)copts->create_id, str);
+		copts->create_id_len = len;
+	    }
+	} else {
+	    rb_raise(rb_eArgError, ":create_id must be string.");
+	}
+    }
+    for (o = ynos; 0 != o->attr; o++) {
+	if (Qnil != (v = rb_hash_lookup(ropts, o->sym))) {
+	    if (Qtrue == v) {
+		*o->attr = Yes;
+	    } else if (Qfalse == v) {
+		*o->attr = No;
+	    } else {
+		rb_raise(rb_eArgError, "%s must be true or false.", rb_id2name(SYM2ID(o->sym)));
+	    }
+	}
+    }
+    if (Qtrue == rb_funcall(ropts, has_key_id, 1, space_sym)) {
+	if (Qnil == (v = rb_hash_lookup(ropts, space_sym))) {
+	    copts->dump_opts.after_size = 0;
+	    *copts->dump_opts.after_sep = '\0';
+	} else {
+	    rb_check_type(v, T_STRING);
+	    if (sizeof(copts->dump_opts.after_sep) <= (len = RSTRING_LEN(v))) {
+		rb_raise(rb_eArgError, "space string is limited to %lu characters.", sizeof(copts->dump_opts.after_sep));
+	    }
+	    strcpy(copts->dump_opts.after_sep, StringValuePtr(v));
+	    copts->dump_opts.after_size = (uint8_t)len;
+	}
+    }
+    if (Qtrue == rb_funcall(ropts, has_key_id, 1, space_before_sym)) {
+	if (Qnil == (v = rb_hash_lookup(ropts, space_before_sym))) {
+	    copts->dump_opts.before_size = 0;
+	    *copts->dump_opts.before_sep = '\0';
+	} else {
+	    rb_check_type(v, T_STRING);
+	    if (sizeof(copts->dump_opts.before_sep) <= (len = RSTRING_LEN(v))) {
+		rb_raise(rb_eArgError, "sapce_before string is limited to %lu characters.", sizeof(copts->dump_opts.before_sep));
+	    }
+	    strcpy(copts->dump_opts.before_sep, StringValuePtr(v));
+	    copts->dump_opts.before_size = (uint8_t)len;
+	}
+    }
+    if (Qtrue == rb_funcall(ropts, has_key_id, 1, object_nl_sym)) {
+	if (Qnil == (v = rb_hash_lookup(ropts, object_nl_sym))) {
+	    copts->dump_opts.hash_size = 0;
+	    *copts->dump_opts.hash_nl = '\0';
+	} else {
+	    rb_check_type(v, T_STRING);
+	    if (sizeof(copts->dump_opts.hash_nl) <= (len = RSTRING_LEN(v))) {
+		rb_raise(rb_eArgError, "object_nl string is limited to %lu characters.", sizeof(copts->dump_opts.hash_nl));
+	    }
+	    strcpy(copts->dump_opts.hash_nl, StringValuePtr(v));
+	    copts->dump_opts.hash_size = (uint8_t)len;
+	}
+    }
+    if (Qtrue == rb_funcall(ropts, has_key_id, 1, array_nl_sym)) {
+	if (Qnil == (v = rb_hash_lookup(ropts, array_nl_sym))) {
+	    copts->dump_opts.array_size = 0;
+	    *copts->dump_opts.array_nl = '\0';
+	} else {
+	    rb_check_type(v, T_STRING);
+	    if (sizeof(copts->dump_opts.array_nl) <= (len = RSTRING_LEN(v))) {
+		rb_raise(rb_eArgError, "array_nl string is limited to %lu characters.", sizeof(copts->dump_opts.array_nl));
+	    }
+	    strcpy(copts->dump_opts.array_nl, StringValuePtr(v));
+	    copts->dump_opts.array_size = (uint8_t)len;
+	}
+    }
+    copts->dump_opts.use = (0 < copts->dump_opts.indent_size ||
+			    0 < copts->dump_opts.after_size ||
+			    0 < copts->dump_opts.before_size ||
+			    0 < copts->dump_opts.hash_size ||
+			    0 < copts->dump_opts.array_size);
+    // This is here only for backwards compatibility with the original Oj.
+    v = rb_hash_lookup(ropts, ascii_only_sym);
+    if (Qtrue == v) {
+	copts->escape_mode = ASCIIEsc;
+    } else if (Qfalse == v) {
+	copts->escape_mode = JSONEsc;
     }
 }
 
@@ -1771,7 +1632,7 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
 	if (T_HASH != rb_type(ropts)) {
 	    rb_raise(rb_eArgError, "options must be a hash.");
 	}
-	if (Qnil != (v = rb_hash_lookup(ropts, indent_str_sym))) {
+	if (Qnil != (v = rb_hash_lookup(ropts, indent_sym))) { // TBD fixnum also ok
 	    rb_check_type(v, T_STRING);
 	    if (sizeof(copts->dump_opts.indent_str) <= (len = RSTRING_LEN(v))) {
 		rb_raise(rb_eArgError, "indent string is limited to %lu characters.", sizeof(copts->dump_opts.indent_str));
@@ -1852,6 +1713,7 @@ mimic_pretty_generate(int argc, VALUE *argv, VALUE self) {
     copts.dump_opts.hash_size = (uint8_t)strlen(copts.dump_opts.hash_nl);
     strcpy(copts.dump_opts.array_nl, "\n");
     copts.dump_opts.array_size = (uint8_t)strlen(copts.dump_opts.array_nl);
+    copts.dump_opts.use = true;
 
     return mimic_generate_core(argc, argv, &copts);
 }
@@ -2230,6 +2092,7 @@ void Init_oj() {
     oj_utc_offset_id = rb_intern("utc_offset");
     oj_utcq_id = rb_intern("utc?");
     oj_write_id = rb_intern("write");
+    has_key_id = rb_intern("has_key?");
 
     rb_require("oj/bag");
     rb_require("oj/error");
@@ -2261,7 +2124,6 @@ void Init_oj() {
     escape_mode_sym = ID2SYM(rb_intern("escape_mode"));	rb_gc_register_address(&escape_mode_sym);
     float_prec_sym = ID2SYM(rb_intern("float_precision"));rb_gc_register_address(&float_prec_sym);
     float_sym = ID2SYM(rb_intern("float"));		rb_gc_register_address(&float_sym);
-    indent_str_sym = ID2SYM(rb_intern("indent_str"));	rb_gc_register_address(&indent_str_sym);
     indent_sym = ID2SYM(rb_intern("indent"));		rb_gc_register_address(&indent_sym);
     json_sym = ID2SYM(rb_intern("json"));		rb_gc_register_address(&json_sym);
     mode_sym = ID2SYM(rb_intern("mode"));		rb_gc_register_address(&mode_sym);

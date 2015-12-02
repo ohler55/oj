@@ -117,7 +117,7 @@ class Juice < Minitest::Test
   def test_set_options
     orig = Oj.default_options()
     alt ={
-      :indent=>3,
+      :indent=>" - ",
       :second_precision=>5,
       :circular=>true,
       :class_cache=>false,
@@ -135,7 +135,6 @@ class Juice < Minitest::Test
       :bigdecimal_load=>:float,
       :create_id=>'classy',
       :space=>'z',
-      :indent_str=>' - ',
       :array_nl=>'a',
       :object_nl=>'o',
       :space_before=>'b',
@@ -249,6 +248,31 @@ class Juice < Minitest::Test
     obj = Oj.load(json)
     json2 = Oj.dump(obj, :ascii_only => true)
     assert_equal(json, json2)
+  end
+
+  def test_dump_options
+    json = Oj.dump({ 'a' => 1, 'b' => [true, false]},
+                   :mode => :compat,
+                   :indent => "--",
+                   :array_nl => "\n",
+                   :object_nl => "#\n",
+                   :space => "*",
+                   :space_before => "~")
+    assert(%{{#
+--"a"~:*1,#
+--"b"~:*[
+----true,
+----false
+--]#
+}} == json ||
+%{{#
+--"b"~:*[
+----true,
+----false
+--],#
+--"a"~:*1#
+}} == json)
+
   end
 
   def test_null_char
