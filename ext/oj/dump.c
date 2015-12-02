@@ -703,30 +703,30 @@ dump_array(VALUE a, VALUE clas, int depth, Out out) {
 	if (0 < id) {
 	    *out->cur++ = ',';
 	}
-	if (0 == out->opts->dump_opts) {
-	    size = d2 * out->indent + 2;
+	if (out->opts->dump_opts.use) {
+	    size = d2 * out->opts->dump_opts.indent_size + out->opts->dump_opts.array_size + 1;
 	} else {
-	    size = d2 * out->opts->dump_opts->indent_size + out->opts->dump_opts->array_size + 1;
+	    size = d2 * out->indent + 2;
 	}
 	cnt--;
 	for (i = 0; i <= cnt; i++) {
 	    if (out->end - out->cur <= (long)size) {
 		grow(out, size);
 	    }
-	    if (0 == out->opts->dump_opts) {
-		fill_indent(out, d2);
-	    } else {
-		if (0 < out->opts->dump_opts->array_size) {
-		    strcpy(out->cur, out->opts->dump_opts->array_nl);
-		    out->cur += out->opts->dump_opts->array_size;
+	    if (out->opts->dump_opts.use) {
+		if (0 < out->opts->dump_opts.array_size) {
+		    strcpy(out->cur, out->opts->dump_opts.array_nl);
+		    out->cur += out->opts->dump_opts.array_size;
 		}
-		if (0 < out->opts->dump_opts->indent_size) {
+		if (0 < out->opts->dump_opts.indent_size) {
 		    int	i;
 		    for (i = d2; 0 < i; i--) {
-			strcpy(out->cur, out->opts->dump_opts->indent);
-			out->cur += out->opts->dump_opts->indent_size;
+			strcpy(out->cur, out->opts->dump_opts.indent_str);
+			out->cur += out->opts->dump_opts.indent_size;
 		    }
 		}
+	    } else {
+		fill_indent(out, d2);
 	    }
 	    dump_val(rb_ary_entry(a, i), d2, out, 0, 0);
 	    if (i < cnt) {
@@ -737,22 +737,22 @@ dump_array(VALUE a, VALUE clas, int depth, Out out) {
 	if (out->end - out->cur <= (long)size) {
 	    grow(out, size);
 	}
-	if (0 == out->opts->dump_opts) {
-	    fill_indent(out, depth);
-	} else {
+	if (out->opts->dump_opts.use) {
 	    //printf("*** d2: %u  indent: %u '%s'\n", d2, out->opts->dump_opts->indent_size, out->opts->dump_opts->indent);
-	    if (0 < out->opts->dump_opts->array_size) {
-		strcpy(out->cur, out->opts->dump_opts->array_nl);
-		out->cur += out->opts->dump_opts->array_size;
+	    if (0 < out->opts->dump_opts.array_size) {
+		strcpy(out->cur, out->opts->dump_opts.array_nl);
+		out->cur += out->opts->dump_opts.array_size;
 	    }
-	    if (0 < out->opts->dump_opts->indent_size) {
+	    if (0 < out->opts->dump_opts.indent_size) {
 		int	i;
 
 		for (i = depth; 0 < i; i--) {
-		    strcpy(out->cur, out->opts->dump_opts->indent);
-		    out->cur += out->opts->dump_opts->indent_size;
+		    strcpy(out->cur, out->opts->dump_opts.indent_str);
+		    out->cur += out->opts->dump_opts.indent_size;
 		}
 	    }
+	} else {
+	    fill_indent(out, depth);
 	}
 	*out->cur++ = ']';
     }
@@ -767,7 +767,7 @@ hash_cb_strict(VALUE key, VALUE value, Out out) {
     if (rb_type(key) != T_STRING) {
 	rb_raise(rb_eTypeError, "In :strict mode all Hash keys must be Strings, not %s.\n", rb_class2name(rb_obj_class(key)));
     }
-    if (0 == out->opts->dump_opts) {
+    if (!out->opts->dump_opts.use) {
 	size = depth * out->indent + 1;
 	if (out->end - out->cur <= size) {
 	    grow(out, size);
@@ -776,34 +776,34 @@ hash_cb_strict(VALUE key, VALUE value, Out out) {
 	dump_str_comp(key, out);
 	*out->cur++ = ':';
     } else {
-	size = depth * out->opts->dump_opts->indent_size + out->opts->dump_opts->hash_size + 1;
+	size = depth * out->opts->dump_opts.indent_size + out->opts->dump_opts.hash_size + 1;
 	if (out->end - out->cur <= size) {
 	    grow(out, size);
 	}
-	if (0 < out->opts->dump_opts->hash_size) {
-	    strcpy(out->cur, out->opts->dump_opts->hash_nl);
-	    out->cur += out->opts->dump_opts->hash_size;
+	if (0 < out->opts->dump_opts.hash_size) {
+	    strcpy(out->cur, out->opts->dump_opts.hash_nl);
+	    out->cur += out->opts->dump_opts.hash_size;
 	}
-	if (0 < out->opts->dump_opts->indent_size) {
+	if (0 < out->opts->dump_opts.indent_size) {
 	    int	i;
 	    for (i = depth; 0 < i; i--) {
-		strcpy(out->cur, out->opts->dump_opts->indent);
-		out->cur += out->opts->dump_opts->indent_size;
+		strcpy(out->cur, out->opts->dump_opts.indent_str);
+		out->cur += out->opts->dump_opts.indent_size;
 	    }
 	}
 	dump_str_comp(key, out);
-	size = out->opts->dump_opts->before_size + out->opts->dump_opts->after_size + 2;
+	size = out->opts->dump_opts.before_size + out->opts->dump_opts.after_size + 2;
 	if (out->end - out->cur <= size) {
 	    grow(out, size);
 	}
-	if (0 < out->opts->dump_opts->before_size) {
-	    strcpy(out->cur, out->opts->dump_opts->before_sep);
-	    out->cur += out->opts->dump_opts->before_size;
+	if (0 < out->opts->dump_opts.before_size) {
+	    strcpy(out->cur, out->opts->dump_opts.before_sep);
+	    out->cur += out->opts->dump_opts.before_size;
 	}
 	*out->cur++ = ':';
-	if (0 < out->opts->dump_opts->after_size) {
-	    strcpy(out->cur, out->opts->dump_opts->after_sep);
-	    out->cur += out->opts->dump_opts->after_size;
+	if (0 < out->opts->dump_opts.after_size) {
+	    strcpy(out->cur, out->opts->dump_opts.after_sep);
+	    out->cur += out->opts->dump_opts.after_size;
 	}
     }
     dump_val(value, depth, out, 0, 0);
@@ -818,26 +818,26 @@ hash_cb_compat(VALUE key, VALUE value, Out out) {
     int		depth = out->depth;
     long	size;
 
-    if (0 == out->opts->dump_opts) {
+    if (!out->opts->dump_opts.use) {
 	size = depth * out->indent + 1;
 	if (out->end - out->cur <= size) {
 	    grow(out, size);
 	}
 	fill_indent(out, depth);
     } else {
-	size = depth * out->opts->dump_opts->indent_size + out->opts->dump_opts->hash_size + 1;
+	size = depth * out->opts->dump_opts.indent_size + out->opts->dump_opts.hash_size + 1;
 	if (out->end - out->cur <= size) {
 	    grow(out, size);
 	}
-	if (0 < out->opts->dump_opts->hash_size) {
-	    strcpy(out->cur, out->opts->dump_opts->hash_nl);
-	    out->cur += out->opts->dump_opts->hash_size;
+	if (0 < out->opts->dump_opts.hash_size) {
+	    strcpy(out->cur, out->opts->dump_opts.hash_nl);
+	    out->cur += out->opts->dump_opts.hash_size;
 	}
-	if (0 < out->opts->dump_opts->indent_size) {
+	if (0 < out->opts->dump_opts.indent_size) {
 	    int	i;
 	    for (i = depth; 0 < i; i--) {
-		strcpy(out->cur, out->opts->dump_opts->indent);
-		out->cur += out->opts->dump_opts->indent_size;
+		strcpy(out->cur, out->opts->dump_opts.indent_str);
+		out->cur += out->opts->dump_opts.indent_size;
 	    }
 	}
     }
@@ -853,21 +853,21 @@ hash_cb_compat(VALUE key, VALUE value, Out out) {
 	dump_str_comp(rb_funcall(key, oj_to_s_id, 0), out);
 	break;
     }
-    if (0 == out->opts->dump_opts) {
+    if (!out->opts->dump_opts.use) {
 	*out->cur++ = ':';
     } else {
-	size = out->opts->dump_opts->before_size + out->opts->dump_opts->after_size + 2;
+	size = out->opts->dump_opts.before_size + out->opts->dump_opts.after_size + 2;
 	if (out->end - out->cur <= size) {
 	    grow(out, size);
 	}
-	if (0 < out->opts->dump_opts->before_size) {
-	    strcpy(out->cur, out->opts->dump_opts->before_sep);
-	    out->cur += out->opts->dump_opts->before_size;
+	if (0 < out->opts->dump_opts.before_size) {
+	    strcpy(out->cur, out->opts->dump_opts.before_sep);
+	    out->cur += out->opts->dump_opts.before_size;
 	}
 	*out->cur++ = ':';
-	if (0 < out->opts->dump_opts->after_size) {
-	    strcpy(out->cur, out->opts->dump_opts->after_sep);
-	    out->cur += out->opts->dump_opts->after_size;
+	if (0 < out->opts->dump_opts.after_size) {
+	    strcpy(out->cur, out->opts->dump_opts.after_sep);
+	    out->cur += out->opts->dump_opts.after_size;
 	}
     }
     dump_val(value, depth, out, 0, 0);
@@ -988,26 +988,26 @@ dump_hash(VALUE obj, VALUE clas, int depth, int mode, Out out) {
 	if (',' == *(out->cur - 1)) {
 	    out->cur--; // backup to overwrite last comma
 	}
-	if (0 == out->opts->dump_opts) {
+	if (!out->opts->dump_opts.use) {
 	    if (out->end - out->cur <= (long)size) {
 		grow(out, size);
 	    }
 	    fill_indent(out, depth);
 	} else {
-	    size = depth * out->opts->dump_opts->indent_size + out->opts->dump_opts->hash_size + 1;
+	    size = depth * out->opts->dump_opts.indent_size + out->opts->dump_opts.hash_size + 1;
 	    if (out->end - out->cur <= (long)size) {
 		grow(out, size);
 	    }
-	    if (0 < out->opts->dump_opts->hash_size) {
-		strcpy(out->cur, out->opts->dump_opts->hash_nl);
-		out->cur += out->opts->dump_opts->hash_size;
+	    if (0 < out->opts->dump_opts.hash_size) {
+		strcpy(out->cur, out->opts->dump_opts.hash_nl);
+		out->cur += out->opts->dump_opts.hash_size;
 	    }
-	    if (0 < out->opts->dump_opts->indent_size) {
+	    if (0 < out->opts->dump_opts.indent_size) {
 		int	i;
 
 		for (i = depth; 0 < i; i--) {
-		    strcpy(out->cur, out->opts->dump_opts->indent);
-		    out->cur += out->opts->dump_opts->indent_size;
+		    strcpy(out->cur, out->opts->dump_opts.indent_str);
+		    out->cur += out->opts->dump_opts.indent_size;
 		}
 	    }
 	}

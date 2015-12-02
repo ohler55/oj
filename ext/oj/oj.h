@@ -46,6 +46,7 @@ extern "C" {
 #endif
 
 #include "stdint.h"
+#include "stdbool.h"
 
 #if USE_PTHREAD_MUTEX
 #include <pthread.h>
@@ -114,11 +115,12 @@ typedef enum {
 } StreamWriterType;
 
 typedef struct _DumpOpts {
-    const char	*indent;
-    const char	*before_sep;
-    const char	*after_sep;
-    const char	*hash_nl;
-    const char	*array_nl;
+    bool	use;
+    char	indent_str[16];
+    char	before_sep[16];
+    char	after_sep[16];
+    char	hash_nl[16];
+    char	array_nl[16];
     uint8_t	indent_size;
     uint8_t	before_size;
     uint8_t	after_size;
@@ -127,26 +129,26 @@ typedef struct _DumpOpts {
 } *DumpOpts;
 
 typedef struct _Options {
-    int		indent;		// indention for dump, default 2
-    char	circular;	// YesNo
-    char	auto_define;	// YesNo
-    char	sym_key;	// YesNo
-    char	escape_mode;	// Escape_Mode
-    char	mode;		// Mode
-    char	class_cache;	// YesNo
-    char	time_format;	// TimeFormat
-    char	bigdec_as_num;	// YesNo
-    char	bigdec_load;	// BigLoad
-    char	to_json;	// YesNo
-    char	nilnil;		// YesNo
-    char	allow_gc;	// allow GC during parse
-    char	quirks_mode;	// allow single JSON values instead of documents
-    const char	*create_id;	// 0 or string
-    size_t	create_id_len;	// length of create_id
-    int		sec_prec;	// second precision when dumping time
-    DumpOpts	dump_opts;
-    char	float_prec;	// float precision, linked to float_fmt
-    char	float_fmt[7];	// float format for dumping, if empty use Ruby
+    int			indent;		// indention for dump, default 2
+    char		circular;	// YesNo
+    char		auto_define;	// YesNo
+    char		sym_key;	// YesNo
+    char		escape_mode;	// Escape_Mode
+    char		mode;		// Mode
+    char		class_cache;	// YesNo
+    char		time_format;	// TimeFormat
+    char		bigdec_as_num;	// YesNo
+    char		bigdec_load;	// BigLoad
+    char		to_json;	// YesNo
+    char		nilnil;		// YesNo
+    char		allow_gc;	// allow GC during parse
+    char		quirks_mode;	// allow single JSON values instead of documents
+    const char		*create_id;	// 0 or string
+    size_t		create_id_len;	// length of create_id
+    int			sec_prec;	// second precision when dumping time
+    char		float_prec;	// float precision, linked to float_fmt
+    char		float_fmt[7];	// float format for dumping, if empty use Ruby
+    struct _DumpOpts	dump_opts;
 } *Options;
 
 typedef struct _Out {

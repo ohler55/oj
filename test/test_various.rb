@@ -115,27 +115,10 @@ class Juice < Minitest::Test
   end
 =end
   def test_set_options
-    orig ={
-      :indent=>0,
-      :second_precision=>9,
-      :circular=>false,
-      :class_cache=>true,
-      :auto_define=>false,
-      :symbol_keys=>false,
-      :bigdecimal_as_decimal=>true,
-      :use_to_json=>true,
-      :nilnil=>false,
-      :allow_gc=>true,
-      :quirks_mode=>true,
-      :float_precision=>15,
-      :mode=>:object,
-      :escape_mode=>:json,
-      :time_format=>:unix,
-      :bigdecimal_load=>:auto,
-      :create_id=>'json_class'}
-    o2 = {
-      :indent=>4,
-      :second_precision=>7,
+    orig = Oj.default_options()
+    alt ={
+      :indent=>3,
+      :second_precision=>5,
       :circular=>true,
       :class_cache=>false,
       :auto_define=>true,
@@ -144,19 +127,27 @@ class Juice < Minitest::Test
       :use_to_json=>false,
       :nilnil=>true,
       :allow_gc=>false,
-      :quirks_mode=>true,
-      :float_precision=>15,
-      :mode=>:compat,
-      :escape_mode=>:json,
-      :time_format=>:ruby,
-      :bigdecimal_load=>:bigdecimal,
-      :create_id=>nil}
-    o3 = { :indent => 4 }
-    Oj.default_options = o2
+      :quirks_mode=>false,
+      :float_precision=>13,
+      :mode=>:strict,
+      :escape_mode=>:ascii,
+      :time_format=>:unix_zone,
+      :bigdecimal_load=>:float,
+      :create_id=>'classy',
+      :space=>'z',
+      :indent_str=>' - ',
+      :array_nl=>'a',
+      :object_nl=>'o',
+      :space_before=>'b',
+    }
+    Oj.default_options = alt
     opts = Oj.default_options()
-    assert_equal(o2, opts);
-    Oj.default_options = o3 # see if it throws an exception
+    assert_equal(alt, opts);
+
     Oj.default_options = orig # return to original
+    # verify back to original
+    opts = Oj.default_options()
+    assert_equal(orig, opts);
   end
 
   def test_nil

@@ -3,6 +3,9 @@
 ^c^d hide subtree
 ^c^s show subtree
 
+- dump options
+ - test dump with each option
+
 - streaming parser for scp and saj
 
 - use these instead of num2long

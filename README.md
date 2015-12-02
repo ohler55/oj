@@ -159,9 +159,12 @@ Oj.default_options = {:mode => :compat }
 
 ## Releases
 
-**Future Release 2.13.2**
+**Future Release 2.14.0**
 
  - More tweaking on decimal rounding.
+
+ - Made dump options available in the default options and not only in the mimic
+   generate calls.
  
 **Release 2.13.1**
 
