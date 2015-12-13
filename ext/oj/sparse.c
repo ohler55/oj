@@ -431,7 +431,9 @@ read_num(ParseInfo pi) {
 	int	dec_cnt = 0;
 
 	for (; '0' <= c && c <= '9'; c = reader_get(&pi->rd)) {
-	    dec_cnt++;
+	    if (0 < ni.i) {
+		dec_cnt++;
+	    }
 	    if (ni.big) {
 		ni.big++;
 	    } else {
@@ -444,12 +446,13 @@ read_num(ParseInfo pi) {
 	    }
 	}
 	if ('.' == c) {
-	    dec_cnt = 0;
 	    c = reader_get(&pi->rd);
 	    for (; '0' <= c && c <= '9'; c = reader_get(&pi->rd)) {
 		int	d = (c - '0');
 
-		dec_cnt++;
+		if (0 < ni.num) {
+		    dec_cnt++;
+		}
 		ni.num = ni.num * 10 + d;
 		ni.div *= 10;
 		ni.di++;

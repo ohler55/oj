@@ -159,6 +159,11 @@ Oj.default_options = {:mode => :compat }
 
 ## Releases
 
+**Release 2.14.1**
+
+ - Fixed bug that reverted to BigDecimal when a decimal had preceeding zeros
+   after the decimal point.
+
 **Release 2.14.0**
 
  - More tweaking on decimal rounding.

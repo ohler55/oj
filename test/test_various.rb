@@ -168,6 +168,25 @@ class Juice < Minitest::Test
     dump_and_load(1, false)
   end
 
+  def test_float_parse
+    Oj.default_options = { :float_precision => 16 }
+    n = Oj.load('0.00001234567890123456')
+    assert_equal(Float, n.class)
+    assert_equal('1.234567890123456e-05', "%0.15e" % [n])
+
+    n = Oj.load('-0.00001234567890123456')
+    assert_equal(Float, n.class)
+    assert_equal('-1.234567890123456e-05', "%0.15e" % [n])
+
+    n = Oj.load('1000.0000123456789')
+    assert_equal(BigDecimal, n.class)
+    assert_equal('0.10000000123456789E4', n.to_s)
+
+    n = Oj.load('-0.000012345678901234567')
+    assert_equal(BigDecimal, n.class)
+    assert_equal('-0.12345678901234567E-4', n.to_s)
+  end
+
   def test_float_dump
     Oj.default_options = { :float_precision => 16 }
     assert_equal('1405460727.723866', Oj.dump(1405460727.723866))
