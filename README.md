@@ -164,13 +164,6 @@ Oj.default_options = {:mode => :compat }
  - Fixed bug that reverted to BigDecimal when a decimal had preceeding zeros
    after the decimal point.
 
-**Release 2.14.0**
-
- - More tweaking on decimal rounding.
-
- - Made dump options available in the default options and not only in the mimic
-   generate calls.
-  
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
 ## Compatibility
