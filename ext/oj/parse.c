@@ -771,8 +771,16 @@ protect_parse(VALUE pip) {
     return Qnil;
 }
 
+extern int oj_utf8_index;
 void
 oj_pi_set_input_str(ParseInfo pi, volatile VALUE input) {
+#if HAS_ENCODING_SUPPORT
+    rb_encoding	*enc = rb_to_encoding(rb_obj_encoding(input));
+
+    if (rb_utf8_encoding() != enc) {
+	input = rb_str_conv_enc(input, enc, rb_utf8_encoding());
+    }
+#endif
     pi->json = rb_string_value_ptr((VALUE*)&input);
     pi->end = pi->json + RSTRING_LEN(input);
 }

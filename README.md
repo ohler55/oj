@@ -159,6 +159,10 @@ Oj.default_options = {:mode => :compat }
 
 ## Releases
 
+**Release 2.14.2**
+
+ - Non-UTF-8 string input is now converted to UTF-8.
+
 **Release 2.14.1**
 
  - Fixed bug that reverted to BigDecimal when a decimal had preceeding zeros
