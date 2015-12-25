@@ -445,9 +445,8 @@ static struct _StrLen data[] = {
 static uint64_t
 micro_time() {
     struct timeval	tv;
-    struct timezone	tz;
 
-    gettimeofday(&tv, &tz);
+    gettimeofday(&tv, NULL);
 
     return (uint64_t)tv.tv_sec * 1000000ULL + (uint64_t)tv.tv_usec;
 }
