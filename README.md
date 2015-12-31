@@ -159,14 +159,9 @@ Oj.default_options = {:mode => :compat }
 
 ## Releases
 
-**Release 2.14.2**
+**Release 2.14.3**
 
- - Non-UTF-8 string input is now converted to UTF-8.
-
-**Release 2.14.1**
-
- - Fixed bug that reverted to BigDecimal when a decimal had preceeding zeros
-   after the decimal point.
+ - Updated to support Ruby 2.3.0.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
