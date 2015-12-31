@@ -73,6 +73,7 @@ class AllHandler < Oj::ScHandler
 end # AllHandler
 
 class Closer < AllHandler
+  attr_accessor :io
   def initialize(io)
     super()
     @io = io
@@ -340,7 +341,13 @@ class ScpTest < Minitest::Test
                       [:hash_set, 'one', true]], handler.calls)
       else
         read_io.close
-        write_io.write json
+        write_io.write json[0..11]
+        sleep(0.1)
+        begin
+          write_io.write json[12..-1]
+        rescue Exception => e
+          # ignore, should fail to write
+        end
         write_io.close
         Process.exit(0)
       end
@@ -357,8 +364,15 @@ class ScpTest < Minitest::Test
     end
     Thread.start(json) do |j|
       c = server.accept()
-      c.puts json
-      c.close
+      c.puts json[0..11]
+      10.times {
+        break if c.closed?
+        sleep(0.1)
+      }
+      unless c.closed?
+        c.puts json[12..-1]
+        c.close
+      end
     end
     begin
       sock = TCPSocket.new('localhost', 8080)

@@ -109,7 +109,7 @@ int
 oj_reader_read(Reader reader) {
     int		err;
     size_t	shift = 0;
-    
+
     if (0 == reader->read_func) {
 	return -1;
     }
@@ -165,7 +165,7 @@ rescue_cb(VALUE rbuf, VALUE err) {
     if (rb_eTypeError != clas && rb_eEOFError != clas) {
 	Reader	reader = (Reader)rbuf;
 
-	rb_raise(err, "at line %d, column %d\n", reader->line, reader->col);
+	rb_raise(clas, "at line %d, column %d\n", reader->line, reader->col);
     }
     return Qfalse;
 }
@@ -185,6 +185,7 @@ partial_io_cb(VALUE rbuf) {
     }
     str = StringValuePtr(rstr);
     cnt = RSTRING_LEN(rstr);
+    //printf("*** partial read %lu bytes, str: '%s'\n", cnt, str);
     strcpy(reader->tail, str);
     reader->read_end = reader->tail + cnt;
 

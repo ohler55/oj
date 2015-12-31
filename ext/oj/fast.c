@@ -813,7 +813,11 @@ parse_json(VALUE clas, char *json, int given, int allocated) {
     }
 #endif
     // last arg is free func void* func(void*)
+#if HAS_DATA_OBJECT_WRAP
+    doc->self = rb_data_object_wrap(clas, doc, 0, free_doc_cb);
+#else
     doc->self = rb_data_object_alloc(clas, doc, 0, free_doc_cb);
+#endif
     rb_gc_register_address(&doc->self);
     doc->json = json;
     DATA_PTR(doc->self) = doc;
