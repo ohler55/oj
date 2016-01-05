@@ -1102,6 +1102,7 @@ str_writer_push_object(int argc, VALUE *argv, VALUE self) {
 	rb_yield(Qnil);
 	oj_str_writer_pop(sw);
     }
+    RB_GC_GUARD(self);
     return Qnil;
 }
 
@@ -1135,6 +1136,7 @@ str_writer_push_array(int argc, VALUE *argv, VALUE self) {
 	rb_yield(Qnil);
 	oj_str_writer_pop(sw);
     }
+    RB_GC_GUARD(self);
     return Qnil;
 }
 
@@ -1162,6 +1164,7 @@ str_writer_push_value(int argc, VALUE *argv, VALUE self) {
 	rb_raise(rb_eArgError, "Wrong number of argument to 'push_value'.");
 	break;
     }
+    RB_GC_GUARD(self);
     return Qnil;
 }
 
@@ -1192,6 +1195,7 @@ str_writer_push_json(int argc, VALUE *argv, VALUE self) {
 	rb_raise(rb_eArgError, "Wrong number of argument to 'push_json'.");
 	break;
     }
+    RB_GC_GUARD(self);
     return Qnil;
 }
 
@@ -1232,6 +1236,7 @@ str_writer_reset(VALUE self) {
     sw->out.cur = sw->out.buf;
     *sw->out.cur = '\0';
 
+    RB_GC_GUARD(self);
     return Qnil;
 }
 
@@ -1244,6 +1249,7 @@ str_writer_to_s(VALUE self) {
     StrWriter	sw = (StrWriter)DATA_PTR(self);
     VALUE	rstr = rb_str_new(sw->out.buf, sw->out.cur - sw->out.buf);
 
+    RB_GC_GUARD(self);
     return oj_encode(rstr);
 }
 
@@ -1355,6 +1361,7 @@ stream_writer_push_key(VALUE self, VALUE key) {
     stream_writer_reset_buf(sw);
     oj_str_writer_push_key(&sw->sw, StringValuePtr(key));
     stream_writer_write(sw);
+    RB_GC_GUARD(self);
     return Qnil;
 }
 
@@ -1386,6 +1393,7 @@ stream_writer_push_object(int argc, VALUE *argv, VALUE self) {
 	break;
     }
     stream_writer_write(sw);
+    RB_GC_GUARD(self);
     return Qnil;
 }
 
@@ -1417,6 +1425,7 @@ stream_writer_push_array(int argc, VALUE *argv, VALUE self) {
 	break;
     }
     stream_writer_write(sw);
+    RB_GC_GUARD(self);
     return Qnil;
 }
 
@@ -1448,6 +1457,7 @@ stream_writer_push_value(int argc, VALUE *argv, VALUE self) {
 	break;
     }
     stream_writer_write(sw);
+    RB_GC_GUARD(self);
     return Qnil;
 }
 
@@ -1482,6 +1492,7 @@ stream_writer_push_json(int argc, VALUE *argv, VALUE self) {
 	break;
     }
     stream_writer_write(sw);
+    RB_GC_GUARD(self);
     return Qnil;
 }
 
@@ -1497,6 +1508,7 @@ stream_writer_pop(VALUE self) {
     stream_writer_reset_buf(sw);
     oj_str_writer_pop(&sw->sw);
     stream_writer_write(sw);
+    RB_GC_GUARD(self);
     return Qnil;
 }
 
@@ -1513,6 +1525,7 @@ stream_writer_pop_all(VALUE self) {
     oj_str_writer_pop_all(&sw->sw);
     stream_writer_write(sw);
 
+    RB_GC_GUARD(self);
     return Qnil;
 }
 
