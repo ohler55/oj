@@ -1250,9 +1250,39 @@ class Juice < Minitest::Test
     assert_equal(nil, obj)
   end
 
-  def test_quirks_mode
+  def test_quirks_null_mode
     assert_raises(Oj::ParseError) { Oj.load("null", :quirks_mode => false) }
-    assert_equal nil, Oj.load("null", :quirks_mode => true)
+    assert_equal(nil, Oj.load("null", :quirks_mode => true))
+  end
+
+  def test_quirks_bool_mode
+    assert_raises(Oj::ParseError) { Oj.load("true", :quirks_mode => false) }
+    assert_equal(true, Oj.load("true", :quirks_mode => true))
+  end
+
+  def test_quirks_number_mode
+    assert_raises(Oj::ParseError) { Oj.load("123", :quirks_mode => false) }
+    assert_equal(123, Oj.load("123", :quirks_mode => true))
+  end
+
+  def test_quirks_decimal_mode
+    assert_raises(Oj::ParseError) { Oj.load("123.45", :quirks_mode => false) }
+    assert_equal(123.45, Oj.load("123.45", :quirks_mode => true))
+  end
+
+  def test_quirks_string_mode
+    assert_raises(Oj::ParseError) { Oj.load('"string"', :quirks_mode => false) }
+    assert_equal('string', Oj.load('"string"', :quirks_mode => true))
+  end
+
+  def test_quirks_array_mode
+    assert_equal([], Oj.load("[]", :quirks_mode => false))
+    assert_equal([], Oj.load("[]", :quirks_mode => true))
+  end
+
+  def test_quirks_object_mode
+    assert_equal({}, Oj.load("{}", :quirks_mode => false))
+    assert_equal({}, Oj.load("{}", :quirks_mode => true))
   end
 
   def dump_and_load(obj, trace=false)

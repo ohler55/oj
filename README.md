@@ -159,9 +159,9 @@ Oj.default_options = {:mode => :compat }
 
 ## Releases
 
-**Release 2.14.3**
+**Release 2.14.4**
 
- - Updated to support Ruby 2.3.0.
+ - When not in quirks mode strings are now raise an exception if they are the top level JSON value.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
