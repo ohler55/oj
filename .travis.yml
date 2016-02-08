@@ -1,7 +1,8 @@
 sudo: false
 
 cache:
-  bundler
+  - ccache
+  - bundler
 
 language: ruby
 rvm:
