@@ -1,5 +1,9 @@
 sudo: false
 
+env:
+  global:
+    - MAKE="make -j 2"
+
 cache:
   bundler
 
