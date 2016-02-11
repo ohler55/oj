@@ -68,7 +68,7 @@ $obj = {
 Oj.default_options = { :indent => $indent, :mode => :compat }
 
 if 0 < $size
-  s = Oj.dump($obj, :mode => :compat).size + 1
+  s = Oj.dump($obj).size + 1
   cnt = $size * 1024 / s
   o = $obj
   $obj = []
@@ -77,7 +77,7 @@ if 0 < $size
   end
 end
 
-$json = Oj.dump($obj, :mode => :compat)
+$json = Oj.dump($obj)
 $failed = {} # key is same as String used in tests later
 
 def capture_error(tag, orig, load_key, dump_key, &blk)
