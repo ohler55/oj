@@ -25,6 +25,11 @@ puts "Same? #{h == h2}"
 # true
 ```
 
+**Attention**
+By default Oj uses the `:object` mode which is used to marshal and unmarshal Ruby objects.
+Do not attempt to deserialize arbitrary JSON in object mode. This may result in issues like in [#285](https://github.com/ohler55/oj/issues/285).
+Instead use the `:compat` or the `:strict` mode.
+
 ## Installation
 ```
 gem install oj
