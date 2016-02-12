@@ -69,7 +69,7 @@ actual default options but on a copy of the Hash:
 Oj.default_options = {:mode => :compat }
 ```
 
- * `:mode` [Symbol] mode for dumping and loading JSON. Important format details [here](http://www.ohler.com/dev/oj_misc/encoding_format.html).
+ * `:mode` [Symbol] mode for dumping and loading JSON. **Important format details [here](http://www.ohler.com/dev/oj_misc/encoding_format.html).**
 
   - `:object` mode will dump any `Object` as a JSON `Object` with keys that
     match the Ruby `Object`'s variable names without the '@' prefix
