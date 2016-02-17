@@ -4,6 +4,9 @@
 ^c^s show subtree
 
 
+- in mimic mode
+ - wrap exceptions with JSON::ParseError
+
 
 - streaming parser for scp and saj
 

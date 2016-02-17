@@ -122,6 +122,7 @@ static VALUE	float_prec_sym;
 static VALUE	float_sym;
 static VALUE	indent_sym;
 static VALUE	json_sym;
+static VALUE	json_parser_error_class;
 static VALUE	mode_sym;
 static VALUE	newline_sym;
 static VALUE	nilnil_sym;
@@ -752,6 +753,7 @@ load_file(int argc, VALUE *argv, VALUE self) {
     Check_Type(*argv, T_STRING);
     pi.options = oj_default_options;
     pi.handler = Qnil;
+    pi.err_class = Qnil;
     if (2 <= argc) {
 	VALUE	ropts = argv[1];
 	VALUE	v;
@@ -806,6 +808,7 @@ safe_load(VALUE self, VALUE doc) {
     struct _ParseInfo	pi;
     VALUE		args[1];
 
+    pi.err_class = Qnil;
     pi.options = oj_default_options;
     pi.options.auto_define = No;
     pi.options.sym_key = No;
@@ -1591,6 +1594,7 @@ mimic_load(int argc, VALUE *argv, VALUE self) {
     VALUE		obj;
     VALUE		p = Qnil;
 
+    pi.err_class = json_parser_error_class;
     pi.options = oj_default_options;
     oj_set_compat_callbacks(&pi);
 
@@ -1727,6 +1731,7 @@ mimic_parse(int argc, VALUE *argv, VALUE self) {
 	rb_raise(rb_eArgError, "Wrong number of arguments to parse.");
     }
     oj_set_compat_callbacks(&pi);
+    pi.err_class = json_parser_error_class;
     pi.options = oj_default_options;
     pi.options.auto_define = No;
     pi.options.quirks_mode = No;
@@ -1942,7 +1947,8 @@ define_mimic_json(int argc, VALUE *argv, VALUE self) {
     if (rb_const_defined_at(mimic, rb_intern("ParserError"))) {
 	rb_funcall(mimic, rb_intern("remove_const"), 1, ID2SYM(rb_intern("ParserError")));
     }
-    rb_define_const(mimic, "ParserError", oj_parse_error_class);
+    rb_define_class_under(mimic, "ParserError", rb_eException);
+    json_parser_error_class = rb_const_get(mimic, rb_intern("ParserError"));
 
     if (!rb_const_defined_at(mimic, rb_intern("State"))) {
         rb_define_class_under(mimic, "State", rb_cObject);
@@ -2107,6 +2113,7 @@ void Init_oj() {
     oj_parse_error_class = rb_const_get_at(Oj, rb_intern("ParseError"));
     oj_stringio_class = rb_const_get(rb_cObject, rb_intern("StringIO"));
     oj_struct_class = rb_const_get(rb_cObject, rb_intern("Struct"));
+    json_parser_error_class = Qnil; // replaced if mimic is called
 
     allow_gc_sym = ID2SYM(rb_intern("allow_gc"));	rb_gc_register_address(&allow_gc_sym);
     ascii_only_sym = ID2SYM(rb_intern("ascii_only"));	rb_gc_register_address(&ascii_only_sym);

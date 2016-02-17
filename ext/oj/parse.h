@@ -88,6 +88,7 @@ typedef struct _ParseInfo {
     void		(*add_cstr)(struct _ParseInfo *pi, const char *str, size_t len, const char *orig);
     void		(*add_num)(struct _ParseInfo *pi, NumInfo ni);
     void		(*add_value)(struct _ParseInfo *pi, VALUE val);
+    VALUE		err_class;
 } *ParseInfo;
 
 extern void	oj_parse2(ParseInfo pi);

@@ -187,6 +187,7 @@ oj_sc_parse(int argc, VALUE *argv, VALUE self) {
     struct _ParseInfo	pi;
     VALUE		input = argv[1];
 
+    pi.err_class = Qnil;
     pi.options = oj_default_options;
     if (3 == argc) {
 	oj_parse_options(argv[2], &pi.options);

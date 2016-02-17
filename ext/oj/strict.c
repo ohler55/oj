@@ -159,6 +159,7 @@ oj_strict_parse(int argc, VALUE *argv, VALUE self) {
 
     pi.options = oj_default_options;
     pi.handler = Qnil;
+    pi.err_class = Qnil;
     oj_set_strict_callbacks(&pi);
 
     if (T_STRING == rb_type(*argv)) {
@@ -174,6 +175,7 @@ oj_strict_parse_cstr(int argc, VALUE *argv, char *json, size_t len) {
 
     pi.options = oj_default_options;
     pi.handler = Qnil;
+    pi.err_class = Qnil;
     oj_set_strict_callbacks(&pi);
 
     return oj_pi_parse(argc, argv, &pi, json, len, 1);

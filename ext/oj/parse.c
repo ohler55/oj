@@ -906,23 +906,35 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
 	rb_jump_tag(line);
     }
     if (err_has(&pi->err)) {
+	if (Qnil != pi->err_class) {
+	    pi->err.clas = pi->err_class;
+	}
 	oj_err_raise(&pi->err);
     }
     if (pi->options.quirks_mode == No) {
 	switch (rb_type(result)) {
-            case T_NIL:
-	    case T_TRUE:
-	    case T_FALSE:
-	    case T_FIXNUM:
-	    case T_FLOAT:
-	    case T_CLASS:
-	    case T_STRING:
-	    case T_SYMBOL:
-		rb_raise(oj_parse_error_class, "unexpected non-document value");
-		break;
-	    default:
-		// okay
-		break;
+	case T_NIL:
+	case T_TRUE:
+	case T_FALSE:
+	case T_FIXNUM:
+	case T_FLOAT:
+	case T_CLASS:
+	case T_STRING:
+	case T_SYMBOL: {
+	    struct _Err	err;
+
+	    if (Qnil == pi->err_class) {
+		err.clas = oj_parse_error_class;
+	    } else {
+		err.clas = pi->err_class;
+	    }
+	    snprintf(err.msg, sizeof(err.msg), "unexpected non-document value");
+	    oj_err_raise(&err);
+	    break;
+	}
+	default:
+	    // okay
+	    break;
 	}
     }
     return result;

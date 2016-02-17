@@ -809,6 +809,9 @@ oj_pi_sparse(int argc, VALUE *argv, ParseInfo pi, int fd) {
 	rb_jump_tag(line);
     }
     if (err_has(&pi->err)) {
+	if (Qnil != pi->err_class) {
+	    pi->err.clas = pi->err_class;
+	}
 	oj_err_raise(&pi->err);
     }
     return result;

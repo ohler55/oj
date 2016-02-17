@@ -159,6 +159,11 @@ Oj.default_options = {:mode => :compat }
 
 ## Releases
 
+**Release 2.14.5**
+
+ - Parse errors in mimic mode are not a separate class than Oj.ParseError so the
+   displayed name is JSON::ParserError instead.
+
 **Release 2.14.4**
 
  - When not in quirks mode strings are now raise an exception if they are the top level JSON value.
