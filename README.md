@@ -159,6 +159,10 @@ Oj.default_options = {:mode => :compat }
 
 ## Releases
 
+**Future Release 2.14.6**
+
+ - Changed JSON::ParserError to inherit from JSON::JSONError which inherits from StandardError.
+
 **Release 2.14.5**
 
  - Parse errors in mimic mode are not a separate class than Oj.ParseError so the
