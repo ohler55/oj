@@ -644,6 +644,9 @@ oj_parse2(ParseInfo pi) {
 	    break;
 	case '/':
 	    skip_comment(pi);
+	    if (first) {
+		continue;
+	    }
 	    break;
 	case '\0':
 	    pi->cur--;

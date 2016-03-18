@@ -1213,7 +1213,8 @@ class Juice < Minitest::Test
   end
 
   def test_comment_c
-    json = %{{
+    json = %{/*before*/
+{
   "x"/*one*/:/*two*/true,
   "y":58,
   "z": [1,2,3]}

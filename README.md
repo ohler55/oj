@@ -159,6 +159,11 @@ Oj.default_options = {:mode => :compat }
 
 ## Releases
 
+**future Release 2.14.7**
+
+ - Fixed bug where a comment before another JSON element caused an
+   error. Comments are not part of the spec but this keep support consistent.
+
 **Release 2.14.6**
 
  - Changed JSON::ParserError to inherit from JSON::JSONError which inherits from StandardError.
