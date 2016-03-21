@@ -5,7 +5,8 @@ env:
     - MAKE="make -j 2"
 
 cache:
-  bundler
+  - ccache
+  - bundler
 
 language: ruby
 rvm:
