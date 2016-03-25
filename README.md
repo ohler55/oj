@@ -159,6 +159,12 @@ Oj.default_options = {:mode => :compat }
 
 ## Releases
 
+**future Release 2.14.8**
+
+ - Fixed bug where encoded strings could be GCed.
+
+ - TBD nan option added....
+
 **Release 2.14.7**
 
  - Fixed bug where a comment before another JSON element caused an
