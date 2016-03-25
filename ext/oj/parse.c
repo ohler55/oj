@@ -775,17 +775,18 @@ protect_parse(VALUE pip) {
 }
 
 extern int oj_utf8_index;
-void
-oj_pi_set_input_str(ParseInfo pi, volatile VALUE input) {
+
+static void
+oj_pi_set_input_str(ParseInfo pi, volatile VALUE *inputp) {
 #if HAS_ENCODING_SUPPORT
-    rb_encoding	*enc = rb_to_encoding(rb_obj_encoding(input));
+    rb_encoding	*enc = rb_to_encoding(rb_obj_encoding(*inputp));
 
     if (rb_utf8_encoding() != enc) {
-	input = rb_str_conv_enc(input, enc, rb_utf8_encoding());
+	*inputp = rb_str_conv_enc(*inputp, enc, rb_utf8_encoding());
     }
 #endif
-    pi->json = rb_string_value_ptr((VALUE*)&input);
-    pi->end = pi->json + RSTRING_LEN(input);
+    pi->json = rb_string_value_ptr((VALUE*)inputp);
+    pi->end = pi->json + RSTRING_LEN(*inputp);
 }
 
 VALUE
@@ -814,7 +815,7 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
 	pi->end = json + len;
 	free_json = 1;
     } else if (T_STRING == rb_type(input)) {
-	oj_pi_set_input_str(pi, input);
+	oj_pi_set_input_str(pi, &input);
     } else if (Qnil == input && Yes == pi->options.nilnil) {
 	return Qnil;
     } else {
@@ -823,7 +824,7 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
 
 	if (oj_stringio_class == clas) {
 	    s = rb_funcall2(input, oj_string_id, 0, 0);
-	    oj_pi_set_input_str(pi, s);
+	    oj_pi_set_input_str(pi, &s);
 #if !IS_WINDOWS
 	} else if (rb_cFile == clas && 0 == FIX2INT(rb_funcall(input, oj_pos_id, 0))) {
 	    int		fd = FIX2INT(rb_funcall(input, oj_fileno_id, 0));
