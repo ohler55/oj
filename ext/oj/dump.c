@@ -441,6 +441,10 @@ dump_bignum(VALUE obj, Out out) {
     *out->cur = '\0';
 }
 
+static const char	inf_val[] = INF_VAL;
+static const char	ninf_val[] = NINF_VAL;
+static const char	nan_val[] = NAN_VAL;
+
 // Removed dependencies on math due to problems with CentOS 5.4.
 static void
 dump_float(VALUE obj, Out out) {
@@ -464,7 +468,11 @@ dump_float(VALUE obj, Out out) {
 	    strcpy(buf, "null");
 	    cnt = 4;
 	    break;
-	default:
+	case ObjectMode:
+	    strcpy(buf, inf_val);
+	    cnt = sizeof(inf_val) - 1;
+	    break;
+	default: // compat mode
 	    strcpy(buf, "Infinity");
 	    cnt = 8;
 	    break;
@@ -477,7 +485,11 @@ dump_float(VALUE obj, Out out) {
 	    strcpy(buf, "null");
 	    cnt = 4;
 	    break;
-	default:
+	case ObjectMode:
+	    strcpy(buf, ninf_val);
+	    cnt = sizeof(ninf_val) - 1;
+	    break;
+	default: // compat mode
 	    strcpy(buf, "-Infinity");
 	    cnt = 9;
 	    break;
@@ -490,7 +502,11 @@ dump_float(VALUE obj, Out out) {
 	    strcpy(buf, "null");
 	    cnt = 4;
 	    break;
-	default:
+	case ObjectMode:
+	    strcpy(buf, nan_val);
+	    cnt = sizeof(nan_val) - 1;
+	    break;
+	default: // compat mode
 	    strcpy(buf, "NaN");
 	    cnt = 3;
 	    break;

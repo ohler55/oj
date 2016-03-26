@@ -481,6 +481,17 @@ read_num(ParseInfo pi) {
 	}
 	ni.len = pi->cur - ni.str;
     }
+    // Check for special reserved values for Infinity and NaN.
+    if (ni.big && '3' == *ni.str) {
+	if (0 == strcasecmp(INF_VAL, ni.str)) {
+	    ni.infinity = 1;
+	} else if (0 == strcasecmp(NINF_VAL, ni.str)) {
+	    ni.infinity = 1;
+	    ni.neg = 1;
+	} else if (0 == strcasecmp(NAN_VAL, ni.str)) {
+	    ni.nan = 1;
+	}
+    }
     if (BigDec == pi->options.bigdec_load) {
 	ni.big = 1;
     }

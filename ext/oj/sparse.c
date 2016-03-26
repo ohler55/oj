@@ -487,11 +487,22 @@ read_num(ParseInfo pi) {
 	    reader_backup(&pi->rd);
 	}
     }
+    ni.str = pi->rd.str;
+    ni.len = pi->rd.tail - pi->rd.str;
+    // Check for special reserved values for Infinity and NaN.
+    if (ni.big && '3' == *ni.str) {
+	if (0 == strcasecmp(INF_VAL, ni.str)) {
+	    ni.infinity = 1;
+	} else if (0 == strcasecmp(NINF_VAL, ni.str)) {
+	    ni.infinity = 1;
+	    ni.neg = 1;
+	} else if (0 == strcasecmp(NAN_VAL, ni.str)) {
+	    ni.nan = 1;
+	}
+    }
     if (BigDec == pi->options.bigdec_load) {
 	ni.big = 1;
     }
-    ni.str = pi->rd.str;
-    ni.len = pi->rd.tail - pi->rd.str;
     add_num_value(pi, &ni);
     reader_release(&pi->rd);
 }

@@ -68,6 +68,11 @@ enum st_retval {ST_CONTINUE = 0, ST_STOP = 1, ST_DELETE = 2, ST_CHECK};
 
 #include "err.h"
 
+// Each starts with 3 for a quick precheck before using strcmp.
+#define INF_VAL		"3.0e14159265358979323846"
+#define NINF_VAL	"-3.0e14159265358979323846"
+#define NAN_VAL		"3.3e14159265358979323846"
+
 typedef enum {
     Yes	   = 'y',
     No	   = 'n',
