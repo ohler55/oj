@@ -157,6 +157,12 @@ Oj.default_options = {:mode => :compat }
  * `:quirks_mode` [Boolean] Allow single JSON values instead of
    documents, default is true (allow).
 
+* `:nan` [:null|:huge|:word|:raise|:auto] How to dump Infinity, -Infinity, and
+  NaN in null, strict, and compat mode. :null places a null, :huge places a huge
+  number, :word places Infinity or NaN, :raise raises and exception, :auto uses
+  default for each mode which are :raise for :strict, :null for :null, and :word
+  for :compat. Default is :auto.
+
 ## Releases
 
 **future Release 2.15.0**
