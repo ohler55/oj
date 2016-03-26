@@ -113,6 +113,7 @@ typedef enum {
 } DumpType;
 
 typedef enum {
+    AutoNan	= 'a',
     NullNan	= 'n',
     HugeNan	= 'h',
     WordNan	= 'w',

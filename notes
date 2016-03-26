@@ -10,6 +10,7 @@
   - :huge_number
   - :as_word (Infinity, NaN)
   - :raise (raise an Exception)
+  - :auto - default for each mode <-----------
  - effects dump only
 
 - streaming parser for scp and saj

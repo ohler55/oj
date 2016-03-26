@@ -163,9 +163,9 @@ Oj.default_options = {:mode => :compat }
 
  - Fixed bug where encoded strings could be GCed.
 
- - :nan option added for dumping Infinity, -Infinity, and NaN. This is a change
-   in the API as the mode is no longer the value that controls how NaN values
-   are dumped.
+ - :nan option added for dumping Infinity, -Infinity, and NaN. This is an
+   edition to the API. The default value for the :non option is :auto which uses
+   the previous NaN handling on dumping of non-object modes.
 
 **Release 2.14.7**
 

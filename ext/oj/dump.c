@@ -465,7 +465,17 @@ dump_float(VALUE obj, Out out) {
 	    strcpy(buf, inf_val);
 	    cnt = sizeof(inf_val) - 1;
 	} else {
-	    switch (out->opts->dump_opts.nan_dump) {
+	    NanDump	nd = out->opts->dump_opts.nan_dump;
+	    
+	    if (AutoNan == nd) {
+		switch (out->opts->mode) {
+		case CompatMode:	nd = WordNan;	break;
+		case StrictMode:	nd = RaiseNan;	break;
+		case NullMode:		nd = NullNan;	break;
+		default:				break;
+		}
+	    }
+	    switch (nd) {
 	    case RaiseNan:
 		raise_strict(obj);
 		break;
@@ -489,7 +499,17 @@ dump_float(VALUE obj, Out out) {
 	    strcpy(buf, ninf_val);
 	    cnt = sizeof(ninf_val) - 1;
 	} else {
-	    switch (out->opts->dump_opts.nan_dump) {
+	    NanDump	nd = out->opts->dump_opts.nan_dump;
+	    
+	    if (AutoNan == nd) {
+		switch (out->opts->mode) {
+		case CompatMode:	nd = WordNan;	break;
+		case StrictMode:	nd = RaiseNan;	break;
+		case NullMode:		nd = NullNan;	break;
+		default:				break;
+		}
+	    }
+	    switch (nd) {
 	    case RaiseNan:
 		raise_strict(obj);
 		break;
@@ -513,7 +533,17 @@ dump_float(VALUE obj, Out out) {
 	    strcpy(buf, nan_val);
 	    cnt = sizeof(nan_val) - 1;
 	} else {
-	    switch (out->opts->dump_opts.nan_dump) {
+	    NanDump	nd = out->opts->dump_opts.nan_dump;
+	    
+	    if (AutoNan == nd) {
+		switch (out->opts->mode) {
+		case CompatMode:	nd = WordNan;	break;
+		case StrictMode:	nd = RaiseNan;	break;
+		case NullMode:		nd = NullNan;	break;
+		default:				break;
+		}
+	    }
+	    switch (nd) {
 	    case RaiseNan:
 		raise_strict(obj);
 		break;

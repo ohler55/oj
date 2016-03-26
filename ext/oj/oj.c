@@ -198,7 +198,7 @@ struct _Options	oj_default_options = {
 	0,	// after_size
 	0,	// hash_size
 	0,	// array_size
-	RaiseNan,// nan_dump
+	AutoNan,// nan_dump
     }
 };
 
@@ -229,7 +229,7 @@ static VALUE	define_mimic_json(int argc, VALUE *argv, VALUE self);
  * - space_before: [String|nil] String to use before the colon separator in JSON object fields
  * - object_nl: [String|nil] String to use after a JSON object field value
  * - array_nl: [String|nil] String to use after a JSON array value
- * - nan: [:null|:huge|:word|:raise] how to dump Infinity and NaN in null, strict, and compat mode. :null places a null, :huge places a huge number, :word places Infinity or NaN, :raise raises and exception.
+ * - nan: [:null|:huge|:word|:raise|:auto] how to dump Infinity and NaN in null, strict, and compat mode. :null places a null, :huge places a huge number, :word places Infinity or NaN, :raise raises and exception, :auto uses default for each mode.
  * @return [Hash] all current option settings.
  */
 static VALUE
@@ -289,8 +289,9 @@ get_def_opts(VALUE self) {
     case NullNan:	rb_hash_aset(opts, nan_sym, null_sym);	break;
     case RaiseNan:	rb_hash_aset(opts, nan_sym, raise_sym);	break;
     case WordNan:	rb_hash_aset(opts, nan_sym, word_sym);	break;
-    case HugeNan:
-    default:		rb_hash_aset(opts, nan_sym, huge_sym);	break;
+    case HugeNan:	rb_hash_aset(opts, nan_sym, huge_sym);	break;
+    case AutoNan:
+    default:		rb_hash_aset(opts, nan_sym, auto_sym);	break;
     }
     return opts;
 }
@@ -334,7 +335,7 @@ get_def_opts(VALUE self) {
  * @param [String|nil] :space_before String to use before the colon separator in JSON object fields
  * @param [String|nil] :object_nl String to use after a JSON object field value
  * @param [String|nil] :array_nl String to use after a JSON array value
- * @param [:null|:huge|:word|:raise] :nan how to dump Infinity and NaN in null, strict, and compat mode. :null places a null, :huge places a huge number, :word places Infinity or NaN, :raise raises and exception.
+ * @param [:null|:huge|:word|:raise] :nan how to dump Infinity and NaN in null, strict, and compat mode. :null places a null, :huge places a huge number, :word places Infinity or NaN, :raise raises and exception, :auto uses default for each mode.
  * @return [nil]
  */
 static VALUE
@@ -569,8 +570,10 @@ oj_parse_options(VALUE ropts, Options copts) {
 	    copts->dump_opts.nan_dump = WordNan;
 	} else if (raise_sym == v) {
 	    copts->dump_opts.nan_dump = RaiseNan;
+	} else if (auto_sym == v) {
+	    copts->dump_opts.nan_dump = AutoNan;
 	} else {
-	    rb_raise(rb_eArgError, ":nan must be :null, :huge, :word, or :raise.");
+	    rb_raise(rb_eArgError, ":nan must be :null, :huge, :word, :raise, or :auto.");
 	}
     }
     copts->dump_opts.use = (0 < copts->dump_opts.indent_size ||
@@ -1859,7 +1862,7 @@ static struct _Options	mimic_object_to_json_options = {
 	0,	// after_size
 	0,	// hash_size
 	0,	// array_size
-	WordNan,// nan_dump
+	AutoNan,// nan_dump
     }
 };
 
