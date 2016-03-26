@@ -159,11 +159,13 @@ Oj.default_options = {:mode => :compat }
 
 ## Releases
 
-**future Release 2.14.8**
+**future Release 2.15.0**
 
  - Fixed bug where encoded strings could be GCed.
 
- - TBD nan option added....
+ - :nan option added for dumping Infinity, -Infinity, and NaN. This is a change
+   in the API as the mode is no longer the value that controls how NaN values
+   are dumped.
 
 **Release 2.14.7**
 

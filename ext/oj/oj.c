@@ -120,15 +120,18 @@ static VALUE	create_id_sym;
 static VALUE	escape_mode_sym;
 static VALUE	float_prec_sym;
 static VALUE	float_sym;
+static VALUE	huge_sym;
 static VALUE	indent_sym;
-static VALUE	json_sym;
 static VALUE	json_parser_error_class;
+static VALUE	json_sym;
 static VALUE	mode_sym;
+static VALUE	nan_sym;
 static VALUE	newline_sym;
 static VALUE	nilnil_sym;
 static VALUE	null_sym;
 static VALUE	object_sym;
 static VALUE	quirks_mode_sym;
+static VALUE	raise_sym;
 static VALUE	ruby_sym;
 static VALUE	sec_prec_sym;
 static VALUE	strict_sym;
@@ -137,6 +140,7 @@ static VALUE	time_format_sym;
 static VALUE	unix_sym;
 static VALUE	unix_zone_sym;
 static VALUE	use_to_json_sym;
+static VALUE	word_sym;
 static VALUE	xmlschema_sym;
 static VALUE	xss_safe_sym;
 
@@ -194,6 +198,7 @@ struct _Options	oj_default_options = {
 	0,	// after_size
 	0,	// hash_size
 	0,	// array_size
+	RaiseNan,// nan_dump
     }
 };
 
@@ -224,6 +229,7 @@ static VALUE	define_mimic_json(int argc, VALUE *argv, VALUE self);
  * - space_before: [String|nil] String to use before the colon separator in JSON object fields
  * - object_nl: [String|nil] String to use after a JSON object field value
  * - array_nl: [String|nil] String to use after a JSON array value
+ * - nan: [:null|:huge|:word|:raise] how to dump Infinity and NaN in null, strict, and compat mode. :null places a null, :huge places a huge number, :word places Infinity or NaN, :raise raises and exception.
  * @return [Hash] all current option settings.
  */
 static VALUE
@@ -279,6 +285,13 @@ get_def_opts(VALUE self) {
     rb_hash_aset(opts, object_nl_sym, (0 == oj_default_options.dump_opts.hash_size) ? Qnil : rb_str_new2(oj_default_options.dump_opts.hash_nl));
     rb_hash_aset(opts, array_nl_sym, (0 == oj_default_options.dump_opts.array_size) ? Qnil : rb_str_new2(oj_default_options.dump_opts.array_nl));
 
+    switch (oj_default_options.dump_opts.nan_dump) {
+    case NullNan:	rb_hash_aset(opts, nan_sym, null_sym);	break;
+    case RaiseNan:	rb_hash_aset(opts, nan_sym, raise_sym);	break;
+    case WordNan:	rb_hash_aset(opts, nan_sym, word_sym);	break;
+    case HugeNan:
+    default:		rb_hash_aset(opts, nan_sym, huge_sym);	break;
+    }
     return opts;
 }
 
@@ -321,6 +334,7 @@ get_def_opts(VALUE self) {
  * @param [String|nil] :space_before String to use before the colon separator in JSON object fields
  * @param [String|nil] :object_nl String to use after a JSON object field value
  * @param [String|nil] :array_nl String to use after a JSON array value
+ * @param [:null|:huge|:word|:raise] :nan how to dump Infinity and NaN in null, strict, and compat mode. :null places a null, :huge places a huge number, :word places Infinity or NaN, :raise raises and exception.
  * @return [nil]
  */
 static VALUE
@@ -544,6 +558,19 @@ oj_parse_options(VALUE ropts, Options copts) {
 	    }
 	    strcpy(copts->dump_opts.array_nl, StringValuePtr(v));
 	    copts->dump_opts.array_size = (uint8_t)len;
+	}
+    }
+    if (Qnil != (v = rb_hash_lookup(ropts, nan_sym))) {
+	if (null_sym == v) {
+	    copts->dump_opts.nan_dump = NullNan;
+	} else if (huge_sym == v) {
+	    copts->dump_opts.nan_dump = HugeNan;
+	} else if (word_sym == v) {
+	    copts->dump_opts.nan_dump = WordNan;
+	} else if (raise_sym == v) {
+	    copts->dump_opts.nan_dump = RaiseNan;
+	} else {
+	    rb_raise(rb_eArgError, ":nan must be :null, :huge, :word, or :raise.");
 	}
     }
     copts->dump_opts.use = (0 < copts->dump_opts.indent_size ||
@@ -1832,6 +1859,7 @@ static struct _Options	mimic_object_to_json_options = {
 	0,	// after_size
 	0,	// hash_size
 	0,	// array_size
+	WordNan,// nan_dump
     }
 };
 
@@ -2120,11 +2148,11 @@ void Init_oj() {
     json_parser_error_class = Qnil; // replaced if mimic is called
 
     allow_gc_sym = ID2SYM(rb_intern("allow_gc"));	rb_gc_register_address(&allow_gc_sym);
+    array_nl_sym = ID2SYM(rb_intern("array_nl"));	rb_gc_register_address(&array_nl_sym);
     ascii_only_sym = ID2SYM(rb_intern("ascii_only"));	rb_gc_register_address(&ascii_only_sym);
     ascii_sym = ID2SYM(rb_intern("ascii"));		rb_gc_register_address(&ascii_sym);
     auto_define_sym = ID2SYM(rb_intern("auto_define"));	rb_gc_register_address(&auto_define_sym);
     auto_sym = ID2SYM(rb_intern("auto"));		rb_gc_register_address(&auto_sym);
-    array_nl_sym = ID2SYM(rb_intern("array_nl"));	rb_gc_register_address(&array_nl_sym);
     bigdecimal_as_decimal_sym = ID2SYM(rb_intern("bigdecimal_as_decimal"));rb_gc_register_address(&bigdecimal_as_decimal_sym);
     bigdecimal_load_sym = ID2SYM(rb_intern("bigdecimal_load"));rb_gc_register_address(&bigdecimal_load_sym);
     bigdecimal_sym = ID2SYM(rb_intern("bigdecimal"));	rb_gc_register_address(&bigdecimal_sym);
@@ -2135,15 +2163,18 @@ void Init_oj() {
     escape_mode_sym = ID2SYM(rb_intern("escape_mode"));	rb_gc_register_address(&escape_mode_sym);
     float_prec_sym = ID2SYM(rb_intern("float_precision"));rb_gc_register_address(&float_prec_sym);
     float_sym = ID2SYM(rb_intern("float"));		rb_gc_register_address(&float_sym);
+    huge_sym = ID2SYM(rb_intern("huge"));		rb_gc_register_address(&huge_sym);
     indent_sym = ID2SYM(rb_intern("indent"));		rb_gc_register_address(&indent_sym);
     json_sym = ID2SYM(rb_intern("json"));		rb_gc_register_address(&json_sym);
     mode_sym = ID2SYM(rb_intern("mode"));		rb_gc_register_address(&mode_sym);
+    nan_sym = ID2SYM(rb_intern("nan"));		rb_gc_register_address(&nan_sym);
     newline_sym = ID2SYM(rb_intern("newline"));		rb_gc_register_address(&newline_sym);
     nilnil_sym = ID2SYM(rb_intern("nilnil"));		rb_gc_register_address(&nilnil_sym);
     null_sym = ID2SYM(rb_intern("null"));		rb_gc_register_address(&null_sym);
     object_nl_sym = ID2SYM(rb_intern("object_nl"));	rb_gc_register_address(&object_nl_sym);
     object_sym = ID2SYM(rb_intern("object"));		rb_gc_register_address(&object_sym);
     quirks_mode_sym = ID2SYM(rb_intern("quirks_mode"));	rb_gc_register_address(&quirks_mode_sym);
+    raise_sym = ID2SYM(rb_intern("raise"));		rb_gc_register_address(&raise_sym);
     ruby_sym = ID2SYM(rb_intern("ruby"));		rb_gc_register_address(&ruby_sym);
     sec_prec_sym = ID2SYM(rb_intern("second_precision"));rb_gc_register_address(&sec_prec_sym);
     space_before_sym = ID2SYM(rb_intern("space_before"));rb_gc_register_address(&space_before_sym);
@@ -2154,6 +2185,7 @@ void Init_oj() {
     unix_sym = ID2SYM(rb_intern("unix"));		rb_gc_register_address(&unix_sym);
     unix_zone_sym = ID2SYM(rb_intern("unix_zone"));	rb_gc_register_address(&unix_zone_sym);
     use_to_json_sym = ID2SYM(rb_intern("use_to_json"));	rb_gc_register_address(&use_to_json_sym);
+    word_sym = ID2SYM(rb_intern("word"));		rb_gc_register_address(&word_sym);
     xmlschema_sym = ID2SYM(rb_intern("xmlschema"));	rb_gc_register_address(&xmlschema_sym);
     xss_safe_sym = ID2SYM(rb_intern("xss_safe"));	rb_gc_register_address(&xss_safe_sym);
 

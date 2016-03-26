@@ -451,7 +451,7 @@ dump_float(VALUE obj, Out out) {
     char	buf[64];
     char	*b;
     double	d = rb_num2dbl(obj);
-    int		cnt;
+    int		cnt = 0;
 
     if (0.0 == d) {
 	b = buf;
@@ -461,55 +461,76 @@ dump_float(VALUE obj, Out out) {
 	*b++ = '\0';
 	cnt = 3;
     } else if (OJ_INFINITY == d) {
-	switch (out->opts->mode) {
-	case StrictMode:
-	    raise_strict(obj);
-	case NullMode:
-	    strcpy(buf, "null");
-	    cnt = 4;
-	    break;
-	case ObjectMode:
+	if (ObjectMode == out->opts->mode) {
 	    strcpy(buf, inf_val);
 	    cnt = sizeof(inf_val) - 1;
-	    break;
-	default: // compat mode
-	    strcpy(buf, "Infinity");
-	    cnt = 8;
-	    break;
+	} else {
+	    switch (out->opts->dump_opts.nan_dump) {
+	    case RaiseNan:
+		raise_strict(obj);
+		break;
+	    case WordNan:
+		strcpy(buf, "Infinity");
+		cnt = 8;
+		break;
+	    case NullNan:
+		strcpy(buf, "null");
+		cnt = 4;
+		break;
+	    case HugeNan:
+	    default:
+		strcpy(buf, inf_val);
+		cnt = sizeof(inf_val) - 1;
+		break;
+	    }
 	}
     } else if (-OJ_INFINITY == d) {
-	switch (out->opts->mode) {
-	case StrictMode:
-	    raise_strict(obj);
-	case NullMode:
-	    strcpy(buf, "null");
-	    cnt = 4;
-	    break;
-	case ObjectMode:
+	if (ObjectMode == out->opts->mode) {
 	    strcpy(buf, ninf_val);
 	    cnt = sizeof(ninf_val) - 1;
-	    break;
-	default: // compat mode
-	    strcpy(buf, "-Infinity");
-	    cnt = 9;
-	    break;
+	} else {
+	    switch (out->opts->dump_opts.nan_dump) {
+	    case RaiseNan:
+		raise_strict(obj);
+		break;
+	    case WordNan:
+		strcpy(buf, "-Infinity");
+		cnt = 9;
+		break;
+	    case NullNan:
+		strcpy(buf, "null");
+		cnt = 4;
+		break;
+	    case HugeNan:
+	    default:
+		strcpy(buf, ninf_val);
+		cnt = sizeof(ninf_val) - 1;
+		break;
+	    }
 	}
     } else if (isnan(d)) {
-	switch (out->opts->mode) {
-	case StrictMode:
-	    raise_strict(obj);
-	case NullMode:
-	    strcpy(buf, "null");
-	    cnt = 4;
-	    break;
-	case ObjectMode:
+	if (ObjectMode == out->opts->mode) {
 	    strcpy(buf, nan_val);
 	    cnt = sizeof(nan_val) - 1;
-	    break;
-	default: // compat mode
-	    strcpy(buf, "NaN");
-	    cnt = 3;
-	    break;
+	} else {
+	    switch (out->opts->dump_opts.nan_dump) {
+	    case RaiseNan:
+		raise_strict(obj);
+		break;
+	    case WordNan:
+		strcpy(buf, "NaN");
+		cnt = 3;
+		break;
+	    case NullNan:
+		strcpy(buf, "null");
+		cnt = 4;
+		break;
+	    case HugeNan:
+	    default:
+		strcpy(buf, nan_val);
+		cnt = sizeof(nan_val) - 1;
+		break;
+	    }
 	}
     } else if (d == (double)(long long int)d) {
 	cnt = snprintf(buf, sizeof(buf), "%.1f", d);

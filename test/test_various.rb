@@ -138,6 +138,7 @@ class Juice < Minitest::Test
       :array_nl=>'a',
       :object_nl=>'o',
       :space_before=>'b',
+      :nan=>:huge,
     }
     Oj.default_options = alt
     opts = Oj.default_options()
@@ -212,6 +213,24 @@ class Juice < Minitest::Test
     assert_equal('73.4', Oj.dump(73.4))
     assert_equal('80.6', Oj.dump(80.6))
     assert_equal('-95.640172', Oj.dump(-95.640172))
+  end
+
+  def test_nan_dump
+    assert_equal('null', Oj.dump(0/0.0, :mode => :strict, :nan => :null))
+    assert_equal('NaN', Oj.dump(0/0.0, :mode => :strict, :nan => :word))
+    assert_equal('3.3e14159265358979323846', Oj.dump(0/0.0, :mode => :strict, :nan => :huge))
+  end
+
+  def test_infinity_dump
+    assert_equal('null', Oj.dump(1/0.0, :mode => :strict, :nan => :null))
+    assert_equal('Infinity', Oj.dump(1/0.0, :mode => :strict, :nan => :word))
+    assert_equal('3.0e14159265358979323846', Oj.dump(1/0.0, :mode => :strict, :nan => :huge))
+  end
+
+  def test_neg_infinity_dump
+    assert_equal('null', Oj.dump(-1/0.0, :mode => :strict, :nan => :null))
+    assert_equal('-Infinity', Oj.dump(-1/0.0, :mode => :strict, :nan => :word))
+    assert_equal('-3.0e14159265358979323846', Oj.dump(-1/0.0, :mode => :strict, :nan => :huge))
   end
 
   def test_float

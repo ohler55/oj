@@ -482,7 +482,7 @@ read_num(ParseInfo pi) {
 	ni.len = pi->cur - ni.str;
     }
     // Check for special reserved values for Infinity and NaN.
-    if (ni.big && '3' == *ni.str) {
+    if (ni.big) {
 	if (0 == strcasecmp(INF_VAL, ni.str)) {
 	    ni.infinity = 1;
 	} else if (0 == strcasecmp(NINF_VAL, ni.str)) {

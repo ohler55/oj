@@ -68,7 +68,6 @@ enum st_retval {ST_CONTINUE = 0, ST_STOP = 1, ST_DELETE = 2, ST_CHECK};
 
 #include "err.h"
 
-// Each starts with 3 for a quick precheck before using strcmp.
 #define INF_VAL		"3.0e14159265358979323846"
 #define NINF_VAL	"-3.0e14159265358979323846"
 #define NAN_VAL		"3.3e14159265358979323846"
@@ -114,6 +113,13 @@ typedef enum {
 } DumpType;
 
 typedef enum {
+    NullNan	= 'n',
+    HugeNan	= 'h',
+    WordNan	= 'w',
+    RaiseNan	= 'r',
+} NanDump;
+
+typedef enum {
     STRING_IO	= 'c',
     STREAM_IO	= 's',
     FILE_IO	= 'f',
@@ -131,6 +137,7 @@ typedef struct _DumpOpts {
     uint8_t	after_size;
     uint8_t	hash_size;
     uint8_t	array_size;
+    char	nan_dump;	// NanDump
 } *DumpOpts;
 
 typedef struct _Options {
