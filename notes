@@ -3,15 +3,6 @@
 ^c^d hide subtree
 ^c^s show subtree
 
-- add option for nan dumping
- - only in non-object mode
- - options
-  - :null
-  - :huge_number
-  - :as_word (Infinity, NaN)
-  - :raise (raise an Exception)
-  - :auto - default for each mode <-----------
- - effects dump only
 
 - streaming parser for scp and saj
 
