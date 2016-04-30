@@ -170,7 +170,7 @@ Oj.default_options = {:mode => :compat }
 
 ## Releases
 
-** Release 2.15.0**
+**Release 2.15.0**
 
  - Fixed bug where encoded strings could be GCed.
 
