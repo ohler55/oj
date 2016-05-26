@@ -2010,6 +2010,9 @@ dump_val(VALUE obj, int depth, Out out, int argc, VALUE *argv) {
     if (MAX_DEPTH < depth) {
 	rb_raise(rb_eNoMemError, "Too deeply nested.\n");
     }
+#ifdef OJ_DEBUG
+    printf("Oj-debug: dump_val %s\n", rb_class2name(rb_obj_class(obj)));
+#endif
     switch (type) {
     case T_NIL:		dump_nil(out);				break;
     case T_TRUE:	dump_true(out);				break;

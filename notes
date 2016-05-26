@@ -3,6 +3,15 @@
 ^c^d hide subtree
 ^c^s show subtree
 
+- debug
+ - look at env var for OJ_DEBUG when doing ruby extconf.rb
+ - add printf for keys spots in parse and dump
+ 
+- invalid character option
+ - don't check options
+  - replace with best attempt such as \ud83d => \xED\xA0\xBD
+  - that would be the normal replacement
+ - allow_invalid_unicode
 
 - streaming parser for scp and saj
 

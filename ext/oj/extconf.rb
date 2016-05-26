@@ -48,6 +48,8 @@ else
   dflags['NEEDS_STPCPY'] = nil if is_windows
 end
 
+dflags['OJ_DEBUG'] = true unless ENV['OJ_DEBUG'].nil?
+
 dflags.each do |k,v|
   if v.nil?
     $CPPFLAGS += " -D#{k}"
@@ -55,6 +57,7 @@ dflags.each do |k,v|
     $CPPFLAGS += " -D#{k}=#{v}"
   end
 end
+
 $CPPFLAGS += ' -Wall'
 #puts "*** $CPPFLAGS: #{$CPPFLAGS}"
 create_makefile("#{extension_name}/#{extension_name}")
