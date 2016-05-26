@@ -53,7 +53,7 @@ converted to JSON. These modes are set with the `:mode` option in either the
 default options or as one of the options to the `dump` method. In addition to
 the various options there are also alternative APIs for parsing JSON.
 
-The fastest alternaive parser API is the `Oj::Doc` API. The `Oj::Doc` API takes
+The fastest alternative parser API is the `Oj::Doc` API. The `Oj::Doc` API takes
 a completely different approach by opening a JSON document and providing calls
 to navigate around the JSON while it is open. With this approach, JSON access
 can be well over 20 times faster than conventional JSON parsing.
@@ -170,7 +170,7 @@ Oj.default_options = {:mode => :compat }
 
 ## Releases
 
-** Release 2.15.0**
+**Release 2.15.0**
 
  - Fixed bug where encoded strings could be GCed.
 
