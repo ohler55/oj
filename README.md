@@ -170,18 +170,9 @@ Oj.default_options = {:mode => :compat }
 
 ## Releases
 
-**Release 2.15.0**
+**Release 2.15.1**
 
- - Fixed bug where encoded strings could be GCed.
-
- - :nan option added for dumping Infinity, -Infinity, and NaN. This is an
-   edition to the API. The default value for the :non option is :auto which uses
-   the previous NaN handling on dumping of non-object modes.
-
-**Release 2.14.7**
-
- - Fixed bug where a comment before another JSON element caused an
-   error. Comments are not part of the spec but this keep support consistent.
+ - Fixed bug with activerecord when to_json returns an array instead of a string.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 

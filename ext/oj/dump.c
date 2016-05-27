@@ -1432,8 +1432,9 @@ dump_obj_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv) {
 
 	    //rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
 	    dump_val(h, depth, out, 0, 0);
+	} else {
+	    dump_hash(h, Qundef, depth, out->opts->mode, out);
 	}
-	dump_hash(h, Qundef, depth, out->opts->mode, out);
     } else if (rb_respond_to(obj, oj_as_json_id)) {
 	volatile VALUE	aj = rb_funcall2(obj, oj_as_json_id, argc, argv);
 
