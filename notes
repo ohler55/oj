@@ -4,6 +4,9 @@
 ^c^s show subtree
 
 - debug
+ - option to allow invalid unicode through
+ - unit tests for 32 bit - test_float_parse
+  - look at RUBY_PLATFORM maybe?
  - look at env var for OJ_DEBUG when doing ruby extconf.rb
  - add printf for keys spots in parse and dump
  

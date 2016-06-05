@@ -255,6 +255,11 @@ read_escaped_str(ParseInfo pi, const char *start) {
 
 		    s++;
 		    if ('\\' != *s || 'u' != *(s + 1)) {
+			if (Yes == pi->options.allow_invalid) {
+			    s--;
+			    unicode_to_chars(pi, &buf, code);
+			    break;
+			}
 			pi->cur = s;
 			oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "invalid escaped character");
 			buf_cleanup(&buf);
@@ -437,7 +442,7 @@ read_num(ParseInfo pi) {
 		int	d = (*pi->cur - '0');
 
 		ni.i = ni.i * 10 + d;
-		if (LONG_MAX <= ni.i || DEC_MAX < dec_cnt) {
+		if (INT64_MAX <= ni.i || DEC_MAX < dec_cnt) {
 		    ni.big = 1;
 		}
 	    }
@@ -453,7 +458,7 @@ read_num(ParseInfo pi) {
 		ni.num = ni.num * 10 + d;
 		ni.div *= 10;
 		ni.di++;
-		if (LONG_MAX <= ni.div || DEC_MAX < dec_cnt) {
+		if (INT64_MAX <= ni.div || DEC_MAX < dec_cnt) {
 		    ni.big = 1;
 		}
 	    }

@@ -106,6 +106,7 @@ class Juice < Minitest::Test
                    :nilnil=>false,
                    :allow_gc=>true,
                    :quirks_mode=>true,
+                   :allow_invalid_unicode=>false,
                    :float_precision=>15,
                    :mode=>:object,
                    :escape_mode=>:json,
@@ -128,6 +129,7 @@ class Juice < Minitest::Test
       :nilnil=>true,
       :allow_gc=>false,
       :quirks_mode=>false,
+      :allow_invalid_unicode=>true,
       :float_precision=>13,
       :mode=>:strict,
       :escape_mode=>:ascii,
@@ -286,6 +288,26 @@ class Juice < Minitest::Test
     obj = Oj.load(json)
     json2 = Oj.dump(obj, :ascii_only => true)
     assert_equal(json, json2)
+  end
+
+  def test_invalid_unicode_raise
+    # validate that an invalid unicode raises unless the :allow_invalid_unicode is true
+    json = %{"x\\ud83dy"}
+    begin
+      obj = Oj.load(json)
+    rescue Exception
+      assert(true)
+      return
+    end
+    assert(false, "*** expected an exception")
+  end
+
+  def test_invalid_unicode_ok
+    # validate that an invalid unicode raises unless the :allow_invalid_unicode is true
+    json = %{"x\\ud83dy"}
+    obj = Oj.load(json, :allow_invalid_unicode => true)
+    # The same as what ruby would do with the invalid encoding.
+    assert_equal("x\xED\xA0\xBDy", obj.to_s)
   end
 
   def test_dump_options

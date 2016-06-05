@@ -170,6 +170,14 @@ Oj.default_options = {:mode => :compat }
 
 ## Releases
 
+**Future Release 2.16.0**
+
+ - Added option to allow invalid unicode characters. This is not a suggested
+   option in a majority of the cases.
+
+ - Fixed float parsing for 32 bit systems so that it does not roll over to
+   BigDecimal until more than 15 significant digits.
+
 **Release 2.15.1**
 
  - Fixed bug with activerecord when to_json returns an array instead of a string.

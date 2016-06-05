@@ -156,6 +156,7 @@ typedef struct _Options {
     char		nilnil;		// YesNo
     char		allow_gc;	// allow GC during parse
     char		quirks_mode;	// allow single JSON values instead of documents
+    char		allow_invalid;	// YesNo - allow invalid unicode
     const char		*create_id;	// 0 or string
     size_t		create_id_len;	// length of create_id
     int			sec_prec;	// second precision when dumping time

@@ -106,6 +106,7 @@ VALUE	oj_struct_class;
 VALUE	oj_slash_string;
 
 static VALUE	allow_gc_sym;
+static VALUE	allow_invalid_unicode_sym;
 static VALUE	ascii_only_sym;
 static VALUE	ascii_sym;
 static VALUE	auto_define_sym;
@@ -181,6 +182,7 @@ struct _Options	oj_default_options = {
     No,		// nilnil
     Yes,	// allow_gc
     Yes,	// quirks_mode
+    No,		// allow_invalid    
     json_class,	// create_id
     10,		// create_id_len
     9,		// sec_prec
@@ -224,6 +226,7 @@ static VALUE	define_mimic_json(int argc, VALUE *argv, VALUE self);
  * - nilnil: [true|false|nil] if true a nil input to load will return nil and not raise an Exception
  * - allow_gc: [true|false|nil] allow or prohibit GC during parsing, default is true (allow)
  * - quirks_mode: [true,|false|nil] Allow single JSON values instead of documents, default is true (allow)
+ * - allow_invalid_unicode: [true,|false|nil] Allow invalid unicode, default is false (don't allow)
  * - indent_str: [String|nil] String to use for indentation, overriding the indent option is not nil
  * - space: [String|nil] String to use for the space after the colon in JSON object fields
  * - space_before: [String|nil] String to use before the colon separator in JSON object fields
@@ -251,6 +254,7 @@ get_def_opts(VALUE self) {
     rb_hash_aset(opts, nilnil_sym, (Yes == oj_default_options.nilnil) ? Qtrue : ((No == oj_default_options.nilnil) ? Qfalse : Qnil));
     rb_hash_aset(opts, allow_gc_sym, (Yes == oj_default_options.allow_gc) ? Qtrue : ((No == oj_default_options.allow_gc) ? Qfalse : Qnil));
     rb_hash_aset(opts, quirks_mode_sym, (Yes == oj_default_options.quirks_mode) ? Qtrue : ((No == oj_default_options.quirks_mode) ? Qfalse : Qnil));
+    rb_hash_aset(opts, allow_invalid_unicode_sym, (Yes == oj_default_options.allow_invalid) ? Qtrue : ((No == oj_default_options.allow_invalid) ? Qfalse : Qnil));
     rb_hash_aset(opts, float_prec_sym, INT2FIX(oj_default_options.float_prec));
     switch (oj_default_options.mode) {
     case StrictMode:	rb_hash_aset(opts, mode_sym, strict_sym);	break;
@@ -331,6 +335,7 @@ get_def_opts(VALUE self) {
  * @param [true|false|nil] :nilnil if true a nil input to load will return nil and not raise an Exception
  * @param [true|false|nil] :allow_gc allow or prohibit GC during parsing, default is true (allow)
  * @param [true|false|nil] :quirks_mode allow single JSON values instead of documents, default is true (allow)
+ * @param [true|false|nil] :allow_invalid_unicode allow invalid unicode, default is false (don't allow)
  * @param [String|nil] :space String to use for the space after the colon in JSON object fields
  * @param [String|nil] :space_before String to use before the colon separator in JSON object fields
  * @param [String|nil] :object_nl String to use after a JSON object field value
@@ -358,6 +363,7 @@ oj_parse_options(VALUE ropts, Options copts) {
 	{ nilnil_sym, &copts->nilnil },
 	{ allow_gc_sym, &copts->allow_gc },
 	{ quirks_mode_sym, &copts->quirks_mode },
+	{ allow_invalid_unicode_sym, &copts->allow_invalid },
 	{ Qnil, 0 }
     };
     YesNoOpt		o;
@@ -1765,6 +1771,7 @@ mimic_parse(int argc, VALUE *argv, VALUE self) {
     pi.options = oj_default_options;
     pi.options.auto_define = No;
     pi.options.quirks_mode = No;
+    pi.options.allow_invalid = No;
 
     if (2 <= argc) {
 	VALUE	ropts = argv[1];
@@ -1845,6 +1852,7 @@ static struct _Options	mimic_object_to_json_options = {
     Yes,	// nilnil
     Yes,	// allow_gc
     Yes,	// quirks_mode
+    No,		// allow_invalid
     json_class,	// create_id
     10,		// create_id_len
     9,		// sec_prec
@@ -2170,13 +2178,14 @@ void Init_oj() {
     indent_sym = ID2SYM(rb_intern("indent"));		rb_gc_register_address(&indent_sym);
     json_sym = ID2SYM(rb_intern("json"));		rb_gc_register_address(&json_sym);
     mode_sym = ID2SYM(rb_intern("mode"));		rb_gc_register_address(&mode_sym);
-    nan_sym = ID2SYM(rb_intern("nan"));		rb_gc_register_address(&nan_sym);
+    nan_sym = ID2SYM(rb_intern("nan"));			rb_gc_register_address(&nan_sym);
     newline_sym = ID2SYM(rb_intern("newline"));		rb_gc_register_address(&newline_sym);
     nilnil_sym = ID2SYM(rb_intern("nilnil"));		rb_gc_register_address(&nilnil_sym);
     null_sym = ID2SYM(rb_intern("null"));		rb_gc_register_address(&null_sym);
     object_nl_sym = ID2SYM(rb_intern("object_nl"));	rb_gc_register_address(&object_nl_sym);
     object_sym = ID2SYM(rb_intern("object"));		rb_gc_register_address(&object_sym);
     quirks_mode_sym = ID2SYM(rb_intern("quirks_mode"));	rb_gc_register_address(&quirks_mode_sym);
+    allow_invalid_unicode_sym = ID2SYM(rb_intern("allow_invalid_unicode"));rb_gc_register_address(&allow_invalid_unicode_sym);
     raise_sym = ID2SYM(rb_intern("raise"));		rb_gc_register_address(&raise_sym);
     ruby_sym = ID2SYM(rb_intern("ruby"));		rb_gc_register_address(&ruby_sym);
     sec_prec_sym = ID2SYM(rb_intern("second_precision"));rb_gc_register_address(&sec_prec_sym);
