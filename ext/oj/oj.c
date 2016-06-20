@@ -402,9 +402,15 @@ oj_parse_options(VALUE ropts, Options copts) {
     if (Qnil != (v = rb_hash_lookup(ropts, float_prec_sym))) {
 	int	n;
 
+#ifdef RUBY_INTEGER_UNIFICATION
+	if (rb_cInteger != rb_obj_class(v)) {
+	    rb_raise(rb_eArgError, ":float_precision must be a Integer.");
+	}
+#else
 	if (rb_cFixnum != rb_obj_class(v)) {
 	    rb_raise(rb_eArgError, ":float_precision must be a Fixnum.");
 	}
+#endif
 	Check_Type(v, T_FIXNUM);
 	n = FIX2INT(v);
 	if (0 >= n) {
@@ -421,9 +427,15 @@ oj_parse_options(VALUE ropts, Options copts) {
     if (Qnil != (v = rb_hash_lookup(ropts, sec_prec_sym))) {
 	int	n;
 
+#ifdef RUBY_INTEGER_UNIFICATION
+	if (rb_cInteger != rb_obj_class(v)) {
+	    rb_raise(rb_eArgError, ":second_precision must be a Integer.");
+	}
+#else
 	if (rb_cFixnum != rb_obj_class(v)) {
 	    rb_raise(rb_eArgError, ":second_precision must be a Fixnum.");
 	}
+#endif
 	n = NUM2INT(v);
 	if (0 > n) {
 	    n = 0;

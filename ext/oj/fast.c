@@ -1281,7 +1281,11 @@ doc_type(int argc, VALUE *argv, VALUE self) {
 	case T_TRUE:	type = rb_cTrueClass;	break;
 	case T_FALSE:	type = rb_cFalseClass;	break;
 	case T_STRING:	type = rb_cString;	break;
+#ifdef RUBY_INTEGER_UNIFICATION
+  case T_FIXNUM:	type = rb_cInteger;	break;
+#else
 	case T_FIXNUM:	type = rb_cFixnum;	break;
+#endif
 	case T_FLOAT:	type = rb_cFloat;	break;
 	case T_ARRAY:	type = rb_cArray;	break;
 	case T_HASH:	type = rb_cHash;	break;
