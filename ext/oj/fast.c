@@ -1282,7 +1282,7 @@ doc_type(int argc, VALUE *argv, VALUE self) {
 	case T_FALSE:	type = rb_cFalseClass;	break;
 	case T_STRING:	type = rb_cString;	break;
 #ifdef RUBY_INTEGER_UNIFICATION
-  case T_FIXNUM:	type = rb_cInteger;	break;
+	case T_FIXNUM:	type = rb_cInteger;	break;
 #else
 	case T_FIXNUM:	type = rb_cFixnum;	break;
 #endif
