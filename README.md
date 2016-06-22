@@ -170,13 +170,9 @@ Oj.default_options = {:mode => :compat }
 
 ## Releases
 
-**Release 2.16.0**
+**Release 2.16.1**
 
- - Added option to allow invalid unicode characters. This is not a suggested
-   option in a majority of the cases.
-
- - Fixed float parsing for 32 bit systems so that it does not roll over to
-   BigDecimal until more than 15 significant digits.
+ - Thanks to hsbt for fixing a compile issue with Ruby 2.4.0-preview1.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
