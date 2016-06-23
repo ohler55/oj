@@ -3,6 +3,19 @@
 ^c^d hide subtree
 ^c^s show subtree
 
+- bag like option for hash
+ - flag to turn on EasyHash
+  - subclass of Hash or has Hash as only member
+   - as subclass
+    - need to use set method (maybe) (slower)
+    - test setting with hash subclass test
+   - as member
+    - same as current by wrap
+    - need special dump or maybe just to_hash()
+    
+  - should be able to be converted to JSON as well
+  - 
+
 - debug
  - option to allow invalid unicode through
  - unit tests for 32 bit - test_float_parse

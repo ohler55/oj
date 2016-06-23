@@ -162,6 +162,7 @@ typedef struct _Options {
     int			sec_prec;	// second precision when dumping time
     char		float_prec;	// float precision, linked to float_fmt
     char		float_fmt[7];	// float format for dumping, if empty use Ruby
+    VALUE		hash_class;	// class to use in place of Hash on load
     struct _DumpOpts	dump_opts;
 } *Options;
 

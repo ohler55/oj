@@ -141,6 +141,7 @@ class Juice < Minitest::Test
       :object_nl=>'o',
       :space_before=>'b',
       :nan=>:huge,
+      :hash_class=>Hash,
     }
     Oj.default_options = alt
     opts = Oj.default_options()

@@ -20,6 +20,8 @@ echo "----- Writer tests (test_writer.rb) -----"
 ruby test_writer.rb
 echo "----- File loading tests (test_file.rb) -----"
 ruby test_file.rb
+echo "----- Hash loading tests (test_hash.rb) -----"
+ruby test_hash.rb
 # only run if <= 1.9.3
 echo "----- Mimic tests (isolated/test_mimic_after.rb) -----"
 ruby isolated/test_mimic_after.rb

@@ -121,6 +121,7 @@ static VALUE	create_id_sym;
 static VALUE	escape_mode_sym;
 static VALUE	float_prec_sym;
 static VALUE	float_sym;
+static VALUE	hash_class_sym;
 static VALUE	huge_sym;
 static VALUE	indent_sym;
 static VALUE	json_parser_error_class;
@@ -188,6 +189,7 @@ struct _Options	oj_default_options = {
     9,		// sec_prec
     15,		// float_prec
     "%0.15g",	// float_fmt
+    Qnil,	// hash_class
     {		// dump_opts
 	false,	//use
 	"",	// indent
@@ -233,6 +235,7 @@ static VALUE	define_mimic_json(int argc, VALUE *argv, VALUE self);
  * - object_nl: [String|nil] String to use after a JSON object field value
  * - array_nl: [String|nil] String to use after a JSON array value
  * - nan: [:null|:huge|:word|:raise|:auto] how to dump Infinity and NaN in null, strict, and compat mode. :null places a null, :huge places a huge number, :word places Infinity or NaN, :raise raises and exception, :auto uses default for each mode.
+ * - hash_class: [Class|nil] Class to use instead of Hash on load
  * @return [Hash] all current option settings.
  */
 static VALUE
@@ -297,6 +300,8 @@ get_def_opts(VALUE self) {
     case AutoNan:
     default:		rb_hash_aset(opts, nan_sym, auto_sym);	break;
     }
+    rb_hash_aset(opts, hash_class_sym, oj_default_options.hash_class);
+    
     return opts;
 }
 
@@ -341,6 +346,7 @@ get_def_opts(VALUE self) {
  * @param [String|nil] :object_nl String to use after a JSON object field value
  * @param [String|nil] :array_nl String to use after a JSON array value
  * @param [:null|:huge|:word|:raise] :nan how to dump Infinity and NaN in null, strict, and compat mode. :null places a null, :huge places a huge number, :word places Infinity or NaN, :raise raises and exception, :auto uses default for each mode.
+ * @param [Class|nil] :hash_class Class to use instead of Hash on load
  * @return [nil]
  */
 static VALUE
@@ -605,6 +611,14 @@ oj_parse_options(VALUE ropts, Options copts) {
 	copts->escape_mode = ASCIIEsc;
     } else if (Qfalse == v) {
 	copts->escape_mode = JSONEsc;
+    }
+    if (Qtrue == rb_funcall(ropts, has_key_id, 1, hash_class_sym)) {
+	if (Qnil == (v = rb_hash_lookup(ropts, hash_class_sym))) {
+	    copts->hash_class = Qnil;
+	} else {
+	    rb_check_type(v, T_CLASS);
+	    copts->hash_class = v;
+	}
     }
 }
 
@@ -1870,6 +1884,7 @@ static struct _Options	mimic_object_to_json_options = {
     9,		// sec_prec
     15,		// float_prec
     "%0.15g",	// float_fmt
+    Qnil,	// hash_class
     {		// dump_opts
 	false,	//use
 	"",	// indent
@@ -2186,6 +2201,7 @@ void Init_oj() {
     escape_mode_sym = ID2SYM(rb_intern("escape_mode"));	rb_gc_register_address(&escape_mode_sym);
     float_prec_sym = ID2SYM(rb_intern("float_precision"));rb_gc_register_address(&float_prec_sym);
     float_sym = ID2SYM(rb_intern("float"));		rb_gc_register_address(&float_sym);
+    hash_class_sym = ID2SYM(rb_intern("hash_class"));	rb_gc_register_address(&hash_class_sym);
     huge_sym = ID2SYM(rb_intern("huge"));		rb_gc_register_address(&huge_sym);
     indent_sym = ID2SYM(rb_intern("indent"));		rb_gc_register_address(&indent_sym);
     json_sym = ID2SYM(rb_intern("json"));		rb_gc_register_address(&json_sym);

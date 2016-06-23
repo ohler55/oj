@@ -70,6 +70,9 @@ add_num(ParseInfo pi, NumInfo ni) {
 
 static VALUE
 start_hash(ParseInfo pi) {
+    if (Qnil != pi->options.hash_class) {
+	return rb_class_new_instance(0, NULL, pi->options.hash_class);
+    }
     return rb_hash_new();
 }
 

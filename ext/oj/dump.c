@@ -1424,7 +1424,7 @@ static void
 dump_obj_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv) {
     if (rb_respond_to(obj, oj_to_hash_id)) {
 	volatile VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
- 
+
 	if (T_HASH != rb_type(h)) {
 	    // It seems that ActiveRecord implemented to_hash so that it returns
 	    // an Array and not a Hash. To get around that any value returned
