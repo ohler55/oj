@@ -173,7 +173,7 @@ class Juice < Minitest::Test
   end
 
   def test_float_parse
-    Oj.default_options = { :float_precision => 16 }
+    Oj.default_options = { :float_precision => 16, :bigdecimal_load => :auto }
     n = Oj.load('0.00001234567890123456')
     assert_equal(Float, n.class)
     assert_equal('1.234567890123456e-05', "%0.15e" % [n])

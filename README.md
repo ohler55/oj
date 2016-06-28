@@ -170,6 +170,12 @@ Oj.default_options = {:mode => :compat }
 
 ## Releases
 
+**Release 2.17.0**
+
+ - Added an option provide an alternative Hash class for loading.
+
+ - Added the Oj::EasyHash class.
+
 **Release 2.16.1**
 
  - Thanks to hsbt for fixing a compile issue with Ruby 2.4.0-preview1.

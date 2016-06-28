@@ -3,18 +3,62 @@
 ^c^d hide subtree
 ^c^s show subtree
 
-- bag like option for hash
- - flag to turn on EasyHash
-  - subclass of Hash or has Hash as only member
-   - as subclass
-    - need to use set method (maybe) (slower)
-    - test setting with hash subclass test
-   - as member
-    - same as current by wrap
-    - need special dump or maybe just to_hash()
-    
-  - should be able to be converted to JSON as well
-  - 
+- Oj opening doors - game changer - Oj history - Oj providing options
+
+Oj development opened the door to using JSON as a message and storage format for Ruby objects at performance levels that
+made a multiple application message based systems with JSON storage feasible.
+
+Back in 2011 Ruby was still fairly young. Gems were more limited than today and performance was not the primary concern
+for many. That presented a problem when trying to build a message based system using Ruby or even using Ruby on
+Rails. That hindrence initiated the effort that led to the development of the Optimized JSON parser named Oj.
+ 
+Motivation
+
+
+
+- selected ruby for fast dev 
+
+- rails and javascript 
+
+ - Oj history
+ - the system
+  - message based
+  - storage in redis
+  - process flow used (written in ruby)
+  - 2011 for ox, 2012 for Oj
+  
+ - the need - motivation
+  - while working in tokyo building a cloud service platform...
+  - needed message format
+   - text based, human readable a plus
+   - fast enough to be an advantage and not a negative for performance
+ - what was there at the time
+  - marshal
+   - formats chaged each release
+   - binary
+   - others
+  - json not what we wanted, not for serialization
+ - history (better title for section)
+  - started with Ox
+  - second product used JSON and Oj
+  
+ - wrote a ruby version
+  - slow but faster than ruby json by a small amount, 2x or so
+ - tried C apis
+  - 10x faster (order of magnitude)
+  - Ox was a friend (leader)
+ - optimizations
+  - reduce ruby calls
+  - alternative APIs like saj or fast
+  - lots of benchmarking and attempts at more efficient code
+ - structure
+  - single pass
+  - layered with parser calling out to specialized
+   - allows for extending
+   - used for OjC with some mods
+ 
+
+
 
 - debug
  - option to allow invalid unicode through
