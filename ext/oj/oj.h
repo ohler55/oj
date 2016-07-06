@@ -139,6 +139,7 @@ typedef struct _DumpOpts {
     uint8_t	hash_size;
     uint8_t	array_size;
     char	nan_dump;	// NanDump
+    bool	omit_nil;
 } *DumpOpts;
 
 typedef struct _Options {
@@ -177,6 +178,7 @@ typedef struct _Out {
     Options	opts;
     uint32_t	hash_cnt;
     int		allocated;
+    bool	omit_nil;
 } *Out;
 
 typedef struct _StrWriter {

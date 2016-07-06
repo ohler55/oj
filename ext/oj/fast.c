@@ -1543,6 +1543,7 @@ doc_dump(int argc, VALUE *argv, VALUE self) {
 	    out.buf = buf;
 	    out.end = buf + sizeof(buf) - 10;
 	    out.allocated = 0;
+	    out.omit_nil = oj_default_options.dump_opts.omit_nil;
 	    oj_dump_leaf_to_json(leaf, &oj_default_options, &out);
 	    rjson = rb_str_new2(out.buf);
 	    if (out.allocated) {

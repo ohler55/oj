@@ -170,6 +170,16 @@ Oj.default_options = {:mode => :compat }
 
 ## Releases
 
+**Release 2.17.1**
+
+ - TBD - Fixed test failures on 32 bit machines.
+
+ - Sped up mimic_JSON.
+
+ - TBD - active support DateTime fix for Rails 5.
+
+ - Added an option to omit Hash and Object attributes with nil values.
+
 **Release 2.17.0**
 
  - Added an option provide an alternative Hash class for loading.

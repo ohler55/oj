@@ -834,6 +834,9 @@ hash_cb_strict(VALUE key, VALUE value, Out out) {
     if (rb_type(key) != T_STRING) {
 	rb_raise(rb_eTypeError, "In :strict mode all Hash keys must be Strings, not %s.\n", rb_class2name(rb_obj_class(key)));
     }
+    if (out->omit_nil && Qnil == value) {
+	return ST_CONTINUE;
+    }
     if (!out->opts->dump_opts.use) {
 	size = depth * out->indent + 1;
 	if (out->end - out->cur <= size) {
@@ -885,6 +888,9 @@ hash_cb_compat(VALUE key, VALUE value, Out out) {
     int		depth = out->depth;
     long	size;
 
+    if (out->omit_nil && Qnil == value) {
+	return ST_CONTINUE;
+    }
     if (!out->opts->dump_opts.use) {
 	size = depth * out->indent + 1;
 	if (out->end - out->cur <= size) {
@@ -949,6 +955,9 @@ hash_cb_object(VALUE key, VALUE value, Out out) {
     int		depth = out->depth;
     long	size = depth * out->indent + 1;
 
+    if (out->omit_nil && Qnil == value) {
+	return ST_CONTINUE;
+    }
     if (out->end - out->cur <= size) {
 	grow(out, size);
     }
@@ -1534,6 +1543,9 @@ dump_attr_cb(ID key, VALUE value, Out out) {
     size_t	size = depth * out->indent + 1;
     const char	*attr = rb_id2name(key);
 
+    if (out->omit_nil && Qnil == value) {
+	return ST_CONTINUE;
+    }
 #if HAS_EXCEPTION_MAGIC
     if (0 == strcmp("bt", attr) || 0 == strcmp("mesg", attr)) {
 	return ST_CONTINUE;
@@ -1681,6 +1693,8 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 #else
 	size = d2 * out->indent + 1;
 	for (i = cnt; 0 < i; i--, np++) {
+	    VALUE	value;
+	    
 	    vid = rb_to_id(*np);
 	    attr = rb_id2name(vid);
 #ifdef RUBINIUS_RUBY
@@ -1688,6 +1702,10 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 		continue;
 	    }
 #endif
+	    value = rb_ivar_get(obj, vid);
+	    if (out->omit_nil && Qnil == value) {
+		continue;
+	    }
 	    if (first) {
 		first = 0;
 	    } else {
@@ -1709,7 +1727,7 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 		dump_cstr(buf, strlen(attr) + 1, 0, 0, out);
 	    }
 	    *out->cur++ = ':';
-	    dump_val(rb_ivar_get(obj, vid), d2, out, 0, 0);
+	    dump_val(value, d2, out, 0, 0);
 	    if (out->end - out->cur <= 2) {
 		grow(out, 2);
 	    }
@@ -2175,6 +2193,7 @@ oj_write_obj_to_file(VALUE obj, const char *path, Options copts) {
     out.buf = buf;
     out.end = buf + sizeof(buf) - BUFFER_EXTRA;
     out.allocated = 0;
+    out.omit_nil = copts->dump_opts.omit_nil;
     oj_dump_obj_to_json(obj, copts, &out);
     size = out.cur - out.buf;
     if (0 == (f = fopen(path, "w"))) {
@@ -2210,6 +2229,7 @@ oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
     out.end = buf + sizeof(buf) - BUFFER_EXTRA;
     out.allocated = 0;
     oj_dump_obj_to_json(obj, copts, &out);
+    out.omit_nil = copts->dump_opts.omit_nil;
     size = out.cur - out.buf;
     if (oj_stringio_class == clas) {
 	rb_funcall(stream, oj_write_id, 1, rb_str_new(out.buf, size));
@@ -2438,6 +2458,7 @@ oj_write_leaf_to_file(Leaf leaf, const char *path, Options copts) {
     out.end = buf + sizeof(buf) - BUFFER_EXTRA;
     out.allocated = 0;
     oj_dump_leaf_to_json(leaf, copts, &out);
+    out.omit_nil = copts->dump_opts.omit_nil;
     size = out.cur - out.buf;
     if (0 == (f = fopen(path, "w"))) {
 	rb_raise(rb_eIOError, "%s\n", strerror(errno));

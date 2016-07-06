@@ -142,6 +142,7 @@ class Juice < Minitest::Test
       :space_before=>'b',
       :nan=>:huge,
       :hash_class=>Hash,
+      :omit_nil=>false,
     }
     Oj.default_options = alt
     opts = Oj.default_options()
@@ -1328,6 +1329,22 @@ class Juice < Minitest::Test
   def test_quirks_object_mode
     assert_equal({}, Oj.load("{}", :quirks_mode => false))
     assert_equal({}, Oj.load("{}", :quirks_mode => true))
+  end
+
+  def test_omit_nil
+    jam = Jam.new({'a' => 1, 'b' => nil }, nil)
+
+    json = Oj.dump(jam, :omit_nil => true, :mode => :object)
+    assert_equal(%|{"^o":"Juice::Jam","x":{"a":1}}|, json)
+
+    json = Oj.dump(jam, :omit_nil => true, :mode => :compat)
+    assert_equal(%|{"x":{"a":1}}|, json)
+
+    json = Oj.dump({'x' => {'a' => 1, 'b' => nil }, 'y' => nil}, :omit_nil => true, :mode => :strict)
+    assert_equal(%|{"x":{"a":1}}|, json)
+
+    json = Oj.dump({'x' => {'a' => 1, 'b' => nil }, 'y' => nil}, :omit_nil => true, :mode => :null)
+    assert_equal(%|{"x":{"a":1}}|, json)
   end
 
   def dump_and_load(obj, trace=false)
