@@ -1947,6 +1947,7 @@ static VALUE
 define_mimic_json(int argc, VALUE *argv, VALUE self) {
     VALUE	ext;
     VALUE	dummy;
+    VALUE	verbose;
     VALUE	json_error;
     
     // Either set the paths to indicate JSON has been loaded or replaces the
@@ -1956,6 +1957,8 @@ define_mimic_json(int argc, VALUE *argv, VALUE self) {
     } else {
 	mimic = rb_define_module("JSON");
     }
+    verbose = rb_gv_get("$VERBOSE");
+    rb_gv_set("$VERBOSE", Qfalse);
     rb_define_module_function(rb_cObject, "JSON", mimic_dump_load, -1);
     if (rb_const_defined_at(mimic, rb_intern("Ext"))) {
 	ext = rb_const_get_at(mimic, rb_intern("Ext"));
@@ -1981,8 +1984,6 @@ define_mimic_json(int argc, VALUE *argv, VALUE self) {
 	    rb_funcall2(Oj, rb_intern("mimic_loaded"), 0, 0);
 	}
     }
-    dummy = rb_gv_get("$VERBOSE");
-    rb_gv_set("$VERBOSE", Qfalse);
     rb_define_module_function(mimic, "parser=", no_op1, 1);
     rb_define_module_function(mimic, "generator=", no_op1, 1);
     rb_define_module_function(mimic, "create_id=", mimic_create_id, 1);
@@ -2006,7 +2007,7 @@ define_mimic_json(int argc, VALUE *argv, VALUE self) {
 
     rb_define_method(rb_cObject, "to_json", mimic_object_to_json, -1);
 
-    rb_gv_set("$VERBOSE", dummy);
+    rb_gv_set("$VERBOSE", verbose);
 
     create_additions_sym = ID2SYM(rb_intern("create_additions"));	rb_gc_register_address(&create_additions_sym);
     symbolize_names_sym = ID2SYM(rb_intern("symbolize_names"));		rb_gc_register_address(&symbolize_names_sym);
