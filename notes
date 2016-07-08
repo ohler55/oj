@@ -4,6 +4,9 @@
 ^c^s show subtree
 
 - debug
+ - instrument for parsing floats/bigdecimal
+  - branch
+
  - option to allow invalid unicode through
  - unit tests for 32 bit - test_float_parse
   - look at RUBY_PLATFORM maybe?

@@ -132,6 +132,7 @@ static VALUE	newline_sym;
 static VALUE	nilnil_sym;
 static VALUE	null_sym;
 static VALUE	object_sym;
+static VALUE	omit_nil_sym;
 static VALUE	quirks_mode_sym;
 static VALUE	raise_sym;
 static VALUE	ruby_sym;
@@ -203,6 +204,7 @@ struct _Options	oj_default_options = {
 	0,	// hash_size
 	0,	// array_size
 	AutoNan,// nan_dump
+	false,	// omit_nil
     }
 };
 
@@ -236,6 +238,7 @@ static VALUE	define_mimic_json(int argc, VALUE *argv, VALUE self);
  * - array_nl: [String|nil] String to use after a JSON array value
  * - nan: [:null|:huge|:word|:raise|:auto] how to dump Infinity and NaN in null, strict, and compat mode. :null places a null, :huge places a huge number, :word places Infinity or NaN, :raise raises and exception, :auto uses default for each mode.
  * - hash_class: [Class|nil] Class to use instead of Hash on load
+ * - omit_nil: [true|false] if true Hash and Object attributes with nil values are omitted
  * @return [Hash] all current option settings.
  */
 static VALUE
@@ -300,6 +303,7 @@ get_def_opts(VALUE self) {
     case AutoNan:
     default:		rb_hash_aset(opts, nan_sym, auto_sym);	break;
     }
+    rb_hash_aset(opts, omit_nil_sym, oj_default_options.dump_opts.omit_nil ? Qtrue : Qfalse);
     rb_hash_aset(opts, hash_class_sym, oj_default_options.hash_class);
     
     return opts;
@@ -347,6 +351,7 @@ get_def_opts(VALUE self) {
  * @param [String|nil] :array_nl String to use after a JSON array value
  * @param [:null|:huge|:word|:raise] :nan how to dump Infinity and NaN in null, strict, and compat mode. :null places a null, :huge places a huge number, :word places Infinity or NaN, :raise raises and exception, :auto uses default for each mode.
  * @param [Class|nil] :hash_class Class to use instead of Hash on load
+ * @param [true|false] :omit_nil if true Hash and Object attributes with nil values are omitted
  * @return [nil]
  */
 static VALUE
@@ -605,6 +610,15 @@ oj_parse_options(VALUE ropts, Options copts) {
 			    0 < copts->dump_opts.before_size ||
 			    0 < copts->dump_opts.hash_size ||
 			    0 < copts->dump_opts.array_size);
+    if (Qnil != (v = rb_hash_lookup(ropts, omit_nil_sym))) {
+	if (Qtrue == v) {
+	    copts->dump_opts.omit_nil = true;
+	} else if (Qfalse == v) {
+	    copts->dump_opts.omit_nil = false;
+	} else {
+	    rb_raise(rb_eArgError, ":omit_nil must be true or false.");
+	}
+    }
     // This is here only for backwards compatibility with the original Oj.
     v = rb_hash_lookup(ropts, ascii_only_sym);
     if (Qtrue == v) {
@@ -924,6 +938,7 @@ dump(int argc, VALUE *argv, VALUE self) {
     out.buf = buf;
     out.end = buf + sizeof(buf) - 10;
     out.allocated = 0;
+    out.omit_nil = copts.dump_opts.omit_nil;
     oj_dump_obj_to_json(*argv, &copts, &out);
     if (0 == out.buf) {
 	rb_raise(rb_eNoMemError, "Not enough memory.");
@@ -1593,6 +1608,7 @@ mimic_dump(int argc, VALUE *argv, VALUE self) {
     out.buf = buf;
     out.end = buf + sizeof(buf) - 10;
     out.allocated = 0;
+    out.omit_nil = copts.dump_opts.omit_nil;
     oj_dump_obj_to_json(*argv, &copts, &out);
     if (0 == out.buf) {
 	rb_raise(rb_eNoMemError, "Not enough memory.");
@@ -1690,6 +1706,7 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
     out.buf = buf;
     out.end = buf + sizeof(buf) - 10;
     out.allocated = 0;
+    out.omit_nil = copts->dump_opts.omit_nil;
     if (2 == argc && Qnil != argv[1]) {
 	VALUE	ropts = argv[1];
 	VALUE	v;
@@ -1898,6 +1915,7 @@ static struct _Options	mimic_object_to_json_options = {
 	0,	// hash_size
 	0,	// array_size
 	AutoNan,// nan_dump
+	false,	// omit_nil
     }
 };
 
@@ -1911,6 +1929,7 @@ mimic_object_to_json(int argc, VALUE *argv, VALUE self) {
     out.buf = buf;
     out.end = buf + sizeof(buf) - 10;
     out.allocated = 0;
+    out.omit_nil = copts.dump_opts.omit_nil;
     // Have to turn off to_json to avoid the Active Support recursion problem.
     copts.to_json = No;
     // To be strict the mimic_object_to_json_options should be used but people
@@ -1947,6 +1966,7 @@ static VALUE
 define_mimic_json(int argc, VALUE *argv, VALUE self) {
     VALUE	ext;
     VALUE	dummy;
+    VALUE	verbose;
     VALUE	json_error;
     
     // Either set the paths to indicate JSON has been loaded or replaces the
@@ -1956,6 +1976,8 @@ define_mimic_json(int argc, VALUE *argv, VALUE self) {
     } else {
 	mimic = rb_define_module("JSON");
     }
+    verbose = rb_gv_get("$VERBOSE");
+    rb_gv_set("$VERBOSE", Qfalse);
     rb_define_module_function(rb_cObject, "JSON", mimic_dump_load, -1);
     if (rb_const_defined_at(mimic, rb_intern("Ext"))) {
 	ext = rb_const_get_at(mimic, rb_intern("Ext"));
@@ -1981,8 +2003,6 @@ define_mimic_json(int argc, VALUE *argv, VALUE self) {
 	    rb_funcall2(Oj, rb_intern("mimic_loaded"), 0, 0);
 	}
     }
-    dummy = rb_gv_get("$VERBOSE");
-    rb_gv_set("$VERBOSE", Qfalse);
     rb_define_module_function(mimic, "parser=", no_op1, 1);
     rb_define_module_function(mimic, "generator=", no_op1, 1);
     rb_define_module_function(mimic, "create_id=", mimic_create_id, 1);
@@ -2006,7 +2026,7 @@ define_mimic_json(int argc, VALUE *argv, VALUE self) {
 
     rb_define_method(rb_cObject, "to_json", mimic_object_to_json, -1);
 
-    rb_gv_set("$VERBOSE", dummy);
+    rb_gv_set("$VERBOSE", verbose);
 
     create_additions_sym = ID2SYM(rb_intern("create_additions"));	rb_gc_register_address(&create_additions_sym);
     symbolize_names_sym = ID2SYM(rb_intern("symbolize_names"));		rb_gc_register_address(&symbolize_names_sym);
@@ -2212,6 +2232,7 @@ void Init_oj() {
     null_sym = ID2SYM(rb_intern("null"));		rb_gc_register_address(&null_sym);
     object_nl_sym = ID2SYM(rb_intern("object_nl"));	rb_gc_register_address(&object_nl_sym);
     object_sym = ID2SYM(rb_intern("object"));		rb_gc_register_address(&object_sym);
+    omit_nil_sym = ID2SYM(rb_intern("omit_nil"));	rb_gc_register_address(&omit_nil_sym);
     quirks_mode_sym = ID2SYM(rb_intern("quirks_mode"));	rb_gc_register_address(&quirks_mode_sym);
     allow_invalid_unicode_sym = ID2SYM(rb_intern("allow_invalid_unicode"));rb_gc_register_address(&allow_invalid_unicode_sym);
     raise_sym = ID2SYM(rb_intern("raise"));		rb_gc_register_address(&raise_sym);

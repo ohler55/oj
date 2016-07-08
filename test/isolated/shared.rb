@@ -107,7 +107,7 @@ class SharedMimicTest < Minitest::Test
   end
 
   def test_load_proc
-    Oj.mimic_JSON # TBD
+    Oj.mimic_JSON
     children = []
     json = %{{"a":1,"b":[true,false]}}
     if 'rubinius' == $ruby || '1.8.7' == RUBY_VERSION

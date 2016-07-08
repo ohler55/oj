@@ -42,11 +42,6 @@
 // Workaround in case INFINITY is not defined in math.h or if the OS is CentOS
 #define OJ_INFINITY	(1.0/0.0)
 
-#ifdef RUBINIUS_RUBY
-#define NUM_MAX		0x07FFFFFF
-#else
-#define NUM_MAX		(FIXNUM_MAX >> 8)
-#endif
 //#define EXP_MAX		1023
 #define EXP_MAX		100000
 #define DEC_MAX		15
@@ -436,9 +431,7 @@ read_num(ParseInfo pi) {
 	    if (0 < ni.i) {
 		dec_cnt++;
 	    }
-	    if (ni.big) {
-		ni.big++;
-	    } else {
+	    if (!ni.big) {
 		int	d = (*pi->cur - '0');
 
 		ni.i = ni.i * 10 + d;
@@ -452,7 +445,7 @@ read_num(ParseInfo pi) {
 	    for (; '0' <= *pi->cur && *pi->cur <= '9'; pi->cur++) {
 		int	d = (*pi->cur - '0');
 
-		if (0 < ni.num) {
+		if (0 < ni.num || 0 < ni.i) {
 		    dec_cnt++;
 		}
 		ni.num = ni.num * 10 + d;

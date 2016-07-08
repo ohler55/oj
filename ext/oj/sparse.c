@@ -456,7 +456,7 @@ read_num(ParseInfo pi) {
 	    for (; '0' <= c && c <= '9'; c = reader_get(&pi->rd)) {
 		int	d = (c - '0');
 
-		if (0 < ni.num) {
+		if (0 < ni.num || 0 < ni.i) {
 		    dec_cnt++;
 		}
 		ni.num = ni.num * 10 + d;

@@ -4,9 +4,11 @@ module Oj
   def self.mimic_loaded(mimic_paths=[])
     $LOAD_PATH.each do |d|
       next unless File.exist?(d)
-      offset = d.size() + 1
-      Dir.glob(File.join(d, '**', '*.rb')).each do |file|
-        next if file[offset..-1] !~ /^json[\/\\\.]{1}/
+
+      jfile = File.join(d, 'json.rb')
+      $LOADED_FEATURES << jfile unless $LOADED_FEATURES.include?(jfile) if File.exist?(jfile)
+      
+      Dir.glob(File.join(d, 'json', '**', '*.rb')).each do |file|
         $LOADED_FEATURES << file unless $LOADED_FEATURES.include?(file)
       end
     end

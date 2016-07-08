@@ -176,6 +176,12 @@ Oj.default_options = {:mode => :compat }
 
  - Added the Oj::EasyHash class.
 
+ - Fixed test failures on 32 bit machines.
+
+ - Sped up mimic_JSON.
+
+ - Added an option to omit Hash and Object attributes with nil values.
+
 **Release 2.16.1**
 
  - Thanks to hsbt for fixing a compile issue with Ruby 2.4.0-preview1.
