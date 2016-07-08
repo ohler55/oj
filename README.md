@@ -170,7 +170,7 @@ Oj.default_options = {:mode => :compat }
 
 ## Releases
 
-**Release 2.17.0**
+**Release 2.17.1**
 
  - Added an option provide an alternative Hash class for loading.
 
