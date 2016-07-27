@@ -1981,7 +1981,7 @@ dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
 		char	*n2 = nbuf;
 		char	*n;
 		char	*end;
-		ID		i;
+		ID	i;
 	    
 		if (sizeof(nbuf) <= nlen) {
 		    n2 = strdup(name);

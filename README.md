@@ -170,6 +170,11 @@ Oj.default_options = {:mode => :compat }
 
 ## Releases
 
+**Release 2.17.2**
+
+ - Worked around a problem with DateTime and ActiveSupport that causes a hang
+   when hour, minute, second, and some other methods are called from C.
+
 **Release 2.17.1**
 
  - Added an option provide an alternative Hash class for loading.
@@ -181,10 +186,6 @@ Oj.default_options = {:mode => :compat }
  - Sped up mimic_JSON.
 
  - Added an option to omit Hash and Object attributes with nil values.
-
-**Release 2.16.1**
-
- - Thanks to hsbt for fixing a compile issue with Ruby 2.4.0-preview1.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
