@@ -175,18 +175,6 @@ Oj.default_options = {:mode => :compat }
  - Worked around a problem with DateTime and ActiveSupport that causes a hang
    when hour, minute, second, and some other methods are called from C.
 
-**Release 2.17.1**
-
- - Added an option provide an alternative Hash class for loading.
-
- - Added the Oj::EasyHash class.
-
- - Fixed test failures on 32 bit machines.
-
- - Sped up mimic_JSON.
-
- - Added an option to omit Hash and Object attributes with nil values.
-
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
 ## Compatibility
