@@ -1860,7 +1860,7 @@ no_op1(VALUE self, VALUE obj) {
 }
 
 static VALUE
-mimic_create_id(VALUE self, VALUE id) {
+mimic_set_create_id(VALUE self, VALUE id) {
     Check_Type(id, T_STRING);
 
     if (0 != oj_default_options.create_id) {
@@ -1878,6 +1878,14 @@ mimic_create_id(VALUE self, VALUE id) {
 	oj_default_options.create_id_len = len - 1;
     }
     return id;
+}
+
+static VALUE
+mimic_create_id(VALUE self) {
+    if (0 != oj_default_options.create_id) {
+	return oj_encode(rb_str_new_cstr(oj_default_options.create_id));
+    }
+    return rb_str_new_cstr(json_class);
 }
 
 static struct _Options	mimic_object_to_json_options = {
@@ -2005,7 +2013,8 @@ define_mimic_json(int argc, VALUE *argv, VALUE self) {
     }
     rb_define_module_function(mimic, "parser=", no_op1, 1);
     rb_define_module_function(mimic, "generator=", no_op1, 1);
-    rb_define_module_function(mimic, "create_id=", mimic_create_id, 1);
+    rb_define_module_function(mimic, "create_id=", mimic_set_create_id, 1);
+    rb_define_module_function(mimic, "create_id", mimic_create_id, 0);
 
     rb_define_module_function(mimic, "dump", mimic_dump, -1);
     rb_define_module_function(mimic, "load", mimic_load, -1);

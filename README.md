@@ -170,6 +170,11 @@ Oj.default_options = {:mode => :compat }
 
 ## Releases
 
+**Release 2.17.3**
+
+- Updated mimic_JSON to monkey patch OpenStruct, Range, Rational, Regexp, Struct, Symbol,
+  and Time like the JSON gem does. Also added the JSON.create_id accessor.
+
 **Release 2.17.2**
 
  - Worked around a problem with DateTime and ActiveSupport that causes a hang

@@ -1,4 +1,10 @@
 
+begin
+  require 'ostruct'
+rescue Exception
+  # ignore
+end
+
 module Oj
 
   def self.mimic_loaded(mimic_paths=[])
@@ -14,5 +20,86 @@ module Oj
     end
     mimic_paths.each { |p| $LOADED_FEATURES << p }
     $LOADED_FEATURES << 'json' unless $LOADED_FEATURES.include?('json')
+
+    if Object.const_defined?('OpenStruct')
+      OpenStruct.class_eval do
+        def as_json(*)
+          name = self.class.name.to_s
+          raise JSON::JSONError, "Only named structs are supported!" if 0 == name.length
+          { JSON.create_id => name, 't' => table }
+        end
+        def self.json_create(h)
+          new(h['t'])
+        end
+      end
+    end
+    
+    Range.class_eval do
+      def as_json(*)
+        {JSON.create_id => 'Range', 'a' => [first, last, exclude_end?]}
+      end
+      def self.json_create(h)
+        new(h['a'])
+      end
+    end
+
+    Rational.class_eval do
+      def as_json(*)
+        {JSON.create_id => 'Rational', 'n' => numerator, 'd' => denominator }
+      end
+      def self.json_create(h)
+        Rational(h['n'], h['d'])
+      end
+    end
+
+    Regexp.class_eval do
+      def as_json(*)
+        {JSON.create_id => 'Regexp', 'o' => options, 's' => source }
+      end
+      def self.json_create(h)
+        new(h['s'], h['o'])
+      end
+    end
+
+    Struct.class_eval do
+      def as_json(*)
+        name = self.class.name.to_s
+        raise JSON::JSONError, "Only named structs are supported!" if 0 == name.length
+        { JSON.create_id => name, 'v' => values }
+      end
+      def self.json_create(h)
+        new(h['v'])
+      end
+    end
+
+    Symbol.class_eval do
+      def as_json(*)
+        {JSON.create_id => 'Symbol', 's' => to_s }
+      end
+      def self.json_create(h)
+        h['s'].to_sym
+      end
+    end
+
+    Time.class_eval do
+      def as_json(*)
+        {JSON.create_id => 'Symbol', 's' => to_s }
+        nsecs = [ tv_usec * 1000 ]
+        nsecs << tv_nsec if respond_to?(:tv_nsec)
+        nanoseconds = nanoseconds.max
+        { JSON.create_id => 'Time', 's' => tv_sec, 'n' => nsecs }
+      end
+      def self.json_create(h)
+        if usec = h.delete('u')
+          h['n'] = usec * 1000
+        end
+        if instance_methods.include?(:tv_nsec)
+          at(h['s'], Rational(h['n'], 1000))
+        else
+          at(h['s'], h['n'] / 1000)
+        end
+      end
+    end
+
   end
 end
