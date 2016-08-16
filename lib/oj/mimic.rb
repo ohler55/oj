@@ -86,7 +86,7 @@ module Oj
         {JSON.create_id => 'Symbol', 's' => to_s }
         nsecs = [ tv_usec * 1000 ]
         nsecs << tv_nsec if respond_to?(:tv_nsec)
-        nanoseconds = nanoseconds.max
+        nsecs = nsecs.max
         { JSON.create_id => 'Time', 's' => tv_sec, 'n' => nsecs }
       end
       def self.json_create(h)

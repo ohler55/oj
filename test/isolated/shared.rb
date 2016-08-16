@@ -56,7 +56,7 @@ class SharedMimicTest < Minitest::Test
 # dump
   def test_dump_string
     json = JSON.dump([1, true, nil, @time])
-    assert_equal(%{[1,true,null,#{@expected_time_string}]}, json)
+    assert_equal(%{[1,true,null,{"json_class":"Time","s":1400000000,"n":0}]}, json)
   end
 
   def test_dump_with_options
@@ -66,7 +66,11 @@ class SharedMimicTest < Minitest::Test
   1,
   true,
   null,
-  #{@expected_time_string}
+  {
+    "json_class":"Time",
+    "s":1400000000,
+    "n":0
+  }
 ]
 }, json)
   end
@@ -75,18 +79,23 @@ class SharedMimicTest < Minitest::Test
     s = StringIO.new()
     json = JSON.dump([1, true, nil, @time], s)
     assert_equal(s, json)
-    assert_equal(%{[1,true,null,#{@expected_time_string}]}, s.string)
+    assert_equal(%{[1,true,null,{"json_class":"Time","s":1400000000,"n":0}]}, s.string)
   end
   # TBD options
 
   def test_dump_struct
-    # anonymous Struct
-    s = Struct.new(:a, :b, :c)
+    # anonymous Struct not supported by json so name it
+    if Object.const_defined?("Struct::Abc")
+      s = Struct::Abc
+    else
+      s = Struct.new("Abc", :a, :b, :c)
+    end
     o = s.new(1, 'two', [true, false])
     json = JSON.dump(o)
     # Rails add the as_json method and changes the behavior.
     if o.respond_to?(:as_json)
-      assert_equal(%|{"a":1,"b":"two","c":[true,false]}|, json)
+      assert_equal(%|{"json_class":"Struct::Abc","v":[1,"two",[true,false]]}|, json)
+      #assert_equal(%|{"a":1,"b":"two","c":[true,false]}|, json)
     else
       j = '"' + o.to_s.gsub('"', '\\"') + '"'
       assert_equal(j, json)
