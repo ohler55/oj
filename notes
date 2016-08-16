@@ -3,6 +3,10 @@
 ^c^d hide subtree
 ^c^s show subtree
 
+- as_json
+ - if ActiveSupport defined and as_json exists then define one
+  - maybe just check as_json defined
+
 - debug
  - instrument for parsing floats/bigdecimal
   - branch
