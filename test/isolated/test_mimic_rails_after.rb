@@ -16,5 +16,7 @@ Oj.mimic_JSON
 
 require 'isolated/shared'
 
+$rails_monkey = true
+
 class MimicRailsAfter < SharedMimicRailsTest
 end # MimicRailsAfter
