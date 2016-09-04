@@ -1760,6 +1760,14 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
 	    copts->dump_opts.array_size = (uint8_t)len;
 	    copts->dump_opts.use = true;
 	}
+	if (Qnil != (v = rb_hash_lookup(ropts, ascii_only_sym))) {
+	    // generate seems to assume anything except nil and false are true.
+	    if (Qfalse == v || Qnil == v) {
+		copts->escape_mode = JSONEsc;
+	    } else {
+		copts->escape_mode = ASCIIEsc;
+	    }
+	}
 	// :allow_nan is not supported as Oj always allows_nan
 	// :max_nesting is always set to 100
     }
@@ -2379,6 +2387,9 @@ void Init_oj() {
  * @param [String] :space_before String placed before a : delimiter
  * @param [String] :object_nl String placed after a JSON object
  * @param [String] :array_nl String placed after a JSON array
+ * @param [true|false] :ascii_only if not nil or false then use only ascii
+ *                      characters in the output. Note JSON.generate does
+ *                      support this even if it is not documented.
  */
 /* Document-method: fast_generate
  *   call-seq: fast_generate(obj, opts=nil) -> String

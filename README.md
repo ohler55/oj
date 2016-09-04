@@ -170,6 +170,11 @@ Oj.default_options = {:mode => :compat }
 
 ## Releases
 
+**Release 2.17.4**
+
+- Added the ascii_only option to JSON.generate when in mimic_JSON mode so that
+  it is consistent with the undocumented feature in the json gem.
+
 **Release 2.17.3**
 
 - Updated mimic_JSON to monkey patch OpenStruct, Range, Rational, Regexp, Struct, Symbol,
