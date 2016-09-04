@@ -297,7 +297,7 @@ class Juice < Minitest::Test
     # validate that an invalid unicode raises unless the :allow_invalid_unicode is true
     json = %{"x\\ud83dy"}
     begin
-      obj = Oj.load(json)
+      Oj.load(json)
     rescue Exception
       assert(true)
       return
