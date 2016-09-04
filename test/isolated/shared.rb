@@ -1,5 +1,11 @@
 # encoding: UTF-8
 
+# The rails tests set this to true. Both Rails and the JSON gem monkey patch the
+# as_json methods on several base classes. Depending on which one replaces the
+# method last the behavior will be different. Oj.mimic_JSON abides by the same
+# conflicting behavior and the tests reflect that.
+$rails_monkey = false unless defined?($rails_monkey)
+
 class SharedMimicTest < Minitest::Test
   class Jam
     attr_accessor :x, :y
@@ -56,37 +62,66 @@ class SharedMimicTest < Minitest::Test
 # dump
   def test_dump_string
     json = JSON.dump([1, true, nil, @time])
-    assert_equal(%{[1,true,null,#{@expected_time_string}]}, json)
+    if $rails_monkey
+      assert_equal(%{[1,true,null,#{@expected_time_string}]}, json)
+    else
+      assert_equal(%{[1,true,null,{"json_class":"Time","s":1400000000,"n":0}]}, json)
+    end
   end
 
   def test_dump_with_options
     Oj.default_options= {:indent => 2} # JSON this will not change anything
     json = JSON.dump([1, true, nil, @time])
-    assert_equal(%{[
+    if $rails_monkey
+      assert_equal(%{[
   1,
   true,
   null,
   #{@expected_time_string}
 ]
 }, json)
+    else
+      assert_equal(%{[
+  1,
+  true,
+  null,
+  {
+    "json_class":"Time",
+    "s":1400000000,
+    "n\":0
+  }
+]
+}, json)
+    end
   end
 
   def test_dump_io
     s = StringIO.new()
     json = JSON.dump([1, true, nil, @time], s)
     assert_equal(s, json)
-    assert_equal(%{[1,true,null,#{@expected_time_string}]}, s.string)
+    if $rails_monkey
+      assert_equal(%{[1,true,null,#{@expected_time_string}]}, s.string)
+    else
+      assert_equal(%{[1,true,null,{"json_class":"Time","s":1400000000,"n":0}]}, s.string)
+    end
   end
   # TBD options
 
   def test_dump_struct
-    # anonymous Struct
-    s = Struct.new(:a, :b, :c)
+    # anonymous Struct not supported by json so name it
+    if Object.const_defined?("Struct::Abc")
+      s = Struct::Abc
+    else
+      s = Struct.new("Abc", :a, :b, :c)
+    end
     o = s.new(1, 'two', [true, false])
     json = JSON.dump(o)
-    # Rails add the as_json method and changes the behavior.
     if o.respond_to?(:as_json)
-      assert_equal(%|{"a":1,"b":"two","c":[true,false]}|, json)
+      if $rails_monkey
+        assert_equal(%|{"a":1,"b":"two","c":[true,false]}|, json)
+      else
+        assert_equal(%|{"json_class":"Struct::Abc","v":[1,"two",[true,false]]}|, json)
+      end
     else
       j = '"' + o.to_s.gsub('"', '\\"') + '"'
       assert_equal(j, json)

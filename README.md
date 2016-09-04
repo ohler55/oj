@@ -175,16 +175,6 @@ Oj.default_options = {:mode => :compat }
 - Added the ascii_only option to JSON.generate when in mimic_JSON mode so that
   it is consistent with the undocumented feature in the json gem.
 
-**Release 2.17.3**
-
-- Updated mimic_JSON to monkey patch OpenStruct, Range, Rational, Regexp, Struct, Symbol,
-  and Time like the JSON gem does. Also added the JSON.create_id accessor.
-
-**Release 2.17.2**
-
- - Worked around a problem with DateTime and ActiveSupport that causes a hang
-   when hour, minute, second, and some other methods are called from C.
-
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
 ## Compatibility

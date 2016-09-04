@@ -15,6 +15,7 @@ end
 
 require 'isolated/shared'
 
+$rails_monkey = true
+
 class MimicRailsBefore < SharedMimicRailsTest
 end # MimicRailsBefore
-
