@@ -7,6 +7,28 @@ end
 
 module Oj
 
+  # A bit hack-ish but does the trick. The JSON.dump_default_options is a Hash
+  # but in mimic we use a C struct to store defaults. This class creates a view
+  # onto that struct.
+  class MimicDumpOption < Hash
+    def initialize()
+      oo = Oj.default_options
+      self.store(:max_nesting, false)
+      self.store(:allow_nan, true)
+      self.store(:quirks_mode, oo[:quirks_mode])
+      self.store(:ascii_only, (:ascii == oo[:escape_mode]))
+    end
+
+    def []=(key, value)
+      case key
+      when :quirks_mode
+        Oj.default_options = {:quirks_mode => value}
+      when :ascii_only
+        Oj.default_options = {:ascii_only => value}
+      end
+    end
+  end
+
   def self.mimic_loaded(mimic_paths=[])
     $LOAD_PATH.each do |d|
       next unless File.exist?(d)
@@ -122,43 +144,19 @@ module Oj
       end
     end
 
-  end
+    JSON.module_eval do
+      def self.dump_default_options
+        Oj::MimicDumpOption.new
+      end
 
-  # A bit hack-ish but does the trick. The JSON.dump_default_options is a Hash
-  # but in mimic we use a C struct to store defaults. This class creates a view
-  # onto that struct.
-  class MimicDumpOption < Hash
-    def initialize()
-      oo = Oj.default_options
-      self.store(:max_nesting, false)
-      self.store(:allow_nan, true)
-      self.store(:quirks_mode, oo[:quirks_mode])
-      self.store(:ascii_only, (:ascii == oo[:escape_mode]))
-    end
-
-    def []=(key, value)
-      case key
-      when :quirks_mode
-        Oj.default_options = {:quirks_mode => value}
-      when :ascii_only
-        Oj.default_options = {:ascii_only => value}
+      def self.dump_default_options=(h)
+        m = Oj::MimicDumpOption.new
+        h.each do |k,v|
+          m[k] = v
+        end
       end
     end
-  end
-end
 
-module JSON
+  end # self.mimic_loaded
 
-  def self.dump_default_options
-    Oj::MimicDumpOption.new
-  end
-
-  def self.dump_default_options=(h)
-    m = Oj::MimicDumpOption.new
-    h.each do |k,v|
-      m[k] = v
-    end
-  end
-
-end
-
+end # Oj
