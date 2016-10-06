@@ -170,6 +170,10 @@ Oj.default_options = {:mode => :compat }
 
 ## Releases
 
+**Future Release 2.17.5**
+
+- Added additional code to check for as_json arguments and recursive calls.
+
 **Release 2.17.4**
 
 - Added the ascii_only option to JSON.generate when in mimic_JSON mode so that

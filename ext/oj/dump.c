@@ -59,7 +59,7 @@
 typedef unsigned long	ulong;
 
 static void	raise_strict(VALUE obj);
-static void	dump_val(VALUE obj, int depth, Out out, int argc, VALUE *argv);
+static void	dump_val(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok);
 static void	dump_nil(Out out);
 static void	dump_true(Out out);
 static void	dump_false(Out out);
@@ -85,11 +85,11 @@ static void	dump_ruby_time(VALUE obj, Out out);
 static void	dump_xml_time(VALUE obj, Out out);
 static void	dump_data_strict(VALUE obj, Out out);
 static void	dump_data_null(VALUE obj, Out out);
-static void	dump_data_comp(VALUE obj, int depth, Out out);
+static void	dump_data_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok);
 static void	dump_data_obj(VALUE obj, int depth, Out out);
-static void	dump_obj_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv);
+static void	dump_obj_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok);
 static void	dump_obj_obj(VALUE obj, int depth, Out out);
-static void	dump_struct_comp(VALUE obj, int depth, Out out);
+static void	dump_struct_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok);
 static void	dump_struct_obj(VALUE obj, int depth, Out out);
 #if HAS_IVAR_HELPERS
 static int	dump_attr_cb(ID key, VALUE value, Out out);
@@ -795,7 +795,7 @@ dump_array(VALUE a, VALUE clas, int depth, Out out) {
 	    } else {
 		fill_indent(out, d2);
 	    }
-	    dump_val(rb_ary_entry(a, i), d2, out, 0, 0);
+	    dump_val(rb_ary_entry(a, i), d2, out, 0, 0, true);
 	    if (i < cnt) {
 		*out->cur++ = ',';
 	    }
@@ -876,7 +876,7 @@ hash_cb_strict(VALUE key, VALUE value, Out out) {
 	    out->cur += out->opts->dump_opts.after_size;
 	}
     }
-    dump_val(value, depth, out, 0, 0);
+    dump_val(value, depth, out, 0, 0, false);
     out->depth = depth;
     *out->cur++ = ',';
 
@@ -943,7 +943,7 @@ hash_cb_compat(VALUE key, VALUE value, Out out) {
 	    out->cur += out->opts->dump_opts.after_size;
 	}
     }
-    dump_val(value, depth, out, 0, 0);
+    dump_val(value, depth, out, 0, 0, true);
     out->depth = depth;
     *out->cur++ = ',';
 
@@ -965,11 +965,11 @@ hash_cb_object(VALUE key, VALUE value, Out out) {
     if (rb_type(key) == T_STRING) {
 	dump_str_obj(key, Qundef, depth, out);
 	*out->cur++ = ':';
-	dump_val(value, depth, out, 0, 0);
+	dump_val(value, depth, out, 0, 0, true);
     } else if (rb_type(key) == T_SYMBOL) {
 	dump_sym_obj(key, out);
 	*out->cur++ = ':';
-	dump_val(value, depth, out, 0, 0);
+	dump_val(value, depth, out, 0, 0, true);
     } else {
 	int	d2 = depth + 1;
 	long	s2 = size + out->indent + 1;
@@ -997,13 +997,13 @@ hash_cb_object(VALUE key, VALUE value, Out out) {
 	*out->cur++ = ':';
 	*out->cur++ = '[';
 	fill_indent(out, d2);
-	dump_val(key, d2, out, 0, 0);
+	dump_val(key, d2, out, 0, 0, true);
 	if (out->end - out->cur <= (long)s2) {
 	    grow(out, s2);
 	}
 	*out->cur++ = ',';
 	fill_indent(out, d2);
-	dump_val(value, d2, out, 0, 0);
+	dump_val(value, d2, out, 0, 0, true);
 	if (out->end - out->cur <= (long)size) {
 	    grow(out, size);
 	}
@@ -1318,10 +1318,10 @@ dump_data_null(VALUE obj, Out out) {
 }
 
 static void
-dump_data_comp(VALUE obj, int depth, Out out) {
+dump_data_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) {
     VALUE	clas = rb_obj_class(obj);
 
-    if (rb_respond_to(obj, oj_to_hash_id)) {
+    if (as_ok && rb_respond_to(obj, oj_to_hash_id)) {
 	volatile VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
  
 	if (T_HASH != rb_type(h)) {
@@ -1330,7 +1330,7 @@ dump_data_comp(VALUE obj, int depth, Out out) {
 	    // will be dumped.
 
 	    //rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
-	    dump_val(h, depth, out, 0, 0);
+	    dump_val(h, depth, out, 0, 0, false);
 	}
 	dump_hash(h, Qundef, depth, out->opts->mode, out);
 
@@ -1338,16 +1338,36 @@ dump_data_comp(VALUE obj, int depth, Out out) {
 	volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
 	dump_raw(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), out);
-    } else if (rb_respond_to(obj, oj_as_json_id)) {
-	volatile VALUE	aj = rb_funcall(obj, oj_as_json_id, 0);
+    } else if (as_ok && rb_respond_to(obj, oj_as_json_id)) {
+	volatile VALUE	aj;
 
+	// Some classes elect to not take an options argument so check the arity
+	// of as_json.
+	switch (rb_obj_method_arity(obj, oj_as_json_id)) {
+	case 0:
+	    aj = rb_funcall2(obj, oj_as_json_id, 0, 0);
+	    break;
+	case 1:
+	    if (1 <= argc) {
+		aj = rb_funcall2(obj, oj_as_json_id, 1, argv);
+	    } else {
+		VALUE	nothing [1];
+
+		nothing[0] = Qnil;
+		aj = rb_funcall2(obj, oj_as_json_id, 1, nothing);
+	    }
+	    break;
+	default:
+	    aj = rb_funcall2(obj, oj_as_json_id, argc, argv);
+	    break;
+	}
 	// Catch the obvious brain damaged recursive dumping.
 	if (aj == obj) {
 	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
 	    dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
 	} else {
-	    dump_val(aj, depth, out, 0, 0);
+	    dump_val(aj, depth, out, 0, 0, false);
 	}
     } else if (Yes == out->opts->to_json && rb_respond_to(obj, oj_to_json_id)) {
 	volatile VALUE	rs;
@@ -1430,8 +1450,8 @@ dump_data_obj(VALUE obj, int depth, Out out) {
 }
 
 static void
-dump_obj_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv) {
-    if (rb_respond_to(obj, oj_to_hash_id)) {
+dump_obj_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) {
+    if (as_ok && rb_respond_to(obj, oj_to_hash_id)) {
 	volatile VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
 
 	if (T_HASH != rb_type(h)) {
@@ -1440,20 +1460,40 @@ dump_obj_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv) {
 	    // will be dumped.
 
 	    //rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
-	    dump_val(h, depth, out, 0, 0);
+	    dump_val(h, depth, out, 0, 0, false);
 	} else {
 	    dump_hash(h, Qundef, depth, out->opts->mode, out);
 	}
-    } else if (rb_respond_to(obj, oj_as_json_id)) {
-	volatile VALUE	aj = rb_funcall2(obj, oj_as_json_id, argc, argv);
+    } else if (as_ok && rb_respond_to(obj, oj_as_json_id)) {
+	volatile VALUE	aj;
 
+	// Some classes elect to not take an options argument so check the arity
+	// of as_json.
+	switch (rb_obj_method_arity(obj, oj_as_json_id)) {
+	case 0:
+	    aj = rb_funcall2(obj, oj_as_json_id, 0, 0);
+	    break;
+	case 1:
+	    if (1 <= argc) {
+		aj = rb_funcall2(obj, oj_as_json_id, 1, argv);
+	    } else {
+		VALUE	nothing [1];
+
+		nothing[0] = Qnil;
+		aj = rb_funcall2(obj, oj_as_json_id, 1, nothing);
+	    }
+	    break;
+	default:
+	    aj = rb_funcall2(obj, oj_as_json_id, argc, argv);
+	    break;
+	}
 	// Catch the obvious brain damaged recursive dumping.
 	if (aj == obj) {
 	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
 	    dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
 	} else {
-	    dump_val(aj, depth, out, 0, 0);
+	    dump_val(aj, depth, out, 0, 0, false);
 	}
     } else if (Yes == out->opts->to_json && rb_respond_to(obj, oj_to_json_id)) {
 	volatile VALUE	rs;
@@ -1567,7 +1607,7 @@ dump_attr_cb(ID key, VALUE value, Out out) {
 	dump_cstr(buf, strlen(buf), 0, 0, out);
     }
     *out->cur++ = ':';
-    dump_val(value, depth, out, 0, 0);
+    dump_val(value, depth, out, 0, 0, true);
     out->depth = depth;
     *out->cur++ = ',';
     
@@ -1727,7 +1767,7 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 		dump_cstr(buf, strlen(attr) + 1, 0, 0, out);
 	    }
 	    *out->cur++ = ':';
-	    dump_val(value, d2, out, 0, 0);
+	    dump_val(value, d2, out, 0, 0, true);
 	    if (out->end - out->cur <= 2) {
 		grow(out, 2);
 	    }
@@ -1748,7 +1788,7 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	    dump_cstr("~mesg", 5, 0, 0, out);
 	    *out->cur++ = ':';
 	    rv = rb_funcall2(obj, rb_intern("message"), 0, 0);
-	    dump_val(rv, d2, out, 0, 0);
+	    dump_val(rv, d2, out, 0, 0, true);
 	    if (out->end - out->cur <= 2) {
 		grow(out, 2);
 	    }
@@ -1761,7 +1801,7 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	    dump_cstr("~bt", 3, 0, 0, out);
 	    *out->cur++ = ':';
 	    rv = rb_funcall2(obj, rb_intern("backtrace"), 0, 0);
-	    dump_val(rv, d2, out, 0, 0);
+	    dump_val(rv, d2, out, 0, 0, true);
 	    if (out->end - out->cur <= 2) {
 		grow(out, 2);
 	    }
@@ -1775,8 +1815,8 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 }
 
 static void
-dump_struct_comp(VALUE obj, int depth, Out out) {
-    if (rb_respond_to(obj, oj_to_hash_id)) {
+dump_struct_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) {
+    if (as_ok && rb_respond_to(obj, oj_to_hash_id)) {
 	volatile VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
  
 	if (T_HASH != rb_type(h)) {
@@ -1785,19 +1825,39 @@ dump_struct_comp(VALUE obj, int depth, Out out) {
 	    // will be dumped.
 
 	    //rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
-	    dump_val(h, depth, out, 0, 0);
+	    dump_val(h, depth, out, 0, 0, false);
 	}
 	dump_hash(h, Qundef, depth, out->opts->mode, out);
-    } else if (rb_respond_to(obj, oj_as_json_id)) {
-	volatile VALUE	aj = rb_funcall(obj, oj_as_json_id, 0);
+    } else if (as_ok && rb_respond_to(obj, oj_as_json_id)) {
+	volatile VALUE	aj;
 
+	// Some classes elect to not take an options argument so check the arity
+	// of as_json.
+	switch (rb_obj_method_arity(obj, oj_as_json_id)) {
+	case 0:
+	    aj = rb_funcall2(obj, oj_as_json_id, 0, 0);
+	    break;
+	case 1:
+	    if (1 <= argc) {
+		aj = rb_funcall2(obj, oj_as_json_id, 1, argv);
+	    } else {
+		VALUE	nothing [1];
+
+		nothing[0] = Qnil;
+		aj = rb_funcall2(obj, oj_as_json_id, 1, nothing);
+	    }
+	    break;
+	default:
+	    aj = rb_funcall2(obj, oj_as_json_id, argc, argv);
+	    break;
+	}
 	// Catch the obvious brain damaged recursive dumping.
 	if (aj == obj) {
 	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
 	    dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
 	} else {
-	    dump_val(aj, depth, out, 0, 0);
+	    dump_val(aj, depth, out, 0, 0, false);
 	}
     } else if (Yes == out->opts->to_json && rb_respond_to(obj, oj_to_json_id)) {
 	volatile VALUE	rs = rb_funcall(obj, oj_to_json_id, 0);
@@ -1882,7 +1942,7 @@ dump_struct_obj(VALUE obj, int depth, Out out) {
 		grow(out, size);
 	    }
 	    fill_indent(out, d3);
-	    dump_val(*vp, d3, out, 0, 0);
+	    dump_val(*vp, d3, out, 0, 0, true);
 	    *out->cur++ = ',';
 	}
     }
@@ -2005,7 +2065,7 @@ dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
 	    fill_indent(out, d2);
 	    dump_cstr(name, nlen, 0, 0, out);
 	    *out->cur++ = ':';
-	    dump_val(v, d2, out, 0, 0);
+	    dump_val(v, d2, out, 0, 0, true);
 	    if (out->end - out->cur <= 2) {
 		grow(out, 2);
 	    }
@@ -2023,7 +2083,7 @@ raise_strict(VALUE obj) {
 }
 
 static void
-dump_val(VALUE obj, int depth, Out out, int argc, VALUE *argv) {
+dump_val(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) {
     int	type = rb_type(obj);
 
     if (MAX_DEPTH < depth) {
@@ -2061,7 +2121,7 @@ dump_val(VALUE obj, int depth, Out out, int argc, VALUE *argv) {
 	switch (out->opts->mode) {
 	case StrictMode:	raise_strict(obj);		break;
 	case NullMode:		dump_nil(out);			break;
-	case CompatMode:	dump_struct_comp(obj, depth, out);	break;
+	case CompatMode:	dump_struct_comp(obj, depth, out, argc, argv, as_ok);	break;
 	case ObjectMode:
 	default:		dump_struct_obj(obj, depth, out);	break;
 	}
@@ -2098,7 +2158,7 @@ dump_val(VALUE obj, int depth, Out out, int argc, VALUE *argv) {
 		switch (out->opts->mode) {
 		case StrictMode:	dump_data_strict(obj, out);	break;
 		case NullMode:		dump_data_null(obj, out);	break;
-		case CompatMode:	dump_obj_comp(obj, depth, out, argc, argv);	break;
+		case CompatMode:	dump_obj_comp(obj, depth, out, argc, argv, as_ok);	break;
 		case ObjectMode:
 		default:		dump_obj_obj(obj, depth, out);	break;
 		}
@@ -2107,7 +2167,7 @@ dump_val(VALUE obj, int depth, Out out, int argc, VALUE *argv) {
 		switch (out->opts->mode) {
 		case StrictMode:	dump_data_strict(obj, out);	break;
 		case NullMode:		dump_data_null(obj, out);	break;
-		case CompatMode:	dump_data_comp(obj, depth, out);break;
+		case CompatMode:	dump_data_comp(obj, depth, out, argc, argv, as_ok);break;
 		case ObjectMode:
 		default:		dump_data_obj(obj, depth, out);	break;
 		}
@@ -2121,7 +2181,7 @@ dump_val(VALUE obj, int depth, Out out, int argc, VALUE *argv) {
 		case NullMode:		dump_nil(out);			break;
 		case CompatMode:
 		case ObjectMode:
-		default:		dump_obj_comp(obj, depth, out, argc, argv);	break;
+		default:		dump_obj_comp(obj, depth, out, argc, argv, as_ok);	break;
 		}
 		break;
 	    default:
@@ -2165,7 +2225,7 @@ oj_dump_obj_to_json_using_params(VALUE obj, Options copts, Out out, int argc, VA
 	oj_cache8_new(&out->circ_cache);
     }
     out->indent = copts->indent;
-    dump_val(obj, 0, out, argc, argv);
+    dump_val(obj, 0, out, argc, argv, true);
     if (0 < out->indent) {
 	switch (*(out->cur - 1)) {
 	case ']':
@@ -2615,7 +2675,7 @@ oj_str_writer_push_value(StrWriter sw, VALUE val, const char *key) {
 	    *sw->out.cur++ = ':';
 	}
     }
-    dump_val(val, sw->depth, &sw->out, 0, 0);
+    dump_val(val, sw->depth, &sw->out, 0, 0, true);
 }
 
 void

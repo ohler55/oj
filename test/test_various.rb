@@ -61,7 +61,7 @@ class Juice < Minitest::Test
       super
     end
 
-    def as_json()
+    def as_json(options)
       "#{x} #{y}"
     end
 
