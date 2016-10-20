@@ -174,11 +174,6 @@ Oj.default_options = {:mode => :compat }
 
 - Added additional code to check for as_json arguments and recursive calls.
 
-**Release 2.17.4**
-
-- Added the ascii_only option to JSON.generate when in mimic_JSON mode so that
-  it is consistent with the undocumented feature in the json gem.
-
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
 ## Compatibility
