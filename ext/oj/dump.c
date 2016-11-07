@@ -1118,7 +1118,7 @@ dump_time(VALUE obj, Out out, int withZone) {
 	long	tzsecs = NUM2LONG(rb_funcall2(obj, oj_utc_offset_id, 0, 0));
 	int	zneg = (0 > tzsecs);
 
-	if (0 == tzsecs && Qtrue == rb_funcall2(obj, oj_utcq_id, 0, 0)) {
+	if (0 == tzsecs && rb_funcall2(obj, oj_utcq_id, 0, 0)) {
 	    tzsecs = 86400;
 	}
 	if (zneg) {
@@ -1251,7 +1251,7 @@ dump_xml_time(VALUE obj, Out out) {
     }
 #endif
     if (0 == nsec || 0 == out->opts->sec_prec) {
-	if (0 == tzsecs && Qtrue == rb_funcall2(obj, oj_utcq_id, 0, 0)) {
+	if (0 == tzsecs && rb_funcall2(obj, oj_utcq_id, 0, 0)) {
 	    sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02dZ",
 		    tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
 		    tm->tm_hour, tm->tm_min, tm->tm_sec);
@@ -1263,7 +1263,7 @@ dump_xml_time(VALUE obj, Out out) {
 		    tzsign, tzhour, tzmin);
 	    dump_cstr(buf, 25, 0, 0, out);
 	}
-    } else if (0 == tzsecs && Qtrue == rb_funcall2(obj, oj_utcq_id, 0, 0)) {
+    } else if (0 == tzsecs && rb_funcall2(obj, oj_utcq_id, 0, 0)) {
 	char	format[64] = "%04d-%02d-%02dT%02d:%02d:%02d.%09ldZ";
 	int	len = 30;
 
@@ -1321,7 +1321,7 @@ static void
 dump_data_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) {
     VALUE	clas = rb_obj_class(obj);
 
-    if (as_ok && Qtrue == rb_respond_to(obj, oj_to_hash_id)) {
+    if (as_ok && rb_respond_to(obj, oj_to_hash_id)) {
 	volatile VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
  
 	if (T_HASH != rb_type(h)) {
@@ -1338,7 +1338,7 @@ dump_data_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok)
 	volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
 	dump_raw(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), out);
-    } else if (as_ok && Qtrue == rb_respond_to(obj, oj_as_json_id)) {
+    } else if (as_ok && rb_respond_to(obj, oj_as_json_id)) {
 	volatile VALUE	aj;
 
 	// Some classes elect to not take an options argument so check the arity
@@ -1369,7 +1369,7 @@ dump_data_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok)
 	} else {
 	    dump_val(aj, depth, out, 0, 0, false);
 	}
-    } else if (Yes == out->opts->to_json && Qtrue == rb_respond_to(obj, oj_to_json_id)) {
+    } else if (Yes == out->opts->to_json && rb_respond_to(obj, oj_to_json_id)) {
 	volatile VALUE	rs;
 	const char	*s;
 	int		len;
@@ -1451,7 +1451,7 @@ dump_data_obj(VALUE obj, int depth, Out out) {
 
 static void
 dump_obj_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) {
-    if (as_ok && Qtrue == rb_respond_to(obj, oj_to_hash_id)) {
+    if (as_ok && rb_respond_to(obj, oj_to_hash_id)) {
 	volatile VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
 
 	if (T_HASH != rb_type(h)) {
@@ -1464,7 +1464,7 @@ dump_obj_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) 
 	} else {
 	    dump_hash(h, Qundef, depth, out->opts->mode, out);
 	}
-    } else if (as_ok && Qtrue == rb_respond_to(obj, oj_as_json_id)) {
+    } else if (as_ok && rb_respond_to(obj, oj_as_json_id)) {
 	volatile VALUE	aj;
 
 	// Some classes elect to not take an options argument so check the arity
@@ -1495,7 +1495,7 @@ dump_obj_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) 
 	} else {
 	    dump_val(aj, depth, out, 0, 0, false);
 	}
-    } else if (Yes == out->opts->to_json && Qtrue == rb_respond_to(obj, oj_to_json_id)) {
+    } else if (Yes == out->opts->to_json && rb_respond_to(obj, oj_to_json_id)) {
 	volatile VALUE	rs;
 	const char	*s;
 	int		len;
@@ -1774,7 +1774,7 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	}
 #endif
 #if HAS_EXCEPTION_MAGIC
-	if (Qtrue == rb_obj_is_kind_of(obj, rb_eException)) {
+	if (rb_obj_is_kind_of(obj, rb_eException)) {
 	    volatile VALUE	rv;
 
 	    if (',' != *(out->cur - 1)) {
@@ -1816,7 +1816,7 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 
 static void
 dump_struct_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) {
-    if (as_ok && Qtrue == rb_respond_to(obj, oj_to_hash_id)) {
+    if (as_ok && rb_respond_to(obj, oj_to_hash_id)) {
 	volatile VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
  
 	if (T_HASH != rb_type(h)) {
@@ -1828,7 +1828,7 @@ dump_struct_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_o
 	    dump_val(h, depth, out, 0, 0, false);
 	}
 	dump_hash(h, Qundef, depth, out->opts->mode, out);
-    } else if (as_ok && Qtrue == rb_respond_to(obj, oj_as_json_id)) {
+    } else if (as_ok && rb_respond_to(obj, oj_as_json_id)) {
 	volatile VALUE	aj;
 
 	// Some classes elect to not take an options argument so check the arity
@@ -1859,7 +1859,7 @@ dump_struct_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_o
 	} else {
 	    dump_val(aj, depth, out, 0, 0, false);
 	}
-    } else if (Yes == out->opts->to_json && Qtrue == rb_respond_to(obj, oj_to_json_id)) {
+    } else if (Yes == out->opts->to_json && rb_respond_to(obj, oj_to_json_id)) {
 	volatile VALUE	rs = rb_funcall(obj, oj_to_json_id, 0);
 	const char	*s;
 	int		len;
@@ -2294,7 +2294,7 @@ oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
     if (oj_stringio_class == clas) {
 	rb_funcall(stream, oj_write_id, 1, rb_str_new(out.buf, size));
 #if !IS_WINDOWS
-    } else if (Qtrue == rb_respond_to(stream, oj_fileno_id) &&
+    } else if (rb_respond_to(stream, oj_fileno_id) &&
 	       Qnil != (s = rb_funcall(stream, oj_fileno_id, 0)) &&
 	       0 != (fd = FIX2INT(s))) {
 	if (size != write(fd, out.buf, size)) {
@@ -2304,7 +2304,7 @@ oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
 	    rb_raise(rb_eIOError, "Write failed. [%d:%s]\n", errno, strerror(errno));
 	}
 #endif
-    } else if (Qtrue == rb_respond_to(stream, oj_write_id)) {
+    } else if (rb_respond_to(stream, oj_write_id)) {
 	rb_funcall(stream, oj_write_id, 1, rb_str_new(out.buf, size));
     } else {
 	if (out.allocated) {

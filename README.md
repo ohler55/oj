@@ -170,10 +170,6 @@ Oj.default_options = {:mode => :compat }
 
 ## Releases
 
-**Release 2.17.6**
-
-- Fixed buf with respond_to for BasicObject classes.
-
 **Release 2.17.5**
 
 - Added additional code to check for as_json arguments and recursive calls.
