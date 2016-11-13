@@ -1341,6 +1341,7 @@ dump_data_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok)
     } else if (as_ok && rb_respond_to(obj, oj_as_json_id)) {
 	volatile VALUE	aj;
 
+#if HAS_METHOD_ARITY
 	// Some classes elect to not take an options argument so check the arity
 	// of as_json.
 	switch (rb_obj_method_arity(obj, oj_as_json_id)) {
@@ -1361,6 +1362,9 @@ dump_data_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok)
 	    aj = rb_funcall2(obj, oj_as_json_id, argc, argv);
 	    break;
 	}
+#else
+	aj = rb_funcall2(obj, oj_as_json_id, argc, argv);
+#endif
 	// Catch the obvious brain damaged recursive dumping.
 	if (aj == obj) {
 	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
@@ -1467,6 +1471,7 @@ dump_obj_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) 
     } else if (as_ok && rb_respond_to(obj, oj_as_json_id)) {
 	volatile VALUE	aj;
 
+#if HAS_METHOD_ARITY
 	// Some classes elect to not take an options argument so check the arity
 	// of as_json.
 	switch (rb_obj_method_arity(obj, oj_as_json_id)) {
@@ -1487,6 +1492,9 @@ dump_obj_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) 
 	    aj = rb_funcall2(obj, oj_as_json_id, argc, argv);
 	    break;
 	}
+#else
+	aj = rb_funcall2(obj, oj_as_json_id, argc, argv);
+#endif
 	// Catch the obvious brain damaged recursive dumping.
 	if (aj == obj) {
 	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
@@ -1831,6 +1839,7 @@ dump_struct_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_o
     } else if (as_ok && rb_respond_to(obj, oj_as_json_id)) {
 	volatile VALUE	aj;
 
+#if HAS_METHOD_ARITY
 	// Some classes elect to not take an options argument so check the arity
 	// of as_json.
 	switch (rb_obj_method_arity(obj, oj_as_json_id)) {
@@ -1851,6 +1860,9 @@ dump_struct_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_o
 	    aj = rb_funcall2(obj, oj_as_json_id, argc, argv);
 	    break;
 	}
+#else
+	aj = rb_funcall2(obj, oj_as_json_id, argc, argv);
+#endif
 	// Catch the obvious brain damaged recursive dumping.
 	if (aj == obj) {
 	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
@@ -1899,6 +1911,7 @@ dump_struct_obj(VALUE obj, int depth, Out out) {
     *out->cur++ = '"';
     *out->cur++ = ':';
     *out->cur++ = '[';
+#if HAS_STRUCT_MEMBERS
     if ('#' == *class_name) {
 	VALUE		ma = rb_struct_s_members(clas);
 	const char	*name;
@@ -1922,6 +1935,9 @@ dump_struct_obj(VALUE obj, int depth, Out out) {
 	}
 	*out->cur++ = ']';
     } else {
+#else
+    if (true) {
+#endif
 	fill_indent(out, d3);
 	*out->cur++ = '"';
 	memcpy(out->cur, class_name, len);
@@ -1957,7 +1973,7 @@ dump_struct_obj(VALUE obj, int depth, Out out) {
 		grow(out, size);
 	    }
 	    fill_indent(out, d3);
-	    dump_val(rb_struct_aref(obj, INT2FIX(i)), d3, out, 0, 0);
+	    dump_val(rb_struct_aref(obj, INT2FIX(i)), d3, out, 0, 0, true);
 	    *out->cur++ = ',';
 	}
     }

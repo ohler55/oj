@@ -35,6 +35,8 @@ dflags = {
   'DATETIME_1_8' => ('ruby' == type && ('1' == version[0] && '8' == version[1])) ? 1 : 0,
   'NO_TIME_ROUND_PAD' => ('rubinius' == type) ? 1 : 0,
   'HAS_DATA_OBJECT_WRAP' => ('ruby' == type && '2' == version[0] && '3' <= version[1]) ? 1 : 0,
+  'HAS_METHOD_ARITY' =>  ('rubinius' == type) ? 0 : 1,
+  'HAS_STRUCT_MEMBERS' =>  ('rubinius' == type) ? 0 : 1,
 }
 # This is a monster hack to get around issues with 1.9.3-p0 on CentOS 5.4. SO
 # some reason math.h and string.h contents are not processed. Might be a

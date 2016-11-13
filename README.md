@@ -170,7 +170,11 @@ Oj.default_options = {:mode => :compat }
 
 ## Releases
 
-**Future Release 2.17.5**
+** Release 2.17.6a1**
+
+- Rubinius compilation fixes.
+
+** Release 2.17.5**
 
 - Added additional code to check for as_json arguments and recursive calls.
 
