@@ -1118,7 +1118,7 @@ dump_time(VALUE obj, Out out, int withZone) {
 	long	tzsecs = NUM2LONG(rb_funcall2(obj, oj_utc_offset_id, 0, 0));
 	int	zneg = (0 > tzsecs);
 
-	if (0 == tzsecs && Qtrue == rb_funcall2(obj, oj_utcq_id, 0, 0)) {
+	if (0 == tzsecs && rb_funcall2(obj, oj_utcq_id, 0, 0)) {
 	    tzsecs = 86400;
 	}
 	if (zneg) {
@@ -1251,7 +1251,7 @@ dump_xml_time(VALUE obj, Out out) {
     }
 #endif
     if (0 == nsec || 0 == out->opts->sec_prec) {
-	if (0 == tzsecs && Qtrue == rb_funcall2(obj, oj_utcq_id, 0, 0)) {
+	if (0 == tzsecs && rb_funcall2(obj, oj_utcq_id, 0, 0)) {
 	    sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02dZ",
 		    tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
 		    tm->tm_hour, tm->tm_min, tm->tm_sec);
@@ -1263,7 +1263,7 @@ dump_xml_time(VALUE obj, Out out) {
 		    tzsign, tzhour, tzmin);
 	    dump_cstr(buf, 25, 0, 0, out);
 	}
-    } else if (0 == tzsecs && Qtrue == rb_funcall2(obj, oj_utcq_id, 0, 0)) {
+    } else if (0 == tzsecs && rb_funcall2(obj, oj_utcq_id, 0, 0)) {
 	char	format[64] = "%04d-%02d-%02dT%02d:%02d:%02d.%09ldZ";
 	int	len = 30;
 
@@ -1782,7 +1782,7 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	}
 #endif
 #if HAS_EXCEPTION_MAGIC
-	if (Qtrue == rb_obj_is_kind_of(obj, rb_eException)) {
+	if (rb_obj_is_kind_of(obj, rb_eException)) {
 	    volatile VALUE	rv;
 
 	    if (',' != *(out->cur - 1)) {
