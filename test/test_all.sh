@@ -31,6 +31,8 @@ echo "----- Mimic tests (isolated/test_mimic_before.rb) -----"
 ruby isolated/test_mimic_before.rb
 echo "----- Mimic tests (isolated/test_mimic_define.rb) -----"
 ruby isolated/test_mimic_define.rb
+echo "----- Mimic tests (isolated/test_mimic_redefine.rb) -----"
+ruby isolated/test_mimic_redefine.rb
 echo "----- Mimic tests (isolated/test_mimic_rails_after.rb) -----"
 ruby isolated/test_mimic_rails_after.rb
 echo "----- Mimic tests (isolated/test_mimic_rails_before.rb) -----"
