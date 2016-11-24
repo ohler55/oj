@@ -2049,13 +2049,15 @@ define_mimic_json(int argc, VALUE *argv, VALUE self) {
     symbolize_names_sym = ID2SYM(rb_intern("symbolize_names"));		rb_gc_register_address(&symbolize_names_sym);
 
     if (rb_const_defined_at(mimic, rb_intern("JSONError"))) {
-	rb_funcall(mimic, rb_intern("remove_const"), 1, ID2SYM(rb_intern("JSONError")));
+        json_error = rb_const_get(mimic, rb_intern("JSONError"));
+    } else {
+        json_error = rb_define_class_under(mimic, "JSONError", rb_eStandardError);
     }
-    json_error = rb_define_class_under(mimic, "JSONError", rb_eStandardError);
     if (rb_const_defined_at(mimic, rb_intern("ParserError"))) {
-	rb_funcall(mimic, rb_intern("remove_const"), 1, ID2SYM(rb_intern("ParserError")));
+        json_parser_error_class = rb_const_get(mimic, rb_intern("ParserError"));
+    } else {
+    	json_parser_error_class = rb_define_class_under(mimic, "ParserError", json_error);
     }
-    json_parser_error_class = rb_define_class_under(mimic, "ParserError", json_error);
 
     if (!rb_const_defined_at(mimic, rb_intern("State"))) {
         rb_define_class_under(mimic, "State", rb_cObject);
