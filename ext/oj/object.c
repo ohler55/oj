@@ -390,7 +390,8 @@ hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, volatile VALUE
 	if (2 == klen && 'u' == key[1]) {
             volatile VALUE	sc;
 	    volatile VALUE	e1;
-
+	    int			slen;
+	    
 	    if (0 == len) {
 		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "Invalid struct data");
 		return 1;
@@ -415,27 +416,20 @@ hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, volatile VALUE
             parent->val = rb_obj_alloc(sc);
             // If the JSON array has more entries than the struct class allows, we record an error.
 #ifdef RSTRUCT_LEN
+	    slen = (int)RSTRUCT_LEN(parent->val);
+#else
+	    slen = FIX2INT(rb_funcall2(parent->val, oj_length_id, 0, 0));
+#endif
             // MRI >= 1.9
-            if (len - 1 > RSTRUCT_LEN(parent->val)) {
+            if (len - 1 > slen) {
 		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "Invalid struct data");
             } else {
-                MEMCPY(RSTRUCT_PTR(parent->val), RARRAY_PTR(value) + 1, VALUE, len - 1);
-            }
-#else
-            {
-		// MRI < 1.9 or Rubinius
-		int	slen = FIX2INT(rb_funcall2(parent->val, oj_length_id, 0, 0));
 		int	i;
 
-		if (len - 1 > slen) {
-		    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "Invalid struct data");
-		} else {
-		    for (i = 0; i < slen; i++) {
-			rb_struct_aset(parent->val, INT2FIX(i), RARRAY_PTR(value)[i + 1]);
-		    }
+		for (i = 0; i < slen; i++) {
+		    rb_struct_aset(parent->val, INT2FIX(i), RARRAY_PTR(value)[i + 1]);
 		}
             }
-#endif
 	    return 1;
 	} else if (3 <= klen && '#' == key[1]) {
 	    volatile VALUE	*a;

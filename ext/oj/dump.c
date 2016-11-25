@@ -1948,17 +1948,15 @@ dump_struct_obj(VALUE obj, int depth, Out out) {
     size = d3 * out->indent + 2;
 #ifdef RSTRUCT_LEN
     {
-	const VALUE	*vp;
+	VALUE	v;
 
-#ifndef RSTRUCT_CONST_PTR
-# define RSTRUCT_CONST_PTR(st) (const VALUE *)RSTRUCT_PTR(st)
-#endif
-	for (i = (int)RSTRUCT_LEN(obj), vp = RSTRUCT_CONST_PTR(obj); 0 < i; i--, vp++) {
+	for (i = (int)RSTRUCT_LEN(obj); 0 < i; i--) {
+	    v = RSTRUCT_GET(obj, i);
 	    if (out->end - out->cur <= (long)size) {
 		grow(out, size);
 	    }
 	    fill_indent(out, d3);
-	    dump_val(*vp, d3, out, 0, 0, true);
+	    dump_val(v, d3, out, 0, 0, true);
 	    *out->cur++ = ',';
 	}
     }
