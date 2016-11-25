@@ -1949,8 +1949,14 @@ dump_struct_obj(VALUE obj, int depth, Out out) {
 #ifdef RSTRUCT_LEN
     {
 	VALUE	v;
-
-	for (i = (int)RSTRUCT_LEN(obj); 0 < i; i--) {
+	int	cnt;
+#if UNIFY_FIXNUM_AND_BIGNUM
+	cnt = (int)NUM2LONG(RSTRUCT_LEN(obj));
+#else // UNIFY_FIXNUM_AND_INTEGER
+	cnt = (int)RSTRUCT_LEN(obj);
+#endif // UNIFY_FIXNUM_AND_INTEGER
+	
+	for (i = 0; i < cnt; i++) {
 	    v = RSTRUCT_GET(obj, i);
 	    if (out->end - out->cur <= (long)size) {
 		grow(out, size);
