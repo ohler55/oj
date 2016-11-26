@@ -1914,7 +1914,7 @@ static struct _Options	mimic_object_to_json_options = {
     No,		// bigdec_as_num
     FloatDec,	// bigdec_load
     No,		// to_json
-    No,		// as_json
+    Yes,	// as_json
     Yes,	// nilnil
     Yes,	// allow_gc
     Yes,	// quirks_mode
