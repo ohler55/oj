@@ -170,11 +170,12 @@ Oj.default_options = {:mode => :compat }
 
 ## Releases
 
-** Release 2.17.6a2**
+** Release 2.18.0a1**
 
 - Rubinius compilation fixes.
 
-- TBD separate options for as_json and to_json
+- Added a separate option for as_json instead of piggy backing on the
+  use_to_json. This changes the API slightly.
 
 - Ready for Ruby 2.4.
 

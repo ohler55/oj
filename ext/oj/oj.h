@@ -154,6 +154,7 @@ typedef struct _Options {
     char		bigdec_as_num;	// YesNo
     char		bigdec_load;	// BigLoad
     char		to_json;	// YesNo
+    char		as_json;	// YesNo
     char		nilnil;		// YesNo
     char		allow_gc;	// allow GC during parse
     char		quirks_mode;	// allow single JSON values instead of documents

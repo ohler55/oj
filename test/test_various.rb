@@ -126,6 +126,7 @@ class Juice < Minitest::Test
       :symbol_keys=>true,
       :bigdecimal_as_decimal=>false,
       :use_to_json=>false,
+      :use_as_json=>false,
       :nilnil=>true,
       :allow_gc=>false,
       :quirks_mode=>false,
@@ -759,6 +760,7 @@ class Juice < Minitest::Test
     assert_equal('null', json)
   end
   def test_to_hash_object_compat
+    Oj.default_options = { :use_to_json => true }
     obj = Jazz.new(true, 58)
     json = Oj.dump(obj, :mode => :compat, :indent => 2)
     h = Oj.load(json, :mode => :strict)
@@ -802,7 +804,7 @@ class Juice < Minitest::Test
   end
 
   def test_as_json_object_compat_hash
-    Oj.default_options = { :mode => :compat, :use_to_json => true }
+    Oj.default_options = { :mode => :compat, :use_as_json => true }
     obj = Orange.new(true, 58)
     json = Oj.dump(obj, :indent => 2)
     assert(!json.nil?)
@@ -810,7 +812,7 @@ class Juice < Minitest::Test
   end
 
   def test_as_json_object_compat_non_hash
-    Oj.default_options = { :mode => :compat, :use_to_json => true }
+    Oj.default_options = { :mode => :compat, :use_as_json => true }
     obj = Melon.new(true, 58)
     json = Oj.dump(obj, :indent => 2)
     assert_equal(%{"true 58"}, json)
@@ -942,6 +944,7 @@ class Juice < Minitest::Test
     assert_equal('null', json)
   end
   def test_range_compat
+    Oj.default_options = { :use_to_json => true }
     json = Oj.dump(1..7, :mode => :compat)
     h = Oj.load(json, :mode => :strict)
     assert_equal({'begin' => 1, 'end' => 7, 'exclude_end' => false}, h)
@@ -1022,6 +1025,7 @@ class Juice < Minitest::Test
     assert_equal(orig.to_f, bg)
   end
   def test_bigdecimal_compat_as_json
+    Oj.default_options = { :use_as_json => true }
     orig = BigDecimal.new('80.51')
     BigDecimal.send(:define_method, :as_json) do
       %{this is big}

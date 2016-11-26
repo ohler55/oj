@@ -142,6 +142,7 @@ static VALUE	symbol_keys_sym;
 static VALUE	time_format_sym;
 static VALUE	unix_sym;
 static VALUE	unix_zone_sym;
+static VALUE	use_as_json_sym;
 static VALUE	use_to_json_sym;
 static VALUE	word_sym;
 static VALUE	xmlschema_sym;
@@ -180,7 +181,8 @@ struct _Options	oj_default_options = {
     UnixZTime,	// time_format
     Yes,	// bigdec_as_num
     AutoDec,	// bigdec_load
-    Yes,	// to_json
+    No,		// to_json
+    No,		// as_json
     No,		// nilnil
     Yes,	// allow_gc
     Yes,	// quirks_mode
@@ -227,6 +229,7 @@ static VALUE	define_mimic_json(int argc, VALUE *argv, VALUE self);
  * - second_precision: [Fixnum|nil] number of digits after the decimal when dumping the seconds portion of time
  * - float_precision: [Fixnum|nil] number of digits of precision when dumping floats, 0 indicates use Ruby
  * - use_to_json: [true|false|nil] call to_json() methods on dump, default is false
+ * - use_as_json: [true|false|nil] call as_json() methods on dump, default is false
  * - nilnil: [true|false|nil] if true a nil input to load will return nil and not raise an Exception
  * - allow_gc: [true|false|nil] allow or prohibit GC during parsing, default is true (allow)
  * - quirks_mode: [true,|false|nil] Allow single JSON values instead of documents, default is true (allow)
@@ -257,6 +260,7 @@ get_def_opts(VALUE self) {
     rb_hash_aset(opts, symbol_keys_sym, (Yes == oj_default_options.sym_key) ? Qtrue : ((No == oj_default_options.sym_key) ? Qfalse : Qnil));
     rb_hash_aset(opts, bigdecimal_as_decimal_sym, (Yes == oj_default_options.bigdec_as_num) ? Qtrue : ((No == oj_default_options.bigdec_as_num) ? Qfalse : Qnil));
     rb_hash_aset(opts, use_to_json_sym, (Yes == oj_default_options.to_json) ? Qtrue : ((No == oj_default_options.to_json) ? Qfalse : Qnil));
+    rb_hash_aset(opts, use_as_json_sym, (Yes == oj_default_options.as_json) ? Qtrue : ((No == oj_default_options.as_json) ? Qfalse : Qnil));
     rb_hash_aset(opts, nilnil_sym, (Yes == oj_default_options.nilnil) ? Qtrue : ((No == oj_default_options.nilnil) ? Qfalse : Qnil));
     rb_hash_aset(opts, allow_gc_sym, (Yes == oj_default_options.allow_gc) ? Qtrue : ((No == oj_default_options.allow_gc) ? Qfalse : Qnil));
     rb_hash_aset(opts, quirks_mode_sym, (Yes == oj_default_options.quirks_mode) ? Qtrue : ((No == oj_default_options.quirks_mode) ? Qfalse : Qnil));
@@ -341,6 +345,7 @@ get_def_opts(VALUE self) {
  * @param [Fixnum|nil] :second_precision number of digits after the decimal when dumping the seconds portion of time
  * @param [Fixnum|nil] :float_precision number of digits of precision when dumping floats, 0 indicates use Ruby
  * @param [true|false|nil] :use_to_json call to_json() methods on dump, default is false
+ * @param [true|false|nil] :use_as_json call as_json() methods on dump, default is false
  * @param [true|false|nil] :nilnil if true a nil input to load will return nil and not raise an Exception
  * @param [true|false|nil] :allow_gc allow or prohibit GC during parsing, default is true (allow)
  * @param [true|false|nil] :quirks_mode allow single JSON values instead of documents, default is true (allow)
@@ -371,6 +376,7 @@ oj_parse_options(VALUE ropts, Options copts) {
 	{ class_cache_sym, &copts->class_cache },
 	{ bigdecimal_as_decimal_sym, &copts->bigdec_as_num },
 	{ use_to_json_sym, &copts->to_json },
+	{ use_as_json_sym, &copts->as_json },
 	{ nilnil_sym, &copts->nilnil },
 	{ allow_gc_sym, &copts->allow_gc },
 	{ quirks_mode_sym, &copts->quirks_mode },
@@ -1908,6 +1914,7 @@ static struct _Options	mimic_object_to_json_options = {
     No,		// bigdec_as_num
     FloatDec,	// bigdec_load
     No,		// to_json
+    No,		// as_json
     Yes,	// nilnil
     Yes,	// allow_gc
     Yes,	// quirks_mode
@@ -2264,6 +2271,7 @@ void Init_oj() {
     time_format_sym = ID2SYM(rb_intern("time_format"));	rb_gc_register_address(&time_format_sym);
     unix_sym = ID2SYM(rb_intern("unix"));		rb_gc_register_address(&unix_sym);
     unix_zone_sym = ID2SYM(rb_intern("unix_zone"));	rb_gc_register_address(&unix_zone_sym);
+    use_as_json_sym = ID2SYM(rb_intern("use_as_json"));	rb_gc_register_address(&use_as_json_sym);
     use_to_json_sym = ID2SYM(rb_intern("use_to_json"));	rb_gc_register_address(&use_to_json_sym);
     word_sym = ID2SYM(rb_intern("word"));		rb_gc_register_address(&word_sym);
     xmlschema_sym = ID2SYM(rb_intern("xmlschema"));	rb_gc_register_address(&xmlschema_sym);

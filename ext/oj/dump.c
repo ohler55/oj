@@ -1321,7 +1321,7 @@ static void
 dump_data_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) {
     VALUE	clas = rb_obj_class(obj);
 
-    if (as_ok && rb_respond_to(obj, oj_to_hash_id)) {
+    if (as_ok && Yes == out->opts->to_json && rb_respond_to(obj, oj_to_hash_id)) {
 	volatile VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
  
 	if (T_HASH != rb_type(h)) {
@@ -1333,12 +1333,11 @@ dump_data_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok)
 	    dump_val(h, depth, out, 0, 0, false);
 	}
 	dump_hash(h, Qundef, depth, out->opts->mode, out);
-
     } else if (Yes == out->opts->bigdec_as_num && oj_bigdecimal_class == clas) {
 	volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
 	dump_raw(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), out);
-    } else if (as_ok && rb_respond_to(obj, oj_as_json_id)) {
+    } else if (as_ok && Yes == out->opts->as_json && rb_respond_to(obj, oj_as_json_id)) {
 	volatile VALUE	aj;
 
 #if HAS_METHOD_ARITY
@@ -1455,7 +1454,7 @@ dump_data_obj(VALUE obj, int depth, Out out) {
 
 static void
 dump_obj_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) {
-    if (as_ok && rb_respond_to(obj, oj_to_hash_id)) {
+    if (as_ok && Yes == out->opts->to_json && rb_respond_to(obj, oj_to_hash_id)) {
 	volatile VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
 
 	if (T_HASH != rb_type(h)) {
@@ -1468,7 +1467,7 @@ dump_obj_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) 
 	} else {
 	    dump_hash(h, Qundef, depth, out->opts->mode, out);
 	}
-    } else if (as_ok && rb_respond_to(obj, oj_as_json_id)) {
+    } else if (as_ok && Yes == out->opts->as_json && rb_respond_to(obj, oj_as_json_id)) {
 	volatile VALUE	aj;
 
 #if HAS_METHOD_ARITY
@@ -1824,7 +1823,7 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 
 static void
 dump_struct_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) {
-    if (as_ok && rb_respond_to(obj, oj_to_hash_id)) {
+    if (as_ok && Yes == out->opts->to_json && rb_respond_to(obj, oj_to_hash_id)) {
 	volatile VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
  
 	if (T_HASH != rb_type(h)) {
@@ -1836,7 +1835,7 @@ dump_struct_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_o
 	    dump_val(h, depth, out, 0, 0, false);
 	}
 	dump_hash(h, Qundef, depth, out->opts->mode, out);
-    } else if (as_ok && rb_respond_to(obj, oj_as_json_id)) {
+    } else if (as_ok && Yes == out->opts->as_json && rb_respond_to(obj, oj_as_json_id)) {
 	volatile VALUE	aj;
 
 #if HAS_METHOD_ARITY

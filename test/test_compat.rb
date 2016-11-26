@@ -331,18 +331,20 @@ class CompatJuice < Minitest::Test
 
   def test_json_object_compat
     obj = Jeez.new(true, 58)
-    Oj.default_options = { :mode => :compat, :use_to_json => true }
+    Oj.default_options = { :mode => :compat, :use_as_json => true, :use_to_json => true }
     dump_and_load(obj, false)
   end
 
   def test_json_module_object
+    Oj.default_options = { :mode => :compat, :use_as_json => true, :use_to_json => true }
     obj = One::Two::Three::Deep.new()
     dump_and_load(obj, false)
   end
 
   def test_json_object_create_id
+    Oj.default_options = { :mode => :compat, :use_as_json => false, :use_to_json => false }
     expected = Jeez.new(true, 58)
-    json = Oj.dump(expected, :indent => 2, :mode => :compat, :use_to_json => true)
+    json = Oj.dump(expected, :indent => 2, :mode => :compat, :use_to_json => true, :use_as_json => true)
     obj = Oj.compat_load(json)
     assert_equal(expected, obj)
   end
@@ -359,6 +361,7 @@ class CompatJuice < Minitest::Test
   end
 
   def test_json_object_create_cache
+    Oj.default_options = { :mode => :compat, :use_as_json => true, :use_to_json => true }
     expected = Jeez.new(true, 58)
     json = Oj.dump(expected, :indent => 2, :mode => :compat, :use_to_json => true)
     obj = Oj.compat_load(json, :class_cache => true)
@@ -368,14 +371,16 @@ class CompatJuice < Minitest::Test
   end
 
   def test_json_object_create_id_other
+    Oj.default_options = { :mode => :compat, :use_as_json => false, :use_to_json => false }
     expected = Jeez.new(true, 58)
-    json = Oj.dump(expected, :indent => 2, :mode => :compat, :use_to_json => true)
+    json = Oj.dump(expected, :indent => 2, :mode => :compat, :use_as_json => true)
     json.gsub!('json_class', '_class_')
     obj = Oj.compat_load(json, :create_id => "_class_")
     assert_equal(expected, obj)
   end
 
   def test_json_object_create_deep
+    Oj.default_options = { :mode => :compat, :use_as_json => true, :use_to_json => true }
     expected = One::Two::Three::Deep.new()
     json = Oj.dump(expected, :indent => 2, :mode => :compat)
     obj = Oj.compat_load(json)
