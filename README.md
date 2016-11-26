@@ -170,7 +170,7 @@ Oj.default_options = {:mode => :compat }
 
 ## Releases
 
-** Release 2.18.0a1**
+** Release 2.18.0**
 
 - Rubinius compilation fixes.
 
@@ -180,10 +180,6 @@ Oj.default_options = {:mode => :compat }
 - Ready for Ruby 2.4.
 
 - Thanks to faucct for fixing mimic to not redefine JSON::ParseError.
-
-** Release 2.17.5**
-
-- Added additional code to check for as_json arguments and recursive calls.
 
 [Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
 
