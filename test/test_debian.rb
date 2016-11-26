@@ -36,7 +36,7 @@ class DebJuice < Minitest::Test
   end
 
   def test_as_json_object_compat_hash_cached
-    Oj.default_options = { :mode => :compat, :class_cache => true, :use_to_json => true }
+    Oj.default_options = { :mode => :compat, :class_cache => true, :use_as_json => true }
     obj = Orange.new(true, 58)
     json = Oj.dump(obj, :indent => 2)
     assert(!json.nil?)
