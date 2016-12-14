@@ -170,18 +170,7 @@ Oj.default_options = {:mode => :compat }
 
 ## Releases
 
-** Release 2.18.0**
-
-- Rubinius compilation fixes.
-
-- Added a separate option for as_json instead of piggy backing on the
-  use_to_json. This changes the API slightly.
-
-- Ready for Ruby 2.4.
-
-- Thanks to faucct for fixing mimic to not redefine JSON::ParseError.
-
-[Older release notes](http://www.ohler.com/dev/oj_misc/release_notes.html).
+See [CHANGELOG.md](CHANGELOG.md)
 
 ## Compatibility
 
