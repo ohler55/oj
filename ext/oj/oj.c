@@ -937,7 +937,10 @@ dump(int argc, VALUE *argv, VALUE self) {
     struct _Out		out;
     struct _Options	copts = oj_default_options;
     VALUE		rstr;
-    
+
+    if (1 > argc) {
+	rb_raise(rb_eArgError, "wrong number of arguments (0 for 1).");
+    }
     if (2 == argc) {
 	oj_parse_options(argv[1], &copts);
     }

@@ -960,6 +960,35 @@ each_leaf(Doc doc, VALUE self) {
     }
 }
 
+static const char*
+next_slash(const char *s) {
+    for (; '\0' != *s; s++) {
+	if ('\\' == *s) {
+	    s++;
+	    if ('\0' == *s) {
+		break;
+	    }
+	} else if ('/' == *s) {
+	    return s;
+	}
+    }
+    return NULL;
+}
+
+static bool
+key_match(const char *pat, const char *key, int plen) {
+    for (; 0 < plen; plen--, pat++, key++) {
+	if ('\\' == *pat) {
+	    plen--;
+	    pat++;
+	}
+	if (*pat != *key) {
+	    return false;
+	}
+    }
+    return '\0' == *key;
+}
+
 static int
 move_step(Doc doc, const char *path, int loc) {
     if (MAX_STACK <= doc->where - doc->where_path) {
@@ -1022,7 +1051,7 @@ move_step(Doc doc, const char *path, int loc) {
 		} while (e != first);
 	    } else if (T_HASH == leaf->rtype) {
 		const char	*key = path;
-		const char	*slash = strchr(path, '/');
+		const char	*slash = next_slash(path);
 		int		klen;
 
 		if (0 == slash) {
@@ -1033,7 +1062,7 @@ move_step(Doc doc, const char *path, int loc) {
 		    path += klen + 1;
 		}
 		do {
-		    if (0 == strncmp(key, e->key, klen) && '\0' == e->key[klen]) {
+		    if (key_match(key, e->key, klen)) {
 			doc->where++;
 			*doc->where = e;
 			loc = move_step(doc, path, loc + 1);
@@ -1167,6 +1196,29 @@ doc_open_file(VALUE clas, VALUE filename) {
     return obj;
 }
 
+static int
+esc_strlen(const char *s) {
+    int	cnt = 0;
+
+    for (; '\0' != *s; s++, cnt++) {
+	if ('/' == *s) {
+	    cnt++;
+	}
+    }
+    return cnt;
+}
+
+static char*
+append_key(char *p, const char *key) {
+    for (; '\0' != *key; p++, key++) {
+	if ('/' == *key) {
+	    *p++ = '\\';
+	}
+	*p = *key;
+    }
+    return p;
+}
+
 /* Document-method: parse
  * @see Oj::Doc.open
  */
@@ -1192,7 +1244,7 @@ doc_where(VALUE self) {
 	for (lp = doc->where_path; lp <= doc->where; lp++) {
 	    leaf = *lp;
 	    if (T_HASH == leaf->parent_type) {
-		size += strlen((*lp)->key) + 1;
+		size += esc_strlen((*lp)->key) + 1;
 	    } else if (T_ARRAY == leaf->parent_type) {
 		size += ((*lp)->index < 100) ? 3 : 11;
 	    }
@@ -1202,7 +1254,7 @@ doc_where(VALUE self) {
 	for (lp = doc->where_path; lp <= doc->where; lp++) {
 	    leaf = *lp;
 	    if (T_HASH == leaf->parent_type) {
-		p = stpcpy(p, (*lp)->key);
+		p = append_key(p, (*lp)->key);
 	    } else if (T_ARRAY == leaf->parent_type) {
 		p = ulong_fill(p, (*lp)->index);
 	    }

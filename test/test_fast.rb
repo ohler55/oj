@@ -174,6 +174,13 @@ class DocTest < Minitest::Test
     end
   end
 
+  def test_move_slash
+    Oj::Doc.open(%|{"top":{"a/b":3}}|) do |doc|
+      doc.move('top/a\/b')
+      assert_equal('/top/a\/b', doc.where?)
+    end
+  end
+
   def test_move_relative
     Oj::Doc.open($json1) do |doc|
       [['/', 'array', '/array'],

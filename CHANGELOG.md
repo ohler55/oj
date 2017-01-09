@@ -1,6 +1,9 @@
 # CHANGELOG
 
-## Unreleased
+## 2.18.1 - 2017-01-09
+
+- Missing argument to dump now raises the correct arg exception and with mimic does not crash on missing argument.
+- Oj::Doc paths can now contain escaped path separators so "a\/b" can match an lement name with a slash in it.
 
 ## 2.18.0 - 2016-11-26
 
