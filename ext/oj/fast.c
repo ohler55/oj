@@ -867,6 +867,35 @@ get_doc_leaf(Doc doc, const char *path) {
     return leaf;
 }
 
+static const char*
+next_slash(const char *s) {
+    for (; '\0' != *s; s++) {
+	if ('\\' == *s) {
+	    s++;
+	    if ('\0' == *s) {
+		break;
+	    }
+	} else if ('/' == *s) {
+	    return s;
+	}
+    }
+    return NULL;
+}
+
+static bool
+key_match(const char *pat, const char *key, int plen) {
+    for (; 0 < plen; plen--, pat++, key++) {
+	if ('\\' == *pat) {
+	    plen--;
+	    pat++;
+	}
+	if (*pat != *key) {
+	    return false;
+	}
+    }
+    return '\0' == *key;
+}
+
 static Leaf
 get_leaf(Leaf *stack, Leaf *lp, const char *path) {
     Leaf	leaf = *lp;
@@ -912,7 +941,7 @@ get_leaf(Leaf *stack, Leaf *lp, const char *path) {
 		} while (e != first);
 	    } else if (T_HASH == type) {
 		const char	*key = path;
-		const char	*slash = strchr(path, '/');
+		const char	*slash = next_slash(path);
 		int		klen;
 
 		if (0 == slash) {
@@ -923,7 +952,7 @@ get_leaf(Leaf *stack, Leaf *lp, const char *path) {
 		    path += klen + 1;
 		}
 		do {
-		    if (0 == strncmp(key, e->key, klen) && '\0' == e->key[klen]) {
+		    if (key_match(key, e->key, klen)) {
 			lp++;
 			*lp = e;
 			leaf = get_leaf(stack, lp, path);
@@ -958,35 +987,6 @@ each_leaf(Doc doc, VALUE self) {
     } else {
 	rb_yield(self);
     }
-}
-
-static const char*
-next_slash(const char *s) {
-    for (; '\0' != *s; s++) {
-	if ('\\' == *s) {
-	    s++;
-	    if ('\0' == *s) {
-		break;
-	    }
-	} else if ('/' == *s) {
-	    return s;
-	}
-    }
-    return NULL;
-}
-
-static bool
-key_match(const char *pat, const char *key, int plen) {
-    for (; 0 < plen; plen--, pat++, key++) {
-	if ('\\' == *pat) {
-	    plen--;
-	    pat++;
-	}
-	if (*pat != *key) {
-	    return false;
-	}
-    }
-    return '\0' == *key;
 }
 
 static int

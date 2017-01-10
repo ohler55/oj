@@ -181,6 +181,13 @@ class DocTest < Minitest::Test
     end
   end
 
+  def test_fetch_slash
+    Oj::Doc.open(%|{"a/b":3}|) do |doc|
+      x = doc.fetch('a\/b')
+      assert_equal(3, x)
+    end
+  end
+
   def test_move_relative
     Oj::Doc.open($json1) do |doc|
       [['/', 'array', '/array'],
