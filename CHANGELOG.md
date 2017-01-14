@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.18.2a1 - 2017-01-13
+
+- Strict mode now allows symbol keys in hashes.
+
 ## 2.18.1 - 2017-01-09
 
 - Missing argument to dump now raises the correct arg exception and with mimic does not crash on missing argument.
