@@ -49,6 +49,9 @@ mark(void *ptr) {
 	if (Qnil != v->val && Qundef != v->val) {
 	    rb_gc_mark(v->val);
 	}
+	if (Qnil != v->key_val && Qundef != v->key_val) {
+	    rb_gc_mark(v->key_val);
+	}
     }
 #if USE_PTHREAD_MUTEX
     pthread_mutex_unlock(&stack->mutex);

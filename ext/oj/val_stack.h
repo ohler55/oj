@@ -92,6 +92,7 @@ inline static void
 stack_cleanup(ValStack stack) {
     if (stack->base != stack->head) {
         xfree(stack->head);
+	stack->head = NULL;
     }
 }
 
