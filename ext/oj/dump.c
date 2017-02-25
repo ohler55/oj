@@ -2316,8 +2316,8 @@ oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
     out.buf = buf;
     out.end = buf + sizeof(buf) - BUFFER_EXTRA;
     out.allocated = 0;
-    oj_dump_obj_to_json(obj, copts, &out);
     out.omit_nil = copts->dump_opts.omit_nil;
+    oj_dump_obj_to_json(obj, copts, &out);
     size = out.cur - out.buf;
     if (oj_stringio_class == clas) {
 	rb_funcall(stream, oj_write_id, 1, rb_str_new(out.buf, size));
@@ -2545,8 +2545,8 @@ oj_write_leaf_to_file(Leaf leaf, const char *path, Options copts) {
     out.buf = buf;
     out.end = buf + sizeof(buf) - BUFFER_EXTRA;
     out.allocated = 0;
-    oj_dump_leaf_to_json(leaf, copts, &out);
     out.omit_nil = copts->dump_opts.omit_nil;
+    oj_dump_leaf_to_json(leaf, copts, &out);
     size = out.cur - out.buf;
     if (0 == (f = fopen(path, "w"))) {
 	rb_raise(rb_eIOError, "%s\n", strerror(errno));
