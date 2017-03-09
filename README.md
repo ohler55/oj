@@ -153,6 +153,9 @@ Oj.default_options = {:mode => :compat }
  * `:use_to_json` [Boolean] call to_json() methods on dump, default is
    false
    
+ * `:use_as_json` [Boolean] call as_json() methods on dump, default is
+   false
+   
  * `:nilnil` [Boolean] if true a nil input to load will return nil and
    not raise an Exception
    
@@ -167,6 +170,14 @@ Oj.default_options = {:mode => :compat }
   number, :word places Infinity or NaN, :raise raises and exception, :auto uses
   default for each mode which are :raise for :strict, :null for :null, and :word
   for :compat. Default is :auto.
+  
+* `:allow_invalid_unicode` [Boolean] Allow invalid unicode, default is
+  false (don't allow)
+  
+* `:hash_class` [Class] Class to use instead of Hash on load
+
+* `:omit_nil` [Boolean] If true, Hash and Object attributes with nil values
+  are omitted
 
 ## Releases
 
