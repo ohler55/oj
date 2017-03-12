@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.18.3a1 - 2017-03-12
+
+- Changed to use long doubles for parsing to minimize round off errors.
+
 ## 2.18.2 - 2017-03-01
 
 - Strict mode now allows symbol keys in hashes.

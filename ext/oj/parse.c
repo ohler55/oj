@@ -732,28 +732,28 @@ oj_num_as_value(NumInfo ni) {
 	    }
 	} else {
 	    // All these machinations are to get rounding to work better.
-	    double	d = (double)ni->i * (double)ni->div + (double)ni->num;
+	    long double	d = (long double)ni->i * (long double)ni->div + (long double)ni->num;
 	    int		x = ni->exp - ni->di;
 
 	    // Rounding sometimes cuts off the last digit even if there are only
 	    // 15 digits. This attempts to fix those few cases where this
 	    // occurs.
-	    if ((double)INT64_MAX > d && (int64_t)d != (ni->i * ni->div + ni->num)) {
+	    if ((long double)INT64_MAX > d && (int64_t)d != (ni->i * ni->div + ni->num)) {
 		rnum = rb_funcall(oj_bigdecimal_class, oj_new_id, 1, rb_str_new(ni->str, ni->len));
 		if (ni->no_big) {
 		    rnum = rb_funcall(rnum, rb_intern("to_f"), 0);
 		}
 	    } else {
-		d = round(d);
+		d = roundl(d);
 		if (0 < x) {
-		    d *= pow(10.0L, x);
+		    d *= powl(10.0L, x);
 		} else if (0 > x) {
-		    d /= pow(10.0L, -x);
+		    d /= powl(10.0L, -x);
 		}
 		if (ni->neg) {
 		    d = -d;
 		}
-		rnum = rb_float_new(d);
+		rnum = rb_float_new((double)d);
 	    }
 	}
     }
