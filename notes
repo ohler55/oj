@@ -4,6 +4,11 @@
 ^c^s show subtree
 
 
+- rail compat
+ - round off of date when sec prec should be round, not cut off
+ - for DateTime.new should include fraction
+ - BigDecimal infinity should follow :nan option
+
 - debug
  - instrument for parsing floats/bigdecimal
   - branch
