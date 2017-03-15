@@ -1,8 +1,8 @@
 # CHANGELOG
 
-## 2.18.3a1 - 2017-03-12
+## 2.18.3 - 2017-03-14
 
-- Changed to use long doubles for parsing to minimize round off errors.
+- Changed to use long doubles for parsing to minimize round off errors. So PI will be accurate to more places for PI day.
 
 ## 2.18.2 - 2017-03-01
 
