@@ -217,18 +217,18 @@ class SharedMimicTest < Minitest::Test
   def test_pretty_generate
     json = JSON.pretty_generate({ 'a' => 1, 'b' => [true, false]})
     assert(%{{
-  "a" : 1,
-  "b" : [
+  "a": 1,
+  "b": [
     true,
     false
   ]
 }} == json ||
 %{{
-  "b" : [
+  "b": [
     true,
     false
   ],
-  "a" : 1
+  "a": 1
 }} == json)
   end
 
