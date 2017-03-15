@@ -6,6 +6,12 @@ $: << File.dirname(__FILE__)
 require 'helper'
 
 class Juice < Minitest::Test
+  def gen_whitespaced_string(length = Random.new.rand(100))
+    whitespace_chars = [" ", "\t", "\f", "\n", "\r"]
+    result = ""
+    length.times { result << whitespace_chars.sample }
+    result
+  end
 
   module TestModule
   end
@@ -128,6 +134,7 @@ class Juice < Minitest::Test
       :use_to_json=>false,
       :use_as_json=>false,
       :nilnil=>true,
+      :empty_string=>true,
       :allow_gc=>false,
       :quirks_mode=>false,
       :allow_invalid_unicode=>true,
@@ -1297,6 +1304,21 @@ class Juice < Minitest::Test
   def test_nilnil_true
     obj = Oj.load(nil, :nilnil => true)
     assert_equal(nil, obj)
+  end
+
+  def test_empty_string_true
+    10.times do
+      result = Oj.load(gen_whitespaced_string, :empty_string => true)
+      assert_nil(result)
+    end
+  end
+
+  def test_empty_string_false
+    10.times do
+      assert_raises(Oj::ParseError) do
+        Oj.load(gen_whitespaced_string, :empty_string => false)
+      end
+    end
   end
 
   def test_quirks_null_mode

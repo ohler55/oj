@@ -598,6 +598,13 @@ oj_parse2(ParseInfo pi) {
 	if (!first && '\0' != *pi->cur) {
 	    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "unexpected characters after the JSON document");
 	}
+
+	// if no tokens are consumed (i.e. empty string), throw a parse error
+	// this is the behavior of JSON.parse in both Ruby and JS
+	if (No == pi->options.empty_string && 1 == first && '\0' == *pi->cur) {
+	    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "unexpected character");
+	}
+
 	switch (*pi->cur++) {
 	case '{':
 	    hash_start(pi);

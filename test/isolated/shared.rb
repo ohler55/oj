@@ -164,6 +164,12 @@ class SharedMimicTest < Minitest::Test
     assert_raises(JSON::ParserError) { JSON.parse(json) }
   end
 
+  def test_parse_with_empty_string
+    Oj.mimic_JSON
+    assert_raises(JSON::ParserError) { JSON.parse(' ') }
+    assert_raises(JSON::ParserError) { JSON.parse("\t\t\n   ") }
+  end
+
 # []
   def test_bracket_load
     json = %{{"a":1,"b":[true,false]}}
@@ -217,18 +223,18 @@ class SharedMimicTest < Minitest::Test
   def test_pretty_generate
     json = JSON.pretty_generate({ 'a' => 1, 'b' => [true, false]})
     assert(%{{
-  "a" : 1,
-  "b" : [
+  "a": 1,
+  "b": [
     true,
     false
   ]
 }} == json ||
 %{{
-  "b" : [
+  "b": [
     true,
     false
   ],
-  "a" : 1
+  "a": 1
 }} == json)
   end
 
