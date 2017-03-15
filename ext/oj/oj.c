@@ -130,6 +130,7 @@ static VALUE	mode_sym;
 static VALUE	nan_sym;
 static VALUE	newline_sym;
 static VALUE	nilnil_sym;
+static VALUE	empty_string_sym;
 static VALUE	null_sym;
 static VALUE	object_sym;
 static VALUE	omit_nil_sym;
@@ -184,6 +185,7 @@ struct _Options	oj_default_options = {
     No,		// to_json
     No,		// as_json
     No,		// nilnil
+    Yes,	// empty_string
     Yes,	// allow_gc
     Yes,	// quirks_mode
     No,		// allow_invalid    
@@ -231,6 +233,7 @@ static VALUE	define_mimic_json(int argc, VALUE *argv, VALUE self);
  * - use_to_json: [true|false|nil] call to_json() methods on dump, default is false
  * - use_as_json: [true|false|nil] call as_json() methods on dump, default is false
  * - nilnil: [true|false|nil] if true a nil input to load will return nil and not raise an Exception
+ * - empty_string: [true|false|nil] if true an empty input will not raise an Exception
  * - allow_gc: [true|false|nil] allow or prohibit GC during parsing, default is true (allow)
  * - quirks_mode: [true,|false|nil] Allow single JSON values instead of documents, default is true (allow)
  * - allow_invalid_unicode: [true,|false|nil] Allow invalid unicode, default is false (don't allow)
@@ -262,6 +265,7 @@ get_def_opts(VALUE self) {
     rb_hash_aset(opts, use_to_json_sym, (Yes == oj_default_options.to_json) ? Qtrue : ((No == oj_default_options.to_json) ? Qfalse : Qnil));
     rb_hash_aset(opts, use_as_json_sym, (Yes == oj_default_options.as_json) ? Qtrue : ((No == oj_default_options.as_json) ? Qfalse : Qnil));
     rb_hash_aset(opts, nilnil_sym, (Yes == oj_default_options.nilnil) ? Qtrue : ((No == oj_default_options.nilnil) ? Qfalse : Qnil));
+    rb_hash_aset(opts, empty_string_sym, (Yes == oj_default_options.empty_string) ? Qtrue : ((No == oj_default_options.empty_string) ? Qfalse : Qnil));
     rb_hash_aset(opts, allow_gc_sym, (Yes == oj_default_options.allow_gc) ? Qtrue : ((No == oj_default_options.allow_gc) ? Qfalse : Qnil));
     rb_hash_aset(opts, quirks_mode_sym, (Yes == oj_default_options.quirks_mode) ? Qtrue : ((No == oj_default_options.quirks_mode) ? Qfalse : Qnil));
     rb_hash_aset(opts, allow_invalid_unicode_sym, (Yes == oj_default_options.allow_invalid) ? Qtrue : ((No == oj_default_options.allow_invalid) ? Qfalse : Qnil));
@@ -378,6 +382,7 @@ oj_parse_options(VALUE ropts, Options copts) {
 	{ use_to_json_sym, &copts->to_json },
 	{ use_as_json_sym, &copts->as_json },
 	{ nilnil_sym, &copts->nilnil },
+	{ empty_string_sym, &copts->empty_string },
 	{ allow_gc_sym, &copts->allow_gc },
 	{ quirks_mode_sym, &copts->quirks_mode },
 	{ allow_invalid_unicode_sym, &copts->allow_invalid },
@@ -1832,6 +1837,7 @@ mimic_parse(int argc, VALUE *argv, VALUE self) {
     pi.options.auto_define = No;
     pi.options.quirks_mode = No;
     pi.options.allow_invalid = No;
+    pi.options.empty_string = No;
 
     if (2 <= argc) {
 	VALUE	ropts = argv[1];
@@ -1919,6 +1925,7 @@ static struct _Options	mimic_object_to_json_options = {
     No,		// to_json
     Yes,	// as_json
     Yes,	// nilnil
+    Yes,	// empty_string
     Yes,	// allow_gc
     Yes,	// quirks_mode
     No,		// allow_invalid
@@ -2258,6 +2265,7 @@ void Init_oj() {
     nan_sym = ID2SYM(rb_intern("nan"));			rb_gc_register_address(&nan_sym);
     newline_sym = ID2SYM(rb_intern("newline"));		rb_gc_register_address(&newline_sym);
     nilnil_sym = ID2SYM(rb_intern("nilnil"));		rb_gc_register_address(&nilnil_sym);
+    empty_string_sym = ID2SYM(rb_intern("empty_string"));rb_gc_register_address(&empty_string_sym);
     null_sym = ID2SYM(rb_intern("null"));		rb_gc_register_address(&null_sym);
     object_nl_sym = ID2SYM(rb_intern("object_nl"));	rb_gc_register_address(&object_nl_sym);
     object_sym = ID2SYM(rb_intern("object"));		rb_gc_register_address(&object_sym);

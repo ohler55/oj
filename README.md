@@ -159,6 +159,10 @@ Oj.default_options = {:mode => :compat }
  * `:nilnil` [Boolean] if true a nil input to load will return nil and
    not raise an Exception
    
+ * `:empty_string` [Boolean] if true an empty input will not raise an
+   Exception, default is true (allow). When Oj.mimic_JSON is used,
+   default is false (raise exception when empty string is encountered)
+
  * `:allow_gc` [Boolean] allow or prohibit GC during parsing, default is
    true (allow).
    

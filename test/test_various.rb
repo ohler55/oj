@@ -128,6 +128,7 @@ class Juice < Minitest::Test
       :use_to_json=>false,
       :use_as_json=>false,
       :nilnil=>true,
+      :empty_string=>true,
       :allow_gc=>false,
       :quirks_mode=>false,
       :allow_invalid_unicode=>true,

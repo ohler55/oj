@@ -164,6 +164,12 @@ class SharedMimicTest < Minitest::Test
     assert_raises(JSON::ParserError) { JSON.parse(json) }
   end
 
+  def test_parse_with_empty_string
+    Oj.mimic_JSON
+    assert_raises(JSON::ParserError) { JSON.parse(' ') }
+    assert_raises(JSON::ParserError) { JSON.parse("\t\t\n   ") }
+  end
+
 # []
   def test_bracket_load
     json = %{{"a":1,"b":[true,false]}}

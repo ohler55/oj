@@ -156,6 +156,7 @@ typedef struct _Options {
     char		to_json;	// YesNo
     char		as_json;	// YesNo
     char		nilnil;		// YesNo
+    char		empty_string;	// YesNo
     char		allow_gc;	// allow GC during parse
     char		quirks_mode;	// allow single JSON values instead of documents
     char		allow_invalid;	// YesNo - allow invalid unicode
