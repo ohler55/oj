@@ -1805,7 +1805,7 @@ mimic_pretty_generate(int argc, VALUE *argv, VALUE self) {
 
     strcpy(copts.dump_opts.indent_str, "  ");
     copts.dump_opts.indent_size = (uint8_t)strlen(copts.dump_opts.indent_str);
-    strcpy(copts.dump_opts.before_sep, " ");
+    strcpy(copts.dump_opts.before_sep, "");
     copts.dump_opts.before_size = (uint8_t)strlen(copts.dump_opts.before_sep);
     strcpy(copts.dump_opts.after_sep, " ");
     copts.dump_opts.after_size = (uint8_t)strlen(copts.dump_opts.after_sep);
