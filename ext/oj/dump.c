@@ -56,6 +56,10 @@
 
 #define MAX_DEPTH 1000
 
+static const char	inf_val[] = INF_VAL;
+static const char	ninf_val[] = NINF_VAL;
+static const char	nan_val[] = NAN_VAL;
+
 typedef unsigned long	ulong;
 
 static void	raise_strict(VALUE obj);
@@ -226,6 +230,51 @@ dump_ulong(unsigned long num, Out out) {
     }
     *out->cur = '\0';
 }
+
+static const char*
+nan_str(VALUE obj, int opt, int mode, bool plus, int *lenp) {
+    const char	*str = NULL;
+    
+    if (AutoNan == opt) {
+	switch (mode) {
+	case CompatMode:	opt = WordNan;	break;
+	case StrictMode:	opt = RaiseNan;	break;
+	case NullMode:		opt = NullNan;	break;
+	default:				break;
+	}
+    }
+    switch (opt) {
+    case RaiseNan:
+	raise_strict(obj);
+	break;
+    case WordNan:
+	if (plus) {
+	    str = "Infinity";
+	    *lenp = 8;
+	} else {
+	    str = "-Infinity";
+	    *lenp = 9;
+	}
+	break;
+    case NullNan:
+	str = "null";
+	*lenp = 4;
+	break;
+    case HugeNan:
+    default:
+	if (plus) {
+	    str = inf_val;
+	    *lenp = sizeof(inf_val) - 1;
+	} else {
+	    str = ninf_val;
+	    *lenp = sizeof(ninf_val) - 1;
+	}
+	break;
+    }
+    return str;
+}
+
+
 
 static void
 grow(Out out, size_t len) {
@@ -440,10 +489,6 @@ dump_bignum(VALUE obj, Out out) {
     out->cur += cnt;
     *out->cur = '\0';
 }
-
-static const char	inf_val[] = INF_VAL;
-static const char	ninf_val[] = NINF_VAL;
-static const char	nan_val[] = NAN_VAL;
 
 // Removed dependencies on math due to problems with CentOS 5.4.
 static void
@@ -1227,13 +1272,21 @@ dump_xml_time(VALUE obj, Out out) {
     if (9 > out->opts->sec_prec) {
 	int	i;
 
-	for (i = 9 - out->opts->sec_prec; 0 < i; i--) {
-	    nsec = (nsec + 5) / 10;
-	    one /= 10;
-	}
-	if (one <= nsec) {
-	    nsec -= one;
-	    sec++;
+	// This is pretty lame but to be compatible with rails and active
+	// support rounding is not done but instead a floor is done when
+	// second precision is 3 just to be like rails. sigh.
+	if (3 == out->opts->sec_prec) {
+	    nsec /= 1000000;
+	    one = 1000;
+	} else {
+	    for (i = 9 - out->opts->sec_prec; 0 < i; i--) {
+		nsec = (nsec + 5) / 10;
+		one /= 10;
+	    }
+	    if (one <= nsec) {
+		nsec -= one;
+		sec++;
+	    }
 	}
     }
     // 2012-01-05T23:58:07.123456000+09:00
@@ -1344,8 +1397,18 @@ dump_data_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok)
 	dump_hash(h, Qundef, depth, out->opts->mode, out);
     } else if (Yes == out->opts->bigdec_as_num && oj_bigdecimal_class == clas) {
 	volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+	const char	*str = rb_string_value_ptr((VALUE*)&rstr);
+	int		len = RSTRING_LEN(rstr);
 
-	dump_raw(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), out);
+	if (0 == strcasecmp("Infinity", str)) {
+	    str = nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, true, &len);
+	    dump_raw(str, len, out);
+	} else if (0 == strcasecmp("-Infinity", str)) {
+	    str = nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, false, &len);
+	    dump_raw(str, len, out);
+	} else {
+	    dump_raw(str, len, out);
+	}
     } else if (as_ok && Yes == out->opts->as_json && rb_respond_to(obj, oj_as_json_id)) {
 	volatile VALUE	aj;
 
@@ -1407,7 +1470,31 @@ dump_data_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok)
 	    }
 	} else if (oj_bigdecimal_class == clas) {
 	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+	    const char		*str = rb_string_value_ptr((VALUE*)&rstr);
+	    int			len = RSTRING_LEN(rstr);
+	    
+	    if (0 == strcasecmp("Infinity", str)) {
+		str = nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, true, &len);
+		dump_raw(str, len, out);
+	    } else if (0 == strcasecmp("-Infinity", str)) {
+		str = nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, false, &len);
+		dump_raw(str, len, out);
+	    } else {
+		dump_cstr(str, len, 0, 0, out);
+	    }
+	} else if (oj_datetime_class == clas) {
+	    volatile VALUE	rstr;
 
+	    switch (out->opts->time_format) {
+	    case XmlTime:
+		rstr = rb_funcall(obj, rb_intern("xmlschema"), 1, INT2FIX(out->opts->sec_prec));
+		break;
+	    case UnixZTime:
+	    case UnixTime:
+	    case RubyTime:
+	    default:
+		rstr = rb_funcall(obj, oj_to_s_id, 0);
+	    }
 	    dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
 	} else {
 	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
@@ -1449,11 +1536,19 @@ dump_data_obj(VALUE obj, int depth, Out out) {
     } else {
 	if (oj_bigdecimal_class == clas) {
 	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
-		
+	    const char		*str = rb_string_value_ptr((VALUE*)&rstr);
+	    int			len = RSTRING_LEN(rstr);
+
 	    if (Yes == out->opts->bigdec_as_num) {
-		dump_raw(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), out);
+		dump_raw(str, len, out);
+	    } else if (0 == strcasecmp("Infinity", str)) {
+		str = nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, true, &len);
+		dump_raw(str, len, out);
+	    } else if (0 == strcasecmp("-Infinity", str)) {
+		str = nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, false, &len);
+		dump_raw(str, len, out);
 	    } else {
-		dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
+		dump_cstr(str, len, 0, 0, out);
 	    }
 	} else {
 	    dump_nil(out);
@@ -1531,11 +1626,19 @@ dump_obj_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) 
 
 	if (oj_bigdecimal_class == clas) {
 	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
-
+	    const char		*str = rb_string_value_ptr((VALUE*)&rstr);
+	    int			len = RSTRING_LEN(rstr);
+	    
 	    if (Yes == out->opts->bigdec_as_num) {
-		dump_raw(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), out);
+		dump_raw(str, len, out);
+	    } else if (0 == strcasecmp("Infinity", str)) {
+		str = nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, true, &len);
+		dump_raw(str, len, out);
+	    } else if (0 == strcasecmp("-Infinity", str)) {
+		str = nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, false, &len);
+		dump_raw(str, len, out);
 	    } else {
-		dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
+		dump_cstr(str, len, 0, 0, out);
 	    }
 #if (defined T_RATIONAL && defined RRATIONAL)
 	} else if (oj_datetime_class == clas || oj_date_class == clas || rb_cRational == clas) {
@@ -1561,8 +1664,18 @@ dump_obj_obj(VALUE obj, int depth, Out out) {
 
 	if (oj_bigdecimal_class == clas) {
 	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
-
-	    dump_raw(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), out);
+	    const char		*str = rb_string_value_ptr((VALUE*)&rstr);
+	    int			len = RSTRING_LEN(rstr);
+	    
+	    if (0 == strcasecmp("Infinity", str)) {
+		str = nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, true, &len);
+		dump_raw(str, len, out);
+	    } else if (0 == strcasecmp("-Infinity", str)) {
+		str = nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, false, &len);
+		dump_raw(str, len, out);
+	    } else {
+		dump_raw(str, len, out);
+	    }
 	} else {
 	    dump_obj_attrs(obj, clas, id, depth, out);
 	}
@@ -2197,7 +2310,7 @@ dump_val(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) {
 		case NullMode:		dump_data_null(obj, out);	break;
 		case CompatMode:	dump_data_comp(obj, depth, out, argc, argv, as_ok);break;
 		case ObjectMode:
-		default:		dump_data_obj(obj, depth, out);	break;
+	default:		dump_data_obj(obj, depth, out);	break;
 		}
 		break;
 #if (defined T_COMPLEX && defined RCOMPLEX)

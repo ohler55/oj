@@ -190,7 +190,7 @@ struct _Options	oj_default_options = {
     json_class,	// create_id
     10,		// create_id_len
     9,		// sec_prec
-    15,		// float_prec
+    16,		// float_prec
     "%0.15g",	// float_fmt
     Qnil,	// hash_class
     {		// dump_opts
@@ -1924,8 +1924,8 @@ static struct _Options	mimic_object_to_json_options = {
     No,		// allow_invalid
     json_class,	// create_id
     10,		// create_id_len
-    9,		// sec_prec
-    15,		// float_prec
+    3,		// sec_prec
+    16,		// float_prec
     "%0.15g",	// float_fmt
     Qnil,	// hash_class
     {		// dump_opts

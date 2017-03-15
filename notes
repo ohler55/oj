@@ -5,9 +5,17 @@
 
 
 - rail compat
- - round off of date when sec prec should be round, not cut off
- - for DateTime.new should include fraction
- - BigDecimal infinity should follow :nan option
+ - Regexp
+ - Enumerable
+ - Struct
+ - Process::Status
+ - ActiveSupport::TimeWithZone
+ - ActiveModel::Errors
+ - ActiveSupport::Multibyte::Chars
+ - ActiveRecord::Relation
+
+ - how about a const for rails options (separate from mimic or maybe the same set)
+  - or a function to set options to rails
 
 - debug
  - instrument for parsing floats/bigdecimal

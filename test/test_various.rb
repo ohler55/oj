@@ -556,8 +556,8 @@ class Juice < Minitest::Test
   end
   def test_xml_time_compat_precision_round
     begin
-      t = Time.new(2012, 1, 5, 23, 58, 7.9996, 32400)
-      json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema, :second_precision => 3)
+      t = Time.new(2012, 1, 5, 23, 58, 7.99996, 32400)
+      json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema, :second_precision => 4)
       assert_equal(%{"2012-01-05T23:58:08+09:00"}, json)
     rescue Exception
       # some Rubies (1.8.7) do not allow the timezome to be set

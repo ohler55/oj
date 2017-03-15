@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2.19.0a1 - 2017-03-15
+
+- Broke date-time seconds rounding in precision to be consistent with Rails and Active Support which down not round when dropping precision to 3 decimal but instead does a floor. In this case better to be compatible than correct.
+
+- Changed the default precision to 16 since long doubles are now used in decimal calculations.
+
+- 
+
 ## 2.18.3 - 2017-03-14
 
 - Changed to use long doubles for parsing to minimize round off errors. So PI will be accurate to more places for PI day.
