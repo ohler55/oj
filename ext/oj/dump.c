@@ -92,6 +92,7 @@ static void	dump_data_null(VALUE obj, Out out);
 static void	dump_data_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok);
 static void	dump_data_obj(VALUE obj, int depth, Out out);
 static void	dump_obj_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok);
+static void	dump_obj_to_s(VALUE obj, int depth, Out out);
 static void	dump_obj_obj(VALUE obj, int depth, Out out);
 static void	dump_struct_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok);
 static void	dump_struct_obj(VALUE obj, int depth, Out out);
@@ -160,11 +161,23 @@ static char	xss_friendly_chars[256] = "\
 33333333333333333333333333333333\
 33333333333333333333333333333333";
 
+// JSON XSS combo
+static char	hixss_friendly_chars[256] = "\
+66666666222622666666666666666666\
+11211161111111121111111111116161\
+11111111111111111111111111112111\
+11111111111111111111111111111116\
+11111111111111111111111111111111\
+11111111111111111111111111111111\
+11111111111111111111111111111111\
+11311111111111111111111111111111";
+
 inline static size_t
 newline_friendly_size(const uint8_t *str, size_t len) {
     size_t	size = 0;
+    size_t	i = len;
 
-    for (; 0 < len; str++, len--) {
+    for (; 0 < i; str++, i--) {
 	size += newline_friendly_chars[*str];
     }
     return size - len * (size_t)'0';
@@ -173,8 +186,9 @@ newline_friendly_size(const uint8_t *str, size_t len) {
 inline static size_t
 hibit_friendly_size(const uint8_t *str, size_t len) {
     size_t	size = 0;
+    size_t	i = len;
 
-    for (; 0 < len; str++, len--) {
+    for (; 0 < i; str++, i--) {
 	size += hibit_friendly_chars[*str];
     }
     return size - len * (size_t)'0';
@@ -183,8 +197,9 @@ hibit_friendly_size(const uint8_t *str, size_t len) {
 inline static size_t
 ascii_friendly_size(const uint8_t *str, size_t len) {
     size_t	size = 0;
+    size_t	i = len;
 
-    for (; 0 < len; str++, len--) {
+    for (; 0 < i; str++, i--) {
 	size += ascii_friendly_chars[*str];
     }
     return size - len * (size_t)'0';
@@ -193,9 +208,21 @@ ascii_friendly_size(const uint8_t *str, size_t len) {
 inline static size_t
 xss_friendly_size(const uint8_t *str, size_t len) {
     size_t	size = 0;
+    size_t	i = len;
 
-    for (; 0 < len; str++, len--) {
+    for (; 0 < i; str++, i--) {
 	size += xss_friendly_chars[*str];
+    }
+    return size - len * (size_t)'0';
+}
+
+inline static size_t
+hixss_friendly_size(const uint8_t *str, size_t len) {
+    size_t	size = 0;
+    size_t	i = len;
+
+    for (; 0 < i; str++, i--) {
+	size += hixss_friendly_chars[*str];
     }
     return size - len * (size_t)'0';
 }
@@ -647,6 +674,10 @@ dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out) {
     case XSSEsc:
 	cmap = xss_friendly_chars;
 	size = xss_friendly_size((uint8_t*)str, cnt);
+	break;
+    case JXEsc:
+	cmap = hixss_friendly_chars;
+	size = hixss_friendly_size((uint8_t*)str, cnt);
 	break;
     case JSONEsc:
     default:
@@ -1557,6 +1588,13 @@ dump_data_obj(VALUE obj, int depth, Out out) {
 }
 
 static void
+dump_obj_to_s(VALUE obj, int depth, Out out) {
+    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+
+    dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
+}
+
+static void
 dump_obj_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) {
     if (as_ok && Yes == out->opts->to_json && rb_respond_to(obj, oj_to_hash_id)) {
 	volatile VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
@@ -2233,6 +2271,7 @@ dump_val(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) {
 #ifdef OJ_DEBUG
     printf("Oj-debug: dump_val %s\n", rb_class2name(rb_obj_class(obj)));
 #endif
+    //printf("*** Oj-debug: dump_val %s\n", rb_class2name(rb_obj_class(obj)));
     switch (type) {
     case T_NIL:		dump_nil(out);				break;
     case T_TRUE:	dump_true(out);				break;
@@ -2310,7 +2349,7 @@ dump_val(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) {
 		case NullMode:		dump_data_null(obj, out);	break;
 		case CompatMode:	dump_data_comp(obj, depth, out, argc, argv, as_ok);break;
 		case ObjectMode:
-	default:		dump_data_obj(obj, depth, out);	break;
+		default:		dump_data_obj(obj, depth, out);	break;
 		}
 		break;
 #if (defined T_COMPLEX && defined RCOMPLEX)
@@ -2320,7 +2359,7 @@ dump_val(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) {
 		switch (out->opts->mode) {
 		case StrictMode:	raise_strict(obj);		break;
 		case NullMode:		dump_nil(out);			break;
-		case CompatMode:
+		case CompatMode:	dump_obj_to_s(obj, depth, out);	break;
 		case ObjectMode:
 		default:		dump_obj_comp(obj, depth, out, argc, argv, as_ok);	break;
 		}

@@ -5,7 +5,11 @@
 
 
 - rail compat
- - Regexp
+ + Regexp
+ - StringSpecial
+  - new friendly mode for XSS and hibit - hixss
+   - need to detect \u2028 and \u2029
+   
  - Enumerable
  - Struct
  - Process::Status
@@ -13,6 +17,8 @@
  - ActiveModel::Errors
  - ActiveSupport::Multibyte::Chars
  - ActiveRecord::Relation
+
+ - make regexp an odd
 
  - how about a const for rails options (separate from mimic or maybe the same set)
   - or a function to set options to rails

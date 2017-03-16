@@ -96,7 +96,8 @@ typedef enum {
     NLEsc	= 'n',
     JSONEsc	= 'j',
     XSSEsc	= 'x',
-    ASCIIEsc	= 'a'
+    ASCIIEsc	= 'a',
+    JXEsc	= 'r' // rails
 } Encoding;
 
 typedef enum {

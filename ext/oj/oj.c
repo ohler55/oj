@@ -141,6 +141,7 @@ static VALUE	sec_prec_sym;
 static VALUE	strict_sym;
 static VALUE	symbol_keys_sym;
 static VALUE	time_format_sym;
+static VALUE	unicode_xss_sym;
 static VALUE	unix_sym;
 static VALUE	unix_zone_sym;
 static VALUE	use_as_json_sym;
@@ -221,7 +222,7 @@ static VALUE	define_mimic_json(int argc, VALUE *argv, VALUE self);
  * - circular: [true|false|nil] support circular references while dumping
  * - auto_define: [true|false|nil] automatically define classes if they do not exist
  * - symbol_keys: [true|false|nil] use symbols instead of strings for hash keys
- * - escape_mode: [:newline|:json|:xss_safe|:ascii|nil] determines the characters to escape
+ * - escape_mode: [:newline|:json|:xss_safe|:ascii|unicode_xss|nil] determines the characters to escape
  * - class_cache: [true|false|nil] cache classes for faster parsing (if dynamically modifying classes or reloading classes then don't use this)
  * - mode: [:object|:strict|:compat|:null] load and dump modes to use for JSON
  * - time_format: [:unix|:unix_zone|:xmlschema|:ruby] time format when dumping in :compat and :object mode
@@ -282,6 +283,7 @@ get_def_opts(VALUE self) {
     case JSONEsc:	rb_hash_aset(opts, escape_mode_sym, json_sym);		break;
     case XSSEsc:	rb_hash_aset(opts, escape_mode_sym, xss_safe_sym);	break;
     case ASCIIEsc:	rb_hash_aset(opts, escape_mode_sym, ascii_sym);		break;
+    case JXEsc:		rb_hash_aset(opts, escape_mode_sym, unicode_xss_sym);	break;
     default:		rb_hash_aset(opts, escape_mode_sym, json_sym);		break;
     }
     switch (oj_default_options.time_format) {
@@ -326,9 +328,10 @@ get_def_opts(VALUE self) {
  * @param [true|false|nil] :auto_define automatically define classes if they do not exist
  * @param [true|false|nil] :symbol_keys convert hash keys to symbols
  * @param [true|false|nil] :class_cache cache classes for faster parsing
- * @param [:newline|:json|:xss_safe|:ascii|nil] :escape mode encodes all high-bit characters as
+ * @param [:newline|:json|:xss_safe|:ascii|unicode_xss|nil] :escape mode encodes all high-bit characters as
  *        escaped sequences if :ascii, :json is standand UTF-8 JSON encoding,
  *        :newline is the same as :json but newlines are not escaped,
+ *        :unicode_xss allows unicode but escapes &, <, and >, and any \u20xx characters along with some others,
  *        and :xss_safe escapes &, <, and >, and some others.
  * @param [true|false|nil] :bigdecimal_as_decimal dump BigDecimal as a decimal number or as a String
  * @param [:bigdecimal|:float|:auto|nil] :bigdecimal_load load decimals as BigDecimal instead of as a Float. :auto pick the most precise for the number of digits.
@@ -501,8 +504,10 @@ oj_parse_options(VALUE ropts, Options copts) {
 	    copts->escape_mode = XSSEsc;
 	} else if (ascii_sym == v) {
 	    copts->escape_mode = ASCIIEsc;
+	} else if (unicode_xss_sym == v) {
+	    copts->escape_mode = JXEsc;
 	} else {
-	    rb_raise(rb_eArgError, ":encoding must be :newline, :json, :xss_safe, or :ascii.");
+	    rb_raise(rb_eArgError, ":encoding must be :newline, :json, :xss_safe, :unicode_xss, or :ascii.");
 	}
     }
     if (Qnil != (v = rb_hash_lookup(ropts, bigdecimal_load_sym))) {
@@ -1916,7 +1921,7 @@ static struct _Options	mimic_object_to_json_options = {
     No,		// circular
     No,		// auto_define
     No,		// sym_key
-    JSONEsc,	// escape_mode
+    JXEsc,	// escape_mode
     CompatMode,	// mode
     No,		// class_cache
     RubyTime,	// time_format
@@ -2287,6 +2292,7 @@ void Init_oj() {
     word_sym = ID2SYM(rb_intern("word"));		rb_gc_register_address(&word_sym);
     xmlschema_sym = ID2SYM(rb_intern("xmlschema"));	rb_gc_register_address(&xmlschema_sym);
     xss_safe_sym = ID2SYM(rb_intern("xss_safe"));	rb_gc_register_address(&xss_safe_sym);
+    unicode_xss_sym = ID2SYM(rb_intern("unicode_xss"));	rb_gc_register_address(&unicode_xss_sym);
 
     oj_slash_string = rb_str_new2("/");			rb_gc_register_address(&oj_slash_string);
 
