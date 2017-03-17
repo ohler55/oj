@@ -23,6 +23,13 @@ task :test_all => [:compile] do
     exitcode = 1 unless status
   end
 
+  Dir.glob(File.join('test', 'isolated_compatibility', 'test_*.rb')).each do |isolated|
+    rout, wout = IO.pipe
+    puts "\n" + "-"*10 + " File: #{isolated} " + "-"*10
+    status = system("ruby -Itest #{isolated}")
+    exitcode = 1 unless status
+  end
+
   Rake::Task['test'].invoke
   exit(1) if exitcode == 1
 end
