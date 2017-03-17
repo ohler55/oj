@@ -268,6 +268,7 @@ extern VALUE	oj_cstack_class;
 extern VALUE	oj_date_class;
 extern VALUE	oj_datetime_class;
 extern VALUE	oj_doc_class;
+extern VALUE	oj_enumerable_class;
 extern VALUE	oj_stream_writer_class;
 extern VALUE	oj_string_writer_class;
 extern VALUE	oj_stringio_class;

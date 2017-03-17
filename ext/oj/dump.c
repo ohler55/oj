@@ -164,7 +164,7 @@ static char	xss_friendly_chars[256] = "\
 // JSON XSS combo
 static char	hixss_friendly_chars[256] = "\
 66666666222622666666666666666666\
-11211161111111121111111111116161\
+11211161111111111111111111116161\
 11111111111111111111111111112111\
 11111111111111111111111111111116\
 11111111111111111111111111111111\
@@ -1416,7 +1416,7 @@ dump_data_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok)
 
     if (as_ok && Yes == out->opts->to_json && rb_respond_to(obj, oj_to_hash_id)) {
 	volatile VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
- 
+
 	if (T_HASH != rb_type(h)) {
 	    // It seems that ActiveRecord implemented to_hash so that it returns
 	    // an Array and not a Hash. To get around that any value returned
@@ -1891,6 +1891,14 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	if (Qundef != clas && 0 < cnt) {
 	    *out->cur++ = ',';
 	}
+	if (0 == cnt && Qundef == clas) {
+	    // Might be something special like an Enumerable.
+	    if (Qtrue == rb_obj_is_kind_of(obj, oj_enumerable_class)) {
+		out->cur--;
+		dump_val(rb_funcall(obj, rb_intern("entries"), 0), depth, out, 0, 0, false);
+		return;
+	    }
+	}
 	out->depth = depth + 1;
 #if HAS_IVAR_HELPERS
 	rb_ivar_foreach(obj, dump_attr_cb, (VALUE)out);
@@ -2043,9 +2051,67 @@ dump_struct_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_o
 	memcpy(out->cur, s, len);
 	out->cur += len;
     } else {
-	volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+	VALUE		clas = rb_obj_class(obj);
+	VALUE		ma = Qnil;
+	VALUE		v;
+	char		num_id[32];
+	int		i;
+	int		d2 = depth + 1;
+	int		d3 = d2 + 1;
+	size_t		size = d2 * out->indent + d3 * out->indent + 1;
+	const char	*name;
+	int		cnt;
+	size_t		len;	
+	
+	if (out->end - out->cur <= (long)size) {
+	    grow(out, size);
+	}
+	*out->cur++ = '{';
+	fill_indent(out, d2);
+	size = d3 * out->indent + 2;
+#if HAS_STRUCT_MEMBERS
+	ma = rb_struct_s_members(clas);
+#endif
 
-	dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
+#ifdef RSTRUCT_LEN
+#if UNIFY_FIXNUM_AND_BIGNUM
+	cnt = (int)NUM2LONG(RSTRUCT_LEN(obj));
+#else // UNIFY_FIXNUM_AND_INTEGER
+	cnt = (int)RSTRUCT_LEN(obj);
+#endif // UNIFY_FIXNUM_AND_INTEGER
+#else
+	// This is a bit risky as a struct in C ruby is not the same as a Struct
+	// class in interpreted Ruby so length() may not be defined.
+	cnt = FIX2INT(rb_funcall2(obj, oj_length_id, 0, 0));
+#endif
+	for (i = 0; i < cnt; i++) {
+#ifdef RSTRUCT_LENx
+	    v = RSTRUCT_GET(obj, i);
+#else
+	    v = rb_struct_aref(obj, INT2FIX(i));
+#endif
+	    if (ma != Qnil) {
+		name = rb_id2name(SYM2ID(rb_ary_entry(ma, i)));
+		len = strlen(name);
+	    } else {
+		len = snprintf(num_id, sizeof(num_id), "%d", i);
+		name = num_id;
+	    }
+	    if (out->end - out->cur <= (long)(size + len + 3)) {
+		grow(out, size + len + 3);
+	    }
+	    fill_indent(out, d3);
+	    *out->cur++ = '"';
+	    memcpy(out->cur, name, len);
+	    out->cur += len;
+	    *out->cur++ = '"';
+	    *out->cur++ = ':';
+	    dump_val(v, d3, out, 0, 0, true);
+	    *out->cur++ = ',';
+	}
+	out->cur--;
+	*out->cur++ = '}';
+	*out->cur = '\0';
     }
 }
 
@@ -2271,7 +2337,7 @@ dump_val(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) {
 #ifdef OJ_DEBUG
     printf("Oj-debug: dump_val %s\n", rb_class2name(rb_obj_class(obj)));
 #endif
-    //printf("*** Oj-debug: dump_val %s\n", rb_class2name(rb_obj_class(obj)));
+    //printf("*** Oj-debug: dump_val %s type: %02x\n", rb_class2name(rb_obj_class(obj)), type);
     switch (type) {
     case T_NIL:		dump_nil(out);				break;
     case T_TRUE:	dump_true(out);				break;
@@ -2368,11 +2434,7 @@ dump_val(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) {
 		switch (out->opts->mode) {
 		case StrictMode:	raise_strict(obj);		break;
 		case NullMode:		dump_nil(out);			break;
-		case CompatMode: {
-		    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
-		    dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
-		    break;
-		}
+		case CompatMode:	dump_obj_to_s(obj, depth, out);	break;
 		case ObjectMode:
 		default:
 		    rb_raise(rb_eNotImpError, "Failed to dump '%s' Object (%02x)\n",

@@ -5,13 +5,20 @@
 
 
 - rail compat
+ - fix struct
+ - consider
+  - detecting active classes (how expensive is it) and calling as_json
+  - something like odd but with a faster lookup that has specially build active dumpers
+
  + Regexp
- - StringSpecial
+ + StringSpecial
   - new friendly mode for XSS and hibit - hixss
-   - need to detect \u2028 and \u2029
-   
- - Enumerable
- - Struct
+ + Struct
+ + Rational
+ + Enumerable
+
+ - add circular check for compat and just stop on compat and don't follow
+
  - Process::Status
  - ActiveSupport::TimeWithZone
  - ActiveModel::Errors

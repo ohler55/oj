@@ -97,6 +97,7 @@ VALUE	oj_bigdecimal_class;
 VALUE	oj_cstack_class;
 VALUE	oj_date_class;
 VALUE	oj_datetime_class;
+VALUE	oj_enumerable_class;
 VALUE	oj_parse_error_class;
 VALUE	oj_stream_writer_class;
 VALUE	oj_string_writer_class;
@@ -2241,6 +2242,7 @@ void Init_oj() {
     oj_bigdecimal_class = rb_const_get(rb_cObject, rb_intern("BigDecimal"));
     oj_date_class = rb_const_get(rb_cObject, rb_intern("Date"));
     oj_datetime_class = rb_const_get(rb_cObject, rb_intern("DateTime"));
+    oj_enumerable_class = rb_const_get(rb_cObject, rb_intern("Enumerable"));
     oj_parse_error_class = rb_const_get_at(Oj, rb_intern("ParseError"));
     oj_stringio_class = rb_const_get(rb_cObject, rb_intern("StringIO"));
     oj_struct_class = rb_const_get(rb_cObject, rb_intern("Struct"));
