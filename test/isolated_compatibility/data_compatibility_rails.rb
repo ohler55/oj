@@ -3,6 +3,7 @@ require 'rails/all'
 require 'sqlite3'
 
 require 'oj'
+
 if Rails::VERSION::MAJOR == 5 && RUBY_VERSION == "2.2.3"
   # see https://github.com/ohler55/oj/commit/050b4c70836394cffd96b63388ff0dedb8ed3558
   require 'oj/active_support_helper'
@@ -56,7 +57,7 @@ RAILS_TEST_DATA = {
   Struct: Struct::Customer.new('Dave', '123 Main'),
   Float: 1.0/3,
   FloatInfinity: 0.5/0,
-  # Range: (1..10),
+  Range: (1..10),
   Complex: Complex('0.3-0.5i'),
   # Exception: Exception.new,
   OpenStruct: OpenStruct.new(country: "Australia", population: 20_000_000),

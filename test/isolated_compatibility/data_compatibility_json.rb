@@ -20,7 +20,7 @@ JSON_TEST_DATA = {
   Regexp: /test/,
   FalseClass: false,
   NilClass: nil,
-  # Object: Object.new,
+  #Object: Object.new,
   TrueClass: true,
   String: 'abc',
   StringChinese: '二胡',

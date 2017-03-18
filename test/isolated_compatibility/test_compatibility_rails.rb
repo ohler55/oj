@@ -2,8 +2,14 @@
 # encoding: UTF-8
 
 $: << File.dirname(__FILE__)
+$: << '..'
 
-require 'helper'
+require 'minitest'
+require 'minitest/autorun'
+require 'date'
+require 'bigdecimal'
+require 'oj'
+
 require 'data_compatibility_rails.rb'
 
 OJ_RAILS_COMPAT = {

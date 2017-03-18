@@ -2058,13 +2058,29 @@ dump_struct_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_o
 	int		i;
 	int		d2 = depth + 1;
 	int		d3 = d2 + 1;
-	size_t		size = d2 * out->indent + d3 * out->indent + 1;
+	size_t		size = d2 * out->indent + d3 * out->indent + 3;
 	const char	*name;
 	int		cnt;
 	size_t		len;	
-	
+
 	if (out->end - out->cur <= (long)size) {
 	    grow(out, size);
+	}
+	if (clas == rb_cRange) {
+	    *out->cur++ = '"';
+	    dump_val(rb_funcall(obj, oj_begin_id, 0), d3, out, 0, 0, false);
+	    if (out->end - out->cur <= (long)3) {
+		grow(out, 3);
+	    }
+	    *out->cur++ = '.';
+	    *out->cur++ = '.';
+	    if (Qtrue == rb_funcall(obj, oj_exclude_end_id, 0)) {
+		*out->cur++ = '.';
+	    }
+	    dump_val(rb_funcall(obj, oj_end_id, 0), d3, out, 0, 0, false);
+	    *out->cur++ = '"';
+
+	    return;
 	}
 	*out->cur++ = '{';
 	fill_indent(out, d2);
