@@ -1,3 +1,5 @@
+# encoding: UTF-8
+
 require 'data_compatibility_json.rb'
 require 'rails/all'
 require 'sqlite3'
