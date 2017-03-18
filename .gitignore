@@ -14,3 +14,5 @@ doc
 .yardoc
 Gemfile.lock
 *.so
+vendor
+gemfiles/*.gemfile.lock
