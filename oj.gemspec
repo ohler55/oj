@@ -25,6 +25,5 @@ Gem::Specification.new do |s|
 
   s.add_development_dependency 'rake-compiler', '~> 0.9'
   s.add_development_dependency 'minitest', '~> 5'
-  s.add_development_dependency 'rails', RUBY_VERSION <= '1.8.7' ? '~> 3' : '~> 4'
-  s.add_development_dependency 'sqlite3'
+  s.add_development_dependency 'wwtd'
 end
