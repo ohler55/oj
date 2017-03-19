@@ -42,6 +42,7 @@
 
 #include "oj.h"
 #include "cache8.h"
+#include "dump.h"
 #include "odd.h"
 
 #if !HAS_ENCODING_SUPPORT || defined(RUBINIUS_RUBY)
@@ -50,9 +51,6 @@
 
 // Workaround in case INFINITY is not defined in math.h or if the OS is CentOS
 #define OJ_INFINITY (1.0/0.0)
-
-// Extra padding at end of buffer.
-#define BUFFER_EXTRA 10
 
 #define MAX_DEPTH 1000
 
@@ -63,15 +61,12 @@ static const char	nan_val[] = NAN_VAL;
 typedef unsigned long	ulong;
 
 static void	raise_strict(VALUE obj);
-static void	dump_val(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok);
 static void	dump_nil(Out out);
 static void	dump_true(Out out);
 static void	dump_false(Out out);
 static void	dump_fixnum(VALUE obj, Out out);
 static void	dump_bignum(VALUE obj, Out out);
 static void	dump_float(VALUE obj, Out out);
-static void	dump_raw(const char *str, size_t cnt, Out out);
-static void	dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out);
 static void	dump_hex(uint8_t c, Out out);
 static void	dump_str_comp(VALUE obj, Out out);
 static void	dump_str_obj(VALUE obj, VALUE clas, int depth, Out out);
@@ -106,13 +101,6 @@ static void	grow(Out out, size_t len);
 static size_t	hibit_friendly_size(const uint8_t *str, size_t len);
 static size_t	xss_friendly_size(const uint8_t *str, size_t len);
 static size_t	ascii_friendly_size(const uint8_t *str, size_t len);
-
-static void	dump_leaf(Leaf leaf, int depth, Out out);
-static void	dump_leaf_str(Leaf leaf, Out out);
-static void	dump_leaf_fixnum(Leaf leaf, Out out);
-static void	dump_leaf_float(Leaf leaf, Out out);
-static void	dump_leaf_array(Leaf leaf, int depth, Out out);
-static void	dump_leaf_hash(Leaf leaf, int depth, Out out);
 
 static const char	hex_chars[17] = "0123456789abcdef";
 
@@ -228,17 +216,6 @@ hixss_friendly_size(const uint8_t *str, size_t len) {
 }
 
 inline static void
-fill_indent(Out out, int cnt) {
-    if (0 < out->indent) {
-	cnt *= out->indent;
-	*out->cur++ = '\n';
-	for (; 0 < cnt; cnt--) {
-	    *out->cur++ = ' ';
-	}
-    }
-}
-
-inline static void
 dump_ulong(unsigned long num, Out out) {
     char	buf[32];
     char	*b = buf + sizeof(buf) - 1;
@@ -301,8 +278,6 @@ nan_str(VALUE obj, int opt, int mode, bool plus, int *lenp) {
     return str;
 }
 
-
-
 static void
 grow(Out out, size_t len) {
     size_t  size = out->end - out->buf;
@@ -337,17 +312,7 @@ dump_hex(uint8_t c, Out out) {
     *out->cur++ = hex_chars[d];
 }
 
-static void
-dump_raw(const char *str, size_t cnt, Out out) {
-    if (out->end - out->cur <= (long)cnt + 10) {
-	grow(out, cnt + 10);
-    }
-    memcpy(out->cur, str, cnt);
-    out->cur += cnt;
-    *out->cur = '\0';
-}
-
-const char*
+static const char*
 dump_unicode(const char *str, const char *end, Out out) {
     uint32_t	code = 0;
     uint8_t	b = *(uint8_t*)str;
@@ -658,100 +623,8 @@ dump_float(VALUE obj, Out out) {
 }
 
 static void
-dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out) {
-    size_t	size;
-    char	*cmap;
-
-    switch (out->opts->escape_mode) {
-    case NLEsc:
-	cmap = newline_friendly_chars;
-	size = newline_friendly_size((uint8_t*)str, cnt);
-	break;
-    case ASCIIEsc:
-	cmap = ascii_friendly_chars;
-	size = ascii_friendly_size((uint8_t*)str, cnt);
-	break;
-    case XSSEsc:
-	cmap = xss_friendly_chars;
-	size = xss_friendly_size((uint8_t*)str, cnt);
-	break;
-    case JXEsc:
-	cmap = hixss_friendly_chars;
-	size = hixss_friendly_size((uint8_t*)str, cnt);
-	break;
-    case JSONEsc:
-    default:
-	cmap = hibit_friendly_chars;
-	size = hibit_friendly_size((uint8_t*)str, cnt);
-    }
-    if (out->end - out->cur <= (long)size + BUFFER_EXTRA) { // extra 10 for escaped first char, quotes, and sym
-	grow(out, size + BUFFER_EXTRA);
-    }
-    *out->cur++ = '"';
-    if (escape1) {
-	*out->cur++ = '\\';
-	*out->cur++ = 'u';
-	*out->cur++ = '0';
-	*out->cur++ = '0';
-	dump_hex((uint8_t)*str, out);
-	cnt--;
-	size--;
-	str++;
-	is_sym = 0; // just to make sure
-    }
-    if (cnt == size) {
-	if (is_sym) {
-	    *out->cur++ = ':';
-	}
-	for (; '\0' != *str; str++) {
-	    *out->cur++ = *str;
-	}
-	*out->cur++ = '"';
-    } else {
-	const char	*end = str + cnt;
-
-	if (is_sym) {
-	    *out->cur++ = ':';
-	}
-	for (; str < end; str++) {
-	    switch (cmap[(uint8_t)*str]) {
-	    case '1':
-		*out->cur++ = *str;
-		break;
-	    case '2':
-		*out->cur++ = '\\';
-		switch (*str) {
-		case '\\':	*out->cur++ = '\\';	break;
-		case '\b':	*out->cur++ = 'b';	break;
-		case '\t':	*out->cur++ = 't';	break;
-		case '\n':	*out->cur++ = 'n';	break;
-		case '\f':	*out->cur++ = 'f';	break;
-		case '\r':	*out->cur++ = 'r';	break;
-		default:	*out->cur++ = *str;	break;
-		}
-		break;
-	    case '3': // Unicode
-		str = dump_unicode(str, end, out);
-		break;
-	    case '6': // control characters
-		*out->cur++ = '\\';
-		*out->cur++ = 'u';
-		*out->cur++ = '0';
-		*out->cur++ = '0';
-		dump_hex((uint8_t)*str, out);
-		break;
-	    default:
-		break; // ignore, should never happen if the table is correct
-	    }
-	}
-	*out->cur++ = '"';
-    }
-    *out->cur = '\0';
-}
-
-static void
 dump_str_comp(VALUE obj, Out out) {
-    dump_cstr(rb_string_value_ptr((VALUE*)&obj), RSTRING_LEN(obj), 0, 0, out);
+    oj_dump_cstr(rb_string_value_ptr((VALUE*)&obj), RSTRING_LEN(obj), 0, 0, out);
 }
 
 static void
@@ -763,7 +636,7 @@ dump_str_obj(VALUE obj, VALUE clas, int depth, Out out) {
 	size_t		len = RSTRING_LEN(obj);
 	char		s1 = s[1];
 
-	dump_cstr(s, len, 0, (':' == *s || ('^' == *s && ('r' == s1 || 'i' == s1))), out);
+	oj_dump_cstr(s, len, 0, (':' == *s || ('^' == *s && ('r' == s1 || 'i' == s1))), out);
     }
 }
 
@@ -771,7 +644,7 @@ static void
 dump_sym_comp(VALUE obj, Out out) {
     const char	*sym = rb_id2name(SYM2ID(obj));
     
-    dump_cstr(sym, strlen(sym), 0, 0, out);
+    oj_dump_cstr(sym, strlen(sym), 0, 0, out);
 }
 
 static void
@@ -779,14 +652,14 @@ dump_sym_obj(VALUE obj, Out out) {
     const char	*sym = rb_id2name(SYM2ID(obj));
     size_t	len = strlen(sym);
     
-    dump_cstr(sym, len, 1, 0, out);
+    oj_dump_cstr(sym, len, 1, 0, out);
 }
 
 static void
 dump_class_comp(VALUE obj, Out out) {
     const char	*s = rb_class2name(obj);
 
-    dump_cstr(s, strlen(s), 0, 0, out);
+    oj_dump_cstr(s, strlen(s), 0, 0, out);
 }
 
 static void
@@ -803,7 +676,7 @@ dump_class_obj(VALUE obj, Out out) {
     *out->cur++ = 'c';
     *out->cur++ = '"';
     *out->cur++ = ':';
-    dump_cstr(s, len, 0, 0, out);
+    oj_dump_cstr(s, len, 0, 0, out);
     *out->cur++ = '}';
     *out->cur = '\0';
 }
@@ -871,7 +744,7 @@ dump_array(VALUE a, VALUE clas, int depth, Out out) {
 	    } else {
 		fill_indent(out, d2);
 	    }
-	    dump_val(rb_ary_entry(a, i), d2, out, 0, 0, true);
+	    oj_dump_val(rb_ary_entry(a, i), d2, out, 0, 0, true);
 	    if (i < cnt) {
 		*out->cur++ = ',';
 	    }
@@ -961,7 +834,7 @@ hash_cb_strict(VALUE key, VALUE value, Out out) {
 	    out->cur += out->opts->dump_opts.after_size;
 	}
     }
-    dump_val(value, depth, out, 0, 0, false);
+    oj_dump_val(value, depth, out, 0, 0, false);
     out->depth = depth;
     *out->cur++ = ',';
 
@@ -1028,7 +901,7 @@ hash_cb_compat(VALUE key, VALUE value, Out out) {
 	    out->cur += out->opts->dump_opts.after_size;
 	}
     }
-    dump_val(value, depth, out, 0, 0, true);
+    oj_dump_val(value, depth, out, 0, 0, true);
     out->depth = depth;
     *out->cur++ = ',';
 
@@ -1050,11 +923,11 @@ hash_cb_object(VALUE key, VALUE value, Out out) {
     if (rb_type(key) == T_STRING) {
 	dump_str_obj(key, Qundef, depth, out);
 	*out->cur++ = ':';
-	dump_val(value, depth, out, 0, 0, true);
+	oj_dump_val(value, depth, out, 0, 0, true);
     } else if (rb_type(key) == T_SYMBOL) {
 	dump_sym_obj(key, out);
 	*out->cur++ = ':';
-	dump_val(value, depth, out, 0, 0, true);
+	oj_dump_val(value, depth, out, 0, 0, true);
     } else {
 	int	d2 = depth + 1;
 	long	s2 = size + out->indent + 1;
@@ -1082,13 +955,13 @@ hash_cb_object(VALUE key, VALUE value, Out out) {
 	*out->cur++ = ':';
 	*out->cur++ = '[';
 	fill_indent(out, d2);
-	dump_val(key, d2, out, 0, 0, true);
+	oj_dump_val(key, d2, out, 0, 0, true);
 	if (out->end - out->cur <= (long)s2) {
 	    grow(out, s2);
 	}
 	*out->cur++ = ',';
 	fill_indent(out, d2);
-	dump_val(value, d2, out, 0, 0, true);
+	oj_dump_val(value, d2, out, 0, 0, true);
 	if (out->end - out->cur <= (long)size) {
 	    grow(out, size);
 	}
@@ -1273,7 +1146,7 @@ static void
 dump_ruby_time(VALUE obj, Out out) {
     volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-    dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
+    oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
 }
 
 static void
@@ -1348,13 +1221,13 @@ dump_xml_time(VALUE obj, Out out) {
 	    sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02dZ",
 		    tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
 		    tm->tm_hour, tm->tm_min, tm->tm_sec);
-	    dump_cstr(buf, 20, 0, 0, out);
+	    oj_dump_cstr(buf, 20, 0, 0, out);
 	} else {
 	    sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02d%c%02d:%02d",
 		    tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
 		    tm->tm_hour, tm->tm_min, tm->tm_sec,
 		    tzsign, tzhour, tzmin);
-	    dump_cstr(buf, 25, 0, 0, out);
+	    oj_dump_cstr(buf, 25, 0, 0, out);
 	}
     } else if (0 == tzsecs && rb_funcall2(obj, oj_utcq_id, 0, 0)) {
 	char	format[64] = "%04d-%02d-%02dT%02d:%02d:%02d.%09ldZ";
@@ -1367,7 +1240,7 @@ dump_xml_time(VALUE obj, Out out) {
 	sprintf(buf, format,
 		tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
 		tm->tm_hour, tm->tm_min, tm->tm_sec, nsec);
-	dump_cstr(buf, len, 0, 0, out);
+	oj_dump_cstr(buf, len, 0, 0, out);
     } else {
 	char	format[64] = "%04d-%02d-%02dT%02d:%02d:%02d.%09ld%c%02d:%02d";
 	int	len = 35;
@@ -1380,7 +1253,7 @@ dump_xml_time(VALUE obj, Out out) {
 		tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
 		tm->tm_hour, tm->tm_min, tm->tm_sec, nsec,
 		tzsign, tzhour, tzmin);
-	dump_cstr(buf, len, 0, 0, out);
+	oj_dump_cstr(buf, len, 0, 0, out);
     }
 }
 
@@ -1391,7 +1264,7 @@ dump_data_strict(VALUE obj, Out out) {
     if (oj_bigdecimal_class == clas) {
 	volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-	dump_raw(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), out);
+	oj_dump_raw(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), out);
     } else {
 	raise_strict(obj);
     }
@@ -1404,7 +1277,7 @@ dump_data_null(VALUE obj, Out out) {
     if (oj_bigdecimal_class == clas) {
 	volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-	dump_raw(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), out);
+	oj_dump_raw(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), out);
     } else {
 	dump_nil(out);
     }
@@ -1423,7 +1296,7 @@ dump_data_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok)
 	    // will be dumped.
 
 	    //rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
-	    dump_val(h, depth, out, 0, 0, false);
+	    oj_dump_val(h, depth, out, 0, 0, false);
 	}
 	dump_hash(h, Qundef, depth, out->opts->mode, out);
     } else if (Yes == out->opts->bigdec_as_num && oj_bigdecimal_class == clas) {
@@ -1433,12 +1306,12 @@ dump_data_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok)
 
 	if (0 == strcasecmp("Infinity", str)) {
 	    str = nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, true, &len);
-	    dump_raw(str, len, out);
+	    oj_dump_raw(str, len, out);
 	} else if (0 == strcasecmp("-Infinity", str)) {
 	    str = nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, false, &len);
-	    dump_raw(str, len, out);
+	    oj_dump_raw(str, len, out);
 	} else {
-	    dump_raw(str, len, out);
+	    oj_dump_raw(str, len, out);
 	}
     } else if (as_ok && Yes == out->opts->as_json && rb_respond_to(obj, oj_as_json_id)) {
 	volatile VALUE	aj;
@@ -1471,9 +1344,9 @@ dump_data_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok)
 	if (aj == obj) {
 	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-	    dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
+	    oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
 	} else {
-	    dump_val(aj, depth, out, 0, 0, false);
+	    oj_dump_val(aj, depth, out, 0, 0, false);
 	}
     } else if (Yes == out->opts->to_json && rb_respond_to(obj, oj_to_json_id)) {
 	volatile VALUE	rs;
@@ -1506,12 +1379,12 @@ dump_data_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok)
 	    
 	    if (0 == strcasecmp("Infinity", str)) {
 		str = nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, true, &len);
-		dump_raw(str, len, out);
+		oj_dump_raw(str, len, out);
 	    } else if (0 == strcasecmp("-Infinity", str)) {
 		str = nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, false, &len);
-		dump_raw(str, len, out);
+		oj_dump_raw(str, len, out);
 	    } else {
-		dump_cstr(str, len, 0, 0, out);
+		oj_dump_cstr(str, len, 0, 0, out);
 	    }
 	} else if (oj_datetime_class == clas) {
 	    volatile VALUE	rstr;
@@ -1526,11 +1399,11 @@ dump_data_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok)
 	    default:
 		rstr = rb_funcall(obj, oj_to_s_id, 0);
 	    }
-	    dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
+	    oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
 	} else {
 	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-	    dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
+	    oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
 	}
     }
 }
@@ -1571,15 +1444,15 @@ dump_data_obj(VALUE obj, int depth, Out out) {
 	    int			len = RSTRING_LEN(rstr);
 
 	    if (Yes == out->opts->bigdec_as_num) {
-		dump_raw(str, len, out);
+		oj_dump_raw(str, len, out);
 	    } else if (0 == strcasecmp("Infinity", str)) {
 		str = nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, true, &len);
-		dump_raw(str, len, out);
+		oj_dump_raw(str, len, out);
 	    } else if (0 == strcasecmp("-Infinity", str)) {
 		str = nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, false, &len);
-		dump_raw(str, len, out);
+		oj_dump_raw(str, len, out);
 	    } else {
-		dump_cstr(str, len, 0, 0, out);
+		oj_dump_cstr(str, len, 0, 0, out);
 	    }
 	} else {
 	    dump_nil(out);
@@ -1591,7 +1464,7 @@ static void
 dump_obj_to_s(VALUE obj, int depth, Out out) {
     volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-    dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
+    oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
 }
 
 static void
@@ -1605,7 +1478,7 @@ dump_obj_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) 
 	    // will be dumped.
 
 	    //rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
-	    dump_val(h, depth, out, 0, 0, false);
+	    oj_dump_val(h, depth, out, 0, 0, false);
 	} else {
 	    dump_hash(h, Qundef, depth, out->opts->mode, out);
 	}
@@ -1640,9 +1513,9 @@ dump_obj_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) 
 	if (aj == obj) {
 	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-	    dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
+	    oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
 	} else {
-	    dump_val(aj, depth, out, 0, 0, false);
+	    oj_dump_val(aj, depth, out, 0, 0, false);
 	}
     } else if (Yes == out->opts->to_json && rb_respond_to(obj, oj_to_json_id)) {
 	volatile VALUE	rs;
@@ -1668,15 +1541,15 @@ dump_obj_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) 
 	    int			len = RSTRING_LEN(rstr);
 	    
 	    if (Yes == out->opts->bigdec_as_num) {
-		dump_raw(str, len, out);
+		oj_dump_raw(str, len, out);
 	    } else if (0 == strcasecmp("Infinity", str)) {
 		str = nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, true, &len);
-		dump_raw(str, len, out);
+		oj_dump_raw(str, len, out);
 	    } else if (0 == strcasecmp("-Infinity", str)) {
 		str = nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, false, &len);
-		dump_raw(str, len, out);
+		oj_dump_raw(str, len, out);
 	    } else {
-		dump_cstr(str, len, 0, 0, out);
+		oj_dump_cstr(str, len, 0, 0, out);
 	    }
 #if (defined T_RATIONAL && defined RRATIONAL)
 	} else if (oj_datetime_class == clas || oj_date_class == clas || rb_cRational == clas) {
@@ -1685,7 +1558,7 @@ dump_obj_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) 
 #endif
 	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-	    dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
+	    oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
 	} else {
 	    dump_obj_attrs(obj, Qundef, 0, depth, out);
 	}
@@ -1707,12 +1580,12 @@ dump_obj_obj(VALUE obj, int depth, Out out) {
 	    
 	    if (0 == strcasecmp("Infinity", str)) {
 		str = nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, true, &len);
-		dump_raw(str, len, out);
+		oj_dump_raw(str, len, out);
 	    } else if (0 == strcasecmp("-Infinity", str)) {
 		str = nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, false, &len);
-		dump_raw(str, len, out);
+		oj_dump_raw(str, len, out);
 	    } else {
-		dump_raw(str, len, out);
+		oj_dump_raw(str, len, out);
 	    }
 	} else {
 	    dump_obj_attrs(obj, clas, id, depth, out);
@@ -1764,17 +1637,17 @@ dump_attr_cb(ID key, VALUE value, Out out) {
     fill_indent(out, depth);
     if ('@' == *attr) {
 	attr++;
-	dump_cstr(attr, strlen(attr), 0, 0, out);
+	oj_dump_cstr(attr, strlen(attr), 0, 0, out);
     } else {
 	char	buf[32];
 
 	*buf = '~';
 	strncpy(buf + 1, attr, sizeof(buf) - 2);
 	buf[sizeof(buf) - 1] = '\0';
-	dump_cstr(buf, strlen(buf), 0, 0, out);
+	oj_dump_cstr(buf, strlen(buf), 0, 0, out);
     }
     *out->cur++ = ':';
-    dump_val(value, depth, out, 0, 0, true);
+    oj_dump_val(value, depth, out, 0, 0, true);
     out->depth = depth;
     *out->cur++ = ',';
     
@@ -1806,7 +1679,7 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	*out->cur++ = 'o';
 	*out->cur++ = '"';
 	*out->cur++ = ':';
-	dump_cstr(class_name, clen, 0, 0, out);
+	oj_dump_cstr(class_name, clen, 0, 0, out);
     }
     if (0 < id) {
 	size = d2 * out->indent + 16;
@@ -1837,7 +1710,7 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	*out->cur++ = 'f';
 	*out->cur++ = '"';
 	*out->cur++ = ':';
-	dump_cstr(rb_string_value_ptr((VALUE*)&obj), RSTRING_LEN(obj), 0, 0, out);
+	oj_dump_cstr(rb_string_value_ptr((VALUE*)&obj), RSTRING_LEN(obj), 0, 0, out);
 	break;
     case T_ARRAY:
 	size = d2 * out->indent + 14;
@@ -1895,7 +1768,7 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	    // Might be something special like an Enumerable.
 	    if (Qtrue == rb_obj_is_kind_of(obj, oj_enumerable_class)) {
 		out->cur--;
-		dump_val(rb_funcall(obj, rb_intern("entries"), 0), depth, out, 0, 0, false);
+		oj_dump_val(rb_funcall(obj, rb_intern("entries"), 0), depth, out, 0, 0, false);
 		return;
 	    }
 	}
@@ -1932,17 +1805,17 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	    fill_indent(out, d2);
 	    if ('@' == *attr) {
 		attr++;
-		dump_cstr(attr, strlen(attr), 0, 0, out);
+		oj_dump_cstr(attr, strlen(attr), 0, 0, out);
 	    } else {
 		char	buf[32];
 
 		*buf = '~';
 		strncpy(buf + 1, attr, sizeof(buf) - 2);
 		buf[sizeof(buf) - 1] = '\0';
-		dump_cstr(buf, strlen(attr) + 1, 0, 0, out);
+		oj_dump_cstr(buf, strlen(attr) + 1, 0, 0, out);
 	    }
 	    *out->cur++ = ':';
-	    dump_val(value, d2, out, 0, 0, true);
+	    oj_dump_val(value, d2, out, 0, 0, true);
 	    if (out->end - out->cur <= 2) {
 		grow(out, 2);
 	    }
@@ -1960,10 +1833,10 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 		grow(out, size);
 	    }
 	    fill_indent(out, d2);
-	    dump_cstr("~mesg", 5, 0, 0, out);
+	    oj_dump_cstr("~mesg", 5, 0, 0, out);
 	    *out->cur++ = ':';
 	    rv = rb_funcall2(obj, rb_intern("message"), 0, 0);
-	    dump_val(rv, d2, out, 0, 0, true);
+	    oj_dump_val(rv, d2, out, 0, 0, true);
 	    if (out->end - out->cur <= 2) {
 		grow(out, 2);
 	    }
@@ -1973,10 +1846,10 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 		grow(out, size);
 	    }
 	    fill_indent(out, d2);
-	    dump_cstr("~bt", 3, 0, 0, out);
+	    oj_dump_cstr("~bt", 3, 0, 0, out);
 	    *out->cur++ = ':';
 	    rv = rb_funcall2(obj, rb_intern("backtrace"), 0, 0);
-	    dump_val(rv, d2, out, 0, 0, true);
+	    oj_dump_val(rv, d2, out, 0, 0, true);
 	    if (out->end - out->cur <= 2) {
 		grow(out, 2);
 	    }
@@ -2000,7 +1873,7 @@ dump_struct_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_o
 	    // will be dumped.
 
 	    //rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
-	    dump_val(h, depth, out, 0, 0, false);
+	    oj_dump_val(h, depth, out, 0, 0, false);
 	}
 	dump_hash(h, Qundef, depth, out->opts->mode, out);
     } else if (as_ok && Yes == out->opts->as_json && rb_respond_to(obj, oj_as_json_id)) {
@@ -2034,9 +1907,9 @@ dump_struct_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_o
 	if (aj == obj) {
 	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-	    dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
+	    oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
 	} else {
-	    dump_val(aj, depth, out, 0, 0, false);
+	    oj_dump_val(aj, depth, out, 0, 0, false);
 	}
     } else if (Yes == out->opts->to_json && rb_respond_to(obj, oj_to_json_id)) {
 	volatile VALUE	rs = rb_funcall(obj, oj_to_json_id, 0);
@@ -2068,7 +1941,7 @@ dump_struct_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_o
 	}
 	if (clas == rb_cRange) {
 	    *out->cur++ = '"';
-	    dump_val(rb_funcall(obj, oj_begin_id, 0), d3, out, 0, 0, false);
+	    oj_dump_val(rb_funcall(obj, oj_begin_id, 0), d3, out, 0, 0, false);
 	    if (out->end - out->cur <= (long)3) {
 		grow(out, 3);
 	    }
@@ -2077,7 +1950,7 @@ dump_struct_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_o
 	    if (Qtrue == rb_funcall(obj, oj_exclude_end_id, 0)) {
 		*out->cur++ = '.';
 	    }
-	    dump_val(rb_funcall(obj, oj_end_id, 0), d3, out, 0, 0, false);
+	    oj_dump_val(rb_funcall(obj, oj_end_id, 0), d3, out, 0, 0, false);
 	    *out->cur++ = '"';
 
 	    return;
@@ -2122,7 +1995,7 @@ dump_struct_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_o
 	    out->cur += len;
 	    *out->cur++ = '"';
 	    *out->cur++ = ':';
-	    dump_val(v, d3, out, 0, 0, true);
+	    oj_dump_val(v, d3, out, 0, 0, true);
 	    *out->cur++ = ',';
 	}
 	out->cur--;
@@ -2203,7 +2076,7 @@ dump_struct_obj(VALUE obj, int depth, Out out) {
 		grow(out, size);
 	    }
 	    fill_indent(out, d3);
-	    dump_val(v, d3, out, 0, 0, true);
+	    oj_dump_val(v, d3, out, 0, 0, true);
 	    *out->cur++ = ',';
 	}
     }
@@ -2218,7 +2091,7 @@ dump_struct_obj(VALUE obj, int depth, Out out) {
 		grow(out, size);
 	    }
 	    fill_indent(out, d3);
-	    dump_val(rb_struct_aref(obj, INT2FIX(i)), d3, out, 0, 0, true);
+	    oj_dump_val(rb_struct_aref(obj, INT2FIX(i)), d3, out, 0, 0, true);
 	    *out->cur++ = ',';
 	}
     }
@@ -2256,7 +2129,7 @@ dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
 	*out->cur++ = 'O';
 	*out->cur++ = '"';
 	*out->cur++ = ':';
-	dump_cstr(class_name, clen, 0, 0, out);
+	oj_dump_cstr(class_name, clen, 0, 0, out);
 	*out->cur++ = ',';
     }
     if (odd->raw) {
@@ -2324,9 +2197,9 @@ dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
 		}
 	    }
 	    fill_indent(out, d2);
-	    dump_cstr(name, nlen, 0, 0, out);
+	    oj_dump_cstr(name, nlen, 0, 0, out);
 	    *out->cur++ = ':';
-	    dump_val(v, d2, out, 0, 0, true);
+	    oj_dump_val(v, d2, out, 0, 0, true);
 	    if (out->end - out->cur <= 2) {
 		grow(out, 2);
 	    }
@@ -2343,17 +2216,17 @@ raise_strict(VALUE obj) {
     rb_raise(rb_eTypeError, "Failed to dump %s Object to JSON in strict mode.\n", rb_class2name(rb_obj_class(obj)));
 }
 
-static void
-dump_val(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) {
+void
+oj_dump_val(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) {
     int	type = rb_type(obj);
 
     if (MAX_DEPTH < depth) {
 	rb_raise(rb_eNoMemError, "Too deeply nested.\n");
     }
 #ifdef OJ_DEBUG
-    printf("Oj-debug: dump_val %s\n", rb_class2name(rb_obj_class(obj)));
+    printf("Oj-debug: oj_dump_val %s\n", rb_class2name(rb_obj_class(obj)));
 #endif
-    //printf("*** Oj-debug: dump_val %s type: %02x\n", rb_class2name(rb_obj_class(obj)), type);
+    //printf("*** Oj-debug: oj_dump_val %s type: %02x\n", rb_class2name(rb_obj_class(obj)), type);
     switch (type) {
     case T_NIL:		dump_nil(out);				break;
     case T_TRUE:	dump_true(out);				break;
@@ -2479,11 +2352,17 @@ oj_dump_obj_to_json_using_params(VALUE obj, Options copts, Out out, int argc, VA
     out->circ_cnt = 0;
     out->opts = copts;
     out->hash_cnt = 0;
+    out->indent = copts->indent;
     if (Yes == copts->circular) {
 	oj_cache8_new(&out->circ_cache);
     }
-    out->indent = copts->indent;
-    dump_val(obj, 0, out, argc, argv, true);
+    switch (copts->mode) {
+    case StrictMode:	oj_dump_strict_val(obj, 0, out);		break;
+    case NullMode:	oj_dump_null_val(obj, 0, out);			break;
+    case CompatMode:	oj_dump_val(obj, 0, out, argc, argv, true);	break;
+    case ObjectMode:	oj_dump_val(obj, 0, out, argc, argv, true);	break;
+    default:		oj_dump_val(obj, 0, out, argc, argv, true);	break;
+    }
     if (0 < out->indent) {
 	switch (*(out->cur - 1)) {
 	case ']':
@@ -2575,427 +2454,131 @@ oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
     }
 }
 
-// dump leaf functions
+//////////////////////////////////
 
-inline static void
-dump_chars(const char *s, size_t size, Out out) {
-    if (out->end - out->cur <= (long)size) {
-	grow(out, size);
-    }
-    memcpy(out->cur, s, size);
-    out->cur += size;
-    *out->cur = '\0';
-}
-
-static void
-dump_leaf_str(Leaf leaf, Out out) {
-    switch (leaf->value_type) {
-    case STR_VAL:
-	dump_cstr(leaf->str, strlen(leaf->str), 0, 0, out);
-	break;
-    case RUBY_VAL:
-	dump_cstr(rb_string_value_cstr(&leaf->value), RSTRING_LEN(leaf->value), 0, 0, out);
-	break;
-    case COL_VAL:
-    default:
-	rb_raise(rb_eTypeError, "Unexpected value type %02x.\n", leaf->value_type);
-	break;
-    }
-}
-
-static void
-dump_leaf_fixnum(Leaf leaf, Out out) {
-    switch (leaf->value_type) {
-    case STR_VAL:
-	dump_chars(leaf->str, strlen(leaf->str), out);
-	break;
-    case RUBY_VAL:
-	if (T_BIGNUM == rb_type(leaf->value)) {
-	    dump_bignum(leaf->value, out);
-	} else {
-	    dump_fixnum(leaf->value, out);
-	}
-	break;
-    case COL_VAL:
-    default:
-	rb_raise(rb_eTypeError, "Unexpected value type %02x.\n", leaf->value_type);
-	break;
-    }
-}
-
-static void
-dump_leaf_float(Leaf leaf, Out out) {
-    switch (leaf->value_type) {
-    case STR_VAL:
-	dump_chars(leaf->str, strlen(leaf->str), out);
-	break;
-    case RUBY_VAL:
-	dump_float(leaf->value, out);
-	break;
-    case COL_VAL:
-    default:
-	rb_raise(rb_eTypeError, "Unexpected value type %02x.\n", leaf->value_type);
-	break;
-    }
-}
-
-static void
-dump_leaf_array(Leaf leaf, int depth, Out out) {
+void
+oj_dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out) {
     size_t	size;
-    int		d2 = depth + 1;
+    char	*cmap;
 
-    size = 2;
-    if (out->end - out->cur <= (long)size) {
-	grow(out, size);
+    switch (out->opts->escape_mode) {
+    case NLEsc:
+	cmap = newline_friendly_chars;
+	size = newline_friendly_size((uint8_t*)str, cnt);
+	break;
+    case ASCIIEsc:
+	cmap = ascii_friendly_chars;
+	size = ascii_friendly_size((uint8_t*)str, cnt);
+	break;
+    case XSSEsc:
+	cmap = xss_friendly_chars;
+	size = xss_friendly_size((uint8_t*)str, cnt);
+	break;
+    case JXEsc:
+	cmap = hixss_friendly_chars;
+	size = hixss_friendly_size((uint8_t*)str, cnt);
+	break;
+    case JSONEsc:
+    default:
+	cmap = hibit_friendly_chars;
+	size = hibit_friendly_size((uint8_t*)str, cnt);
     }
-    *out->cur++ = '[';
-    if (0 == leaf->elements) {
-	*out->cur++ = ']';
-    } else {
-	Leaf	first = leaf->elements->next;
-	Leaf	e = first;
-
-	size = d2 * out->indent + 2;
-	do {
-	    if (out->end - out->cur <= (long)size) {
-		grow(out, size);
-	    }
-	    fill_indent(out, d2);
-	    dump_leaf(e, d2, out);
-	    if (e->next != first) {
-		*out->cur++ = ',';
-	    }
-	    e = e->next;
-	} while (e != first);
-	size = depth * out->indent + 1;
-	if (out->end - out->cur <= (long)size) {
-	    grow(out, size);
-	}
-	fill_indent(out, depth);
-	*out->cur++ = ']';
+    if (out->end - out->cur <= (long)size + BUFFER_EXTRA) { // extra 10 for escaped first char, quotes, and sym
+	grow(out, size + BUFFER_EXTRA);
     }
-    *out->cur = '\0';
-}
-
-static void
-dump_leaf_hash(Leaf leaf, int depth, Out out) {
-    size_t	size;
-    int		d2 = depth + 1;
-
-    size = 2;
-    if (out->end - out->cur <= (long)size) {
-	grow(out, size);
+    *out->cur++ = '"';
+    if (escape1) {
+	*out->cur++ = '\\';
+	*out->cur++ = 'u';
+	*out->cur++ = '0';
+	*out->cur++ = '0';
+	dump_hex((uint8_t)*str, out);
+	cnt--;
+	size--;
+	str++;
+	is_sym = 0; // just to make sure
     }
-    *out->cur++ = '{';
-    if (0 == leaf->elements) {
-	*out->cur++ = '}';
-    } else {
-	Leaf	first = leaf->elements->next;
-	Leaf	e = first;
-
-	size = d2 * out->indent + 2;
-	do {
-	    if (out->end - out->cur <= (long)size) {
-		grow(out, size);
-	    }
-	    fill_indent(out, d2);
-	    dump_cstr(e->key, strlen(e->key), 0, 0, out);
+    if (cnt == size) {
+	if (is_sym) {
 	    *out->cur++ = ':';
-	    dump_leaf(e, d2, out);
-	    if (e->next != first) {
-		*out->cur++ = ',';
-	    }
-	    e = e->next;
-	} while (e != first);
-	size = depth * out->indent + 1;
-	if (out->end - out->cur <= (long)size) {
-	    grow(out, size);
 	}
-	fill_indent(out, depth);
-	*out->cur++ = '}';
+	for (; '\0' != *str; str++) {
+	    *out->cur++ = *str;
+	}
+	*out->cur++ = '"';
+    } else {
+	const char	*end = str + cnt;
+
+	if (is_sym) {
+	    *out->cur++ = ':';
+	}
+	for (; str < end; str++) {
+	    switch (cmap[(uint8_t)*str]) {
+	    case '1':
+		*out->cur++ = *str;
+		break;
+	    case '2':
+		*out->cur++ = '\\';
+		switch (*str) {
+		case '\\':	*out->cur++ = '\\';	break;
+		case '\b':	*out->cur++ = 'b';	break;
+		case '\t':	*out->cur++ = 't';	break;
+		case '\n':	*out->cur++ = 'n';	break;
+		case '\f':	*out->cur++ = 'f';	break;
+		case '\r':	*out->cur++ = 'r';	break;
+		default:	*out->cur++ = *str;	break;
+		}
+		break;
+	    case '3': // Unicode
+		str = dump_unicode(str, end, out);
+		break;
+	    case '6': // control characters
+		*out->cur++ = '\\';
+		*out->cur++ = 'u';
+		*out->cur++ = '0';
+		*out->cur++ = '0';
+		dump_hex((uint8_t)*str, out);
+		break;
+	    default:
+		break; // ignore, should never happen if the table is correct
+	    }
+	}
+	*out->cur++ = '"';
     }
     *out->cur = '\0';
 }
 
-static void
-dump_leaf(Leaf leaf, int depth, Out out) {
-    switch (leaf->rtype) {
-    case T_NIL:
-	dump_nil(out);
-	break;
-    case T_TRUE:
-	dump_true(out);
-	break;
-    case T_FALSE:
-	dump_false(out);
-	break;
-    case T_STRING:
-	dump_leaf_str(leaf, out);
-	break;
-    case T_FIXNUM:
-	dump_leaf_fixnum(leaf, out);
-	break;
-    case T_FLOAT:
-	dump_leaf_float(leaf, out);
-	break;
-    case T_ARRAY:
-	dump_leaf_array(leaf, depth, out);
-	break;
-    case T_HASH:
-	dump_leaf_hash(leaf, depth, out);
-	break;
-    default:
-	rb_raise(rb_eTypeError, "Unexpected type %02x.\n", leaf->rtype);
-	break;
+void
+oj_dump_raw(const char *str, size_t cnt, Out out) {
+    if (out->end - out->cur <= (long)cnt + 10) {
+	grow(out, cnt + 10);
     }
+    memcpy(out->cur, str, cnt);
+    out->cur += cnt;
+    *out->cur = '\0';
 }
 
 void
-oj_dump_leaf_to_json(Leaf leaf, Options copts, Out out) {
-    if (0 == out->buf) {
-	out->buf = ALLOC_N(char, 4096);
-	out->end = out->buf + 4095 - BUFFER_EXTRA; // 1 less than end plus extra for possible errors
+oj_grow_out(Out out, size_t len) {
+    size_t  size = out->end - out->buf;
+    long    pos = out->cur - out->buf;
+    char    *buf;
+	
+    size *= 2;
+    if (size <= len * 2 + pos) {
+	size += len;
+    }
+    if (out->allocated) {
+	buf = REALLOC_N(out->buf, char, (size + BUFFER_EXTRA));
+    } else {
+	buf = ALLOC_N(char, (size + BUFFER_EXTRA));
 	out->allocated = 1;
+	memcpy(buf, out->buf, out->end - out->buf + BUFFER_EXTRA);
     }
-    out->cur = out->buf;
-    out->circ_cnt = 0;
-    out->opts = copts;
-    out->hash_cnt = 0;
-    out->indent = copts->indent;
-    dump_leaf(leaf, 0, out);
-}
-
-void
-oj_write_leaf_to_file(Leaf leaf, const char *path, Options copts) {
-    char	buf[4096];
-    struct _Out out;
-    size_t	size;
-    FILE	*f;
-
-    out.buf = buf;
-    out.end = buf + sizeof(buf) - BUFFER_EXTRA;
-    out.allocated = 0;
-    out.omit_nil = copts->dump_opts.omit_nil;
-    oj_dump_leaf_to_json(leaf, copts, &out);
-    size = out.cur - out.buf;
-    if (0 == (f = fopen(path, "w"))) {
-	rb_raise(rb_eIOError, "%s\n", strerror(errno));
+    if (0 == buf) {
+	rb_raise(rb_eNoMemError, "Failed to create string. [%d:%s]\n", ENOSPC, strerror(ENOSPC));
     }
-    if (size != fwrite(out.buf, 1, size, f)) {
-	int	err = ferror(f);
-
-	rb_raise(rb_eIOError, "Write failed. [%d:%s]\n", err, strerror(err));
-    }
-    if (out.allocated) {
-	xfree(out.buf);
-    }
-    fclose(f);
-}
-
-// string writer functions
-
-static void
-key_check(StrWriter sw, const char *key) {
-    DumpType	type = sw->types[sw->depth];
-
-    if (0 == key && (ObjectNew == type || ObjectType == type)) {
-	rb_raise(rb_eStandardError, "Can not push onto an Object without a key.");
-    }
-}
-
-static void
-push_type(StrWriter sw, DumpType type) {
-    if (sw->types_end <= sw->types + sw->depth + 1) {
-	size_t	size = (sw->types_end - sw->types) * 2;
-
-	REALLOC_N(sw->types, char, size);
-	sw->types_end = sw->types + size;
-    }
-    sw->depth++;
-    sw->types[sw->depth] = type;
-}
-
-static void
-maybe_comma(StrWriter sw) {
-    switch (sw->types[sw->depth]) {
-    case ObjectNew:
-	sw->types[sw->depth] = ObjectType;
-	break;
-    case ArrayNew:
-	sw->types[sw->depth] = ArrayType;
-	break;
-    case ObjectType:
-    case ArrayType:
-	// Always have a few characters available in the out.buf.
-	*sw->out.cur++ = ',';
-	break;
-    }
-}
-
-void
-oj_str_writer_push_key(StrWriter sw, const char *key) {
-    DumpType	type = sw->types[sw->depth];
-    long	size;
-
-    if (sw->keyWritten) {
-	rb_raise(rb_eStandardError, "Can not push more than one key before pushing a non-key.");
-    }
-    if (ObjectNew != type && ObjectType != type) {
-	rb_raise(rb_eStandardError, "Can only push a key onto an Object.");
-    }
-    size = sw->depth * sw->out.indent + 3;
-    if (sw->out.end - sw->out.cur <= (long)size) {
-	grow(&sw->out, size);
-    }
-    maybe_comma(sw);
-    if (0 < sw->depth) {
-	fill_indent(&sw->out, sw->depth);
-    }
-    dump_cstr(key, strlen(key), 0, 0, &sw->out);
-    *sw->out.cur++ = ':';
-    sw->keyWritten = 1;
-}
-
-void
-oj_str_writer_push_object(StrWriter sw, const char *key) {
-    if (sw->keyWritten) {
-	sw->keyWritten = 0;
-	if (sw->out.end - sw->out.cur <= 1) {
-	    grow(&sw->out, 1);
-	}
-    } else {
-	long	size;
-
-	key_check(sw, key);
-	size = sw->depth * sw->out.indent + 3;
-	if (sw->out.end - sw->out.cur <= (long)size) {
-	    grow(&sw->out, size);
-	}
-	maybe_comma(sw);
-	if (0 < sw->depth) {
-	    fill_indent(&sw->out, sw->depth);
-	}
-	if (0 != key) {
-	    dump_cstr(key, strlen(key), 0, 0, &sw->out);
-	    *sw->out.cur++ = ':';
-	}
-    }
-    *sw->out.cur++ = '{';
-    push_type(sw, ObjectNew);
-}
-
-void
-oj_str_writer_push_array(StrWriter sw, const char *key) {
-    if (sw->keyWritten) {
-	sw->keyWritten = 0;
-	if (sw->out.end - sw->out.cur <= 1) {
-	    grow(&sw->out, 1);
-	}
-    } else {
-	long	size;
-
-	key_check(sw, key);
-	size = sw->depth * sw->out.indent + 3;
-	if (sw->out.end - sw->out.cur <= size) {
-	    grow(&sw->out, size);
-	}
-	maybe_comma(sw);
-	if (0 < sw->depth) {
-	    fill_indent(&sw->out, sw->depth);
-	}
-	if (0 != key) {
-	    dump_cstr(key, strlen(key), 0, 0, &sw->out);
-	    *sw->out.cur++ = ':';
-	}
-    }
-    *sw->out.cur++ = '[';
-    push_type(sw, ArrayNew);
-}
-
-void
-oj_str_writer_push_value(StrWriter sw, VALUE val, const char *key) {
-    if (sw->keyWritten) {
-	sw->keyWritten = 0;
-    } else {
-	long	size;
-
-	key_check(sw, key);
-	size = sw->depth * sw->out.indent + 3;
-	if (sw->out.end - sw->out.cur <= size) {
-	    grow(&sw->out, size);
-	}
-	maybe_comma(sw);
-	if (0 < sw->depth) {
-	    fill_indent(&sw->out, sw->depth);
-	}
-	if (0 != key) {
-	    dump_cstr(key, strlen(key), 0, 0, &sw->out);
-	    *sw->out.cur++ = ':';
-	}
-    }
-    dump_val(val, sw->depth, &sw->out, 0, 0, true);
-}
-
-void
-oj_str_writer_push_json(StrWriter sw, const char *json, const char *key) {
-    if (sw->keyWritten) {
-	sw->keyWritten = 0;
-    } else {
-	long	size;
-
-	key_check(sw, key);
-	size = sw->depth * sw->out.indent + 3;
-	if (sw->out.end - sw->out.cur <= size) {
-	    grow(&sw->out, size);
-	}
-	maybe_comma(sw);
-	if (0 < sw->depth) {
-	    fill_indent(&sw->out, sw->depth);
-	}
-	if (0 != key) {
-	    dump_cstr(key, strlen(key), 0, 0, &sw->out);
-	    *sw->out.cur++ = ':';
-	}
-    }
-    dump_raw(json, strlen(json), &sw->out);
-}
-
-void
-oj_str_writer_pop(StrWriter sw) {
-    long	size;
-    DumpType	type = sw->types[sw->depth];
-
-    if (sw->keyWritten) {
-	sw->keyWritten = 0;
-	rb_raise(rb_eStandardError, "Can not pop after writing a key but no value.");
-    }
-    sw->depth--;
-    if (0 > sw->depth) {
-	rb_raise(rb_eStandardError, "Can not pop with no open array or object.");
-    }
-    size = sw->depth * sw->out.indent + 2;
-    if (sw->out.end - sw->out.cur <= size) {
-	grow(&sw->out, size);
-    }
-    fill_indent(&sw->out, sw->depth);
-    switch (type) {
-    case ObjectNew:
-    case ObjectType:
-	*sw->out.cur++ = '}';
-	break;
-    case ArrayNew:
-    case ArrayType:
-	*sw->out.cur++ = ']';
-	break;
-    }
-    if (0 == sw->depth && 0 <= sw->out.indent) {
-	*sw->out.cur++ = '\n';
-    }
-}
-
-void
-oj_str_writer_pop_all(StrWriter sw) {
-    while (0 < sw->depth) {
-	oj_str_writer_pop(sw);
-    }
+    out->buf = buf;
+    out->end = buf + size;
+    out->cur = out->buf + pos;
 }

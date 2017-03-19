@@ -434,13 +434,8 @@ class Juice < Minitest::Test
 
   # Symbol
   def test_symbol_strict
-    begin
-      Oj.dump(:abc, :mode => :strict)
-    rescue Exception
-      assert(true)
-      return
-    end
-    assert(false, "*** expected an exception")
+    json = Oj.dump(:abc, :mode => :strict)
+    assert_equal('"abc"', json)
   end
   def test_symbol_null
     json = Oj.dump(:abc, :mode => :null)
