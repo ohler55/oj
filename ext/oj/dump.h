@@ -40,7 +40,8 @@ extern long	oj_check_circular(VALUE obj, Out out);
 extern void	oj_dump_strict_val(VALUE obj, int depth, Out out);
 extern void	oj_dump_null_val(VALUE obj, int depth, Out out);
 extern void	oj_dump_obj_val(VALUE obj, int depth, Out out);
-extern void	oj_dump_val(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok);
+
+extern void	oj_dump_comp_val(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok);
 
 
 

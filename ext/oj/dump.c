@@ -301,6 +301,31 @@ dump_unicode(const char *str, const char *end, Out out) {
 // returns 0 if not using circular references, -1 if not further writing is
 // needed (duplicate), and a positive value if the object was added to the cache.
 #if 1
+long
+oj_check_circular(VALUE obj, Out out) {
+    slot_t	id = 0;
+    slot_t	*slot;
+
+    if (ObjectMode == out->opts->mode && Yes == out->opts->circular) {
+	if (0 == (id = oj_cache8_get(out->circ_cache, obj, &slot))) {
+	    out->circ_cnt++;
+	    id = out->circ_cnt;
+	    *slot = id;
+	} else {
+	    if (out->end - out->cur <= 18) {
+		grow(out, 18);
+	    }
+	    *out->cur++ = '"';
+	    *out->cur++ = '^';
+	    *out->cur++ = 'r';
+	    dump_ulong(id, out);
+	    *out->cur++ = '"';
+
+	    return -1;
+	}
+    }
+    return (long)id;
+}
 #else
 long
 oj_check_circular(VALUE obj, Out out) {
@@ -408,7 +433,7 @@ dump_array(VALUE a, VALUE clas, int depth, Out out) {
 	    } else {
 		fill_indent(out, d2);
 	    }
-	    oj_dump_val(rb_ary_entry(a, i), d2, out, 0, 0, true);
+	    oj_dump_comp_val(rb_ary_entry(a, i), d2, out, 0, 0, true);
 	    if (i < cnt) {
 		*out->cur++ = ',';
 	    }
@@ -499,7 +524,7 @@ hash_cb_compat(VALUE key, VALUE value, Out out) {
 	    out->cur += out->opts->dump_opts.after_size;
 	}
     }
-    oj_dump_val(value, depth, out, 0, 0, true);
+    oj_dump_comp_val(value, depth, out, 0, 0, true);
     out->depth = depth;
     *out->cur++ = ',';
 
@@ -803,7 +828,7 @@ dump_data_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok)
 	    // will be dumped.
 
 	    //rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
-	    oj_dump_val(h, depth, out, 0, 0, false);
+	    oj_dump_comp_val(h, depth, out, 0, 0, false);
 	}
 	dump_hash(h, Qundef, depth, out->opts->mode, out);
     } else if (Yes == out->opts->bigdec_as_num && oj_bigdecimal_class == clas) {
@@ -853,7 +878,7 @@ dump_data_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok)
 
 	    oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
 	} else {
-	    oj_dump_val(aj, depth, out, 0, 0, false);
+	    oj_dump_comp_val(aj, depth, out, 0, 0, false);
 	}
     } else if (Yes == out->opts->to_json && rb_respond_to(obj, oj_to_json_id)) {
 	volatile VALUE	rs;
@@ -927,7 +952,7 @@ dump_obj_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) 
 	    // will be dumped.
 
 	    //rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
-	    oj_dump_val(h, depth, out, 0, 0, false);
+	    oj_dump_comp_val(h, depth, out, 0, 0, false);
 	} else {
 	    dump_hash(h, Qundef, depth, out->opts->mode, out);
 	}
@@ -964,7 +989,7 @@ dump_obj_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) 
 
 	    oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
 	} else {
-	    oj_dump_val(aj, depth, out, 0, 0, false);
+	    oj_dump_comp_val(aj, depth, out, 0, 0, false);
 	}
     } else if (Yes == out->opts->to_json && rb_respond_to(obj, oj_to_json_id)) {
 	volatile VALUE	rs;
@@ -1046,7 +1071,7 @@ dump_attr_cb(ID key, VALUE value, Out out) {
 	oj_dump_cstr(buf, strlen(buf), 0, 0, out);
     }
     *out->cur++ = ':';
-    oj_dump_val(value, depth, out, 0, 0, true);
+    oj_dump_comp_val(value, depth, out, 0, 0, true);
     out->depth = depth;
     *out->cur++ = ',';
     
@@ -1167,7 +1192,7 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	    // Might be something special like an Enumerable.
 	    if (Qtrue == rb_obj_is_kind_of(obj, oj_enumerable_class)) {
 		out->cur--;
-		oj_dump_val(rb_funcall(obj, rb_intern("entries"), 0), depth, out, 0, 0, false);
+		oj_dump_comp_val(rb_funcall(obj, rb_intern("entries"), 0), depth, out, 0, 0, false);
 		return;
 	    }
 	}
@@ -1214,7 +1239,7 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 		oj_dump_cstr(buf, strlen(attr) + 1, 0, 0, out);
 	    }
 	    *out->cur++ = ':';
-	    oj_dump_val(value, d2, out, 0, 0, true);
+	    oj_dump_comp_val(value, d2, out, 0, 0, true);
 	    if (out->end - out->cur <= 2) {
 		grow(out, 2);
 	    }
@@ -1235,7 +1260,7 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	    oj_dump_cstr("~mesg", 5, 0, 0, out);
 	    *out->cur++ = ':';
 	    rv = rb_funcall2(obj, rb_intern("message"), 0, 0);
-	    oj_dump_val(rv, d2, out, 0, 0, true);
+	    oj_dump_comp_val(rv, d2, out, 0, 0, true);
 	    if (out->end - out->cur <= 2) {
 		grow(out, 2);
 	    }
@@ -1248,7 +1273,7 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	    oj_dump_cstr("~bt", 3, 0, 0, out);
 	    *out->cur++ = ':';
 	    rv = rb_funcall2(obj, rb_intern("backtrace"), 0, 0);
-	    oj_dump_val(rv, d2, out, 0, 0, true);
+	    oj_dump_comp_val(rv, d2, out, 0, 0, true);
 	    if (out->end - out->cur <= 2) {
 		grow(out, 2);
 	    }
@@ -1272,7 +1297,7 @@ dump_struct_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_o
 	    // will be dumped.
 
 	    //rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
-	    oj_dump_val(h, depth, out, 0, 0, false);
+	    oj_dump_comp_val(h, depth, out, 0, 0, false);
 	}
 	dump_hash(h, Qundef, depth, out->opts->mode, out);
     } else if (as_ok && Yes == out->opts->as_json && rb_respond_to(obj, oj_as_json_id)) {
@@ -1308,7 +1333,7 @@ dump_struct_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_o
 
 	    oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
 	} else {
-	    oj_dump_val(aj, depth, out, 0, 0, false);
+	    oj_dump_comp_val(aj, depth, out, 0, 0, false);
 	}
     } else if (Yes == out->opts->to_json && rb_respond_to(obj, oj_to_json_id)) {
 	volatile VALUE	rs = rb_funcall(obj, oj_to_json_id, 0);
@@ -1340,7 +1365,7 @@ dump_struct_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_o
 	}
 	if (clas == rb_cRange) {
 	    *out->cur++ = '"';
-	    oj_dump_val(rb_funcall(obj, oj_begin_id, 0), d3, out, 0, 0, false);
+	    oj_dump_comp_val(rb_funcall(obj, oj_begin_id, 0), d3, out, 0, 0, false);
 	    if (out->end - out->cur <= (long)3) {
 		grow(out, 3);
 	    }
@@ -1349,7 +1374,7 @@ dump_struct_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_o
 	    if (Qtrue == rb_funcall(obj, oj_exclude_end_id, 0)) {
 		*out->cur++ = '.';
 	    }
-	    oj_dump_val(rb_funcall(obj, oj_end_id, 0), d3, out, 0, 0, false);
+	    oj_dump_comp_val(rb_funcall(obj, oj_end_id, 0), d3, out, 0, 0, false);
 	    *out->cur++ = '"';
 
 	    return;
@@ -1394,7 +1419,7 @@ dump_struct_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_o
 	    out->cur += len;
 	    *out->cur++ = '"';
 	    *out->cur++ = ':';
-	    oj_dump_val(v, d3, out, 0, 0, true);
+	    oj_dump_comp_val(v, d3, out, 0, 0, true);
 	    *out->cur++ = ',';
 	}
 	out->cur--;
@@ -1409,16 +1434,16 @@ raise_strict(VALUE obj) {
 }
 
 void
-oj_dump_val(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) {
+oj_dump_comp_val(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) {
     int	type = rb_type(obj);
 
     if (MAX_DEPTH < depth) {
 	rb_raise(rb_eNoMemError, "Too deeply nested.\n");
     }
 #ifdef OJ_DEBUG
-    printf("Oj-debug: oj_dump_val %s\n", rb_class2name(rb_obj_class(obj)));
+    printf("Oj-debug: oj_dump_comp_val %s\n", rb_class2name(rb_obj_class(obj)));
 #endif
-    //printf("*** Oj-debug: oj_dump_val %s type: %02x\n", rb_class2name(rb_obj_class(obj)), type);
+    //printf("*** Oj-debug: oj_dump_comp_val %s type: %02x\n", rb_class2name(rb_obj_class(obj)), type);
     switch (type) {
     case T_NIL:		oj_dump_nil(Qnil, 0, out);		break;
     case T_TRUE:	oj_dump_true(Qtrue, 0, out);		break;
@@ -1496,8 +1521,8 @@ oj_dump_obj_to_json_using_params(VALUE obj, Options copts, Out out, int argc, VA
     case StrictMode:	oj_dump_strict_val(obj, 0, out);		break;
     case NullMode:	oj_dump_null_val(obj, 0, out);			break;
     case ObjectMode:	oj_dump_obj_val(obj, 0, out);			break;
-    case CompatMode:	oj_dump_val(obj, 0, out, argc, argv, true);	break;
-    default:		oj_dump_val(obj, 0, out, argc, argv, true);	break;
+    case CompatMode:	oj_dump_comp_val(obj, 0, out, argc, argv, true);	break;
+    default:		oj_dump_comp_val(obj, 0, out, argc, argv, true);	break;
     }
     if (0 < out->indent) {
 	switch (*(out->cur - 1)) {
