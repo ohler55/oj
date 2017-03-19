@@ -65,11 +65,13 @@ RAILS_TEST_DATA = {
   OpenStruct: OpenStruct.new(country: "Australia", population: 20_000_000),
   Rational: Rational(0.3),
   # 'Process::Status' => $?,
+  # JsonRenderable: JsonRenderable.new, #TODO, except: [:c, :e]
   # 'ActiveSupport::TimeWithZone' => Time.utc(2005,2,1,15,15,10).in_time_zone('Hawaii'),
   # 'ActiveModel::Errors' => user.errors,
   # 'ActiveSupport::Duration' => 1.month.ago,
   # 'ActiveSupport::Multibyte::Chars' => 'über'.mb_chars,
   # 'ActiveRecord::Relation' => User.where(name: 'aaa'),
-  # 'ActiveRecord' => User.find_or_create_by(name: "John")
+  # 'ActiveRecord' => User.find_or_create_by(name: "John"),
+  # 'ActiveSupport::OrderedHash': ActiveSupport::OrderedHash[:foo, :bar],
   # 'ActionDispatch::Journey::GTG::TransitionTable' => TODO,
 }

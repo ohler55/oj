@@ -17,6 +17,18 @@ Struct.new('Customer', :name, :address)
 fork { exit 99 }
 Process.wait
 
+class JsonRenderable
+  def as_json(options = {})
+    hash = { a: :b, c: :d, e: :f }
+    hash.except!(*options[:except]) if options[:except]
+    hash
+  end
+
+  def to_json(options = {})
+    super except: [:c, :e]
+  end
+end
+
 # commented out failing examples
 JSON_TEST_DATA = {
   Regexp: /test/,
@@ -49,4 +61,5 @@ JSON_TEST_DATA = {
   # OpenStruct: OpenStruct.new(country: "Australia", population: 20_000_000),
   Rational: Rational(0.3),
   # 'Process::Status' => $?,
+  # JsonRenderable: JsonRenderable.new, #TODO, except: [:c, :e]
 }
