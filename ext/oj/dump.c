@@ -1,31 +1,6 @@
 /* dump.c
- * Copyright (c) 2012, Peter Ohler
+ * Copyright (c) 2012, 2017, Peter Ohler
  * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- * 
- *  - Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer.
- * 
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- * 
- *  - Neither the name of Peter Ohler nor the names of its contributors may be
- *    used to endorse or promote products derived from this software without
- *    specific prior written permission.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include <stdlib.h>
@@ -61,41 +36,20 @@ static const char	nan_val[] = NAN_VAL;
 typedef unsigned long	ulong;
 
 static void	raise_strict(VALUE obj);
-static void	dump_nil(Out out);
-static void	dump_true(Out out);
-static void	dump_false(Out out);
-static void	dump_fixnum(VALUE obj, Out out);
-static void	dump_bignum(VALUE obj, Out out);
-static void	dump_float(VALUE obj, Out out);
 static void	dump_hex(uint8_t c, Out out);
 static void	dump_str_comp(VALUE obj, Out out);
-static void	dump_str_obj(VALUE obj, VALUE clas, int depth, Out out);
 static void	dump_sym_comp(VALUE obj, Out out);
-static void	dump_sym_obj(VALUE obj, Out out);
 static void	dump_class_comp(VALUE obj, Out out);
-static void	dump_class_obj(VALUE obj, Out out);
-static void	dump_array(VALUE obj, VALUE clas, int depth, Out out);
-static int	hash_cb_strict(VALUE key, VALUE value, Out out);
 static int	hash_cb_compat(VALUE key, VALUE value, Out out);
-static int	hash_cb_object(VALUE key, VALUE value, Out out);
 static void	dump_hash(VALUE obj, VALUE clas, int depth, int mode, Out out);
-static void	dump_time(VALUE obj, Out out, int withZone);
-static void	dump_ruby_time(VALUE obj, Out out);
-static void	dump_xml_time(VALUE obj, Out out);
-static void	dump_data_strict(VALUE obj, Out out);
-static void	dump_data_null(VALUE obj, Out out);
 static void	dump_data_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok);
-static void	dump_data_obj(VALUE obj, int depth, Out out);
 static void	dump_obj_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok);
 static void	dump_obj_to_s(VALUE obj, int depth, Out out);
-static void	dump_obj_obj(VALUE obj, int depth, Out out);
 static void	dump_struct_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok);
-static void	dump_struct_obj(VALUE obj, int depth, Out out);
 #if HAS_IVAR_HELPERS
 static int	dump_attr_cb(ID key, VALUE value, Out out);
 #endif
 static void	dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out);
-static void	dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out);
 
 static void	grow(Out out, size_t len);
 static size_t	hibit_friendly_size(const uint8_t *str, size_t len);
@@ -215,35 +169,14 @@ hixss_friendly_size(const uint8_t *str, size_t len) {
     return size - len * (size_t)'0';
 }
 
-inline static void
-dump_ulong(unsigned long num, Out out) {
-    char	buf[32];
-    char	*b = buf + sizeof(buf) - 1;
-
-    *b-- = '\0';
-    if (0 < num) {
-	for (; 0 < num; num /= 10, b--) {
-	    *b = (num % 10) + '0';
-	}
-	b++;
-    } else {
-	*b = '0';
-    }
-    for (; '\0' != *b; b++) {
-	*out->cur++ = *b;
-    }
-    *out->cur = '\0';
-}
-
-static const char*
-nan_str(VALUE obj, int opt, int mode, bool plus, int *lenp) {
+const char*
+oj_nan_str(VALUE obj, int opt, int mode, bool plus, int *lenp) {
     const char	*str = NULL;
     
     if (AutoNan == opt) {
 	switch (mode) {
 	case CompatMode:	opt = WordNan;	break;
 	case StrictMode:	opt = RaiseNan;	break;
-	case NullMode:		opt = NullNan;	break;
 	default:				break;
 	}
     }
@@ -367,277 +300,39 @@ dump_unicode(const char *str, const char *end, Out out) {
 
 // returns 0 if not using circular references, -1 if not further writing is
 // needed (duplicate), and a positive value if the object was added to the cache.
-static long
-check_circular(VALUE obj, Out out) {
+#if 1
+#else
+long
+oj_check_circular(VALUE obj, Out out) {
     slot_t	id = 0;
     slot_t	*slot;
 
-    if (ObjectMode == out->opts->mode && Yes == out->opts->circular) {
+    if (Yes == out->opts->circular) {
 	if (0 == (id = oj_cache8_get(out->circ_cache, obj, &slot))) {
 	    out->circ_cnt++;
 	    id = out->circ_cnt;
 	    *slot = id;
 	} else {
-	    if (out->end - out->cur <= 18) {
-		grow(out, 18);
+	    if (ObjectMode == out->opts->mode) {
+		if (out->end - out->cur <= 18) {
+		    grow(out, 18);
+		}
+		*out->cur++ = '"';
+		*out->cur++ = '^';
+		*out->cur++ = 'r';
+		dump_ulong(id, out);
+		*out->cur++ = '"';
 	    }
-	    *out->cur++ = '"';
-	    *out->cur++ = '^';
-	    *out->cur++ = 'r';
-	    dump_ulong(id, out);
-	    *out->cur++ = '"';
-
 	    return -1;
 	}
     }
     return (long)id;
 }
-
-static void
-dump_nil(Out out) {
-    size_t	size = 4;
-
-    if (out->end - out->cur <= (long)size) {
-	grow(out, size);
-    }
-    *out->cur++ = 'n';
-    *out->cur++ = 'u';
-    *out->cur++ = 'l';
-    *out->cur++ = 'l';
-    *out->cur = '\0';
-}
-
-static void
-dump_true(Out out) {
-    size_t	size = 4;
-
-    if (out->end - out->cur <= (long)size) {
-	grow(out, size);
-    }
-    *out->cur++ = 't';
-    *out->cur++ = 'r';
-    *out->cur++ = 'u';
-    *out->cur++ = 'e';
-    *out->cur = '\0';
-}
-
-static void
-dump_false(Out out) {
-    size_t	size = 5;
-
-    if (out->end - out->cur <= (long)size) {
-	grow(out, size);
-    }
-    *out->cur++ = 'f';
-    *out->cur++ = 'a';
-    *out->cur++ = 'l';
-    *out->cur++ = 's';
-    *out->cur++ = 'e';
-    *out->cur = '\0';
-}
-
-static void
-dump_fixnum(VALUE obj, Out out) {
-    char	buf[32];
-    char	*b = buf + sizeof(buf) - 1;
-    long long	num = rb_num2ll(obj);
-    int		neg = 0;
-
-    if (0 > num) {
-	neg = 1;
-	num = -num;
-    }
-    *b-- = '\0';
-    if (0 < num) {
-	for (; 0 < num; num /= 10, b--) {
-	    *b = (num % 10) + '0';
-	}
-	if (neg) {
-	    *b = '-';
-	} else {
-	    b++;
-	}
-    } else {
-	*b = '0';
-    }
-    if (out->end - out->cur <= (long)(sizeof(buf) - (b - buf))) {
-	grow(out, sizeof(buf) - (b - buf));
-    }
-    for (; '\0' != *b; b++) {
-	*out->cur++ = *b;
-    }
-    *out->cur = '\0';
-}
-
-static void
-dump_bignum(VALUE obj, Out out) {
-    volatile VALUE	rs = rb_big2str(obj, 10);
-    int			cnt = (int)RSTRING_LEN(rs);
-
-    if (out->end - out->cur <= (long)cnt) {
-	grow(out, cnt);
-    }
-    memcpy(out->cur, rb_string_value_ptr((VALUE*)&rs), cnt);
-    out->cur += cnt;
-    *out->cur = '\0';
-}
-
-// Removed dependencies on math due to problems with CentOS 5.4.
-static void
-dump_float(VALUE obj, Out out) {
-    char	buf[64];
-    char	*b;
-    double	d = rb_num2dbl(obj);
-    int		cnt = 0;
-
-    if (0.0 == d) {
-	b = buf;
-	*b++ = '0';
-	*b++ = '.';
-	*b++ = '0';
-	*b++ = '\0';
-	cnt = 3;
-    } else if (OJ_INFINITY == d) {
-	if (ObjectMode == out->opts->mode) {
-	    strcpy(buf, inf_val);
-	    cnt = sizeof(inf_val) - 1;
-	} else {
-	    NanDump	nd = out->opts->dump_opts.nan_dump;
-	    
-	    if (AutoNan == nd) {
-		switch (out->opts->mode) {
-		case CompatMode:	nd = WordNan;	break;
-		case StrictMode:	nd = RaiseNan;	break;
-		case NullMode:		nd = NullNan;	break;
-		default:				break;
-		}
-	    }
-	    switch (nd) {
-	    case RaiseNan:
-		raise_strict(obj);
-		break;
-	    case WordNan:
-		strcpy(buf, "Infinity");
-		cnt = 8;
-		break;
-	    case NullNan:
-		strcpy(buf, "null");
-		cnt = 4;
-		break;
-	    case HugeNan:
-	    default:
-		strcpy(buf, inf_val);
-		cnt = sizeof(inf_val) - 1;
-		break;
-	    }
-	}
-    } else if (-OJ_INFINITY == d) {
-	if (ObjectMode == out->opts->mode) {
-	    strcpy(buf, ninf_val);
-	    cnt = sizeof(ninf_val) - 1;
-	} else {
-	    NanDump	nd = out->opts->dump_opts.nan_dump;
-	    
-	    if (AutoNan == nd) {
-		switch (out->opts->mode) {
-		case CompatMode:	nd = WordNan;	break;
-		case StrictMode:	nd = RaiseNan;	break;
-		case NullMode:		nd = NullNan;	break;
-		default:				break;
-		}
-	    }
-	    switch (nd) {
-	    case RaiseNan:
-		raise_strict(obj);
-		break;
-	    case WordNan:
-		strcpy(buf, "-Infinity");
-		cnt = 9;
-		break;
-	    case NullNan:
-		strcpy(buf, "null");
-		cnt = 4;
-		break;
-	    case HugeNan:
-	    default:
-		strcpy(buf, ninf_val);
-		cnt = sizeof(ninf_val) - 1;
-		break;
-	    }
-	}
-    } else if (isnan(d)) {
-	if (ObjectMode == out->opts->mode) {
-	    strcpy(buf, nan_val);
-	    cnt = sizeof(nan_val) - 1;
-	} else {
-	    NanDump	nd = out->opts->dump_opts.nan_dump;
-	    
-	    if (AutoNan == nd) {
-		switch (out->opts->mode) {
-		case CompatMode:	nd = WordNan;	break;
-		case StrictMode:	nd = RaiseNan;	break;
-		case NullMode:		nd = NullNan;	break;
-		default:				break;
-		}
-	    }
-	    switch (nd) {
-	    case RaiseNan:
-		raise_strict(obj);
-		break;
-	    case WordNan:
-		strcpy(buf, "NaN");
-		cnt = 3;
-		break;
-	    case NullNan:
-		strcpy(buf, "null");
-		cnt = 4;
-		break;
-	    case HugeNan:
-	    default:
-		strcpy(buf, nan_val);
-		cnt = sizeof(nan_val) - 1;
-		break;
-	    }
-	}
-    } else if (d == (double)(long long int)d) {
-	cnt = snprintf(buf, sizeof(buf), "%.1f", d);
-    } else if (0 == out->opts->float_prec) {
-	volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
-
-	cnt = RSTRING_LEN(rstr);
-	if ((int)sizeof(buf) <= cnt) {
-	    cnt = sizeof(buf) - 1;
-	}
-	strncpy(buf, rb_string_value_ptr((VALUE*)&rstr), cnt);
-	buf[cnt] = '\0';
-    } else {
-	cnt = snprintf(buf, sizeof(buf), out->opts->float_fmt, d);
-    }
-    if (out->end - out->cur <= (long)cnt) {
-	grow(out, cnt);
-    }
-    for (b = buf; '\0' != *b; b++) {
-	*out->cur++ = *b;
-    }
-    *out->cur = '\0';
-}
+#endif
 
 static void
 dump_str_comp(VALUE obj, Out out) {
     oj_dump_cstr(rb_string_value_ptr((VALUE*)&obj), RSTRING_LEN(obj), 0, 0, out);
-}
-
-static void
-dump_str_obj(VALUE obj, VALUE clas, int depth, Out out) {
-    if (Qundef != clas && rb_cString != clas) {
-	dump_obj_attrs(obj, clas, 0, depth, out);
-    } else {
-	const char	*s = rb_string_value_ptr((VALUE*)&obj);
-	size_t		len = RSTRING_LEN(obj);
-	char		s1 = s[1];
-
-	oj_dump_cstr(s, len, 0, (':' == *s || ('^' == *s && ('r' == s1 || 'i' == s1))), out);
-    }
 }
 
 static void
@@ -648,14 +343,6 @@ dump_sym_comp(VALUE obj, Out out) {
 }
 
 static void
-dump_sym_obj(VALUE obj, Out out) {
-    const char	*sym = rb_id2name(SYM2ID(obj));
-    size_t	len = strlen(sym);
-    
-    oj_dump_cstr(sym, len, 1, 0, out);
-}
-
-static void
 dump_class_comp(VALUE obj, Out out) {
     const char	*s = rb_class2name(obj);
 
@@ -663,36 +350,13 @@ dump_class_comp(VALUE obj, Out out) {
 }
 
 static void
-dump_class_obj(VALUE obj, Out out) {
-    const char	*s = rb_class2name(obj);
-    size_t	len = strlen(s);
-
-    if (out->end - out->cur <= 6) {
-	grow(out, 6);
-    }
-    *out->cur++ = '{';
-    *out->cur++ = '"';
-    *out->cur++ = '^';
-    *out->cur++ = 'c';
-    *out->cur++ = '"';
-    *out->cur++ = ':';
-    oj_dump_cstr(s, len, 0, 0, out);
-    *out->cur++ = '}';
-    *out->cur = '\0';
-}
-
-static void
 dump_array(VALUE a, VALUE clas, int depth, Out out) {
     size_t	size;
     int		i, cnt;
     int		d2 = depth + 1;
-    long	id = check_circular(a, out);
+    long	id = oj_check_circular(a, out);
 
     if (id < 0) {
-	return;
-    }
-    if (Qundef != clas && rb_cArray != clas && ObjectMode == out->opts->mode) {
-	dump_obj_attrs(a, clas, 0, depth, out);
 	return;
     }
     cnt = (int)RARRAY_LEN(a);
@@ -776,72 +440,6 @@ dump_array(VALUE a, VALUE clas, int depth, Out out) {
 }
 
 static int
-hash_cb_strict(VALUE key, VALUE value, Out out) {
-    int		depth = out->depth;
-    long	size;
-    int		rtype = rb_type(key);
-    
-    if (rtype != T_STRING && rtype != T_SYMBOL) {
-	rb_raise(rb_eTypeError, "In :strict mode all Hash keys must be Strings or Symbols, not %s.\n", rb_class2name(rb_obj_class(key)));
-    }
-    if (out->omit_nil && Qnil == value) {
-	return ST_CONTINUE;
-    }
-    if (!out->opts->dump_opts.use) {
-	size = depth * out->indent + 1;
-	if (out->end - out->cur <= size) {
-	    grow(out, size);
-	}
-	fill_indent(out, depth);
-	if (rtype == T_STRING) {
-	    dump_str_comp(key, out);
-	} else {
-	    dump_sym_comp(key, out);
-	}
-	*out->cur++ = ':';
-    } else {
-	size = depth * out->opts->dump_opts.indent_size + out->opts->dump_opts.hash_size + 1;
-	if (out->end - out->cur <= size) {
-	    grow(out, size);
-	}
-	if (0 < out->opts->dump_opts.hash_size) {
-	    strcpy(out->cur, out->opts->dump_opts.hash_nl);
-	    out->cur += out->opts->dump_opts.hash_size;
-	}
-	if (0 < out->opts->dump_opts.indent_size) {
-	    int	i;
-	    for (i = depth; 0 < i; i--) {
-		strcpy(out->cur, out->opts->dump_opts.indent_str);
-		out->cur += out->opts->dump_opts.indent_size;
-	    }
-	}
-	if (rtype == T_STRING) {
-	    dump_str_comp(key, out);
-	} else {
-	    dump_sym_comp(key, out);
-	}
-	size = out->opts->dump_opts.before_size + out->opts->dump_opts.after_size + 2;
-	if (out->end - out->cur <= size) {
-	    grow(out, size);
-	}
-	if (0 < out->opts->dump_opts.before_size) {
-	    strcpy(out->cur, out->opts->dump_opts.before_sep);
-	    out->cur += out->opts->dump_opts.before_size;
-	}
-	*out->cur++ = ':';
-	if (0 < out->opts->dump_opts.after_size) {
-	    strcpy(out->cur, out->opts->dump_opts.after_sep);
-	    out->cur += out->opts->dump_opts.after_size;
-	}
-    }
-    oj_dump_val(value, depth, out, 0, 0, false);
-    out->depth = depth;
-    *out->cur++ = ',';
-
-    return ST_CONTINUE;
-}
-
-static int
 hash_cb_compat(VALUE key, VALUE value, Out out) {
     int		depth = out->depth;
     long	size;
@@ -908,81 +506,11 @@ hash_cb_compat(VALUE key, VALUE value, Out out) {
     return ST_CONTINUE;
 }
 
-static int
-hash_cb_object(VALUE key, VALUE value, Out out) {
-    int		depth = out->depth;
-    long	size = depth * out->indent + 1;
-
-    if (out->omit_nil && Qnil == value) {
-	return ST_CONTINUE;
-    }
-    if (out->end - out->cur <= size) {
-	grow(out, size);
-    }
-    fill_indent(out, depth);
-    if (rb_type(key) == T_STRING) {
-	dump_str_obj(key, Qundef, depth, out);
-	*out->cur++ = ':';
-	oj_dump_val(value, depth, out, 0, 0, true);
-    } else if (rb_type(key) == T_SYMBOL) {
-	dump_sym_obj(key, out);
-	*out->cur++ = ':';
-	oj_dump_val(value, depth, out, 0, 0, true);
-    } else {
-	int	d2 = depth + 1;
-	long	s2 = size + out->indent + 1;
-	int	i;
-	int	started = 0;
-	uint8_t	b;
-
-	if (out->end - out->cur <= s2 + 15) {
-	    grow(out, s2 + 15);
-	}
-	*out->cur++ = '"';
-	*out->cur++ = '^';
-	*out->cur++ = '#';
-	out->hash_cnt++;
-	for (i = 28; 0 <= i; i -= 4) {
-	    b = (uint8_t)((out->hash_cnt >> i) & 0x0000000F);
-	    if ('\0' != b) {
-		started = 1;
-	    }
-	    if (started) {
-		*out->cur++ = hex_chars[b];
-	    }
-	}
-	*out->cur++ = '"';
-	*out->cur++ = ':';
-	*out->cur++ = '[';
-	fill_indent(out, d2);
-	oj_dump_val(key, d2, out, 0, 0, true);
-	if (out->end - out->cur <= (long)s2) {
-	    grow(out, s2);
-	}
-	*out->cur++ = ',';
-	fill_indent(out, d2);
-	oj_dump_val(value, d2, out, 0, 0, true);
-	if (out->end - out->cur <= (long)size) {
-	    grow(out, size);
-	}
-	fill_indent(out, depth);
-	*out->cur++ = ']';
-    }
-    out->depth = depth;
-    *out->cur++ = ',';
-    
-    return ST_CONTINUE;
-}
-
 static void
 dump_hash(VALUE obj, VALUE clas, int depth, int mode, Out out) {
     int		cnt;
     size_t	size;
 
-    if (Qundef != clas && rb_cHash != clas && ObjectMode == mode) {
-	dump_obj_attrs(obj, clas, 0, depth, out);
-	return;
-    }
     cnt = (int)RHASH_SIZE(obj);
     size = depth * out->indent + 2;
     if (out->end - out->cur <= 2) {
@@ -992,7 +520,7 @@ dump_hash(VALUE obj, VALUE clas, int depth, int mode, Out out) {
 	*out->cur++ = '{';
 	*out->cur++ = '}';
     } else {
-	long	id = check_circular(obj, out);
+	long	id = oj_check_circular(obj, out);
 
 	if (0 > id) {
 	    return;
@@ -1012,13 +540,7 @@ dump_hash(VALUE obj, VALUE clas, int depth, int mode, Out out) {
 	    *out->cur++ = ',';
 	}
 	out->depth = depth + 1;
-	if (ObjectMode == mode) {
-	    rb_hash_foreach(obj, hash_cb_object, (VALUE)out);
-	} else if (CompatMode == mode) {
-	    rb_hash_foreach(obj, hash_cb_compat, (VALUE)out);
-	} else {
-	    rb_hash_foreach(obj, hash_cb_strict, (VALUE)out);
-	}
+	rb_hash_foreach(obj, hash_cb_compat, (VALUE)out);
 	if (',' == *(out->cur - 1)) {
 	    out->cur--; // backup to overwrite last comma
 	}
@@ -1050,8 +572,8 @@ dump_hash(VALUE obj, VALUE clas, int depth, int mode, Out out) {
     *out->cur = '\0';
 }
 
-static void
-dump_time(VALUE obj, Out out, int withZone) {
+void
+oj_dump_time(VALUE obj, Out out, int withZone) {
     char		buf[64];
     char		*b = buf + sizeof(buf) - 1;
     long		size;
@@ -1142,15 +664,15 @@ dump_time(VALUE obj, Out out, int withZone) {
     *out->cur = '\0';
 }
 
-static void
-dump_ruby_time(VALUE obj, Out out) {
+void
+oj_dump_ruby_time(VALUE obj, Out out) {
     volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
     oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
 }
 
-static void
-dump_xml_time(VALUE obj, Out out) {
+void
+oj_dump_xml_time(VALUE obj, Out out) {
     char		buf[64];
     struct tm		*tm;
     long		one = 1000000000;
@@ -1257,29 +779,14 @@ dump_xml_time(VALUE obj, Out out) {
     }
 }
 
-static void
-dump_data_strict(VALUE obj, Out out) {
-    VALUE	clas = rb_obj_class(obj);
-
-    if (oj_bigdecimal_class == clas) {
-	volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
-
-	oj_dump_raw(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), out);
-    } else {
-	raise_strict(obj);
-    }
-}
-
-static void
-dump_data_null(VALUE obj, Out out) {
-    VALUE	clas = rb_obj_class(obj);
-
-    if (oj_bigdecimal_class == clas) {
-	volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
-
-	oj_dump_raw(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), out);
-    } else {
-	dump_nil(out);
+void
+dump_time(VALUE obj, Out out) {
+    switch (out->opts->time_format) {
+    case RubyTime:	oj_dump_ruby_time(obj, out);	break;
+    case XmlTime:	oj_dump_xml_time(obj, out);	break;
+    case UnixZTime:	oj_dump_time(obj, out, 1);	break;
+    case UnixTime:
+    default:		oj_dump_time(obj, out, 0);	break;
     }
 }
 
@@ -1305,10 +812,10 @@ dump_data_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok)
 	int		len = RSTRING_LEN(rstr);
 
 	if (0 == strcasecmp("Infinity", str)) {
-	    str = nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, true, &len);
+	    str = oj_nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, true, &len);
 	    oj_dump_raw(str, len, out);
 	} else if (0 == strcasecmp("-Infinity", str)) {
-	    str = nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, false, &len);
+	    str = oj_nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, false, &len);
 	    oj_dump_raw(str, len, out);
 	} else {
 	    oj_dump_raw(str, len, out);
@@ -1365,23 +872,17 @@ dump_data_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok)
 	*out->cur = '\0';
     } else {
 	if (rb_cTime == clas) {
-	    switch (out->opts->time_format) {
-	    case RubyTime:	dump_ruby_time(obj, out);	break;
-	    case XmlTime:	dump_xml_time(obj, out);	break;
-	    case UnixZTime:	dump_time(obj, out, 1);		break;
-	    case UnixTime:
-	    default:		dump_time(obj, out, 0);		break;
-	    }
+	    dump_time(obj, out);
 	} else if (oj_bigdecimal_class == clas) {
 	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 	    const char		*str = rb_string_value_ptr((VALUE*)&rstr);
 	    int			len = RSTRING_LEN(rstr);
 	    
 	    if (0 == strcasecmp("Infinity", str)) {
-		str = nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, true, &len);
+		str = oj_nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, true, &len);
 		oj_dump_raw(str, len, out);
 	    } else if (0 == strcasecmp("-Infinity", str)) {
-		str = nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, false, &len);
+		str = oj_nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, false, &len);
 		oj_dump_raw(str, len, out);
 	    } else {
 		oj_dump_cstr(str, len, 0, 0, out);
@@ -1404,58 +905,6 @@ dump_data_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok)
 	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
 	    oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
-	}
-    }
-}
-
-static void
-dump_data_obj(VALUE obj, int depth, Out out) {
-    VALUE	clas = rb_obj_class(obj);
-
-    if (rb_cTime == clas) {
-	if (out->end - out->cur <= 6) {
-	    grow(out, 6);
-	}
-	*out->cur++ = '{';
-	*out->cur++ = '"';
-	*out->cur++ = '^';
-	*out->cur++ = 't';
-	*out->cur++ = '"';
-	*out->cur++ = ':';
-	switch (out->opts->time_format) {
-	case RubyTime: // Does not output fractional seconds
-	case XmlTime:
-	    dump_xml_time(obj, out);
-	    break;
-	case UnixZTime:
-	    dump_time(obj, out, 1);
-	    break;
-	case UnixTime:
-	default:
-	    dump_time(obj, out, 0);
-	    break;
-	}
-	*out->cur++ = '}';
-	*out->cur = '\0';
-    } else {
-	if (oj_bigdecimal_class == clas) {
-	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
-	    const char		*str = rb_string_value_ptr((VALUE*)&rstr);
-	    int			len = RSTRING_LEN(rstr);
-
-	    if (Yes == out->opts->bigdec_as_num) {
-		oj_dump_raw(str, len, out);
-	    } else if (0 == strcasecmp("Infinity", str)) {
-		str = nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, true, &len);
-		oj_dump_raw(str, len, out);
-	    } else if (0 == strcasecmp("-Infinity", str)) {
-		str = nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, false, &len);
-		oj_dump_raw(str, len, out);
-	    } else {
-		oj_dump_cstr(str, len, 0, 0, out);
-	    }
-	} else {
-	    dump_nil(out);
 	}
     }
 }
@@ -1543,10 +992,10 @@ dump_obj_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) 
 	    if (Yes == out->opts->bigdec_as_num) {
 		oj_dump_raw(str, len, out);
 	    } else if (0 == strcasecmp("Infinity", str)) {
-		str = nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, true, &len);
+		str = oj_nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, true, &len);
 		oj_dump_raw(str, len, out);
 	    } else if (0 == strcasecmp("-Infinity", str)) {
-		str = nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, false, &len);
+		str = oj_nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, false, &len);
 		oj_dump_raw(str, len, out);
 	    } else {
 		oj_dump_cstr(str, len, 0, 0, out);
@@ -1565,56 +1014,6 @@ dump_obj_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) 
     }
     *out->cur = '\0';
 }
-
-inline static void
-dump_obj_obj(VALUE obj, int depth, Out out) {
-    long	id = check_circular(obj, out);
-
-    if (0 <= id) {
-	VALUE	clas = rb_obj_class(obj);
-
-	if (oj_bigdecimal_class == clas) {
-	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
-	    const char		*str = rb_string_value_ptr((VALUE*)&rstr);
-	    int			len = RSTRING_LEN(rstr);
-	    
-	    if (0 == strcasecmp("Infinity", str)) {
-		str = nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, true, &len);
-		oj_dump_raw(str, len, out);
-	    } else if (0 == strcasecmp("-Infinity", str)) {
-		str = nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, false, &len);
-		oj_dump_raw(str, len, out);
-	    } else {
-		oj_dump_raw(str, len, out);
-	    }
-	} else {
-	    dump_obj_attrs(obj, clas, id, depth, out);
-	}
-    }
-}
-
-#ifdef RUBINIUS_RUBY
-static int
-isRbxHashAttr(const char *attr) {
-    const char	*hashAttrs[] = {
-	"@capacity",
-	"@max_entries",
-	"@state",
-	"@mask",
-	"@size",
-	"@entries",
-	"@default_proc",
-	0 };
-    const char	**ap;
-
-    for (ap = hashAttrs; 0 != *ap; ap++) {
-	if (0 == strcmp(attr, *ap)) {
-	    return 1;
-	}
-    }
-    return 0;
-}
-#endif
 
 #if HAS_IVAR_HELPERS
 static int
@@ -1974,7 +1373,7 @@ dump_struct_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_o
 	cnt = FIX2INT(rb_funcall2(obj, oj_length_id, 0, 0));
 #endif
 	for (i = 0; i < cnt; i++) {
-#ifdef RSTRUCT_LENx
+#ifdef RSTRUCT_LEN
 	    v = RSTRUCT_GET(obj, i);
 #else
 	    v = rb_struct_aref(obj, INT2FIX(i));
@@ -2005,213 +1404,6 @@ dump_struct_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_o
 }
 
 static void
-dump_struct_obj(VALUE obj, int depth, Out out) {
-    VALUE	clas = rb_obj_class(obj);
-    const char	*class_name = rb_class2name(clas);
-    int		i;
-    int		d2 = depth + 1;
-    int		d3 = d2 + 1;
-    size_t	len = strlen(class_name);
-    size_t	size = d2 * out->indent + d3 * out->indent + 10 + len;
-
-    if (out->end - out->cur <= (long)size) {
-	grow(out, size);
-    }
-    *out->cur++ = '{';
-    fill_indent(out, d2);
-    *out->cur++ = '"';
-    *out->cur++ = '^';
-    *out->cur++ = 'u';
-    *out->cur++ = '"';
-    *out->cur++ = ':';
-    *out->cur++ = '[';
-#if HAS_STRUCT_MEMBERS
-    if ('#' == *class_name) {
-	VALUE		ma = rb_struct_s_members(clas);
-	const char	*name;
-	int		cnt = (int)RARRAY_LEN(ma);
-
-	*out->cur++ = '[';
-	for (i = 0; i < cnt; i++) {
-	    name = rb_id2name(SYM2ID(rb_ary_entry(ma, i)));
-	    len = strlen(name);
-	    size = len + 3;
-	    if (out->end - out->cur <= (long)size) {
-		grow(out, size);
-	    }
-	    if (0 < i) {
-		*out->cur++ = ',';
-	    }
-	    *out->cur++ = '"';
-	    memcpy(out->cur, name, len);
-	    out->cur += len;
-	    *out->cur++ = '"';
-	}
-	*out->cur++ = ']';
-    } else {
-#else
-    if (true) {
-#endif
-	fill_indent(out, d3);
-	*out->cur++ = '"';
-	memcpy(out->cur, class_name, len);
-	out->cur += len;
-	*out->cur++ = '"';
-    }
-    *out->cur++ = ',';
-    size = d3 * out->indent + 2;
-#ifdef RSTRUCT_LEN
-    {
-	VALUE	v;
-	int	cnt;
-#if UNIFY_FIXNUM_AND_BIGNUM
-	cnt = (int)NUM2LONG(RSTRUCT_LEN(obj));
-#else // UNIFY_FIXNUM_AND_INTEGER
-	cnt = (int)RSTRUCT_LEN(obj);
-#endif // UNIFY_FIXNUM_AND_INTEGER
-	
-	for (i = 0; i < cnt; i++) {
-	    v = RSTRUCT_GET(obj, i);
-	    if (out->end - out->cur <= (long)size) {
-		grow(out, size);
-	    }
-	    fill_indent(out, d3);
-	    oj_dump_val(v, d3, out, 0, 0, true);
-	    *out->cur++ = ',';
-	}
-    }
-#else
-    {
-	// This is a bit risky as a struct in C ruby is not the same as a Struct
-	// class in interpreted Ruby so length() may not be defined.
-	int	slen = FIX2INT(rb_funcall2(obj, oj_length_id, 0, 0));
-
-	for (i = 0; i < slen; i++) {
-	    if (out->end - out->cur <= (long)size) {
-		grow(out, size);
-	    }
-	    fill_indent(out, d3);
-	    oj_dump_val(rb_struct_aref(obj, INT2FIX(i)), d3, out, 0, 0, true);
-	    *out->cur++ = ',';
-	}
-    }
-#endif
-    out->cur--;
-    *out->cur++ = ']';
-    *out->cur++ = '}';
-    *out->cur = '\0';
-}
-
-static void
-dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
-    ID			*idp;
-    AttrGetFunc		*fp;
-    volatile VALUE	v;
-    const char		*name;
-    size_t		size;
-    int			d2 = depth + 1;
-
-    if (out->end - out->cur <= 2) {
-	grow(out, 2);
-    }
-    *out->cur++ = '{';
-    if (Qundef != clas) {
-	const char	*class_name = rb_class2name(clas);
-	int		clen = (int)strlen(class_name);
-
-	size = d2 * out->indent + clen + 10;
-	if (out->end - out->cur <= (long)size) {
-	    grow(out, size);
-	}
-	fill_indent(out, d2);
-	*out->cur++ = '"';
-	*out->cur++ = '^';
-	*out->cur++ = 'O';
-	*out->cur++ = '"';
-	*out->cur++ = ':';
-	oj_dump_cstr(class_name, clen, 0, 0, out);
-	*out->cur++ = ',';
-    }
-    if (odd->raw) {
-	v = rb_funcall(obj, *odd->attrs, 0);
-	if (Qundef == v || T_STRING != rb_type(v)) {
-	    rb_raise(rb_eEncodingError, "Invalid type for raw JSON.\n");
-	} else {	    
-	    const char	*s = rb_string_value_ptr((VALUE*)&v);
-	    int		len = RSTRING_LEN(v);
-	    const char	*name = rb_id2name(*odd->attrs);
-	    size_t	nlen = strlen(name);
-
-	    size = len + d2 * out->indent + nlen + 10;
-	    if (out->end - out->cur <= (long)size) {
-		grow(out, size);
-	    }
-	    fill_indent(out, d2);
-	    *out->cur++ = '"';
-	    memcpy(out->cur, name, nlen);
-	    out->cur += nlen;
-	    *out->cur++ = '"';
-	    *out->cur++ = ':';
-	    memcpy(out->cur, s, len);
-	    out->cur += len;
-	    *out->cur = '\0';
-	}
-    } else {
-	size = d2 * out->indent + 1;
-	for (idp = odd->attrs, fp = odd->attrFuncs; 0 != *idp; idp++, fp++) {
-	    size_t	nlen;
-
-	    if (out->end - out->cur <= (long)size) {
-		grow(out, size);
-	    }
-	    name = rb_id2name(*idp);
-	    nlen = strlen(name);
-	    if (0 != *fp) {
-		v = (*fp)(obj);
-	    } else if (0 == strchr(name, '.')) {
-		v = rb_funcall(obj, *idp, 0);
-	    } else {
-		char	nbuf[256];
-		char	*n2 = nbuf;
-		char	*n;
-		char	*end;
-		ID	i;
-	    
-		if (sizeof(nbuf) <= nlen) {
-		    n2 = strdup(name);
-		} else {
-		    strcpy(n2, name);
-		}
-		n = n2;
-		v = obj;
-		while (0 != (end = strchr(n, '.'))) {
-		    *end = '\0';
-		    i = rb_intern(n);
-		    v = rb_funcall(v, i, 0);
-		    n = end + 1;
-		}
-		i = rb_intern(n);
-		v = rb_funcall(v, i, 0);
-		if (nbuf != n2) {
-		    free(n2);
-		}
-	    }
-	    fill_indent(out, d2);
-	    oj_dump_cstr(name, nlen, 0, 0, out);
-	    *out->cur++ = ':';
-	    oj_dump_val(v, d2, out, 0, 0, true);
-	    if (out->end - out->cur <= 2) {
-		grow(out, 2);
-	    }
-	    *out->cur++ = ',';
-	}
-	out->cur--;
-    }
-    *out->cur++ = '}';
-    *out->cur = '\0';
-}
-
-static void
 raise_strict(VALUE obj) {
     rb_raise(rb_eTypeError, "Failed to dump %s Object to JSON in strict mode.\n", rb_class2name(rb_obj_class(obj)));
 }
@@ -2228,38 +1420,20 @@ oj_dump_val(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) {
 #endif
     //printf("*** Oj-debug: oj_dump_val %s type: %02x\n", rb_class2name(rb_obj_class(obj)), type);
     switch (type) {
-    case T_NIL:		dump_nil(out);				break;
-    case T_TRUE:	dump_true(out);				break;
-    case T_FALSE:	dump_false(out);			break;
-    case T_FIXNUM:	dump_fixnum(obj, out);			break;
-    case T_FLOAT:	dump_float(obj, out);			break;
+    case T_NIL:		oj_dump_nil(Qnil, 0, out);		break;
+    case T_TRUE:	oj_dump_true(Qtrue, 0, out);		break;
+    case T_FALSE:	oj_dump_false(Qfalse, 0, out);		break;
+    case T_FIXNUM:	oj_dump_fixnum(obj, 0, out);		break;
+    case T_FLOAT:	oj_dump_float(obj, 0, out);		break;
     case T_MODULE:
     case T_CLASS:
-	switch (out->opts->mode) {
-	case StrictMode:	raise_strict(obj);		break;
-	case NullMode:		dump_nil(out);			break;
-	case CompatMode:	dump_class_comp(obj, out);	break;
-	case ObjectMode:
-	default:		dump_class_obj(obj, out);	break;
-	}
+	dump_class_comp(obj, out);
 	break;
     case T_SYMBOL:
-	switch (out->opts->mode) {
-	case StrictMode:	raise_strict(obj);		break;
-	case NullMode:		dump_nil(out);			break;
-	case CompatMode:	dump_sym_comp(obj, out);	break;
-	case ObjectMode:
-	default:		dump_sym_obj(obj, out);		break;
-	}
+	dump_sym_comp(obj, out);
 	break;
     case T_STRUCT: // for Range
-	switch (out->opts->mode) {
-	case StrictMode:	raise_strict(obj);		break;
-	case NullMode:		dump_nil(out);			break;
-	case CompatMode:	dump_struct_comp(obj, depth, out, argc, argv, as_ok);	break;
-	case ObjectMode:
-	default:		dump_struct_obj(obj, depth, out);	break;
-	}
+	dump_struct_comp(obj, depth, out, argc, argv, as_ok);
 	break;
     default:
 	// Most developers have enough sense not to subclass primitive types but
@@ -2267,22 +1441,11 @@ oj_dump_val(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) {
 	// classes is performed.
 	{
 	    VALUE	clas = rb_obj_class(obj);
-	    Odd		odd;
 
-	    if (ObjectMode == out->opts->mode && 0 != (odd = oj_get_odd(clas))) {
-		dump_odd(obj, odd, clas, depth + 1, out);
-		return;
-	    }
 	    switch (type) {
-	    case T_BIGNUM:		dump_bignum(obj, out);		break;
+	    case T_BIGNUM:		oj_dump_bignum(obj, 0, out);		break;
 	    case T_STRING:
-		switch (out->opts->mode) {
-		case StrictMode:
-		case NullMode:
-		case CompatMode:	dump_str_comp(obj, out);	break;
-		case ObjectMode:
-		default:		dump_str_obj(obj, clas, depth, out);	break;
-		}
+		dump_str_comp(obj, out);
 		break;
 	    case T_ARRAY:		dump_array(obj, clas, depth, out);	break;
 	    case T_HASH:		dump_hash(obj, clas, depth, out->opts->mode, out);	break;
@@ -2290,46 +1453,19 @@ oj_dump_val(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) {
 	    case T_RATIONAL:
 #endif
 	    case T_OBJECT:
-		switch (out->opts->mode) {
-		case StrictMode:	dump_data_strict(obj, out);	break;
-		case NullMode:		dump_data_null(obj, out);	break;
-		case CompatMode:	dump_obj_comp(obj, depth, out, argc, argv, as_ok);	break;
-		case ObjectMode:
-		default:		dump_obj_obj(obj, depth, out);	break;
-		}
+		dump_obj_comp(obj, depth, out, argc, argv, as_ok);
 		break;
 	    case T_DATA:
-		switch (out->opts->mode) {
-		case StrictMode:	dump_data_strict(obj, out);	break;
-		case NullMode:		dump_data_null(obj, out);	break;
-		case CompatMode:	dump_data_comp(obj, depth, out, argc, argv, as_ok);break;
-		case ObjectMode:
-		default:		dump_data_obj(obj, depth, out);	break;
-		}
+		dump_data_comp(obj, depth, out, argc, argv, as_ok);
 		break;
 #if (defined T_COMPLEX && defined RCOMPLEX)
 	    case T_COMPLEX:
 #endif
 	    case T_REGEXP:
-		switch (out->opts->mode) {
-		case StrictMode:	raise_strict(obj);		break;
-		case NullMode:		dump_nil(out);			break;
-		case CompatMode:	dump_obj_to_s(obj, depth, out);	break;
-		case ObjectMode:
-		default:		dump_obj_comp(obj, depth, out, argc, argv, as_ok);	break;
-		}
+		dump_obj_to_s(obj, depth, out);
 		break;
 	    default:
-		switch (out->opts->mode) {
-		case StrictMode:	raise_strict(obj);		break;
-		case NullMode:		dump_nil(out);			break;
-		case CompatMode:	dump_obj_to_s(obj, depth, out);	break;
-		case ObjectMode:
-		default:
-		    rb_raise(rb_eNotImpError, "Failed to dump '%s' Object (%02x)\n",
-			     rb_class2name(rb_obj_class(obj)), rb_type(obj));
-		    break;
-		}
+		dump_obj_to_s(obj, depth, out);
 		break;
 	    }
 	}
@@ -2359,8 +1495,8 @@ oj_dump_obj_to_json_using_params(VALUE obj, Options copts, Out out, int argc, VA
     switch (copts->mode) {
     case StrictMode:	oj_dump_strict_val(obj, 0, out);		break;
     case NullMode:	oj_dump_null_val(obj, 0, out);			break;
+    case ObjectMode:	oj_dump_obj_val(obj, 0, out);			break;
     case CompatMode:	oj_dump_val(obj, 0, out, argc, argv, true);	break;
-    case ObjectMode:	oj_dump_val(obj, 0, out, argc, argv, true);	break;
     default:		oj_dump_val(obj, 0, out, argc, argv, true);	break;
     }
     if (0 < out->indent) {

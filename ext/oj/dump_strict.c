@@ -23,33 +23,11 @@
 // Extra padding at end of buffer.
 #define BUFFER_EXTRA 10
 
-#define MAX_DEPTH 1000
+typedef unsigned long	ulong;
 
 static const char	inf_val[] = INF_VAL;
 static const char	ninf_val[] = NINF_VAL;
 static const char	nan_val[] = NAN_VAL;
-
-typedef unsigned long	ulong;
-
-inline static void
-dump_ulong(unsigned long num, Out out) {
-    char	buf[32];
-    char	*b = buf + sizeof(buf) - 1;
-
-    *b-- = '\0';
-    if (0 < num) {
-	for (; 0 < num; num /= 10, b--) {
-	    *b = (num % 10) + '0';
-	}
-	b++;
-    } else {
-	*b = '0';
-    }
-    for (; '\0' != *b; b++) {
-	*out->cur++ = *b;
-    }
-    *out->cur = '\0';
-}
 
 static void
 raise_strict(VALUE obj) {

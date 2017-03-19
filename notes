@@ -21,16 +21,10 @@ Comparison Matrix
            JSON::Ext       0.29       1.00
            
 - refactor
- - no RSTRUCT_GET in 1.9.3
+ - what happened to obj mode loading time?
 
- - move dump writer stuff to separate file
- - keep dump first level func in dump.c and make oj_dump_strict_val gloabl instead
+ - hook up circular for strict and compat but without adding the id  
   
-  
- - separate file dump_strict (maybe merge with strict.c later)
-  - start with switch
-  - try array of types and compare to switch
-
 
 - rail compat
  - fix struct

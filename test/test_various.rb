@@ -439,7 +439,7 @@ class Juice < Minitest::Test
   end
   def test_symbol_null
     json = Oj.dump(:abc, :mode => :null)
-    assert_equal('null', json)
+    assert_equal('"abc"', json)
   end
   def test_symbol_compat
     json = Oj.dump(:abc, :mode => :compat)

@@ -10,6 +10,8 @@
 
 #include "oj.h"
 
+#define MAX_DEPTH 1000
+
 // Extra padding at end of buffer.
 #define BUFFER_EXTRA 10
 
@@ -26,10 +28,18 @@ extern void	oj_dump_sym(VALUE obj, int depth, Out out);
 
 extern void	oj_dump_raw(const char *str, size_t cnt, Out out);
 extern void	oj_dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out);
+extern void	oj_dump_ruby_time(VALUE obj, Out out);
+extern void	oj_dump_xml_time(VALUE obj, Out out);
+extern void	oj_dump_time(VALUE obj, Out out, int withZone);
+
+extern const char*	oj_nan_str(VALUE obj, int opt, int mode, bool plus, int *lenp);
+
 extern void	oj_grow_out(Out out, size_t len);
+extern long	oj_check_circular(VALUE obj, Out out);
 
 extern void	oj_dump_strict_val(VALUE obj, int depth, Out out);
 extern void	oj_dump_null_val(VALUE obj, int depth, Out out);
+extern void	oj_dump_obj_val(VALUE obj, int depth, Out out);
 extern void	oj_dump_val(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok);
 
 
@@ -50,6 +60,26 @@ fill_indent(Out out, int cnt) {
 	    *out->cur++ = ' ';
 	}
     }
+}
+
+inline static void
+dump_ulong(unsigned long num, Out out) {
+    char	buf[32];
+    char	*b = buf + sizeof(buf) - 1;
+
+    *b-- = '\0';
+    if (0 < num) {
+	for (; 0 < num; num /= 10, b--) {
+	    *b = (num % 10) + '0';
+	}
+	b++;
+    } else {
+	*b = '0';
+    }
+    for (; '\0' != *b; b++) {
+	*out->cur++ = *b;
+    }
+    *out->cur = '\0';
 }
 
 #endif /* __OJ_DUMP_H__ */
