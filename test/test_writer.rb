@@ -44,6 +44,14 @@ class OjWriter < Minitest::Test
     assert_equal("{}\n", w.to_s)
   end
 
+  def test_string_writer_push_null_value_with_key
+    w = Oj::StringWriter.new(:indent => 0, :mode => :compat)
+    w.push_object()
+    w.push_value(nil, 'nothing')
+    w.pop()
+    assert_equal(%|{"nothing":null}\n|, w.to_s)
+  end
+
   def test_string_writer_nested_object
     w = Oj::StringWriter.new(:indent => 0)
     w.push_object()
@@ -289,4 +297,12 @@ class OjWriter < Minitest::Test
     assert_equal(%|{"a1":{},"a2":{"b":{}},"a3":{"a4":37}}\n|, output.string())
   end
 
+  def test_stream_writer_push_null_value_with_key
+    output = StringIO.open("", "w+")
+    w = Oj::StreamWriter.new(output, :indent => 0)
+    w.push_object()
+    w.push_value(nil, 'nothing')
+    w.pop()
+    assert_equal(%|{"nothing":null}\n|, output.string())
+  end
 end # OjWriter
