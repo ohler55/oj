@@ -65,7 +65,7 @@ $obj = {
   'i' => [[[[[[[nil]]]]]]]  # deep array, again, not that deep
 }
 
-Oj.default_options = { :indent => $indent, :mode => :compat }
+Oj.default_options = { :indent => $indent, :mode => :compat, :use_to_json => true }
 
 if 0 < $size
   s = Oj.dump($obj).size + 1

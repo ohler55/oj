@@ -23,7 +23,10 @@ Comparison Matrix
 - refactor
  - what happened to obj mode loading time?
 
-  - hook up circular for strict and compat but without adding the id  
+ - add rails mode
+ - add use_to_hash option
+ - hook up circular for strict and compat but without adding the id
+ 
   
 
 - rail compat

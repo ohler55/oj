@@ -5,6 +5,17 @@
 
 #include "dump.h"
 
+static void
+dump_time(VALUE obj, Out out) {
+    switch (out->opts->time_format) {
+    case RubyTime:	oj_dump_obj_to_s(obj, out);	break;
+    case XmlTime:	oj_dump_xml_time(obj, out);	break;
+    case UnixZTime:	oj_dump_time(obj, out, 1);	break;
+    case UnixTime:
+    default:		oj_dump_time(obj, out, 0);	break;
+    }
+}
+
 static int
 hash_cb(VALUE key, VALUE value, Out out) {
     int	depth = out->depth;
@@ -652,7 +663,7 @@ dump_data(VALUE obj, int depth, Out out, bool as_ok) {
 	*out->cur = '\0';
     } else {
 	if (rb_cTime == clas) {
-	    oj_dump_xml_time(obj, out);
+	    dump_time(obj, out);
 	} else if (oj_bigdecimal_class == clas) {
 	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 	    const char		*str = rb_string_value_ptr((VALUE*)&rstr);
@@ -740,7 +751,7 @@ oj_dump_compat_val(VALUE obj, int depth, Out out, bool as_ok) {
 	DumpFunc	f = compat_funcs[type];
 
 	if (NULL != f) {
-	    f(obj, depth, out, Yes == out->opts->as_json);
+	    f(obj, depth, out, true);
 	    return;
 	}
     }
