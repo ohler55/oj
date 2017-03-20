@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby -wW1
+#!/usr/bin/env ruby
 # encoding: UTF-8
 
 $: << '.'
@@ -83,6 +83,7 @@ $failed = {} # key is same as String used in tests later
 def capture_error(tag, orig, load_key, dump_key, &blk)
   begin
     obj = blk.call(orig)
+    puts obj unless orig == obj
     raise "#{tag} #{dump_key} and #{load_key} did not return the same object as the original." unless orig == obj
   rescue Exception => e
     $failed[tag] = "#{e.class}: #{e.message}"

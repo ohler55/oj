@@ -35,7 +35,7 @@ raise_strict(VALUE obj) {
 }
 
 void
-oj_dump_nil(VALUE obj, int depth, Out out) {
+oj_dump_nil(VALUE obj, int depth, Out out, bool as_ok) {
     assure_size(out, 4);
     *out->cur++ = 'n';
     *out->cur++ = 'u';
@@ -45,7 +45,7 @@ oj_dump_nil(VALUE obj, int depth, Out out) {
 }
 
 void
-oj_dump_true(VALUE obj, int depth, Out out) {
+oj_dump_true(VALUE obj, int depth, Out out, bool as_ok) {
     assure_size(out, 4);
     *out->cur++ = 't';
     *out->cur++ = 'r';
@@ -55,7 +55,7 @@ oj_dump_true(VALUE obj, int depth, Out out) {
 }
 
 void
-oj_dump_false(VALUE obj, int depth, Out out) {
+oj_dump_false(VALUE obj, int depth, Out out, bool as_ok) {
     assure_size(out, 5);
     *out->cur++ = 'f';
     *out->cur++ = 'a';
@@ -66,7 +66,7 @@ oj_dump_false(VALUE obj, int depth, Out out) {
 }
 
 void
-oj_dump_fixnum(VALUE obj, int depth, Out out) {
+oj_dump_fixnum(VALUE obj, int depth, Out out, bool as_ok) {
     char	buf[32];
     char	*b = buf + sizeof(buf) - 1;
     long long	num = rb_num2ll(obj);
@@ -97,7 +97,7 @@ oj_dump_fixnum(VALUE obj, int depth, Out out) {
 }
 
 void
-oj_dump_bignum(VALUE obj, int depth, Out out) {
+oj_dump_bignum(VALUE obj, int depth, Out out, bool as_ok) {
     volatile VALUE	rs = rb_big2str(obj, 10);
     int			cnt = (int)RSTRING_LEN(rs);
 
@@ -109,7 +109,7 @@ oj_dump_bignum(VALUE obj, int depth, Out out) {
 
 // Removed dependencies on math due to problems with CentOS 5.4.
 void
-oj_dump_float(VALUE obj, int depth, Out out) {
+oj_dump_float(VALUE obj, int depth, Out out, bool as_ok) {
     char	buf[64];
     char	*b;
     double	d = rb_num2dbl(obj);
@@ -246,12 +246,12 @@ oj_dump_float(VALUE obj, int depth, Out out) {
 }
 
 void
-oj_dump_str(VALUE obj, int depth, Out out) {
+oj_dump_str(VALUE obj, int depth, Out out, bool as_ok) {
     oj_dump_cstr(rb_string_value_ptr((VALUE*)&obj), RSTRING_LEN(obj), 0, 0, out);
 }
 
 static void
-dump_array(VALUE a, int depth, Out out) {
+dump_array(VALUE a, int depth, Out out, bool as_ok) {
     size_t	size;
     int		i, cnt;
     int		d2 = depth + 1;
@@ -316,7 +316,7 @@ dump_array(VALUE a, int depth, Out out) {
 }
 
 void
-oj_dump_sym(VALUE obj, int depth, Out out) {
+oj_dump_sym(VALUE obj, int depth, Out out, bool as_ok) {
     const char	*sym = rb_id2name(SYM2ID(obj));
     
     oj_dump_cstr(sym, strlen(sym), 0, 0, out);
@@ -339,9 +339,9 @@ hash_cb(VALUE key, VALUE value, Out out) {
 	assure_size(out, size);
 	fill_indent(out, depth);
 	if (rtype == T_STRING) {
-	    oj_dump_str(key, 0, out);
+	    oj_dump_str(key, 0, out, false);
 	} else {
-	    oj_dump_sym(key, 0, out);
+	    oj_dump_sym(key, 0, out, false);
 	}
 	*out->cur++ = ':';
     } else {
@@ -359,9 +359,9 @@ hash_cb(VALUE key, VALUE value, Out out) {
 	    }
 	}
 	if (rtype == T_STRING) {
-	    oj_dump_str(key, 0, out);
+	    oj_dump_str(key, 0, out, false);
 	} else {
-	    oj_dump_sym(key, 0, out);
+	    oj_dump_sym(key, 0, out, false);
 	}
 	size = out->opts->dump_opts.before_size + out->opts->dump_opts.after_size + 2;
 	assure_size(out, size);
@@ -383,7 +383,7 @@ hash_cb(VALUE key, VALUE value, Out out) {
 }
 
 static void
-dump_hash(VALUE obj, int depth, Out out) {
+dump_hash(VALUE obj, int depth, Out out, bool as_ok) {
     int		cnt;
     size_t	size;
 
@@ -424,7 +424,7 @@ dump_hash(VALUE obj, int depth, Out out) {
 }
 
 static void
-dump_data_strict(VALUE obj, int depth, Out out) {
+dump_data_strict(VALUE obj, int depth, Out out, bool as_ok) {
     VALUE	clas = rb_obj_class(obj);
 
     if (oj_bigdecimal_class == clas) {
@@ -437,7 +437,7 @@ dump_data_strict(VALUE obj, int depth, Out out) {
 }
 
 static void
-dump_data_null(VALUE obj, int depth, Out out) {
+dump_data_null(VALUE obj, int depth, Out out, bool as_ok) {
     VALUE	clas = rb_obj_class(obj);
 
     if (oj_bigdecimal_class == clas) {
@@ -445,7 +445,7 @@ dump_data_null(VALUE obj, int depth, Out out) {
 
 	oj_dump_raw(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), out);
     } else {
-	oj_dump_nil(Qnil, depth, out);
+	oj_dump_nil(Qnil, depth, out, false);
     }
 }
 
@@ -485,7 +485,7 @@ oj_dump_strict_val(VALUE obj, int depth, Out out) {
 	DumpFunc	f = strict_funcs[type];
 
 	if (NULL != f) {
-	    f(obj, depth, out);
+	    f(obj, depth, out, false);
 	    return;
 	}
     }
@@ -528,9 +528,9 @@ oj_dump_null_val(VALUE obj, int depth, Out out) {
 	DumpFunc	f = null_funcs[type];
 
 	if (NULL != f) {
-	    f(obj, depth, out);
+	    f(obj, depth, out, false);
 	    return;
 	}
     }
-    oj_dump_nil(Qnil, depth, out);
+    oj_dump_nil(Qnil, depth, out, false);
 }

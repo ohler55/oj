@@ -25,7 +25,7 @@ dump_time(VALUE obj, Out out) {
 }
 
 static void
-dump_data(VALUE obj, int depth, Out out) {
+dump_data(VALUE obj, int depth, Out out, bool as_ok) {
     VALUE	clas = rb_obj_class(obj);
 
     if (rb_cTime == clas) {
@@ -67,7 +67,7 @@ dump_data(VALUE obj, int depth, Out out) {
 }
 
 static void
-dump_obj(VALUE obj, int depth, Out out) {
+dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
     VALUE	clas = rb_obj_class(obj);
 
     if (oj_bigdecimal_class == clas) {
@@ -94,7 +94,7 @@ dump_obj(VALUE obj, int depth, Out out) {
 }
 
 static void
-dump_class(VALUE obj, int depth, Out out) {
+dump_class(VALUE obj, int depth, Out out, bool as_ok) {
     const char	*s = rb_class2name(obj);
     size_t	len = strlen(s);
 
@@ -196,7 +196,7 @@ dump_array_class(VALUE a, VALUE clas, int depth, Out out) {
 }
 
 static void
-dump_array(VALUE obj, int depth, Out out) {
+dump_array(VALUE obj, int depth, Out out, bool as_ok) {
     dump_array_class(obj, rb_obj_class(obj), depth, out);
 }
 
@@ -214,12 +214,12 @@ dump_str_class(VALUE obj, VALUE clas, int depth, Out out) {
 }
 
 static void
-dump_str(VALUE obj, int depth, Out out) {
+dump_str(VALUE obj, int depth, Out out, bool as_ok) {
     dump_str_class(obj, rb_obj_class(obj), depth, out);
 }
 
 static void
-dump_sym(VALUE obj, int depth, Out out) {
+dump_sym(VALUE obj, int depth, Out out, bool as_ok) {
     const char	*sym = rb_id2name(SYM2ID(obj));
     
     oj_dump_cstr(sym, strlen(sym), 1, 0, out);
@@ -240,7 +240,7 @@ hash_cb(VALUE key, VALUE value, Out out) {
 	*out->cur++ = ':';
 	oj_dump_obj_val(value, depth, out);
     } else if (rb_type(key) == T_SYMBOL) {
-	dump_sym(key, 0, out);
+	dump_sym(key, 0, out, false);
 	*out->cur++ = ':';
 	oj_dump_obj_val(value, depth, out);
     } else {
@@ -383,7 +383,7 @@ dump_attr_cb(ID key, VALUE value, Out out) {
 #endif
 
 static void
-dump_hash(VALUE obj, int depth, Out out) {
+dump_hash(VALUE obj, int depth, Out out, bool as_ok) {
     dump_hash_class(obj, rb_obj_class(obj), depth, out);
 }
 
@@ -665,12 +665,12 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 }
 
 static void
-dump_regexp(VALUE obj, int depth, Out out) {
+dump_regexp(VALUE obj, int depth, Out out, bool as_ok) {
     dump_obj_attrs(obj, rb_obj_class(obj), 0, depth, out);
 }
 
 static void
-dump_struct(VALUE obj, int depth, Out out) {
+dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
     VALUE	clas = rb_obj_class(obj);
     const char	*class_name = rb_class2name(clas);
     int		i;
@@ -760,12 +760,12 @@ dump_struct(VALUE obj, int depth, Out out) {
 }
 
 static void
-dump_complex(VALUE obj, int depth, Out out) {
+dump_complex(VALUE obj, int depth, Out out, bool as_ok) {
     dump_obj_attrs(obj, rb_obj_class(obj), 0, depth, out);
 }
 
 static void
-dump_rational(VALUE obj, int depth, Out out) {
+dump_rational(VALUE obj, int depth, Out out, bool as_ok) {
     dump_obj_attrs(obj, rb_obj_class(obj), 0, depth, out);
 }
 
@@ -805,9 +805,9 @@ oj_dump_obj_val(VALUE obj, int depth, Out out) {
 	DumpFunc	f = obj_funcs[type];
 
 	if (NULL != f) {
-	    f(obj, depth, out);
+	    f(obj, depth, out, false);
 	    return;
 	}
     }
-    oj_dump_nil(Qnil, depth, out);
+    oj_dump_nil(Qnil, depth, out, false);
 }

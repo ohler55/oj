@@ -171,17 +171,19 @@ typedef struct _Options {
 } *Options;
 
 typedef struct _Out {
-    char	*buf;
-    char	*end;
-    char	*cur;
-    Cache8	circ_cache;
-    slot_t	circ_cnt;
-    int		indent;
-    int		depth; // used by dump_hash
-    Options	opts;
-    uint32_t	hash_cnt;
-    int		allocated;
-    bool	omit_nil;
+    char		*buf;
+    char		*end;
+    char		*cur;
+    Cache8		circ_cache;
+    slot_t		circ_cnt;
+    int			indent;
+    int			depth; // used by dump_hash
+    Options		opts;
+    uint32_t		hash_cnt;
+    int			allocated;
+    bool		omit_nil;
+    int			argc;
+    VALUE		*argv;
 } *Out;
 
 typedef struct _StrWriter {

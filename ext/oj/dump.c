@@ -37,9 +37,6 @@ typedef unsigned long	ulong;
 
 static void	raise_strict(VALUE obj);
 static void	dump_hex(uint8_t c, Out out);
-static void	dump_str_comp(VALUE obj, Out out);
-static void	dump_sym_comp(VALUE obj, Out out);
-static void	dump_class_comp(VALUE obj, Out out);
 static int	hash_cb_compat(VALUE key, VALUE value, Out out);
 static void	dump_hash(VALUE obj, VALUE clas, int depth, int mode, Out out);
 static void	dump_data_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok);
@@ -356,25 +353,6 @@ oj_check_circular(VALUE obj, Out out) {
 #endif
 
 static void
-dump_str_comp(VALUE obj, Out out) {
-    oj_dump_cstr(rb_string_value_ptr((VALUE*)&obj), RSTRING_LEN(obj), 0, 0, out);
-}
-
-static void
-dump_sym_comp(VALUE obj, Out out) {
-    const char	*sym = rb_id2name(SYM2ID(obj));
-    
-    oj_dump_cstr(sym, strlen(sym), 0, 0, out);
-}
-
-static void
-dump_class_comp(VALUE obj, Out out) {
-    const char	*s = rb_class2name(obj);
-
-    oj_dump_cstr(s, strlen(s), 0, 0, out);
-}
-
-static void
 dump_array(VALUE a, VALUE clas, int depth, Out out) {
     size_t	size;
     int		i, cnt;
@@ -497,14 +475,14 @@ hash_cb_compat(VALUE key, VALUE value, Out out) {
     }
     switch (rb_type(key)) {
     case T_STRING:
-	dump_str_comp(key, out);
+	oj_dump_str(key, 0, out, false);
 	break;
     case T_SYMBOL:
-	dump_sym_comp(key, out);
+	oj_dump_sym(key, 0, out, false);
 	break;
     default:
 	/*rb_raise(rb_eTypeError, "In :compat mode all Hash keys must be Strings or Symbols, not %s.\n", rb_class2name(rb_obj_class(key)));*/
-	dump_str_comp(rb_funcall(key, oj_to_s_id, 0), out);
+	oj_dump_str(rb_funcall(key, oj_to_s_id, 0), 0, out, false);
 	break;
     }
     if (!out->opts->dump_opts.use) {
@@ -1292,9 +1270,9 @@ dump_struct_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_o
 	volatile VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
  
 	if (T_HASH != rb_type(h)) {
-	    // It seems that ActiveRecord implemented to_hash so that it returns
-	    // an Array and not a Hash. To get around that any value returned
-	    // will be dumped.
+	    // It seems that ActiveRecord implemented to_hash so that it
+	    // returns an Array and not a Hash. To get around that any value
+	    // returned will be dumped.
 
 	    //rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
 	    oj_dump_comp_val(h, depth, out, 0, 0, false);
@@ -1445,17 +1423,17 @@ oj_dump_comp_val(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_o
 #endif
     //printf("*** Oj-debug: oj_dump_comp_val %s type: %02x\n", rb_class2name(rb_obj_class(obj)), type);
     switch (type) {
-    case T_NIL:		oj_dump_nil(Qnil, 0, out);		break;
-    case T_TRUE:	oj_dump_true(Qtrue, 0, out);		break;
-    case T_FALSE:	oj_dump_false(Qfalse, 0, out);		break;
-    case T_FIXNUM:	oj_dump_fixnum(obj, 0, out);		break;
-    case T_FLOAT:	oj_dump_float(obj, 0, out);		break;
+    case T_NIL:		oj_dump_nil(Qnil, 0, out, as_ok);		break;
+    case T_TRUE:	oj_dump_true(Qtrue, 0, out, as_ok);		break;
+    case T_FALSE:	oj_dump_false(Qfalse, 0, out, as_ok);		break;
+    case T_FIXNUM:	oj_dump_fixnum(obj, 0, out, as_ok);		break;
+    case T_FLOAT:	oj_dump_float(obj, 0, out, as_ok);		break;
     case T_MODULE:
     case T_CLASS:
-	dump_class_comp(obj, out);
+	oj_dump_class(obj, 0, out, false);
 	break;
     case T_SYMBOL:
-	dump_sym_comp(obj, out);
+	oj_dump_sym(obj, 0, out, false);
 	break;
     case T_STRUCT: // for Range
 	dump_struct_comp(obj, depth, out, argc, argv, as_ok);
@@ -1468,9 +1446,9 @@ oj_dump_comp_val(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_o
 	    VALUE	clas = rb_obj_class(obj);
 
 	    switch (type) {
-	    case T_BIGNUM:		oj_dump_bignum(obj, 0, out);		break;
+	    case T_BIGNUM:		oj_dump_bignum(obj, 0, out, as_ok);		break;
 	    case T_STRING:
-		dump_str_comp(obj, out);
+		oj_dump_str(obj, 0, out, false);
 		break;
 	    case T_ARRAY:		dump_array(obj, clas, depth, out);	break;
 	    case T_HASH:		dump_hash(obj, clas, depth, out->opts->mode, out);	break;
@@ -1514,15 +1492,19 @@ oj_dump_obj_to_json_using_params(VALUE obj, Options copts, Out out, int argc, VA
     out->opts = copts;
     out->hash_cnt = 0;
     out->indent = copts->indent;
+    out->argc = argc;
+    out->argv = argv;
     if (Yes == copts->circular) {
 	oj_cache8_new(&out->circ_cache);
     }
     switch (copts->mode) {
-    case StrictMode:	oj_dump_strict_val(obj, 0, out);		break;
-    case NullMode:	oj_dump_null_val(obj, 0, out);			break;
-    case ObjectMode:	oj_dump_obj_val(obj, 0, out);			break;
-    case CompatMode:	oj_dump_comp_val(obj, 0, out, argc, argv, true);	break;
-    default:		oj_dump_comp_val(obj, 0, out, argc, argv, true);	break;
+    case StrictMode:	oj_dump_strict_val(obj, 0, out);	break;
+    case NullMode:	oj_dump_null_val(obj, 0, out);		break;
+    case ObjectMode:	oj_dump_obj_val(obj, 0, out);		break;
+    case CompatMode:	oj_dump_compat_val(obj, 0, out, Yes == out->opts->as_json);	break;
+	//case RailsMode:	oj_dump_rails_val(obj, 0, out);		break;
+    default:		oj_dump_compat_val(obj, 0, out, Yes == out->opts->as_json);	break;
+	//default:	oj_dump_comp_val(obj, 0, out, argc, argv, true);	break;
     }
     if (0 < out->indent) {
 	switch (*(out->cur - 1)) {
@@ -1618,7 +1600,7 @@ oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
 //////////////////////////////////
 
 void
-oj_dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out) {
+oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
     size_t	size;
     char	*cmap;
 
@@ -1707,6 +1689,20 @@ oj_dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out) {
 	*out->cur++ = '"';
     }
     *out->cur = '\0';
+}
+
+void
+oj_dump_class(VALUE obj, int depth, Out out, bool as_ok) {
+    const char	*s = rb_class2name(obj);
+
+    oj_dump_cstr(s, strlen(s), 0, 0, out);
+}
+
+void
+oj_dump_obj_to_s(VALUE obj, Out out) {
+    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+
+    oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
 }
 
 void

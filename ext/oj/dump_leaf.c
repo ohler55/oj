@@ -72,9 +72,9 @@ dump_leaf_fixnum(Leaf leaf, Out out) {
 	break;
     case RUBY_VAL:
 	if (T_BIGNUM == rb_type(leaf->value)) {
-	    oj_dump_bignum(leaf->value, 0, out);
+	    oj_dump_bignum(leaf->value, 0, out, false);
 	} else {
-	    oj_dump_fixnum(leaf->value, 0, out);
+	    oj_dump_fixnum(leaf->value, 0, out, false);
 	}
 	break;
     case COL_VAL:
@@ -91,7 +91,7 @@ dump_leaf_float(Leaf leaf, Out out) {
 	dump_chars(leaf->str, strlen(leaf->str), out);
 	break;
     case RUBY_VAL:
-	oj_dump_float(leaf->value, 0, out);
+	oj_dump_float(leaf->value, 0, out, false);
 	break;
     case COL_VAL:
     default:
@@ -182,13 +182,13 @@ static void
 dump_leaf(Leaf leaf, int depth, Out out) {
     switch (leaf->rtype) {
     case T_NIL:
-	oj_dump_nil(Qnil, 0, out);
+	oj_dump_nil(Qnil, 0, out, false);
 	break;
     case T_TRUE:
-	oj_dump_true(Qtrue, 0, out);
+	oj_dump_true(Qtrue, 0, out, false);
 	break;
     case T_FALSE:
-	oj_dump_false(Qfalse, 0, out);
+	oj_dump_false(Qfalse, 0, out, false);
 	break;
     case T_STRING:
 	dump_leaf_str(leaf, out);

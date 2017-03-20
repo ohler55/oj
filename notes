@@ -23,7 +23,7 @@ Comparison Matrix
 - refactor
  - what happened to obj mode loading time?
 
- - hook up circular for strict and compat but without adding the id  
+  - hook up circular for strict and compat but without adding the id  
   
 
 - rail compat
