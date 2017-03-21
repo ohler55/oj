@@ -5,15 +5,66 @@
 
 #include "dump.h"
 
+// Workaround in case INFINITY is not defined in math.h or if the OS is CentOS
+#define OJ_INFINITY (1.0/0.0)
+
 static void
-dump_time(VALUE obj, Out out) {
-    switch (out->opts->time_format) {
-    case RubyTime:	oj_dump_obj_to_s(obj, out);	break;
-    case XmlTime:	oj_dump_xml_time(obj, out);	break;
-    case UnixZTime:	oj_dump_time(obj, out, 1);	break;
-    case UnixTime:
-    default:		oj_dump_time(obj, out, 0);	break;
+raise_gen_err(const char *msg) {
+    volatile VALUE	json_module;
+    volatile VALUE	gen_err_class;
+    volatile VALUE	json_error_class;
+
+    if (rb_const_defined_at(rb_cObject, rb_intern("JSON"))) {
+	json_module = rb_const_get_at(rb_cObject, rb_intern("JSON"));
+    } else {
+	json_module = rb_define_module("JSON");
     }
+    if (rb_const_defined_at(json_module, rb_intern("JSONError"))) {
+        json_error_class = rb_const_get(json_module, rb_intern("JSONError"));
+    } else {
+        json_error_class = rb_define_class_under(json_module, "JSONError", rb_eStandardError);
+    }
+    if (rb_const_defined_at(json_module, rb_intern("GeneratorError"))) {
+        gen_err_class = rb_const_get(json_module, rb_intern("GeneratorError"));
+    } else {
+    	gen_err_class = rb_define_class_under(json_module, "GeneratorError", json_error_class);
+    }
+    rb_raise(gen_err_class, "%s", msg);
+}
+
+// The JSON gem is inconsistent with handling of infinity. Using
+// JSON.dump(0.1/0) returns the string Infinity but (0.1/0).to_json raise and
+// exception. Worse, for BigDecimals a quoted "Infinity" is returned.
+static void
+dump_float(VALUE obj, int depth, Out out, bool as_ok) {
+    char	buf[64];
+    char	*b;
+    double	d = rb_num2dbl(obj);
+    int		cnt = 0;
+
+    if (0.0 == d) {
+	b = buf;
+	*b++ = '0';
+	*b++ = '.';
+	*b++ = '0';
+	*b++ = '\0';
+	cnt = 3;
+    } else if (OJ_INFINITY == d || -OJ_INFINITY == d) {
+	raise_gen_err("Infinity not allowed in JSON.");
+    } else if (isnan(d)) {
+	raise_gen_err("NaN not allowed in JSON.");
+    } else if (d == (double)(long long int)d) {
+	//cnt = snprintf(buf, sizeof(buf), "%.1Lf", (long double)d);
+	cnt = snprintf(buf, sizeof(buf), "%.1f", d);
+    } else {
+	//cnt = snprintf(buf, sizeof(buf), "%0.16Lg", (long double)d);
+	cnt = snprintf(buf, sizeof(buf), "%0.16g", d);
+    }
+    assure_size(out, cnt);
+    for (b = buf; '\0' != *b; b++) {
+	*out->cur++ = *b;
+    }
+    *out->cur = '\0';
 }
 
 static int
@@ -66,7 +117,7 @@ hash_cb(VALUE key, VALUE value, Out out) {
 	    out->cur += out->opts->dump_opts.after_size;
 	}
     }
-    oj_dump_compat_val(value, depth, out, true);
+    oj_dump_compat_val(value, depth, out, false);
     out->depth = depth;
     *out->cur++ = ',';
 
@@ -74,12 +125,10 @@ hash_cb(VALUE key, VALUE value, Out out) {
 }
 
 static void
-dump_hash_class(VALUE obj, VALUE clas, int depth, Out out) {
+dump_hash(VALUE obj, int depth, Out out, bool as_ok) {
     int		cnt;
-    size_t	size;
 
     cnt = (int)RHASH_SIZE(obj);
-    size = depth * out->indent + 2;
     assure_size(out, 2);
     if (0 == cnt) {
 	*out->cur++ = '{';
@@ -88,31 +137,20 @@ dump_hash_class(VALUE obj, VALUE clas, int depth, Out out) {
 	long	id = oj_check_circular(obj, out);
 
 	if (0 > id) {
+	    oj_dump_nil(Qnil, 0, out, false);
 	    return;
 	}
 	*out->cur++ = '{';
-	if (0 < id) {
-	    assure_size(out, size + 16);
-	    fill_indent(out, depth + 1);
-	    *out->cur++ = '"';
-	    *out->cur++ = '^';
-	    *out->cur++ = 'i';
-	    *out->cur++ = '"';
-	    *out->cur++ = ':';
-	    dump_ulong(id, out);
-	    *out->cur++ = ',';
-	}
 	out->depth = depth + 1;
 	rb_hash_foreach(obj, hash_cb, (VALUE)out);
 	if (',' == *(out->cur - 1)) {
 	    out->cur--; // backup to overwrite last comma
 	}
 	if (!out->opts->dump_opts.use) {
-	    assure_size(out, size);
+	    assure_size(out, depth * out->indent + 2);
 	    fill_indent(out, depth);
 	} else {
-	    size = depth * out->opts->dump_opts.indent_size + out->opts->dump_opts.hash_size + 1;
-	    assure_size(out, size);
+	    assure_size(out, depth * out->opts->dump_opts.indent_size + out->opts->dump_opts.hash_size + 1);
 	    if (0 < out->opts->dump_opts.hash_size) {
 		strcpy(out->cur, out->opts->dump_opts.hash_nl);
 		out->cur += out->opts->dump_opts.hash_size;
@@ -131,203 +169,26 @@ dump_hash_class(VALUE obj, VALUE clas, int depth, Out out) {
     *out->cur = '\0';
 }
 
-static void
-dump_hash(VALUE obj, int depth, Out out, bool as_ok) {
-    dump_hash_class(obj, rb_obj_class(obj), depth, out);
-}
-
-#if HAS_IVAR_HELPERS
-static int
-dump_attr_cb(ID key, VALUE value, Out out) {
-    int		depth = out->depth;
-    size_t	size = depth * out->indent + 1;
-    const char	*attr = rb_id2name(key);
-
-    if (out->omit_nil && Qnil == value) {
-	return ST_CONTINUE;
-    }
-#if HAS_EXCEPTION_MAGIC
-    if (0 == strcmp("bt", attr) || 0 == strcmp("mesg", attr)) {
-	return ST_CONTINUE;
-    }
-#endif
-    assure_size(out, size);
-    fill_indent(out, depth);
-    if ('@' == *attr) {
-	attr++;
-	oj_dump_cstr(attr, strlen(attr), 0, 0, out);
-    } else {
-	char	buf[32];
-
-	*buf = '~';
-	strncpy(buf + 1, attr, sizeof(buf) - 2);
-	buf[sizeof(buf) - 1] = '\0';
-	oj_dump_cstr(buf, strlen(buf), 0, 0, out);
-    }
-    *out->cur++ = ':';
-    oj_dump_comp_val(value, depth, out, 0, 0, true);
-    out->depth = depth;
-    *out->cur++ = ',';
-    
-    return ST_CONTINUE;
-}
-#endif
-
-static void
-dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
-    size_t	size = 0;
-    int		d2 = depth + 1;
-    int		cnt;
-
-    assure_size(out, 2);
-    *out->cur++ = '{';
-    {
-#if HAS_IVAR_HELPERS
-	cnt = (int)rb_ivar_count(obj);
-#else
-	volatile VALUE	vars = rb_funcall2(obj, oj_instance_variables_id, 0, 0);
-	VALUE		*np = RARRAY_PTR(vars);
-	ID		vid;
-	const char	*attr;
-	int		i;
-	int		first = 1;
-
-	cnt = (int)RARRAY_LEN(vars);
-#endif
-	if (Qundef != clas && 0 < cnt) {
-	    *out->cur++ = ',';
-	}
-	if (0 == cnt && Qundef == clas) {
-	    // Might be something special like an Enumerable.
-	    if (Qtrue == rb_obj_is_kind_of(obj, oj_enumerable_class)) {
-		out->cur--;
-		oj_dump_compat_val(rb_funcall(obj, rb_intern("entries"), 0), depth, out, false);
-		return;
-	    }
-	}
-	out->depth = depth + 1;
-#if HAS_IVAR_HELPERS
-	rb_ivar_foreach(obj, dump_attr_cb, (VALUE)out);
-	if (',' == *(out->cur - 1)) {
-	    out->cur--; // backup to overwrite last comma
-	}
-#else
-	size = d2 * out->indent + 1;
-	for (i = cnt; 0 < i; i--, np++) {
-	    VALUE	value;
-	    
-	    vid = rb_to_id(*np);
-	    attr = rb_id2name(vid);
-	    value = rb_ivar_get(obj, vid);
-	    if (out->omit_nil && Qnil == value) {
-		continue;
-	    }
-	    if (first) {
-		first = 0;
-	    } else {
-		*out->cur++ = ',';
-	    }
-	    assure_size(out, size);
-	    fill_indent(out, d2);
-	    if ('@' == *attr) {
-		attr++;
-		oj_dump_cstr(attr, strlen(attr), 0, 0, out);
-	    } else {
-		char	buf[32];
-
-		*buf = '~';
-		strncpy(buf + 1, attr, sizeof(buf) - 2);
-		buf[sizeof(buf) - 1] = '\0';
-		oj_dump_cstr(buf, strlen(attr) + 1, 0, 0, out);
-	    }
-	    *out->cur++ = ':';
-	    oj_dump_compat_val(value, d2, out, 0, 0, true);
-	    assure_size(out, 2);
-	}
-#endif
-#if HAS_EXCEPTION_MAGIC
-	if (rb_obj_is_kind_of(obj, rb_eException)) {
-	    volatile VALUE	rv;
-
-	    if (',' != *(out->cur - 1)) {
-		*out->cur++ = ',';
-	    }
-	    // message
-	    assure_size(out, 2);
-	    fill_indent(out, d2);
-	    oj_dump_cstr("~mesg", 5, 0, 0, out);
-	    *out->cur++ = ':';
-	    rv = rb_funcall2(obj, rb_intern("message"), 0, 0);
-	    oj_dump_compat_val(rv, d2, out, true);
-	    assure_size(out, size + 2);
-	    *out->cur++ = ',';
-	    // backtrace
-	    fill_indent(out, d2);
-	    oj_dump_cstr("~bt", 3, 0, 0, out);
-	    *out->cur++ = ':';
-	    rv = rb_funcall2(obj, rb_intern("backtrace"), 0, 0);
-	    oj_dump_compat_val(rv, d2, out, true);
-	    assure_size(out, 2);
-	}
-#endif
-	out->depth = depth;
-    }
-    fill_indent(out, depth);
-    *out->cur++ = '}';
-    *out->cur = '\0';
-}
-
+// In compat mode only the first call check for to_json. After that to_s is
+// called.
 static void
 dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
-    if (as_ok && Yes == out->opts->to_json && rb_respond_to(obj, oj_to_hash_id)) {
-	volatile VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
+    VALUE	clas = rb_obj_class(obj);
 
-	if (T_HASH != rb_type(h)) {
-	    // It seems that ActiveRecord implemented to_hash so that it returns
-	    // an Array and not a Hash. To get around that any value returned
-	    // will be dumped.
+    // to_s classes
+    if (rb_cTime == clas ||
+	oj_bigdecimal_class == clas ||
+	rb_cRational == clas ||
+	oj_datetime_class == clas ||
+	oj_date_class == clas) {
 
-	    //rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
-	    oj_dump_compat_val(h, depth, out, false);
-	} else {
-	    dump_hash_class(h, Qundef, depth, out);
-	}
-    } else if (as_ok && Yes == out->opts->as_json && rb_respond_to(obj, oj_as_json_id)) {
-	volatile VALUE	aj;
+	volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-#if HAS_METHOD_ARITY
-	// Some classes elect to not take an options argument so check the arity
-	// of as_json.
-	switch (rb_obj_method_arity(obj, oj_as_json_id)) {
-	case 0:
-	    aj = rb_funcall2(obj, oj_as_json_id, 0, 0);
-	    break;
-	case 1:
-	    if (1 <= out->argc) {
-		aj = rb_funcall2(obj, oj_as_json_id, 1, (VALUE*)out->argv);
-	    } else {
-		VALUE	nothing [1];
+	oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
 
-		nothing[0] = Qnil;
-		aj = rb_funcall2(obj, oj_as_json_id, 1, nothing);
-	    }
-	    break;
-	default:
-	    aj = rb_funcall2(obj, oj_as_json_id, out->argc, out->argv);
-	    break;
-	}
-#else
-	aj = rb_funcall2(obj, oj_as_json_id, out->argc, out->argv);
-#endif
-	// Catch the obvious brain damaged recursive dumping.
-	if (aj == obj) {
-	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
-
-	    oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), false, false, out);
-	} else {
-	    oj_dump_compat_val(aj, depth, out, false);
-	}
-    } else if (Yes == out->opts->to_json && rb_respond_to(obj, oj_to_json_id)) {
+	return;
+    }
+    if (as_ok && rb_respond_to(obj, oj_to_json_id)) {
 	volatile VALUE	rs;
 	const char	*s;
 	int		len;
@@ -340,38 +201,11 @@ dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
 	memcpy(out->cur, s, len);
 	out->cur += len;
 	*out->cur = '\0';
-    } else {
-	VALUE	clas = rb_obj_class(obj);
-
-	if (oj_bigdecimal_class == clas) {
-	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
-	    const char		*str = rb_string_value_ptr((VALUE*)&rstr);
-	    int			len = RSTRING_LEN(rstr);
-	    
-	    if (Yes == out->opts->bigdec_as_num) {
-		oj_dump_raw(str, len, out);
-	    } else if (0 == strcasecmp("Infinity", str)) {
-		str = oj_nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, true, &len);
-		oj_dump_raw(str, len, out);
-	    } else if (0 == strcasecmp("-Infinity", str)) {
-		str = oj_nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, false, &len);
-		oj_dump_raw(str, len, out);
-	    } else {
-		oj_dump_cstr(str, len, 0, 0, out);
-	    }
-#if (defined T_RATIONAL && defined RRATIONAL)
-	} else if (oj_datetime_class == clas || oj_date_class == clas || rb_cRational == clas) {
-#else
-	} else if (oj_datetime_class == clas || oj_date_class == clas) {
-#endif
-	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
-
-	    oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
-	} else {
-	    dump_obj_attrs(obj, Qundef, 0, depth, out);
-	}
+	return;
     }
-    *out->cur = '\0';
+    // Nothing else matched so encode as a JSON object with Ruby obj members
+    // as JSON object members.
+    oj_dump_obj_to_s(obj, out);
 }
 
 static void
@@ -420,7 +254,7 @@ dump_array(VALUE a, int depth, Out out, bool as_ok) {
 	    } else {
 		fill_indent(out, d2);
 	    }
-	    oj_dump_comp_val(rb_ary_entry(a, i), d2, out, 0, 0, true);
+	    oj_dump_compat_val(rb_ary_entry(a, i), d2, out, false);
 	    if (i < cnt) {
 		*out->cur++ = ',';
 	    }
@@ -451,54 +285,25 @@ dump_array(VALUE a, int depth, Out out, bool as_ok) {
 
 static void
 dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
-    if (as_ok && Yes == out->opts->to_json && rb_respond_to(obj, oj_to_hash_id)) {
-	volatile VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
- 
-	if (T_HASH != rb_type(h)) {
-	    // It seems that ActiveRecord implemented to_hash so that it
-	    // returns an Array and not a Hash. To get around that any value
-	    // returned will be dumped.
+    VALUE	clas = rb_obj_class(obj);
 
-	    //rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
-	    oj_dump_comp_val(h, depth, out, 0, 0, false);
+    // to_s classes
+    if (rb_cRange == clas) {
+	*out->cur++ = '"';
+	oj_dump_compat_val(rb_funcall(obj, oj_begin_id, 0), 0, out, false);
+	assure_size(out, 3);
+	*out->cur++ = '.';
+	*out->cur++ = '.';
+	if (Qtrue == rb_funcall(obj, oj_exclude_end_id, 0)) {
+	    *out->cur++ = '.';
 	}
-	dump_hash_class(h, Qundef, depth, out);
-    } else if (as_ok && Yes == out->opts->as_json && rb_respond_to(obj, oj_as_json_id)) {
-	volatile VALUE	aj;
+	oj_dump_compat_val(rb_funcall(obj, oj_end_id, 0), 0, out, false);
+	*out->cur++ = '"';
 
-#if HAS_METHOD_ARITY
-	// Some classes elect to not take an options argument so check the arity
-	// of as_json.
-	switch (rb_obj_method_arity(obj, oj_as_json_id)) {
-	case 0:
-	    aj = rb_funcall2(obj, oj_as_json_id, 0, 0);
-	    break;
-	case 1:
-	    if (1 <= out->argc) {
-		aj = rb_funcall2(obj, oj_as_json_id, 1, out->argv);
-	    } else {
-		VALUE	nothing [1];
+	return;
+    }
 
-		nothing[0] = Qnil;
-		aj = rb_funcall2(obj, oj_as_json_id, 1, nothing);
-	    }
-	    break;
-	default:
-	    aj = rb_funcall2(obj, oj_as_json_id, out->argc, out->argv);
-	    break;
-	}
-#else
-	aj = rb_funcall2(obj, oj_as_json_id, out->argc, out->argv);
-#endif
-	// Catch the obvious brain damaged recursive dumping.
-	if (aj == obj) {
-	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
-
-	    oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), false, false, out);
-	} else {
-	    oj_dump_compat_val(aj, depth, out, false);
-	}
-    } else if (Yes == out->opts->to_json && rb_respond_to(obj, oj_to_json_id)) {
+    if (as_ok && rb_respond_to(obj, oj_to_json_id)) {
 	volatile VALUE	rs = rb_funcall(obj, oj_to_json_id, 0);
 	const char	*s;
 	int		len;
@@ -509,7 +314,6 @@ dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
 	memcpy(out->cur, s, len);
 	out->cur += len;
     } else {
-	VALUE		clas = rb_obj_class(obj);
 	VALUE		ma = Qnil;
 	VALUE		v;
 	char		num_id[32];
@@ -522,20 +326,6 @@ dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
 	size_t		len;	
 
 	assure_size(out, size);
-	if (clas == rb_cRange) {
-	    *out->cur++ = '"';
-	    oj_dump_comp_val(rb_funcall(obj, oj_begin_id, 0), d3, out, 0, 0, false);
-	    assure_size(out, 3);
-	    *out->cur++ = '.';
-	    *out->cur++ = '.';
-	    if (Qtrue == rb_funcall(obj, oj_exclude_end_id, 0)) {
-		*out->cur++ = '.';
-	    }
-	    oj_dump_comp_val(rb_funcall(obj, oj_end_id, 0), d3, out, 0, 0, false);
-	    *out->cur++ = '"';
-
-	    return;
-	}
 	*out->cur++ = '{';
 	fill_indent(out, d2);
 	size = d3 * out->indent + 2;
@@ -574,129 +364,12 @@ dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
 	    out->cur += len;
 	    *out->cur++ = '"';
 	    *out->cur++ = ':';
-	    oj_dump_comp_val(v, d3, out, 0, 0, true);
+	    oj_dump_compat_val(v, d3, out, false);
 	    *out->cur++ = ',';
 	}
 	out->cur--;
 	*out->cur++ = '}';
 	*out->cur = '\0';
-    }
-}
-
-static void
-dump_data(VALUE obj, int depth, Out out, bool as_ok) {
-    VALUE	clas = rb_obj_class(obj);
-
-    if (as_ok && Yes == out->opts->to_json && rb_respond_to(obj, oj_to_hash_id)) {
-	volatile VALUE	h = rb_funcall(obj, oj_to_hash_id, 0);
-
-	if (T_HASH != rb_type(h)) {
-	    // It seems that ActiveRecord implemented to_hash so that it returns
-	    // an Array and not a Hash. To get around that any value returned
-	    // will be dumped.
-
-	    //rb_raise(rb_eTypeError, "%s.to_hash() did not return a Hash.\n", rb_class2name(rb_obj_class(obj)));
-	    oj_dump_compat_val(h, depth, out, false);
-	}
-	dump_hash_class(h, Qundef, depth, out);
-    } else if (Yes == out->opts->bigdec_as_num && oj_bigdecimal_class == clas) {
-	volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
-	const char	*str = rb_string_value_ptr((VALUE*)&rstr);
-	int		len = RSTRING_LEN(rstr);
-
-	if (0 == strcasecmp("Infinity", str)) {
-	    str = oj_nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, true, &len);
-	    oj_dump_raw(str, len, out);
-	} else if (0 == strcasecmp("-Infinity", str)) {
-	    str = oj_nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, false, &len);
-	    oj_dump_raw(str, len, out);
-	} else {
-	    oj_dump_raw(str, len, out);
-	}
-    } else if (as_ok && Yes == out->opts->as_json && rb_respond_to(obj, oj_as_json_id)) {
-	volatile VALUE	aj;
-
-#if HAS_METHOD_ARITY
-	// Some classes elect to not take an options argument so check the arity
-	// of as_json.
-	switch (rb_obj_method_arity(obj, oj_as_json_id)) {
-	case 0:
-	    aj = rb_funcall2(obj, oj_as_json_id, 0, 0);
-	    break;
-	case 1:
-	    if (1 <= out->argc) {
-		aj = rb_funcall2(obj, oj_as_json_id, 1, out->argv);
-	    } else {
-		VALUE	nothing [1];
-
-		nothing[0] = Qnil;
-		aj = rb_funcall2(obj, oj_as_json_id, 1, nothing);
-	    }
-	    break;
-	default:
-	    aj = rb_funcall2(obj, oj_as_json_id, out->argc, out->argv);
-	    break;
-	}
-#else
-	aj = rb_funcall2(obj, oj_as_json_id, out->argc, out->argv);
-#endif
-	// Catch the obvious brain damaged recursive dumping.
-	if (aj == obj) {
-	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
-
-	    oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
-	} else {
-	    oj_dump_comp_val(aj, depth, out, 0, 0, false);
-	}
-    } else if (Yes == out->opts->to_json && rb_respond_to(obj, oj_to_json_id)) {
-	volatile VALUE	rs;
-	const char	*s;
-	int		len;
-
-	rs = rb_funcall(obj, oj_to_json_id, 0);
-	s = rb_string_value_ptr((VALUE*)&rs);
-	len = (int)RSTRING_LEN(rs);
-
-	assure_size(out, len + 1);
-	memcpy(out->cur, s, len);
-	out->cur += len;
-	*out->cur = '\0';
-    } else {
-	if (rb_cTime == clas) {
-	    dump_time(obj, out);
-	} else if (oj_bigdecimal_class == clas) {
-	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
-	    const char		*str = rb_string_value_ptr((VALUE*)&rstr);
-	    int			len = RSTRING_LEN(rstr);
-	    
-	    if (0 == strcasecmp("Infinity", str)) {
-		str = oj_nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, true, &len);
-		oj_dump_raw(str, len, out);
-	    } else if (0 == strcasecmp("-Infinity", str)) {
-		str = oj_nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, false, &len);
-		oj_dump_raw(str, len, out);
-	    } else {
-		oj_dump_cstr(str, len, 0, 0, out);
-	    }
-	} else if (oj_datetime_class == clas) {
-	    volatile VALUE	rstr;
-
-	    switch (out->opts->time_format) {
-	    case XmlTime:
-		rstr = rb_funcall(obj, rb_intern("xmlschema"), 1, INT2FIX(out->opts->sec_prec));
-		break;
-	    case UnixZTime:
-	    case UnixTime:
-	    case RubyTime:
-	    default:
-		rstr = rb_funcall(obj, oj_to_s_id, 0);
-	    }
-	    oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
-	} else {
-	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
-
-	    oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
-	}
     }
 }
 
@@ -720,7 +393,7 @@ static DumpFunc	compat_funcs[] = {
     dump_obj,		// RUBY_T_OBJECT = 0x01,
     oj_dump_class, 	// RUBY_T_CLASS  = 0x02,
     oj_dump_class,	// RUBY_T_MODULE = 0x03,
-    oj_dump_float, 	// RUBY_T_FLOAT  = 0x04,
+    dump_float, 	// RUBY_T_FLOAT  = 0x04,
     oj_dump_str, 	// RUBY_T_STRING = 0x05,
     dump_regexp,	// RUBY_T_REGEXP = 0x06,
     dump_array,		// RUBY_T_ARRAY  = 0x07,
@@ -728,7 +401,7 @@ static DumpFunc	compat_funcs[] = {
     dump_struct,	// RUBY_T_STRUCT = 0x09,
     oj_dump_bignum,	// RUBY_T_BIGNUM = 0x0a,
     NULL, 		// RUBY_T_FILE   = 0x0b,
-    dump_data,		// RUBY_T_DATA   = 0x0c,
+    dump_obj,		// RUBY_T_DATA   = 0x0c,
     NULL, 		// RUBY_T_MATCH  = 0x0d,
     dump_complex, 	// RUBY_T_COMPLEX  = 0x0e,
     dump_rational, 	// RUBY_T_RATIONAL = 0x0f,
@@ -743,7 +416,7 @@ static DumpFunc	compat_funcs[] = {
 void
 oj_dump_compat_val(VALUE obj, int depth, Out out, bool as_ok) {
     int	type = rb_type(obj);
-    
+
     if (MAX_DEPTH < depth) {
 	rb_raise(rb_eNoMemError, "Too deeply nested.\n");
     }
@@ -751,7 +424,7 @@ oj_dump_compat_val(VALUE obj, int depth, Out out, bool as_ok) {
 	DumpFunc	f = compat_funcs[type];
 
 	if (NULL != f) {
-	    f(obj, depth, out, true);
+	    f(obj, depth, out, as_ok);
 	    return;
 	}
     }

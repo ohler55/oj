@@ -82,7 +82,9 @@ typedef enum {
     StrictMode	= 's',
     ObjectMode	= 'o',
     NullMode	= 'n',
-    CompatMode	= 'c'
+    CompatMode	= 'c',
+    RailsMode	= 'r',
+    CustomMode	= 'C',
 } Mode;
 
 typedef enum {

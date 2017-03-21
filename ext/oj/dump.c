@@ -1501,9 +1501,9 @@ oj_dump_obj_to_json_using_params(VALUE obj, Options copts, Out out, int argc, VA
     case StrictMode:	oj_dump_strict_val(obj, 0, out);	break;
     case NullMode:	oj_dump_null_val(obj, 0, out);		break;
     case ObjectMode:	oj_dump_obj_val(obj, 0, out);		break;
-    case CompatMode:	oj_dump_compat_val(obj, 0, out, Yes == out->opts->as_json);	break;
+    case CompatMode:	oj_dump_compat_val(obj, 0, out, true);	break;
 	//case RailsMode:	oj_dump_rails_val(obj, 0, out);		break;
-    default:		oj_dump_compat_val(obj, 0, out, Yes == out->opts->as_json);	break;
+    default:		oj_dump_compat_val(obj, 0, out, true);	break;
 	//default:	oj_dump_comp_val(obj, 0, out, argc, argv, true);	break;
     }
     if (0 < out->indent) {

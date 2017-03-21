@@ -2,8 +2,16 @@
 # encoding: UTF-8
 
 $: << File.dirname(__FILE__)
+%w(lib ext).each do |dir|
+  $: << File.expand_path("../#{dir}")
+end
 
-require 'helper'
+require 'minitest'
+require 'minitest/autorun'
+require 'stringio'
+require 'date'
+require 'bigdecimal'
+require 'oj'
 
 class CompatJuice < Minitest::Test
 
@@ -20,8 +28,8 @@ class CompatJuice < Minitest::Test
     end
     alias == eql?
 
-    def as_json()
-      {"json_class" => self.class.to_s,"x" => @x,"y" => @y}
+    def to_json()
+      %|{"json_class":"#{self.class.to_s}","x":#{@x},"y":#{@y}}|
     end
 
     def self.json_create(h)
@@ -42,12 +50,8 @@ class CompatJuice < Minitest::Test
           end
           alias == eql?
 
-          def to_hash()
-            {'json_class' => "#{self.class.name}"}
-          end
-
           def to_json(*a)
-            %{{"json_class":"#{self.class.name}"}}
+            %|{"json_class":"#{self.class.name}"}|
           end
 
           def self.json_create(h)
@@ -60,6 +64,9 @@ class CompatJuice < Minitest::Test
 
   def setup
     @default_options = Oj.default_options
+    # in compat mode other options other than the JSON gem globals and options
+    # are not used.
+    Oj.default_options = { :mode => :compat }
   end
 
   def teardown
@@ -87,6 +94,8 @@ class CompatJuice < Minitest::Test
 
   def test_float
     dump_and_load(0.0, false)
+    dump_and_load(0.56, false)
+    dump_and_load(3.0, false)
     dump_and_load(12345.6789, false)
     dump_and_load(70.35, false)
     dump_and_load(-54321.012, false)
@@ -95,6 +104,19 @@ class CompatJuice < Minitest::Test
     dump_and_load(2.48e16, false)
     dump_and_load(2.48e100 * 1.0e10, false)
     dump_and_load(-2.48e100 * 1.0e10, false)
+    dump_and_load(1405460727.723866, false)
+    dump_and_load(0.5773, false)
+    dump_and_load(0.6768, false)
+    dump_and_load(0.685, false)
+    dump_and_load(0.7032, false)
+    dump_and_load(0.7051, false)
+    dump_and_load(0.8274, false)
+    dump_and_load(0.9149, false)
+    dump_and_load(64.4, false)
+    dump_and_load(71.6, false)
+    dump_and_load(73.4, false)
+    dump_and_load(80.6, false)
+    dump_and_load(-95.640172, false)
   end
 
   def test_string
@@ -180,78 +202,19 @@ class CompatJuice < Minitest::Test
   end
 
   # BigDecimal
-  def test_bigdecimal_compat
-    dump_and_load(BigDecimal.new('3.14159265358979323846'), false)
-  end
-
-  def test_bigdecimal_load
-    orig = BigDecimal.new('80.51')
-    json = Oj.dump(orig, :mode => :compat, :bigdecimal_as_decimal => true)
-    bg = Oj.load(json, :mode => :compat, :bigdecimal_load => true)
-    assert_equal(BigDecimal, bg.class)
-    assert_equal(orig, bg)
+  def test_bigdecimal
+    # BigDecimals are dumped as strings and can not be restored to the
+    # original value.
+    json = Oj.dump(BigDecimal.new('3.14159265358979323846'))
+    assert_equal('"0.314159265358979323846E1"', json)
   end
 
   # Time
-  def test_time_ruby
-    if RUBY_VERSION.start_with?('1.8')
-      t = Time.parse('2015-01-05T21:37:07.123456-08:00')
-    else
-      t = Time.new(2015, 1, 5, 21, 37, 7.123456, -8 * 3600)
-    end
+  def test_time
+    t = Time.new(2015, 1, 5, 21, 37, 7.123456, -8 * 3600)
     expect = '"' + t.to_s + '"'
-    json = Oj.dump(t, :mode => :compat, :time_format => :ruby)
+    json = Oj.dump(t)
     assert_equal(expect, json)
-  end
-  def test_time_xml
-    if RUBY_VERSION.start_with?('1.8')
-      t = Time.parse('2015-01-05T21:37:07.123456-08:00')
-    else
-      t = Time.new(2015, 1, 5, 21, 37, 7.123456, -8 * 3600)
-    end
-    json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema, :second_precision => 6)
-    assert_equal('"2015-01-05T21:37:07.123456-08:00"', json)
-  end
-  unless RUBY_VERSION.start_with?('1.8')
-    def test_time_xml_12345
-      t = Time.new(2015, 1, 5, 21, 37, 7.123456, 12345)
-      json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema, :second_precision => 6)
-      assert_equal('"2015-01-05T21:37:07.123456+03:25"', json)
-    end
-  end
-  def test_time_unix
-    if RUBY_VERSION.start_with?('1.8')
-      t = Time.parse('2015-01-05T21:37:07.123456-08:00')
-    else
-      t = Time.new(2015, 1, 5, 21, 37, 7.123456, -8 * 3600)
-    end
-    json = Oj.dump(t, :mode => :compat, :time_format => :unix, :second_precision => 6)
-    assert_equal('1420522627.123456', json)
-  end
-  def test_time_unix_zone
-    if RUBY_VERSION.start_with?('1.8')
-      t = Time.parse('2015-01-05T21:37:07.123456-08:00')
-    else
-      t = Time.new(2015, 1, 5, 21, 37, 7.123456, -8 * 3600)
-    end
-    json = Oj.dump(t, :mode => :compat, :time_format => :unix_zone, :second_precision => 6)
-    assert_equal('1420522627.123456e-28800', json)
-  end
-  unless RUBY_VERSION.start_with?('1.8')
-    def test_time_unix_zone_12345
-      t = Time.new(2015, 1, 5, 21, 37, 7.123456, 12345)
-      json = Oj.dump(t, :mode => :compat, :time_format => :unix_zone, :second_precision => 6)
-      assert_equal('1420481482.123456e12345', json)
-    end
-  end
-  def test_time_unix_zone_early
-    if RUBY_VERSION.start_with?('1.8')
-      t = Time.parse('1954-01-05T21:37:07.123456-08:00')
-    else
-      t = Time.new(1954, 1, 5, 21, 37, 7.123456, -8 * 3600)
-    end
-    json = Oj.dump(t, :mode => :compat, :time_format => :unix_zone, :second_precision => 6)
-    assert_equal('-504469372.876544e-28800', json)
   end
 
   # Stream IO
@@ -329,22 +292,27 @@ class CompatJuice < Minitest::Test
     assert_equal({ 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}, obj)
   end
 
-  def test_json_object_compat
+  # If mimic_JSON has not been called then Oj.dump will call to_json on the
+  # top level object only.
+  def test_json_object_top
     obj = Jeez.new(true, 58)
-    Oj.default_options = { :mode => :compat, :use_as_json => true, :use_to_json => true }
     dump_and_load(obj, false)
   end
 
+  # A child to_json should not be called.
+  def test_json_object_child
+    obj = { "child": Jeez.new(true, 58) }
+    assert_equal('{"child":"#<CompatJuice::Jeez:0x', Oj.dump(obj)[0..31])
+  end
+
   def test_json_module_object
-    Oj.default_options = { :mode => :compat, :use_as_json => true, :use_to_json => true }
     obj = One::Two::Three::Deep.new()
     dump_and_load(obj, false)
   end
 
   def test_json_object_create_id
-    Oj.default_options = { :mode => :compat, :use_as_json => false, :use_to_json => false }
     expected = Jeez.new(true, 58)
-    json = Oj.dump(expected, :indent => 2, :mode => :compat, :use_to_json => true, :use_as_json => true)
+    json = Oj.dump(expected, :indent => 2)
     obj = Oj.compat_load(json)
     assert_equal(expected, obj)
   end
@@ -361,9 +329,8 @@ class CompatJuice < Minitest::Test
   end
 
   def test_json_object_create_cache
-    Oj.default_options = { :mode => :compat, :use_as_json => true, :use_to_json => true }
     expected = Jeez.new(true, 58)
-    json = Oj.dump(expected, :indent => 2, :mode => :compat, :use_to_json => true)
+    json = Oj.dump(expected, :indent => 2)
     obj = Oj.compat_load(json, :class_cache => true)
     assert_equal(expected, obj)
     obj = Oj.compat_load(json, :class_cache => false)
@@ -371,24 +338,27 @@ class CompatJuice < Minitest::Test
   end
 
   def test_json_object_create_id_other
-    Oj.default_options = { :mode => :compat, :use_as_json => false, :use_to_json => false }
     expected = Jeez.new(true, 58)
-    json = Oj.dump(expected, :indent => 2, :mode => :compat, :use_as_json => true)
+    json = Oj.dump(expected, :indent => 2)
     json.gsub!('json_class', '_class_')
     obj = Oj.compat_load(json, :create_id => "_class_")
     assert_equal(expected, obj)
   end
 
   def test_json_object_create_deep
-    Oj.default_options = { :mode => :compat, :use_as_json => true, :use_to_json => true }
     expected = One::Two::Three::Deep.new()
-    json = Oj.dump(expected, :indent => 2, :mode => :compat)
+    json = Oj.dump(expected, :indent => 2)
     obj = Oj.compat_load(json)
     assert_equal(expected, obj)
   end
 
+  def test_range
+    json = Oj.dump(1..7)
+    assert_equal('"1..7"', json)
+  end
+
   def dump_and_load(obj, trace=false)
-    json = Oj.dump(obj, :indent => 2, :mode => :compat)
+    json = Oj.dump(obj, :indent => 2)
     puts json if trace
     loaded = Oj.compat_load(json);
     assert_equal(obj, loaded)

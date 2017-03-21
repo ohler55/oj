@@ -201,6 +201,8 @@ class Juice < Minitest::Test
 
   end
 
+=begin
+# TBD move to custom
   def test_float_dump
     Oj.default_options = { :float_precision => 16 }
     assert_equal('1405460727.723866', Oj.dump(1405460727.723866))
@@ -227,6 +229,7 @@ class Juice < Minitest::Test
     assert_equal('80.6', Oj.dump(80.6))
     assert_equal('-95.640172', Oj.dump(-95.640172))
   end
+=end
 
   def test_nan_dump
     assert_equal('null', Oj.dump(0/0.0, :mode => :strict, :nan => :null))
@@ -468,6 +471,16 @@ class Juice < Minitest::Test
     json = Oj.dump(t, :mode => :null)
     assert_equal('null', json)
   end
+
+  def test_time_compat
+    t = Time.xmlschema("2012-01-05T23:58:07.123456000+09:00")
+    #t = Time.local(2012, 1, 5, 23, 58, 7, 123456)
+    json = Oj.dump(t, :mode => :compat)
+    assert_equal(%{"2012-01-05 23:58:07 +0900"}, json)
+  end
+
+=begin
+# TBD make thse tests for cusom mode
   def test_unix_time_compat
     t = Time.xmlschema("2012-01-05T23:58:07.123456000+09:00")
     #t = Time.local(2012, 1, 5, 23, 58, 7, 123456)
@@ -588,6 +601,7 @@ class Juice < Minitest::Test
       assert_equal(%{"2012-01-05T23:58:07Z"}, json)
     end
   end
+=end
 
   # Class
   def test_class_strict
@@ -761,13 +775,6 @@ class Juice < Minitest::Test
     json = Oj.dump(obj, :mode => :null)
     assert_equal('null', json)
   end
-  def test_to_hash_object_compat
-    Oj.default_options = { :use_to_json => true }
-    obj = Jazz.new(true, 58)
-    json = Oj.dump(obj, :mode => :compat, :indent => 2)
-    h = Oj.load(json, :mode => :strict)
-    assert_equal(obj.to_hash, h)
-  end
   def test_to_hash_object_object
     obj = Jazz.new(true, 58)
     json = Oj.dump(obj, :mode => :object, :indent => 2)
@@ -805,21 +812,6 @@ class Juice < Minitest::Test
     assert_equal('null', json)
   end
 
-  def test_as_json_object_compat_hash
-    Oj.default_options = { :mode => :compat, :use_as_json => true }
-    obj = Orange.new(true, 58)
-    json = Oj.dump(obj, :indent => 2)
-    assert(!json.nil?)
-    dump_and_load(obj, false)
-  end
-
-  def test_as_json_object_compat_non_hash
-    Oj.default_options = { :mode => :compat, :use_as_json => true }
-    obj = Melon.new(true, 58)
-    json = Oj.dump(obj, :indent => 2)
-    assert_equal(%{"true 58"}, json)
-  end
-
   def test_as_json_object_object
     obj = Orange.new(true, 58)
     json = Oj.dump(obj, :mode => :object, :indent => 2)
@@ -855,39 +847,6 @@ class Juice < Minitest::Test
     json = Oj.dump(obj, :mode => :null)
     assert_equal('null', json)
   end
-  def test_object_compat
-    obj = Jam.new(true, 58)
-    json = Oj.dump(obj, :mode => :compat, :indent => 2)
-    assert(%{{
-  "x":true,
-  "y":58
-}
-} == json ||
-%{{
-  "y":58,
-  "x":true
-}
-} == json)
-  end
-  def test_object_object
-    obj = Jam.new(true, 58)
-    json = Oj.dump(obj, :mode => :object, :indent => 2)
-    assert(%{{
-  "^o":"Juice::Jam",
-  "x":true,
-  "y":58
-}
-} == json ||
-%{{
-  "^o":"Juice::Jam",
-  "y":58,
-  "x":true
-}
-} == json)
-    obj2 = Oj.load(json, :mode => :object)
-    assert_equal(obj, obj2)
-  end
-
   def test_object_object_no_cache
     obj = Jam.new(true, 58)
     json = Oj.dump(obj, :mode => :object, :indent => 2)
@@ -944,15 +903,6 @@ class Juice < Minitest::Test
   def test_range_null
     json = Oj.dump(1..7, :mode => :null)
     assert_equal('null', json)
-  end
-  def test_range_compat
-    Oj.default_options = { :use_to_json => true }
-    json = Oj.dump(1..7, :mode => :compat)
-    h = Oj.load(json, :mode => :strict)
-    assert_equal({'begin' => 1, 'end' => 7, 'exclude_end' => false}, h)
-    json = Oj.dump(1...7, :mode => :compat)
-    h = Oj.load(json, :mode => :strict)
-    assert_equal({'begin' => 1, 'end' => 7, 'exclude_end' => true}, h)
   end
   def test_range_object
     unless RUBY_VERSION.start_with?('1.8')
@@ -1012,30 +962,10 @@ class Juice < Minitest::Test
     bg = Oj.load(json, :mode => :compat)
     assert_equal(orig.to_s, bg)
   end
-  def test_bigdecimal_load
+  def test_bigdecimal_compat
     orig = BigDecimal.new('80.51')
-    json = Oj.dump(orig, :mode => :compat, :bigdecimal_as_decimal => true)
-    bg = Oj.load(json, :mode => :compat, :bigdecimal_load => true)
-    assert_equal(BigDecimal, bg.class)
-    assert_equal(orig, bg)
-  end
-  def test_float_load
-    orig = BigDecimal.new('80.51')
-    json = Oj.dump(orig, :mode => :compat, :bigdecimal_as_decimal => true)
-    bg = Oj.load(json, :mode => :compat, :bigdecimal_load => :float)
-    assert_equal(Float, bg.class)
-    assert_equal(orig.to_f, bg)
-  end
-  def test_bigdecimal_compat_as_json
-    Oj.default_options = { :use_as_json => true }
-    orig = BigDecimal.new('80.51')
-    BigDecimal.send(:define_method, :as_json) do
-      %{this is big}
-    end
-    json = Oj.dump(orig, :mode => :compat, :bigdecimal_as_decimal => false)
-    bg = Oj.load(json, :mode => :compat)
-    assert_equal("this is big", bg)
-    BigDecimal.send(:remove_method, :as_json) # cleanup
+    json = Oj.dump(orig, :mode => :compat)
+    assert_equal(%|"0.8051E2"|, json)
   end
   def test_bigdecimal_object
     mode = Oj.default_options[:mode]
@@ -1356,9 +1286,6 @@ class Juice < Minitest::Test
 
     json = Oj.dump(jam, :omit_nil => true, :mode => :object)
     assert_equal(%|{"^o":"Juice::Jam","x":{"a":1}}|, json)
-
-    json = Oj.dump(jam, :omit_nil => true, :mode => :compat)
-    assert_equal(%|{"x":{"a":1}}|, json)
 
     json = Oj.dump({'x' => {'a' => 1, 'b' => nil }, 'y' => nil}, :omit_nil => true, :mode => :strict)
     assert_equal(%|{"x":{"a":1}}|, json)

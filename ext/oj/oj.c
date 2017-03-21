@@ -122,6 +122,7 @@ static VALUE	circular_sym;
 static VALUE	class_cache_sym;
 static VALUE	compat_sym;
 static VALUE	create_id_sym;
+static VALUE	custom_sym;
 static VALUE	escape_mode_sym;
 static VALUE	float_prec_sym;
 static VALUE	float_sym;
@@ -139,6 +140,7 @@ static VALUE	null_sym;
 static VALUE	object_sym;
 static VALUE	omit_nil_sym;
 static VALUE	quirks_mode_sym;
+static VALUE	rails_sym;
 static VALUE	raise_sym;
 static VALUE	ruby_sym;
 static VALUE	sec_prec_sym;
@@ -228,7 +230,7 @@ static VALUE	define_mimic_json(int argc, VALUE *argv, VALUE self);
  * - symbol_keys: [true|false|nil] use symbols instead of strings for hash keys
  * - escape_mode: [:newline|:json|:xss_safe|:ascii|unicode_xss|nil] determines the characters to escape
  * - class_cache: [true|false|nil] cache classes for faster parsing (if dynamically modifying classes or reloading classes then don't use this)
- * - mode: [:object|:strict|:compat|:null] load and dump modes to use for JSON
+ * - mode: [:object|:strict|:compat|:null|:custom|:rails] load and dump modes to use for JSON
  * - time_format: [:unix|:unix_zone|:xmlschema|:ruby] time format when dumping in :compat and :object mode
  * - bigdecimal_as_decimal: [true|false|nil] dump BigDecimal as a decimal number or as a String
  * - bigdecimal_load: [:bigdecimal|:float|:auto] load decimals as BigDecimal instead of as a Float. :auto pick the most precise for the number of digits.
@@ -280,6 +282,8 @@ get_def_opts(VALUE self) {
     case CompatMode:	rb_hash_aset(opts, mode_sym, compat_sym);	break;
     case NullMode:	rb_hash_aset(opts, mode_sym, null_sym);		break;
     case ObjectMode:
+    case CustomMode:	rb_hash_aset(opts, mode_sym, custom_sym);	break;
+    case RailsMode:	rb_hash_aset(opts, mode_sym, rails_sym);	break;
     default:		rb_hash_aset(opts, mode_sym, object_sym);	break;
     }
     switch (oj_default_options.escape_mode) {
@@ -339,14 +343,15 @@ get_def_opts(VALUE self) {
  *        and :xss_safe escapes &, <, and >, and some others.
  * @param [true|false|nil] :bigdecimal_as_decimal dump BigDecimal as a decimal number or as a String
  * @param [:bigdecimal|:float|:auto|nil] :bigdecimal_load load decimals as BigDecimal instead of as a Float. :auto pick the most precise for the number of digits.
- * @param [:object|:strict|:compat|:null] load and dump mode to use for JSON
+ * @param [:object|:strict|:compat|:null|:custom|:rails] load and dump mode to use for JSON
  *	  :strict raises an exception when a non-supported Object is
  *	  encountered. :compat attempts to extract variable values from an
  *	  Object using to_json() or to_hash() then it walks the Object's
  *	  variables if neither is found. The :object mode ignores to_hash()
  *	  and to_json() methods and encodes variables using code internal to
  *	  the Oj gem. The :null mode ignores non-supported Objects and
- *	  replaces them with a null.
+ *	  replaces them with a null. The :custom mode honors all dump options.
+ *        The :rails more mimics rails and Active behavior.
  * @param [:unix|:xmlschema|:ruby] time format when dumping in :compat mode
  *        :unix decimal number denoting the number of seconds since 1/1/1970,
  *        :unix_zone decimal number denoting the number of seconds since 1/1/1970 plus the utc_offset in the exponent ,
@@ -482,8 +487,12 @@ oj_parse_options(VALUE ropts, Options copts) {
 	    copts->mode = CompatMode;
 	} else if (null_sym == v) {
 	    copts->mode = NullMode;
+	} else if (custom_sym == v) {
+	    copts->mode = CustomMode;
+	} else if (rails_sym == v) {
+	    copts->mode = RailsMode;
 	} else {
-	    rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, or :null.");
+	    rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, :null, :custom, or :rails.");
 	}
     }
     if (Qnil != (v = rb_hash_lookup(ropts, time_format_sym))) {
@@ -792,8 +801,12 @@ load(int argc, VALUE *argv, VALUE self) {
 		mode = CompatMode;
 	    } else if (null_sym == v) {
 		mode = NullMode;
+	    } else if (custom_sym == v) {
+		mode = CustomMode;
+	    } else if (rails_sym == v) {
+		mode = RailsMode;
 	    } else {
-		rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, or :null.");
+		rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, :null, :custom, or :rails.");
 	    }
 	}
     }
@@ -802,6 +815,8 @@ load(int argc, VALUE *argv, VALUE self) {
 	return oj_strict_parse(argc, argv, self);
     case NullMode:
     case CompatMode:
+    case CustomMode:
+    case RailsMode:
 	return oj_compat_parse(argc, argv, self);
     case ObjectMode:
     default:
@@ -864,8 +879,12 @@ load_file(int argc, VALUE *argv, VALUE self) {
 		mode = CompatMode;
 	    } else if (null_sym == v) {
 		mode = NullMode;
+	    } else if (custom_sym == v) {
+		mode = CustomMode;
+	    } else if (rails_sym == v) {
+		mode = RailsMode;
 	    } else {
-		rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, or :null.");
+		rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, :null, :custom, :rails.");
 	    }
 	}
     }
@@ -879,6 +898,8 @@ load_file(int argc, VALUE *argv, VALUE self) {
 	return oj_pi_sparse(argc, argv, &pi, fd);
     case NullMode:
     case CompatMode:
+    case CustomMode:
+    case RailsMode:
 	oj_set_compat_callbacks(&pi);
 	return oj_pi_sparse(argc, argv, &pi, fd);
     case ObjectMode:
@@ -2084,7 +2105,6 @@ define_mimic_json(int argc, VALUE *argv, VALUE self) {
     } else {
     	json_parser_error_class = rb_define_class_under(mimic, "ParserError", json_error);
     }
-
     if (!rb_const_defined_at(mimic, rb_intern("State"))) {
         rb_define_class_under(mimic, "State", rb_cObject);
     }
@@ -2267,6 +2287,7 @@ void Init_oj() {
     class_cache_sym = ID2SYM(rb_intern("class_cache"));	rb_gc_register_address(&class_cache_sym);
     compat_sym = ID2SYM(rb_intern("compat"));		rb_gc_register_address(&compat_sym);
     create_id_sym = ID2SYM(rb_intern("create_id"));	rb_gc_register_address(&create_id_sym);
+    custom_sym = ID2SYM(rb_intern("custom"));		rb_gc_register_address(&custom_sym);
     escape_mode_sym = ID2SYM(rb_intern("escape_mode"));	rb_gc_register_address(&escape_mode_sym);
     float_prec_sym = ID2SYM(rb_intern("float_precision"));rb_gc_register_address(&float_prec_sym);
     float_sym = ID2SYM(rb_intern("float"));		rb_gc_register_address(&float_sym);
@@ -2286,6 +2307,7 @@ void Init_oj() {
     quirks_mode_sym = ID2SYM(rb_intern("quirks_mode"));	rb_gc_register_address(&quirks_mode_sym);
     allow_invalid_unicode_sym = ID2SYM(rb_intern("allow_invalid_unicode"));rb_gc_register_address(&allow_invalid_unicode_sym);
     raise_sym = ID2SYM(rb_intern("raise"));		rb_gc_register_address(&raise_sym);
+    rails_sym = ID2SYM(rb_intern("rails"));		rb_gc_register_address(&rails_sym);
     ruby_sym = ID2SYM(rb_intern("ruby"));		rb_gc_register_address(&ruby_sym);
     sec_prec_sym = ID2SYM(rb_intern("second_precision"));rb_gc_register_address(&sec_prec_sym);
     space_before_sym = ID2SYM(rb_intern("space_before"));rb_gc_register_address(&space_before_sym);

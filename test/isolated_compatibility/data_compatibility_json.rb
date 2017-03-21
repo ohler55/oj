@@ -18,6 +18,8 @@ fork { exit 99 }
 Process.wait
 
 class JsonRenderable
+  # This method should not be called by to_json so Oj should also ignore it in
+  # compat mode.
   def as_json(options = {})
     hash = { a: :b, c: :d, e: :f }
     hash.except!(*options[:except]) if options[:except]
@@ -27,6 +29,7 @@ class JsonRenderable
   def to_json(options = {})
     super except: [:c, :e]
   end
+
 end
 
 # commented out failing examples
@@ -34,7 +37,7 @@ JSON_TEST_DATA = {
   Regexp: /test/,
   FalseClass: false,
   NilClass: nil,
-  #Object: Object.new,
+  Object: Object.new,
   TrueClass: true,
   String: 'abc',
   StringChinese: '二胡',
@@ -43,23 +46,23 @@ JSON_TEST_DATA = {
   StringSpecial3: "\\\b\f\n\r\t",
   Numeric: 1,
   Symbol: :sym,
-  # Time: Time.new(2012, 1, 5, 23, 58, 7.99996, 32400),
+  Time: Time.new(2012, 1, 5, 23, 58, 7.99996, 32400),
   Array: [],
   Hash: {},
   HashNotEmpty: {a: 1},
   Date: Date.new,
-  # DateTime: DateTime.new,
-  # Enumerable: Colors.new,
+  DateTime: DateTime.new,
+  Enumerable: Colors.new,
   BigDecimal: BigDecimal.new('1')/3,
-  # BigDecimalInfinity: BigDecimal.new('0.5')/0,
-  # Struct: Struct::Customer.new('Dave', '123 Main'),
+  BigDecimalInfinity: BigDecimal.new('0.5')/0,
+  Struct: Struct::Customer.new('Dave', '123 Main'),
   Float: 1.0/3,
-  # FloatInfinity: 0.5/0,
-  # Range: (1..10),
+  FloatInfinity: 0.5/0,
+  Range: (1..10),
   Complex: Complex('0.3-0.5i'),
-  # Exception: Exception.new,
-  # OpenStruct: OpenStruct.new(country: "Australia", population: 20_000_000),
+  Exception: Exception.new,
+  OpenStruct: OpenStruct.new(country: "Australia", population: 20_000_000),
   Rational: Rational(0.3),
-  # 'Process::Status' => $?,
-  # JsonRenderable: JsonRenderable.new, #TODO, except: [:c, :e]
+  'Process::Status' => $?,
+  JsonRenderable: JsonRenderable.new, #TODO, except: [:c, :e]
 }

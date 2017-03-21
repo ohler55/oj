@@ -23,8 +23,22 @@ Comparison Matrix
 - refactor
  - what happened to obj mode loading time?
 
+ - plan
+  - add custom and rails modes
+  - compat
+   - option for circular
+   - handle options
+    - unit tests
+
+  - add to_hash option
+  - create dump_custom, copy from compat
+  - modify compat to not use :use_xx_json
+  - have rails use compat funcs
+  
  - add rails mode
  - add use_to_hash option
+ - custom mode for using all the options
+
  - hook up circular for strict and compat but without adding the id
  
   
