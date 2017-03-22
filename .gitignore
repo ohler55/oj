@@ -15,4 +15,4 @@ doc
 Gemfile.lock
 *.so
 vendor
-gemfiles/*.gemfile.lock
+gemfiles/*.lock

@@ -7,9 +7,9 @@ require 'helper'
 
 begin
   require 'rails/all'
-rescue Exception => e
-  puts "*** #{e.class}: #{e.message}"
-  Process.exit!(false)
+rescue LoadError => e
+  puts "Rails are not in the gemfile, skipping tests"
+  Process.exit
 end
 
 Oj.mimic_JSON
