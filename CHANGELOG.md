@@ -1,5 +1,6 @@
 # CHANGELOG
 
+## 2.18.5 - 2017-03-21 (2.18.4 was a bad release)
 ## 2.18.4 - 2017-03-21
 
 - Thanks to ianks for adding the :empty_string option.
