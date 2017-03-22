@@ -109,7 +109,7 @@ oj_dump_bignum(VALUE obj, int depth, Out out, bool as_ok) {
 
 // Removed dependencies on math due to problems with CentOS 5.4.
 void
-oj_dump_float(VALUE obj, int depth, Out out, bool as_ok) {
+dump_float(VALUE obj, int depth, Out out, bool as_ok) {
     char	buf[64];
     char	*b;
     double	d = rb_num2dbl(obj);
@@ -122,28 +122,17 @@ oj_dump_float(VALUE obj, int depth, Out out, bool as_ok) {
 	*b++ = '0';
 	*b++ = '\0';
 	cnt = 3;
-    } else if (OJ_INFINITY == d) {
-	if (ObjectMode == out->opts->mode) {
-	    strcpy(buf, inf_val);
-	    cnt = sizeof(inf_val) - 1;
-	} else {
-	    NanDump	nd = out->opts->dump_opts.nan_dump;
+    } else {
+	NanDump	nd = out->opts->dump_opts.nan_dump;
 	    
-	    if (AutoNan == nd) {
-		switch (out->opts->mode) {
-		case CompatMode:	nd = WordNan;	break;
-		case StrictMode:	nd = RaiseNan;	break;
-		case NullMode:		nd = NullNan;	break;
-		default:				break;
-		}
-	    }
+	if (AutoNan == nd) {
+	    nd = RaiseNan;
+	}
+	if (OJ_INFINITY == d) {
 	    switch (nd) {
 	    case RaiseNan:
-		raise_strict(obj);
-		break;
 	    case WordNan:
-		strcpy(buf, "Infinity");
-		cnt = 8;
+		raise_strict(obj);
 		break;
 	    case NullNan:
 		strcpy(buf, "null");
@@ -155,29 +144,11 @@ oj_dump_float(VALUE obj, int depth, Out out, bool as_ok) {
 		cnt = sizeof(inf_val) - 1;
 		break;
 	    }
-	}
-    } else if (-OJ_INFINITY == d) {
-	if (ObjectMode == out->opts->mode) {
-	    strcpy(buf, ninf_val);
-	    cnt = sizeof(ninf_val) - 1;
-	} else {
-	    NanDump	nd = out->opts->dump_opts.nan_dump;
-	    
-	    if (AutoNan == nd) {
-		switch (out->opts->mode) {
-		case CompatMode:	nd = WordNan;	break;
-		case StrictMode:	nd = RaiseNan;	break;
-		case NullMode:		nd = NullNan;	break;
-		default:				break;
-		}
-	    }
+	} else if (-OJ_INFINITY == d) {
 	    switch (nd) {
 	    case RaiseNan:
-		raise_strict(obj);
-		break;
 	    case WordNan:
-		strcpy(buf, "-Infinity");
-		cnt = 9;
+		raise_strict(obj);
 		break;
 	    case NullNan:
 		strcpy(buf, "null");
@@ -189,29 +160,11 @@ oj_dump_float(VALUE obj, int depth, Out out, bool as_ok) {
 		cnt = sizeof(ninf_val) - 1;
 		break;
 	    }
-	}
-    } else if (isnan(d)) {
-	if (ObjectMode == out->opts->mode) {
-	    strcpy(buf, nan_val);
-	    cnt = sizeof(nan_val) - 1;
-	} else {
-	    NanDump	nd = out->opts->dump_opts.nan_dump;
-	    
-	    if (AutoNan == nd) {
-		switch (out->opts->mode) {
-		case CompatMode:	nd = WordNan;	break;
-		case StrictMode:	nd = RaiseNan;	break;
-		case NullMode:		nd = NullNan;	break;
-		default:				break;
-		}
-	    }
+	} else if (isnan(d)) {
 	    switch (nd) {
 	    case RaiseNan:
-		raise_strict(obj);
-		break;
 	    case WordNan:
-		strcpy(buf, "NaN");
-		cnt = 3;
+		raise_strict(obj);
 		break;
 	    case NullNan:
 		strcpy(buf, "null");
@@ -223,20 +176,20 @@ oj_dump_float(VALUE obj, int depth, Out out, bool as_ok) {
 		cnt = sizeof(nan_val) - 1;
 		break;
 	    }
-	}
-    } else if (d == (double)(long long int)d) {
-	cnt = snprintf(buf, sizeof(buf), "%.1f", d);
-    } else if (0 == out->opts->float_prec) {
-	volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+	} else if (d == (double)(long long int)d) {
+	    cnt = snprintf(buf, sizeof(buf), "%.1f", d);
+	} else if (0 == out->opts->float_prec) {
+	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-	cnt = RSTRING_LEN(rstr);
-	if ((int)sizeof(buf) <= cnt) {
-	    cnt = sizeof(buf) - 1;
+	    cnt = RSTRING_LEN(rstr);
+	    if ((int)sizeof(buf) <= cnt) {
+		cnt = sizeof(buf) - 1;
+	    }
+	    strncpy(buf, rb_string_value_ptr((VALUE*)&rstr), cnt);
+	    buf[cnt] = '\0';
+	} else {
+	    cnt = snprintf(buf, sizeof(buf), out->opts->float_fmt, d);
 	}
-	strncpy(buf, rb_string_value_ptr((VALUE*)&rstr), cnt);
-	buf[cnt] = '\0';
-    } else {
-	cnt = snprintf(buf, sizeof(buf), out->opts->float_fmt, d);
     }
     assure_size(out, cnt);
     for (b = buf; '\0' != *b; b++) {
@@ -256,6 +209,12 @@ dump_array(VALUE a, int depth, Out out, bool as_ok) {
     int		i, cnt;
     int		d2 = depth + 1;
 
+    if (Yes == out->opts->circular) {
+	if (0 > oj_check_circular(a, out)) {
+	    oj_dump_nil(Qnil, 0, out, false);
+	    return;
+	}
+    }
     cnt = (int)RARRAY_LEN(a);
     *out->cur++ = '[';
     size = 2;
@@ -387,6 +346,12 @@ dump_hash(VALUE obj, int depth, Out out, bool as_ok) {
     int		cnt;
     size_t	size;
 
+    if (Yes == out->opts->circular) {
+	if (0 > oj_check_circular(obj, out)) {
+	    oj_dump_nil(Qnil, 0, out, false);
+	    return;
+	}
+    }
     cnt = (int)RHASH_SIZE(obj);
     size = depth * out->indent + 2;
     assure_size(out, 2);
@@ -454,7 +419,7 @@ static DumpFunc	strict_funcs[] = {
     dump_data_strict,	// RUBY_T_OBJECT = 0x01,
     NULL, 		// RUBY_T_CLASS  = 0x02,
     NULL, 		// RUBY_T_MODULE = 0x03,
-    oj_dump_float, 	// RUBY_T_FLOAT  = 0x04,
+    dump_float, 	// RUBY_T_FLOAT  = 0x04,
     oj_dump_str, 	// RUBY_T_STRING = 0x05,
     NULL, 		// RUBY_T_REGEXP = 0x06,
     dump_array,		// RUBY_T_ARRAY  = 0x07,
@@ -497,7 +462,7 @@ static DumpFunc	null_funcs[] = {
     dump_data_null,	// RUBY_T_OBJECT = 0x01,
     NULL, 		// RUBY_T_CLASS  = 0x02,
     NULL, 		// RUBY_T_MODULE = 0x03,
-    oj_dump_float, 	// RUBY_T_FLOAT  = 0x04,
+    dump_float, 	// RUBY_T_FLOAT  = 0x04,
     oj_dump_str, 	// RUBY_T_STRING = 0x05,
     NULL, 		// RUBY_T_REGEXP = 0x06,
     dump_array,		// RUBY_T_ARRAY  = 0x07,

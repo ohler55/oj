@@ -2,13 +2,35 @@
 # encoding: UTF-8
 
 $: << File.dirname(__FILE__)
+%w(lib ext).each do |dir|
+  $: << File.expand_path("../#{dir}")
+end
 
-require 'helper'
+require 'minitest'
+require 'minitest/autorun'
+require 'stringio'
+require 'date'
+require 'bigdecimal'
+require 'oj'
 
 class StrictJuice < Minitest::Test
 
+  module TestModule
+  end
+
+  class Jeez
+    attr_accessor :x, :y
+
+    def initialize(x, y)
+      @x = x
+      @y = y
+    end
+  end
+
   def setup
     @default_options = Oj.default_options
+    # in strict mode other options other than the number formats are not used.
+    Oj.default_options = { :mode => :strict }
   end
 
   def teardown
@@ -44,6 +66,42 @@ class StrictJuice < Minitest::Test
     dump_and_load(2.48e16, false)
     dump_and_load(2.48e100 * 1.0e10, false)
     dump_and_load(-2.48e100 * 1.0e10, false)
+  end
+
+  def test_nan_dump
+    assert_equal('null', Oj.dump(0/0.0, :nan => :null))
+    assert_equal('3.3e14159265358979323846', Oj.dump(0/0.0, :nan => :huge))
+    begin
+      Oj.dump(0/0.0, :nan => :word)
+    rescue Exception
+      assert(true)
+      return
+    end
+    assert(false, "*** expected an exception")
+  end
+
+  def test_infinity_dump
+    assert_equal('null', Oj.dump(1/0.0, :nan => :null))
+    assert_equal('3.0e14159265358979323846', Oj.dump(1/0.0, :nan => :huge))
+    begin
+      Oj.dump(1/0.0, :nan => :word)
+    rescue Exception
+      assert(true)
+      return
+    end
+    assert(false, "*** expected an exception")
+  end
+
+  def test_neg_infinity_dump
+    assert_equal('null', Oj.dump(-1/0.0, :nan => :null))
+    assert_equal('-3.0e14159265358979323846', Oj.dump(-1/0.0, :nan => :huge))
+    begin
+      Oj.dump(-1/0.0, :nan => :word)
+    rescue Exception
+      assert(true)
+      return
+    end
+    assert(false, "*** expected an exception")
   end
 
   def test_string
@@ -96,6 +154,15 @@ class StrictJuice < Minitest::Test
     dump_and_load([1,[2,[3,[4,[5,[6,[7,[8,[9,[10,[11,[12,[13,[14,[15,[16,[17,[18,[19,[20]]]]]]]]]]]]]]]]]]]], false)
   end
 
+  def test_deep_nest
+    begin
+      n = 10000
+      Oj.strict_load('[' * n + ']' * n)
+    rescue Exception => e
+      assert(false, e.message)
+    end
+  end
+
   # Hash
   def test_hash
     dump_and_load({}, false)
@@ -132,13 +199,23 @@ class StrictJuice < Minitest::Test
     assert_equal({"a\nb" => true, "c\td" => false}, obj)
   end
 
+  def test_non_str_hash
+    begin
+      Oj.dump({ 1 => true, 0 => false })
+    rescue Exception
+      assert(true)
+      return
+    end
+    assert(false, "*** expected an exception")
+  end
+
   def test_bignum_object
     dump_and_load(7 ** 55, false)
   end
 
   # BigDecimal
   def test_bigdecimal_strict
-    Oj.default_options = { :mode => :strict, :bigdecimal_load => true}
+    Oj.default_options = { :bigdecimal_load => true}
     dump_and_load(BigDecimal.new('3.14159265358979323846'), false)
   end
 
@@ -148,6 +225,27 @@ class StrictJuice < Minitest::Test
     bg = Oj.load(json, :mode => :strict, :bigdecimal_load => true)
     assert_equal(BigDecimal, bg.class)
     assert_equal(orig, bg)
+  end
+
+  def test_json_object
+    obj = Jeez.new(true, 58)
+    begin
+      Oj.dump(obj)
+    rescue Exception
+      assert(true)
+      return
+    end
+    assert(false, "*** expected an exception")
+  end
+
+  def test_range
+    begin
+      Oj.dump(1..7)
+    rescue Exception
+      assert(true)
+      return
+    end
+    assert(false, "*** expected an exception")
   end
 
   # Stream IO
@@ -175,6 +273,42 @@ class StrictJuice < Minitest::Test
     obj = Oj.strict_load(f)
     f.close()
     assert_equal({ 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}, obj)
+  end
+
+  def test_symbol
+    json = Oj.dump(:abc)
+    assert_equal('"abc"', json)
+  end
+
+  def test_time
+    t = Time.local(2012, 1, 5, 23, 58, 7)
+    begin
+      Oj.dump(t)
+    rescue Exception
+      assert(true)
+      return
+    end
+    assert(false, "*** expected an exception")
+  end
+
+  def test_class
+    begin
+      Oj.dump(StrictJuice)
+    rescue Exception
+      assert(true)
+      return
+    end
+    assert(false, "*** expected an exception")
+  end
+
+  def test_module
+    begin
+      Oj.dump(TestModule)
+    rescue Exception
+      assert(true)
+      return
+    end
+    assert(false, "*** expected an exception")
   end
 
   # symbol_keys option
@@ -242,6 +376,22 @@ class StrictJuice < Minitest::Test
     Oj.load(json, :mode => :strict) { |x| results << x }
 
     assert_equal([{ 'x' => 1 }, { 'y' => 2 }], results)
+  end
+
+  def test_circular_hash
+    h = { 'a' => 7 }
+    h['b'] = h
+    json = Oj.dump(h, :indent => 2, :circular => true)
+    assert_equal(%|{
+  "a":7,
+  "b":null
+}
+|, json)
+  end
+
+  def test_omit_nil
+    json = Oj.dump({'x' => {'a' => 1, 'b' => nil }, 'y' => nil}, :omit_nil => true)
+    assert_equal(%|{"x":{"a":1}}|, json)
   end
 
   def dump_and_load(obj, trace=false)

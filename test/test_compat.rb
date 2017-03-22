@@ -161,7 +161,34 @@ class CompatJuice < Minitest::Test
     dump_and_load([1,[2,[3,[4,[5,[6,[7,[8,[9,[10,[11,[12,[13,[14,[15,[16,[17,[18,[19,[20]]]]]]]]]]]]]]]]]]]], false)
   end
 
+  def test_symbol
+    json = Oj.dump(:abc, :mode => :compat)
+    assert_equal('"abc"', json)
+  end
+
+  def test_time
+    t = Time.xmlschema("2012-01-05T23:58:07.123456000+09:00")
+    #t = Time.local(2012, 1, 5, 23, 58, 7, 123456)
+    json = Oj.dump(t, :mode => :compat)
+    assert_equal(%{"2012-01-05 23:58:07 +0900"}, json)
+  end
+
+  def test_class
+    json = Oj.dump(CompatJuice, :mode => :compat)
+    assert_equal(%{"CompatJuice"}, json)
+  end
+
+  def test_module
+    json = Oj.dump(One::Two, :mode => :compat)
+    assert_equal(%{"CompatJuice::One::Two"}, json)
+  end
+
   # Hash
+  def test_non_str_hash
+    json = Oj.dump({ 1 => true, 0 => false }, :mode => :compat)
+    h = Oj.load(json, :mode => :strict)
+    assert_equal({ "1" => true, "0" => false }, h)
+  end
   def test_hash
     dump_and_load({}, false)
     dump_and_load({ 'true' => true, 'false' => false}, false)
@@ -201,6 +228,31 @@ class CompatJuice < Minitest::Test
     dump_and_load(7 ** 55, false)
   end
 
+  def test_json_object
+    obj = Jeez.new(true, 58)
+    json = Oj.dump(obj, :indent => 2)
+    assert(%{{"json_class":"CompatJuice::Jeez","x":true,"y":58}
+} == json ||
+           %{{"json_class":"CompatJuice::Jeez","y":58,"x":true}
+} == json)
+    dump_and_load(obj, false)
+  end
+
+  def test_json_object_create_id
+    Oj.default_options = { :create_id => 'kson_class' }
+    expected = Jeez.new(true, 58)
+    json = %{{"kson_class":"CompatJuice::Jeez","x":true,"y":58}}
+    obj = Oj.load(json)
+    assert_equal(expected, obj)
+    Oj.default_options = { :create_id => 'json_class' }
+  end
+
+  def test_bignum_compat
+    json = Oj.dump(7 ** 55, :mode => :compat)
+    b = Oj.load(json, :mode => :strict)
+    assert_equal(30226801971775055948247051683954096612865741943, b)
+  end
+
   # BigDecimal
   def test_bigdecimal
     # BigDecimals are dumped as strings and can not be restored to the
@@ -209,12 +261,46 @@ class CompatJuice < Minitest::Test
     assert_equal('"0.314159265358979323846E1"', json)
   end
 
+  def test_infinity
+    begin
+      Oj.load('Infinity', :mode => :strict)
+      fail()
+    rescue Oj::ParseError
+      assert(true)
+    end
+    x = Oj.load('Infinity', :mode => :compat)
+    assert_equal('Infinity', x.to_s)
+
+  end
+
   # Time
   def test_time
     t = Time.new(2015, 1, 5, 21, 37, 7.123456, -8 * 3600)
     expect = '"' + t.to_s + '"'
     json = Oj.dump(t)
     assert_equal(expect, json)
+  end
+
+  def test_date_compat
+    orig = Date.new(2012, 6, 19)
+    json = Oj.dump(orig, :mode => :compat)
+    x = Oj.load(json, :mode => :compat)
+    # Some Rubies implement Date as data and some as a real Object. Either are
+    # okay for the test.
+    if x.is_a?(String)
+      assert_equal(orig.to_s, x)
+    else # better be a Hash
+      assert_equal({"year" => orig.year, "month" => orig.month, "day" => orig.day, "start" => orig.start}, x)
+    end
+  end
+
+  def test_datetime_compat
+    orig = DateTime.new(2012, 6, 19, 20, 19, 27)
+    json = Oj.dump(orig, :mode => :compat)
+    x = Oj.load(json, :mode => :compat)
+    # Some Rubies implement Date as data and some as a real Object. Either are
+    # okay for the test.
+    assert_equal(orig.to_s, x)
   end
 
   # Stream IO

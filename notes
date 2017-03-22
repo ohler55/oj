@@ -23,8 +23,19 @@ Comparison Matrix
 - refactor
  - what happened to obj mode loading time?
 
+ - can __method__ be checked for to_json?
+  - tests with to_json calling Oj.dump on itself
+  - VALUE rb_current_receiver(void);
+  - int rb_frame_method_id_and_class(ID *idp, VALUE *klassp);
+
  - plan
-  - add custom and rails modes
+  - reorg tests
+   - test_<mode>
+   - isolated rails stuff
+    - only need to verify JSON methods have beed defined and not overridden
+    - really a mimic tests
+    - can rails tests not be run for 1.9.3?
+
   - compat
    - option for circular
    - handle options

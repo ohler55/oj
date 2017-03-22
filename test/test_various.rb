@@ -231,24 +231,6 @@ class Juice < Minitest::Test
   end
 =end
 
-  def test_nan_dump
-    assert_equal('null', Oj.dump(0/0.0, :mode => :strict, :nan => :null))
-    assert_equal('NaN', Oj.dump(0/0.0, :mode => :strict, :nan => :word))
-    assert_equal('3.3e14159265358979323846', Oj.dump(0/0.0, :mode => :strict, :nan => :huge))
-  end
-
-  def test_infinity_dump
-    assert_equal('null', Oj.dump(1/0.0, :mode => :strict, :nan => :null))
-    assert_equal('Infinity', Oj.dump(1/0.0, :mode => :strict, :nan => :word))
-    assert_equal('3.0e14159265358979323846', Oj.dump(1/0.0, :mode => :strict, :nan => :huge))
-  end
-
-  def test_neg_infinity_dump
-    assert_equal('null', Oj.dump(-1/0.0, :mode => :strict, :nan => :null))
-    assert_equal('-Infinity', Oj.dump(-1/0.0, :mode => :strict, :nan => :word))
-    assert_equal('-3.0e14159265358979323846', Oj.dump(-1/0.0, :mode => :strict, :nan => :huge))
-  end
-
   def test_float
     mode = Oj.default_options()[:mode]
     Oj.default_options = {:mode => :object}
@@ -436,16 +418,8 @@ class Juice < Minitest::Test
   end
 
   # Symbol
-  def test_symbol_strict
-    json = Oj.dump(:abc, :mode => :strict)
-    assert_equal('"abc"', json)
-  end
   def test_symbol_null
     json = Oj.dump(:abc, :mode => :null)
-    assert_equal('"abc"', json)
-  end
-  def test_symbol_compat
-    json = Oj.dump(:abc, :mode => :compat)
     assert_equal('"abc"', json)
   end
   def test_symbol_object
@@ -456,71 +430,54 @@ class Juice < Minitest::Test
   end
 
   # Time
-  def test_time_strict
-    t = Time.local(2012, 1, 5, 23, 58, 7)
-    begin
-      Oj.dump(t, :mode => :strict)
-    rescue Exception
-      assert(true)
-      return
-    end
-    assert(false, "*** expected an exception")
-  end
   def test_time_null
     t = Time.local(2012, 1, 5, 23, 58, 7)
     json = Oj.dump(t, :mode => :null)
     assert_equal('null', json)
   end
 
-  def test_time_compat
-    t = Time.xmlschema("2012-01-05T23:58:07.123456000+09:00")
-    #t = Time.local(2012, 1, 5, 23, 58, 7, 123456)
-    json = Oj.dump(t, :mode => :compat)
-    assert_equal(%{"2012-01-05 23:58:07 +0900"}, json)
-  end
-
 =begin
 # TBD make thse tests for cusom mode
-  def test_unix_time_compat
+  def test_unix_time_custom
     t = Time.xmlschema("2012-01-05T23:58:07.123456000+09:00")
     #t = Time.local(2012, 1, 5, 23, 58, 7, 123456)
-    json = Oj.dump(t, :mode => :compat, :time_format => :unix)
+    json = Oj.dump(t, :mode => :custom, :time_format => :unix)
     assert_equal(%{1325775487.123456000}, json)
   end
-  def test_unix_time_compat_precision
+  def test_unix_time_custom_precision
     t = Time.xmlschema("2012-01-05T23:58:07.123456789+09:00")
     #t = Time.local(2012, 1, 5, 23, 58, 7, 123456)
-    json = Oj.dump(t, :mode => :compat, :second_precision => 5, :time_format => :unix)
+    json = Oj.dump(t, :mode => :custom, :second_precision => 5, :time_format => :unix)
     assert_equal(%{1325775487.12346}, json)
     t = Time.xmlschema("2012-01-05T23:58:07.999600+09:00")
-    json = Oj.dump(t, :mode => :compat, :second_precision => 3, :time_format => :unix)
+    json = Oj.dump(t, :mode => :custom, :second_precision => 3, :time_format => :unix)
     assert_equal(%{1325775488.000}, json)
   end
-  def test_unix_time_compat_early
+  def test_unix_time_custom_early
     t = Time.xmlschema("1954-01-05T00:00:00.123456789+00:00")
-    json = Oj.dump(t, :mode => :compat, :second_precision => 5, :time_format => :unix)
+    json = Oj.dump(t, :mode => :custom, :second_precision => 5, :time_format => :unix)
     assert_equal(%{-504575999.87654}, json)
   end
-  def test_unix_time_compat_1970
+  def test_unix_time_custom_1970
     t = Time.xmlschema("1970-01-01T00:00:00.123456789+00:00")
-    json = Oj.dump(t, :mode => :compat, :second_precision => 5, :time_format => :unix)
+    json = Oj.dump(t, :mode => :custom, :second_precision => 5, :time_format => :unix)
     assert_equal(%{0.12346}, json)
   end
-  def test_ruby_time_compat
+  def test_ruby_time_custom
     t = Time.xmlschema("2012-01-05T23:58:07.123456000+09:00")
-    json = Oj.dump(t, :mode => :compat, :time_format => :ruby)
+    json = Oj.dump(t, :mode => :custom, :time_format => :ruby)
     #assert_equal(%{"2012-01-05 23:58:07 +0900"}, json)
     assert_equal(%{"#{t.to_s}"}, json)
   end
-  def test_xml_time_compat
+  def test_xml_time_custom
     begin
       t = Time.new(2012, 1, 5, 23, 58, 7.123456000, 34200)
-      json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema)
+      json = Oj.dump(t, :mode => :custom, :time_format => :xmlschema)
       assert_equal(%{"2012-01-05T23:58:07.123456000+09:30"}, json)
     rescue Exception
       # some Rubies (1.8.7) do not allow the timezome to be set
       t = Time.local(2012, 1, 5, 23, 58, 7, 123456)
-      json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema)
+      json = Oj.dump(t, :mode => :custom, :time_format => :xmlschema)
       tz = t.utc_offset
       # Ruby does not handle a %+02d properly so...
       sign = '+'
@@ -531,15 +488,15 @@ class Juice < Minitest::Test
       assert_equal(%{"2012-01-05T23:58:07.123456000%s%02d:%02d"} % [sign, tz / 3600, tz / 60 % 60], json)
     end
   end
-  def test_xml_time_compat_no_secs
+  def test_xml_time_custom_no_secs
     begin
       t = Time.new(2012, 1, 5, 23, 58, 7.0, 34200)
-      json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema)
+      json = Oj.dump(t, :mode => :custom, :time_format => :xmlschema)
       assert_equal(%{"2012-01-05T23:58:07+09:30"}, json)
     rescue Exception
       # some Rubies (1.8.7) do not allow the timezome to be set
       t = Time.local(2012, 1, 5, 23, 58, 7, 0)
-      json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema)
+      json = Oj.dump(t, :mode => :custom, :time_format => :xmlschema)
       tz = t.utc_offset
       # Ruby does not handle a %+02d properly so...
       sign = '+'
@@ -550,15 +507,15 @@ class Juice < Minitest::Test
       assert_equal(%{"2012-01-05T23:58:07%s%02d:%02d"} % [sign, tz / 3600, tz / 60 % 60], json)
     end
   end
-  def test_xml_time_compat_precision
+  def test_xml_time_custom_precision
     begin
       t = Time.new(2012, 1, 5, 23, 58, 7.123456789, 32400)
-      json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema, :second_precision => 5)
+      json = Oj.dump(t, :mode => :custom, :time_format => :xmlschema, :second_precision => 5)
       assert_equal(%{"2012-01-05T23:58:07.12346+09:00"}, json)
     rescue Exception
       # some Rubies (1.8.7) do not allow the timezome to be set
       t = Time.local(2012, 1, 5, 23, 58, 7, 123456)
-      json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema, :second_precision => 5)
+      json = Oj.dump(t, :mode => :custom, :time_format => :xmlschema, :second_precision => 5)
       tz = t.utc_offset
       # Ruby does not handle a %+02d properly so...
       sign = '+'
@@ -569,15 +526,15 @@ class Juice < Minitest::Test
       assert_equal(%{"2012-01-05T23:58:07.12346%s%02d:%02d"} % [sign, tz / 3600, tz / 60 % 60], json)
     end
   end
-  def test_xml_time_compat_precision_round
+  def test_xml_time_custom_precision_round
     begin
       t = Time.new(2012, 1, 5, 23, 58, 7.99996, 32400)
-      json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema, :second_precision => 4)
+      json = Oj.dump(t, :mode => :custom, :time_format => :xmlschema, :second_precision => 4)
       assert_equal(%{"2012-01-05T23:58:08+09:00"}, json)
     rescue Exception
       # some Rubies (1.8.7) do not allow the timezome to be set
       t = Time.local(2012, 1, 5, 23, 58, 7, 999600)
-      json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema, :second_precision => 3)
+      json = Oj.dump(t, :mode => :custom, :time_format => :xmlschema, :second_precision => 3)
       tz = t.utc_offset
       # Ruby does not handle a %+02d properly so...
       sign = '+'
@@ -588,15 +545,15 @@ class Juice < Minitest::Test
       assert_equal(%{"2012-01-05T23:58:08%s%02d:%02d"} % [sign, tz / 3600, tz / 60 % 60], json)
     end
   end
-  def test_xml_time_compat_zulu
+  def test_xml_time_custom_zulu
     begin
       t = Time.new(2012, 1, 5, 23, 58, 7.0, 0)
-      json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema)
+      json = Oj.dump(t, :mode => :custom, :time_format => :xmlschema)
       assert_equal(%{"2012-01-05T23:58:07Z"}, json)
     rescue Exception
       # some Rubies (1.8.7) do not allow the timezome to be set
       t = Time.utc(2012, 1, 5, 23, 58, 7, 0)
-      json = Oj.dump(t, :mode => :compat, :time_format => :xmlschema)
+      json = Oj.dump(t, :mode => :custom, :time_format => :xmlschema)
       #tz = t.utc_offset
       assert_equal(%{"2012-01-05T23:58:07Z"}, json)
     end
@@ -604,22 +561,9 @@ class Juice < Minitest::Test
 =end
 
   # Class
-  def test_class_strict
-    begin
-      Oj.dump(Juice, :mode => :strict)
-    rescue Exception
-      assert(true)
-      return
-    end
-    assert(false, "*** expected an exception")
-  end
   def test_class_null
     json = Oj.dump(Juice, :mode => :null)
     assert_equal('null', json)
-  end
-  def test_class_compat
-    json = Oj.dump(Juice, :mode => :compat)
-    assert_equal(%{"Juice"}, json)
   end
   def test_class_object
     Oj.default_options = { :mode => :object }
@@ -627,22 +571,9 @@ class Juice < Minitest::Test
   end
 
   # Module
-  def test_module_strict
-    begin
-      Oj.dump(TestModule, :mode => :strict)
-    rescue Exception
-      assert(true)
-      return
-    end
-    assert(false, "*** expected an exception")
-  end
   def test_module_null
     json = Oj.dump(TestModule, :mode => :null)
     assert_equal('null', json)
-  end
-  def test_module_compat
-    json = Oj.dump(TestModule, :mode => :compat)
-    assert_equal(%{"Juice::TestModule"}, json)
   end
   def test_module_object
     Oj.default_options = { :mode => :object }
@@ -650,21 +581,6 @@ class Juice < Minitest::Test
   end
 
   # Hash
-  def test_hash
-    Oj.default_options = { :mode => :strict }
-    dump_and_load({}, false)
-    dump_and_load({ 'true' => true, 'false' => false}, false)
-    dump_and_load({ 'true' => true, 'array' => [], 'hash' => { }}, false)
-  end
-  def test_non_str_hash_strict
-    begin
-      Oj.dump({ 1 => true, 0 => false }, :mode => :strict)
-    rescue Exception
-      assert(true)
-      return
-    end
-    assert(false, "*** expected an exception")
-  end
   def test_non_str_hash_null
     begin
       Oj.dump({ 1 => true, 0 => false }, :mode => :null)
@@ -673,11 +589,6 @@ class Juice < Minitest::Test
       return
     end
     assert(false, "*** expected an exception")
-  end
-  def test_non_str_hash_compat
-    json = Oj.dump({ 1 => true, 0 => false }, :mode => :compat)
-    h = Oj.load(json, :mode => :strict)
-    assert_equal({ "1" => true, "0" => false }, h)
   end
   def test_non_str_hash_object
     Oj.default_options = { :mode => :object }
@@ -706,39 +617,10 @@ class Juice < Minitest::Test
   end
 
   # Object with to_json()
-  def test_json_object_strict
-    obj = Jeez.new(true, 58)
-    begin
-      Oj.dump(obj, :mode => :strict)
-    rescue Exception
-      assert(true)
-      return
-    end
-    assert(false, "*** expected an exception")
-  end
   def test_json_object_null
     obj = Jeez.new(true, 58)
     json = Oj.dump(obj, :mode => :null)
     assert_equal('null', json)
-  end
-  def test_json_object_compat
-    Oj.default_options = { :mode => :compat, :use_to_json => true }
-    obj = Jeez.new(true, 58)
-    json = Oj.dump(obj, :indent => 2)
-    assert(%{{"json_class":"Juice::Jeez","x":true,"y":58}
-} == json ||
-           %{{"json_class":"Juice::Jeez","y":58,"x":true}
-} == json)
-    dump_and_load(obj, false)
-    Oj.default_options = { :mode => :compat, :use_to_json => false }
-  end
-  def test_json_object_create_id
-    Oj.default_options = { :mode => :compat, :create_id => 'kson_class' }
-    expected = Jeez.new(true, 58)
-    json = %{{"kson_class":"Juice::Jeez","x":true,"y":58}}
-    obj = Oj.load(json)
-    assert_equal(expected, obj)
-    Oj.default_options = { :create_id => 'json_class' }
   end
   def test_json_object_object
     obj = Jeez.new(true, 58)
@@ -760,16 +642,6 @@ class Juice < Minitest::Test
   end
 
 # Object with to_hash()
-  def test_to_hash_object_strict
-    obj = Jazz.new(true, 58)
-    begin
-      Oj.dump(obj, :mode => :strict)
-    rescue Exception
-      assert(true)
-      return
-    end
-    assert(false, "*** expected an exception")
-  end
   def test_to_hash_object_null
     obj = Jazz.new(true, 58)
     json = Oj.dump(obj, :mode => :null)
@@ -795,17 +667,6 @@ class Juice < Minitest::Test
   end
 
   # Object with as_json() # contributed by sauliusg
-  def test_as_json_object_strict
-    obj = Orange.new(true, 58)
-    begin
-      Oj.dump(obj, :mode => :strict)
-    rescue Exception
-      assert(true)
-      return
-    end
-    assert(false, "*** expected an exception")
-  end
-
   def test_as_json_object_null
     obj = Orange.new(true, 58)
     json = Oj.dump(obj, :mode => :null)
@@ -832,16 +693,6 @@ class Juice < Minitest::Test
   end
 
   # Object without to_json() or to_hash()
-  def test_object_strict
-    obj = Jam.new(true, 58)
-    begin
-      Oj.dump(obj, :mode => :strict)
-    rescue Exception
-      assert(true)
-      return
-    end
-    assert(false, "*** expected an exception")
-  end
   def test_object_null
     obj = Jam.new(true, 58)
     json = Oj.dump(obj, :mode => :null)
@@ -891,15 +742,6 @@ class Juice < Minitest::Test
   end
 
   # Range
-  def test_range_strict
-    begin
-      Oj.dump(1..7, :mode => :strict)
-    rescue Exception
-      assert(true)
-      return
-    end
-    assert(false, "*** expected an exception")
-  end
   def test_range_null
     json = Oj.dump(1..7, :mode => :null)
     assert_equal('null', json)
@@ -920,18 +762,9 @@ class Juice < Minitest::Test
   end
 
   # BigNum
-  def test_bignum_strict
-    json = Oj.dump(7 ** 55, :mode => :strict)
-    assert_equal('30226801971775055948247051683954096612865741943', json)
-  end
   def test_bignum_null
     json = Oj.dump(7 ** 55, :mode => :null)
     assert_equal('30226801971775055948247051683954096612865741943', json)
-  end
-  def test_bignum_compat
-    json = Oj.dump(7 ** 55, :mode => :compat)
-    b = Oj.load(json, :mode => :strict)
-    assert_equal(30226801971775055948247051683954096612865741943, b)
   end
 
   def test_bignum_object
@@ -940,32 +773,11 @@ class Juice < Minitest::Test
   end
 
   # BigDecimal
-  def test_bigdecimal_strict
-    mode = Oj.default_options[:mode]
-    Oj.default_options = {:mode => :strict}
-    dump_and_load(BigDecimal.new('3.14159265358979323846'), false)
-    Oj.default_options = {:mode => mode}
-  end
   def test_bigdecimal_null
     mode = Oj.default_options[:mode]
     Oj.default_options = {:mode => :null}
     dump_and_load(BigDecimal.new('3.14159265358979323846'), false)
     Oj.default_options = {:mode => mode}
-  end
-  def test_bigdecimal_compat
-    orig = BigDecimal.new('80.51')
-    json = Oj.dump(orig, :mode => :compat, :bigdecimal_as_decimal => false)
-    bg = Oj.load(json, :mode => :compat)
-    assert_equal(orig.to_s, bg)
-    orig = BigDecimal.new('3.14159265358979323846')
-    json = Oj.dump(orig, :mode => :compat, :bigdecimal_as_decimal => false)
-    bg = Oj.load(json, :mode => :compat)
-    assert_equal(orig.to_s, bg)
-  end
-  def test_bigdecimal_compat
-    orig = BigDecimal.new('80.51')
-    json = Oj.dump(orig, :mode => :compat)
-    assert_equal(%|"0.8051E2"|, json)
   end
   def test_bigdecimal_object
     mode = Oj.default_options[:mode]
@@ -982,42 +794,15 @@ class Juice < Minitest::Test
   def test_infinity
     n = Oj.load('Infinity', :mode => :object)
     assert_equal(BigDecimal.new('Infinity').to_f, n);
-    begin
-      Oj.load('Infinity', :mode => :strict)
-      fail()
-    rescue Oj::ParseError
-      assert(true)
-    end
     x = Oj.load('Infinity', :mode => :compat)
     assert_equal('Infinity', x.to_s)
 
   end
 
   # Date
-  def test_date_strict
-    begin
-      Oj.dump(Date.new(2012, 6, 19), :mode => :strict)
-    rescue Exception
-      assert(true)
-      return
-    end
-    assert(false, "*** expected an exception")
-  end
   def test_date_null
     json = Oj.dump(Date.new(2012, 6, 19), :mode => :null)
     assert_equal('null', json)
-  end
-  def test_date_compat
-    orig = Date.new(2012, 6, 19)
-    json = Oj.dump(orig, :mode => :compat)
-    x = Oj.load(json, :mode => :compat)
-    # Some Rubies implement Date as data and some as a real Object. Either are
-    # okay for the test.
-    if x.is_a?(String)
-      assert_equal(orig.to_s, x)
-    else # better be a Hash
-      assert_equal({"year" => orig.year, "month" => orig.month, "day" => orig.day, "start" => orig.start}, x)
-    end
   end
   def test_date_object
     Oj.default_options = {:mode => :object}
@@ -1025,26 +810,9 @@ class Juice < Minitest::Test
   end
 
   # DateTime
-  def test_datetime_strict
-    begin
-      Oj.dump(DateTime.new(2012, 6, 19, 20, 19, 27), :mode => :strict)
-    rescue Exception
-      assert(true)
-      return
-    end
-    assert(false, "*** expected an exception")
-  end
   def test_datetime_null
     json = Oj.dump(DateTime.new(2012, 6, 19, 20, 19, 27), :mode => :null)
     assert_equal('null', json)
-  end
-  def test_datetime_compat
-    orig = DateTime.new(2012, 6, 19, 20, 19, 27)
-    json = Oj.dump(orig, :mode => :compat)
-    x = Oj.load(json, :mode => :compat)
-    # Some Rubies implement Date as data and some as a real Object. Either are
-    # okay for the test.
-    assert_equal(orig.to_s, x)
   end
   def test_datetime_object
     Oj.default_options = {:mode => :object}
@@ -1123,15 +891,6 @@ class Juice < Minitest::Test
   end
 
 # Stream Deeply Nested
-  def test_deep_nest
-    begin
-      n = 10000
-      Oj.strict_load('[' * n + ']' * n)
-    rescue Exception => e
-      assert(false, e.message)
-    end
-  end
-
   def test_deep_nest_dump
     begin
       a = []
@@ -1165,18 +924,6 @@ class Juice < Minitest::Test
     obj = Oj.load(f, :mode => :strict)
     f.close()
     assert_equal(src, obj)
-  end
-
-# symbol_keys option
-  def test_symbol_keys
-    json = %{{
-  "x":true,
-  "y":58,
-  "z": [1,2,3]
-}
-}
-    obj = Oj.load(json, :mode => :strict, :symbol_keys => true)
-    assert_equal({ :x => true, :y => 58, :z => [1, 2, 3]}, obj)
   end
 
 # comments

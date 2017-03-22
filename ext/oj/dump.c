@@ -297,33 +297,6 @@ dump_unicode(const char *str, const char *end, Out out) {
 
 // returns 0 if not using circular references, -1 if not further writing is
 // needed (duplicate), and a positive value if the object was added to the cache.
-#if 1
-long
-oj_check_circular(VALUE obj, Out out) {
-    slot_t	id = 0;
-    slot_t	*slot;
-
-    if (ObjectMode == out->opts->mode && Yes == out->opts->circular) {
-	if (0 == (id = oj_cache8_get(out->circ_cache, obj, &slot))) {
-	    out->circ_cnt++;
-	    id = out->circ_cnt;
-	    *slot = id;
-	} else {
-	    if (out->end - out->cur <= 18) {
-		grow(out, 18);
-	    }
-	    *out->cur++ = '"';
-	    *out->cur++ = '^';
-	    *out->cur++ = 'r';
-	    dump_ulong(id, out);
-	    *out->cur++ = '"';
-
-	    return -1;
-	}
-    }
-    return (long)id;
-}
-#else
 long
 oj_check_circular(VALUE obj, Out out) {
     slot_t	id = 0;
@@ -350,7 +323,6 @@ oj_check_circular(VALUE obj, Out out) {
     }
     return (long)id;
 }
-#endif
 
 static void
 dump_array(VALUE a, VALUE clas, int depth, Out out) {
@@ -1739,3 +1711,142 @@ oj_grow_out(Out out, size_t len) {
     out->end = buf + size;
     out->cur = out->buf + pos;
 }
+
+// Removed dependencies on math due to problems with CentOS 5.4.
+void
+oj_dump_float(VALUE obj, int depth, Out out, bool as_ok) {
+    char	buf[64];
+    char	*b;
+    double	d = rb_num2dbl(obj);
+    int		cnt = 0;
+
+    if (0.0 == d) {
+	b = buf;
+	*b++ = '0';
+	*b++ = '.';
+	*b++ = '0';
+	*b++ = '\0';
+	cnt = 3;
+    } else if (OJ_INFINITY == d) {
+	if (ObjectMode == out->opts->mode) {
+	    strcpy(buf, inf_val);
+	    cnt = sizeof(inf_val) - 1;
+	} else {
+	    NanDump	nd = out->opts->dump_opts.nan_dump;
+	    
+	    if (AutoNan == nd) {
+		switch (out->opts->mode) {
+		case CompatMode:	nd = WordNan;	break;
+		case StrictMode:	nd = RaiseNan;	break;
+		case NullMode:		nd = NullNan;	break;
+		default:				break;
+		}
+	    }
+	    switch (nd) {
+	    case RaiseNan:
+		raise_strict(obj);
+		break;
+	    case WordNan:
+		strcpy(buf, "Infinity");
+		cnt = 8;
+		break;
+	    case NullNan:
+		strcpy(buf, "null");
+		cnt = 4;
+		break;
+	    case HugeNan:
+	    default:
+		strcpy(buf, inf_val);
+		cnt = sizeof(inf_val) - 1;
+		break;
+	    }
+	}
+    } else if (-OJ_INFINITY == d) {
+	if (ObjectMode == out->opts->mode) {
+	    strcpy(buf, ninf_val);
+	    cnt = sizeof(ninf_val) - 1;
+	} else {
+	    NanDump	nd = out->opts->dump_opts.nan_dump;
+	    
+	    if (AutoNan == nd) {
+		switch (out->opts->mode) {
+		case CompatMode:	nd = WordNan;	break;
+		case StrictMode:	nd = RaiseNan;	break;
+		case NullMode:		nd = NullNan;	break;
+		default:				break;
+		}
+	    }
+	    switch (nd) {
+	    case RaiseNan:
+		raise_strict(obj);
+		break;
+	    case WordNan:
+		strcpy(buf, "-Infinity");
+		cnt = 9;
+		break;
+	    case NullNan:
+		strcpy(buf, "null");
+		cnt = 4;
+		break;
+	    case HugeNan:
+	    default:
+		strcpy(buf, ninf_val);
+		cnt = sizeof(ninf_val) - 1;
+		break;
+	    }
+	}
+    } else if (isnan(d)) {
+	if (ObjectMode == out->opts->mode) {
+	    strcpy(buf, nan_val);
+	    cnt = sizeof(nan_val) - 1;
+	} else {
+	    NanDump	nd = out->opts->dump_opts.nan_dump;
+	    
+	    if (AutoNan == nd) {
+		switch (out->opts->mode) {
+		case CompatMode:	nd = WordNan;	break;
+		case StrictMode:	nd = RaiseNan;	break;
+		case NullMode:		nd = NullNan;	break;
+		default:				break;
+		}
+	    }
+	    switch (nd) {
+	    case RaiseNan:
+		raise_strict(obj);
+		break;
+	    case WordNan:
+		strcpy(buf, "NaN");
+		cnt = 3;
+		break;
+	    case NullNan:
+		strcpy(buf, "null");
+		cnt = 4;
+		break;
+	    case HugeNan:
+	    default:
+		strcpy(buf, nan_val);
+		cnt = sizeof(nan_val) - 1;
+		break;
+	    }
+	}
+    } else if (d == (double)(long long int)d) {
+	cnt = snprintf(buf, sizeof(buf), "%.1f", d);
+    } else if (0 == out->opts->float_prec) {
+	volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+
+	cnt = RSTRING_LEN(rstr);
+	if ((int)sizeof(buf) <= cnt) {
+	    cnt = sizeof(buf) - 1;
+	}
+	strncpy(buf, rb_string_value_ptr((VALUE*)&rstr), cnt);
+	buf[cnt] = '\0';
+    } else {
+	cnt = snprintf(buf, sizeof(buf), out->opts->float_fmt, d);
+    }
+    assure_size(out, cnt);
+    for (b = buf; '\0' != *b; b++) {
+	*out->cur++ = *b;
+    }
+    *out->cur = '\0';
+}
+
