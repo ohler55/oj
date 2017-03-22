@@ -399,7 +399,11 @@ class StrictJuice < Minitest::Test
     json = Oj.dump(obj, :indent => 2)
     puts json if trace
     loaded = Oj.strict_load(json);
-    assert_equal(obj, loaded)
+    if obj.nil?
+      assert_nil(loaded)
+    else
+      assert_equal(obj, loaded)
+    end
     loaded
   end
 

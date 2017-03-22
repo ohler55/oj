@@ -259,7 +259,12 @@ class CompatJuice < Minitest::Test
     # BigDecimals are dumped as strings and can not be restored to the
     # original value.
     json = Oj.dump(BigDecimal.new('3.14159265358979323846'))
-    assert_equal('"0.314159265358979323846E1"', json)
+    if RUBY_VERSION == '2.4.0'
+      # 2.4.0 changes the exponent to lowercase
+      assert_equal('"0.314159265358979323846e1"', json)
+    else
+      assert_equal('"0.314159265358979323846E1"', json)
+    end
   end
 
   def test_infinity
@@ -448,7 +453,11 @@ class CompatJuice < Minitest::Test
     json = Oj.dump(obj, :indent => 2)
     puts json if trace
     loaded = Oj.compat_load(json);
-    assert_equal(obj, loaded)
+    if obj.nil?
+      assert_nil(loaded)
+    else
+      assert_equal(obj, loaded)
+    end
     loaded
   end
 

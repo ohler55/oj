@@ -441,11 +441,10 @@ oj_parse_options(VALUE ropts, Options copts) {
 	    rb_raise(rb_eArgError, ":float_precision must be a Integer.");
 	}
 #else
-	if (rb_cFixnum != rb_obj_class(v)) {
+	if (T_FIXNUM != rb_type(v)) {
 	    rb_raise(rb_eArgError, ":float_precision must be a Fixnum.");
 	}
 #endif
-	Check_Type(v, T_FIXNUM);
 	n = FIX2INT(v);
 	if (0 >= n) {
 	    *copts->float_fmt = '\0';
@@ -466,7 +465,7 @@ oj_parse_options(VALUE ropts, Options copts) {
 	    rb_raise(rb_eArgError, ":second_precision must be a Integer.");
 	}
 #else
-	if (rb_cFixnum != rb_obj_class(v)) {
+	if (T_FIXNUM != rb_type(v)) {
 	    rb_raise(rb_eArgError, ":second_precision must be a Fixnum.");
 	}
 #endif
