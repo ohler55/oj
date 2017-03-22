@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 2.18.4 - 2017-03-21
+
+- Thanks to ianks for adding the :empty_string option.
+
 ## 2.18.3 - 2017-03-14
 
 - Changed to use long doubles for parsing to minimize round off errors. So PI will be accurate to more places for PI day.
