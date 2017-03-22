@@ -24,9 +24,9 @@ gemfile:
 
 matrix:
   fast_finish: true
-  allow_failures:
-    - rvm: 2.4.0
-    - rvm: 1.9.3
+  #allow_failures:
+    #- rvm: 2.4.0
+    #- rvm: 1.9.3
   exclude:
     - gemfile: gemfiles/rails_5.gemfile
       rvm: 2.1.10
@@ -42,5 +42,3 @@ matrix:
       rvm: 2.2.6
     - gemfile: gemfiles/no_rails.gemfile
       rvm: 2.3.3
-    - gemfile: gemfiles/no_rails.gemfile
-      rvm: 2.4.0
