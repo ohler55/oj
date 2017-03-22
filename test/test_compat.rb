@@ -388,7 +388,7 @@ class CompatJuice < Minitest::Test
 
   # A child to_json should not be called.
   def test_json_object_child
-    obj = { "child": Jeez.new(true, 58) }
+    obj = { "child" => Jeez.new(true, 58) }
     assert_equal('{"child":"#<CompatJuice::Jeez:0x', Oj.dump(obj)[0..31])
   end
 
