@@ -41,6 +41,7 @@
 #include "parse.h"
 #include "hash.h"
 #include "odd.h"
+#include "dump.h"
 #include "encode.h"
 
 typedef struct _YesNoOpt {
@@ -111,6 +112,7 @@ VALUE	oj_slash_string;
 
 static VALUE	allow_gc_sym;
 static VALUE	allow_invalid_unicode_sym;
+static VALUE	allow_nan_sym;
 static VALUE	ascii_only_sym;
 static VALUE	ascii_sym;
 static VALUE	auto_define_sym;
@@ -131,6 +133,7 @@ static VALUE	huge_sym;
 static VALUE	indent_sym;
 static VALUE	json_parser_error_class;
 static VALUE	json_sym;
+static VALUE	max_nesting_sym;
 static VALUE	mode_sym;
 static VALUE	nan_sym;
 static VALUE	newline_sym;
@@ -216,6 +219,7 @@ struct _Options	oj_default_options = {
 	0,	// array_size
 	AutoNan,// nan_dump
 	false,	// omit_nil
+	MAX_DEPTH, // max_depth
     }
 };
 
@@ -978,6 +982,9 @@ dump(int argc, VALUE *argv, VALUE self) {
     if (2 == argc) {
 	oj_parse_options(argv[1], &copts);
     }
+    if (CompatMode == copts.mode) {
+	copts.to_json = No;
+    }
     out.buf = buf;
     out.end = buf + sizeof(buf) - 10;
     out.allocated = 0;
@@ -994,6 +1001,122 @@ dump(int argc, VALUE *argv, VALUE self) {
     return rstr;
 }
 
+/* call-seq: to_json(obj, options) => json-string
+ *
+ * Dumps an Object (obj) to a string. If the object has a to_json method that
+ * will be called. The mode is set to :compat.
+ * @param [Object] obj Object to serialize as an JSON document String
+ * @param [Hash] options
+ * @param [boolean] :max_nesting It true nesting is limited to 100. The option
+ *                  to detect circular references is available but is not
+ *                  compatible with the json gem., default is false
+ * @param [boolean] :allow_nan If true non JSON compliant words such as Nan
+ *                  and Infinity will be used as appropriate, default is true.
+ * @param [boolean] :quirks_mode Allow single JSON values instead of
+ *                  documents, default is true (allow).
+ * @param [String|nil] :indent_str String to use for indentation, overriding
+ *                     the indent option if not nil.
+ * @param [String|nil] :space String to use for the space after the colon in
+ *                     JSON object fields
+ * @param [String|nil] :space_before String to use before the colon separator
+ *                     in JSON object fields
+ * @param [String|nil] :object_nl String to use after a JSON object field value
+ * @param [String|nil] :array_nl String to use after a JSON array value
+ */
+static VALUE
+to_json(int argc, VALUE *argv, VALUE self) {
+    char		buf[4096];
+    struct _Out		out;
+    struct _Options	copts = oj_default_options;
+    VALUE		rstr;
+
+    if (1 > argc) {
+	rb_raise(rb_eArgError, "wrong number of arguments (0 for 1).");
+    }
+    if (2 == argc) {
+	VALUE	ropts = argv[1];
+	VALUE	v;
+	size_t	len;
+
+	if (Qnil != (v = rb_hash_lookup(ropts, quirks_mode_sym))) {
+	    copts.quirks_mode = (Qtrue == v) ? Yes : No;
+	}
+	if (Qnil != (v = rb_hash_lookup(ropts, max_nesting_sym))) {
+	    if (Qtrue == v) {
+		copts.dump_opts.max_depth = 100;
+	    } else {
+		copts.dump_opts.max_depth = MAX_DEPTH;
+	    }
+	}
+	if (Qnil != (v = rb_hash_lookup(ropts, allow_nan_sym))) {
+	    copts.dump_opts.nan_dump = (Qtrue == v);
+	}
+	if (Qnil != (v = rb_hash_lookup(ropts, indent_sym))) { // TBD fixnum also ok
+	    rb_check_type(v, T_STRING);
+	    if (sizeof(copts.dump_opts.indent_str) <= (len = RSTRING_LEN(v))) {
+		rb_raise(rb_eArgError, "indent string is limited to %lu characters.", sizeof(copts.dump_opts.indent_str));
+	    }
+	    strcpy(copts.dump_opts.indent_str, StringValuePtr(v));
+	    copts.dump_opts.indent_size = (uint8_t)len;
+	    copts.dump_opts.use = true;
+	}
+	if (Qnil != (v = rb_hash_lookup(ropts, space_sym))) {
+	    rb_check_type(v, T_STRING);
+	    if (sizeof(copts.dump_opts.after_sep) <= (len = RSTRING_LEN(v))) {
+		rb_raise(rb_eArgError, "space string is limited to %lu characters.", sizeof(copts.dump_opts.after_sep));
+	    }
+	    strcpy(copts.dump_opts.after_sep, StringValuePtr(v));
+	    copts.dump_opts.after_size = (uint8_t)len;
+	    copts.dump_opts.use = true;
+	}
+	if (Qnil != (v = rb_hash_lookup(ropts, space_before_sym))) {
+	    rb_check_type(v, T_STRING);
+	    if (sizeof(copts.dump_opts.before_sep) <= (len = RSTRING_LEN(v))) {
+		rb_raise(rb_eArgError, "space_before string is limited to %lu characters.", sizeof(copts.dump_opts.before_sep));
+	    }
+	    strcpy(copts.dump_opts.before_sep, StringValuePtr(v));
+	    copts.dump_opts.before_size = (uint8_t)len;
+	    copts.dump_opts.use = true;
+	}
+	if (Qnil != (v = rb_hash_lookup(ropts, object_nl_sym))) {
+	    rb_check_type(v, T_STRING);
+	    if (sizeof(copts.dump_opts.hash_nl) <= (len = RSTRING_LEN(v))) {
+		rb_raise(rb_eArgError, "object_nl string is limited to %lu characters.", sizeof(copts.dump_opts.hash_nl));
+	    }
+	    strcpy(copts.dump_opts.hash_nl, StringValuePtr(v));
+	    copts.dump_opts.hash_size = (uint8_t)len;
+	    copts.dump_opts.use = true;
+	}
+	if (Qnil != (v = rb_hash_lookup(ropts, array_nl_sym))) {
+	    rb_check_type(v, T_STRING);
+	    if (sizeof(copts.dump_opts.array_nl) <= (len = RSTRING_LEN(v))) {
+		rb_raise(rb_eArgError, "array_nl string is limited to %lu characters.", sizeof(copts.dump_opts.array_nl));
+	    }
+	    strcpy(copts.dump_opts.array_nl, StringValuePtr(v));
+	    copts.dump_opts.array_size = (uint8_t)len;
+	    copts.dump_opts.use = true;
+	}
+    }
+    copts.mode = CompatMode;
+    copts.to_json = Yes;
+    out.buf = buf;
+    out.end = buf + sizeof(buf) - 10;
+    out.allocated = 0;
+    out.omit_nil = copts.dump_opts.omit_nil;
+    // For obj.to_json or generate nan is not allowed but if called from dump
+    // it is.
+    copts.dump_opts.nan_dump = false;
+    oj_dump_obj_to_json(*argv, &copts, &out);
+    if (0 == out.buf) {
+	rb_raise(rb_eNoMemError, "Not enough memory.");
+    }
+    rstr = rb_str_new2(out.buf);
+    rstr = oj_encode(rstr);
+    if (out.allocated) {
+	xfree(out.buf);
+    }
+    return rstr;
+}
 
 /* call-seq: to_file(file_path, obj, options)
  *
@@ -1750,6 +1873,10 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
     out.end = buf + sizeof(buf) - 10;
     out.allocated = 0;
     out.omit_nil = copts->dump_opts.omit_nil;
+    // For obj.to_json or generate nan is not allowed but if called from dump
+    // it is.
+    copts->dump_opts.nan_dump = true;
+    copts->mode = CompatMode;
     if (2 == argc && Qnil != argv[1]) {
 	VALUE	ropts = argv[1];
 	VALUE	v;
@@ -1757,6 +1884,16 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
 
 	if (T_HASH != rb_type(ropts)) {
 	    rb_raise(rb_eArgError, "options must be a hash.");
+	}
+	if (Qnil != (v = rb_hash_lookup(ropts, max_nesting_sym))) {
+	    if (Qtrue == v) {
+		copts->dump_opts.max_depth = 100;
+	    } else {
+		copts->dump_opts.max_depth = MAX_DEPTH;
+	    }
+	}
+	if (Qnil != (v = rb_hash_lookup(ropts, allow_nan_sym))) {
+	    copts->dump_opts.nan_dump = (Qtrue == v);
 	}
 	if (Qnil != (v = rb_hash_lookup(ropts, indent_sym))) { // TBD fixnum also ok
 	    rb_check_type(v, T_STRING);
@@ -1811,8 +1948,6 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
 		copts->escape_mode = ASCIIEsc;
 	    }
 	}
-	// :allow_nan is not supported as Oj always allows_nan
-	// :max_nesting is always set to 100
     }
     oj_dump_obj_to_json(*argv, copts, &out);
     if (0 == out.buf) {
@@ -1889,7 +2024,6 @@ mimic_parse(int argc, VALUE *argv, VALUE self) {
 	    }
 	}
 	// :allow_nan is not supported as Oj always allows nan
-	// :max_nesting is ignored as Oj has not nesting limit
 	// :object_class is always Hash
 	// :array_class is always Array
     }
@@ -1992,8 +2126,8 @@ mimic_object_to_json(int argc, VALUE *argv, VALUE self) {
     out.end = buf + sizeof(buf) - 10;
     out.allocated = 0;
     out.omit_nil = copts.dump_opts.omit_nil;
-    // Have to turn off to_json to avoid the Active Support recursion problem.
-    copts.to_json = No;
+    copts.mode = CompatMode;
+    copts.to_json = Yes;
     // To be strict the mimic_object_to_json_options should be used but people
     // seem to prefer the option of changing that.
     //oj_dump_obj_to_json(self, &mimic_object_to_json_options, &out);
@@ -2207,6 +2341,7 @@ void Init_oj() {
     rb_define_module_function(Oj, "object_load", oj_object_parse, -1);
 
     rb_define_module_function(Oj, "dump", dump, -1);
+    rb_define_module_function(Oj, "to_json", to_json, -1);
     rb_define_module_function(Oj, "to_file", to_file, -1);
     rb_define_module_function(Oj, "to_stream", to_stream, -1);
     rb_define_module_function(Oj, "register_odd", register_odd, -1);
@@ -2274,6 +2409,7 @@ void Init_oj() {
     json_parser_error_class = Qnil; // replaced if mimic is called
 
     allow_gc_sym = ID2SYM(rb_intern("allow_gc"));	rb_gc_register_address(&allow_gc_sym);
+    allow_nan_sym = ID2SYM(rb_intern("allow_nan"));	rb_gc_register_address(&allow_nan_sym);
     array_nl_sym = ID2SYM(rb_intern("array_nl"));	rb_gc_register_address(&array_nl_sym);
     ascii_only_sym = ID2SYM(rb_intern("ascii_only"));	rb_gc_register_address(&ascii_only_sym);
     ascii_sym = ID2SYM(rb_intern("ascii"));		rb_gc_register_address(&ascii_sym);
@@ -2294,6 +2430,7 @@ void Init_oj() {
     huge_sym = ID2SYM(rb_intern("huge"));		rb_gc_register_address(&huge_sym);
     indent_sym = ID2SYM(rb_intern("indent"));		rb_gc_register_address(&indent_sym);
     json_sym = ID2SYM(rb_intern("json"));		rb_gc_register_address(&json_sym);
+    max_nesting_sym = ID2SYM(rb_intern("max_nesting"));	rb_gc_register_address(&max_nesting_sym);
     mode_sym = ID2SYM(rb_intern("mode"));		rb_gc_register_address(&mode_sym);
     nan_sym = ID2SYM(rb_intern("nan"));			rb_gc_register_address(&nan_sym);
     newline_sym = ID2SYM(rb_intern("newline"));		rb_gc_register_address(&newline_sym);

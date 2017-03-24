@@ -231,12 +231,10 @@ class CompatJuice < Minitest::Test
 
   def test_json_object
     obj = Jeez.new(true, 58)
-    json = Oj.dump(obj, :indent => 2)
-    assert(%{{"json_class":"CompatJuice::Jeez","x":true,"y":58}
-} == json ||
-           %{{"json_class":"CompatJuice::Jeez","y":58,"x":true}
-} == json)
-    dump_and_load(obj, false)
+    json = Oj.to_json(obj)
+    assert(%|{"json_class":"CompatJuice::Jeez","x":true,"y":58}| == json ||
+          %|{"json_class":"CompatJuice::Jeez","y":58,"x":true}| == json)
+    dump_to_json_and_load(obj, false)
   end
 
   def test_json_object_create_id
@@ -388,7 +386,7 @@ class CompatJuice < Minitest::Test
   # top level object only.
   def test_json_object_top
     obj = Jeez.new(true, 58)
-    dump_and_load(obj, false)
+    dump_to_json_and_load(obj, false)
   end
 
   # A child to_json should not be called.
@@ -399,12 +397,12 @@ class CompatJuice < Minitest::Test
 
   def test_json_module_object
     obj = One::Two::Three::Deep.new()
-    dump_and_load(obj, false)
+    dump_to_json_and_load(obj, false)
   end
 
-  def test_json_object_create_id
+  def test_json_object_dump_create_id
     expected = Jeez.new(true, 58)
-    json = Oj.dump(expected, :indent => 2)
+    json = Oj.to_json(expected)
     obj = Oj.compat_load(json)
     assert_equal(expected, obj)
   end
@@ -422,7 +420,7 @@ class CompatJuice < Minitest::Test
 
   def test_json_object_create_cache
     expected = Jeez.new(true, 58)
-    json = Oj.dump(expected, :indent => 2)
+    json = Oj.to_json(expected)
     obj = Oj.compat_load(json, :class_cache => true)
     assert_equal(expected, obj)
     obj = Oj.compat_load(json, :class_cache => false)
@@ -431,7 +429,7 @@ class CompatJuice < Minitest::Test
 
   def test_json_object_create_id_other
     expected = Jeez.new(true, 58)
-    json = Oj.dump(expected, :indent => 2)
+    json = Oj.to_json(expected)
     json.gsub!('json_class', '_class_')
     obj = Oj.compat_load(json, :create_id => "_class_")
     assert_equal(expected, obj)
@@ -439,7 +437,7 @@ class CompatJuice < Minitest::Test
 
   def test_json_object_create_deep
     expected = One::Two::Three::Deep.new()
-    json = Oj.dump(expected, :indent => 2)
+    json = Oj.to_json(expected)
     obj = Oj.compat_load(json)
     assert_equal(expected, obj)
   end
@@ -450,7 +448,19 @@ class CompatJuice < Minitest::Test
   end
 
   def dump_and_load(obj, trace=false)
-    json = Oj.dump(obj, :indent => 2)
+    json = Oj.dump(obj)
+    puts json if trace
+    loaded = Oj.compat_load(json);
+    if obj.nil?
+      assert_nil(loaded)
+    else
+      assert_equal(obj, loaded)
+    end
+    loaded
+  end
+
+  def dump_to_json_and_load(obj, trace=false)
+    json = Oj.to_json(obj, :indent => '  ')
     puts json if trace
     loaded = Oj.compat_load(json);
     if obj.nil?

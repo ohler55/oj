@@ -143,6 +143,7 @@ typedef struct _DumpOpts {
     uint8_t	array_size;
     char	nan_dump;	// NanDump
     bool	omit_nil;
+    int		max_depth;
 } *DumpOpts;
 
 typedef struct _Options {

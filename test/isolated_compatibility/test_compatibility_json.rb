@@ -42,7 +42,7 @@ class CompatibilityJson < Minitest::Test
                      e
                    end
       oj_value = begin
-                   Oj.dump(value)
+                   Oj.to_json(value)
                  rescue Exception => e
                    e
                  end

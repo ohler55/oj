@@ -49,10 +49,24 @@ dump_float(VALUE obj, int depth, Out out, bool as_ok) {
 	*b++ = '0';
 	*b++ = '\0';
 	cnt = 3;
-    } else if (OJ_INFINITY == d || -OJ_INFINITY == d) {
-	raise_gen_err("Infinity not allowed in JSON.");
+    } else if (OJ_INFINITY == d) {
+	if (out->opts->dump_opts.nan_dump) {
+	    strcpy(buf, "Infinity");
+	} else {
+	    raise_gen_err("Infinity not allowed in JSON.");
+	}
+    } else if (-OJ_INFINITY == d) {
+	if (out->opts->dump_opts.nan_dump) {
+	    strcpy(buf, "-Infinity");
+	} else {
+	    raise_gen_err("-Infinity not allowed in JSON.");
+	}
     } else if (isnan(d)) {
-	raise_gen_err("NaN not allowed in JSON.");
+	if (out->opts->dump_opts.nan_dump) {
+	    strcpy(buf, "NaN");
+	} else {
+	    raise_gen_err("NaN not allowed in JSON.");
+	}
     } else if (d == (double)(long long int)d) {
 	//cnt = snprintf(buf, sizeof(buf), "%.1Lf", (long double)d);
 	cnt = snprintf(buf, sizeof(buf), "%.1f", d);
@@ -302,7 +316,6 @@ dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
 
 	return;
     }
-
     if (as_ok && rb_respond_to(obj, oj_to_json_id)) {
 	volatile VALUE	rs = rb_funcall(obj, oj_to_json_id, 0);
 	const char	*s;
@@ -314,6 +327,7 @@ dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
 	memcpy(out->cur, s, len);
 	out->cur += len;
     } else {
+#if 0
 	VALUE		ma = Qnil;
 	VALUE		v;
 	char		num_id[32];
@@ -370,6 +384,9 @@ dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
 	out->cur--;
 	*out->cur++ = '}';
 	*out->cur = '\0';
+#else
+	oj_dump_obj_to_s(obj, out);
+#endif
     }
 }
 
@@ -417,7 +434,7 @@ void
 oj_dump_compat_val(VALUE obj, int depth, Out out, bool as_ok) {
     int	type = rb_type(obj);
 
-    if (MAX_DEPTH < depth) {
+    if (out->opts->dump_opts.max_depth < depth) {
 	rb_raise(rb_eNoMemError, "Too deeply nested.\n");
     }
     if (0 < type && type <= RUBY_T_FIXNUM) {

@@ -29,6 +29,15 @@ Comparison Matrix
   - int rb_frame_method_id_and_class(ID *idp, VALUE *klassp);
 
  - plan
+  - oj.c
+
+   - mimic calls
+    - review and fix if needed
+    - maybe don't use a different default set since they are ignored anyway
+   - used compat mode
+   - check top level for to_json otherwise not
+   - normal dump does not
+    - check infinity handling, different for each mode
   - reorg tests
    - test_<mode>
    - isolated rails stuff
