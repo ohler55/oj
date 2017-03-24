@@ -33,7 +33,7 @@ class CompatibilityJson < Minitest::Test
   # Compares the results of to_json and Oj.dump. If an exception is raised the
   # exception class is compared but not the exception message.
   TEST_DATA_TO_JSON.each do |key, value|
-    define_method "test_to_#{key}" do 
+    define_method "test_to_json_#{key}" do 
       Oj.default_options = OJ_JSON_COMPAT
       json_value = begin
                      value.to_json
@@ -54,7 +54,7 @@ class CompatibilityJson < Minitest::Test
   end
 
   TEST_DATA_GENERATE.each do |key, value|
-    define_method "test_gen_#{key}" do 
+    define_method "test_generate_#{key}" do 
       Oj.default_options = OJ_JSON_COMPAT
       json_value = begin
                      JSON.generate(*value)
@@ -63,6 +63,27 @@ class CompatibilityJson < Minitest::Test
                    end
       oj_value = begin
                    Oj.to_json(*value)
+                 rescue Exception => e
+                   e
+                 end
+      if json_value.is_a?(Exception)
+        assert_equal(json_value.class, oj_value.class, key.to_s)
+      else
+        assert_equal(json_value, oj_value, key.to_s)
+      end
+    end
+  end
+
+  TEST_DATA_PARSE.each do |key, value|
+    define_method "test_parse_#{key}" do 
+      Oj.default_options = OJ_JSON_COMPAT
+      json_value = begin
+                     JSON.parse(*value)
+                   rescue Exception => e
+                     e
+                   end
+      oj_value = begin
+                   Oj.load(*value)
                  rescue Exception => e
                    e
                  end

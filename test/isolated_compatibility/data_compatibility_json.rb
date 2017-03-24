@@ -132,3 +132,16 @@ TEST_DATA_GENERATE = {
   string_12: [["\xea"], { ascii_only: false }],
   string_13: [["\x80"], { ascii_only: true }],
 }
+
+TEST_DATA_PARSE = {
+  ascii_8bit:  [ascii_8bit],
+  utf_16be:    [utf_16be],
+  utf_16le:    [utf_16le],
+  utf_32be:    [utf_32be],
+  utf_32le:    [utf_32le],
+  too_deep:    [too_deep],
+  load_null:   [nil, nil, :allow_blank => true],
+  load_null:   [nil, nil, :allow_blank => false],
+  load_null:   ['', nil, :allow_blank => false],
+}
+
