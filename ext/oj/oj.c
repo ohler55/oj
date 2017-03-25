@@ -113,6 +113,7 @@ VALUE	oj_slash_string;
 VALUE	oj_indent_sym;
 VALUE	oj_quirks_mode_sym;
 VALUE	oj_allow_nan_sym;
+VALUE	oj_create_additions_sym;
 
 static VALUE	allow_gc_sym;
 static VALUE	allow_invalid_unicode_sym;
@@ -392,6 +393,7 @@ oj_parse_options(VALUE ropts, Options copts) {
 	{ allow_gc_sym, &copts->allow_gc },
 	{ oj_quirks_mode_sym, &copts->quirks_mode },
 	{ allow_invalid_unicode_sym, &copts->allow_invalid },
+	{ oj_create_additions_sym, &copts->create_ok },
 	{ Qnil, 0 }
     };
     YesNoOpt		o;
@@ -1318,9 +1320,7 @@ Init_oj() {
     oj_json_parser_error_class = Qnil; // replaced if mimic is called
 
     allow_gc_sym = ID2SYM(rb_intern("allow_gc"));	rb_gc_register_address(&allow_gc_sym);
-    oj_allow_nan_sym = ID2SYM(rb_intern("allow_nan"));	rb_gc_register_address(&oj_allow_nan_sym);
-    oj_array_nl_sym = ID2SYM(rb_intern("array_nl"));	rb_gc_register_address(&oj_array_nl_sym);
-    oj_ascii_only_sym = ID2SYM(rb_intern("ascii_only"));	rb_gc_register_address(&oj_ascii_only_sym);
+    allow_invalid_unicode_sym = ID2SYM(rb_intern("allow_invalid_unicode"));rb_gc_register_address(&allow_invalid_unicode_sym);
     ascii_sym = ID2SYM(rb_intern("ascii"));		rb_gc_register_address(&ascii_sym);
     auto_define_sym = ID2SYM(rb_intern("auto_define"));	rb_gc_register_address(&auto_define_sym);
     auto_sym = ID2SYM(rb_intern("auto"));		rb_gc_register_address(&auto_sym);
@@ -1332,34 +1332,38 @@ Init_oj() {
     compat_sym = ID2SYM(rb_intern("compat"));		rb_gc_register_address(&compat_sym);
     create_id_sym = ID2SYM(rb_intern("create_id"));	rb_gc_register_address(&create_id_sym);
     custom_sym = ID2SYM(rb_intern("custom"));		rb_gc_register_address(&custom_sym);
+    empty_string_sym = ID2SYM(rb_intern("empty_string"));rb_gc_register_address(&empty_string_sym);
     escape_mode_sym = ID2SYM(rb_intern("escape_mode"));	rb_gc_register_address(&escape_mode_sym);
     float_prec_sym = ID2SYM(rb_intern("float_precision"));rb_gc_register_address(&float_prec_sym);
     float_sym = ID2SYM(rb_intern("float"));		rb_gc_register_address(&float_sym);
     hash_class_sym = ID2SYM(rb_intern("hash_class"));	rb_gc_register_address(&hash_class_sym);
     huge_sym = ID2SYM(rb_intern("huge"));		rb_gc_register_address(&huge_sym);
-    oj_indent_sym = ID2SYM(rb_intern("indent"));	rb_gc_register_address(&oj_indent_sym);
     json_sym = ID2SYM(rb_intern("json"));		rb_gc_register_address(&json_sym);
-    oj_max_nesting_sym = ID2SYM(rb_intern("max_nesting"));rb_gc_register_address(&oj_max_nesting_sym);
     mode_sym = ID2SYM(rb_intern("mode"));		rb_gc_register_address(&mode_sym);
     nan_sym = ID2SYM(rb_intern("nan"));			rb_gc_register_address(&nan_sym);
     newline_sym = ID2SYM(rb_intern("newline"));		rb_gc_register_address(&newline_sym);
     nilnil_sym = ID2SYM(rb_intern("nilnil"));		rb_gc_register_address(&nilnil_sym);
-    empty_string_sym = ID2SYM(rb_intern("empty_string"));rb_gc_register_address(&empty_string_sym);
     null_sym = ID2SYM(rb_intern("null"));		rb_gc_register_address(&null_sym);
-    oj_object_nl_sym = ID2SYM(rb_intern("object_nl"));	rb_gc_register_address(&oj_object_nl_sym);
     object_sym = ID2SYM(rb_intern("object"));		rb_gc_register_address(&object_sym);
-    omit_nil_sym = ID2SYM(rb_intern("omit_nil"));	rb_gc_register_address(&omit_nil_sym);
+    oj_allow_nan_sym = ID2SYM(rb_intern("allow_nan"));	rb_gc_register_address(&oj_allow_nan_sym);
+    oj_array_nl_sym = ID2SYM(rb_intern("array_nl"));	rb_gc_register_address(&oj_array_nl_sym);
+    oj_ascii_only_sym = ID2SYM(rb_intern("ascii_only"));rb_gc_register_address(&oj_ascii_only_sym);
+    oj_create_additions_sym = ID2SYM(rb_intern("create_additions"));rb_gc_register_address(&oj_create_additions_sym);
+    oj_indent_sym = ID2SYM(rb_intern("indent"));	rb_gc_register_address(&oj_indent_sym);
+    oj_max_nesting_sym = ID2SYM(rb_intern("max_nesting"));rb_gc_register_address(&oj_max_nesting_sym);
+    oj_object_nl_sym = ID2SYM(rb_intern("object_nl"));	rb_gc_register_address(&oj_object_nl_sym);
     oj_quirks_mode_sym = ID2SYM(rb_intern("quirks_mode"));rb_gc_register_address(&oj_quirks_mode_sym);
-    allow_invalid_unicode_sym = ID2SYM(rb_intern("allow_invalid_unicode"));rb_gc_register_address(&allow_invalid_unicode_sym);
-    raise_sym = ID2SYM(rb_intern("raise"));		rb_gc_register_address(&raise_sym);
-    rails_sym = ID2SYM(rb_intern("rails"));		rb_gc_register_address(&rails_sym);
-    ruby_sym = ID2SYM(rb_intern("ruby"));		rb_gc_register_address(&ruby_sym);
-    sec_prec_sym = ID2SYM(rb_intern("second_precision"));rb_gc_register_address(&sec_prec_sym);
     oj_space_before_sym = ID2SYM(rb_intern("space_before"));rb_gc_register_address(&oj_space_before_sym);
     oj_space_sym = ID2SYM(rb_intern("space"));		rb_gc_register_address(&oj_space_sym);
+    omit_nil_sym = ID2SYM(rb_intern("omit_nil"));	rb_gc_register_address(&omit_nil_sym);
+    rails_sym = ID2SYM(rb_intern("rails"));		rb_gc_register_address(&rails_sym);
+    raise_sym = ID2SYM(rb_intern("raise"));		rb_gc_register_address(&raise_sym);
+    ruby_sym = ID2SYM(rb_intern("ruby"));		rb_gc_register_address(&ruby_sym);
+    sec_prec_sym = ID2SYM(rb_intern("second_precision"));rb_gc_register_address(&sec_prec_sym);
     strict_sym = ID2SYM(rb_intern("strict"));		rb_gc_register_address(&strict_sym);
     symbol_keys_sym = ID2SYM(rb_intern("symbol_keys"));	rb_gc_register_address(&symbol_keys_sym);
     time_format_sym = ID2SYM(rb_intern("time_format"));	rb_gc_register_address(&time_format_sym);
+    unicode_xss_sym = ID2SYM(rb_intern("unicode_xss"));	rb_gc_register_address(&unicode_xss_sym);
     unix_sym = ID2SYM(rb_intern("unix"));		rb_gc_register_address(&unix_sym);
     unix_zone_sym = ID2SYM(rb_intern("unix_zone"));	rb_gc_register_address(&unix_zone_sym);
     use_as_json_sym = ID2SYM(rb_intern("use_as_json"));	rb_gc_register_address(&use_as_json_sym);
@@ -1367,7 +1371,6 @@ Init_oj() {
     word_sym = ID2SYM(rb_intern("word"));		rb_gc_register_address(&word_sym);
     xmlschema_sym = ID2SYM(rb_intern("xmlschema"));	rb_gc_register_address(&xmlschema_sym);
     xss_safe_sym = ID2SYM(rb_intern("xss_safe"));	rb_gc_register_address(&xss_safe_sym);
-    unicode_xss_sym = ID2SYM(rb_intern("unicode_xss"));	rb_gc_register_address(&unicode_xss_sym);
 
     oj_slash_string = rb_str_new2("/");			rb_gc_register_address(&oj_slash_string);
 

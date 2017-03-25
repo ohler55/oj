@@ -8,7 +8,6 @@
 #include "dump.h"
 #include "parse.h"
 
-static VALUE	create_additions_sym;
 static VALUE	symbolize_names_sym;
 
 static const char	json_class[] = "json_class";
@@ -408,7 +407,7 @@ mimic_parse(int argc, VALUE *argv, VALUE self) {
 	if (Qnil != (v = rb_hash_lookup(ropts, oj_quirks_mode_sym))) {
 	    pi.options.quirks_mode = (Qtrue == v) ? Yes : No;
 	}
-	if (Qnil != (v = rb_hash_lookup(ropts, create_additions_sym))) {
+	if (Qnil != (v = rb_hash_lookup(ropts, oj_create_additions_sym))) {
 	    pi.options.create_ok = (Qtrue == v) ? Yes : No;
 	}
 	// :allow_nan is not supported as Oj always allows nan
@@ -640,7 +639,6 @@ oj_define_mimic_json(int argc, VALUE *argv, VALUE self) {
 
     rb_gv_set("$VERBOSE", verbose);
 
-    create_additions_sym = ID2SYM(rb_intern("create_additions"));	rb_gc_register_address(&create_additions_sym);
     symbolize_names_sym = ID2SYM(rb_intern("symbolize_names"));		rb_gc_register_address(&symbolize_names_sym);
 
     if (rb_const_defined_at(mimic, rb_intern("JSONError"))) {

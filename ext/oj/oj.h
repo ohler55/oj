@@ -275,12 +275,12 @@ extern rb_encoding	*oj_utf8_encoding;
 extern VALUE		oj_utf8_encoding;
 #endif
 
-extern VALUE	oj_quirks_mode_sym;
 extern VALUE	oj_allow_nan_sym;
 extern VALUE	oj_array_nl_sym;
 extern VALUE	oj_ascii_only_sym;
 extern VALUE	oj_bag_class;
 extern VALUE	oj_bigdecimal_class;
+extern VALUE	oj_create_additions_sym;
 extern VALUE	oj_cstack_class;
 extern VALUE	oj_date_class;
 extern VALUE	oj_datetime_class;
@@ -290,13 +290,14 @@ extern VALUE	oj_indent_sym;
 extern VALUE	oj_json_parser_error_class;
 extern VALUE	oj_max_nesting_sym;
 extern VALUE	oj_object_nl_sym;
+extern VALUE	oj_quirks_mode_sym;
+extern VALUE	oj_slash_string;
 extern VALUE	oj_space_before_sym;
 extern VALUE	oj_space_sym;
 extern VALUE	oj_stream_writer_class;
 extern VALUE	oj_string_writer_class;
 extern VALUE	oj_stringio_class;
 extern VALUE	oj_struct_class;
-extern VALUE	oj_slash_string;
 
 extern ID	oj_add_value_id;
 extern ID	oj_array_append_id;

@@ -238,7 +238,7 @@ class CompatJuice < Minitest::Test
   end
 
   def test_json_object_create_id
-    Oj.default_options = { :create_id => 'kson_class' }
+    Oj.default_options = { :create_id => 'kson_class', :create_additions => true}
     expected = Jeez.new(true, 58)
     json = %{{"kson_class":"CompatJuice::Jeez","x":true,"y":58}}
     obj = Oj.load(json)
@@ -403,16 +403,16 @@ class CompatJuice < Minitest::Test
   def test_json_object_dump_create_id
     expected = Jeez.new(true, 58)
     json = Oj.to_json(expected)
-    obj = Oj.compat_load(json)
+    obj = Oj.compat_load(json, :create_additions => true)
     assert_equal(expected, obj)
   end
 
   def test_json_object_bad
     json = %{{"json_class":"CompatJuice::Junk","x":true}}
     begin
-      Oj.compat_load(json)
+      Oj.compat_load(json, :create_additions => true)
     rescue Exception => e
-      assert_equal("Oj::ParseError", e.class().name)
+      assert_equal("ArgumentError", e.class().name)
       return
     end
     assert(false, "*** expected an exception")
@@ -421,9 +421,9 @@ class CompatJuice < Minitest::Test
   def test_json_object_create_cache
     expected = Jeez.new(true, 58)
     json = Oj.to_json(expected)
-    obj = Oj.compat_load(json, :class_cache => true)
+    obj = Oj.compat_load(json, :class_cache => true, :create_additions => true)
     assert_equal(expected, obj)
-    obj = Oj.compat_load(json, :class_cache => false)
+    obj = Oj.compat_load(json, :class_cache => false, :create_additions => true)
     assert_equal(expected, obj)
   end
 
@@ -431,7 +431,7 @@ class CompatJuice < Minitest::Test
     expected = Jeez.new(true, 58)
     json = Oj.to_json(expected)
     json.gsub!('json_class', '_class_')
-    obj = Oj.compat_load(json, :create_id => "_class_")
+    obj = Oj.compat_load(json, :create_id => "_class_", :create_additions => true)
     assert_equal(expected, obj)
   end
 
