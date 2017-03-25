@@ -1,3 +1,12 @@
---title ""
+--title "Oj API Documentation"
+--readme README.md
+--charset utf-8
+--markup markdown
 -
+docs/Advanced.md
+docs/Compatibility.md
+docs/Modes.md
+docs/Options.md
+docs/Security.md
 CHANGELOG.md
+LICENSE

@@ -29,6 +29,8 @@ module Oj
     end
   end
 
+  # Loads mimic-ed JSON paths. Used by OJ.mimic_JSON.
+  # @param mimic_path [Array] additional paths to add to the Ruby loaded features.
   def self.mimic_loaded(mimic_paths=[])
     $LOAD_PATH.each do |d|
       next unless File.exist?(d)

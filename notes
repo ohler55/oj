@@ -29,30 +29,26 @@ Comparison Matrix
   - int rb_frame_method_id_and_class(ID *idp, VALUE *klassp);
 
  - plan
-  - oj.c
+  - doc for modes
+   - web page?
+   - 
+  - object mode
+   - move tests
+   - parse down dump_object
 
-   - mimic calls
-    - review and fix if needed
-    - maybe don't use a different default set since they are ignored anyway
-   - used compat mode
-   - check top level for to_json otherwise not
-   - normal dump does not
-    - check infinity handling, different for each mode
+  - rails mode
+
+  - custom mode
+  
   - reorg tests
-   - test_<mode>
    - isolated rails stuff
     - only need to verify JSON methods have beed defined and not overridden
     - really a mimic tests
     - can rails tests not be run for 1.9.3?
 
-  - compat
-   - option for circular
-   - handle options
-    - unit tests
 
-  - add to_hash option
   - create dump_custom, copy from compat
-  - modify compat to not use :use_xx_json
+
   - have rails use compat funcs
   
  - add rails mode
