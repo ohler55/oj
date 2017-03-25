@@ -188,7 +188,8 @@ struct _Options	oj_default_options = {
     Yes,	// empty_string
     Yes,	// allow_gc
     Yes,	// quirks_mode
-    No,		// allow_invalid    
+    No,		// allow_invalid
+    No,		// create_ok
     json_class,	// create_id
     10,		// create_id_len
     9,		// sec_prec
@@ -1026,68 +1027,7 @@ to_json(int argc, VALUE *argv, VALUE self) {
     }
     copts.dump_opts.nan_dump = false;
     if (2 == argc) {
-	VALUE	ropts = argv[1];
-	VALUE	v;
-	size_t	len;
-
-	if (Qnil != (v = rb_hash_lookup(ropts, oj_quirks_mode_sym))) {
-	    copts.quirks_mode = (Qtrue == v) ? Yes : No;
-	}
-	if (Qnil != (v = rb_hash_lookup(ropts, oj_max_nesting_sym))) {
-	    if (Qtrue == v) {
-		copts.dump_opts.max_depth = 100;
-	    } else {
-		copts.dump_opts.max_depth = MAX_DEPTH;
-	    }
-	}
-	if (Qnil != (v = rb_hash_lookup(ropts, oj_allow_nan_sym))) {
-	    copts.dump_opts.nan_dump = (Qtrue == v);
-	}
-	if (Qnil != (v = rb_hash_lookup(ropts, oj_indent_sym))) { // TBD fixnum also ok
-	    rb_check_type(v, T_STRING);
-	    if (sizeof(copts.dump_opts.indent_str) <= (len = RSTRING_LEN(v))) {
-		rb_raise(rb_eArgError, "indent string is limited to %lu characters.", sizeof(copts.dump_opts.indent_str));
-	    }
-	    strcpy(copts.dump_opts.indent_str, StringValuePtr(v));
-	    copts.dump_opts.indent_size = (uint8_t)len;
-	    copts.dump_opts.use = true;
-	}
-	if (Qnil != (v = rb_hash_lookup(ropts, oj_space_sym))) {
-	    rb_check_type(v, T_STRING);
-	    if (sizeof(copts.dump_opts.after_sep) <= (len = RSTRING_LEN(v))) {
-		rb_raise(rb_eArgError, "space string is limited to %lu characters.", sizeof(copts.dump_opts.after_sep));
-	    }
-	    strcpy(copts.dump_opts.after_sep, StringValuePtr(v));
-	    copts.dump_opts.after_size = (uint8_t)len;
-	    copts.dump_opts.use = true;
-	}
-	if (Qnil != (v = rb_hash_lookup(ropts, oj_space_before_sym))) {
-	    rb_check_type(v, T_STRING);
-	    if (sizeof(copts.dump_opts.before_sep) <= (len = RSTRING_LEN(v))) {
-		rb_raise(rb_eArgError, "space_before string is limited to %lu characters.", sizeof(copts.dump_opts.before_sep));
-	    }
-	    strcpy(copts.dump_opts.before_sep, StringValuePtr(v));
-	    copts.dump_opts.before_size = (uint8_t)len;
-	    copts.dump_opts.use = true;
-	}
-	if (Qnil != (v = rb_hash_lookup(ropts, oj_object_nl_sym))) {
-	    rb_check_type(v, T_STRING);
-	    if (sizeof(copts.dump_opts.hash_nl) <= (len = RSTRING_LEN(v))) {
-		rb_raise(rb_eArgError, "object_nl string is limited to %lu characters.", sizeof(copts.dump_opts.hash_nl));
-	    }
-	    strcpy(copts.dump_opts.hash_nl, StringValuePtr(v));
-	    copts.dump_opts.hash_size = (uint8_t)len;
-	    copts.dump_opts.use = true;
-	}
-	if (Qnil != (v = rb_hash_lookup(ropts, oj_array_nl_sym))) {
-	    rb_check_type(v, T_STRING);
-	    if (sizeof(copts.dump_opts.array_nl) <= (len = RSTRING_LEN(v))) {
-		rb_raise(rb_eArgError, "array_nl string is limited to %lu characters.", sizeof(copts.dump_opts.array_nl));
-	    }
-	    strcpy(copts.dump_opts.array_nl, StringValuePtr(v));
-	    copts.dump_opts.array_size = (uint8_t)len;
-	    copts.dump_opts.use = true;
-	}
+	oj_parse_mimic_dump_options(argv[1], &copts);
     }
     copts.mode = CompatMode;
     copts.to_json = Yes;

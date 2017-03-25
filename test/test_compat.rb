@@ -450,7 +450,7 @@ class CompatJuice < Minitest::Test
   def dump_and_load(obj, trace=false)
     json = Oj.dump(obj)
     puts json if trace
-    loaded = Oj.compat_load(json);
+    loaded = Oj.compat_load(json, :create_additions => true);
     if obj.nil?
       assert_nil(loaded)
     else
@@ -462,7 +462,7 @@ class CompatJuice < Minitest::Test
   def dump_to_json_and_load(obj, trace=false)
     json = Oj.to_json(obj, :indent => '  ')
     puts json if trace
-    loaded = Oj.compat_load(json);
+    loaded = Oj.compat_load(json, :create_additions => true);
     if obj.nil?
       assert_nil(loaded)
     else

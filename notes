@@ -23,12 +23,12 @@ Comparison Matrix
 - refactor
  - what happened to obj mode loading time?
 
- - can __method__ be checked for to_json?
-  - tests with to_json calling Oj.dump on itself
-  - VALUE rb_current_receiver(void);
-  - int rb_frame_method_id_and_class(ID *idp, VALUE *klassp);
-
  - plan
+  - address how to handle the requires like 'json/add/core'
+   - can a check be made for whether the to_json is the oj one or something else?
+    - maybe not
+   - have to detect non-oj to_jsons in order to optimizes
+
   - doc for modes
    - web page?
    - 

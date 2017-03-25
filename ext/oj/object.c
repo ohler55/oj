@@ -243,7 +243,7 @@ hat_cstr(ParseInfo pi, Val parent, Val kval, const char *str, size_t len) {
 	switch (key[1]) {
 	case 'o': // object
 	    {	// name2class sets and error if the class is not found or created
-		VALUE	clas = oj_name2class(pi, str, len, Yes == pi->options.auto_define);
+		VALUE	clas = oj_name2class(pi, str, len, Yes == pi->options.auto_define, rb_eArgError);
 
 		if (Qundef != clas) {
 		    parent->val = rb_obj_alloc(clas);
@@ -272,7 +272,7 @@ hat_cstr(ParseInfo pi, Val parent, Val kval, const char *str, size_t len) {
 	    break;
 	case 'c': // class
 	    {
-		VALUE	clas = oj_name2class(pi, str, len, Yes == pi->options.auto_define);
+		VALUE	clas = oj_name2class(pi, str, len, Yes == pi->options.auto_define, rb_eArgError);
 
 		if (Qundef == clas) {
 		    return 0;
@@ -410,7 +410,7 @@ hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, volatile VALUE
 		sc = rb_funcall2(rb_cStruct, oj_new_id, cnt, args);
 	    } else {
 		// If struct is not defined then we let this fail and raise an exception.
-		sc = oj_name2struct(pi, *RARRAY_PTR(value));
+		sc = oj_name2struct(pi, *RARRAY_PTR(value), rb_eArgError);
 	    }
             // Create a properly initialized struct instance without calling the initialize method.
             parent->val = rb_obj_alloc(sc);

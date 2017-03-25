@@ -164,6 +164,7 @@ typedef struct _Options {
     char		allow_gc;	// allow GC during parse
     char		quirks_mode;	// allow single JSON values instead of documents
     char		allow_invalid;	// YesNo - allow invalid unicode
+    char		create_ok;	// YesNo allow create_id in compat mode
     const char		*create_id;	// 0 or string
     size_t		create_id_len;	// length of create_id
     int			sec_prec;	// second precision when dumping time
@@ -264,6 +265,7 @@ extern void	oj_str_writer_init(StrWriter sw);
 extern VALUE	oj_define_mimic_json(int argc, VALUE *argv, VALUE self);
 extern VALUE	oj_mimic_generate(int argc, VALUE *argv, VALUE self);
 extern VALUE	oj_mimic_pretty_generate(int argc, VALUE *argv, VALUE self);
+extern void	oj_parse_mimic_dump_options(VALUE ropts, Options copts);
 
 extern VALUE	Oj;
 extern struct _Options	oj_default_options;

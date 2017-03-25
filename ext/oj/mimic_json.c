@@ -21,6 +21,7 @@ VALUE	oj_object_nl_sym;
 VALUE	oj_space_before_sym;
 VALUE	oj_space_sym;
 
+
 // mimic JSON documentation
 
 /* Document-module: JSON::Ext
@@ -52,6 +53,78 @@ VALUE	oj_space_sym;
  * @param generator [Object] ignored
  */
 
+void
+oj_parse_mimic_dump_options(VALUE ropts, Options copts) {
+    VALUE	v;
+    size_t	len;
+
+    if (T_HASH != rb_type(ropts)) {
+	rb_raise(rb_eArgError, "options must be a hash.");
+    }
+    if (Qnil != (v = rb_hash_lookup(ropts, oj_max_nesting_sym))) {
+	if (Qtrue == v) {
+	    copts->dump_opts.max_depth = 100;
+	} else {
+	    copts->dump_opts.max_depth = MAX_DEPTH;
+	}
+    }
+    if (Qnil != (v = rb_hash_lookup(ropts, oj_allow_nan_sym))) {
+	copts->dump_opts.nan_dump = (Qtrue == v);
+    }
+    if (Qnil != (v = rb_hash_lookup(ropts, oj_indent_sym))) { // TBD fixnum also ok
+	rb_check_type(v, T_STRING);
+	if (sizeof(copts->dump_opts.indent_str) <= (len = RSTRING_LEN(v))) {
+	    rb_raise(rb_eArgError, "indent string is limited to %lu characters.", sizeof(copts->dump_opts.indent_str));
+	}
+	strcpy(copts->dump_opts.indent_str, StringValuePtr(v));
+	copts->dump_opts.indent_size = (uint8_t)len;
+	copts->dump_opts.use = true;
+    }
+    if (Qnil != (v = rb_hash_lookup(ropts, oj_space_sym))) {
+	rb_check_type(v, T_STRING);
+	if (sizeof(copts->dump_opts.after_sep) <= (len = RSTRING_LEN(v))) {
+	    rb_raise(rb_eArgError, "space string is limited to %lu characters.", sizeof(copts->dump_opts.after_sep));
+	}
+	strcpy(copts->dump_opts.after_sep, StringValuePtr(v));
+	copts->dump_opts.after_size = (uint8_t)len;
+	copts->dump_opts.use = true;
+    }
+    if (Qnil != (v = rb_hash_lookup(ropts, oj_space_before_sym))) {
+	rb_check_type(v, T_STRING);
+	if (sizeof(copts->dump_opts.before_sep) <= (len = RSTRING_LEN(v))) {
+	    rb_raise(rb_eArgError, "space_before string is limited to %lu characters.", sizeof(copts->dump_opts.before_sep));
+	}
+	strcpy(copts->dump_opts.before_sep, StringValuePtr(v));
+	copts->dump_opts.before_size = (uint8_t)len;
+	copts->dump_opts.use = true;
+    }
+    if (Qnil != (v = rb_hash_lookup(ropts, oj_object_nl_sym))) {
+	rb_check_type(v, T_STRING);
+	if (sizeof(copts->dump_opts.hash_nl) <= (len = RSTRING_LEN(v))) {
+	    rb_raise(rb_eArgError, "object_nl string is limited to %lu characters.", sizeof(copts->dump_opts.hash_nl));
+	}
+	strcpy(copts->dump_opts.hash_nl, StringValuePtr(v));
+	copts->dump_opts.hash_size = (uint8_t)len;
+	copts->dump_opts.use = true;
+    }
+    if (Qnil != (v = rb_hash_lookup(ropts, oj_array_nl_sym))) {
+	rb_check_type(v, T_STRING);
+	if (sizeof(copts->dump_opts.array_nl) <= (len = RSTRING_LEN(v))) {
+	    rb_raise(rb_eArgError, "array_nl string is limited to %lu characters.", sizeof(copts->dump_opts.array_nl));
+	}
+	strcpy(copts->dump_opts.array_nl, StringValuePtr(v));
+	copts->dump_opts.array_size = (uint8_t)len;
+	copts->dump_opts.use = true;
+    }
+    if (Qnil != (v = rb_hash_lookup(ropts, oj_ascii_only_sym))) {
+	// generate seems to assume anything except nil and false are true.
+	if (Qfalse == v || Qnil == v) {
+	    copts->escape_mode = JSONEsc;
+	} else {
+	    copts->escape_mode = ASCIIEsc;
+	}
+    }
+}
 
 /* Document-module: JSON
  * @!method dump(obj, anIO=nil, limit = nil)
@@ -156,17 +229,18 @@ mimic_walk(VALUE key, VALUE obj, VALUE proc) {
  */
 static VALUE
 mimic_load(int argc, VALUE *argv, VALUE self) {
-    struct _ParseInfo	pi;
-    VALUE		obj;
-    VALUE		p = Qnil;
+    VALUE	obj;
+    VALUE	p = Qnil;
 
-    pi.err_class = oj_json_parser_error_class;
-    pi.options = oj_default_options;
-    oj_set_compat_callbacks(&pi);
-
-    obj = oj_pi_parse(argc, argv, &pi, 0, 0, 0);
+    obj = oj_compat_parse(argc, argv, self);
     if (2 <= argc) {
-	p = argv[1];
+	if (rb_cProc == rb_obj_class(argv[1])) {
+	    p = argv[1];
+	} else if (3 <= argc) {
+	    if (rb_cProc == rb_obj_class(argv[2])) {
+		p = argv[2];
+	    }
+	}
     }
     mimic_walk(Qnil, obj, p);
 
@@ -210,76 +284,7 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
     copts->dump_opts.nan_dump = false;
     copts->mode = CompatMode;
     if (2 == argc && Qnil != argv[1]) {
-	VALUE	ropts = argv[1];
-	VALUE	v;
-	size_t	len;
-
-	if (T_HASH != rb_type(ropts)) {
-	    rb_raise(rb_eArgError, "options must be a hash.");
-	}
-	if (Qnil != (v = rb_hash_lookup(ropts, oj_max_nesting_sym))) {
-	    if (Qtrue == v) {
-		copts->dump_opts.max_depth = 100;
-	    } else {
-		copts->dump_opts.max_depth = MAX_DEPTH;
-	    }
-	}
-	if (Qnil != (v = rb_hash_lookup(ropts, oj_allow_nan_sym))) {
-	    copts->dump_opts.nan_dump = (Qtrue == v);
-	}
-	if (Qnil != (v = rb_hash_lookup(ropts, oj_indent_sym))) { // TBD fixnum also ok
-	    rb_check_type(v, T_STRING);
-	    if (sizeof(copts->dump_opts.indent_str) <= (len = RSTRING_LEN(v))) {
-		rb_raise(rb_eArgError, "indent string is limited to %lu characters.", sizeof(copts->dump_opts.indent_str));
-	    }
-	    strcpy(copts->dump_opts.indent_str, StringValuePtr(v));
-	    copts->dump_opts.indent_size = (uint8_t)len;
-	    copts->dump_opts.use = true;
-	}
-	if (Qnil != (v = rb_hash_lookup(ropts, oj_space_sym))) {
-	    rb_check_type(v, T_STRING);
-	    if (sizeof(copts->dump_opts.after_sep) <= (len = RSTRING_LEN(v))) {
-		rb_raise(rb_eArgError, "space string is limited to %lu characters.", sizeof(copts->dump_opts.after_sep));
-	    }
-	    strcpy(copts->dump_opts.after_sep, StringValuePtr(v));
-	    copts->dump_opts.after_size = (uint8_t)len;
-	    copts->dump_opts.use = true;
-	}
-	if (Qnil != (v = rb_hash_lookup(ropts, oj_space_before_sym))) {
-	    rb_check_type(v, T_STRING);
-	    if (sizeof(copts->dump_opts.before_sep) <= (len = RSTRING_LEN(v))) {
-		rb_raise(rb_eArgError, "space_before string is limited to %lu characters.", sizeof(copts->dump_opts.before_sep));
-	    }
-	    strcpy(copts->dump_opts.before_sep, StringValuePtr(v));
-	    copts->dump_opts.before_size = (uint8_t)len;
-	    copts->dump_opts.use = true;
-	}
-	if (Qnil != (v = rb_hash_lookup(ropts, oj_object_nl_sym))) {
-	    rb_check_type(v, T_STRING);
-	    if (sizeof(copts->dump_opts.hash_nl) <= (len = RSTRING_LEN(v))) {
-		rb_raise(rb_eArgError, "object_nl string is limited to %lu characters.", sizeof(copts->dump_opts.hash_nl));
-	    }
-	    strcpy(copts->dump_opts.hash_nl, StringValuePtr(v));
-	    copts->dump_opts.hash_size = (uint8_t)len;
-	    copts->dump_opts.use = true;
-	}
-	if (Qnil != (v = rb_hash_lookup(ropts, oj_array_nl_sym))) {
-	    rb_check_type(v, T_STRING);
-	    if (sizeof(copts->dump_opts.array_nl) <= (len = RSTRING_LEN(v))) {
-		rb_raise(rb_eArgError, "array_nl string is limited to %lu characters.", sizeof(copts->dump_opts.array_nl));
-	    }
-	    strcpy(copts->dump_opts.array_nl, StringValuePtr(v));
-	    copts->dump_opts.array_size = (uint8_t)len;
-	    copts->dump_opts.use = true;
-	}
-	if (Qnil != (v = rb_hash_lookup(ropts, oj_ascii_only_sym))) {
-	    // generate seems to assume anything except nil and false are true.
-	    if (Qfalse == v || Qnil == v) {
-		copts->escape_mode = JSONEsc;
-	    } else {
-		copts->escape_mode = ASCIIEsc;
-	    }
-	}
+	oj_parse_mimic_dump_options(argv[1], copts);
     }
     oj_dump_obj_to_json(*argv, copts, &out);
     if (0 == out.buf) {
@@ -379,12 +384,16 @@ mimic_parse(int argc, VALUE *argv, VALUE self) {
 	rb_raise(rb_eArgError, "Wrong number of arguments to parse.");
     }
     oj_set_compat_callbacks(&pi);
-    pi.err_class = oj_json_parser_error_class;
+    // TBD
+    //pi.err_class = oj_json_parser_error_class;
+    pi.err_class = Qnil;
+
     pi.options = oj_default_options;
     pi.options.auto_define = No;
-    pi.options.quirks_mode = No;
+    pi.options.quirks_mode = Yes;
     pi.options.allow_invalid = No;
     pi.options.empty_string = No;
+    pi.options.create_ok = No; // TBD what is default?
 
     if (2 <= argc) {
 	VALUE	ropts = argv[1];
@@ -396,15 +405,11 @@ mimic_parse(int argc, VALUE *argv, VALUE self) {
 	if (Qnil != (v = rb_hash_lookup(ropts, symbolize_names_sym))) {
 	    pi.options.sym_key = (Qtrue == v) ? Yes : No;
 	}
-
 	if (Qnil != (v = rb_hash_lookup(ropts, oj_quirks_mode_sym))) {
 	    pi.options.quirks_mode = (Qtrue == v) ? Yes : No;
 	}
-
 	if (Qnil != (v = rb_hash_lookup(ropts, create_additions_sym))) {
-	    if (Qfalse == v) {
-		oj_set_strict_callbacks(&pi);
-	    }
+	    pi.options.create_ok = (Qtrue == v) ? Yes : No;
 	}
 	// :allow_nan is not supported as Oj always allows nan
 	// :object_class is always Hash
@@ -498,6 +503,7 @@ static struct _Options	mimic_object_to_json_options = {
     Yes,	// allow_gc
     Yes,	// quirks_mode
     No,		// allow_invalid
+    No,		// create_ok
     json_class,	// create_id
     10,		// create_id_len
     3,		// sec_prec
@@ -518,6 +524,8 @@ static struct _Options	mimic_object_to_json_options = {
 	0,	// array_size
 	AutoNan,// nan_dump
 	false,	// omit_nil
+	MAX_DEPTH, // max_depth
+	false,	// create_additions
     }
 };
 
@@ -620,7 +628,7 @@ oj_define_mimic_json(int argc, VALUE *argv, VALUE self) {
     rb_define_module_function(mimic, "generate", oj_mimic_generate, -1);
     rb_define_module_function(mimic, "fast_generate", oj_mimic_generate, -1);
     rb_define_module_function(mimic, "pretty_generate", oj_mimic_pretty_generate, -1);
-    /* for older versions of JSON, the deprecated unparse methods */
+    // For older versions of JSON, the deprecated unparse methods.
     rb_define_module_function(mimic, "unparse", oj_mimic_generate, -1);
     rb_define_module_function(mimic, "fast_unparse", oj_mimic_generate, -1);
     rb_define_module_function(mimic, "pretty_unparse", oj_mimic_pretty_generate, -1);
