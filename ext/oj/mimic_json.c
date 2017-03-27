@@ -420,7 +420,7 @@ mimic_parse(int argc, VALUE *argv, VALUE self) {
 }
 
 /* Document-module: JSON
- * @!methof recurse_proc(obj, &proc)
+ * @!method recurse_proc(obj, &proc)
  * 
  * Yields to the proc for every element in the obj recursivly.
  * 

@@ -6,12 +6,12 @@
 # FIXME not sure how these should be handled. Better performance if we let Oj
 # do it but then code would have to change. Maybe oj/add/rational as an option
 # or oj/json/add/rational.
+require 'json_gem/test_helper'
 require 'json/add/core'
 require 'json/add/complex'
 require 'json/add/rational'
 require 'json/add/bigdecimal'
 require 'json/add/ostruct'
-require 'json_gem/test_helper'
 require 'date'
 
 class JSONAdditionTest < Test::Unit::TestCase
@@ -148,7 +148,7 @@ class JSONAdditionTest < Test::Unit::TestCase
 
   # FIXME depends on the add/core
   def test_core
-    pend("mimic_JSON") if MIMIC_JSON
+    #pend("mimic_JSON") if MIMIC_JSON
     t = Time.now
     assert_equal t, JSON(JSON(t), :create_additions => true)
     d = Date.today
