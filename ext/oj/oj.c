@@ -1255,6 +1255,9 @@ Init_oj() {
     rb_define_module_function(Oj, "generate", oj_mimic_generate, -1);
     rb_define_module_function(Oj, "fast_generate", oj_mimic_generate, -1);
 
+    rb_define_module_function(Oj, "add_to_json", oj_add_to_json, -1);
+    rb_define_module_function(Oj, "remove_to_json", oj_remove_to_json, -1);
+
     rb_define_module_function(Oj, "register_odd", register_odd, -1);
     rb_define_module_function(Oj, "register_odd_raw", register_odd_raw, -1);
 

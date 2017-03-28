@@ -39,7 +39,8 @@ module Oj
       $LOADED_FEATURES << jfile unless $LOADED_FEATURES.include?(jfile) if File.exist?(jfile)
       
       Dir.glob(File.join(d, 'json', '**', '*.rb')).each do |file|
-        $LOADED_FEATURES << file unless $LOADED_FEATURES.include?(file)
+        # allow json/add/xxx to be loaded. User can override with Oj.add_to_json(xxx).
+        $LOADED_FEATURES << file unless $LOADED_FEATURES.include?(file) unless file.include?('add')
       end
     end
     mimic_paths.each { |p| $LOADED_FEATURES << p }
@@ -56,7 +57,7 @@ module Oj
           end
         end
         def self.json_create(h)
-          new(h['t'])
+          new(h['t'] || h[:t])
         end
       end
     end
@@ -82,6 +83,18 @@ module Oj
       end
       def self.json_create(h)
         Rational(h['n'], h['d'])
+      end
+    end
+
+    Complex.class_eval do
+      # Both the JSON gem and Rails monkey patch as_json. Let them battle it out.
+      unless defined?(self.as_json)
+        def as_json(*)
+          {JSON.create_id => 'Complex', 'r' => real, 'i' => imag }
+        end
+      end
+      def self.json_create(h)
+        Complex(h['r'], h['i'])
       end
     end
 
@@ -157,8 +170,41 @@ module Oj
           m[k] = v
         end
       end
+
     end
 
   end # self.mimic_loaded
 
 end # Oj
+
+module JSON
+  Infinity = 1/0.0
+  MinusInfinity = -1/0.0
+  NaN = 0.0/0.0
+end
+
+# More monkey patches.
+class String
+  def to_json_raw_object
+    {
+      JSON.create_id => self.class.name,
+      'raw' => self.bytes
+    }
+  end
+  def to_json_raw(*)
+   to_json_raw_object().to_json()
+  end
+  def self.json_create(obj)
+    s = ''
+    s.encode!(Encoding::ASCII_8BIT) if s.respond_to?(:encode!)
+    raw = obj['raw']
+    if raw.is_a? Array
+      raw.each { |v| s << v }
+    end
+    s
+  end
+end
+
+
+
+  

@@ -7,12 +7,22 @@
 # do it but then code would have to change. Maybe oj/add/rational as an option
 # or oj/json/add/rational.
 require 'json_gem/test_helper'
+require 'date'
+unless MIMIC_JSON
+  require 'json/add/core'
+  require 'json/add/complex'
+  require 'json/add/rational'
+  require 'json/add/bigdecimal'
+  require 'json/add/ostruct'
+end
+
 require 'json/add/core'
-require 'json/add/complex'
-require 'json/add/rational'
+#require 'json/add/complex'
+#require 'json/add/rational'
 require 'json/add/bigdecimal'
 require 'json/add/ostruct'
-require 'date'
+
+Oj.add_to_json(Complex, Rational)
 
 class JSONAdditionTest < Test::Unit::TestCase
   include Test::Unit::TestCaseOmissionSupport
@@ -148,7 +158,7 @@ class JSONAdditionTest < Test::Unit::TestCase
 
   # FIXME depends on the add/core
   def test_core
-    #pend("mimic_JSON") if MIMIC_JSON
+    pend("mimic_JSON") if MIMIC_JSON
     t = Time.now
     assert_equal t, JSON(JSON(t), :create_additions => true)
     d = Date.today
@@ -191,7 +201,6 @@ class JSONAdditionTest < Test::Unit::TestCase
 
   # FIXME these depend on modified behavior from the 'add/xxx' requires
   def test_rational_complex
-    pend("mimic_JSON") if MIMIC_JSON
     assert_equal Rational(2, 9), JSON.parse(JSON(Rational(2, 9)), :create_additions => true)
     assert_equal Complex(2, 9), JSON.parse(JSON(Complex(2, 9)), :create_additions => true)
   end

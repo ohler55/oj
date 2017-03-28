@@ -8,6 +8,21 @@
 // Workaround in case INFINITY is not defined in math.h or if the OS is CentOS
 #define OJ_INFINITY (1.0/0.0)
 
+typedef void	(*AltFunc)(VALUE obj, int depth, Out out);
+
+typedef struct _Alt {
+    const char	*name;
+    VALUE	clas;
+    AltFunc	func;
+    bool	active;
+} *Alt;
+
+typedef struct _Attr {
+    const char	*name;
+    int		len;
+    VALUE	value;
+} *Attr;
+
 static void
 raise_gen_err(const char *msg) {
     volatile VALUE	json_module;
@@ -30,6 +45,180 @@ raise_gen_err(const char *msg) {
     	gen_err_class = rb_define_class_under(json_module, "GeneratorError", json_error_class);
     }
     rb_raise(gen_err_class, "%s", msg);
+}
+
+static void
+dump_obj_attrs(const char *classname, Attr attrs, int depth, Out out) {
+    int		d2 = depth + 1;
+    int		d3 = d2 + 1;
+    size_t	len = strlen(classname);
+    size_t	sep_len = out->opts->dump_opts.before_size + out->opts->dump_opts.after_size + 2;
+    size_t	size = d2 * out->indent + d3 * out->indent + 10 + len + out->opts->create_id_len + sep_len;
+
+    assure_size(out, size);
+    *out->cur++ = '{';
+    fill_indent(out, d2);
+    *out->cur++ = '"';
+    memcpy(out->cur, out->opts->create_id, out->opts->create_id_len);
+    out->cur += out->opts->create_id_len;
+    *out->cur++ = '"';
+    if (0 < out->opts->dump_opts.before_size) {
+	strcpy(out->cur, out->opts->dump_opts.before_sep);
+	out->cur += out->opts->dump_opts.before_size;
+    }
+    *out->cur++ = ':';
+    if (0 < out->opts->dump_opts.after_size) {
+	strcpy(out->cur, out->opts->dump_opts.after_sep);
+	out->cur += out->opts->dump_opts.after_size;
+    }
+    *out->cur++ = '"';
+    memcpy(out->cur, classname, len);
+    out->cur += len;
+    *out->cur++ = '"';
+    size = d3 * out->indent + 2;
+    for (; NULL != attrs->name; attrs++) {
+	assure_size(out, size + attrs->len + sep_len + 2);
+	*out->cur++ = ',';
+	fill_indent(out, d3);
+	*out->cur++ = '"';
+	memcpy(out->cur, attrs->name, attrs->len);
+	out->cur += attrs->len;
+	*out->cur++ = '"';
+	if (0 < out->opts->dump_opts.before_size) {
+	    strcpy(out->cur, out->opts->dump_opts.before_sep);
+	    out->cur += out->opts->dump_opts.before_size;
+	}
+	*out->cur++ = ':';
+	if (0 < out->opts->dump_opts.after_size) {
+	    strcpy(out->cur, out->opts->dump_opts.after_sep);
+	    out->cur += out->opts->dump_opts.after_size;
+	}
+	oj_dump_compat_val(attrs->value, d3, out, true);
+    }
+    assure_size(out, depth * out->indent + 2);
+    fill_indent(out, depth);
+    *out->cur++ = '}';
+    *out->cur = '\0';
+}
+
+static ID	numerator_id = 0;
+static ID	denominator_id = 0;
+
+static void
+rational_alt(VALUE obj, int depth, Out out) {
+    struct _Attr	attrs[] = {
+	{ "n", 1, Qnil },
+	{ "d", 1, Qnil },
+	{ NULL, 0, Qnil },
+    };
+    if (0 == numerator_id) {
+	numerator_id = rb_intern("numerator");
+	denominator_id = rb_intern("denominator");
+    }
+    attrs[0].value = rb_funcall(obj, numerator_id, 0);
+    attrs[1].value = rb_funcall(obj, denominator_id, 0);
+
+    dump_obj_attrs(rb_class2name(rb_obj_class(obj)), attrs, depth, out);
+}
+
+static ID	real_id = 0;
+static ID	imag_id = 0;
+
+static void
+complex_alt(VALUE obj, int depth, Out out) {
+    struct _Attr	attrs[] = {
+	{ "r", 1, Qnil },
+	{ "i", 1, Qnil },
+	{ NULL, 0, Qnil },
+    };
+
+    if (0 == real_id) {
+	real_id = rb_intern("real");
+	imag_id = rb_intern("imag");
+    }
+    attrs[0].value = rb_funcall(obj, real_id, 0);
+    attrs[1].value = rb_funcall(obj, imag_id, 0);
+
+    dump_obj_attrs(rb_class2name(rb_obj_class(obj)), attrs, depth, out);
+}
+
+static struct _Alt	alts[] = {
+    { "Complex", Qnil, complex_alt, false },
+    { "Rational", Qnil, rational_alt, false },
+    //{ "OpenStruct", Qnil, NULL, false },
+    // TBD the rest of the library classes
+    { NULL, Qundef, NULL, false },
+};
+
+static bool
+dump_alt(VALUE obj, int depth, Out out) {
+    VALUE	clas = rb_obj_class(obj);
+    Alt		a = alts;
+
+    for (; NULL != a->name; a++) {
+	if (Qnil == a->clas) {	
+	    a->clas = rb_const_get_at(rb_cObject, rb_intern(a->name));
+	}
+	if (clas == a->clas && a->active) {
+	    a->func(obj, depth, out);
+	    return true;
+	}
+    }
+    return false;
+}
+
+VALUE
+oj_add_to_json(int argc, VALUE *argv, VALUE self) {
+    Alt	a = alts;
+
+    if (0 == argc) {
+	for (; NULL != a->name; a++) {
+	    if (Qnil == a->clas) {	
+		a->clas = rb_const_get_at(rb_cObject, rb_intern(a->name));
+	    }
+	    a->active = true;
+	}
+    } else {
+	for (; 0 < argc; argc--, argv++) {
+	    for (; NULL != a->name; a++) {
+		if (Qnil == a->clas) {	
+		    a->clas = rb_const_get_at(rb_cObject, rb_intern(a->name));
+		}
+		if (*argv == a->clas) {
+		    a->active = true;
+		    break;
+		}
+	    }
+	}
+    }
+    return Qnil;
+}
+
+VALUE
+oj_remove_to_json(int argc, VALUE *argv, VALUE self) {
+    Alt	a = alts;
+
+    if (0 == argc) {
+	for (; NULL != a->name; a++) {
+	    if (Qnil == a->clas) {	
+		a->clas = rb_const_get_at(rb_cObject, rb_intern(a->name));
+	    }
+	    a->active = false;
+	}
+    } else {
+	for (; 0 < argc; argc--, argv++) {
+	    for (; NULL != a->name; a++) {
+		if (Qnil == a->clas) {	
+		    a->clas = rb_const_get_at(rb_cObject, rb_intern(a->name));
+		}
+		if (*argv == a->clas) {
+		    a->active = false;
+		    break;
+		}
+	    }
+	}
+    }
+    return Qnil;
 }
 
 // The JSON gem is inconsistent with handling of infinity. Using
@@ -131,7 +320,7 @@ hash_cb(VALUE key, VALUE value, Out out) {
 	    out->cur += out->opts->dump_opts.after_size;
 	}
     }
-    oj_dump_compat_val(value, depth, out, false);
+    oj_dump_compat_val(value, depth, out, true);
     out->depth = depth;
     *out->cur++ = ',';
 
@@ -187,8 +376,12 @@ dump_hash(VALUE obj, int depth, Out out, bool as_ok) {
 // called.
 static void
 dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
-    VALUE	clas = rb_obj_class(obj);
+    if (dump_alt(obj, depth, out)) {
+	return;
+    }
 
+/*
+    VALUE	clas = rb_obj_class(obj);
     // to_s classes
     if (rb_cTime == clas ||
 	oj_bigdecimal_class == clas ||
@@ -202,6 +395,7 @@ dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
 
 	return;
     }
+*/
     if (as_ok && rb_respond_to(obj, oj_to_json_id)) {
 	volatile VALUE	rs;
 	const char	*s;
@@ -268,7 +462,7 @@ dump_array(VALUE a, int depth, Out out, bool as_ok) {
 	    } else {
 		fill_indent(out, d2);
 	    }
-	    oj_dump_compat_val(rb_ary_entry(a, i), d2, out, false);
+	    oj_dump_compat_val(rb_ary_entry(a, i), d2, out, true);
 	    if (i < cnt) {
 		*out->cur++ = ',';
 	    }
@@ -276,7 +470,6 @@ dump_array(VALUE a, int depth, Out out, bool as_ok) {
 	size = depth * out->indent + 1;
 	assure_size(out, size);
 	if (out->opts->dump_opts.use) {
-	    //printf("*** d2: %u  indent: %u '%s'\n", d2, out->opts->dump_opts->indent_size, out->opts->dump_opts->indent);
 	    if (0 < out->opts->dump_opts.array_size) {
 		strcpy(out->cur, out->opts->dump_opts.array_nl);
 		out->cur += out->opts->dump_opts.array_size;
@@ -397,12 +590,14 @@ dump_regexp(VALUE obj, int depth, Out out, bool as_ok) {
 
 static void
 dump_complex(VALUE obj, int depth, Out out, bool as_ok) {
-    oj_dump_obj_to_s(obj, out);
+    dump_obj(obj, depth, out, as_ok);
+    //oj_dump_obj_to_s(obj, out);
 }
 
 static void
 dump_rational(VALUE obj, int depth, Out out, bool as_ok) {
-    oj_dump_obj_to_s(obj, out);
+    dump_obj(obj, depth, out, as_ok);
+    //oj_dump_obj_to_s(obj, out);
 }
 
 static DumpFunc	compat_funcs[] = {

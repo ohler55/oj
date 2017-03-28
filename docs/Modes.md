@@ -36,8 +36,9 @@ JSON string. The json gem also provides the JSON.generate(), JSON.dump(), and
 JSON() functions. These functions generally act the same with some exceptions
 such as JSON.generate(), JSON(), and to_json raise an exception when
 attempting to encode infinity while JSON.dump() returns a the string
-"Infinity". Oj in mimic mode mimics this behavior including the seemly
-inconsistent behavior with NaN and Infinity.
+"Infinity". The String class is also monkey patched with to_json_raw() and
+to_json_raw_object(). Oj in mimic mode mimics this behavior including the
+seemly inconsistent behavior with NaN and Infinity.
 
 Any class can define a to_json() method and JSON.generate(), JSON.dump(), and
 JSON() functions will call that method when an object of that type is
@@ -46,7 +47,8 @@ can be over-ridden but unless the to_json() method is called directory the
 to_json() method will be ignored. Oj in mimic mode follow the same logic,
 
 The json gem includes additions. These additions change the behavior of some
-library and core classes. They are activated by requiring the appropriate
+library and core classes. These additions also add the as_json() method and
+json_create() class method. They are activated by requiring the appropriate
 files. As an example, to get the modified to_json() for the Rational class
 this line would be added.
 

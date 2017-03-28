@@ -524,7 +524,6 @@ static struct _Options	mimic_object_to_json_options = {
 	AutoNan,// nan_dump
 	false,	// omit_nil
 	MAX_DEPTH, // max_depth
-	false,	// create_additions
     }
 };
 
@@ -540,7 +539,7 @@ mimic_object_to_json(int argc, VALUE *argv, VALUE self) {
     out.allocated = 0;
     out.omit_nil = copts.dump_opts.omit_nil;
     copts.mode = CompatMode;
-    copts.to_json = Yes;
+    copts.to_json = No;
     // To be strict the mimic_object_to_json_options should be used but people
     // seem to prefer the option of changing that.
     //oj_dump_obj_to_json(self, &mimic_object_to_json_options, &out);
