@@ -3,11 +3,9 @@
 
 #frozen_string_literal: false
 
-# FIXME not sure how these should be handled. Better performance if we let Oj
-# do it but then code would have to change. Maybe oj/add/rational as an option
-# or oj/json/add/rational.
 require 'json_gem/test_helper'
 require 'date'
+
 unless MIMIC_JSON
   require 'json/add/core'
   require 'json/add/complex'
@@ -16,13 +14,7 @@ unless MIMIC_JSON
   require 'json/add/ostruct'
 end
 
-require 'json/add/core'
-#require 'json/add/complex'
-#require 'json/add/rational'
-require 'json/add/bigdecimal'
-require 'json/add/ostruct'
-
-Oj.add_to_json(Complex, Rational)
+Oj.add_to_json(BigDecimal, Complex, Date, DateTime, Exception, OpenStruct, Range, Rational, Regexp, Struct, Time)
 
 class JSONAdditionTest < Test::Unit::TestCase
   include Test::Unit::TestCaseOmissionSupport
@@ -156,24 +148,28 @@ class JSONAdditionTest < Test::Unit::TestCase
 
   MyJsonStruct = Struct.new 'MyJsonStruct', :foo, :bar
 
-  # FIXME depends on the add/core
   def test_core
-    pend("mimic_JSON") if MIMIC_JSON
     t = Time.now
     assert_equal t, JSON(JSON(t), :create_additions => true)
+
     d = Date.today
     assert_equal d, JSON(JSON(d), :create_additions => true)
+
     d = DateTime.civil(2007, 6, 14, 14, 57, 10, Rational(1, 12), 2299161)
     assert_equal d, JSON(JSON(d), :create_additions => true)
+
     assert_equal 1..10, JSON(JSON(1..10), :create_additions => true)
     assert_equal 1...10, JSON(JSON(1...10), :create_additions => true)
     assert_equal "a".."c", JSON(JSON("a".."c"), :create_additions => true)
     assert_equal "a"..."c", JSON(JSON("a"..."c"), :create_additions => true)
+
     s = MyJsonStruct.new 4711, 'foot'
     assert_equal s, JSON(JSON(s), :create_additions => true)
+
     struct = Struct.new :foo, :bar
     s = struct.new 4711, 'foot'
     assert_raise(JSON::JSONError) { JSON(s) }
+
     begin
       raise TypeError, "test me"
     rescue TypeError => e
@@ -183,6 +179,7 @@ class JSONAdditionTest < Test::Unit::TestCase
       assert_equal e.message, e_again.message
       assert_equal e.backtrace, e_again.backtrace
     end
+
     assert_equal(/foo/, JSON(JSON(/foo/), :create_additions => true))
     assert_equal(/foo/i, JSON(JSON(/foo/i), :create_additions => true))
   end
@@ -199,14 +196,12 @@ class JSONAdditionTest < Test::Unit::TestCase
     assert_equal d, JSON.parse(d.to_json, :create_additions => true)
   end
 
-  # FIXME these depend on modified behavior from the 'add/xxx' requires
   def test_rational_complex
     assert_equal Rational(2, 9), JSON.parse(JSON(Rational(2, 9)), :create_additions => true)
     assert_equal Complex(2, 9), JSON.parse(JSON(Complex(2, 9)), :create_additions => true)
   end
 
   def test_bigdecimal
-    pend("mimic_JSON") if MIMIC_JSON
     assert_equal BigDecimal('3.141', 23), JSON(JSON(BigDecimal('3.141', 23)), :create_additions => true)
     assert_equal BigDecimal('3.141', 666), JSON(JSON(BigDecimal('3.141', 666)), :create_additions => true)
   end

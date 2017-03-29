@@ -1,4 +1,5 @@
 
+require 'bigdecimal'
 begin
   require 'ostruct'
 rescue Exception
@@ -62,27 +63,15 @@ module Oj
       end
     end
 
-    Range.class_eval do
+    BigDecimal.class_eval do
       # Both the JSON gem and Rails monkey patch as_json. Let them battle it out.
       unless defined?(self.as_json)
         def as_json(*)
-          {JSON.create_id => 'Range', 'a' => [first, last, exclude_end?]}
+          {JSON.create_id => 'BigDecimal', 'b' => _dump }
         end
       end
       def self.json_create(h)
-        new(h['a'])
-      end
-    end
-
-    Rational.class_eval do
-      # Both the JSON gem and Rails monkey patch as_json. Let them battle it out.
-      unless defined?(self.as_json)
-        def as_json(*)
-          {JSON.create_id => 'Rational', 'n' => numerator, 'd' => denominator }
-        end
-      end
-      def self.json_create(h)
-        Rational(h['n'], h['d'])
+        BigDecimal._load(h['b'])
       end
     end
 
@@ -95,6 +84,97 @@ module Oj
       end
       def self.json_create(h)
         Complex(h['r'], h['i'])
+      end
+    end
+
+    Date.class_eval do
+      # Both the JSON gem and Rails monkey patch as_json. Let them battle it out.
+      unless defined?(self.as_json)
+        def as_json(*)
+          { JSON.create_id => 'Date', 'y' => year, 'm' => month, 'd' => day, 'sg' => start }
+        end
+      end
+      def self.json_create(h)
+        civil(h['y'], h['m'], h['d'], h['sg'])
+      end
+    end
+
+    DateTime.class_eval do
+      # Both the JSON gem and Rails monkey patch as_json. Let them battle it out.
+      unless defined?(self.as_json)
+        def as_json(*)
+          { JSON.create_id => 'DateTime',
+            'y' => year,
+            'm' => month,
+            'd' => day,
+            'H' => hour,
+            'M' => min,
+            'S' => sec,
+            'of' => offset.to_s,
+            'sg' => start }
+        end
+      end
+      def self.json_create(h)
+        # offset is a rational as a string
+        as, bs = h['of'].split('/')
+        a = as.to_i
+        b = bs.to_i
+        if 0 == b
+          off = a
+        else
+          off = Rational(a, b)
+        end
+        civil(h['y'], h['m'], h['d'], h['H'], h['M'], h['S'], off, h['sg'])
+      end
+    end
+
+    Date.class_eval do
+      # Both the JSON gem and Rails monkey patch as_json. Let them battle it out.
+      unless defined?(self.as_json)
+        def as_json(*)
+          { JSON.create_id => 'Date', 'y' => year, 'm' => month, 'd' => day, 'sg' => start }
+        end
+      end
+      def self.json_create(h)
+        civil(h['y'], h['m'], h['d'], h['sg'])
+      end
+    end
+
+    Exception.class_eval do
+      # Both the JSON gem and Rails monkey patch as_json. Let them battle it out.
+      unless defined?(self.as_json)
+        def as_json(*)
+          {JSON.create_id => self.class.name, 'm' => message, 'b' => backtrace }
+        end
+      end
+      def self.json_create(h)
+        e = new(h['m'])
+        e.set_backtrace(h['b'])
+        e
+      end
+    end
+
+    Range.class_eval do
+      # Both the JSON gem and Rails monkey patch as_json. Let them battle it out.
+      unless defined?(self.as_json)
+        def as_json(*)
+          {JSON.create_id => 'Range', 'a' => [first, last, exclude_end?]}
+        end
+      end
+      def self.json_create(h)
+        new(*h['a'])
+      end
+    end
+
+    Rational.class_eval do
+      # Both the JSON gem and Rails monkey patch as_json. Let them battle it out.
+      unless defined?(self.as_json)
+        def as_json(*)
+          {JSON.create_id => 'Rational', 'n' => numerator, 'd' => denominator }
+        end
+      end
+      def self.json_create(h)
+        Rational(h['n'], h['d'])
       end
     end
 
@@ -120,7 +200,7 @@ module Oj
         end
       end
       def self.json_create(h)
-        new(h['v'])
+        new(*h['v'])
       end
     end
 
@@ -140,7 +220,6 @@ module Oj
       # Both the JSON gem and Rails monkey patch as_json. Let them battle it out.
       unless defined?(self.as_json)
         def as_json(*)
-          {JSON.create_id => 'Symbol', 's' => to_s }
           nsecs = [ tv_usec * 1000 ]
           nsecs << tv_nsec if respond_to?(:tv_nsec)
           nsecs = nsecs.max

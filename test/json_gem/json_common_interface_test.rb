@@ -1,5 +1,10 @@
+#!/usr/bin/env ruby
+# encoding: UTF-8
+
 #frozen_string_literal: false
+
 require 'json_gem/test_helper'
+
 require 'stringio'
 require 'tempfile'
 
@@ -23,7 +28,6 @@ class JSONCommonInterfaceTest < Test::Unit::TestCase
   end
 
   def test_index
-    omit_if(MIMIC_JSON, "mimic_JSON")
     assert_equal @json, JSON[@hash]
     assert_equal @hash, JSON[@json]
   end
@@ -62,22 +66,20 @@ class JSONCommonInterfaceTest < Test::Unit::TestCase
   end
 
   def test_parse_bang
-    pend("mimic_JSON") if MIMIC_JSON
-    assert_equal [ 1, NaN, 3, ], JSON.parse!('[ 1, NaN, 3 ]')
+    # Modified this test to compare strings since NaN comparison fails if NaN
+    # was defined in different places even if it represents the same value.
+    assert_equal [ 1, NaN, 3, ].to_s, JSON.parse!('[ 1, NaN, 3 ]').to_s
   end
 
   def test_generate
-    pend("mimic_JSON") if MIMIC_JSON
     assert_equal '[1,2,3]', JSON.generate([ 1, 2, 3 ])
   end
 
   def test_fast_generate
-    pend("mimic_JSON") if MIMIC_JSON
     assert_equal '[1,2,3]', JSON.generate([ 1, 2, 3 ])
   end
 
   def test_pretty_generate
-    omit_if(MIMIC_JSON, "mimic_JSON")
     assert_equal "[\n  1,\n  2,\n  3\n]", JSON.pretty_generate([ 1, 2, 3 ])
   end
 
