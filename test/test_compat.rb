@@ -438,7 +438,7 @@ class CompatJuice < Minitest::Test
   def test_json_object_create_deep
     expected = One::Two::Three::Deep.new()
     json = Oj.to_json(expected)
-    obj = Oj.compat_load(json)
+    obj = Oj.compat_load(json, :create_additions => true)
     assert_equal(expected, obj)
   end
 

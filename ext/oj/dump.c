@@ -20,10 +20,6 @@
 #include "dump.h"
 #include "odd.h"
 
-#if !HAS_ENCODING_SUPPORT || defined(RUBINIUS_RUBY)
-#define rb_eEncodingError	rb_eException
-#endif
-
 // Workaround in case INFINITY is not defined in math.h or if the OS is CentOS
 #define OJ_INFINITY (1.0/0.0)
 
@@ -105,7 +101,7 @@ static char	hixss_friendly_chars[256] = "\
 66666666222622666666666666666666\
 11211161111111111111111111116161\
 11111111111111111111111111112111\
-11111111111111111111111111111116\
+11111111111111111111111111111111\
 11111111111111111111111111111111\
 11111111111111111111111111111111\
 11111111111111111111111111111111\
@@ -226,7 +222,7 @@ grow(Out out, size_t len) {
 	memcpy(buf, out->buf, out->end - out->buf + BUFFER_EXTRA);
     }
     if (0 == buf) {
-	rb_raise(rb_eNoMemError, "Failed to create string. [%d:%s]\n", ENOSPC, strerror(ENOSPC));
+	rb_raise(rb_eNoMemError, "Failed to create string. [%d:%s]", ENOSPC, strerror(ENOSPC));
     }
     out->buf = buf;
     out->end = buf + size;
@@ -265,13 +261,13 @@ dump_unicode(const char *str, const char *end, Out out) {
 	code = b & 0x00000001;
     } else {
 	cnt = 0;
-	rb_raise(rb_eEncodingError, "Invalid Unicode\n");
+	rb_raise(oj_json_generator_error_class, "Invalid Unicode");
     }
     str++;
     for (; 0 < cnt; cnt--, str++) {
 	b = *(uint8_t*)str;
 	if (end <= str || 0x80 != (0xC0 & b)) {
-	    rb_raise(rb_eEncodingError, "Invalid Unicode\n");
+	    rb_raise(oj_json_generator_error_class, "Invalid Unicode");
 	}
 	code = (code << 6) | (b & 0x0000003F);
     }
@@ -1380,7 +1376,7 @@ dump_struct_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_o
 
 static void
 raise_strict(VALUE obj) {
-    rb_raise(rb_eTypeError, "Failed to dump %s Object to JSON in strict mode.\n", rb_class2name(rb_obj_class(obj)));
+    rb_raise(rb_eTypeError, "Failed to dump %s Object to JSON in strict mode.", rb_class2name(rb_obj_class(obj)));
 }
 
 void
@@ -1388,10 +1384,10 @@ oj_dump_comp_val(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_o
     int	type = rb_type(obj);
 
     if (MAX_DEPTH < depth) {
-	rb_raise(rb_eNoMemError, "Too deeply nested.\n");
+	rb_raise(rb_eNoMemError, "Too deeply nested.");
     }
 #ifdef OJ_DEBUG
-    printf("Oj-debug: oj_dump_comp_val %s\n", rb_class2name(rb_obj_class(obj)));
+    printf("Oj-debug: oj_dump_comp_val %s", rb_class2name(rb_obj_class(obj)));
 #endif
     //printf("*** Oj-debug: oj_dump_comp_val %s type: %02x\n", rb_class2name(rb_obj_class(obj)), type);
     switch (type) {
@@ -1512,7 +1508,7 @@ oj_write_obj_to_file(VALUE obj, const char *path, Options copts) {
 	if (out.allocated) {
 	    xfree(out.buf);
 	}
-	rb_raise(rb_eIOError, "%s\n", strerror(errno));
+	rb_raise(rb_eIOError, "%s", strerror(errno));
     }
     ok = (size == fwrite(out.buf, 1, size, f));
     if (out.allocated) {
@@ -1522,7 +1518,7 @@ oj_write_obj_to_file(VALUE obj, const char *path, Options copts) {
     if (!ok) {
 	int	err = ferror(f);
 
-	rb_raise(rb_eIOError, "Write failed. [%d:%s]\n", err, strerror(err));
+	rb_raise(rb_eIOError, "Write failed. [%d:%s]", err, strerror(err));
     }
 }
 
@@ -1553,7 +1549,7 @@ oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
 	    if (out.allocated) {
 		xfree(out.buf);
 	    }
-	    rb_raise(rb_eIOError, "Write failed. [%d:%s]\n", errno, strerror(errno));
+	    rb_raise(rb_eIOError, "Write failed. [%d:%s]", errno, strerror(errno));
 	}
 #endif
     } else if (rb_respond_to(stream, oj_write_id)) {
@@ -1575,7 +1571,7 @@ void
 oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
     size_t	size;
     char	*cmap;
-
+    
     switch (out->opts->escape_mode) {
     case NLEsc:
 	cmap = newline_friendly_chars;
@@ -1645,6 +1641,13 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
 		}
 		break;
 	    case '3': // Unicode
+		if (0xe2 == (uint8_t)*str && JXEsc == out->opts->escape_mode) {
+		    *out->cur++ = *str;
+		    
+		    // TBD handle the 2 special cases
+		    //printf("*** e2\n");
+		    break;
+		}
 		str = dump_unicode(str, end, out);
 		break;
 	    case '6': // control characters
@@ -1659,6 +1662,9 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
 	    }
 	}
 	*out->cur++ = '"';
+    }
+    if (0 != (0x80 & *(str - 1)) && JXEsc == out->opts->escape_mode) {
+	rb_raise(oj_json_generator_error_class, "Partial character in string.");
     }
     *out->cur = '\0';
 }
@@ -1705,7 +1711,7 @@ oj_grow_out(Out out, size_t len) {
 	memcpy(buf, out->buf, out->end - out->buf + BUFFER_EXTRA);
     }
     if (0 == buf) {
-	rb_raise(rb_eNoMemError, "Failed to create string. [%d:%s]\n", ENOSPC, strerror(ENOSPC));
+	rb_raise(rb_eNoMemError, "Failed to create string. [%d:%s]", ENOSPC, strerror(ENOSPC));
     }
     out->buf = buf;
     out->end = buf + size;

@@ -44,6 +44,10 @@
 #include "dump.h"
 #include "encode.h"
 
+#if !HAS_ENCODING_SUPPORT || defined(RUBINIUS_RUBY)
+#define rb_eEncodingError	rb_eException
+#endif
+
 typedef struct _YesNoOpt {
     VALUE	sym;
     char	*attr;
@@ -81,6 +85,7 @@ ID	oj_readpartial_id;
 ID	oj_replace_id;
 ID	oj_stat_id;
 ID	oj_string_id;
+ID	oj_to_h_id;
 ID	oj_to_hash_id;
 ID	oj_to_json_id;
 ID	oj_to_s_id;
@@ -115,6 +120,7 @@ VALUE	oj_quirks_mode_sym;
 VALUE	oj_allow_nan_sym;
 VALUE	oj_create_additions_sym;
 
+static VALUE	allow_blank_sym;
 static VALUE	allow_gc_sym;
 static VALUE	allow_invalid_unicode_sym;
 static VALUE	ascii_sym;
@@ -389,6 +395,7 @@ oj_parse_options(VALUE ropts, Options copts) {
 	{ use_to_json_sym, &copts->to_json },
 	{ use_as_json_sym, &copts->as_json },
 	{ nilnil_sym, &copts->nilnil },
+	{ allow_blank_sym, &copts->nilnil }, // same as nilnil
 	{ empty_string_sym, &copts->empty_string },
 	{ allow_gc_sym, &copts->allow_gc },
 	{ oj_quirks_mode_sym, &copts->quirks_mode },
@@ -1293,6 +1300,7 @@ Init_oj() {
     oj_stat_id = rb_intern("stat");
     oj_string_id = rb_intern("string");
     oj_to_hash_id = rb_intern("to_hash");
+    oj_to_h_id = rb_intern("to_h");
     oj_to_json_id = rb_intern("to_json");
     oj_to_s_id = rb_intern("to_s");
     oj_to_sym_id = rb_intern("to_sym");
@@ -1320,8 +1328,10 @@ Init_oj() {
     oj_parse_error_class = rb_const_get_at(Oj, rb_intern("ParseError"));
     oj_stringio_class = rb_const_get(rb_cObject, rb_intern("StringIO"));
     oj_struct_class = rb_const_get(rb_cObject, rb_intern("Struct"));
-    oj_json_parser_error_class = Qnil; // replaced if mimic is called
+    oj_json_parser_error_class = rb_eEncodingError;    // replaced if mimic is called
+    oj_json_generator_error_class = rb_eEncodingError; // replaced if mimic is called
 
+    allow_blank_sym = ID2SYM(rb_intern("allow_blank"));	rb_gc_register_address(&allow_blank_sym);
     allow_gc_sym = ID2SYM(rb_intern("allow_gc"));	rb_gc_register_address(&allow_gc_sym);
     allow_invalid_unicode_sym = ID2SYM(rb_intern("allow_invalid_unicode"));rb_gc_register_address(&allow_invalid_unicode_sym);
     ascii_sym = ID2SYM(rb_intern("ascii"));		rb_gc_register_address(&ascii_sym);

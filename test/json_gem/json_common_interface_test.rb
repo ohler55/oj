@@ -32,6 +32,11 @@ class JSONCommonInterfaceTest < Test::Unit::TestCase
     assert_equal @hash, JSON[@json]
   end
 
+  ##############################################################################
+  # The next tests are omitted as implementing them and using them is a
+  # performance hit. Use of the JSON.parse() and similar provide the same
+  # functionality and perform better.
+
   def test_parser
     omit_if(MIMIC_JSON, "mimic_JSON")
     assert_match /::Parser\z/, JSON.parser.name
@@ -47,18 +52,19 @@ class JSONCommonInterfaceTest < Test::Unit::TestCase
     assert_match /::Generator::State\z/, JSON.state.name
   end
 
+  def test_deep_const_get
+    omit("mimic_JSON") if MIMIC_JSON
+    assert_raise(ArgumentError) { JSON.deep_const_get('Nix::Da') }
+    assert_equal File::SEPARATOR, JSON.deep_const_get('File::SEPARATOR')
+  end
+  ##############################################################################
+
   def test_create_id
     assert_equal 'json_class', JSON.create_id
     JSON.create_id = 'foo_bar'
     assert_equal 'foo_bar', JSON.create_id
   ensure
     JSON.create_id = 'json_class'
-  end
-
-  def test_deep_const_get
-    pend("mimic_JSON") if MIMIC_JSON
-    assert_raise(ArgumentError) { JSON.deep_const_get('Nix::Da') }
-    assert_equal File::SEPARATOR, JSON.deep_const_get('File::SEPARATOR')
   end
 
   def test_parse
@@ -104,14 +110,12 @@ class JSONCommonInterfaceTest < Test::Unit::TestCase
   end
 
   def test_load_null
-    pend("mimic_JSON") if MIMIC_JSON
     assert_equal nil, JSON.load(nil, nil, :allow_blank => true)
     assert_raise(TypeError) { JSON.load(nil, nil, :allow_blank => false) }
     assert_raise(JSON::ParserError) { JSON.load('', nil, :allow_blank => false) }
   end
 
   def test_dump
-    pend("mimic_JSON") if MIMIC_JSON
     too_deep = '[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]'
     assert_equal too_deep, JSON.dump(eval(too_deep))
     assert_kind_of String, Marshal.dump(eval(too_deep))
@@ -134,7 +138,6 @@ class JSONCommonInterfaceTest < Test::Unit::TestCase
   end
 
   def test_JSON
-    omit_if(MIMIC_JSON, "mimic_JSON")
     assert_equal @json, JSON(@hash)
     assert_equal @hash, JSON(@json)
   end

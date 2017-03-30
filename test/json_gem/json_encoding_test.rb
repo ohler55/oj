@@ -1,5 +1,8 @@
-# encoding: utf-8
+#!/usr/bin/env ruby
+# encoding: UTF-8
+
 #frozen_string_literal: false
+
 require 'json_gem/test_helper'
 
 class JSONEncodingTest < Test::Unit::TestCase
@@ -83,7 +86,6 @@ class JSONEncodingTest < Test::Unit::TestCase
   end
 
   def test_chars
-    pend("mimic_JSON") if MIMIC_JSON
     (0..0x7f).each do |i|
       json = '["\u%04x"]' % i
       if RUBY_VERSION >= "1.9."

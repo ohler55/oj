@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 # encoding: utf-8
+
 # frozen_string_literal: false
 
 require 'json_gem/test_helper'
@@ -42,7 +43,6 @@ EOT
   end
 
   def test_generate
-    omit_if(MIMIC_JSON, "mimic_JSON")
     json = JSON.generate(@hash)
     assert_equal(JSON.parse(@json2), JSON.parse(json))
     json = JSON[@hash]
@@ -57,7 +57,6 @@ EOT
   end
 
   def test_generate_pretty
-    omit_if(MIMIC_JSON, "mimic_JSON")
     json = JSON.pretty_generate(@hash)
     # hashes aren't (insertion) ordered on every ruby implementation
     assert_equal(@json3, json)
@@ -76,7 +75,6 @@ EOT
   end
 
   def test_generate_custom
-    omit_if(MIMIC_JSON, "mimic_JSON")
     state = JSON::State.new(:space_before => " ", :space => "   ", :indent => "<i>", :object_nl => "\n", :array_nl => "<a_nl>")
     json = JSON.generate({1=>{2=>3,4=>[5,6]}}, state)
     assert_equal(<<'EOT'.chomp, json)
@@ -90,7 +88,6 @@ EOT
   end
 
   def test_fast_generate
-    omit_if(MIMIC_JSON, "mimic_JSON")
     json = JSON.fast_generate(@hash)
     assert_equal(JSON.parse(@json2), JSON.parse(json))
     parsed_json = JSON.parse(json)
@@ -103,7 +100,6 @@ EOT
   end
 
   def test_own_state
-    omit_if(MIMIC_JSON, "mimic_JSON")
     state = JSON::State.new
     json = JSON.generate(@hash, state)
     assert_equal(JSON.parse(@json2), JSON.parse(json))
@@ -116,6 +112,10 @@ EOT
     assert_equal '666', JSON.generate(666, state)
   end
 
+  # TBD Implement JSON.state to return state class.
+  # set state attibutes from defaults
+  # implement methods
+  # circular should use circular in defaults or maybe always set to true, allow changes with [:check_circular]=
   def test_states
     pend("mimic_JSON") if MIMIC_JSON
     json = JSON.generate({1=>2}, nil)
@@ -341,7 +341,6 @@ EOT
   end
 
   def test_json_generate
-    pend("mimic_JSON") if MIMIC_JSON && !defined?(JSON::GeneratorError)
     assert_raise JSON::GeneratorError do
       assert_equal true, JSON.generate(["\xea"])
     end

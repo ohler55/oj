@@ -786,7 +786,6 @@ dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
 	return;
     }
     if (use_exception_alt && rb_obj_is_kind_of(obj, rb_eException)) {
-	printf("*** class %s\n", rb_class2name(rb_obj_class(obj)));
 	exception_alt(obj, depth, out);
 	return;
     }
@@ -933,9 +932,9 @@ static DumpFunc	compat_funcs[] = {
 void
 oj_dump_compat_val(VALUE obj, int depth, Out out, bool as_ok) {
     int	type = rb_type(obj);
-
-    if (out->opts->dump_opts.max_depth < depth) {
-	rb_raise(rb_eNoMemError, "Too deeply nested.\n");
+    
+    if (out->opts->dump_opts.max_depth <= depth) {
+	rb_raise(rb_eArgError, "Too deeply nested.");
     }
     if (0 < type && type <= RUBY_T_FIXNUM) {
 	DumpFunc	f = compat_funcs[type];

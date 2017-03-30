@@ -1,5 +1,8 @@
-# encoding: utf-8
+#!/usr/bin/env ruby
+# encoding: UTF-8
+
 # frozen_string_literal: false
+
 require 'json_gem/test_helper'
 require 'stringio'
 require 'tempfile'

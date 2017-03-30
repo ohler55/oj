@@ -92,8 +92,10 @@ information.
 
     | Option                 | type    | :null   | :strict | :compat | :rails  | :object | :custom |
     | ---------------------- | ------- | ------- | ------- | ------- | ------- | ------- | ------- |
+    | :allow_blank           | Boolean |         |         |       1 |       1 |         |         |
     | :allow_gc              | Boolean |       x |       x |       x |       x |       x |       x |
     | :allow_invalid_unicode | Boolean |         |         |         |         |       x |       x |
+    | :ascii_only            | Boolean |       x |       x |       2 |       2 |       x |       x |
     | :array_nl              |         |         |         |         |         |         |       x |
     | :auto_define           |         |         |         |         |         |         |       x |
     | :bigdecimal_as_decimal | Boolean |         |         |         |         |       x |       x |
@@ -105,14 +107,14 @@ information.
     | :escape_mode           |         |         |         |         |         |         |       x |
     | :float_precision       |         |         |         |         |         |         |       x |
     | :hash_class            |         |         |         |         |         |         |       x |
-    | :indent                | Integer |       x |       x |       1 |       ? |       x |       x |
+    | :indent                | Integer |       x |       x |       3 |       ? |       x |       x |
     | :indent_str            | String  |         |         |       x |         |         |       x |
     | :mode                  | Symbol  |       - |       - |       - |       - |       - |       - |
     | :nan                   |         |         |         |         |         |         |       x |
     | :nilnil                |         |         |         |         |         |         |       x |
     | :object_nl             |         |         |         |         |         |         |       x |
     | :omit_nil              |         |         |         |         |         |         |       x |
-    | :quirks_mode           |         |         |         |         |         |         |       x |
+    | :quirks_mode           |         |         |         |       4 |         |         |       x |
     | :second_precision      |         |         |         |         |         |         |       x |
     | :space                 |         |         |         |         |         |         |       x |
     | :space_before          |         |         |         |         |         |         |       x |
@@ -122,7 +124,15 @@ information.
     | :use_to_hash           | Boolean |         |         |         |         |         |       x |
     | :use_to_json           | Boolean |         |         |         |       ? |         |       x |
 
- 1. The integer indent value in the default options will be honored by since
+ 1. :allow_blank an alias for :nilnil.
+
+ 2. The :ascii_only options is an undocumented json gem option.
+
+ 3. The integer indent value in the default options will be honored by since
     the json gem expects a String type the indent in calls to 'to_json()',
     'Oj.generate()', or 'Oj.generate_fast()' expect a String and not an
     integer.
+
+ 4. The quirks mode option is no longer supported in the most recent json
+    gem. It is supported by Oj for backward compatibility with older json gem
+    versions.

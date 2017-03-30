@@ -14,6 +14,7 @@ static const char	json_class[] = "json_class";
 
 VALUE	oj_array_nl_sym;
 VALUE	oj_ascii_only_sym;
+VALUE	oj_json_generator_error_class;
 VALUE	oj_json_parser_error_class;
 VALUE	oj_max_nesting_sym;
 VALUE	oj_object_nl_sym;
@@ -58,7 +59,13 @@ oj_parse_mimic_dump_options(VALUE ropts, Options copts) {
     size_t	len;
 
     if (T_HASH != rb_type(ropts)) {
-	rb_raise(rb_eArgError, "options must be a hash.");
+	if (rb_respond_to(ropts, oj_to_hash_id)) {
+	    ropts = rb_funcall(ropts, oj_to_hash_id, 0);
+	} else if (rb_respond_to(ropts, oj_to_h_id)) {
+	    ropts = rb_funcall(ropts, oj_to_h_id, 0);
+	} else {
+	    rb_raise(rb_eArgError, "options must be a hash.");
+	}
     }
     if (Qnil != (v = rb_hash_lookup(ropts, oj_max_nesting_sym))) {
 	if (Qtrue == v) {
@@ -70,7 +77,7 @@ oj_parse_mimic_dump_options(VALUE ropts, Options copts) {
     if (Qnil != (v = rb_hash_lookup(ropts, oj_allow_nan_sym))) {
 	copts->dump_opts.nan_dump = (Qtrue == v);
     }
-    if (Qnil != (v = rb_hash_lookup(ropts, oj_indent_sym))) { // TBD fixnum also ok
+    if (Qnil != (v = rb_hash_lookup(ropts, oj_indent_sym))) {
 	rb_check_type(v, T_STRING);
 	if (sizeof(copts->dump_opts.indent_str) <= (len = RSTRING_LEN(v))) {
 	    rb_raise(rb_eArgError, "indent string is limited to %lu characters.", sizeof(copts->dump_opts.indent_str));
@@ -117,12 +124,20 @@ oj_parse_mimic_dump_options(VALUE ropts, Options copts) {
     }
     if (Qnil != (v = rb_hash_lookup(ropts, oj_ascii_only_sym))) {
 	// generate seems to assume anything except nil and false are true.
-	if (Qfalse == v || Qnil == v) {
+	if (Qfalse == v) {
 	    copts->escape_mode = JSONEsc;
 	} else {
 	    copts->escape_mode = ASCIIEsc;
 	}
     }
+}
+
+static int
+mimic_limit_arg(VALUE a) {
+    if (Qnil == a || T_FIXNUM != rb_type(a)) {
+	return -1;
+    }
+    return NUM2INT(a);
 }
 
 /* Document-module: JSON
@@ -145,14 +160,31 @@ mimic_dump(int argc, VALUE *argv, VALUE self) {
     out.buf = buf;
     out.end = buf + sizeof(buf) - 10;
     out.allocated = 0;
+    if (No == copts.nilnil && Qnil == *argv) {
+	rb_raise(rb_eTypeError, "nil not allowed.");
+    }
     out.omit_nil = copts.dump_opts.omit_nil;
+    if (2 <= argc) {
+	int	limit;
+	
+	// The json gem take a more liberal approach to optional
+	// arguments. Expected are (obj, anIO=nil, limit=nil) yet the io
+	// argument can be left off completely and the 2nd argument is then
+	// the limit.
+	if (0 <= (limit = mimic_limit_arg(argv[1]))) {
+	    copts.dump_opts.max_depth = limit;
+	}
+	if (3 <= argc && 0 <= (limit = mimic_limit_arg(argv[2]))) {
+	    copts.dump_opts.max_depth = limit;
+	}
+    }
     oj_dump_obj_to_json(*argv, &copts, &out);
     if (0 == out.buf) {
 	rb_raise(rb_eNoMemError, "Not enough memory.");
     }
     rstr = rb_str_new2(out.buf);
     rstr = oj_encode(rstr);
-    if (2 <= argc && Qnil != argv[1]) {
+    if (2 <= argc && Qnil != argv[1] && rb_respond_to(argv[1], oj_write_id)) {
 	VALUE	io = argv[1];
 	VALUE	args[1];
 
@@ -284,6 +316,9 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
     copts->mode = CompatMode;
     if (2 == argc && Qnil != argv[1]) {
 	oj_parse_mimic_dump_options(argv[1], copts);
+    }
+    if (No == copts->nilnil && Qnil == *argv) {
+	rb_raise(rb_eTypeError, "nil not allowed.");
     }
     oj_dump_obj_to_json(*argv, copts, &out);
     if (0 == out.buf) {
@@ -540,6 +575,9 @@ mimic_object_to_json(int argc, VALUE *argv, VALUE self) {
     out.omit_nil = copts.dump_opts.omit_nil;
     copts.mode = CompatMode;
     copts.to_json = No;
+    if (1 <= argc && Qnil != argv[0]) {
+	oj_parse_mimic_dump_options(argv[0], &copts);
+    }
     // To be strict the mimic_object_to_json_options should be used but people
     // seem to prefer the option of changing that.
     //oj_dump_obj_to_json(self, &mimic_object_to_json_options, &out);
@@ -553,6 +591,23 @@ mimic_object_to_json(int argc, VALUE *argv, VALUE self) {
 	xfree(out.buf);
     }
     return rstr;
+}
+
+static int
+state_new_cb(VALUE key, VALUE value, VALUE state) {    
+    rb_hash_aset(state, key, value);
+
+    return ST_CONTINUE;
+}
+
+static VALUE
+state_new(int argc, VALUE *argv, VALUE self) {
+    VALUE	state = rb_obj_alloc(self);
+
+    if (0 < argc && T_HASH == rb_type(*argv)) {
+	rb_hash_foreach(*argv, state_new_cb, state);
+    }
+    return state;
 }
 
 
@@ -638,7 +693,7 @@ oj_define_mimic_json(int argc, VALUE *argv, VALUE self) {
 
     rb_gv_set("$VERBOSE", verbose);
 
-    symbolize_names_sym = ID2SYM(rb_intern("symbolize_names"));		rb_gc_register_address(&symbolize_names_sym);
+    symbolize_names_sym = ID2SYM(rb_intern("symbolize_names"));	rb_gc_register_address(&symbolize_names_sym);
 
     if (rb_const_defined_at(mimic, rb_intern("JSONError"))) {
         json_error = rb_const_get(mimic, rb_intern("JSONError"));
@@ -650,8 +705,15 @@ oj_define_mimic_json(int argc, VALUE *argv, VALUE self) {
     } else {
     	oj_json_parser_error_class = rb_define_class_under(mimic, "ParserError", json_error);
     }
+    if (rb_const_defined_at(mimic, rb_intern("GeneratorError"))) {
+        oj_json_generator_error_class = rb_const_get(mimic, rb_intern("GeneratorError"));
+    } else {
+    	oj_json_generator_error_class = rb_define_class_under(mimic, "GeneratorError", json_error);
+    }
     if (!rb_const_defined_at(mimic, rb_intern("State"))) {
-        rb_define_class_under(mimic, "State", rb_cObject);
+        VALUE	state = rb_define_class_under(mimic, "State", rb_cHash);
+	rb_define_module_function(state, "new", state_new, -1);
+	
     }
 
     oj_default_options = mimic_object_to_json_options;

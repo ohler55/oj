@@ -758,11 +758,19 @@ oj_pi_sparse(int argc, VALUE *argv, ParseInfo pi, int fd) {
 	rb_raise(rb_eArgError, "Wrong number of arguments to parse.");
     }
     input = argv[0];
-    if (2 == argc) {
-	oj_parse_options(argv[1], &pi->options);
+    if (2 <= argc) {
+	if (T_HASH == rb_type(argv[1])) {
+	    oj_parse_options(argv[1], &pi->options);
+	} else if (3 <= argc && T_HASH == rb_type(argv[2])) {
+	    oj_parse_options(argv[2], &pi->options);
+	}
     }
-    if (Qnil == input && Yes == pi->options.nilnil) {
-	return Qnil;
+    if (Qnil == input) {
+	if (Yes == pi->options.nilnil) {
+	    return Qnil;
+	} else {
+	    rb_raise(rb_eTypeError, "Nil is not a valid JSON source.");
+	}
     }
     if (rb_block_given_p()) {
 	pi->proc = Qnil;

@@ -818,8 +818,12 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
 	rb_raise(rb_eArgError, "Wrong number of arguments to parse.");
     }
     input = argv[0];
-    if (2 == argc) {
-	oj_parse_options(argv[1], &pi->options);
+    if (2 <= argc) {
+	if (T_HASH == rb_type(argv[1])) {
+	    oj_parse_options(argv[1], &pi->options);
+	} else if (3 <= argc && T_HASH == rb_type(argv[2])) {
+	    oj_parse_options(argv[2], &pi->options);
+	}
     }
     if (yieldOk && rb_block_given_p()) {
 	pi->proc = Qnil;
@@ -831,9 +835,16 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
 	pi->end = json + len;
 	free_json = 1;
     } else if (T_STRING == rb_type(input)) {
+	if (No == pi->options.nilnil && 0 == RSTRING_LEN(input)) {
+	    rb_raise(oj_json_parser_error_class, "An empty string is not a valid JSON string.");
+	}
 	oj_pi_set_input_str(pi, &input);
-    } else if (Qnil == input && Yes == pi->options.nilnil) {
-	return Qnil;
+    } else if (Qnil == input) {
+	if (Yes == pi->options.nilnil) {
+	    return Qnil;
+	} else {
+	    rb_raise(rb_eTypeError, "Nil is not a valid JSON source.");
+	}
     } else {
 	VALUE		clas = rb_obj_class(input);
 	volatile VALUE	s;

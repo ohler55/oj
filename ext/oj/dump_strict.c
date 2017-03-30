@@ -200,6 +200,13 @@ dump_float(VALUE obj, int depth, Out out, bool as_ok) {
 
 void
 oj_dump_str(VALUE obj, int depth, Out out, bool as_ok) {
+#if HAS_ENCODING_SUPPORT
+    rb_encoding	*enc = rb_to_encoding(rb_obj_encoding(obj));
+
+    if (rb_utf8_encoding() != enc) {
+	obj = rb_str_conv_enc(obj, enc, rb_utf8_encoding());
+    }
+#endif
     oj_dump_cstr(rb_string_value_ptr((VALUE*)&obj), RSTRING_LEN(obj), 0, 0, out);
 }
 
