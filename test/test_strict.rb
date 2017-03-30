@@ -238,9 +238,61 @@ class StrictJuice < Minitest::Test
   def test_double
     json = %{{ "x": 1}{ "y": 2}}
     results = []
-    Oj.load(json, :mode => :strict) { |x| results << x }
+    Oj.load(json, :mode => :strict) { |x, i| results << [x, i] }
 
-    assert_equal([{ 'x' => 1 }, { 'y' => 2 }], results)
+    assert_equal([[{ 'x' => 1 }, 9], [{ 'y' => 2 }, 18]], results)
+  end
+
+  def test_resume
+    json = %{{ "x": 1}{ "y": 2}}
+
+    objects = []
+    read_offset = 0
+
+    assert_raises(Oj::ParseError) do
+      Oj.load(json[0...13], :mode => :strict) do |obj, offset|
+        objects << obj
+        read_offset = offset
+      end
+    end
+
+    assert_equal([{ 'x' => 1 }], objects)
+
+    Oj.load(json[read_offset..-1], :mode => :strict) do |obj|
+      objects << obj
+    end
+
+    assert_equal([{ 'x' => 1 }, { 'y' => 2 }], objects)
+  end
+
+  def test_resume_io
+    json = %{{ "x": 1}{ "y": 2}}
+
+    objects = []
+    read_offset = 0
+
+    io = StringIO.new
+    io.write(json[0...13])
+    io.seek(0)
+
+    assert_raises(Oj::ParseError) do
+      Oj.load(io, :mode => :strict) do |obj, offset|
+        objects << obj
+        read_offset = offset
+      end
+    end
+
+    assert_equal([{ 'x' => 1 }], objects)
+    assert_equal(9, read_offset)
+
+    io.seek(0, IO::SEEK_END)
+    io.write(json[13..-1])
+    io.seek(read_offset)
+
+    # NOTE: Oj ignores the IO offset, which is why we pull out the string here.
+    Oj.load(io.read, :mode => :strict) { |obj| objects << obj }
+
+    assert_equal([{ 'x' => 1 }, { 'y' => 2 }], objects)
   end
 
   def dump_and_load(obj, trace=false)
