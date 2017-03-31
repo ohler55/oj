@@ -25,11 +25,12 @@ typedef struct _Attr {
 
 static bool	use_struct_alt = false;
 static bool	use_exception_alt = false;
+static bool	use_bignum_alt = false;
 
 static void
-raise_gen_err(const char *msg, bool gen_err) {
+raise_json_err(const char *msg, const char *err_classname) {
     volatile VALUE	json_module;
-    volatile VALUE	gen_err_class;
+    volatile VALUE	clas;
     volatile VALUE	json_error_class;
 
     if (rb_const_defined_at(rb_cObject, rb_intern("JSON"))) {
@@ -42,16 +43,16 @@ raise_gen_err(const char *msg, bool gen_err) {
     } else {
         json_error_class = rb_define_class_under(json_module, "JSONError", rb_eStandardError);
     }
-    if (rb_const_defined_at(json_module, rb_intern("GeneratorError"))) {
-        gen_err_class = rb_const_get(json_module, rb_intern("GeneratorError"));
+    if (0 == strcmp(err_classname, "JSONError")) {
+	clas = json_error_class;
     } else {
-    	gen_err_class = rb_define_class_under(json_module, "GeneratorError", json_error_class);
+	if (rb_const_defined_at(json_module, rb_intern(err_classname))) {
+	    clas = rb_const_get(json_module, rb_intern(err_classname));
+	} else {
+	    clas = rb_define_class_under(json_module, err_classname, json_error_class);
+	}
     }
-    if (gen_err) {
-	rb_raise(gen_err_class, "%s", msg);
-    } else {
-	rb_raise(json_error_class, "%s", msg);
-    }
+    rb_raise(clas, "%s", msg);
 }
 
 static void
@@ -187,6 +188,7 @@ dump_array(VALUE a, int depth, Out out, bool as_ok) {
     long	id = oj_check_circular(a, out);
 
     if (id < 0) {
+	raise_json_err("Too deeply nested", "NestingError");
 	return;
     }
     cnt = (int)RARRAY_LEN(a);
@@ -566,6 +568,7 @@ oj_add_to_json(int argc, VALUE *argv, VALUE self) {
 	}
 	use_struct_alt = true;
 	use_exception_alt = true;
+	use_bignum_alt = true;
     } else {
 	for (; 0 < argc; argc--, argv++) {
 	    if (rb_cStruct == *argv) {
@@ -574,6 +577,10 @@ oj_add_to_json(int argc, VALUE *argv, VALUE self) {
 	    }
 	    if (rb_eException == *argv) {
 		use_exception_alt = true;
+		continue;
+	    }
+	    if (rb_cInteger == *argv) {
+		use_bignum_alt = true;
 		continue;
 	    }
 	    for (a = alts; NULL != a->name; a++) {
@@ -603,6 +610,7 @@ oj_remove_to_json(int argc, VALUE *argv, VALUE self) {
 	}
 	use_struct_alt = false;
 	use_exception_alt = false;
+	use_bignum_alt = false;
     } else {
 	for (; 0 < argc; argc--, argv++) {
 	    if (rb_cStruct == *argv) {
@@ -611,6 +619,10 @@ oj_remove_to_json(int argc, VALUE *argv, VALUE self) {
 	    }
 	    if (rb_eException == *argv) {
 		use_exception_alt = false;
+		continue;
+	    }
+	    if (rb_cInteger == *argv) {
+		use_bignum_alt = false;
 		continue;
 	    }
 	    for (; NULL != a->name; a++) {
@@ -648,19 +660,19 @@ dump_float(VALUE obj, int depth, Out out, bool as_ok) {
 	if (out->opts->dump_opts.nan_dump) {
 	    strcpy(buf, "Infinity");
 	} else {
-	    raise_gen_err("Infinity not allowed in JSON.", true);
+	    raise_json_err("Infinity not allowed in JSON.", "GeneratorError");
 	}
     } else if (-OJ_INFINITY == d) {
 	if (out->opts->dump_opts.nan_dump) {
 	    strcpy(buf, "-Infinity");
 	} else {
-	    raise_gen_err("-Infinity not allowed in JSON.", true);
+	    raise_json_err("-Infinity not allowed in JSON.", "GeneratorError");
 	}
     } else if (isnan(d)) {
 	if (out->opts->dump_opts.nan_dump) {
 	    strcpy(buf, "NaN");
 	} else {
-	    raise_gen_err("NaN not allowed in JSON.", true);
+	    raise_json_err("NaN not allowed in JSON.", "GeneratorError");
 	}
     } else if (d == (double)(long long int)d) {
 	//cnt = snprintf(buf, sizeof(buf), "%.1Lf", (long double)d);
@@ -746,7 +758,7 @@ dump_hash(VALUE obj, int depth, Out out, bool as_ok) {
 	long	id = oj_check_circular(obj, out);
 
 	if (0 > id) {
-	    oj_dump_nil(Qnil, 0, out, false);
+	    raise_json_err("Too deeply nested", "NestingError");
 	    return;
 	}
 	*out->cur++ = '{';
@@ -853,7 +865,7 @@ dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
 	int		i;
 
 	if (NULL == classname || '#' == *classname) {
-	    raise_gen_err("Only named structs are supported.", false);
+	    raise_json_err("Only named structs are supported.", "JSONError");
 	}
 #ifdef RSTRUCT_LEN
 #if UNIFY_FIXNUM_AND_BIGNUM
@@ -904,6 +916,28 @@ dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
     }
 }
 
+static void
+dump_bignum(VALUE obj, int depth, Out out, bool as_ok) {
+    // The json gem uses to_s explicitly. to_s can be overridden while
+    // rb_big2str can not so unless overridden by using add_to_json(Integer)
+    // this must use to_s to pass the json gem unit tests.
+    volatile VALUE	rs;
+    int			cnt;
+
+    if (use_bignum_alt) {
+	rs = rb_big2str(obj, 10);
+    } else {
+	rs = rb_funcall(obj, oj_to_s_id, 0);
+    }
+    rb_check_type(rs, T_STRING);
+    cnt = (int)RSTRING_LEN(rs);
+    assure_size(out, cnt);
+    memcpy(out->cur, rb_string_value_ptr((VALUE*)&rs), cnt);
+    out->cur += cnt;
+    *out->cur = '\0';
+}
+
+
 static DumpFunc	compat_funcs[] = {
     NULL,	 	// RUBY_T_NONE   = 0x00,
     dump_obj,		// RUBY_T_OBJECT = 0x01,
@@ -915,7 +949,7 @@ static DumpFunc	compat_funcs[] = {
     dump_array,		// RUBY_T_ARRAY  = 0x07,
     dump_hash,	 	// RUBY_T_HASH   = 0x08,
     dump_struct,	// RUBY_T_STRUCT = 0x09,
-    oj_dump_bignum,	// RUBY_T_BIGNUM = 0x0a,
+    dump_bignum,	// RUBY_T_BIGNUM = 0x0a,
     NULL, 		// RUBY_T_FILE   = 0x0b,
     dump_obj,		// RUBY_T_DATA   = 0x0c,
     NULL, 		// RUBY_T_MATCH  = 0x0d,
@@ -929,12 +963,38 @@ static DumpFunc	compat_funcs[] = {
     oj_dump_fixnum,	// RUBY_T_FIXNUM = 0x15,
 };
 
+// 0x3fffffffffffffff is max for fixnum
+
+static void
+set_state_depth(VALUE state, int depth) {
+    VALUE	json_module = rb_const_get_at(rb_cObject, rb_intern("JSON"));
+    VALUE	state_class = rb_const_get(json_module, rb_intern("State"));
+
+    if (state_class == rb_obj_class(state)) {
+	rb_funcall(state, rb_intern("depth="), 1, INT2NUM(depth));
+    }
+}
+
 void
 oj_dump_compat_val(VALUE obj, int depth, Out out, bool as_ok) {
     int	type = rb_type(obj);
     
     if (out->opts->dump_opts.max_depth <= depth) {
-	rb_raise(rb_eArgError, "Too deeply nested.");
+	// When JSON.dump is called then an ArgumentError is expected and the
+	// limit is the depth inclusive. If JSON.generate is called then a
+	// NestingError is expected and the limit is inclusive. Worse than
+	// that there are unit tests for both.
+	if (CALLER_DUMP == out->caller) {
+	    if (0 < out->argc) {
+		set_state_depth(*out->argv, depth);
+	    }
+	    rb_raise(rb_eArgError, "Too deeply nested.");
+	} else if (out->opts->dump_opts.max_depth < depth) {
+	    if (0 < out->argc) {
+		set_state_depth(*out->argv, depth - 1);
+	    }
+	    raise_json_err("Too deeply nested", "NestingError");
+	}
     }
     if (0 < type && type <= RUBY_T_FIXNUM) {
 	DumpFunc	f = compat_funcs[type];

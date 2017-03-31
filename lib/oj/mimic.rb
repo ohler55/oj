@@ -6,6 +6,8 @@ rescue Exception
   # ignore
 end
 
+require 'oj/state'
+
 module Oj
 
   # A bit hack-ish but does the trick. The JSON.dump_default_options is a Hash
@@ -256,11 +258,51 @@ module Oj
 
 end # Oj
 
+# Needed to define constants.
 module JSON
-  Infinity = 1/0.0
-  MinusInfinity = -1/0.0
   NaN = 0.0/0.0
-end
+  Infinity = 1.0/0.0
+  MinusInfinity = -1.0/0.0
+  # Taken from the unit test. Note that items like check_circular? are not
+  # present.
+  PRETTY_STATE_PROTOTYPE = State.from_state({
+                                              :allow_nan             => false,
+                                              :array_nl              => "\n",
+                                              :ascii_only            => false,
+                                              :buffer_initial_length => 1024,
+                                              :depth                 => 0,
+                                              :indent                => "  ",
+                                              :max_nesting           => 100,
+                                              :object_nl             => "\n",
+                                              :space                 => " ",
+                                              :space_before          => "",
+                                            })
+  SAFE_STATE_PROTOTYPE = State.from_state({
+                                            :allow_nan             => false,
+                                            :array_nl              => "",
+                                            :ascii_only            => false,
+                                            :buffer_initial_length => 1024,
+                                            :depth                 => 0,
+                                            :indent                => "",
+                                            :max_nesting           => 100,
+                                            :object_nl             => "",
+                                            :space                 => "",
+                                            :space_before          => "",
+                                            })
+  FAST_STATE_PROTOTYPE = State.from_state({
+                                            :allow_nan             => false,
+                                            :array_nl              => "",
+                                            :ascii_only            => false,
+                                            :buffer_initial_length => 1024,
+                                            :depth                 => 0,
+                                            :indent                => "",
+                                            :max_nesting           => 0,
+                                            :object_nl             => "",
+                                            :space                 => "",
+                                            :space_before          => "",
+                                            })
+
+end # JSON
 
 # More monkey patches.
 class String
@@ -283,7 +325,3 @@ class String
     s
   end
 end
-
-
-
-  

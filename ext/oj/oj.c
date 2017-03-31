@@ -990,6 +990,7 @@ dump(int argc, VALUE *argv, VALUE self) {
     out.end = buf + sizeof(buf) - 10;
     out.allocated = 0;
     out.omit_nil = copts.dump_opts.omit_nil;
+    out.caller = CALLER_DUMP;
     oj_dump_obj_to_json(*argv, &copts, &out);
     if (0 == out.buf) {
 	rb_raise(rb_eNoMemError, "Not enough memory.");

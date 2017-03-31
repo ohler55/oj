@@ -20,6 +20,12 @@ Comparison Matrix
            Oj:strict       1.00       3.48
            JSON::Ext       0.29       1.00
            
+- json gem bugs
+ - max nesting
+  When JSON.dump is called then an ArgumentError is expected and the
+  limit is the depth inclusive. If JSON.generate is called then a
+  NestingError is expected and the limit is inclusive. there are unit tests for both cases.
+  
 - refactor
  - what happened to obj mode loading time?
 
@@ -27,6 +33,7 @@ Comparison Matrix
   - json_gem tests
    - json_generate_test
     - state
+     - make it a ruby file
    - json_generator_test.rb
    - json_generic_object_test.rb
    - json_parser_test.rb

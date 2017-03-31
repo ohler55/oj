@@ -21,6 +21,7 @@ VALUE	oj_object_nl_sym;
 VALUE	oj_space_before_sym;
 VALUE	oj_space_sym;
 
+static VALUE	state_class;
 
 // mimic JSON documentation
 
@@ -67,10 +68,14 @@ oj_parse_mimic_dump_options(VALUE ropts, Options copts) {
 	    rb_raise(rb_eArgError, "options must be a hash.");
 	}
     }
-    if (Qnil != (v = rb_hash_lookup(ropts, oj_max_nesting_sym))) {
-	if (Qtrue == v) {
-	    copts->dump_opts.max_depth = 100;
-	} else {
+    v = rb_hash_lookup(ropts, oj_max_nesting_sym);
+    if (Qtrue == v) {
+	copts->dump_opts.max_depth = 100;
+    } else if (Qfalse == v || Qnil == v) {
+	copts->dump_opts.max_depth = MAX_DEPTH;
+    } else if (T_FIXNUM == rb_type(v)) {
+	copts->dump_opts.max_depth = NUM2INT(v);
+	if (0 >= copts->dump_opts.max_depth) {
 	    copts->dump_opts.max_depth = MAX_DEPTH;
 	}
     }
@@ -160,6 +165,7 @@ mimic_dump(int argc, VALUE *argv, VALUE self) {
     out.buf = buf;
     out.end = buf + sizeof(buf) - 10;
     out.allocated = 0;
+    out.caller = CALLER_DUMP;
     if (No == copts.nilnil && Qnil == *argv) {
 	rb_raise(rb_eTypeError, "nil not allowed.");
     }
@@ -310,6 +316,7 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
     out.end = buf + sizeof(buf) - 10;
     out.allocated = 0;
     out.omit_nil = copts->dump_opts.omit_nil;
+    out.caller = CALLER_GENERATE;
     // For obj.to_json or generate nan is not allowed but if called from dump
     // it is.
     copts->dump_opts.nan_dump = false;
@@ -558,7 +565,7 @@ static struct _Options	mimic_object_to_json_options = {
 	0,	// array_size
 	AutoNan,// nan_dump
 	false,	// omit_nil
-	MAX_DEPTH, // max_depth
+	100, // max_depth
     }
 };
 
@@ -593,23 +600,15 @@ mimic_object_to_json(int argc, VALUE *argv, VALUE self) {
     return rstr;
 }
 
-static int
-state_new_cb(VALUE key, VALUE value, VALUE state) {    
-    rb_hash_aset(state, key, value);
-
-    return ST_CONTINUE;
-}
-
+/* Document-module: JSON
+ * @!method state() -> JSON::State
+ *
+ * @return [Class] return the JSON::State class
+ */
 static VALUE
-state_new(int argc, VALUE *argv, VALUE self) {
-    VALUE	state = rb_obj_alloc(self);
-
-    if (0 < argc && T_HASH == rb_type(*argv)) {
-	rb_hash_foreach(*argv, state_new_cb, state);
-    }
-    return state;
+mimic_state(VALUE self) {
+    return state_class;
 }
-
 
 /* Document-method: mimic_JSON
  * @overload mimic_JSON() => Module
@@ -667,6 +666,10 @@ oj_define_mimic_json(int argc, VALUE *argv, VALUE self) {
 	    rb_funcall2(Oj, rb_intern("mimic_loaded"), 0, 0);
 	}
     }
+    // Pull in the JSON::State mimic file.
+    rb_require("oj/state");
+    state_class = rb_const_get_at(mimic, rb_intern("State"));
+
     rb_define_module_function(mimic, "parser=", no_op1, 1);
     rb_define_module_function(mimic, "generator=", no_op1, 1);
     rb_define_module_function(mimic, "create_id=", mimic_set_create_id, 1);
@@ -689,6 +692,8 @@ oj_define_mimic_json(int argc, VALUE *argv, VALUE self) {
     rb_define_module_function(mimic, "parse", mimic_parse, -1);
     rb_define_module_function(mimic, "parse!", mimic_parse, -1);
 
+    rb_define_module_function(mimic, "state", mimic_state, 0);
+
     rb_define_method(rb_cObject, "to_json", mimic_object_to_json, -1);
 
     rb_gv_set("$VERBOSE", verbose);
@@ -710,10 +715,10 @@ oj_define_mimic_json(int argc, VALUE *argv, VALUE self) {
     } else {
     	oj_json_generator_error_class = rb_define_class_under(mimic, "GeneratorError", json_error);
     }
-    if (!rb_const_defined_at(mimic, rb_intern("State"))) {
-        VALUE	state = rb_define_class_under(mimic, "State", rb_cHash);
-	rb_define_module_function(state, "new", state_new, -1);
-	
+    if (rb_const_defined_at(mimic, rb_intern("NestingError"))) {
+        rb_const_get(mimic, rb_intern("NestingError"));
+    } else {
+    	rb_define_class_under(mimic, "NestingError", json_error);
     }
 
     oj_default_options = mimic_object_to_json_options;

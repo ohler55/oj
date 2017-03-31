@@ -117,7 +117,6 @@ EOT
   # implement methods
   # circular should use circular in defaults or maybe always set to true, allow changes with [:check_circular]=
   def test_states
-    pend("mimic_JSON") if MIMIC_JSON
     json = JSON.generate({1=>2}, nil)
     assert_equal('{"1":2}', json)
     s = JSON.state.new
@@ -136,7 +135,6 @@ EOT
   end
 
   def test_pretty_state
-    omit_if(MIMIC_JSON, "mimic_JSON")
     state = JSON::PRETTY_STATE_PROTOTYPE.dup
     assert_equal({
       :allow_nan             => false,
@@ -153,7 +151,6 @@ EOT
   end
 
   def test_safe_state
-    omit_if(MIMIC_JSON, "mimic_JSON")
     state = JSON::SAFE_STATE_PROTOTYPE.dup
     assert_equal({
       :allow_nan             => false,
@@ -170,7 +167,6 @@ EOT
   end
 
   def test_fast_state
-    omit_if(MIMIC_JSON, "mimic_JSON")
     state = JSON::FAST_STATE_PROTOTYPE.dup
     assert_equal({
       :allow_nan             => false,
@@ -187,7 +183,6 @@ EOT
   end
 
   def test_allow_nan
-    pend("mimic_JSON") if MIMIC_JSON && !defined?(JSON::GeneratorError)
     assert_raise(JSON::GeneratorError) { JSON.generate([JSON::NaN]) }
     assert_equal '[NaN]', JSON.generate([JSON::NaN], :allow_nan => true)
     assert_raise(JSON::GeneratorError) { JSON.fast_generate([JSON::NaN]) }
@@ -206,7 +201,6 @@ EOT
   end
 
   def test_depth
-    omit_if(MIMIC_JSON, "mimic_JSON")
     ary = []; ary << ary
     assert_equal 0, JSON::SAFE_STATE_PROTOTYPE.depth
     assert_raise(JSON::NestingError) { JSON.generate(ary) }
@@ -221,7 +215,6 @@ EOT
   end
 
   def test_buffer_initial_length
-    omit_if(MIMIC_JSON, "mimic_JSON")
     s = JSON.state.new
     assert_equal 1024, s.buffer_initial_length
     s.buffer_initial_length = 0
@@ -248,7 +241,6 @@ EOT
   end if GC.respond_to?(:stress=)
 
   def test_configure_using_configure_and_merge
-    omit_if(MIMIC_JSON, "mimic_JSON")
     numbered_state = {
       :indent       => "1",
       :space        => '2',
@@ -273,7 +265,6 @@ EOT
   end
 
   def test_configure_hash_conversion
-    omit_if(MIMIC_JSON, "mimic_JSON")
     state = JSON.state.new
     state.configure(:indent => '1')
     assert_equal '1', state.indent
@@ -291,7 +282,6 @@ EOT
 
   if defined?(JSON::Ext::Generator)
     def test_broken_bignum # [ruby-core:38867]
-      omit_if(MIMIC_JSON, "mimic_JSON")
       pid = fork do
         x = 1 << 64
         x.class.class_eval do
@@ -299,7 +289,7 @@ EOT
           end
         end
         begin
-          JSON::Ext::Generator::State.new.generate(x)
+          j = JSON::Ext::Generator::State.new.generate(x)
           exit 1
         rescue TypeError
           exit 0
@@ -314,7 +304,6 @@ EOT
   end
 
   def test_hash_likeness_set_symbol
-    omit_if(MIMIC_JSON, "mimic_JSON")
     state = JSON.state.new
     assert_equal nil, state[:foo]
     assert_equal nil.class, state[:foo].class
@@ -328,7 +317,6 @@ EOT
   end
 
   def test_hash_likeness_set_string
-    omit_if(MIMIC_JSON, "mimic_JSON")
     state = JSON.state.new
     assert_equal nil, state[:foo]
     assert_equal nil, state['foo']
@@ -347,7 +335,6 @@ EOT
   end
 
   def test_nesting
-    pend("mimic_JSON") if MIMIC_JSON && !defined?(JSON::NestingError)
     too_deep = '[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[["Too deep"]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]'
     too_deep_ary = eval too_deep
     assert_raise(JSON::NestingError) { JSON.generate too_deep_ary }
@@ -363,7 +350,6 @@ EOT
   end
 
   def test_backslash
-    pend("mimic_JSON") if MIMIC_JSON
     data = [ '\\.(?i:gif|jpe?g|png)$' ]
     json = '["\\\\.(?i:gif|jpe?g|png)$"]'
     assert_equal json, JSON.generate(data)
@@ -386,7 +372,6 @@ EOT
   end
 
   def test_string_subclass
-    pend("mimic_JSON") if MIMIC_JSON
     s = Class.new(String) do
       def to_s; self; end
       undef to_json
