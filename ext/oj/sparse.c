@@ -252,6 +252,17 @@ read_escaped_str(ParseInfo pi) {
 	    case '"':	buf_append(&buf, '"');	break;
 	    case '/':	buf_append(&buf, '/');	break;
 	    case '\\':	buf_append(&buf, '\\');	break;
+	    case '\'':
+		// The json gem claims this is not an error despite the
+		// ECMA-404 indicating it is not valid.
+		if (CompatMode == pi->options.mode) {
+		    buf_append(&buf, '\'');
+		} else {
+		    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "invalid escaped character");
+		    buf_cleanup(&buf);
+		    return;
+		}
+		break;
 	    case 'u':
 		if (0 == (code = read_hex(pi)) && err_has(&pi->err)) {
 		    buf_cleanup(&buf);
@@ -428,15 +439,22 @@ read_num(ParseInfo pi) {
 	c = reader_get(&pi->rd);
     }
     if ('I' == c) {
-	if (0 != reader_expect(&pi->rd, "nfinity")) {
+	if (No == pi->options.allow_nan) {
+	    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number or other value");
+	    return;
+	} else if (0 != reader_expect(&pi->rd, "nfinity")) {
 	    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number or other value");
 	    return;
 	}
 	ni.infinity = 1;
     } else {
 	int	dec_cnt = 0;
+	bool	zero1 = false;
 
 	for (; '0' <= c && c <= '9'; c = reader_get(&pi->rd)) {
+	    if (0 == ni.i && '0' == c) {
+		zero1 = true;
+	    }
 	    if (0 < ni.i) {
 		dec_cnt++;
 	    }
@@ -445,6 +463,13 @@ read_num(ParseInfo pi) {
 	    } else {
 		int	d = (c - '0');
 
+		if (0 < d) {
+		    if (zero1 && CompatMode == pi->options.mode) {
+			oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number");
+			return;
+		    }
+		    zero1 = false;
+		}
 		ni.i = ni.i * 10 + d;
 		if (INT64_MAX <= ni.i || DEC_MAX < dec_cnt) {
 		    ni.big = 1;
@@ -453,6 +478,9 @@ read_num(ParseInfo pi) {
 	}
 	if ('.' == c) {
 	    c = reader_get(&pi->rd);
+	    if (c < '0' || '9' < c) {
+		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number");
+	    }
 	    for (; '0' <= c && c <= '9'; c = reader_get(&pi->rd)) {
 		int	d = (c - '0');
 
@@ -619,6 +647,13 @@ oj_sparse2(ParseInfo pi) {
 
     err_init(&pi->err);
     while (1) {
+	if (0 < pi->max_depth && pi->max_depth <= pi->stack.tail - pi->stack.head - 1) {
+	    VALUE	err_clas = oj_get_json_err_class("NestingError");
+	    
+	    oj_set_error_at(pi, err_clas, __FILE__, __LINE__, "Too deeply nested.");
+	    pi->err_class = err_clas;
+	    return;
+	}
 	c = reader_next_non_white(&pi->rd);
 	if (!first && '\0' != c) {
 	    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "unexpected characters after the JSON document");
@@ -657,12 +692,25 @@ oj_sparse2(ParseInfo pi) {
 	case '7':
 	case '8':
 	case '9':
-	case 'I':
 	    reader_backup(&pi->rd);
 	    read_num(pi);
 	    break;
+	case 'I':
+	    if (Yes == pi->options.allow_nan) {
+		reader_backup(&pi->rd);
+		read_num(pi);
+	    } else {
+		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "unexpected character");
+		return;
+	    }
+	    break;
 	case 'N':
-	    read_nan(pi);
+	    if (Yes == pi->options.allow_nan) {
+		read_nan(pi);
+	    } else {
+		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "unexpected character");
+		return;
+	    }
 	    break;
 	case 't':
 	    read_true(pi);

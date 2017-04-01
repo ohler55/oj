@@ -31,13 +31,6 @@ Comparison Matrix
 
  - plan
   - json_gem tests
-   - json_generate_test
-    - state
-     - make it a ruby file
-   - json_generator_test.rb
-   - json_generic_object_test.rb
-   - json_parser_test.rb
-   - json_string_matching_test.rb
   
   - object mode
    - move tests

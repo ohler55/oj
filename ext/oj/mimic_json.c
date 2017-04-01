@@ -54,6 +54,34 @@ static VALUE	state_class;
  * @param generator [Object] ignored
  */
 
+VALUE
+oj_get_json_err_class(const char *err_classname) {
+    volatile VALUE	json_module;
+    volatile VALUE	clas;
+    volatile VALUE	json_error_class;
+
+    if (rb_const_defined_at(rb_cObject, rb_intern("JSON"))) {
+	json_module = rb_const_get_at(rb_cObject, rb_intern("JSON"));
+    } else {
+	json_module = rb_define_module("JSON");
+    }
+    if (rb_const_defined_at(json_module, rb_intern("JSONError"))) {
+        json_error_class = rb_const_get(json_module, rb_intern("JSONError"));
+    } else {
+        json_error_class = rb_define_class_under(json_module, "JSONError", rb_eStandardError);
+    }
+    if (0 == strcmp(err_classname, "JSONError")) {
+	clas = json_error_class;
+    } else {
+	if (rb_const_defined_at(json_module, rb_intern(err_classname))) {
+	    clas = rb_const_get(json_module, rb_intern(err_classname));
+	} else {
+	    clas = rb_define_class_under(json_module, err_classname, json_error_class);
+	}
+    }
+    return clas;
+}
+
 void
 oj_parse_mimic_dump_options(VALUE ropts, Options copts) {
     VALUE	v;
@@ -166,9 +194,11 @@ mimic_dump(int argc, VALUE *argv, VALUE self) {
     out.end = buf + sizeof(buf) - 10;
     out.allocated = 0;
     out.caller = CALLER_DUMP;
+    
     if (No == copts.nilnil && Qnil == *argv) {
 	rb_raise(rb_eTypeError, "nil not allowed.");
     }
+    copts.dump_opts.max_depth = MAX_DEPTH; // when using dump there is no limit
     out.omit_nil = copts.dump_opts.omit_nil;
     if (2 <= argc) {
 	int	limit;
@@ -396,28 +426,8 @@ oj_mimic_pretty_generate(int argc, VALUE *argv, VALUE self) {
     return mimic_generate_core(argc, argv, &copts);
 }
 
-/* Document-module: JSON
- * @!method parse!(source, opts=nil)
- *
- * Same as parse().
- * @see parse
- */
-/* Document-module: JSON
- * @!method parse(source, opts=nil)
- *
- * Parses a JSON String or IO into a Ruby Object.  Options other than those
- * listed such as +:allow_nan+ or +:max_nesting+ are ignored. +:object_class+ and
- * +:array_object+ are not supported.
- *
- * @param source [String|IO] source to parse
- * @param opts [Hash] options
- * @option opts [Boolean] :symbolize _names flag indicating JSON object keys should be Symbols instead of Strings
- * @option opts [Boolean] :create_additions flag indicating a key matching +create_id+ in a JSON object should trigger the creation of Ruby Object
- * @return [Object]
- * @see create_id=
- */
 static VALUE
-mimic_parse(int argc, VALUE *argv, VALUE self) {
+mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
     struct _ParseInfo	pi;
     VALUE		args[1];
 
@@ -426,15 +436,18 @@ mimic_parse(int argc, VALUE *argv, VALUE self) {
     }
     oj_set_compat_callbacks(&pi);
     // TBD
-    //pi.err_class = oj_json_parser_error_class;
-    pi.err_class = Qnil;
+    pi.err_class = oj_json_parser_error_class;
+    //pi.err_class = Qnil;
 
     pi.options = oj_default_options;
     pi.options.auto_define = No;
     pi.options.quirks_mode = Yes;
     pi.options.allow_invalid = No;
     pi.options.empty_string = No;
-    pi.options.create_ok = No; // TBD what is default?
+    pi.options.create_ok = No;
+    pi.options.allow_nan = (bang ? Yes : No);
+    pi.options.nilnil = No;
+    pi.max_depth = 100;
 
     if (2 <= argc) {
 	VALUE	ropts = argv[1];
@@ -452,13 +465,82 @@ mimic_parse(int argc, VALUE *argv, VALUE self) {
 	if (Qnil != (v = rb_hash_lookup(ropts, oj_create_additions_sym))) {
 	    pi.options.create_ok = (Qtrue == v) ? Yes : No;
 	}
-	// :allow_nan is not supported as Oj always allows nan
-	// :object_class is always Hash
-	// :array_class is always Array
+	if (Qnil != (v = rb_hash_lookup(ropts, oj_allow_nan_sym))) {
+	    pi.options.allow_nan = (Qtrue == v) ? Yes : No;
+	}
+	if (Qnil != (v = rb_hash_lookup(ropts, oj_allow_nan_sym))) {
+	    pi.options.allow_nan = (Qtrue == v) ? Yes : No;
+	}
+
+	if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_hash_class_sym)) {
+	    if (Qnil == (v = rb_hash_lookup(ropts, oj_hash_class_sym))) {
+		pi.options.hash_class = Qnil;
+	    } else {
+		rb_check_type(v, T_CLASS);
+		pi.options.hash_class = v;
+	    }
+	}
+	if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_object_class_sym)) {
+	    if (Qnil == (v = rb_hash_lookup(ropts, oj_object_class_sym))) {
+		pi.options.hash_class = Qnil;
+	    } else {
+		rb_check_type(v, T_CLASS);
+		pi.options.hash_class = v;
+	    }
+	}
+	if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_array_class_sym)) {
+	    if (Qnil == (v = rb_hash_lookup(ropts, oj_array_class_sym))) {
+		pi.options.array_class = Qnil;
+	    } else {
+		rb_check_type(v, T_CLASS);
+		pi.options.array_class = v;
+	    }
+	}
+	v = rb_hash_lookup(ropts, oj_max_nesting_sym);
+	if (Qtrue == v) {
+	    pi.max_depth = 100;
+	} else if (Qfalse == v || Qnil == v) {
+	    pi.max_depth = 0;
+	} else if (T_FIXNUM == rb_type(v)) {
+	    pi.max_depth = NUM2INT(v);
+	}
+	if (Yes == pi.options.create_ok && Yes == pi.options.sym_key) {
+	    rb_raise(rb_eArgError, ":symbolize_names and :create_additions can not both be true.");
+	}
     }
     *args = *argv;
 
     return oj_pi_parse(1, args, &pi, 0, 0, 0);
+}
+
+/* Document-module: JSON
+ * @!method parse(source, opts=nil)
+ *
+ * Parses a JSON String or IO into a Ruby Object.  Options other than those
+ * listed such as +:allow_nan+ or +:max_nesting+ are ignored. +:object_class+ and
+ * +:array_object+ are not supported.
+ *
+ * @param source [String|IO] source to parse
+ * @param opts [Hash] options
+ * @option opts [Boolean] :symbolize _names flag indicating JSON object keys should be Symbols instead of Strings
+ * @option opts [Boolean] :create_additions flag indicating a key matching +create_id+ in a JSON object should trigger the creation of Ruby Object
+ * @return [Object]
+ * @see create_id=
+ */
+static VALUE
+mimic_parse(int argc, VALUE *argv, VALUE self) {
+    return mimic_parse_core(argc, argv, self, false);
+}
+
+/* Document-module: JSON
+ * @!method parse!(source, opts=nil)
+ *
+ * Same as parse().
+ * @see parse
+ */
+static VALUE
+mimic_parse_bang(int argc, VALUE *argv, VALUE self) {
+    return mimic_parse_core(argc, argv, self, true);
 }
 
 /* Document-module: JSON
@@ -539,18 +621,20 @@ static struct _Options	mimic_object_to_json_options = {
     FloatDec,	// bigdec_load
     No,		// to_json
     Yes,	// as_json
-    Yes,	// nilnil
+    No,		// nilnil
     Yes,	// empty_string
     Yes,	// allow_gc
     Yes,	// quirks_mode
     No,		// allow_invalid
     No,		// create_ok
+    No,		// allow_nan
     json_class,	// create_id
     10,		// create_id_len
     3,		// sec_prec
     16,		// float_prec
     "%0.15g",	// float_fmt
     Qnil,	// hash_class
+    Qnil,	// array_class
     {		// dump_opts
 	false,	//use
 	"",	// indent
@@ -690,7 +774,7 @@ oj_define_mimic_json(int argc, VALUE *argv, VALUE self) {
     rb_define_module_function(mimic, "pretty_unparse", oj_mimic_pretty_generate, -1);
 
     rb_define_module_function(mimic, "parse", mimic_parse, -1);
-    rb_define_module_function(mimic, "parse!", mimic_parse, -1);
+    rb_define_module_function(mimic, "parse!", mimic_parse_bang, -1);
 
     rb_define_module_function(mimic, "state", mimic_state, 0);
 

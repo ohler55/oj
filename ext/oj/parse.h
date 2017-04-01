@@ -71,6 +71,7 @@ typedef struct _ParseInfo {
     struct _ValStack	stack;
     CircArray		circ_array;
     int			expect_value;
+    int			max_depth; // just for the json gem
     VALUE		proc;
     VALUE		(*start_hash)(struct _ParseInfo *pi);
     void		(*end_hash)(struct _ParseInfo *pi);

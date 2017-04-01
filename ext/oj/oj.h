@@ -172,12 +172,14 @@ typedef struct _Options {
     char		quirks_mode;	// allow single JSON values instead of documents
     char		allow_invalid;	// YesNo - allow invalid unicode
     char		create_ok;	// YesNo allow create_id in compat mode
+    char		allow_nan;	// YEsyNo for parsing only
     const char		*create_id;	// 0 or string
     size_t		create_id_len;	// length of create_id
     int			sec_prec;	// second precision when dumping time
     char		float_prec;	// float precision, linked to float_fmt
     char		float_fmt[7];	// float format for dumping, if empty use Ruby
     VALUE		hash_class;	// class to use in place of Hash on load
+    VALUE		array_class;	// class to use in place of Array on load
     struct _DumpOpts	dump_opts;
 } *Options;
 
@@ -275,6 +277,8 @@ extern VALUE	oj_mimic_generate(int argc, VALUE *argv, VALUE self);
 extern VALUE	oj_mimic_pretty_generate(int argc, VALUE *argv, VALUE self);
 extern void	oj_parse_mimic_dump_options(VALUE ropts, Options copts);
 
+extern VALUE	oj_get_json_err_class(const char *err_classname);
+
 extern VALUE	Oj;
 extern struct _Options	oj_default_options;
 #if HAS_ENCODING_SUPPORT
@@ -283,30 +287,35 @@ extern rb_encoding	*oj_utf8_encoding;
 extern VALUE		oj_utf8_encoding;
 #endif
 
-extern VALUE	oj_allow_nan_sym;
-extern VALUE	oj_array_nl_sym;
-extern VALUE	oj_ascii_only_sym;
 extern VALUE	oj_bag_class;
 extern VALUE	oj_bigdecimal_class;
-extern VALUE	oj_create_additions_sym;
 extern VALUE	oj_cstack_class;
 extern VALUE	oj_date_class;
 extern VALUE	oj_datetime_class;
 extern VALUE	oj_doc_class;
 extern VALUE	oj_enumerable_class;
-extern VALUE	oj_indent_sym;
-extern VALUE	oj_json_parser_error_class;
 extern VALUE	oj_json_generator_error_class;
-extern VALUE	oj_max_nesting_sym;
-extern VALUE	oj_object_nl_sym;
-extern VALUE	oj_quirks_mode_sym;
-extern VALUE	oj_slash_string;
-extern VALUE	oj_space_before_sym;
-extern VALUE	oj_space_sym;
+extern VALUE	oj_json_parser_error_class;
 extern VALUE	oj_stream_writer_class;
 extern VALUE	oj_string_writer_class;
 extern VALUE	oj_stringio_class;
 extern VALUE	oj_struct_class;
+
+extern VALUE	oj_allow_nan_sym;
+extern VALUE	oj_array_class_sym;
+extern VALUE	oj_array_nl_sym;
+extern VALUE	oj_ascii_only_sym;
+extern VALUE	oj_create_additions_sym;
+extern VALUE	oj_hash_class_sym;
+extern VALUE	oj_indent_sym;
+extern VALUE	oj_max_nesting_sym;
+extern VALUE	oj_object_class_sym;
+extern VALUE	oj_object_nl_sym;
+extern VALUE	oj_quirks_mode_sym;
+extern VALUE	oj_space_before_sym;
+extern VALUE	oj_space_sym;
+
+extern VALUE	oj_slash_string;
 
 extern ID	oj_add_value_id;
 extern ID	oj_array_append_id;
@@ -320,6 +329,7 @@ extern ID	oj_exclude_end_id;
 extern ID	oj_file_id;
 extern ID	oj_fileno_id;
 extern ID	oj_ftype_id;
+extern ID	oj_has_key_id;
 extern ID	oj_hash_end_id;
 extern ID	oj_hash_key_id;
 extern ID	oj_hash_set_id;

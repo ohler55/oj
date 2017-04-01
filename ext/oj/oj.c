@@ -69,6 +69,7 @@ ID	oj_error_id;
 ID	oj_file_id;
 ID	oj_fileno_id;
 ID	oj_ftype_id;
+ID	oj_has_key_id;
 ID	oj_hash_end_id;
 ID	oj_hash_key_id;
 ID	oj_hash_set_id;
@@ -99,7 +100,6 @@ ID	oj_utc_offset_id;
 ID	oj_utcq_id;
 ID	oj_write_id;
 
-static ID	has_key_id;
 
 VALUE	oj_bag_class;
 VALUE	oj_bigdecimal_class;
@@ -115,10 +115,13 @@ VALUE	oj_struct_class;
 
 VALUE	oj_slash_string;
 
-VALUE	oj_indent_sym;
-VALUE	oj_quirks_mode_sym;
 VALUE	oj_allow_nan_sym;
+VALUE	oj_array_class_sym;
 VALUE	oj_create_additions_sym;
+VALUE	oj_hash_class_sym;
+VALUE	oj_indent_sym;
+VALUE	oj_object_class_sym;
+VALUE	oj_quirks_mode_sym;
 
 static VALUE	allow_blank_sym;
 static VALUE	allow_gc_sym;
@@ -137,7 +140,6 @@ static VALUE	custom_sym;
 static VALUE	escape_mode_sym;
 static VALUE	float_prec_sym;
 static VALUE	float_sym;
-static VALUE	hash_class_sym;
 static VALUE	huge_sym;
 static VALUE	json_sym;
 static VALUE	mode_sym;
@@ -197,12 +199,14 @@ struct _Options	oj_default_options = {
     Yes,	// quirks_mode
     No,		// allow_invalid
     No,		// create_ok
+    Yes,	// allow_nan
     json_class,	// create_id
     10,		// create_id_len
     9,		// sec_prec
     16,		// float_prec
     "%0.15g",	// float_fmt
     Qnil,	// hash_class
+    Qnil,	// array_class
     {		// dump_opts
 	false,	//use
 	"",	// indent
@@ -244,13 +248,15 @@ struct _Options	oj_default_options = {
  * - allow_gc: [true|false|nil] allow or prohibit GC during parsing, default is true (allow)
  * - quirks_mode: [true,|false|nil] Allow single JSON values instead of documents, default is true (allow)
  * - allow_invalid_unicode: [true,|false|nil] Allow invalid unicode, default is false (don't allow)
+ * - allow_nan: [true,|false|nil] Allow Nan, Infinity, and -Infinity to be parsed, default is true (allow)
  * - indent_str: [String|nil] String to use for indentation, overriding the indent option is not nil
  * - space: [String|nil] String to use for the space after the colon in JSON object fields
  * - space_before: [String|nil] String to use before the colon separator in JSON object fields
  * - object_nl: [String|nil] String to use after a JSON object field value
  * - array_nl: [String|nil] String to use after a JSON array value
  * - nan: [:null|:huge|:word|:raise|:auto] how to dump Infinity and NaN in null, strict, and compat mode. :null places a null, :huge places a huge number, :word places Infinity or NaN, :raise raises and exception, :auto uses default for each mode.
- * - hash_class: [Class|nil] Class to use instead of Hash on load
+ * - hash_class: [Class|nil] Class to use instead of Hash on load, :object_class can also be used
+ * - array_class: [Class|nil] Class to use instead of Array on load
  * - omit_nil: [true|false] if true Hash and Object attributes with nil values are omitted
  * @return [Hash] all current option settings.
  */
@@ -276,6 +282,7 @@ get_def_opts(VALUE self) {
     rb_hash_aset(opts, allow_gc_sym, (Yes == oj_default_options.allow_gc) ? Qtrue : ((No == oj_default_options.allow_gc) ? Qfalse : Qnil));
     rb_hash_aset(opts, oj_quirks_mode_sym, (Yes == oj_default_options.quirks_mode) ? Qtrue : ((No == oj_default_options.quirks_mode) ? Qfalse : Qnil));
     rb_hash_aset(opts, allow_invalid_unicode_sym, (Yes == oj_default_options.allow_invalid) ? Qtrue : ((No == oj_default_options.allow_invalid) ? Qfalse : Qnil));
+    rb_hash_aset(opts, oj_allow_nan_sym, (Yes == oj_default_options.allow_nan) ? Qtrue : ((No == oj_default_options.allow_nan) ? Qfalse : Qnil));
     rb_hash_aset(opts, float_prec_sym, INT2FIX(oj_default_options.float_prec));
     switch (oj_default_options.mode) {
     case StrictMode:	rb_hash_aset(opts, mode_sym, strict_sym);	break;
@@ -322,7 +329,8 @@ get_def_opts(VALUE self) {
     default:		rb_hash_aset(opts, nan_sym, auto_sym);	break;
     }
     rb_hash_aset(opts, omit_nil_sym, oj_default_options.dump_opts.omit_nil ? Qtrue : Qfalse);
-    rb_hash_aset(opts, hash_class_sym, oj_default_options.hash_class);
+    rb_hash_aset(opts, oj_hash_class_sym, oj_default_options.hash_class);
+    rb_hash_aset(opts, oj_array_class_sym, oj_default_options.array_class);
     
     return opts;
 }
@@ -367,12 +375,14 @@ get_def_opts(VALUE self) {
  * @option opts [true|false|nil] :allow_gc allow or prohibit GC during parsing, default is true (allow)
  * @option opts [true|false|nil] :quirks_mode allow single JSON values instead of documents, default is true (allow)
  * @option opts [true|false|nil] :allow_invalid_unicode allow invalid unicode, default is false (don't allow)
+ * @option opts [true|false|nil] :allow_nan allow Nan, Infinity, and -Infinity, default is true (allow)
  * @option opts [String|nil] :space String to use for the space after the colon in JSON object fields
  * @option opts [String|nil] :space_before String to use before the colon separator in JSON object fields
  * @option opts [String|nil] :object_nl String to use after a JSON object field value
  * @option opts [String|nil] :array_nl String to use after a JSON array value
  * @option opts [:null|:huge|:word|:raise] :nan how to dump Infinity and NaN in null, strict, and compat mode. :null places a null, :huge places a huge number, :word places Infinity or NaN, :raise raises and exception, :auto uses default for each mode.
- * @option opts [Class|nil] :hash_class Class to use instead of Hash on load
+ * @option opts [Class|nil] :hash_class Class to use instead of Hash on load, :object_class can also be used
+ * @option opts [Class|nil] :array_class Class to use instead of Array on load
  * @option opts [true|false] :omit _nil if true Hash and Object attributes with nil values are omitted
  * @return [nil]
  */
@@ -400,6 +410,7 @@ oj_parse_options(VALUE ropts, Options copts) {
 	{ allow_gc_sym, &copts->allow_gc },
 	{ oj_quirks_mode_sym, &copts->quirks_mode },
 	{ allow_invalid_unicode_sym, &copts->allow_invalid },
+	{ oj_allow_nan_sym, &copts->allow_nan },
 	{ oj_create_additions_sym, &copts->create_ok },
 	{ Qnil, 0 }
     };
@@ -410,7 +421,7 @@ oj_parse_options(VALUE ropts, Options copts) {
     if (T_HASH != rb_type(ropts)) {
 	return;
     }
-    if (Qtrue == rb_funcall(ropts, has_key_id, 1, oj_indent_sym)) {
+    if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_indent_sym)) {
 	v = rb_hash_lookup(ropts, oj_indent_sym);
 	switch (rb_type(v)) {
 	case T_NIL:
@@ -536,7 +547,7 @@ oj_parse_options(VALUE ropts, Options copts) {
 	    rb_raise(rb_eArgError, ":bigdecimal_load must be :bigdecimal, :float, or :auto.");
 	}
     }
-    if (Qtrue == rb_funcall(ropts, has_key_id, 1, create_id_sym)) {
+    if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, create_id_sym)) {
 	v = rb_hash_lookup(ropts, create_id_sym);
 	if (Qnil == v) {
 	    if (json_class != oj_default_options.create_id) {
@@ -569,7 +580,7 @@ oj_parse_options(VALUE ropts, Options copts) {
 	    }
 	}
     }
-    if (Qtrue == rb_funcall(ropts, has_key_id, 1, oj_space_sym)) {
+    if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_space_sym)) {
 	if (Qnil == (v = rb_hash_lookup(ropts, oj_space_sym))) {
 	    copts->dump_opts.after_size = 0;
 	    *copts->dump_opts.after_sep = '\0';
@@ -582,7 +593,7 @@ oj_parse_options(VALUE ropts, Options copts) {
 	    copts->dump_opts.after_size = (uint8_t)len;
 	}
     }
-    if (Qtrue == rb_funcall(ropts, has_key_id, 1, oj_space_before_sym)) {
+    if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_space_before_sym)) {
 	if (Qnil == (v = rb_hash_lookup(ropts, oj_space_before_sym))) {
 	    copts->dump_opts.before_size = 0;
 	    *copts->dump_opts.before_sep = '\0';
@@ -595,7 +606,7 @@ oj_parse_options(VALUE ropts, Options copts) {
 	    copts->dump_opts.before_size = (uint8_t)len;
 	}
     }
-    if (Qtrue == rb_funcall(ropts, has_key_id, 1, oj_object_nl_sym)) {
+    if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_object_nl_sym)) {
 	if (Qnil == (v = rb_hash_lookup(ropts, oj_object_nl_sym))) {
 	    copts->dump_opts.hash_size = 0;
 	    *copts->dump_opts.hash_nl = '\0';
@@ -608,7 +619,7 @@ oj_parse_options(VALUE ropts, Options copts) {
 	    copts->dump_opts.hash_size = (uint8_t)len;
 	}
     }
-    if (Qtrue == rb_funcall(ropts, has_key_id, 1, oj_array_nl_sym)) {
+    if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_array_nl_sym)) {
 	if (Qnil == (v = rb_hash_lookup(ropts, oj_array_nl_sym))) {
 	    copts->dump_opts.array_size = 0;
 	    *copts->dump_opts.array_nl = '\0';
@@ -657,12 +668,28 @@ oj_parse_options(VALUE ropts, Options copts) {
     } else if (Qfalse == v) {
 	copts->escape_mode = JSONEsc;
     }
-    if (Qtrue == rb_funcall(ropts, has_key_id, 1, hash_class_sym)) {
-	if (Qnil == (v = rb_hash_lookup(ropts, hash_class_sym))) {
+    if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_hash_class_sym)) {
+	if (Qnil == (v = rb_hash_lookup(ropts, oj_hash_class_sym))) {
 	    copts->hash_class = Qnil;
 	} else {
 	    rb_check_type(v, T_CLASS);
 	    copts->hash_class = v;
+	}
+    }
+    if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_object_class_sym)) {
+	if (Qnil == (v = rb_hash_lookup(ropts, oj_object_class_sym))) {
+	    copts->hash_class = Qnil;
+	} else {
+	    rb_check_type(v, T_CLASS);
+	    copts->hash_class = v;
+	}
+    }
+    if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_array_class_sym)) {
+	if (Qnil == (v = rb_hash_lookup(ropts, oj_array_class_sym))) {
+	    copts->array_class = Qnil;
+	} else {
+	    rb_check_type(v, T_CLASS);
+	    copts->array_class = v;
 	}
     }
 }
@@ -868,6 +895,7 @@ load_file(int argc, VALUE *argv, VALUE self) {
     pi.options = oj_default_options;
     pi.handler = Qnil;
     pi.err_class = Qnil;
+    pi.max_depth = 0;
     if (2 <= argc) {
 	VALUE	ropts = argv[1];
 	VALUE	v;
@@ -929,6 +957,7 @@ safe_load(VALUE self, VALUE doc) {
     VALUE		args[1];
 
     pi.err_class = Qnil;
+    pi.max_depth = 0;
     pi.options = oj_default_options;
     pi.options.auto_define = No;
     pi.options.sym_key = No;
@@ -1313,7 +1342,7 @@ Init_oj() {
     oj_utc_offset_id = rb_intern("utc_offset");
     oj_utcq_id = rb_intern("utc?");
     oj_write_id = rb_intern("write");
-    has_key_id = rb_intern("has_key?");
+    oj_has_key_id = rb_intern("has_key?");
 
     rb_require("oj/bag");
     rb_require("oj/error");
@@ -1332,61 +1361,63 @@ Init_oj() {
     oj_json_parser_error_class = rb_eEncodingError;    // replaced if mimic is called
     oj_json_generator_error_class = rb_eEncodingError; // replaced if mimic is called
 
-    allow_blank_sym = ID2SYM(rb_intern("allow_blank"));	rb_gc_register_address(&allow_blank_sym);
-    allow_gc_sym = ID2SYM(rb_intern("allow_gc"));	rb_gc_register_address(&allow_gc_sym);
+    allow_blank_sym = ID2SYM(rb_intern("allow_blank"));		rb_gc_register_address(&allow_blank_sym);
+    allow_gc_sym = ID2SYM(rb_intern("allow_gc"));		rb_gc_register_address(&allow_gc_sym);
     allow_invalid_unicode_sym = ID2SYM(rb_intern("allow_invalid_unicode"));rb_gc_register_address(&allow_invalid_unicode_sym);
-    ascii_sym = ID2SYM(rb_intern("ascii"));		rb_gc_register_address(&ascii_sym);
-    auto_define_sym = ID2SYM(rb_intern("auto_define"));	rb_gc_register_address(&auto_define_sym);
-    auto_sym = ID2SYM(rb_intern("auto"));		rb_gc_register_address(&auto_sym);
+    ascii_sym = ID2SYM(rb_intern("ascii"));			rb_gc_register_address(&ascii_sym);
+    auto_define_sym = ID2SYM(rb_intern("auto_define"));		rb_gc_register_address(&auto_define_sym);
+    auto_sym = ID2SYM(rb_intern("auto"));			rb_gc_register_address(&auto_sym);
     bigdecimal_as_decimal_sym = ID2SYM(rb_intern("bigdecimal_as_decimal"));rb_gc_register_address(&bigdecimal_as_decimal_sym);
-    bigdecimal_load_sym = ID2SYM(rb_intern("bigdecimal_load"));rb_gc_register_address(&bigdecimal_load_sym);
-    bigdecimal_sym = ID2SYM(rb_intern("bigdecimal"));	rb_gc_register_address(&bigdecimal_sym);
-    circular_sym = ID2SYM(rb_intern("circular"));	rb_gc_register_address(&circular_sym);
-    class_cache_sym = ID2SYM(rb_intern("class_cache"));	rb_gc_register_address(&class_cache_sym);
-    compat_sym = ID2SYM(rb_intern("compat"));		rb_gc_register_address(&compat_sym);
-    create_id_sym = ID2SYM(rb_intern("create_id"));	rb_gc_register_address(&create_id_sym);
-    custom_sym = ID2SYM(rb_intern("custom"));		rb_gc_register_address(&custom_sym);
-    empty_string_sym = ID2SYM(rb_intern("empty_string"));rb_gc_register_address(&empty_string_sym);
-    escape_mode_sym = ID2SYM(rb_intern("escape_mode"));	rb_gc_register_address(&escape_mode_sym);
-    float_prec_sym = ID2SYM(rb_intern("float_precision"));rb_gc_register_address(&float_prec_sym);
-    float_sym = ID2SYM(rb_intern("float"));		rb_gc_register_address(&float_sym);
-    hash_class_sym = ID2SYM(rb_intern("hash_class"));	rb_gc_register_address(&hash_class_sym);
-    huge_sym = ID2SYM(rb_intern("huge"));		rb_gc_register_address(&huge_sym);
-    json_sym = ID2SYM(rb_intern("json"));		rb_gc_register_address(&json_sym);
-    mode_sym = ID2SYM(rb_intern("mode"));		rb_gc_register_address(&mode_sym);
-    nan_sym = ID2SYM(rb_intern("nan"));			rb_gc_register_address(&nan_sym);
-    newline_sym = ID2SYM(rb_intern("newline"));		rb_gc_register_address(&newline_sym);
-    nilnil_sym = ID2SYM(rb_intern("nilnil"));		rb_gc_register_address(&nilnil_sym);
-    null_sym = ID2SYM(rb_intern("null"));		rb_gc_register_address(&null_sym);
-    object_sym = ID2SYM(rb_intern("object"));		rb_gc_register_address(&object_sym);
-    oj_allow_nan_sym = ID2SYM(rb_intern("allow_nan"));	rb_gc_register_address(&oj_allow_nan_sym);
-    oj_array_nl_sym = ID2SYM(rb_intern("array_nl"));	rb_gc_register_address(&oj_array_nl_sym);
-    oj_ascii_only_sym = ID2SYM(rb_intern("ascii_only"));rb_gc_register_address(&oj_ascii_only_sym);
+    bigdecimal_load_sym = ID2SYM(rb_intern("bigdecimal_load"));	rb_gc_register_address(&bigdecimal_load_sym);
+    bigdecimal_sym = ID2SYM(rb_intern("bigdecimal"));		rb_gc_register_address(&bigdecimal_sym);
+    circular_sym = ID2SYM(rb_intern("circular"));		rb_gc_register_address(&circular_sym);
+    class_cache_sym = ID2SYM(rb_intern("class_cache"));		rb_gc_register_address(&class_cache_sym);
+    compat_sym = ID2SYM(rb_intern("compat"));			rb_gc_register_address(&compat_sym);
+    create_id_sym = ID2SYM(rb_intern("create_id"));		rb_gc_register_address(&create_id_sym);
+    custom_sym = ID2SYM(rb_intern("custom"));			rb_gc_register_address(&custom_sym);
+    empty_string_sym = ID2SYM(rb_intern("empty_string"));	rb_gc_register_address(&empty_string_sym);
+    escape_mode_sym = ID2SYM(rb_intern("escape_mode"));		rb_gc_register_address(&escape_mode_sym);
+    float_prec_sym = ID2SYM(rb_intern("float_precision"));	rb_gc_register_address(&float_prec_sym);
+    float_sym = ID2SYM(rb_intern("float"));			rb_gc_register_address(&float_sym);
+    huge_sym = ID2SYM(rb_intern("huge"));			rb_gc_register_address(&huge_sym);
+    json_sym = ID2SYM(rb_intern("json"));			rb_gc_register_address(&json_sym);
+    mode_sym = ID2SYM(rb_intern("mode"));			rb_gc_register_address(&mode_sym);
+    nan_sym = ID2SYM(rb_intern("nan"));				rb_gc_register_address(&nan_sym);
+    newline_sym = ID2SYM(rb_intern("newline"));			rb_gc_register_address(&newline_sym);
+    nilnil_sym = ID2SYM(rb_intern("nilnil"));			rb_gc_register_address(&nilnil_sym);
+    null_sym = ID2SYM(rb_intern("null"));			rb_gc_register_address(&null_sym);
+    object_sym = ID2SYM(rb_intern("object"));			rb_gc_register_address(&object_sym);
+    oj_allow_nan_sym = ID2SYM(rb_intern("allow_nan"));		rb_gc_register_address(&oj_allow_nan_sym);
+    oj_array_class_sym = ID2SYM(rb_intern("array_class"));	rb_gc_register_address(&oj_array_class_sym);
+    oj_array_nl_sym = ID2SYM(rb_intern("array_nl"));		rb_gc_register_address(&oj_array_nl_sym);
+    oj_ascii_only_sym = ID2SYM(rb_intern("ascii_only"));	rb_gc_register_address(&oj_ascii_only_sym);
     oj_create_additions_sym = ID2SYM(rb_intern("create_additions"));rb_gc_register_address(&oj_create_additions_sym);
-    oj_indent_sym = ID2SYM(rb_intern("indent"));	rb_gc_register_address(&oj_indent_sym);
-    oj_max_nesting_sym = ID2SYM(rb_intern("max_nesting"));rb_gc_register_address(&oj_max_nesting_sym);
-    oj_object_nl_sym = ID2SYM(rb_intern("object_nl"));	rb_gc_register_address(&oj_object_nl_sym);
-    oj_quirks_mode_sym = ID2SYM(rb_intern("quirks_mode"));rb_gc_register_address(&oj_quirks_mode_sym);
-    oj_space_before_sym = ID2SYM(rb_intern("space_before"));rb_gc_register_address(&oj_space_before_sym);
-    oj_space_sym = ID2SYM(rb_intern("space"));		rb_gc_register_address(&oj_space_sym);
-    omit_nil_sym = ID2SYM(rb_intern("omit_nil"));	rb_gc_register_address(&omit_nil_sym);
-    rails_sym = ID2SYM(rb_intern("rails"));		rb_gc_register_address(&rails_sym);
-    raise_sym = ID2SYM(rb_intern("raise"));		rb_gc_register_address(&raise_sym);
-    ruby_sym = ID2SYM(rb_intern("ruby"));		rb_gc_register_address(&ruby_sym);
-    sec_prec_sym = ID2SYM(rb_intern("second_precision"));rb_gc_register_address(&sec_prec_sym);
-    strict_sym = ID2SYM(rb_intern("strict"));		rb_gc_register_address(&strict_sym);
-    symbol_keys_sym = ID2SYM(rb_intern("symbol_keys"));	rb_gc_register_address(&symbol_keys_sym);
-    time_format_sym = ID2SYM(rb_intern("time_format"));	rb_gc_register_address(&time_format_sym);
-    unicode_xss_sym = ID2SYM(rb_intern("unicode_xss"));	rb_gc_register_address(&unicode_xss_sym);
-    unix_sym = ID2SYM(rb_intern("unix"));		rb_gc_register_address(&unix_sym);
-    unix_zone_sym = ID2SYM(rb_intern("unix_zone"));	rb_gc_register_address(&unix_zone_sym);
-    use_as_json_sym = ID2SYM(rb_intern("use_as_json"));	rb_gc_register_address(&use_as_json_sym);
-    use_to_json_sym = ID2SYM(rb_intern("use_to_json"));	rb_gc_register_address(&use_to_json_sym);
-    word_sym = ID2SYM(rb_intern("word"));		rb_gc_register_address(&word_sym);
-    xmlschema_sym = ID2SYM(rb_intern("xmlschema"));	rb_gc_register_address(&xmlschema_sym);
-    xss_safe_sym = ID2SYM(rb_intern("xss_safe"));	rb_gc_register_address(&xss_safe_sym);
+    oj_hash_class_sym = ID2SYM(rb_intern("hash_class"));	rb_gc_register_address(&oj_hash_class_sym);
+    oj_indent_sym = ID2SYM(rb_intern("indent"));		rb_gc_register_address(&oj_indent_sym);
+    oj_max_nesting_sym = ID2SYM(rb_intern("max_nesting"));	rb_gc_register_address(&oj_max_nesting_sym);
+    oj_object_class_sym = ID2SYM(rb_intern("object_class"));	rb_gc_register_address(&oj_object_class_sym);
+    oj_object_nl_sym = ID2SYM(rb_intern("object_nl"));		rb_gc_register_address(&oj_object_nl_sym);
+    oj_quirks_mode_sym = ID2SYM(rb_intern("quirks_mode"));	rb_gc_register_address(&oj_quirks_mode_sym);
+    oj_space_before_sym = ID2SYM(rb_intern("space_before"));	rb_gc_register_address(&oj_space_before_sym);
+    oj_space_sym = ID2SYM(rb_intern("space"));			rb_gc_register_address(&oj_space_sym);
+    omit_nil_sym = ID2SYM(rb_intern("omit_nil"));		rb_gc_register_address(&omit_nil_sym);
+    rails_sym = ID2SYM(rb_intern("rails"));			rb_gc_register_address(&rails_sym);
+    raise_sym = ID2SYM(rb_intern("raise"));			rb_gc_register_address(&raise_sym);
+    ruby_sym = ID2SYM(rb_intern("ruby"));			rb_gc_register_address(&ruby_sym);
+    sec_prec_sym = ID2SYM(rb_intern("second_precision"));	rb_gc_register_address(&sec_prec_sym);
+    strict_sym = ID2SYM(rb_intern("strict"));			rb_gc_register_address(&strict_sym);
+    symbol_keys_sym = ID2SYM(rb_intern("symbol_keys"));		rb_gc_register_address(&symbol_keys_sym);
+    time_format_sym = ID2SYM(rb_intern("time_format"));		rb_gc_register_address(&time_format_sym);
+    unicode_xss_sym = ID2SYM(rb_intern("unicode_xss"));		rb_gc_register_address(&unicode_xss_sym);
+    unix_sym = ID2SYM(rb_intern("unix"));			rb_gc_register_address(&unix_sym);
+    unix_zone_sym = ID2SYM(rb_intern("unix_zone"));		rb_gc_register_address(&unix_zone_sym);
+    use_as_json_sym = ID2SYM(rb_intern("use_as_json"));		rb_gc_register_address(&use_as_json_sym);
+    use_to_json_sym = ID2SYM(rb_intern("use_to_json"));		rb_gc_register_address(&use_to_json_sym);
+    word_sym = ID2SYM(rb_intern("word"));			rb_gc_register_address(&word_sym);
+    xmlschema_sym = ID2SYM(rb_intern("xmlschema"));		rb_gc_register_address(&xmlschema_sym);
+    xss_safe_sym = ID2SYM(rb_intern("xss_safe"));		rb_gc_register_address(&xss_safe_sym);
 
-    oj_slash_string = rb_str_new2("/");			rb_gc_register_address(&oj_slash_string);
+    oj_slash_string = rb_str_new2("/");				rb_gc_register_address(&oj_slash_string);
 
     oj_default_options.mode = ObjectMode;
 

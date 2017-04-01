@@ -1,31 +1,6 @@
 /* parse.c
  * Copyright (c) 2013, Peter Ohler
  * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer.
- *
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- *  - Neither the name of Peter Ohler nor the names of its contributors may be
- *    used to endorse or promote products derived from this software without
- *    specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include <stdlib.h>
@@ -237,6 +212,18 @@ read_escaped_str(ParseInfo pi, const char *start) {
 	    case '"':	buf_append(&buf, '"');	break;
 	    case '/':	buf_append(&buf, '/');	break;
 	    case '\\':	buf_append(&buf, '\\');	break;
+	    case '\'':
+		// The json gem claims this is not an error despite the
+		// ECMA-404 indicating it is not valid.
+		if (CompatMode == pi->options.mode) {
+		    buf_append(&buf, '\'');
+		} else {
+		    pi->cur = s;
+		    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "invalid escaped character");
+		    buf_cleanup(&buf);
+		    return;
+		}
+		break;
 	    case 'u':
 		s++;
 		if (0 == (code = read_hex(pi, s)) && err_has(&pi->err)) {
@@ -411,7 +398,7 @@ read_num(ParseInfo pi) {
 	pi->cur++;
     }
     if ('I' == *pi->cur) {
-	if (0 != strncmp("Infinity", pi->cur, 8)) {
+	if (No == pi->options.allow_nan || 0 != strncmp("Infinity", pi->cur, 8)) {
 	    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number or other value");
 	    return;
 	}
@@ -426,14 +413,25 @@ read_num(ParseInfo pi) {
 	ni.nan = 1;
     } else {
 	int	dec_cnt = 0;
-
+	bool	zero1 = false;
+	
 	for (; '0' <= *pi->cur && *pi->cur <= '9'; pi->cur++) {
+	    if (0 == ni.i && '0' == *pi->cur) {
+		zero1 = true;
+	    }
 	    if (0 < ni.i) {
 		dec_cnt++;
 	    }
 	    if (!ni.big) {
 		int	d = (*pi->cur - '0');
 
+		if (0 < d) {
+		    if (zero1 && CompatMode == pi->options.mode) {
+			oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number");
+			return;
+		    }
+		    zero1 = false;
+		}
 		ni.i = ni.i * 10 + d;
 		if (INT64_MAX <= ni.i || DEC_MAX < dec_cnt) {
 		    ni.big = 1;
@@ -442,6 +440,10 @@ read_num(ParseInfo pi) {
 	}
 	if ('.' == *pi->cur) {
 	    pi->cur++;
+	    if (*pi->cur < '0' || '9' < *pi->cur) {
+		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number");
+		return;
+	    }
 	    for (; '0' <= *pi->cur && *pi->cur <= '9'; pi->cur++) {
 		int	d = (*pi->cur - '0');
 
@@ -594,13 +596,20 @@ oj_parse2(ParseInfo pi) {
     pi->cur = pi->json;
     err_init(&pi->err);
     while (1) {
+	if (0 < pi->max_depth && pi->max_depth <= pi->stack.tail - pi->stack.head - 1) {
+	    VALUE	err_clas = oj_get_json_err_class("NestingError");
+	    
+	    oj_set_error_at(pi, err_clas, __FILE__, __LINE__, "Too deeply nested.");
+	    pi->err_class = err_clas;
+	    return;
+	}
 	next_non_white(pi);
 	if (!first && '\0' != *pi->cur) {
 	    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "unexpected characters after the JSON document");
 	}
 
-	// if no tokens are consumed (i.e. empty string), throw a parse error
-	// this is the behavior of JSON.parse in both Ruby and JS
+	// If no tokens are consumed (i.e. empty string), throw a parse error
+	// this is the behavior of JSON.parse in both Ruby and JS.
 	if (No == pi->options.empty_string && 1 == first && '\0' == *pi->cur) {
 	    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "unexpected character");
 	}
@@ -627,7 +636,7 @@ oj_parse2(ParseInfo pi) {
 	case '"':
 	    read_str(pi);
 	    break;
-	case '+':
+	    //case '+':
 	case '-':
 	case '0':
 	case '1':
@@ -639,10 +648,17 @@ oj_parse2(ParseInfo pi) {
 	case '7':
 	case '8':
 	case '9':
-	case 'I':
-	case 'N':
 	    pi->cur--;
 	    read_num(pi);
+	    break;
+	case 'I':
+	case 'N':
+	    if (Yes == pi->options.allow_nan) {
+		pi->cur--;
+		read_num(pi);
+	    } else {
+		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "unexpected character");
+	    }
 	    break;
 	case 't':
 	    read_true(pi);
@@ -878,7 +894,7 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
 	    // use stream parser instead
 	    return oj_pi_sparse(argc, argv, pi, 0);
 	} else {
-	    rb_raise(rb_eArgError, "strict_parse() expected a String or IO Object.");
+	    rb_raise(rb_eArgError, "parse() expected a String or IO Object.");
 }
     }
     if (Yes == pi->options.circular) {

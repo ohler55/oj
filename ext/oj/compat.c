@@ -63,8 +63,24 @@ hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *o
 		rkey = rb_str_intern(rkey);
 	    }
 	}
-	rb_hash_aset(parent->val, rkey, rstr);
+	if (rb_cHash != rb_obj_class(parent->val)) {
+	    // The rb_hash_set would still work but the unit tests for the
+	    // json gem require the less efficient []= method be called to set
+	    // values. Even using the store method to set the values will fail
+	    // the unit tests.
+	    rb_funcall(parent->val, rb_intern("[]="), 2, rkey, rstr);
+	} else {
+	    rb_hash_aset(parent->val, rkey, rstr);
+	}
     }
+}
+
+static VALUE
+start_hash(ParseInfo pi) {
+    if (Qnil != pi->options.hash_class) {
+	return rb_class_new_instance(0, NULL, pi->options.hash_class);
+    }
+    return rb_hash_new();
 }
 
 static void
@@ -106,21 +122,48 @@ add_num(ParseInfo pi, NumInfo ni) {
 
 static void
 hash_set_num(struct _ParseInfo *pi, Val parent, NumInfo ni) {
-    rb_hash_aset(stack_peek(&pi->stack)->val, calc_hash_key(pi, parent), oj_num_as_value(ni));
+    if (rb_cHash != rb_obj_class(parent->val)) {
+	// The rb_hash_set would still work but the unit tests for the
+	// json gem require the less efficient []= method be called to set
+	// values. Even using the store method to set the values will fail
+	// the unit tests.
+	rb_funcall(stack_peek(&pi->stack)->val, rb_intern("[]="), 2, calc_hash_key(pi, parent), oj_num_as_value(ni));
+    } else {
+	rb_hash_aset(stack_peek(&pi->stack)->val, calc_hash_key(pi, parent), oj_num_as_value(ni));
+    }
+}
+
+static VALUE
+start_array(ParseInfo pi) {
+    if (Qnil != pi->options.array_class) {
+	return rb_class_new_instance(0, NULL, pi->options.array_class);
+    }
+    return rb_ary_new();
 }
 
 static void
 array_append_num(ParseInfo pi, NumInfo ni) {
-    rb_ary_push(stack_peek(&pi->stack)->val, oj_num_as_value(ni));
+    Val	parent = stack_peek(&pi->stack);
+    
+    if (rb_cArray != rb_obj_class(parent->val)) {
+	// The rb_ary_push would still work but the unit tests for the json
+	// gem require the less efficient << method be called to push the
+	// values.
+	rb_funcall(parent->val, rb_intern("<<"), 1, oj_num_as_value(ni));
+    } else {
+	rb_ary_push(parent->val, oj_num_as_value(ni));
+    }
 }
 
 void
 oj_set_compat_callbacks(ParseInfo pi) {
     oj_set_strict_callbacks(pi);
+    pi->start_hash = start_hash;
     pi->end_hash = end_hash;
     pi->hash_set_cstr = hash_set_cstr;
     pi->add_num = add_num;
     pi->hash_set_num = hash_set_num;
+    pi->start_array = start_array;
     pi->array_append_num = array_append_num;
 }
 
@@ -131,6 +174,9 @@ oj_compat_parse(int argc, VALUE *argv, VALUE self) {
     pi.options = oj_default_options;
     pi.handler = Qnil;
     pi.err_class = Qnil;
+    pi.max_depth = 0;
+    pi.options.allow_nan = Yes;
+    pi.options.nilnil = Yes;
     oj_set_compat_callbacks(&pi);
 
     if (T_STRING == rb_type(*argv)) {
@@ -147,6 +193,9 @@ oj_compat_parse_cstr(int argc, VALUE *argv, char *json, size_t len) {
     pi.options = oj_default_options;
     pi.handler = Qnil;
     pi.err_class = Qnil;
+    pi.max_depth = 0;
+    pi.options.allow_nan = Yes;
+    pi.options.nilnil = Yes;
     oj_set_strict_callbacks(&pi);
     pi.end_hash = end_hash;
     pi.hash_set_cstr = hash_set_cstr;

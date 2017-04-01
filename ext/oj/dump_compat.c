@@ -29,30 +29,7 @@ static bool	use_bignum_alt = false;
 
 static void
 raise_json_err(const char *msg, const char *err_classname) {
-    volatile VALUE	json_module;
-    volatile VALUE	clas;
-    volatile VALUE	json_error_class;
-
-    if (rb_const_defined_at(rb_cObject, rb_intern("JSON"))) {
-	json_module = rb_const_get_at(rb_cObject, rb_intern("JSON"));
-    } else {
-	json_module = rb_define_module("JSON");
-    }
-    if (rb_const_defined_at(json_module, rb_intern("JSONError"))) {
-        json_error_class = rb_const_get(json_module, rb_intern("JSONError"));
-    } else {
-        json_error_class = rb_define_class_under(json_module, "JSONError", rb_eStandardError);
-    }
-    if (0 == strcmp(err_classname, "JSONError")) {
-	clas = json_error_class;
-    } else {
-	if (rb_const_defined_at(json_module, rb_intern(err_classname))) {
-	    clas = rb_const_get(json_module, rb_intern(err_classname));
-	} else {
-	    clas = rb_define_class_under(json_module, err_classname, json_error_class);
-	}
-    }
-    rb_raise(clas, "%s", msg);
+    rb_raise(oj_get_json_err_class(err_classname), "%s", msg);
 }
 
 static void

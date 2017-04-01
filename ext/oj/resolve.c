@@ -85,6 +85,9 @@ resolve_classpath(ParseInfo pi, const char *name, size_t len, int auto_define, V
     *s = '\0';
     if (Qundef == (clas = resolve_classname(clas, class_name, auto_define))) {
 	oj_set_error_at(pi, error_class, __FILE__, __LINE__, "class %s is not defined", name);
+	if (Qnil != error_class) {
+	    pi->err_class = error_class;
+	}
     }
     return clas;
 }
