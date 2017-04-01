@@ -1,7 +1,7 @@
 
 module JSON
 
-  unless defined?(State)
+  unless defined?(::JSON::State)
     # This class exists for json gem compatibility only. While it can be used
     # as the options for other than compatibility a simple Hash is recommended
     # as it is simpler and performs better. The only bit missing by not using

@@ -260,9 +260,9 @@ end # Oj
 
 # Needed to define constants.
 module JSON
-  NaN = 0.0/0.0
-  Infinity = 1.0/0.0
-  MinusInfinity = -1.0/0.0
+  NaN = 0.0/0.0 unless defined?(::JSON::NaN)
+  Infinity = 1.0/0.0 unless defined?(::JSON::Infinity)
+  MinusInfinity = -1.0/0.0 unless defined?(::JSON::MinusInfinity)
   # Taken from the unit test. Note that items like check_circular? are not
   # present.
   PRETTY_STATE_PROTOTYPE = State.from_state({
@@ -276,7 +276,7 @@ module JSON
                                               :object_nl             => "\n",
                                               :space                 => " ",
                                               :space_before          => "",
-                                            })
+                                            }) unless defined?(::JSON::PRETTY_STATE_PROTOTYPE)
   SAFE_STATE_PROTOTYPE = State.from_state({
                                             :allow_nan             => false,
                                             :array_nl              => "",
@@ -288,7 +288,7 @@ module JSON
                                             :object_nl             => "",
                                             :space                 => "",
                                             :space_before          => "",
-                                            })
+                                            }) unless defined?(::JSON::SAFE_STATE_PROTOTYPE)
   FAST_STATE_PROTOTYPE = State.from_state({
                                             :allow_nan             => false,
                                             :array_nl              => "",
@@ -300,7 +300,7 @@ module JSON
                                             :object_nl             => "",
                                             :space                 => "",
                                             :space_before          => "",
-                                            })
+                                            }) unless defined?(::JSON::FAST_STATE_PROTOTYPE)
 
 end # JSON
 
