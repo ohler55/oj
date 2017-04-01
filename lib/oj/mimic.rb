@@ -265,7 +265,7 @@ module JSON
   MinusInfinity = -1.0/0.0 unless defined?(::JSON::MinusInfinity)
   # Taken from the unit test. Note that items like check_circular? are not
   # present.
-  PRETTY_STATE_PROTOTYPE = State.from_state({
+  PRETTY_STATE_PROTOTYPE = Ext::Generator::State.from_state({
                                               :allow_nan             => false,
                                               :array_nl              => "\n",
                                               :ascii_only            => false,
@@ -277,7 +277,7 @@ module JSON
                                               :space                 => " ",
                                               :space_before          => "",
                                             }) unless defined?(::JSON::PRETTY_STATE_PROTOTYPE)
-  SAFE_STATE_PROTOTYPE = State.from_state({
+  SAFE_STATE_PROTOTYPE = Ext::Generator::State.from_state({
                                             :allow_nan             => false,
                                             :array_nl              => "",
                                             :ascii_only            => false,
@@ -289,7 +289,7 @@ module JSON
                                             :space                 => "",
                                             :space_before          => "",
                                             }) unless defined?(::JSON::SAFE_STATE_PROTOTYPE)
-  FAST_STATE_PROTOTYPE = State.from_state({
+  FAST_STATE_PROTOTYPE = Ext::Generator::State.from_state({
                                             :allow_nan             => false,
                                             :array_nl              => "",
                                             :ascii_only            => false,
@@ -301,6 +301,9 @@ module JSON
                                             :space                 => "",
                                             :space_before          => "",
                                             }) unless defined?(::JSON::FAST_STATE_PROTOTYPE)
+
+  class State < ::JSON::Ext::Generator::State
+  end
 
 end # JSON
 

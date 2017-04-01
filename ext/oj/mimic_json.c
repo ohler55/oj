@@ -715,6 +715,7 @@ oj_define_mimic_json(int argc, VALUE *argv, VALUE self) {
     VALUE	verbose;
     VALUE	json_error;
     VALUE	mimic;
+    VALUE	generator;
     
     // Either set the paths to indicate JSON has been loaded or replaces the
     // methods if it has been loaded.
@@ -734,8 +735,10 @@ oj_define_mimic_json(int argc, VALUE *argv, VALUE self) {
     if (!rb_const_defined_at(ext, rb_intern("Parser"))) {
 	dummy = rb_define_class_under(ext, "Parser", rb_cObject);
     }
-    if (!rb_const_defined_at(ext, rb_intern("Generator"))) {
-	dummy = rb_define_class_under(ext, "Generator", rb_cObject);
+    if (rb_const_defined_at(ext, rb_intern("Generator"))) {
+	generator = rb_const_get_at(ext, rb_intern("Generator"));
+     } else {
+	generator = rb_define_module_under(ext, "Generator");
     }
     // convince Ruby that the json gem has already been loaded
     dummy = rb_gv_get("$LOADED_FEATURES");
@@ -752,7 +755,7 @@ oj_define_mimic_json(int argc, VALUE *argv, VALUE self) {
     }
     // Pull in the JSON::State mimic file.
     rb_require("oj/state");
-    state_class = rb_const_get_at(mimic, rb_intern("State"));
+    state_class = rb_const_get_at(generator, rb_intern("State"));
 
     rb_define_module_function(mimic, "parser=", no_op1, 1);
     rb_define_module_function(mimic, "generator=", no_op1, 1);

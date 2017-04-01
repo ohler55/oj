@@ -945,7 +945,9 @@ static DumpFunc	compat_funcs[] = {
 static void
 set_state_depth(VALUE state, int depth) {
     VALUE	json_module = rb_const_get_at(rb_cObject, rb_intern("JSON"));
-    VALUE	state_class = rb_const_get(json_module, rb_intern("State"));
+    VALUE	ext = rb_const_get(json_module, rb_intern("Ext"));
+    VALUE	generator = rb_const_get(ext, rb_intern("Generator"));
+    VALUE	state_class = rb_const_get(generator, rb_intern("State"));
 
     if (state_class == rb_obj_class(state)) {
 	rb_funcall(state, rb_intern("depth="), 1, INT2NUM(depth));
