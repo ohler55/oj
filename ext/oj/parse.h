@@ -1,31 +1,6 @@
 /* parse.h
  * Copyright (c) 2011, Peter Ohler
  * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- * 
- *  - Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer.
- * 
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- * 
- *  - Neither the name of Peter Ohler nor the names of its contributors may be
- *    used to endorse or promote products derived from this software without
- *    specific prior written permission.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #ifndef __OJ_PARSE_H__
@@ -33,12 +8,16 @@
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "ruby.h"
 #include "oj.h"
 #include "val_stack.h"
 #include "circarray.h"
 #include "reader.h"
+#include "rxclass.h"
+
+struct _RxClass;
 
 typedef struct _NumInfo {
     int64_t	i;
@@ -48,7 +27,6 @@ typedef struct _NumInfo {
     const char	*str;
     size_t	len;
     long	exp;
-    //int		dec_cnt;
     int		big;
     int		infinity;
     int		nan;
@@ -70,6 +48,7 @@ typedef struct _ParseInfo {
     VALUE		handler;
     struct _ValStack	stack;
     CircArray		circ_array;
+    struct _RxClass	str_rx;
     int			expect_value;
     int			max_depth; // just for the json gem
     VALUE		proc;
@@ -103,5 +82,10 @@ extern void	oj_set_compat_callbacks(ParseInfo pi);
 
 extern void	oj_sparse2(ParseInfo pi);
 extern VALUE	oj_pi_sparse(int argc, VALUE *argv, ParseInfo pi, int fd);
+
+static inline void
+parse_info_init(ParseInfo pi) {
+    memset(pi, 0, sizeof(struct _ParseInfo));
+}
 
 #endif /* __OJ_PARSE_H__ */

@@ -35,6 +35,7 @@
 #include <math.h>
 
 #include "oj.h"
+#include "encode.h"
 #include "parse.h"
 #include "buf.h"
 #include "hash.h" // for oj_strndup()
@@ -885,6 +886,19 @@ oj_pi_sparse(int argc, VALUE *argv, ParseInfo pi, int fd) {
 	if (Qnil != pi->err_class) {
 	    pi->err.clas = pi->err_class;
 	}
+	if (CompatMode == pi->options.mode) {
+	    // The json gem requires the error message be UTF-8 encoded. In
+	    // additional the complete JSON source should be returned but that
+	    // is not possible without stored all the bytes read and reading
+	    // the remaining bytes on the stream. Both seem like a very bad
+	    // idea.
+	    VALUE	args[] = { oj_encode(rb_str_new2(pi->err.msg)) };
+
+	    rb_exc_raise(rb_class_new_instance(1, args, pi->err.clas));
+	} else {
+	    oj_err_raise(&pi->err);
+	}
+
 	oj_err_raise(&pi->err);
     }
     return result;

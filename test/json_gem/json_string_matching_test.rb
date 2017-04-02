@@ -1,5 +1,9 @@
+#!/usr/bin/env ruby
+# encoding: UTF-8
 #frozen_string_literal: false
+
 require 'json_gem/test_helper'
+
 require 'time'
 
 class JSONStringMatchingTest < Test::Unit::TestCase
@@ -20,9 +24,10 @@ class JSONStringMatchingTest < Test::Unit::TestCase
   end
 
   def test_match_date
-    pend("mimic_JSON") if MIMIC_JSON
+    #pend("mimic_JSON") if MIMIC_JSON
     t = TestTime.new
     t_json = [ t ].to_json
+    puts "*** #{t_json}"
     time_regexp = /\A\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{4}\z/
     assert_equal [ t ],
       JSON.parse(

@@ -6,8 +6,6 @@ rescue Exception
   # ignore
 end
 
-require 'oj/state'
-
 module Oj
 
   # A bit hack-ish but does the trick. The JSON.dump_default_options is a Hash
@@ -48,6 +46,8 @@ module Oj
     end
     mimic_paths.each { |p| $LOADED_FEATURES << p }
     $LOADED_FEATURES << 'json' unless $LOADED_FEATURES.include?('json')
+
+    require 'oj/json'
 
     if Object.const_defined?('OpenStruct')
       OpenStruct.class_eval do
@@ -240,72 +240,9 @@ module Oj
       end
     end
 
-    JSON.module_eval do
-      def self.dump_default_options
-        Oj::MimicDumpOption.new
-      end
-
-      def self.dump_default_options=(h)
-        m = Oj::MimicDumpOption.new
-        h.each do |k,v|
-          m[k] = v
-        end
-      end
-
-    end
-
   end # self.mimic_loaded
 
 end # Oj
-
-# Needed to define constants.
-module JSON
-  NaN = 0.0/0.0 unless defined?(::JSON::NaN)
-  Infinity = 1.0/0.0 unless defined?(::JSON::Infinity)
-  MinusInfinity = -1.0/0.0 unless defined?(::JSON::MinusInfinity)
-  # Taken from the unit test. Note that items like check_circular? are not
-  # present.
-  PRETTY_STATE_PROTOTYPE = Ext::Generator::State.from_state({
-                                              :allow_nan             => false,
-                                              :array_nl              => "\n",
-                                              :ascii_only            => false,
-                                              :buffer_initial_length => 1024,
-                                              :depth                 => 0,
-                                              :indent                => "  ",
-                                              :max_nesting           => 100,
-                                              :object_nl             => "\n",
-                                              :space                 => " ",
-                                              :space_before          => "",
-                                            }) unless defined?(::JSON::PRETTY_STATE_PROTOTYPE)
-  SAFE_STATE_PROTOTYPE = Ext::Generator::State.from_state({
-                                            :allow_nan             => false,
-                                            :array_nl              => "",
-                                            :ascii_only            => false,
-                                            :buffer_initial_length => 1024,
-                                            :depth                 => 0,
-                                            :indent                => "",
-                                            :max_nesting           => 100,
-                                            :object_nl             => "",
-                                            :space                 => "",
-                                            :space_before          => "",
-                                            }) unless defined?(::JSON::SAFE_STATE_PROTOTYPE)
-  FAST_STATE_PROTOTYPE = Ext::Generator::State.from_state({
-                                            :allow_nan             => false,
-                                            :array_nl              => "",
-                                            :ascii_only            => false,
-                                            :buffer_initial_length => 1024,
-                                            :depth                 => 0,
-                                            :indent                => "",
-                                            :max_nesting           => 0,
-                                            :object_nl             => "",
-                                            :space                 => "",
-                                            :space_before          => "",
-                                            }) unless defined?(::JSON::FAST_STATE_PROTOTYPE)
-
-  class State < ::JSON::Ext::Generator::State
-  end
-
-end # JSON
 
 # More monkey patches.
 class String

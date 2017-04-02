@@ -83,7 +83,9 @@ TBD
 
 TBD
 
-## Options Matrix
+## Options
+
+### Options Matrix
 
 Not all options are available in all modes. The options matrix identifies the
 options available in each mode. An x in the matrix indicates the option is
@@ -136,3 +138,7 @@ information.
  4. The quirks mode option is no longer supported in the most recent json
     gem. It is supported by Oj for backward compatibility with older json gem
     versions.
+
+### Options Details
+
+TBD

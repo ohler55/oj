@@ -4,6 +4,7 @@
 # frozen_string_literal: false
 
 require 'json_gem/test_helper'
+
 require 'stringio'
 require 'tempfile'
 require 'ostruct'
@@ -12,20 +13,17 @@ class JSONParserTest < Test::Unit::TestCase
   include Test::Unit::TestCaseOmissionSupport
 
   def test_construction
-    omit_if(MIMIC_JSON, "mimic_JSON")
     parser = JSON::Parser.new('test')
     assert_equal 'test', parser.source
   end
 
   def test_argument_encoding
-    omit_if(MIMIC_JSON, "mimic_JSON")
     source = "{}".encode("UTF-16")
     JSON::Parser.new(source)
     assert_equal Encoding::UTF_16, source.encoding
   end if defined?(Encoding::UTF_16)
 
   def test_error_message_encoding
-    omit_if(MIMIC_JSON, "mimic_JSON")
     bug10705 = '[ruby-core:67386] [Bug #10705]'
     json = ".\"\xE2\x88\x9A\"".force_encoding(Encoding::UTF_8)
     e = assert_raise(JSON::ParserError) {
@@ -36,13 +34,11 @@ class JSONParserTest < Test::Unit::TestCase
   end if defined?(Encoding::UTF_8)
 
   def test_parsing
-    omit_if(MIMIC_JSON, "mimic_JSON")
     parser = JSON::Parser.new('"test"')
     assert_equal 'test', parser.parse
   end
 
   def test_parser_reset
-    omit_if(MIMIC_JSON, "mimic_JSON")
     parser = JSON::Parser.new('{"a":"b"}')
     assert_equal({ 'a' => 'b' }, parser.parse)
     assert_equal({ 'a' => 'b' }, parser.parse)
@@ -118,7 +114,6 @@ class JSONParserTest < Test::Unit::TestCase
 
   if Array.method_defined?(:permutation)
     def test_parse_more_complex_arrays
-      pend("mimic_JSON") if MIMIC_JSON
       a = [ nil, false, true, "foßbar", [ "n€st€d", true ], { "nested" => true, "n€ßt€ð2" => {} }]
       a.permutation.each do |perm|
         json = JSON.pretty_generate(perm)
@@ -127,7 +122,6 @@ class JSONParserTest < Test::Unit::TestCase
     end
 
     def test_parse_complex_objects
-      pend("mimic_JSON") if MIMIC_JSON
       a = [ nil, false, true, "foßbar", [ "n€st€d", true ], { "nested" => true, "n€ßt€ð2" => {} }]
       a.permutation.each do |perm|
         s = "a"
@@ -433,7 +427,6 @@ EOT
   end if defined?(JSON::GenericObject)
 
   def test_generate_core_subclasses_with_new_to_json
-    pend("mimic_JSON") if MIMIC_JSON
     obj = SubHash2["foo" => SubHash2["bar" => true]]
     obj_json = JSON(obj)
     obj_again = JSON.parse(obj_json, :create_additions => true)
@@ -446,13 +439,11 @@ EOT
   end
 
   def test_generate_core_subclasses_with_default_to_json
-    pend("mimic_JSON") if MIMIC_JSON
     assert_equal '{"foo":"bar"}', JSON(SubHash["foo" => "bar"])
     assert_equal '["foo"]', JSON(SubArray["foo"])
   end
 
   def test_generate_of_core_subclasses
-    pend("mimic_JSON") if MIMIC_JSON
     obj = SubHash["foo" => SubHash["bar" => true]]
     obj_json = JSON(obj)
     obj_again = JSON(obj_json)

@@ -434,6 +434,7 @@ mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
     if (argc < 1) {
 	rb_raise(rb_eArgError, "Wrong number of arguments to parse.");
     }
+    parse_info_init(&pi);
     oj_set_compat_callbacks(&pi);
     // TBD
     pi.err_class = oj_json_parser_error_class;
@@ -557,11 +558,6 @@ mimic_recurse_proc(VALUE self, VALUE obj) {
     rb_need_block();
     mimic_walk(Qnil, obj, Qnil);
 
-    return Qnil;
-}
-
-static VALUE
-no_op1(VALUE self, VALUE obj) {
     return Qnil;
 }
 
@@ -727,20 +723,6 @@ oj_define_mimic_json(int argc, VALUE *argv, VALUE self) {
     verbose = rb_gv_get("$VERBOSE");
     rb_gv_set("$VERBOSE", Qfalse);
     rb_define_module_function(rb_cObject, "JSON", mimic_dump_load, -1);
-    if (rb_const_defined_at(mimic, rb_intern("Ext"))) {
-	ext = rb_const_get_at(mimic, rb_intern("Ext"));
-     } else {
-	ext = rb_define_module_under(mimic, "Ext");
-    }
-    if (!rb_const_defined_at(ext, rb_intern("Parser"))) {
-	dummy = rb_define_class_under(ext, "Parser", rb_cObject);
-    }
-    if (rb_const_defined_at(ext, rb_intern("Generator"))) {
-	generator = rb_const_get_at(ext, rb_intern("Generator"));
-     } else {
-	generator = rb_define_module_under(ext, "Generator");
-    }
-    // convince Ruby that the json gem has already been loaded
     dummy = rb_gv_get("$LOADED_FEATURES");
     if (rb_type(dummy) == T_ARRAY) {
 	rb_ary_push(dummy, rb_str_new2("json"));
@@ -753,12 +735,23 @@ oj_define_mimic_json(int argc, VALUE *argv, VALUE self) {
 	    rb_funcall2(Oj, rb_intern("mimic_loaded"), 0, 0);
 	}
     }
+    if (rb_const_defined_at(mimic, rb_intern("Ext"))) {
+	ext = rb_const_get_at(mimic, rb_intern("Ext"));
+     } else {
+	ext = rb_define_module_under(mimic, "Ext");
+    }
+    if (rb_const_defined_at(ext, rb_intern("Generator"))) {
+	generator = rb_const_get_at(ext, rb_intern("Generator"));
+     } else {
+	generator = rb_define_module_under(ext, "Generator");
+    }
+
+    // convince Ruby that the json gem has already been loaded
     // Pull in the JSON::State mimic file.
     rb_require("oj/state");
     state_class = rb_const_get_at(generator, rb_intern("State"));
+    // TBD create all modules in mimic_loaded
 
-    rb_define_module_function(mimic, "parser=", no_op1, 1);
-    rb_define_module_function(mimic, "generator=", no_op1, 1);
     rb_define_module_function(mimic, "create_id=", mimic_set_create_id, 1);
     rb_define_module_function(mimic, "create_id", mimic_create_id, 0);
 

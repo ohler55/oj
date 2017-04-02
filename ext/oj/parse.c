@@ -10,9 +10,11 @@
 #include <math.h>
 
 #include "oj.h"
+#include "encode.h"
 #include "parse.h"
 #include "buf.h"
 #include "val_stack.h"
+#include "rxclass.h"
 
 // Workaround in case INFINITY is not defined in math.h or if the OS is CentOS
 #define OJ_INFINITY	(1.0/0.0)
@@ -949,6 +951,8 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
 	xfree(json);
     }
     stack_cleanup(&pi->stack);
+    oj_rxclass_cleanup(&pi->str_rx);
+
     if (0 != line) {
 	rb_jump_tag(line);
     }
@@ -956,7 +960,22 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
 	if (Qnil != pi->err_class) {
 	    pi->err.clas = pi->err_class;
 	}
-	oj_err_raise(&pi->err);
+	if (CompatMode == pi->options.mode) {
+	    // The json gem requires the error message be UTF-8 encoded. In
+	    // additional the complete JSON source must be returned. There
+	    // does not seem to be a size limit.
+	    VALUE	msg = oj_encode(rb_str_new2(pi->err.msg));
+	    VALUE	args[1];
+
+	    if (NULL != pi->json) {
+		msg = rb_str_append(msg, oj_encode(rb_str_new2(" in '")));
+		msg = rb_str_append(msg, oj_encode(rb_str_new2(pi->json)));
+	    }
+	    args[0] = msg;
+	    rb_exc_raise(rb_class_new_instance(1, args, pi->err.clas));
+	} else {
+	    oj_err_raise(&pi->err);
+	}
     }
     if (pi->options.quirks_mode == No) {
 	switch (rb_type(result)) {

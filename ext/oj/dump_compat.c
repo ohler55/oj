@@ -21,11 +21,19 @@ typedef struct _Attr {
     const char	*name;
     int		len;
     VALUE	value;
+    long	num;
 } *Attr;
+
+typedef struct _NumAttr {
+    const char	*name;
+    long	value;
+} *NumAttr;
 
 static bool	use_struct_alt = false;
 static bool	use_exception_alt = false;
 static bool	use_bignum_alt = false;
+static bool	use_hash_alt = false;
+static bool	use_array_alt = false;
 
 static void
 raise_json_err(const char *msg, const char *err_classname) {
@@ -87,7 +95,36 @@ dump_obj_attrs(const char *classname, Attr attrs, int depth, Out out) {
 	    strcpy(out->cur, out->opts->dump_opts.after_sep);
 	    out->cur += out->opts->dump_opts.after_size;
 	}
-	oj_dump_compat_val(attrs->value, d3, out, true);
+	if (Qundef == attrs->value) {
+	    char	buf[32];
+	    char	*b = buf + sizeof(buf) - 1;
+	    int		neg = 0;
+	    long	num = attrs->num;
+	    
+	    if (0 > num) {
+		neg = 1;
+		num = -num;
+	    }
+	    *b-- = '\0';
+	    if (0 < num) {
+		for (; 0 < num; num /= 10, b--) {
+		    *b = (num % 10) + '0';
+		}
+		if (neg) {
+		    *b = '-';
+		} else {
+		    b++;
+		}
+	    } else {
+		*b = '0';
+	    }
+	    assure_size(out, (sizeof(buf) - (b - buf)));
+	    for (; '\0' != *b; b++) {
+		*out->cur++ = *b;
+	    }
+	} else {
+	    oj_dump_compat_val(attrs->value, d3, out, true);
+	}
     }
     assure_size(out, depth * out->indent + 2);
     fill_indent(out, depth);
@@ -158,6 +195,22 @@ dump_values_array(VALUE *values, int depth, Out out) {
 }
 
 static void
+dump_to_json(VALUE obj, Out out) {
+    volatile VALUE	rs;
+    const char		*s;
+    int			len;
+
+    rs = rb_funcall2(obj, oj_to_json_id, out->argc, out->argv);
+    s = rb_string_value_ptr((VALUE*)&rs);
+    len = (int)RSTRING_LEN(rs);
+
+    assure_size(out, len + 1);
+    memcpy(out->cur, s, len);
+    out->cur += len;
+    *out->cur = '\0';
+}
+
+static void
 dump_array(VALUE a, int depth, Out out, bool as_ok) {
     size_t	size;
     int		i, cnt;
@@ -168,6 +221,10 @@ dump_array(VALUE a, int depth, Out out, bool as_ok) {
 	raise_json_err("Too deeply nested", "NestingError");
 	return;
     }
+    if (as_ok && !use_hash_alt && rb_obj_class(a) != rb_cArray && rb_respond_to(a, oj_to_json_id)) {
+	dump_to_json(a, out);
+	return;
+    }	
     cnt = (int)RARRAY_LEN(a);
     *out->cur++ = '[';
     if (0 < id) {
@@ -479,28 +536,18 @@ regexp_alt(VALUE obj, int depth, Out out) {
     dump_obj_attrs(rb_class2name(rb_obj_class(obj)), attrs, depth, out);
 }
 
-static ID	tv_sec_id = 0;
-static ID	tv_usec_id = 0;
-static ID	tv_nsec_id = 0;
-
 static void
 time_alt(VALUE obj, int depth, Out out) {
     struct _Attr	attrs[] = {
-	{ "s", 1, Qnil },
-	{ "n", 1, Qnil },
+	{ "s", 1, Qundef, 0 },
+	{ "n", 1, Qundef, 0 },
 	{ NULL, 0, Qnil },
     };
-    if (0 == tv_sec_id) {
-	tv_sec_id = rb_intern("tv_sec");
-	tv_usec_id = rb_intern("tv_usec");
-	tv_nsec_id = rb_intern("tv_nsec");
-    }
-    attrs[0].value = rb_funcall(obj, tv_sec_id, 0);
-    if (rb_respond_to(obj, tv_nsec_id)) {
-	attrs[1].value = rb_funcall(obj, tv_nsec_id, 0);
-    } else {
-	attrs[1].value = LONG2NUM(NUM2LONG(rb_funcall(obj, tv_usec_id, 0)) * 1000);
-    }
+    struct timespec	ts = rb_time_timespec(obj);
+
+    attrs[0].num = ts.tv_sec;
+    attrs[1].num = ts.tv_nsec;
+
     dump_obj_attrs(rb_class2name(rb_obj_class(obj)), attrs, depth, out);
 }
 
@@ -546,6 +593,8 @@ oj_add_to_json(int argc, VALUE *argv, VALUE self) {
 	use_struct_alt = true;
 	use_exception_alt = true;
 	use_bignum_alt = true;
+	use_hash_alt = true;
+	use_array_alt = true;
     } else {
 	for (; 0 < argc; argc--, argv++) {
 	    if (rb_cStruct == *argv) {
@@ -558,6 +607,14 @@ oj_add_to_json(int argc, VALUE *argv, VALUE self) {
 	    }
 	    if (rb_cInteger == *argv) {
 		use_bignum_alt = true;
+		continue;
+	    }
+	    if (rb_cHash == *argv) {
+		use_hash_alt = true;
+		continue;
+	    }
+	    if (rb_cArray == *argv) {
+		use_array_alt = true;
 		continue;
 	    }
 	    for (a = alts; NULL != a->name; a++) {
@@ -588,6 +645,8 @@ oj_remove_to_json(int argc, VALUE *argv, VALUE self) {
 	use_struct_alt = false;
 	use_exception_alt = false;
 	use_bignum_alt = false;
+	use_hash_alt = false;
+	use_array_alt = false;
     } else {
 	for (; 0 < argc; argc--, argv++) {
 	    if (rb_cStruct == *argv) {
@@ -600,6 +659,14 @@ oj_remove_to_json(int argc, VALUE *argv, VALUE self) {
 	    }
 	    if (rb_cInteger == *argv) {
 		use_bignum_alt = false;
+		continue;
+	    }
+	    if (rb_cHash == *argv) {
+		use_hash_alt = false;
+		continue;
+	    }
+	    if (rb_cArray == *argv) {
+		use_array_alt = false;
 		continue;
 	    }
 	    for (; NULL != a->name; a++) {
@@ -725,19 +792,22 @@ hash_cb(VALUE key, VALUE value, Out out) {
 static void
 dump_hash(VALUE obj, int depth, Out out, bool as_ok) {
     int		cnt;
+    long	id = oj_check_circular(obj, out);
 
+    if (0 > id) {
+	raise_json_err("Too deeply nested", "NestingError");
+	return;
+    }
+    if (as_ok && !use_hash_alt && rb_obj_class(obj) != rb_cHash && rb_respond_to(obj, oj_to_json_id)) {
+	dump_to_json(obj, out);
+	return;
+    }	
     cnt = (int)RHASH_SIZE(obj);
     assure_size(out, 2);
     if (0 == cnt) {
 	*out->cur++ = '{';
 	*out->cur++ = '}';
     } else {
-	long	id = oj_check_circular(obj, out);
-
-	if (0 > id) {
-	    raise_json_err("Too deeply nested", "NestingError");
-	    return;
-	}
 	*out->cur++ = '{';
 	out->depth = depth + 1;
 	rb_hash_foreach(obj, hash_cb, (VALUE)out);
@@ -939,8 +1009,6 @@ static DumpFunc	compat_funcs[] = {
     oj_dump_sym,	// RUBY_T_SYMBOL = 0x14,
     oj_dump_fixnum,	// RUBY_T_FIXNUM = 0x15,
 };
-
-// 0x3fffffffffffffff is max for fixnum
 
 static void
 set_state_depth(VALUE state, int depth) {
