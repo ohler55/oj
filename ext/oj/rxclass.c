@@ -97,7 +97,8 @@ oj_rxclass_match(RxClass rc, const char *str, int len) {
 	    // Must use a valiabel for this to work.
 	    volatile VALUE	rstr = rb_str_new(str, len);
 	    
-	    if (Qtrue == rb_funcall(rxc->rrx, rb_intern("match?"), 1, rstr)) {
+	    //if (Qtrue == rb_funcall(rxc->rrx, rb_intern("match?"), 1, rstr)) {
+	    if (Qnil != rb_funcall(rxc->rrx, rb_intern("match"), 1, rstr)) {
 		return rxc->clas;
 	    }
 	} else if (len < (int)sizeof(buf)) {
