@@ -10,8 +10,9 @@ MIMIC_JSON = !!ENV['MIMIC_JSON']
 if ENV['MIMIC_JSON']
   require 'oj'
   Oj.mimic_JSON
+else
+  require 'json'
 end
-require 'json'
 
 NaN = JSON::NaN if defined?(JSON::NaN)
 NaN = 0.0/0 unless defined?(NaN)
