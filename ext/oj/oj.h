@@ -363,6 +363,9 @@ extern ID	oj_utc_offset_id;
 extern ID	oj_utcq_id;
 extern ID	oj_write_id;
 
+extern bool	oj_use_hash_alt;
+extern bool	oj_use_array_alt;
+
 #if USE_PTHREAD_MUTEX
 extern pthread_mutex_t	oj_cache_mutex;
 #elif USE_RB_MUTEX

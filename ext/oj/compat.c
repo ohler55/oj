@@ -127,7 +127,7 @@ add_num(ParseInfo pi, NumInfo ni) {
 
 static void
 hash_set_num(struct _ParseInfo *pi, Val parent, NumInfo ni) {
-    if (rb_cHash != rb_obj_class(parent->val)) {
+    if (!oj_use_hash_alt && rb_cHash != rb_obj_class(parent->val)) {
 	// The rb_hash_set would still work but the unit tests for the
 	// json gem require the less efficient []= method be called to set
 	// values. Even using the store method to set the values will fail
@@ -163,7 +163,7 @@ static void
 array_append_num(ParseInfo pi, NumInfo ni) {
     Val	parent = stack_peek(&pi->stack);
     
-    if (rb_cArray != rb_obj_class(parent->val)) {
+    if (!oj_use_array_alt && rb_cArray != rb_obj_class(parent->val)) {
 	// The rb_ary_push would still work but the unit tests for the json
 	// gem require the less efficient << method be called to push the
 	// values.

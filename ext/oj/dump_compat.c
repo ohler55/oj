@@ -29,11 +29,12 @@ typedef struct _NumAttr {
     long	value;
 } *NumAttr;
 
+bool	oj_use_hash_alt = false;
+bool	oj_use_array_alt = false;
+
 static bool	use_struct_alt = false;
 static bool	use_exception_alt = false;
 static bool	use_bignum_alt = false;
-static bool	use_hash_alt = false;
-static bool	use_array_alt = false;
 
 static void
 raise_json_err(const char *msg, const char *err_classname) {
@@ -221,7 +222,7 @@ dump_array(VALUE a, int depth, Out out, bool as_ok) {
 	raise_json_err("Too deeply nested", "NestingError");
 	return;
     }
-    if (as_ok && !use_hash_alt && rb_obj_class(a) != rb_cArray && rb_respond_to(a, oj_to_json_id)) {
+    if (as_ok && !oj_use_hash_alt && rb_obj_class(a) != rb_cArray && rb_respond_to(a, oj_to_json_id)) {
 	dump_to_json(a, out);
 	return;
     }	
@@ -593,8 +594,8 @@ oj_add_to_json(int argc, VALUE *argv, VALUE self) {
 	use_struct_alt = true;
 	use_exception_alt = true;
 	use_bignum_alt = true;
-	use_hash_alt = true;
-	use_array_alt = true;
+	oj_use_hash_alt = true;
+	oj_use_array_alt = true;
     } else {
 	for (; 0 < argc; argc--, argv++) {
 	    if (rb_cStruct == *argv) {
@@ -610,11 +611,11 @@ oj_add_to_json(int argc, VALUE *argv, VALUE self) {
 		continue;
 	    }
 	    if (rb_cHash == *argv) {
-		use_hash_alt = true;
+		oj_use_hash_alt = true;
 		continue;
 	    }
 	    if (rb_cArray == *argv) {
-		use_array_alt = true;
+		oj_use_array_alt = true;
 		continue;
 	    }
 	    for (a = alts; NULL != a->name; a++) {
@@ -645,8 +646,8 @@ oj_remove_to_json(int argc, VALUE *argv, VALUE self) {
 	use_struct_alt = false;
 	use_exception_alt = false;
 	use_bignum_alt = false;
-	use_hash_alt = false;
-	use_array_alt = false;
+	oj_use_hash_alt = false;
+	oj_use_array_alt = false;
     } else {
 	for (; 0 < argc; argc--, argv++) {
 	    if (rb_cStruct == *argv) {
@@ -662,11 +663,11 @@ oj_remove_to_json(int argc, VALUE *argv, VALUE self) {
 		continue;
 	    }
 	    if (rb_cHash == *argv) {
-		use_hash_alt = false;
+		oj_use_hash_alt = false;
 		continue;
 	    }
 	    if (rb_cArray == *argv) {
-		use_array_alt = false;
+		oj_use_array_alt = false;
 		continue;
 	    }
 	    for (; NULL != a->name; a++) {
@@ -798,7 +799,7 @@ dump_hash(VALUE obj, int depth, Out out, bool as_ok) {
 	raise_json_err("Too deeply nested", "NestingError");
 	return;
     }
-    if (as_ok && !use_hash_alt && rb_obj_class(obj) != rb_cHash && rb_respond_to(obj, oj_to_json_id)) {
+    if (as_ok && !oj_use_hash_alt && rb_obj_class(obj) != rb_cHash && rb_respond_to(obj, oj_to_json_id)) {
 	dump_to_json(obj, out);
 	return;
     }	
