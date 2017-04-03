@@ -951,8 +951,9 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
 	xfree(json);
     }
     stack_cleanup(&pi->stack);
-    oj_rxclass_cleanup(&pi->str_rx);
-
+    if (pi->str_rx.head != oj_default_options.str_rx.head) {
+	oj_rxclass_cleanup(&pi->str_rx);
+    }
     if (0 != line) {
 	rb_jump_tag(line);
     }

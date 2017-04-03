@@ -38,20 +38,19 @@ class JSONCommonInterfaceTest < Test::Unit::TestCase
   # functionality and perform better.
 
   def test_parser
-    omit_if(MIMIC_JSON, "mimic_JSON")
     assert_match /::Parser\z/, JSON.parser.name
   end
 
   def test_generator
-    omit_if(MIMIC_JSON, "mimic_JSON")
     assert_match /::Generator\z/, JSON.generator.name
   end
 
   def test_state
-    omit_if(MIMIC_JSON, "mimic_JSON")
     assert_match /::Generator::State\z/, JSON.state.name
   end
 
+  # This doesn't have anything to do with JSON parsing or generation. It seems
+  # to be more of an internal tool that is exposed to users.
   def test_deep_const_get
     omit("mimic_JSON") if MIMIC_JSON
     assert_raise(ArgumentError) { JSON.deep_const_get('Nix::Da') }

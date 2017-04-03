@@ -31,14 +31,6 @@ Comparison Matrix
 
  - plan
   - json_gem tests
-   - string match
-    - implement matchers, regexp => class
-    - if value is a string and regex matches then ...
-    - ruby regexp same as c?
-   - linked list
-   - cleanup
-
-  - generic object
   
   - docs on mode and options
    - docs on functions as well

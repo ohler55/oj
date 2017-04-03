@@ -25,6 +25,7 @@ hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *o
 	*pi->options.create_id == *key &&
 	(int)pi->options.create_id_len == klen &&
 	0 == strncmp(pi->options.create_id, key, klen)) {
+
 	parent->classname = oj_strndup(str, len);
 	parent->clen = len;
     } else {
@@ -36,6 +37,13 @@ hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *o
 	    rkey = oj_encode(rkey);
 	    if (Yes == pi->options.sym_key) {
 		rkey = rb_str_intern(rkey);
+	    }
+	}
+	if (Yes == pi->options.create_ok && NULL != pi->options.str_rx.head) {
+	    VALUE	clas = oj_rxclass_match(&pi->options.str_rx, str, len);
+
+	    if (Qnil != clas) {
+		rstr = rb_funcall(clas, oj_json_create_id, 1, rstr);
 	    }
 	}
 	if (rb_cHash != rb_obj_class(parent->val)) {
@@ -53,7 +61,9 @@ hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *o
 static VALUE
 start_hash(ParseInfo pi) {
     if (Qnil != pi->options.hash_class) {
-	return rb_class_new_instance(0, NULL, pi->options.hash_class);
+	VALUE	foo = rb_class_new_instance(0, NULL, pi->options.hash_class);
+	
+	return foo;
     }
     return rb_hash_new();
 }
@@ -63,11 +73,15 @@ end_hash(struct _ParseInfo *pi) {
     Val	parent = stack_peek(&pi->stack);
 
     if (0 != parent->classname) {
-	VALUE	clas;
+	volatile VALUE	clas;
 
 	clas = oj_name2class(pi, parent->classname, parent->clen, 0, rb_eArgError);
 	if (Qundef != clas) { // else an error
-	    parent->val = rb_funcall(clas, oj_json_create_id, 1, parent->val);
+	    ID	creatable = rb_intern("json_creatable?");
+	    
+	    if (!rb_respond_to(clas, creatable) || Qtrue == rb_funcall(clas, creatable, 0)) {
+		parent->val = rb_funcall(clas, oj_json_create_id, 1, parent->val);
+	    }
 	}
 	if (0 != parent->classname) {
 	    xfree((char*)parent->classname);
@@ -91,6 +105,22 @@ calc_hash_key(ParseInfo pi, Val parent) {
 }
 
 static void
+add_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
+    volatile VALUE	rstr = rb_str_new(str, len);
+
+    rstr = oj_encode(rstr);
+    if (Yes == pi->options.create_ok && NULL != pi->options.str_rx.head) {
+	VALUE	clas = oj_rxclass_match(&pi->options.str_rx, str, len);
+
+	if (Qnil != clas) {
+	    pi->stack.head->val = rb_funcall(clas, oj_json_create_id, 1, rstr);
+	    return;
+	}
+    }
+    pi->stack.head->val = rstr;
+}
+
+static void
 add_num(ParseInfo pi, NumInfo ni) {
     pi->stack.head->val = oj_num_as_value(ni);
 }
@@ -105,6 +135,19 @@ hash_set_num(struct _ParseInfo *pi, Val parent, NumInfo ni) {
 	rb_funcall(stack_peek(&pi->stack)->val, rb_intern("[]="), 2, calc_hash_key(pi, parent), oj_num_as_value(ni));
     } else {
 	rb_hash_aset(stack_peek(&pi->stack)->val, calc_hash_key(pi, parent), oj_num_as_value(ni));
+    }
+}
+
+static void
+hash_set_value(ParseInfo pi, Val parent, VALUE value) {
+    if (rb_cHash != rb_obj_class(parent->val)) {
+	// The rb_hash_set would still work but the unit tests for the
+	// json gem require the less efficient []= method be called to set
+	// values. Even using the store method to set the values will fail
+	// the unit tests.
+	rb_funcall(stack_peek(&pi->stack)->val, rb_intern("[]="), 2, calc_hash_key(pi, parent), value);
+    } else {
+	rb_hash_aset(stack_peek(&pi->stack)->val, calc_hash_key(pi, parent), value);
     }
 }
 
@@ -130,14 +173,33 @@ array_append_num(ParseInfo pi, NumInfo ni) {
     }
 }
 
+static void
+array_append_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
+    volatile VALUE	rstr = rb_str_new(str, len);
+
+    rstr = oj_encode(rstr);
+    if (Yes == pi->options.create_ok && NULL != pi->options.str_rx.head) {
+	VALUE	clas = oj_rxclass_match(&pi->options.str_rx, str, len);
+
+	if (Qnil != clas) {
+	    rb_ary_push(stack_peek(&pi->stack)->val, rb_funcall(clas, oj_json_create_id, 1, rstr));
+	    return;
+	}
+    }
+    rb_ary_push(stack_peek(&pi->stack)->val, rstr);
+}
+
 void
 oj_set_compat_callbacks(ParseInfo pi) {
     oj_set_strict_callbacks(pi);
     pi->start_hash = start_hash;
     pi->end_hash = end_hash;
     pi->hash_set_cstr = hash_set_cstr;
-    pi->add_num = add_num;
     pi->hash_set_num = hash_set_num;
+    pi->hash_set_value = hash_set_value;
+    pi->add_num = add_num;
+    pi->add_cstr = add_cstr;
+    pi->array_append_cstr = array_append_cstr;
     pi->start_array = start_array;
     pi->array_append_num = array_append_num;
 }

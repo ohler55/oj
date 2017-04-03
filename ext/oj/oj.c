@@ -111,16 +111,17 @@ static VALUE	class_cache_sym;
 static VALUE	compat_sym;
 static VALUE	create_id_sym;
 static VALUE	custom_sym;
+static VALUE	empty_string_sym;
 static VALUE	escape_mode_sym;
 static VALUE	float_prec_sym;
 static VALUE	float_sym;
 static VALUE	huge_sym;
 static VALUE	json_sym;
+static VALUE	match_string_sym;
 static VALUE	mode_sym;
 static VALUE	nan_sym;
 static VALUE	newline_sym;
 static VALUE	nilnil_sym;
-static VALUE	empty_string_sym;
 static VALUE	null_sym;
 static VALUE	object_sym;
 static VALUE	omit_nil_sym;
@@ -196,6 +197,11 @@ struct _Options	oj_default_options = {
 	AutoNan,// nan_dump
 	false,	// omit_nil
 	MAX_DEPTH, // max_depth
+    },
+    {		// str_rx
+	NULL,	// head
+	NULL,	// tail
+	{ '\0' }, // err
     }
 };
 
@@ -665,6 +671,42 @@ oj_parse_options(VALUE ropts, Options copts) {
 	    rb_check_type(v, T_CLASS);
 	    copts->array_class = v;
 	}
+    }
+    oj_parse_opt_match_string(&copts->str_rx, ropts);
+}
+
+static int
+match_string_cb(VALUE key, VALUE value, RxClass rc) {
+    if (T_CLASS != rb_type(value)) {
+	rb_raise(rb_eArgError, "for :match_string, the hash values must be a Class.");
+    }
+    switch (rb_type(key)) {
+    case T_REGEXP:
+	oj_rxclass_rappend(rc, key, value);
+	break;
+    case T_STRING:
+	if (0 != oj_rxclass_append(rc, StringValuePtr(key), value)) {
+	    rb_raise(rb_eArgError, "%s", rc->err);
+	}
+	break;
+    default:
+	rb_raise(rb_eArgError, "for :match_string, keys must either a String or RegExp.");
+	break;
+    }
+    return ST_CONTINUE;
+}
+
+void
+oj_parse_opt_match_string(RxClass rc, VALUE ropts) {
+    VALUE	v;
+
+    if (Qnil != (v = rb_hash_lookup(ropts, match_string_sym))) {
+	rb_check_type(v, T_HASH);
+	// Zero out rc. Pattern are not appended but override.
+	rc->head = NULL;
+	rc->tail = NULL;
+	*rc->err = '\0';
+	rb_hash_foreach(v, match_string_cb, (VALUE)rc);
     }
 }
 
@@ -1357,6 +1399,7 @@ Init_oj() {
     float_sym = ID2SYM(rb_intern("float"));			rb_gc_register_address(&float_sym);
     huge_sym = ID2SYM(rb_intern("huge"));			rb_gc_register_address(&huge_sym);
     json_sym = ID2SYM(rb_intern("json"));			rb_gc_register_address(&json_sym);
+    match_string_sym = ID2SYM(rb_intern("match_string"));	rb_gc_register_address(&match_string_sym);
     mode_sym = ID2SYM(rb_intern("mode"));			rb_gc_register_address(&mode_sym);
     nan_sym = ID2SYM(rb_intern("nan"));				rb_gc_register_address(&nan_sym);
     newline_sym = ID2SYM(rb_intern("newline"));			rb_gc_register_address(&newline_sym);

@@ -9,7 +9,6 @@ class JSONExtParserTest < Test::Unit::TestCase
 
   if defined?(JSON::Ext::Parser)
     def test_allocate
-      omit_if(MIMIC_JSON, "mimic_JSON")
       parser = JSON::Ext::Parser.new("{}")
       assert_raise(TypeError, '[ruby-core:35079]') do
         parser.__send__(:initialize, "{}")

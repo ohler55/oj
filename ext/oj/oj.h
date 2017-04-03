@@ -45,8 +45,8 @@ extern "C" {
 #include "ruby/encoding.h"
 #endif
 
-#include "stdint.h"
-#include "stdbool.h"
+#include <stdint.h>
+#include <stdbool.h>
 
 #if USE_PTHREAD_MUTEX
 #include <pthread.h>
@@ -66,6 +66,7 @@ enum st_retval {ST_CONTINUE = 0, ST_STOP = 1, ST_DELETE = 2, ST_CHECK};
 #endif
 #endif
 
+#include "rxclass.h"
 #include "err.h"
 
 #define INF_VAL		"3.0e14159265358979323846"
@@ -181,6 +182,7 @@ typedef struct _Options {
     VALUE		hash_class;	// class to use in place of Hash on load
     VALUE		array_class;	// class to use in place of Array on load
     struct _DumpOpts	dump_opts;
+    struct _RxClass	str_rx;
 } *Options;
 
 typedef struct _Out {
@@ -278,6 +280,7 @@ extern VALUE	oj_mimic_pretty_generate(int argc, VALUE *argv, VALUE self);
 extern void	oj_parse_mimic_dump_options(VALUE ropts, Options copts);
 
 extern VALUE	oj_get_json_err_class(const char *err_classname);
+extern void	oj_parse_opt_match_string(RxClass rc, VALUE ropts);
 
 extern VALUE	Oj;
 extern struct _Options	oj_default_options;

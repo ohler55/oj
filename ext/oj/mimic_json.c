@@ -189,7 +189,9 @@ mimic_dump(int argc, VALUE *argv, VALUE self) {
     struct _Out		out;
     struct _Options	copts = oj_default_options;
     VALUE		rstr;
-    
+
+    copts.str_rx.head = NULL;
+    copts.str_rx.tail = NULL;
     out.buf = buf;
     out.end = buf + sizeof(buf) - 10;
     out.allocated = 0;
@@ -398,6 +400,9 @@ VALUE
 oj_mimic_generate(int argc, VALUE *argv, VALUE self) {
     struct _Options	copts = oj_default_options;
 
+    copts.str_rx.head = NULL;
+    copts.str_rx.tail = NULL;
+
     return mimic_generate_core(argc, argv, &copts);
 }
 
@@ -411,6 +416,8 @@ VALUE
 oj_mimic_pretty_generate(int argc, VALUE *argv, VALUE self) {
     struct _Options	copts = oj_default_options;
 
+    copts.str_rx.head = NULL;
+    copts.str_rx.tail = NULL;
     strcpy(copts.dump_opts.indent_str, "  ");
     copts.dump_opts.indent_size = (uint8_t)strlen(copts.dump_opts.indent_str);
     strcpy(copts.dump_opts.before_sep, "");
@@ -505,6 +512,7 @@ mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
 	} else if (T_FIXNUM == rb_type(v)) {
 	    pi.max_depth = NUM2INT(v);
 	}
+	oj_parse_opt_match_string(&pi.options.str_rx, ropts);
 	if (Yes == pi.options.create_ok && Yes == pi.options.sym_key) {
 	    rb_raise(rb_eArgError, ":symbolize_names and :create_additions can not both be true.");
 	}
@@ -646,6 +654,11 @@ static struct _Options	mimic_object_to_json_options = {
 	AutoNan,// nan_dump
 	false,	// omit_nil
 	100, // max_depth
+    },
+    {		// str_rx
+	NULL,	// head
+	NULL,	// tail
+	{ '\0' }, // err
     }
 };
 
@@ -656,6 +669,8 @@ mimic_object_to_json(int argc, VALUE *argv, VALUE self) {
     VALUE		rstr;
     struct _Options	copts = oj_default_options;
 
+    copts.str_rx.head = NULL;
+    copts.str_rx.tail = NULL;
     out.buf = buf;
     out.end = buf + sizeof(buf) - 10;
     out.allocated = 0;
