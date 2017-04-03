@@ -23,7 +23,6 @@ task :test_all => [:clean, :compile] do
    'test/tests.rb', # basic tests
    #Dir.glob('test/isolated/test_*.rb'), # tests mimic over-ride of JSON gem functions
    'test/isolated_compatibility/test_compatibility_json.rb',
-   Dir.glob('text/json_gem/json_*.rb'),
    #'test/isolated_compatibility/test_compatibility_rails.rb',
    ].flatten.each do |file|
     cmd = "ruby -Itest #{file}"

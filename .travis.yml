@@ -22,8 +22,15 @@ gemfile:
   - gemfiles/rails_4.2.gemfile
   - gemfiles/rails_5.gemfile
 
+
 matrix:
   fast_finish: true
+  allow_failures:
+    - rvm: 1.9.3
+    - rvm: 2.1.10
+    - rvm: 2.2.6
+    - rvm: 2.3.3
+    
   exclude:
     - gemfile: gemfiles/rails_5.gemfile
       rvm: 2.1.10
