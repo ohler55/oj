@@ -5,13 +5,13 @@ $oj_dir = File.dirname(File.dirname(File.expand_path(File.dirname(__FILE__))))
 end
 
 require 'test/unit'
-MIMIC_JSON = !!ENV['MIMIC_JSON']
+REAL_JSON_GEM = !!ENV['REAL_JSON_GEM']
 
-if ENV['MIMIC_JSON']
+if ENV['REAL_JSON_GEM']
+  require 'json'
+else
   require 'oj'
   Oj.mimic_JSON
-else
-  require 'json'
 end
 
 NaN = JSON::NaN if defined?(JSON::NaN)

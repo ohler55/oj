@@ -52,7 +52,7 @@ class JSONCommonInterfaceTest < Test::Unit::TestCase
   # This doesn't have anything to do with JSON parsing or generation. It seems
   # to be more of an internal tool that is exposed to users.
   def test_deep_const_get
-    omit("mimic_JSON") if MIMIC_JSON
+    omit("mimic_JSON") unless REAL_JSON_GEM
     assert_raise(ArgumentError) { JSON.deep_const_get('Nix::Da') }
     assert_equal File::SEPARATOR, JSON.deep_const_get('File::SEPARATOR')
   end

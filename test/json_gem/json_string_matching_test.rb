@@ -24,7 +24,6 @@ class JSONStringMatchingTest < Test::Unit::TestCase
   end
 
   def test_match_date
-    #pend("mimic_JSON") if MIMIC_JSON
     t = TestTime.new
     t_json = [ t ].to_json
     time_regexp = /\A\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{4}\z/

@@ -9,7 +9,6 @@ class JSONGenericObjectTest < Test::Unit::TestCase
   include Test::Unit::TestCaseOmissionSupport
 
   def setup
-    #omit_if(MIMIC_JSON, "mimic_JSON")
     @go = JSON::GenericObject[ :a => 1, :b => 2 ]
   end
 

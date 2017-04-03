@@ -6,15 +6,15 @@
 require 'json_gem/test_helper'
 require 'date'
 
-if MIMIC_JSON
-  #Oj.add_to_json()
-  Oj.add_to_json(Array, BigDecimal, Complex, Date, DateTime, Exception, Hash, Integer, OpenStruct, Range, Rational, Regexp, Struct, Time)
-else
+if REAL_JSON_GEM
   require 'json/add/core'
   require 'json/add/complex'
   require 'json/add/rational'
   require 'json/add/bigdecimal'
   require 'json/add/ostruct'
+else
+  #Oj.add_to_json()
+  Oj.add_to_json(Array, BigDecimal, Complex, Date, DateTime, Exception, Hash, Integer, OpenStruct, Range, Rational, Regexp, Struct, Time)
 end
 
 class JSONAdditionTest < Test::Unit::TestCase

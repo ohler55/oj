@@ -31,7 +31,8 @@ Comparison Matrix
 
  - plan
   - json_gem tests
-  
+   -  flip MIMIC_JSON to make sure travis uses oj and not json gem
+
   - docs on mode and options
    - docs on functions as well
    
