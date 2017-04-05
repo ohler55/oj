@@ -101,7 +101,7 @@ defaults are:
 ### :escape_mode [Symbol]
 
 Determines the characters to escape when dumping. Only the :ascii and
-:unicode_xss modes are supported in :compat mode.
+:json modes are supported in :compat mode.
 
  - `:newline` allows unescaped newlines in the output.
 
@@ -111,7 +111,7 @@ Determines the characters to escape when dumping. Only the :ascii and
 
  - `:ascii` escapes all non-ascii or characters with the hi-bit set.
 
- - `:unicode_xss` escapes a mode for the json gem mimic mode.
+ - `:unicode_xss` escapes a special unicodes and is xss safe.
 
 ### :float_precision [Fixnum]
 
