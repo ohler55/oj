@@ -20,7 +20,7 @@ task :test_all => [:clean, :compile] do
   exitcode = 0
   status = 0
 
-  cmd = "(cd test && test_all.sh)"
+  cmd = "(cd test && ./test_all.sh)"
   puts "\n" + "#"*90
   puts cmd
   Bundler.with_clean_env do
