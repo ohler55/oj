@@ -614,7 +614,7 @@ static struct _Options	mimic_object_to_json_options = {
     No,		// circular
     No,		// auto_define
     No,		// sym_key
-    JSONEsc,	// escape_mode
+    JXEsc,	// escape_mode
     CompatMode,	// mode
     No,		// class_cache
     RubyTime,	// time_format
