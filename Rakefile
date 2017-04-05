@@ -19,8 +19,17 @@ end
 task :test_all => [:clean, :compile] do
   exitcode = 0
   status = 0
+
+  cmd = "(cd test && test_all.sh)"
+  puts "\n" + "#"*90
+  puts cmd
+  Bundler.with_clean_env do
+    status = system(cmd)
+  end
+  exitcode = 1 unless status
+
   [
-   'test/tests.rb', # basic tests
+   #'test/tests.rb', # basic tests
    #Dir.glob('test/isolated/test_*.rb'), # tests mimic over-ride of JSON gem functions
    #'test/isolated_compatibility/test_compatibility_json.rb',
    #'test/isolated_compatibility/test_compatibility_rails.rb',
@@ -36,7 +45,7 @@ task :test_all => [:clean, :compile] do
 
   # verifying that JSON tests work for native implemntation
   Dir.glob('test/json_gem/*_test.rb').each do |file|
-    cmd = "ruby -Itest #{file}"
+    cmd = "REAL_JSON_GEM=1 ruby -Itest #{file}"
     puts "\n" + "#"*90
     puts cmd
     Bundler.with_clean_env do
@@ -45,15 +54,17 @@ task :test_all => [:clean, :compile] do
     exitcode = 1 unless status
   end
 
+  if false
   # run JSON tests for Oj.mimic_JSON
   Dir.glob('test/json_gem/*_test.rb').each do |file|
-    cmd = "MIMIC_JSON=1 ruby -Itest #{file}"
+    cmd = "ruby -Itest #{file}"
     puts "\n" + "#"*90
     puts cmd
     Bundler.with_clean_env do
       status = system(cmd)
     end
     exitcode = 1 unless status
+  end
   end
 
   Rake::Task['test'].invoke

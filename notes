@@ -31,6 +31,8 @@ Comparison Matrix
 
  - plan
   - json_gem tests
+   - encoding is still not correct in mimic
+    - get unicode_xss working correctly for all modes
    - test_mimic.rb
     - all json_gem tests except additions
    - test_mimic.sh

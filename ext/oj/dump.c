@@ -1571,7 +1571,7 @@ void
 oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
     size_t	size;
     char	*cmap;
-    
+
     switch (out->opts->escape_mode) {
     case NLEsc:
 	cmap = newline_friendly_chars;
@@ -1661,10 +1661,46 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
 		break; // ignore, should never happen if the table is correct
 	    }
 	}
-	*out->cur++ = '"';
+	*out->cur++ = '"'; 
     }
-    if (0 != (0x80 & *(str - 1)) && JXEsc == out->opts->escape_mode) {
-	rb_raise(oj_json_generator_error_class, "Partial character in string.");
+    if (JXEsc == out->opts->escape_mode && 0 != (0x80 & *(str - 1))) {
+	uint8_t	c = (uint8_t)*(str - 1);
+	int	i;
+	
+	// Last utf-8 characters must be 0x10xxxxxx. The start must be
+	// 0x110xxxxx for 2 characters, 0x1110xxxx for 3, and 0x11110xxx for
+	// 4.
+	if (0 != (0x40 & c)) {
+	    rb_raise(oj_json_generator_error_class, "Partial character in string. 1");
+	}
+	for (i = 1; i < (int)cnt && i < 4; i++) {
+	    c = str[-1 - i];
+	    if (0x80 != (0xC0 & c)) {
+		switch (i) {
+		case 1:
+		    if (0xC0 != (0xE0 & c)) {
+			rb_raise(oj_json_generator_error_class, "Partial character in string.");
+		    }
+		    break;
+		case 2:
+		    if (0xE0 != (0xF0 & c)) {
+			rb_raise(oj_json_generator_error_class, "Partial character in string. 2");
+		    }
+		    break;
+		case 3:
+		    if (0xF0 != (0xF8 & c)) {
+			rb_raise(oj_json_generator_error_class, "Partial character in string.");
+		    }
+		    break;
+		default: // can't get here
+		    break;
+		}
+		break;
+	    }
+	}
+	if (i == (int)cnt || 4 <= i) {
+	    rb_raise(oj_json_generator_error_class, "Partial character in string.");
+	}
     }
     *out->cur = '\0';
 }
