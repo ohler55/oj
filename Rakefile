@@ -43,17 +43,21 @@ task :test_all => [:clean, :compile] do
     exitcode = 1 unless status
   end
 
-  # verifying that JSON tests work for native implemntation
-  Dir.glob('test/json_gem/*_test.rb').each do |file|
-    cmd = "REAL_JSON_GEM=1 ruby -Itest #{file}"
-    puts "\n" + "#"*90
-    puts cmd
-    Bundler.with_clean_env do
-      status = system(cmd)
+  # Verifying that json gem tests work for native implemntation for Ruby 2.4.0
+  # and above only. We know the older versions do not pass the 2.4.0 unit
+  # tests.
+  if 2.4 <= RUBY_VERSION.split('.')[0..1].join('.').to_f
+    Dir.glob('test/json_gem/*_test.rb').each do |file|
+      cmd = "REAL_JSON_GEM=1 ruby -Itest #{file}"
+      puts "\n" + "#"*90
+      puts cmd
+      Bundler.with_clean_env do
+        status = system(cmd)
+      end
+      exitcode = 1 unless status
     end
-    exitcode = 1 unless status
   end
-
+  
   if false
   # run JSON tests for Oj.mimic_JSON
   Dir.glob('test/json_gem/*_test.rb').each do |file|
