@@ -158,7 +158,7 @@ oj_parse_mimic_dump_options(VALUE ropts, Options copts) {
     if (Qnil != (v = rb_hash_lookup(ropts, oj_ascii_only_sym))) {
 	// generate seems to assume anything except nil and false are true.
 	if (Qfalse == v) {
-	    copts->escape_mode = JSONEsc;
+	    copts->escape_mode = JXEsc; // JSONEsc;
 	} else {
 	    copts->escape_mode = ASCIIEsc;
 	}
@@ -472,9 +472,6 @@ mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
 	}
 	if (Qnil != (v = rb_hash_lookup(ropts, oj_create_additions_sym))) {
 	    pi.options.create_ok = (Qtrue == v) ? Yes : No;
-	}
-	if (Qnil != (v = rb_hash_lookup(ropts, oj_allow_nan_sym))) {
-	    pi.options.allow_nan = (Qtrue == v) ? Yes : No;
 	}
 	if (Qnil != (v = rb_hash_lookup(ropts, oj_allow_nan_sym))) {
 	    pi.options.allow_nan = (Qtrue == v) ? Yes : No;

@@ -8,124 +8,222 @@ actual default options but on a copy of the Hash:
 Oj.default_options = {:mode => :compat }
 ```
 
-### Common (for serializer and parser) options
+Another way to make use of options when calling load or dump methods is to
+pass in a Hash with the options already set in the Hash. This is slightly less
+efficient than setting the globals for many smaller JSON documents but does
+provide a more thread safe approach to using custom options for loading and
+dumping.
 
- * `:mode` [Symbol] mode for dumping and loading JSON. **Important format details [here](http://www.ohler.com/dev/oj_misc/encoding_format.html)**
+### Options for serializer and parser
 
-    - `:object` mode will dump any `Object` as a JSON `Object` with keys that
-      match the Ruby `Object`'s variable names without the '@' prefix
-      character. This mode has the best performance and is the default
+### :allow_blank [Boolean]
 
-    - `:strict` mode will only allow the 7 basic JSON types to be serialized. Any
-      other `Object` will raise an `Exception`
+If true a nil input to load will return nil and not raise an Exception.
 
-    - `:null` mode replaces any `Object` that is not one of the JSON types with a JSON `null`
+### :allow_gc [Boolean]
 
-    - `:compat` mode attempts to be compatible with other systems. It will
-      serialize any `Object`, but will check to see if the `Object` implements an
-      `to_hash` or `to_json` method. If either exists, that method is used for
-      serializing the `Object`.  Since `as_json` is more flexible and produces
-      more consistent output, it is preferred over the `to_json` method. If
-      neither the `to_json` or `to_hash` methods exists, then the Oj internal
-      `Object` variable encoding is used
+Allow or prohibit GC during parsing, default is true (allow).
 
- * `:time_format` [Symbol] time format when dumping in :compat and :object mode
+### :allow_invalid_unicode [Boolean]
 
-    - `:unix` time is output as a decimal number in seconds since epoch including
-      fractions of a second.
+Allow invalid unicode, default is false (don't allow).
 
-    - `:unix_zone` similar to the `:unix` format but with the timezone encoded in
-      the exponent of the decimal number of seconds since epoch.
+### :allow_nan
 
-    - `:xmlschema` time is output as a string that follows the XML schema definition.
+Alias for the :nan option.
 
-    - `:ruby` time is output as a string formatted using the Ruby `to_s` conversion.
+### :array_class [Class]
 
- * `:second_precision` [Fixnum] number of digits after the decimal when dumping
-   the seconds portion of time
+Class to use instead of Array on load.
 
- * `:bigdecimal_as_decimal` [Boolean] dump BigDecimal as a decimal number
-   or as a String
+### :array_nl
 
- * `:create_id` [String] create id for json compatible object encoding,
-   default is `json_create`.
+TBD
 
- * `:allow_gc` [Boolean] allow or prohibit GC during parsing, default is
-   true (allow).
+### :ascii_only
 
- * `:quirks_mode` [Boolean] Allow single JSON values instead of
-   documents, default is true (allow).
+TBD
 
- * `:allow_invalid_unicode` [Boolean] Allow invalid unicode, default is
-   false (don't allow)
+### :auto_define [Boolean]
 
- * `:omit_nil` [Boolean] If true, Hash and Object attributes with nil values
-   are omitted
+Automatically define classes if they do not exist.
 
-### Serializer options
+### :bigdecimal_as_decimal [Boolean]
 
- * `:indent` [Fixnum] number of spaces to indent each element in an JSON
-   document, zero is no newline between JSON elements, negative indicates no
-   newline between top level JSON elements in a stream
-   
- * `:circular` [Boolean] support circular references while dumping
+If true dump BigDecimal as a decimal number otherwise as a String
 
- * `:escape_mode` [Symbol] determines the characters to escape
+### :bigdecimal_load [Symbol]
 
-    - `:newline` allows unescaped newlines in the output
+Determines how to load decimals.
 
-    - `:json` follows the JSON specification. This is the default mode
+ - `:bigdecimal` convert all decimal numbers to BigDecimal.
 
-    - `:xss_safe` escapes HTML and XML characters such as `&` and `<`
+ - `:float` convert all decimal numbers to Float.
 
-    - `:ascii` escapes all non-ascii or characters with the hi-bit set
+ - `:auto` the most precise for the number of digits is used.
 
- * `:use_to_json` [Boolean] call `to_json()` methods on dump, default is
-   false
+### :circular [Boolean]
 
- * `:use_as_json` [Boolean] call `as_json()` methods on dump, default is
-   false
+Detect circular references while dumping. In :compat mode raise a
+NestingError. For other modes except the :object mode place a null in the
+output. For :object mode place references in the output that will be used to
+recreate the looped references on load.
 
- * `:nan` [Symbol] How to dump Infinity, -Infinity, and
-   NaN in :null, :strict, and :compat mode. Default is :auto
+### :class_cache [Boolean]
 
-    - `:null` places a null
+Cache classes for faster parsing. This option should not be used if
+dynamically modifying classes or reloading classes then don't use this.
 
-    - `:huge` places a huge number
+### :create_additions
 
-    - `:word` places Infinity or NaN
+TBD
 
-    - `:raise` raises and exception
+### :create_id [String]
 
-    - `:auto` uses default for each mode which are `:raise` for `:strict`, `:null` for `:null`, and `:word` for `:compat`
+The :create_id option specifies that key is used for dumping and loading when
+specifying the class for an encoded object. The default is `json_create`.
 
-### Parser options
+### :empty_string [Boolean]
 
- * `:auto_define` [Boolean] automatically define classes if they do not
-   exist
+If true an empty input will not raise an Exception. The default differs
+according to the mode and in some cases the function used to load or dump. The
+defaults are:
 
- * `:symbol_keys` [Boolean] use symbols instead of strings for hash keys
+ - :null - true
+ - :strict - true
+ - :compat or :json - true
+    - JSON.parse() - false
+    - JSON.load() - true (or what ever is set in the defaults)
+ - :rails - TBD
+ - :object - true
+ - :custom - true
 
- * `:class_cache` [Boolean] cache classes for faster parsing (if
-   dynamically modifying classes or reloading classes then don't use this)
+### :escape_mode [Symbol]
 
- * `:bigdecimal_load` [Symbol] load decimals as BigDecimal instead of as a
-   Float
+Determines the characters to escape when dumping. Only the :ascii and
+:unicode_xss modes are supported in :compat mode.
 
-    - `:bigdecimal` convert all decimal numbers to BigDecimal
+ - `:newline` allows unescaped newlines in the output.
 
-    - `:float` convert all decimal numbers to Float
+ - `:json` follows the JSON specification. This is the default mode.
 
-    - `:auto` the most precise for the number of digits is used
+ - `:xss_safe` escapes HTML and XML characters such as `&` and `<`.
 
- * `:float_precision` [Fixnum] number of digits of precision when dumping
-   floats, 0 indicates use Ruby
+ - `:ascii` escapes all non-ascii or characters with the hi-bit set.
 
- * `:nilnil` [Boolean] if true a nil input to load will return nil and
-   not raise an Exception
+ - `:unicode_xss` escapes a mode for the json gem mimic mode.
 
- * `:empty_string` [Boolean] if true an empty input will not raise an
-   Exception, default is true (allow). When Oj.mimic_JSON is used,
-   default is false (raise exception when empty string is encountered)
+### :float_precision [Fixnum]
 
- * `:hash_class` [Class] Class to use instead of Hash on load
+The number of digits of precision when dumping floats, 0 indicates use Ruby directly.
+
+### :hash_class [Class]
+
+Class to use instead of Hash on load. This is the same as the :object_class.
+
+### :indent [Fixnum]
+
+Number of spaces to indent each element in a JSON document, zero is no newline
+between JSON elements, negative indicates no newline between top level JSON
+elements in a stream.
+
+### :indent_str
+
+TBD
+
+### :match_string
+
+TBD
+
+### :max_nesting
+
+TBD
+
+### :mode [Symbol]
+
+Primary behavior for loading and dumping. The :mode option controls which
+other options are in effect. For more details see the {file:Modes.md} page.
+
+### :nan [Symbol]
+
+How to dump Infinity, -Infinity, and NaN in :null, :strict, and :compat
+mode. Default is :auto but is ignored in the :compat and :rails mode.
+
+ - `:null` places a null
+
+ - `:huge` places a huge number
+
+ - `:word` places Infinity or NaN
+
+ - `:raise` raises and exception
+
+ - `:auto` uses default for each mode which are `:raise` for `:strict`, `:null` for `:null`, and `:word` for `:compat`.
+
+### :nilnil [Boolean]
+
+If true a nil input to load will return nil and not raise an Exception.
+
+### :object_class
+
+TBD
+
+### :object_nl
+
+TBD
+
+### :omit_nil [Boolean]
+
+If true, Hash and Object attributes with nil values are omitted.
+
+### :quirks_mode [Boolean]
+
+Allow single JSON values instead of documents, default is true (allow). This
+can also be used in :compat mode to be backward compatible with older versions
+of the json gem.
+
+### :second_precision [Fixnum]
+
+The number of digits after the decimal when dumping the seconds of time.
+
+### :space
+
+TBD
+
+### :space_before
+
+TBD
+
+### :symbol_keys [Boolean]
+
+Use symbols instead of strings for hash keys. :symbolize_names is an alias.
+
+### :time_format [Symbol]
+
+The :time_format when dumping.
+
+ - `:unix` time is output as a decimal number in seconds since epoch including fractions of a second.
+
+ - `:unix_zone` similar to the `:unix` format but with the timezone encoded in
+   the exponent of the decimal number of seconds since epoch.
+
+ - `:xmlschema` time is output as a string that follows the XML schema definition.
+
+ - `:ruby` time is output as a string formatted using the Ruby `to_s` conversion.
+
+### :use_as_json [Boolean]
+
+Call `as_json()` methods on dump, default is false. The option is ignored in
+the :compat and :rails mode.
+
+### :use_to_hash [Boolean]
+
+Call `to_json()` methods on dump, default is false. The option is ignored in
+the :compat and :rails mode.
+
+### :use_to_json [Boolean]
+
+Call `to_json()` methods on dump, default is false. The option is ignored in
+the :compat and :rails mode.
+
+
+

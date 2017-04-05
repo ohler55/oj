@@ -7,20 +7,32 @@ without monkey patching the object classes. From that start other demands were
 made the were best met by giving Oj multiple modes of operation. The current
 modes are:
 
- - `:null`
  - `:strict`
+ - `:null`
  - `:compat` or `:json`
  - `:rails`
  - `:object`
  - `:custom`
 
-## :null Mode
-
-TBD
+Since modes detemine what the JSON output will look like and alternatively
+what Oj expects when the `Oj.load()` method is called, mixing the output and
+input mode formats will most likely not behave as intended. If the object mode
+is used for producing JSON then use object mode for reading. The same is true
+for each mode. It is possible to mix but only for advanced users.
 
 ## :strict Mode
 
-TBD
+Strict mode follows the JSON specifications and only supports the JSON native
+types, Boolean, nil, String, Hash, Array, and Number are encoded as
+expected. Encountering any other type causes an Exception to be raised. This
+is the safest mode as it is just simple translation, no code outside Oj or the
+core Ruby is execution on loading. Very few options are supported by this mode
+other than formatting options.
+
+## :null Mode
+
+Null mode is similar to the :strict mode except that a JSON null is inserted
+if a non-native type is encountered instead of raising an Exception.
 
 ## :compat or :json Mode
 
@@ -65,7 +77,8 @@ to_json() method call
 Oj.add_to_json(Rational)
 ```
 
-To revert back to unoptimized version just remove the Oj flag on that class.
+To revert back to the unoptimized version, just remove the Oj flag on that
+class.
 
 ```ruby
 Oj.remove_to_json(Rational)
@@ -77,54 +90,70 @@ TBD
 
 ## :object Mode
 
-TBD
+Object mode is for fast Ruby object serialization and deserialization. That
+was the primary purpose of Oj when it was first developed. As such it is the
+default mode unless changed in the Oj default options. In :object mode Oj
+generates JSON that follows conventions which allow Class and other
+information such as Object IDs for circular reference detection to be encoded
+in a JSON document. The formatting follows the rules describe on the
+{file:Encoding.md} page.
 
 ## :custom Mode
 
-TBD
+Custom mode honors all options. It provides the most flexibility although it
+can not be configured to be exactly like any of the other modes. Each mode has
+some special aspect that makes it unique. For example, the `:object` mode has
+it's own unique format for object dumping and loading. The `:compat` mode
+mimic the json gem including methods called for encoding and inconsistencies
+between `JSON.dump()`, `JSON.generate()`, and `JSON()`.
 
-## Options
-
-### Options Matrix
+## Options Matrix
 
 Not all options are available in all modes. The options matrix identifies the
-options available in each mode. An x in the matrix indicates the option is
+options available in each mode. An `x` in the matrix indicates the option is
 supported in that mode. A number indicates the footnotes describe additional
 information.
 
     | Option                 | type    | :null   | :strict | :compat | :rails  | :object | :custom |
     | ---------------------- | ------- | ------- | ------- | ------- | ------- | ------- | ------- |
-    | :allow_blank           | Boolean |         |         |       1 |       1 |         |         |
+    | :allow_blank           | Boolean |         |         |       1 |       1 |         |       x |
     | :allow_gc              | Boolean |       x |       x |       x |       x |       x |       x |
     | :allow_invalid_unicode | Boolean |         |         |         |         |       x |       x |
+    | :allow_nan             | Boolean |         |         |       x |       x |       x |       x |
+    | :array_class           | Class   |         |         |       x |       x |         |       x |
+    | :array_nl              | String  |         |         |         |         |         |       x |
     | :ascii_only            | Boolean |       x |       x |       2 |       2 |       x |       x |
-    | :array_nl              |         |         |         |         |         |         |       x |
-    | :auto_define           |         |         |         |         |         |         |       x |
+    | :auto_define           | Boolean |         |         |         |         |       x |       x |
     | :bigdecimal_as_decimal | Boolean |         |         |         |         |       x |       x |
-    | :bigdecimal_load       |         |         |         |         |         |         |       x |
+    | :bigdecimal_load       | Boolean |         |         |         |         |         |       x |
     | :circular              | Boolean |       x |       x |       x |       x |       x |       x |
     | :class_cache           | Boolean |         |         |         |         |       x |       x |
-    | :create_id             |         |         |         |         |         |         |       x |
-    | :empty_string          |         |         |         |         |         |         |       x |
-    | :escape_mode           |         |         |         |         |         |         |       x |
-    | :float_precision       |         |         |         |         |         |         |       x |
-    | :hash_class            |         |         |         |         |         |         |       x |
-    | :indent                | Integer |       x |       x |       3 |       ? |       x |       x |
-    | :indent_str            | String  |         |         |       x |         |         |       x |
+    | :create_additions      | Boolean |         |         |       x |       x |         |       x |
+    | :create_id             | String  |         |         |       x |       x |         |       x |
+    | :empty_string          | Boolean |         |         |         |         |         |       x |
+    | :escape_mode           | Symbol  |         |         |         |         |         |       x |
+    | :float_precision       | Fixnum  |       x |       x |         |         |         |       x |
+    | :hash_class            | Class   |         |         |       x |       x |         |       x |
+    | :indent                | Integer |       x |       x |       3 |       3 |       x |       x |
+    | :indent_str            | String  |         |         |       x |       x |         |       x |
+    | :match_string          | Hash    |         |         |       x |       x |         |       x |
+    | :max_nesting           | Fixnum  |       4 |       4 |       x |       x |       4 |       4 |
     | :mode                  | Symbol  |       - |       - |       - |       - |       - |       - |
-    | :nan                   |         |         |         |         |         |         |       x |
-    | :nilnil                |         |         |         |         |         |         |       x |
-    | :object_nl             |         |         |         |         |         |         |       x |
-    | :omit_nil              |         |         |         |         |         |         |       x |
-    | :quirks_mode           |         |         |         |       4 |         |         |       x |
-    | :second_precision      |         |         |         |         |         |         |       x |
-    | :space                 |         |         |         |         |         |         |       x |
-    | :space_before          |         |         |         |         |         |         |       x |
-    | :symbol_keys           |         |         |         |         |         |         |       x |
-    | :time_format           |         |         |         |         |         |         |       x |
+    | :nan                   | Symbol  |         |         |         |         |         |       x |
+    | :nilnil                | Boolean |         |         |         |         |         |       x |
+    | :object_class          | Class   |         |         |       x |       x |         |       x |
+    | :object_nl             | String  |         |         |       x |       x |         |       x |
+    | :omit_nil              | Boolean |       x |       x |       x |       x |       x |       x |
+    | :quirks_mode           | Boolean |         |         |       5 |         |         |       x |
+    | :second_precision      | Fixnum  |         |         |         |         |       x |       x |
+    | :space                 | String  |         |         |       x |       x |         |       x |
+    | :space_before          | String  |         |         |       x |       x |         |       x |
+    | :symbol_keys           | Boolean |       x |       x |       x |       x |       x |       x |
+    | :time_format           | Symbol  |         |         |         |         |       x |       x |
     | :use_as_json           | Boolean |         |         |         |       x |         |       x |
     | :use_to_hash           | Boolean |         |         |         |         |         |       x |
-    | :use_to_json           | Boolean |         |         |         |       ? |         |       x |
+    | :use_to_json           | Boolean |         |         |         |         |         |       x |
+     ----------------------------------------------------------------------------------------------
 
  1. :allow_blank an alias for :nilnil.
 
@@ -135,10 +164,14 @@ information.
     'Oj.generate()', or 'Oj.generate_fast()' expect a String and not an
     integer.
 
- 4. The quirks mode option is no longer supported in the most recent json
+ 4. The max_nesting option is for the json gem and rails only. It exists for
+    compatibility. For other Oj dump modes the maximum nesting is set to over
+    1000. If reference loops exist in the object being dumped then using the
+    `:circular` option is a far better choice. It adds a slight overhead but
+    detects an object that appears more than once in a dump and does not dump
+    that object a second time.
+
+ 5. The quirks mode option is no longer supported in the most recent json
     gem. It is supported by Oj for backward compatibility with older json gem
     versions.
 
-### Options Details
-
-TBD

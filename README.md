@@ -48,6 +48,7 @@ links.
 
  - {file:Options.md} for parse and dump options.
  - {file:Modes.md} for details on modes for strict JSON compliance, mimicing the JSON gem, and mimicing Rails and ActiveSupport behavior.
+ - {file:Encoding.md} describes the :object encoding format.
  - {file:Compatibility.md} lists current compatibility with Rubys and Rails.
  - {file:Advanced.md} for fast parser and marshalling features.
  - {file:Security.md} for security considerations.

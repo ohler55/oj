@@ -1159,8 +1159,8 @@ to_stream(int argc, VALUE *argv, VALUE self) {
  * classes as it is not optimized for large numbers of classes.
  *
  * @param clas [Class|Module] Class or Module to be made special
- * @param create [Object] _object object to call the create method on
- * @param create [Symbol] _method method on the clas that will create a new
+ * @param create_object [Object]  object to call the create method on
+ * @param create_method [Symbol] method on the clas that will create a new
  *                 instance of the clas when given all the member values in the
  *                 order specified.
  * @param members [Symbol|String] methods used to get the member values from
@@ -1188,7 +1188,7 @@ register_odd(int argc, VALUE *argv, VALUE self) {
     return Qnil;
 }
 
-/* @overload register_odd_raw(clas, create_object, create_method, dump_method)
+/* @!method register_odd_raw(clas, create_object, create_method, dump_method)
  *
  * Registers a class as special and expect the output to be a string that can be
  * included in the dumped JSON directly. This is useful for working around
@@ -1199,11 +1199,11 @@ register_odd(int argc, VALUE *argv, VALUE self) {
  * this option as the JSON may be incorrect if invalid JSON is returned.
  *
  * @param clas [Class|Module] Class or Module to be made special
- * @param create [Object] _object object to call the create method on
- * @param create [Symbol] _method method on the clas that will create a new
+ * @param create_object [Object] object to call the create method on
+ * @param create_method [Symbol] method on the clas that will create a new
  *                 instance of the clas when given all the member values in the
  *                 order specified.
- * @param dump [Symbol|String] _method method to call on the object being
+ * @param dump_method [Symbol|String] method to call on the object being
  *                        serialized to generate the raw JSON.
  */
 static VALUE
