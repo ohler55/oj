@@ -348,7 +348,7 @@ class NullJuice < Minitest::Test
   def test_circular_hash
     h = { 'a' => 7 }
     h['b'] = h
-    json = Oj.dump(h, :indent => 2, :circular => true)
+    json = Oj.dump(h, :indent => 2, :circular => true, :mode => :null)
     assert_equal(%|{
   "a":7,
   "b":null

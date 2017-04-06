@@ -291,8 +291,9 @@ dump_unicode(const char *str, const char *end, Out out) {
     return str - 1;
 }
 
-// returns 0 if not using circular references, -1 if not further writing is
-// needed (duplicate), and a positive value if the object was added to the cache.
+// Returns 0 if not using circular references, -1 if not further writing is
+// needed (duplicate), and a positive value if the object was added to the
+// cache.
 long
 oj_check_circular(VALUE obj, Out out) {
     slot_t	id = 0;
@@ -327,7 +328,7 @@ dump_array(VALUE a, VALUE clas, int depth, Out out) {
     int		d2 = depth + 1;
     long	id = oj_check_circular(a, out);
 
-    if (id < 0) {
+    if (0 > id) {
 	return;
     }
     cnt = (int)RARRAY_LEN(a);

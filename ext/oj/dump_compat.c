@@ -218,7 +218,7 @@ dump_array(VALUE a, int depth, Out out, bool as_ok) {
     int		d2 = depth + 1;
     long	id = oj_check_circular(a, out);
 
-    if (id < 0) {
+    if (0 > id) {
 	raise_json_err("Too deeply nested", "NestingError");
 	return;
     }

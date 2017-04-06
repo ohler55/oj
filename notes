@@ -30,12 +30,6 @@ Comparison Matrix
  - what happened to obj mode loading time?
 
  - plan
-  - json_gem tests
-
-  - object mode
-   - move tests
-   - parse down dump_object
-
   - rails mode
 
   - custom mode
