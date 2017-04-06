@@ -580,6 +580,21 @@ dump_alt(VALUE obj, int depth, Out out) {
     return false;
 }
 
+/* Document-class: Oj
+ * @!method add_to_json(*args)
+ *
+ * Override simple to_s dump behavior in :compat mode to instead use an
+ * optimized dump that includes the classname and attributes so that the
+ * object can be re-created on load. The format is the same as the json gem
+ * but does not use the ruby methods for encoding.
+ *
+ * The classes supported for optimization are: Array, BigDecimal, Complex,
+ * Date, DateTime, Exception, Hash, Integer, OpenStruct, Range, Rational,
+ * Regexp, Struct, and Time. Providing no classes will result in all those
+ * classes being optimized.q
+ *
+ * @param args [Class] zero or more classes to optimize.
+ */
 VALUE
 oj_add_to_json(int argc, VALUE *argv, VALUE self) {
     Alt	a;
@@ -632,6 +647,21 @@ oj_add_to_json(int argc, VALUE *argv, VALUE self) {
     return Qnil;
 }
 
+/* Document-class: Oj
+ * @!method remove_to_json(*args)
+ *
+ * Reverts back to the to_s dump behavior in :compat mode to instead use an
+ * optimized dump that includes the classname and attributes so that the
+ * object can be re-created on load. The format is the same as the json gem
+ * but does not use the ruby methods for encoding.
+ *
+ * The classes supported for optimization are: Array, BigDecimal, Complex,
+ * Date, DateTime, Exception, Hash, Integer, OpenStruct, Range, Rational,
+ * Regexp, Struct, and Time. Providing no classes will result in all those
+ * classes being reverted from the optimized mode.
+ *
+ * @param args [Class] zero or more classes to optimize.
+ */
 VALUE
 oj_remove_to_json(int argc, VALUE *argv, VALUE self) {
     Alt	a = alts;

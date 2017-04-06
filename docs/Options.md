@@ -38,11 +38,15 @@ Class to use instead of Array on load.
 
 ### :array_nl
 
-TBD
+Trailer appended to the end of an array dump. The default is an empty
+string. Primarily intended for json gem compatibility. Using just indent as an
+integer gives better performance.
 
 ### :ascii_only
 
-TBD
+If true all non-ASCII character are escaped when dumping. This is the same as
+setting the :escape_mode options to :ascii and exists for json gem
+compatibility.
 
 ### :auto_define [Boolean]
 
@@ -76,7 +80,9 @@ dynamically modifying classes or reloading classes then don't use this.
 
 ### :create_additions
 
-TBD
+A flag indicating the :create_id key when encounterd during parsing should
+creating an Object mactching the class name specified in the value associated
+with the key.
 
 ### :create_id [String]
 
@@ -129,15 +135,22 @@ elements in a stream.
 
 ### :indent_str
 
-TBD
+Indentation for each element when dumping. The default is an empty
+string. Primarily intended for json gem compatibility. Using just indent as an
+integer gives better performance.
 
 ### :match_string
 
-TBD
+Provides a means to detect strings that should be used to create non-String
+objects. The value to the option must be a Hash with keys that are regular
+expressions and values are class names. For strict json gem compatibility a
+RegExp should be used. For better performance but sacrificing some regexp
+options a string can be used and the C version of regex will be used instead.
 
 ### :max_nesting
 
-TBD
+The maximum nesting depth on both dump and load that is allowed. This exists
+for json gem compatibility.
 
 ### :mode [Symbol]
 
@@ -165,11 +178,13 @@ If true a nil input to load will return nil and not raise an Exception.
 
 ### :object_class
 
-TBD
+The class to use when creating a Hash on load instead of the Hash class.
 
 ### :object_nl
 
-TBD
+Trailer appended to the end of an object dump. The default is an empty
+string. Primarily intended for json gem compatibility. Using just indent as an
+integer gives better performance.
 
 ### :omit_nil [Boolean]
 
@@ -187,11 +202,15 @@ The number of digits after the decimal when dumping the seconds of time.
 
 ### :space
 
-TBD
+String inserted after the ':' character when dumping a JSON object. The
+default is an empty string. Primarily intended for json gem
+compatibility. Using just indent as an integer gives better performance.
 
 ### :space_before
 
-TBD
+String inserted before the ':' character when dumping a JSON object. The
+default is an empty string. Primarily intended for json gem
+compatibility. Using just indent as an integer gives better performance.
 
 ### :symbol_keys [Boolean]
 

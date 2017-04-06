@@ -231,39 +231,12 @@ class Juice < Minitest::Test
   end
 =end
 
-  def test_float
-    mode = Oj.default_options()[:mode]
-    Oj.default_options = {:mode => :object}
-    dump_and_load(0.0, false)
-    dump_and_load(12345.6789, false)
-    dump_and_load(70.35, false)
-    dump_and_load(-54321.012, false)
-    dump_and_load(1.7775, false)
-    dump_and_load(2.5024, false)
-    dump_and_load(2.48e16, false)
-    dump_and_load(2.48e100 * 1.0e10, false)
-    dump_and_load(-2.48e100 * 1.0e10, false)
-    dump_and_load(1/0.0, false)
-    # NaN does not always == NaN
-    json = Oj.dump(0/0.0)
-    assert_equal('3.3e14159265358979323846', json)
-    loaded = Oj.load(json);
-    assert_equal(true, loaded.nan?)
-    Oj.default_options = {:mode => mode}
-  end
-
   def test_string
     dump_and_load('', false)
     dump_and_load('abc', false)
     dump_and_load("abc\ndef", false)
     dump_and_load("a\u0041", false)
     assert_equal("a\u0000a", dump_and_load("a\u0000a", false))
-  end
-
-  def test_string_object
-    Oj.default_options = {:mode => :object}
-    dump_and_load('abc', false)
-    dump_and_load(':abc', false)
   end
 
   def test_encode
@@ -422,12 +395,6 @@ class Juice < Minitest::Test
     json = Oj.dump(:abc, :mode => :null)
     assert_equal('"abc"', json)
   end
-  def test_symbol_object
-    Oj.default_options = { :mode => :object }
-    #dump_and_load(''.to_sym, false)
-    dump_and_load(:abc, false)
-    dump_and_load(':xyz'.to_sym, false)
-  end
 
   # Time
   def test_time_null
@@ -565,19 +532,11 @@ class Juice < Minitest::Test
     json = Oj.dump(Juice, :mode => :null)
     assert_equal('null', json)
   end
-  def test_class_object
-    Oj.default_options = { :mode => :object }
-    dump_and_load(Juice, false)
-  end
 
   # Module
   def test_module_null
     json = Oj.dump(TestModule, :mode => :null)
     assert_equal('null', json)
-  end
-  def test_module_object
-    Oj.default_options = { :mode => :object }
-    dump_and_load(TestModule, false)
   end
 
   # Hash
@@ -590,22 +549,7 @@ class Juice < Minitest::Test
     end
     assert(false, "*** expected an exception")
   end
-  def test_non_str_hash_object
-    Oj.default_options = { :mode => :object }
-    json = Oj.dump({ 1 => true, :sim => nil })
-    h = Oj.load(json, :mode => :strict)
-    assert_equal({"^#1" => [1, true], ":sim" => nil}, h)
-    h = Oj.load(json)
-    assert_equal({ 1 => true, :sim => nil }, h)
-  end
-  def test_mixed_hash_object
-    Oj.default_options = { :mode => :object }
-    json = Oj.dump({ 1 => true, 'nil' => nil, :sim => 4 })
-    h = Oj.load(json, :mode => :strict)
-    assert_equal({"^#1" => [1, true], "nil" => nil, ":sim" => 4}, h)
-    h = Oj.load(json)
-    assert_equal({ 1 => true, 'nil' => nil, :sim => 4 }, h)
-  end
+
   def test_hash_not_closed
     begin
       Oj.load('{')
@@ -622,48 +566,12 @@ class Juice < Minitest::Test
     json = Oj.dump(obj, :mode => :null)
     assert_equal('null', json)
   end
-  def test_json_object_object
-    obj = Jeez.new(true, 58)
-    json = Oj.dump(obj, :mode => :object, :indent => 2)
-    assert(%{{
-  "^o":"Juice::Jeez",
-  "x":true,
-  "y":58
-}
-} == json ||
-%{{
-  "^o":"Juice::Jeez",
-  "y":58,
-  "x":true
-}
-} == json)
-    obj2 = Oj.load(json, :mode => :object)
-    assert_equal(obj, obj2)
-  end
 
 # Object with to_hash()
   def test_to_hash_object_null
     obj = Jazz.new(true, 58)
     json = Oj.dump(obj, :mode => :null)
     assert_equal('null', json)
-  end
-  def test_to_hash_object_object
-    obj = Jazz.new(true, 58)
-    json = Oj.dump(obj, :mode => :object, :indent => 2)
-    assert(%{{
-  "^o":"Juice::Jazz",
-  "x":true,
-  "y":58
-}
-} == json ||
-%{{
-  "^o":"Juice::Jazz",
-  "y":58,
-  "x":true
-}
-} == json)
-    obj2 = Oj.load(json, :mode => :object)
-    assert_equal(obj, obj2)
   end
 
   # Object with as_json() # contributed by sauliusg
@@ -673,92 +581,17 @@ class Juice < Minitest::Test
     assert_equal('null', json)
   end
 
-  def test_as_json_object_object
-    obj = Orange.new(true, 58)
-    json = Oj.dump(obj, :mode => :object, :indent => 2)
-    assert(%{{
-  "^o":"Juice::Orange",
-  "x":true,
-  "y":58
-}
-} == json ||
-%{{
-  "^o":"Juice::Orange",
-  "y":58,
-  "x":true
-}
-} == json)
-    obj2 = Oj.load(json, :mode => :object)
-    assert_equal(obj, obj2)
-  end
-
   # Object without to_json() or to_hash()
   def test_object_null
     obj = Jam.new(true, 58)
     json = Oj.dump(obj, :mode => :null)
     assert_equal('null', json)
   end
-  def test_object_object_no_cache
-    obj = Jam.new(true, 58)
-    json = Oj.dump(obj, :mode => :object, :indent => 2)
-    assert(%{{
-  "^o":"Juice::Jam",
-  "x":true,
-  "y":58
-}
-} == json ||
-%{{
-  "^o":"Juice::Jam",
-  "y":58,
-  "x":true
-}
-} == json)
-    obj2 = Oj.load(json, :mode => :object, :class_cache => false)
-    assert_equal(obj, obj2)
-  end
-
-  # Exception
-  def test_exception
-    err = nil
-    begin
-      raise StandardError.new('A Message')
-    rescue Exception => e
-      err = e
-    end
-    json = Oj.dump(err, :mode => :object, :indent => 2)
-    #puts "*** #{json}"
-    e2 = Oj.load(json, :mode => :strict)
-    assert_equal(err.class.to_s, e2['^o'])
-    assert_equal(err.message, e2['~mesg'])
-    assert_equal(err.backtrace, e2['~bt'])
-    e2 = Oj.load(json, :mode => :object)
-    if RUBY_VERSION.start_with?('1.8') || 'rubinius' == $ruby
-      assert_equal(e.class, e2.class);
-      assert_equal(e.message, e2.message);
-      assert_equal(e.backtrace, e2.backtrace);
-    else
-      assert_equal(e, e2);
-    end
-  end
 
   # Range
   def test_range_null
     json = Oj.dump(1..7, :mode => :null)
     assert_equal('null', json)
-  end
-  def test_range_object
-    unless RUBY_VERSION.start_with?('1.8')
-      Oj.default_options = { :mode => :object }
-      json = Oj.dump(1..7, :mode => :object, :indent => 0)
-      if 'rubinius' == $ruby
-        assert(%{{"^O":"Range","begin":1,"end":7,"exclude_end?":false}} == json)
-      else
-        assert_equal(%{{"^u":["Range",1,7,false]}}, json)
-      end
-      dump_and_load(1..7, false)
-      dump_and_load(1..1, false)
-      dump_and_load(1...7, false)
-    end
   end
 
   # BigNum
@@ -779,24 +612,12 @@ class Juice < Minitest::Test
     dump_and_load(BigDecimal.new('3.14159265358979323846'), false)
     Oj.default_options = {:mode => mode}
   end
-  def test_bigdecimal_object
-    mode = Oj.default_options[:mode]
-    Oj.default_options = {:mode => :object}
-    dump_and_load(BigDecimal.new('3.14159265358979323846'), false)
-    Oj.default_options = {:mode => mode}
-    # Infinity is the same for Float and BigDecimal
-    json = Oj.dump(BigDecimal.new('Infinity'), :mode => :object)
-    assert_equal('Infinity', json)
-    json = Oj.dump(BigDecimal.new('-Infinity'), :mode => :object)
-    assert_equal('-Infinity', json)
-  end
 
   def test_infinity
     n = Oj.load('Infinity', :mode => :object)
     assert_equal(BigDecimal.new('Infinity').to_f, n);
     x = Oj.load('Infinity', :mode => :compat)
     assert_equal('Infinity', x.to_s)
-
   end
 
   # Date
@@ -804,19 +625,11 @@ class Juice < Minitest::Test
     json = Oj.dump(Date.new(2012, 6, 19), :mode => :null)
     assert_equal('null', json)
   end
-  def test_date_object
-    Oj.default_options = {:mode => :object}
-    dump_and_load(Date.new(2012, 6, 19), false)
-  end
 
   # DateTime
   def test_datetime_null
     json = Oj.dump(DateTime.new(2012, 6, 19, 20, 19, 27), :mode => :null)
     assert_equal('null', json)
-  end
-  def test_datetime_object
-    Oj.default_options = {:mode => :object}
-    dump_and_load(DateTime.new(2012, 6, 19), false)
   end
 
   # autodefine Oj::Bag
@@ -829,65 +642,6 @@ class Juice < Minitest::Test
     assert_equal('Juice::Jem', obj.class.name)
     assert_equal(true, obj.x)
     assert_equal(58, obj.y)
-  end
-
-  # Circular
-  def test_circular_object
-    obj = Jam.new(nil, 58)
-    obj.x = obj
-    json = Oj.dump(obj, :mode => :object, :indent => 2, :circular => true)
-    assert(%{{
-  "^o":"Juice::Jam",
-  "^i":1,
-  "x":"^r1",
-  "y":58
-}
-} == json ||
-%{{
-  "^o":"Juice::Jam",
-  "^i":1,
-  "y":58,
-  "x":"^r1"
-}
-} == json)
-    obj2 = Oj.load(json, :mode => :object, :circular => true)
-    assert_equal(obj2.x.__id__, obj2.__id__)
-  end
-
-  def test_circular_hash
-    h = { 'a' => 7 }
-    h['b'] = h
-    json = Oj.dump(h, :mode => :object, :indent => 2, :circular => true)
-    ha = Oj.load(json, :mode => :strict)
-    assert_equal({'^i' => 1, 'a' => 7, 'b' => '^r1'}, ha)
-    Oj.load(json, :mode => :object, :circular => true)
-    assert_equal(h['b'].__id__, h.__id__)
-  end
-
-  def test_circular_array
-    a = [7]
-    a << a
-    json = Oj.dump(a, :mode => :object, :indent => 2, :circular => true)
-    assert_equal(%{[
-  "^i1",
-  7,
-  "^r1"
-]
-}, json)
-    a2 = Oj.load(json, :mode => :object, :circular => true)
-    assert_equal(a2[1].__id__, a2.__id__)
-  end
-
-  def test_circular
-    h = { 'a' => 7 }
-    obj = Jam.new(h, 58)
-    obj.x['b'] = obj
-    json = Oj.dump(obj, :mode => :object, :indent => 2, :circular => true)
-    ha = Oj.load(json, :mode => :strict)
-    assert_equal({'^o' => 'Juice::Jam', '^i' => 1, 'x' => { '^i' => 2, 'a' => 7, 'b' => '^r1' }, 'y' => 58 }, ha)
-    Oj.load(json, :mode => :object, :circular => true)
-    assert_equal(obj.x.__id__, h.__id__)
-    assert_equal(h['b'].__id__, obj.__id__)
   end
 
 # Stream Deeply Nested
