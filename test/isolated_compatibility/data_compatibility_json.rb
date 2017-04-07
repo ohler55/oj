@@ -1,6 +1,7 @@
 # encoding: UTF-8
 
 require 'bigdecimal'
+require 'ostruct'
 
 # test data
 class Colors
@@ -75,7 +76,7 @@ too_deep = '[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[
 too_deep_ary = eval too_deep
 s = Class.new(String) do
   def to_s; self; end
-  undef to_json
+  undef to_json if defined?(to_json)
 end
 
 utf_8      = '"© ≠ €!"'

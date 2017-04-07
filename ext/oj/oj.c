@@ -1309,6 +1309,7 @@ Init_oj() {
     rb_define_module_function(Oj, "to_json", to_json, -1);
     rb_define_module_function(Oj, "generate", oj_mimic_generate, -1);
     rb_define_module_function(Oj, "fast_generate", oj_mimic_generate, -1);
+    rb_define_module_function(Oj, "encode", oj_rails_encode, -1);
 
     rb_define_module_function(Oj, "add_to_json", oj_add_to_json, -1);
     rb_define_module_function(Oj, "remove_to_json", oj_remove_to_json, -1);

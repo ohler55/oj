@@ -9,6 +9,9 @@ ruby tests_mimic.rb
 echo "----- Mimic with additions tests (tests_mimic_addition.rb) -----"
 ruby tests_mimic_addition.rb
 
+echo "----- JSON gem compatibility tests (test_compatibility_json.rb) -----"
+ruby isolated_compatibility/test_compatibility_json.rb
+
 #ruby test_various.rb
 #echo "----- Strict parser tests (test_strict.rb) -----"
 #ruby test_strict.rb

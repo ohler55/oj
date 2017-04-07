@@ -282,6 +282,8 @@ extern void	oj_parse_mimic_dump_options(VALUE ropts, Options copts);
 extern VALUE	oj_get_json_err_class(const char *err_classname);
 extern void	oj_parse_opt_match_string(RxClass rc, VALUE ropts);
 
+extern VALUE	oj_rails_encode(int argc, VALUE *argv, VALUE self);
+
 extern VALUE	Oj;
 extern struct _Options	oj_default_options;
 #if HAS_ENCODING_SUPPORT

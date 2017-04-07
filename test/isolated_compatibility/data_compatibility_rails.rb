@@ -4,13 +4,6 @@ require 'data_compatibility_json.rb'
 require 'rails/all'
 require 'sqlite3'
 
-require 'oj'
-
-if Rails::VERSION::MAJOR == 5 && RUBY_VERSION == "2.2.3"
-  # see https://github.com/ohler55/oj/commit/050b4c70836394cffd96b63388ff0dedb8ed3558
-  require 'oj/active_support_helper'
-end
-
 ActiveRecord::Base.logger = Logger.new(STDERR)
 ActiveRecord::Base.logger.level = 1
 
@@ -30,6 +23,12 @@ class User < ActiveRecord::Base
   validates :name, presence: true
 end
 
+class Foo
+  def initialize()
+    @bar = 4
+  end
+end
+
 user = User.new
 user.valid?
 
@@ -38,6 +37,7 @@ RAILS_TEST_DATA = {
   Regexp: /test/,
   FalseClass: false,
   NilClass: nil,
+  Foo: Foo.new,
   Object: Object.new,
   TrueClass: true,
   String: 'abc',

@@ -1599,6 +1599,7 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
 	grow(out, size + BUFFER_EXTRA);
     }
     *out->cur++ = '"';
+
     if (escape1) {
 	*out->cur++ = '\\';
 	*out->cur++ = 'u';
