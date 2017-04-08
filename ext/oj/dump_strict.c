@@ -108,7 +108,7 @@ oj_dump_bignum(VALUE obj, int depth, Out out, bool as_ok) {
 }
 
 // Removed dependencies on math due to problems with CentOS 5.4.
-void
+static void
 dump_float(VALUE obj, int depth, Out out, bool as_ok) {
     char	buf[64];
     char	*b;

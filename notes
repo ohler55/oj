@@ -31,7 +31,11 @@ Comparison Matrix
 
  - plan
   - rails mode
+   - protect to handle raises
    - add encode and decode that call the rails mode for dump and load
+   - Oj.rails_optimize(Hash, Array, ...)
+   - Oj.rails_deoptimize()
+   - Oj.rails_can_optimize
 
   - custom mode
   

@@ -43,7 +43,7 @@ extern void	oj_dump_strict_val(VALUE obj, int depth, Out out);
 extern void	oj_dump_null_val(VALUE obj, int depth, Out out);
 extern void	oj_dump_obj_val(VALUE obj, int depth, Out out);
 extern void	oj_dump_compat_val(VALUE obj, int depth, Out out, bool as_ok);
-extern void	oj_dump_rails_val(VALUE obj, int depth, Out out);
+extern void	oj_dump_rails_val(VALUE obj, int depth, Out out, bool as_ok);
 
 extern VALUE	oj_add_to_json(int argc, VALUE *argv, VALUE self);
 extern VALUE	oj_remove_to_json(int argc, VALUE *argv, VALUE self);

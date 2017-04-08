@@ -56,6 +56,7 @@ class CompatibilityRails < Minitest::Test
       oj_value = begin
                    Oj.encode(value)
                  rescue Exception => e
+                   puts "*** #{e.class}: #{e.message}"
                    e.class
                  end
       assert_equal(rails_value, oj_value, key.to_s)
