@@ -31,12 +31,24 @@ Comparison Matrix
 
  - plan
   - rails mode
-   - protect to handle raises
-   - add encode and decode that call the rails mode for dump and load
-   - Oj.rails_optimize(Hash, Array, ...)
-   - Oj.rails_deoptimize()
-   - Oj.rails_can_optimize
+   - implement ROptTable
+  - Slava
+   - Complex and Rational raise
+   - opinion on API
+    - used encode
+    - using json_encoder being set
+    - create encoder
+    - using optimize
+     - will add more specific optimizations later
+    - major doc cleanup task
+     - fighting yardoc and rdoc
 
+   - options
+    - :only - array of attributes
+    - :except - array of attributes
+    - :indent - number, yeah!
+    - :pretty
+    
   - custom mode
   
   - reorg tests

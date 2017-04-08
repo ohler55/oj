@@ -15,8 +15,6 @@
 // Extra padding at end of buffer.
 #define BUFFER_EXTRA 10
 
-typedef void	(*DumpFunc)(VALUE obj, int depth, Out out, bool as_ok);
-
 extern void	oj_dump_nil(VALUE obj, int depth, Out out, bool as_ok);
 extern void	oj_dump_true(VALUE obj, int depth, Out out, bool as_ok);
 extern void	oj_dump_false(VALUE obj, int depth, Out out, bool as_ok);
@@ -50,7 +48,6 @@ extern VALUE	oj_remove_to_json(int argc, VALUE *argv, VALUE self);
 
 // TBD remove when refactor complete
 extern void	oj_dump_comp_val(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok);
-
 
 
 inline static void

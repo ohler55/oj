@@ -16,6 +16,7 @@
 #include "hash.h"
 #include "odd.h"
 #include "dump.h"
+#include "mimic_rails.h"
 #include "encode.h"
 
 #if !HAS_ENCODING_SUPPORT || defined(RUBINIUS_RUBY)
@@ -1303,13 +1304,13 @@ Init_oj() {
     rb_define_module_function(Oj, "object_load", oj_object_parse, -1);
 
     rb_define_module_function(Oj, "dump", dump, -1);
+
     rb_define_module_function(Oj, "to_file", to_file, -1);
     rb_define_module_function(Oj, "to_stream", to_stream, -1);
     // JSON gem compatibility
     rb_define_module_function(Oj, "to_json", to_json, -1);
     rb_define_module_function(Oj, "generate", oj_mimic_generate, -1);
     rb_define_module_function(Oj, "fast_generate", oj_mimic_generate, -1);
-    rb_define_module_function(Oj, "encode", oj_rails_encode, -1);
 
     rb_define_module_function(Oj, "add_to_json", oj_add_to_json, -1);
     rb_define_module_function(Oj, "remove_to_json", oj_remove_to_json, -1);
@@ -1443,6 +1444,7 @@ Init_oj() {
 
     oj_hash_init();
     oj_odd_init();
+    oj_mimic_rails_init(Oj);
 
 #if USE_PTHREAD_MUTEX
     pthread_mutex_init(&oj_cache_mutex, 0);

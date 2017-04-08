@@ -580,8 +580,7 @@ dump_alt(VALUE obj, int depth, Out out) {
     return false;
 }
 
-/* Document-class: Oj
- * @!method add_to_json(*args)
+/* @!method add_to_json(*args)
  *
  * Override simple to_s dump behavior in :compat mode to instead use an
  * optimized dump that includes the classname and attributes so that the
@@ -647,8 +646,7 @@ oj_add_to_json(int argc, VALUE *argv, VALUE self) {
     return Qnil;
 }
 
-/* Document-class: Oj
- * @!method remove_to_json(*args)
+/* @!method remove_to_json(*args)
  *
  * Reverts back to the to_s dump behavior in :compat mode to instead use an
  * optimized dump that includes the classname and attributes so that the

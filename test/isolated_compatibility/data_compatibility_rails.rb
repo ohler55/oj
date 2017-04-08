@@ -34,7 +34,6 @@ user.valid?
 
 # commented out failing examples
 RAILS_TEST_DATA = {
-  Regexp: /test/,
   FalseClass: false,
   TrueClass: true,
   NilClass: nil,
@@ -47,6 +46,11 @@ RAILS_TEST_DATA = {
   NestedArrays: [[],[[]]],
   NestedMixed: [{},[{}]],
   Symbol: :sym,
+  Regexp: /test/,
+  # Rails will raise a SystemStackError which also corrupts the stack or
+  # memory and the next time the rails encoder is called it will segfault.
+  #Complex: Complex('0.3-0.5i'),
+  #Rational: Rational(2, 9),
 
   Foo: Foo.new,
   Object: Object.new,
@@ -63,18 +67,16 @@ RAILS_TEST_DATA = {
   BigDecimalInfinity: BigDecimal.new('0.5')/0,
   Struct: Struct::Customer.new('Dave', '123 Main'),
   Range: (1..10),
-  #Complex: Complex('0.3-0.5i'),
-  Rational: Rational(2, 9),
   # Exception: Exception.new,
   OpenStruct: OpenStruct.new(country: "Australia", population: 20_000_000),
-  # 'Process::Status' => $?,
-  # JsonRenderable: JsonRenderable.new, #TODO, except: [:c, :e]
-  # 'ActiveSupport::TimeWithZone' => Time.utc(2005,2,1,15,15,10).in_time_zone('Hawaii'),
-  # 'ActiveModel::Errors' => user.errors,
-  # 'ActiveSupport::Duration' => 1.month.ago,
-  # 'ActiveSupport::Multibyte::Chars' => 'über'.mb_chars,
-  # 'ActiveRecord::Relation' => User.where(name: 'aaa'),
-  # 'ActiveRecord' => User.find_or_create_by(name: "John"),
-  # 'ActiveSupport::OrderedHash': ActiveSupport::OrderedHash[:foo, :bar],
-  # 'ActionDispatch::Journey::GTG::TransitionTable' => TODO,
+  'Process::Status' => $?,
+  JsonRenderable: JsonRenderable.new, #TODO, except: [:c, :e]
+  'ActiveSupport::TimeWithZone' => Time.utc(2005,2,1,15,15,10).in_time_zone('Hawaii'),
+  'ActiveModel::Errors' => user.errors,
+  'ActiveSupport::Duration' => 1.month.ago,
+  'ActiveSupport::Multibyte::Chars' => 'über'.mb_chars,
+  'ActiveRecord::Relation' => User.where(name: 'aaa'),
+  'ActiveRecord' => User.find_or_create_by(name: "John"),
+  'ActiveSupport::OrderedHash': ActiveSupport::OrderedHash[:foo, :bar],
+  #'ActionDispatch::Journey::GTG::TransitionTable' => TODO,
 }

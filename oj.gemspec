@@ -19,7 +19,7 @@ Gem::Specification.new do |s|
 
   s.has_rdoc = true
   s.extra_rdoc_files = ['README.md'] + Dir["docs/*.md"]
-  s.rdoc_options = ['--main', 'README.md']
+  s.rdoc_options = ['--title', 'Oj', '--main', 'README.md']
 
   s.rubyforge_project = 'oj'
 

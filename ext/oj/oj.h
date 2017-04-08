@@ -185,6 +185,22 @@ typedef struct _Options {
     struct _RxClass	str_rx;
 } *Options;
 
+struct _Out;
+typedef void	(*DumpFunc)(VALUE obj, int depth, struct _Out *out, bool as_ok);
+
+// rails optimize
+typedef struct _ROpt {
+    VALUE	clas;
+    bool	on;
+    DumpFunc	dump;
+} *ROpt;
+
+typedef struct _ROptTable {
+    int			len;
+    int			alen;
+    ROpt		table;
+} *ROptTable;
+
 typedef struct _Out {
     char		*buf;
     char		*end;
@@ -199,7 +215,8 @@ typedef struct _Out {
     bool		omit_nil;
     int			argc;
     VALUE		*argv;
-    DumpCaller		caller;
+    DumpCaller		caller; // used for the mimic json only
+    ROptTable		ropts;
 } *Out;
 
 typedef struct _StrWriter {
