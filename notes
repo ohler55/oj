@@ -31,17 +31,6 @@ Comparison Matrix
 
  - plan
   - rails mode
-   - implement ROptTable
-  - Slava
-   - Complex and Rational raise
-   - opinion on API
-    - used encode
-    - using json_encoder being set
-    - create encoder
-    - using optimize
-     - will add more specific optimizations later
-    - major doc cleanup task
-     - fighting yardoc and rdoc
 
    - options
     - :only - array of attributes
