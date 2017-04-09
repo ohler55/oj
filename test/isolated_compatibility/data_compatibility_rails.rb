@@ -1,7 +1,7 @@
 # encoding: UTF-8
 
 require 'data_compatibility_json.rb'
-require 'rails/all'
+require "active_record/railtie"
 require 'sqlite3'
 
 ActiveRecord::Base.logger = Logger.new(STDERR)
