@@ -6,8 +6,8 @@ require 'active_support/time'
 require 'activesupport5/time_zone_test_helpers'
 require 'activesupport5/encoding_test_cases'
 
-require 'oj'
-ActiveSupport.json_encoder = Oj::Rails::Encoder
+#require 'oj'
+#ActiveSupport.json_encoder = Oj::Rails::Encoder
 
 class TestJSONEncoding < ActiveSupport::TestCase
   include TimeZoneTestHelpers
