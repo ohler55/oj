@@ -12,8 +12,8 @@ ruby tests_mimic_addition.rb
 echo "----- JSON gem compatibility tests (test_compatibility_json.rb) -----"
 ruby isolated_compatibility/test_compatibility_json.rb
 
-echo "----- Rails compatibility tests (test_compatibility_rails.rb) -----"
-ruby isolated_compatibility/test_compatibility_rails.rb
+#echo "----- Rails compatibility tests (test_compatibility_rails.rb) -----"
+#ruby isolated_compatibility/test_compatibility_rails.rb
 
 #ruby test_various.rb
 #echo "----- Strict parser tests (test_strict.rb) -----"
