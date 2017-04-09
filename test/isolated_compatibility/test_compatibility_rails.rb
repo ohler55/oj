@@ -22,7 +22,7 @@ if Rails::VERSION::MAJOR == 5 && RUBY_VERSION == "2.2.3"
   #require 'oj/active_support_helper'
 end
 
-Oj.mimic_JSON()
+#Oj.mimic_JSON()
 #Oj.add_to_json()
 
 OJ_RAILS_COMPAT = {
@@ -43,7 +43,7 @@ OJ_RAILS_COMPAT = {
 class CompatibilityRails < Minitest::Test
   def setup
     @default_options = Oj.default_options
-    Oj::Rails.optimize(Foo, Time, Range, Regexp)
+    Oj::Rails.optimize(BigDecimal, Colors, Range, Regexp, Simple, Struct::Customer, Time, OpenStruct )
   end
 
   def teardown
@@ -57,7 +57,7 @@ class CompatibilityRails < Minitest::Test
       rails_value = begin
                       ActiveSupport::JSON.encode(value)
                     rescue Exception => e
-                      puts "  Rails Error #{e.class}: #{e.message}"  if DEBUG
+                      puts "  Rails #{e.class}: #{e.message}"  if DEBUG
                       e.class
                     end
       puts "  Rails: #{rails_value}"  if DEBUG
@@ -65,10 +65,10 @@ class CompatibilityRails < Minitest::Test
                    Oj::Rails.encode(value)
                    #$encoder.encode(value)
                  rescue Exception => e
-                   puts "     Oj Error #{e.class}: #{e.message}"  if DEBUG
+                   puts "     Oj #{e.class}: #{e.message}"  if DEBUG
                    e.class
                  end
-      puts "     Oj: #{rails_value}"  if DEBUG
+      puts "     Oj: #{oj_value}"  if DEBUG
       assert_equal(rails_value, oj_value, key.to_s)
     end
   end

@@ -13,6 +13,5 @@ extern ROpt	oj_rails_get_opt(ROptTable rot, VALUE clas);
 
 extern bool	oj_rails_hash_opt;
 extern bool	oj_rails_array_opt;
-extern bool	oj_rails_object_opt; // override opts
 
 #endif /* __OJ_MIMIC_RAILS_H__ */

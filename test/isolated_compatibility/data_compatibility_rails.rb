@@ -23,9 +23,9 @@ class User < ActiveRecord::Base
   validates :name, presence: true
 end
 
-class Foo
+class Simple
   def initialize()
-    @bar = 4
+    @one = 2
   end
 end
 
@@ -47,12 +47,10 @@ RAILS_TEST_DATA = {
   NestedMixed: [{},[{}]],
   Symbol: :sym,
   Regexp: /test/,
-  # Rails will raise a SystemStackError which also corrupts the stack or
-  # memory and the next time the rails encoder is called it will segfault.
-  #Complex: Complex('0.3-0.5i'),
-  #Rational: Rational(2, 9),
+  Complex: Complex('0.3-0.5i'),
+  Rational: Rational(2, 9),
 
-  Foo: Foo.new,
+  Simple: Simple.new,
   Object: Object.new,
   StringChinese: '二胡',
   StringSpecial: "\u2028\u2029><&",
@@ -67,7 +65,7 @@ RAILS_TEST_DATA = {
   BigDecimalInfinity: BigDecimal.new('0.5')/0,
   Struct: Struct::Customer.new('Dave', '123 Main'),
   Range: (1..10),
-  # Exception: Exception.new,
+  Exception: Exception.new,
   OpenStruct: OpenStruct.new(country: "Australia", population: 20_000_000),
   'Process::Status' => $?,
   JsonRenderable: JsonRenderable.new, #TODO, except: [:c, :e]

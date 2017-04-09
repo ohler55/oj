@@ -1643,11 +1643,12 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
 		}
 		break;
 	    case '3': // Unicode
-		if (0xe2 == (uint8_t)*str && JXEsc == out->opts->escape_mode) {
-		    *out->cur++ = *str;
-		    
-		    // TBD handle the 2 special cases
-		    //printf("*** e2\n");
+		if (0xe2 == (uint8_t)*str && JXEsc == out->opts->escape_mode && 2 <= end - str) {
+		    if (0x80 == (uint8_t)str[1] && (0xa8 == (uint8_t)str[2] || 0xa9 == (uint8_t)str[2])) {
+			str = dump_unicode(str, end, out);
+		    } else {
+			*out->cur++ = *str;
+		    }
 		    break;
 		}
 		str = dump_unicode(str, end, out);

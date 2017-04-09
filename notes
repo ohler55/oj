@@ -31,14 +31,16 @@ Comparison Matrix
 
  - plan
   - rails mode
-
-   - options
-    - :only - array of attributes
-    - :except - array of attributes
-    - :indent - number, yeah!
-    - :pretty
+   - parser?
+   - run new tests from Slavic
+    - need to handle options
+     - ActiveSupport.escape_html_entities_in_json 
+     - ActiveSupport.use_standard_json_time_format
     
+    - default to JXEsc
+
   - custom mode
+  - cleanup dump.c
   
   - reorg tests
    - isolated rails stuff

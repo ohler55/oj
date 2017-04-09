@@ -93,7 +93,7 @@ dump_attr_cb(ID key, VALUE value, Out out) {
 	oj_dump_cstr(buf, strlen(buf), 0, 0, out);
     }
     *out->cur++ = ':';
-    oj_dump_obj_val(value, depth, out);
+    oj_dump_rails_val(value, depth, out, true);
     out->depth = depth;
     *out->cur++ = ',';
     
@@ -116,6 +116,88 @@ dump_obj_attrs(VALUE obj, int depth, Out out, bool as_ok) {
 }
 
 static void
+dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
+    int			d3 = depth + 2;
+    size_t		size = d3 * out->indent + 2;
+    size_t		sep_len = out->opts->dump_opts.before_size + out->opts->dump_opts.after_size + 2;
+    volatile VALUE	ma;
+    volatile VALUE	v;
+    int			cnt;
+    int			i;
+    int			len;
+    const char		*name;
+
+#ifdef RSTRUCT_LEN
+#if UNIFY_FIXNUM_AND_BIGNUM
+    cnt = (int)NUM2LONG(RSTRUCT_LEN(obj));
+#else // UNIFY_FIXNUM_AND_INTEGER
+    cnt = (int)RSTRUCT_LEN(obj);
+#endif // UNIFY_FIXNUM_AND_INTEGER
+#else
+    // This is a bit risky as a struct in C ruby is not the same as a Struct
+    // class in interpreted Ruby so length() may not be defined.
+    cnt = FIX2INT(rb_funcall(obj, oj_length_id, 0));
+#endif
+    ma = rb_struct_s_members(rb_obj_class(obj));
+    assure_size(out, 2);
+    *out->cur++ = '{';
+    for (i = 0; i < cnt; i++) {
+	name = rb_id2name(SYM2ID(rb_ary_entry(ma, i)));
+	len = strlen(name);
+	assure_size(out, size + sep_len + 6);
+	if (0 < i) {
+	    *out->cur++ = ',';
+	}
+	fill_indent(out, d3);
+	*out->cur++ = '"';
+	memcpy(out->cur, name, len);
+	out->cur += len;
+	*out->cur++ = '"';
+	if (0 < out->opts->dump_opts.before_size) {
+	    strcpy(out->cur, out->opts->dump_opts.before_sep);
+	    out->cur += out->opts->dump_opts.before_size;
+	}
+	*out->cur++ = ':';
+	if (0 < out->opts->dump_opts.after_size) {
+	    strcpy(out->cur, out->opts->dump_opts.after_sep);
+	    out->cur += out->opts->dump_opts.after_size;
+	}
+#ifdef RSTRUCT_LEN
+	v = RSTRUCT_GET(obj, i);
+#else
+	v = rb_struct_aref(obj, INT2FIX(i));
+#endif
+	oj_dump_rails_val(v, d3, out, true);
+    }
+    fill_indent(out, depth);
+    *out->cur++ = '}';
+    *out->cur = '\0';
+}
+
+
+static ID	to_a_id = 0;
+
+static void
+dump_enumerable(VALUE obj, int depth, Out out, bool as_ok) {
+    if (0 == to_a_id) {
+	to_a_id = rb_intern("to_a");
+    }
+    oj_dump_rails_val(rb_funcall(obj, to_a_id, 0), depth, out, false);
+}
+
+static void
+dump_bigdecimal(VALUE obj, int depth, Out out, bool as_ok) {
+    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+    const char		*str = rb_string_value_ptr((VALUE*)&rstr);
+
+    if ('I' == *str || 'N' == *str || ('-' == *str && 'I' == str[1])) {
+	oj_dump_nil(Qnil, depth, out, false);
+    } else {
+	oj_dump_cstr(str, RSTRING_LEN(rstr), 0, 0, out);
+    }
+}
+
+static void
 dump_time(VALUE obj, int depth, Out out, bool as_ok) {
     oj_dump_xml_time(obj, out);
 }
@@ -133,6 +215,7 @@ typedef struct _NamedFunc {
 } *NamedFunc;
 
 static struct _NamedFunc	dump_map[] = {
+    { "BigDecimal", dump_bigdecimal },
     { "Range", dump_to_s },
     { "Regexp", dump_to_s },
     { "Time", dump_time },
@@ -177,6 +260,15 @@ create_opt(ROptTable rot, VALUE clas) {
 	if (0 == strcmp(nf->name, classname)) {
 	    ro->dump = nf->func;
 	    break;
+	}
+    }
+    if (ro->dump == dump_obj_attrs) {
+	if (Qtrue == rb_class_inherited_p(clas, rb_cStruct)) { // check before enumerable
+	    ro->dump = dump_struct;
+	} else if (Qtrue == rb_class_inherited_p(clas, rb_mEnumerable)) {
+	    ro->dump = dump_enumerable;
+	} else if (Qtrue == rb_class_inherited_p(clas, rb_eException)) {
+	    ro->dump = dump_to_s;
 	}
     }
     return NULL;
@@ -229,8 +321,6 @@ optimize(int argc, VALUE *argv, ROptTable rot, bool on) {
 	    oj_rails_hash_opt = on;
 	} else if (rb_cArray == *argv) {
 	    oj_rails_array_opt = on;
-	} else if (rb_cObject == *argv) {
-	    oj_rails_object_opt = on;
 	} else if (NULL != (ro = oj_rails_get_opt(rot, *argv)) ||
 		   NULL != (ro = create_opt(rot, *argv))) {
 	    ro->on = on;
@@ -342,6 +432,7 @@ encode(VALUE obj, ROptTable ropts, Options opts, int argc, VALUE *argv) {
     copts.str_rx.head = NULL;
     copts.str_rx.tail = NULL;
     copts.mode = RailsMode;
+    copts.escape_mode = JXEsc;
     out.buf = buf;
     out.end = buf + sizeof(buf) - 10;
     out.allocated = 0;

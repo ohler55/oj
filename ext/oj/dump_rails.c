@@ -11,21 +11,6 @@
 
 bool	oj_rails_hash_opt = true;
 bool	oj_rails_array_opt = true;
-bool	oj_rails_object_opt = false;
-
-static void
-dump_nil(VALUE obj, int depth, Out out, bool as_ok) {
-    if (0 == depth) {
-	rb_raise(rb_eTypeError, "nil not allowed at depth of 0 in rails mode.");
-    } else {
-	assure_size(out, 4);
-	*out->cur++ = 'n';
-	*out->cur++ = 'u';
-	*out->cur++ = 'l';
-	*out->cur++ = 'l';
-	*out->cur = '\0';
-    }
-}
 
 static void
 dump_as_json(VALUE obj, int depth, Out out) {
@@ -56,7 +41,8 @@ dump_float(VALUE obj, int depth, Out out, bool as_ok) {
 	cnt = 3;
     } else {
 	if (isnan(d) || OJ_INFINITY == d || -OJ_INFINITY == d) {
-	    rb_raise(rb_eTypeError, "NaN is not allowed in rails mode.\n");
+	    strcpy(buf, "null");
+	    cnt = 4;
 	} else if (d == (double)(long long int)d) {
 	    cnt = snprintf(buf, sizeof(buf), "%.1f", d);
 	} else {
@@ -194,7 +180,7 @@ hash_cb(VALUE key, VALUE value, Out out) {
 	    out->cur += out->opts->dump_opts.after_size;
 	}
     }
-    oj_dump_strict_val(value, depth, out);
+    oj_dump_rails_val(value, depth, out, true);
     out->depth = depth;
     *out->cur++ = ',';
 
@@ -257,9 +243,7 @@ dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
     if (as_ok) {
 	ROpt	ro;
 	
-	if (oj_rails_object_opt) {
-	    // TBD print out all attrs
-	} else if (NULL != (ro = oj_rails_get_opt(out->ropts, rb_obj_class(obj))) && ro->on) {
+	if (NULL != (ro = oj_rails_get_opt(out->ropts, rb_obj_class(obj))) && ro->on) {
 	    ro->dump(obj, depth, out, as_ok);
 	} else if (rb_respond_to(obj, oj_as_json_id)) {
 	    dump_as_json(obj, depth, out);
@@ -297,7 +281,7 @@ static DumpFunc	rails_funcs[] = {
     dump_as_string, 	// RUBY_T_COMPLEX  = 0x0e,
     dump_as_string, 	// RUBY_T_RATIONAL = 0x0f,
     NULL, 		// 0x10
-    dump_nil,	 	// RUBY_T_NIL      = 0x11,
+    oj_dump_nil, 	// RUBY_T_NIL      = 0x11,
     oj_dump_true, 	// RUBY_T_TRUE     = 0x12,
     oj_dump_false,	// RUBY_T_FALSE    = 0x13,
     oj_dump_sym,	// RUBY_T_SYMBOL   = 0x14,

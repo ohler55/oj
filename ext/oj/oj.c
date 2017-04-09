@@ -1274,7 +1274,6 @@ Init_oj() {
     oj_string_writer_init(Oj);
     oj_stream_writer_init(Oj);
 
-    rb_require("time");
     rb_require("date");
     // On Rubinius the require fails but can be done from a ruby file.
     rb_protect(protect_require, Qnil, &err);
