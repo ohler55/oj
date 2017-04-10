@@ -8,7 +8,7 @@ require 'activesupport5/encoding_test_cases'
 
 require 'oj'
 
-ActiveSupport.json_encoder = Oj::Rails::Encoder
+#ActiveSupport.json_encoder = Oj::Rails::Encoder
 
 class TestJSONEncoding < ActiveSupport::TestCase
   include TimeZoneTestHelpers
@@ -328,7 +328,7 @@ class TestJSONEncoding < ActiveSupport::TestCase
   end
 
   def test_nil_true_and_false_represented_as_themselves
-    assert_equal nil,   nil.as_json
+    assert_nil   nil.as_json
     assert_equal true,  true.as_json
     assert_equal false, false.as_json
   end
