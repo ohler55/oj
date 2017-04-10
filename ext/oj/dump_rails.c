@@ -9,11 +9,11 @@
 
 #define OJ_INFINITY (1.0/0.0)
 
-bool	oj_rails_hash_opt = true;
-bool	oj_rails_array_opt = true;
+bool	oj_rails_hash_opt = false;
+bool	oj_rails_array_opt = false;
 
 static void
-dump_as_json(VALUE obj, int depth, Out out) {
+dump_as_json(VALUE obj, int depth, Out out, bool as_ok) {
     volatile VALUE	ja;
 
     if (0 < out->argc) {
@@ -21,8 +21,24 @@ dump_as_json(VALUE obj, int depth, Out out) {
     } else {
 	ja = rb_funcall(obj, oj_as_json_id, 0);
     }
-    // Once as_json is call it should never be called again.
-    oj_dump_rails_val(ja, depth, out, false);
+    if (ja == obj || !as_ok) {
+	// Once as_json is call it should never be called again on the same
+	// object with as_ok.
+	oj_dump_rails_val(ja, depth, out, false);
+    } else {
+	int	type = rb_type(ja);
+
+	if (T_HASH == type || T_ARRAY == type) {
+	    oj_dump_rails_val(ja, depth, out, false);
+	} else {
+	    oj_dump_rails_val(ja, depth, out, true);
+	}
+    }
+}
+
+static void
+dump_to_hash(VALUE obj, int depth, Out out) {
+    oj_dump_rails_val(rb_funcall(obj, oj_to_hash_id, 0), depth, out, false);
 }
 
 static void
@@ -46,7 +62,7 @@ dump_float(VALUE obj, int depth, Out out, bool as_ok) {
 	} else if (d == (double)(long long int)d) {
 	    cnt = snprintf(buf, sizeof(buf), "%.1f", d);
 	} else {
-	    cnt = snprintf(buf, sizeof(buf), "%0.16f", d);
+	    cnt = snprintf(buf, sizeof(buf), "%0.16g", d);
 	}
     }
     assure_size(out, cnt);
@@ -69,7 +85,7 @@ dump_array(VALUE a, int depth, Out out, bool as_ok) {
 	}
     }
     if (as_ok && !oj_rails_array_opt && rb_respond_to(a, oj_as_json_id)) {
-	dump_as_json(a, depth, out);
+	dump_as_json(a, depth, out, false);
 	return;
     }
     cnt = (int)RARRAY_LEN(a);
@@ -138,6 +154,7 @@ hash_cb(VALUE key, VALUE value, Out out) {
     
     if (rtype != T_STRING && rtype != T_SYMBOL) {
 	key = rb_funcall(key, oj_to_s_id, 0);
+	rtype = rb_type(key);
     }
     if (!out->opts->dump_opts.use) {
 	size = depth * out->indent + 1;
@@ -180,7 +197,7 @@ hash_cb(VALUE key, VALUE value, Out out) {
 	    out->cur += out->opts->dump_opts.after_size;
 	}
     }
-    oj_dump_rails_val(value, depth, out, true);
+    oj_dump_rails_val(value, depth, out, false);
     out->depth = depth;
     *out->cur++ = ',';
 
@@ -199,7 +216,7 @@ dump_hash(VALUE obj, int depth, Out out, bool as_ok) {
 	}
     }
     if (as_ok && !oj_rails_hash_opt && rb_respond_to(obj, oj_as_json_id)) {
-	dump_as_json(obj, depth, out);
+	dump_as_json(obj, depth, out, false);
 	return;
     }
     cnt = (int)RHASH_SIZE(obj);
@@ -246,10 +263,15 @@ dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
 	if (NULL != (ro = oj_rails_get_opt(out->ropts, rb_obj_class(obj))) && ro->on) {
 	    ro->dump(obj, depth, out, as_ok);
 	} else if (rb_respond_to(obj, oj_as_json_id)) {
-	    dump_as_json(obj, depth, out);
+	    dump_as_json(obj, depth, out, true);
+	} else if (rb_respond_to(obj, oj_to_hash_id)) {
+	    dump_to_hash(obj, depth, out);
 	} else {
 	    oj_dump_obj_to_s(obj, out);
 	}
+    } else if (rb_respond_to(obj, oj_to_hash_id)) {
+	// Always attempt to_hash.
+	dump_to_hash(obj, depth, out);
     } else {
 	oj_dump_obj_to_s(obj, out);
     }

@@ -11,6 +11,7 @@
 typedef struct _Encoder {
     struct _ROptTable	ropts;
     struct _Options	opts;
+    VALUE		arg;
 } *Encoder;
 
 static struct _ROptTable	ropts = { 0, 0, NULL };
@@ -286,6 +287,17 @@ encoder_free(void *ptr) {
     }
 }
 
+static void
+encoder_mark(void *ptr) {
+    if (NULL != ptr) {
+	Encoder	e = (Encoder)ptr;
+
+	if (Qnil != e->arg) {
+	    rb_gc_mark(e->arg);
+	}
+    }
+}
+
 /* Document-class: Oj::Rails::Encoder
  * @!method new(options=nil)
  *
@@ -297,12 +309,14 @@ encoder_new(int argc, VALUE *argv, VALUE self) {
     Encoder	e = ALLOC(struct _Encoder);
 
     e->opts = oj_default_options;
+    e->arg = Qnil;
     copy_opts(&ropts, &e->ropts);
-
+    
     if (1 <= argc && Qnil != *argv) {
 	oj_parse_options(*argv, &e->opts);
+	e->arg = *argv;
     }
-    return Data_Wrap_Struct(encoder_class, 0, encoder_free, e);
+    return Data_Wrap_Struct(encoder_class, encoder_mark, encoder_free, e);
 }
 
 static void
@@ -426,7 +440,7 @@ encode(VALUE obj, ROptTable ropts, Options opts, int argc, VALUE *argv) {
     VALUE		rstr = Qnil;
     struct _OO		oo;
     int			line = 0;
-    
+
     oo.out = &out;
     oo.obj = obj;
     copts.str_rx.head = NULL;
@@ -493,7 +507,11 @@ static VALUE
 encoder_encode(VALUE self, VALUE obj) {
     Encoder	e = (Encoder)DATA_PTR(self);
 
-    // TBD pass in opts from creation
+    if (Qnil != e->arg) {
+	VALUE	argv[1] = { e->arg };
+	
+	return encode(obj, &e->ropts, &e->opts, 1, argv);
+    }
     return encode(obj, &e->ropts, &e->opts, 0, NULL);
 }
 
