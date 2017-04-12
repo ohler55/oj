@@ -100,7 +100,8 @@ typedef enum {
     JSONEsc	= 'j',
     XSSEsc	= 'x',
     ASCIIEsc	= 'a',
-    JXEsc	= 'r' // rails
+    JXEsc	= 'r', // json
+    RailsEsc	= 'R', // rails non escape
 } Encoding;
 
 typedef enum {

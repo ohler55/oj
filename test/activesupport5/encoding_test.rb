@@ -9,6 +9,7 @@ require 'activesupport5/encoding_test_cases'
 require 'oj'
 
 #ActiveSupport.json_encoder = Oj::Rails::Encoder
+Oj::Rails.set_encoder()
 
 class TestJSONEncoding < ActiveSupport::TestCase
   include TimeZoneTestHelpers

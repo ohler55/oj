@@ -17,6 +17,7 @@ typedef struct _Encoder {
 static struct _ROptTable	ropts = { 0, 0, NULL };
 
 static VALUE	encoder_class = Qnil;
+static bool	escape_html = true;
 
 static ROpt	create_opt(ROptTable rot, VALUE clas);
 
@@ -446,7 +447,9 @@ encode(VALUE obj, ROptTable ropts, Options opts, int argc, VALUE *argv) {
     copts.str_rx.head = NULL;
     copts.str_rx.tail = NULL;
     copts.mode = RailsMode;
-    copts.escape_mode = JXEsc;
+    if (JXEsc != copts.escape_mode && RailsEsc != copts.escape_mode) {
+	copts.escape_mode = JXEsc;
+    }
     out.buf = buf;
     out.end = buf + sizeof(buf) - 10;
     out.allocated = 0;
@@ -507,6 +510,11 @@ static VALUE
 encoder_encode(VALUE self, VALUE obj) {
     Encoder	e = (Encoder)DATA_PTR(self);
 
+    if (escape_html) {
+	e->opts.escape_mode = JXEsc;
+    } else {
+	e->opts.escape_mode = RailsEsc;
+    }
     if (Qnil != e->arg) {
 	VALUE	argv[1] = { e->arg };
 	
@@ -537,6 +545,53 @@ rails_encode(int argc, VALUE *argv, VALUE self) {
     }
 }
 
+static VALUE
+rails_escape_html_entities_in_json(VALUE self, VALUE state) {
+    rb_iv_set(self, "@escape_html_entities_in_json", state);
+    escape_html = Qtrue == state;
+
+    return state;
+}
+
+static VALUE
+rails_set_encoder(VALUE self) {
+    VALUE	active;
+    VALUE	json;
+    VALUE	encoding;
+    
+    if (rb_const_defined_at(rb_cObject, rb_intern("ActiveSupport"))) {
+	active = rb_const_get_at(rb_cObject, rb_intern("ActiveSupport"));
+    } else {
+	rb_raise(rb_eStandardError, "ActiveSupport not loaded.");
+    }
+    rb_funcall(active, rb_intern("json_encoder="), 1, encoder_class);
+
+    json = rb_const_get_at(active, rb_intern("JSON"));
+    encoding = rb_const_get_at(json, rb_intern("Encoding"));
+
+    //rb_undef_method(active, "use_standard_json_time_format=");
+    //rb_define_module_function(active, "use_standard_json_time_format=", rails_use_standard_json_time_format, 1);
+
+    rb_undef_method(encoding, "escape_html_entities_in_json=");
+    rb_define_module_function(encoding, "escape_html_entities_in_json=", rails_escape_html_entities_in_json, 1);
+
+    /*
+    ActiceSupport.use_standard_json_time_format = true
+    ActiceSupport.escape_html_entities_in_json  = true
+    ActiceSupport.time_precision = 3
+    */
+    return Qnil;
+}
+
+static VALUE
+rails_set_decoder(VALUE self) {
+    // TBD
+    // set ::JSON.parse with quirks mode set to true
+    // void rb_undef_method(VALUE,const char*);
+    
+    return Qnil;
+}
+
 /* Document-module: Oj::Rails
  * 
  * Module that provides rails and active support compatibility.
@@ -552,6 +607,9 @@ oj_mimic_rails_init(VALUE oj) {
     rb_define_module_function(rails, "optimize", rails_optimize, -1);
     rb_define_module_function(rails, "deoptimize", rails_deoptimize, -1);
     rb_define_module_function(rails, "optimized?", rails_optimized, 1);
+
+    rb_define_module_function(rails, "set_encoder", rails_set_encoder, 0);
+    rb_define_module_function(rails, "set_decoder", rails_set_decoder, 0);
 
     rb_define_method(encoder_class, "encode", encoder_encode, 1);
     rb_define_method(encoder_class, "optimize", encoder_optimize, -1);

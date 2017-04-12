@@ -107,6 +107,17 @@ static char	hixss_friendly_chars[256] = "\
 11111111111111111111111111111111\
 11311111111111111111111111111111";
 
+// Rails HTML non-escape
+static char	rails_friendly_chars[256] = "\
+66666666222622666666666666666666\
+11211111111111111111111111111111\
+11111111111111111111111111112111\
+11111111111111111111111111111111\
+11111111111111111111111111111111\
+11111111111111111111111111111111\
+11111111111111111111111111111111\
+11311111111111111111111111111111";
+
 inline static size_t
 newline_friendly_size(const uint8_t *str, size_t len) {
     size_t	size = 0;
@@ -158,6 +169,17 @@ hixss_friendly_size(const uint8_t *str, size_t len) {
 
     for (; 0 < i; str++, i--) {
 	size += hixss_friendly_chars[*str];
+    }
+    return size - len * (size_t)'0';
+}
+
+inline static size_t
+rails_friendly_size(const uint8_t *str, size_t len) {
+    size_t	size = 0;
+    size_t	i = len;
+
+    for (; 0 < i; str++, i--) {
+	size += rails_friendly_chars[*str];
     }
     return size - len * (size_t)'0';
 }
@@ -1589,6 +1611,10 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
     case JXEsc:
 	cmap = hixss_friendly_chars;
 	size = hixss_friendly_size((uint8_t*)str, cnt);
+	break;
+    case RailsEsc:
+	cmap = rails_friendly_chars;
+	size = rails_friendly_size((uint8_t*)str, cnt);
 	break;
     case JSONEsc:
     default:
