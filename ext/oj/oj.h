@@ -297,6 +297,7 @@ extern VALUE	oj_mimic_generate(int argc, VALUE *argv, VALUE self);
 extern VALUE	oj_mimic_pretty_generate(int argc, VALUE *argv, VALUE self);
 extern void	oj_parse_mimic_dump_options(VALUE ropts, Options copts);
 
+extern VALUE	oj_mimic_parse(int argc, VALUE *argv, VALUE self);
 extern VALUE	oj_get_json_err_class(const char *err_classname);
 extern void	oj_parse_opt_match_string(RxClass rc, VALUE ropts);
 

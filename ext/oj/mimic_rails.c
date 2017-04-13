@@ -447,8 +447,10 @@ encode(VALUE obj, ROptTable ropts, Options opts, int argc, VALUE *argv) {
     copts.str_rx.head = NULL;
     copts.str_rx.tail = NULL;
     copts.mode = RailsMode;
-    if (JXEsc != copts.escape_mode && RailsEsc != copts.escape_mode) {
+    if (escape_html) {
 	copts.escape_mode = JXEsc;
+    } else {
+	copts.escape_mode = RailsEsc;
     }
     out.buf = buf;
     out.end = buf + sizeof(buf) - 10;
@@ -510,11 +512,6 @@ static VALUE
 encoder_encode(VALUE self, VALUE obj) {
     Encoder	e = (Encoder)DATA_PTR(self);
 
-    if (escape_html) {
-	e->opts.escape_mode = JXEsc;
-    } else {
-	e->opts.escape_mode = RailsEsc;
-    }
     if (Qnil != e->arg) {
 	VALUE	argv[1] = { e->arg };
 	
@@ -585,9 +582,26 @@ rails_set_encoder(VALUE self) {
 
 static VALUE
 rails_set_decoder(VALUE self) {
-    // TBD
-    // set ::JSON.parse with quirks mode set to true
-    // void rb_undef_method(VALUE,const char*);
+    VALUE	json;
+    VALUE	json_error;
+    
+    if (rb_const_defined_at(rb_cObject, rb_intern("JSON"))) {
+	json = rb_const_get_at(rb_cObject, rb_intern("JSON"));
+    } else {
+	json = rb_define_module("JSON");
+    }
+    if (rb_const_defined_at(json, rb_intern("JSONError"))) {
+        json_error = rb_const_get(json, rb_intern("JSONError"));
+    } else {
+        json_error = rb_define_class_under(json, "JSONError", rb_eStandardError);
+    }
+    if (rb_const_defined_at(json, rb_intern("ParserError"))) {
+        oj_json_parser_error_class = rb_const_get(json, rb_intern("ParserError"));
+    } else {
+    	oj_json_parser_error_class = rb_define_class_under(json, "ParserError", json_error);
+    }
+    rb_undef_method(json, "parse");
+    rb_define_module_function(json, "parse", oj_mimic_parse, -1);
     
     return Qnil;
 }

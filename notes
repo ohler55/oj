@@ -31,6 +31,9 @@ Comparison Matrix
 
  - plan
   - rails mode
+   - Oj::Rails.optimize
+    - Time
+    
    - parser
     - hard coded as ::JSON.parse with quirks mode set to true
     - need to override JSON.parse so a mimic_rails is needed or at least an parse override

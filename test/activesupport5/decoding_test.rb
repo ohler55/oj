@@ -3,6 +3,10 @@ require 'active_support/json'
 require 'active_support/time'
 require 'activesupport5/time_zone_test_helpers'
 
+require 'oj'
+
+Oj::Rails.set_decoder()
+
 class TestJSONDecoding < ActiveSupport::TestCase
   include TimeZoneTestHelpers
 
@@ -79,8 +83,11 @@ class TestJSONDecoding < ActiveSupport::TestCase
       with_tz_default 'Eastern Time (US & Canada)' do
         with_parse_json_times(true) do
           silence_warnings do
-            assert_equal expected, ActiveSupport::JSON.decode(json), "JSON decoding \
-            failed for #{json}"
+            if expected.nil?
+              assert_nil(ActiveSupport::JSON.decode(json), "JSON failed for #{json}")
+            else
+              assert_equal(expected, ActiveSupport::JSON.decode(json), "JSON failed for #{json}")
+            end
           end
         end
       end

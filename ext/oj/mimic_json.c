@@ -533,8 +533,8 @@ mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
  * @return [Object]
  * @see create_id=
  */
-static VALUE
-mimic_parse(int argc, VALUE *argv, VALUE self) {
+VALUE
+oj_mimic_parse(int argc, VALUE *argv, VALUE self) {
     return mimic_parse_core(argc, argv, self, false);
 }
 
@@ -781,7 +781,7 @@ oj_define_mimic_json(int argc, VALUE *argv, VALUE self) {
     rb_define_module_function(mimic, "fast_unparse", oj_mimic_generate, -1);
     rb_define_module_function(mimic, "pretty_unparse", oj_mimic_pretty_generate, -1);
 
-    rb_define_module_function(mimic, "parse", mimic_parse, -1);
+    rb_define_module_function(mimic, "parse", oj_mimic_parse, -1);
     rb_define_module_function(mimic, "parse!", mimic_parse_bang, -1);
 
     rb_define_module_function(mimic, "state", mimic_state, 0);
