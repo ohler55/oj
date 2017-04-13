@@ -38,7 +38,7 @@ OJ_RAILS_COMPAT = {
 }.freeze
 
 #$encoder = Oj::Rails::Encoder.new()
-#ActiveSupport.json_encoder = Oj::Rails::Encoder
+ActiveSupport.json_encoder = Oj::Rails::Encoder
 
 class CompatibilityRails < Minitest::Test
   def setup
