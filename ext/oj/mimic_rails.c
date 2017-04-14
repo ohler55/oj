@@ -18,6 +18,7 @@ static struct _ROptTable	ropts = { 0, 0, NULL };
 
 static VALUE	encoder_class = Qnil;
 static bool	escape_html = true;
+static bool	xml_time = true;
 
 static ROpt	create_opt(ROptTable rot, VALUE clas);
 
@@ -201,7 +202,104 @@ dump_bigdecimal(VALUE obj, int depth, Out out, bool as_ok) {
 
 static void
 dump_time(VALUE obj, int depth, Out out, bool as_ok) {
-    oj_dump_xml_time(obj, out);
+    char		buf[64];
+    struct tm		*tm;
+    long		one = 1000000000;
+#if HAS_RB_TIME_TIMESPEC
+    struct timespec	ts = rb_time_timespec(obj);
+    time_t		sec = ts.tv_sec;
+    long		nsec = ts.tv_nsec;
+#else
+    time_t		sec = NUM2LONG(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+#if HAS_NANO_TIME
+    long long		nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+#else
+    long long		nsec = rb_num2ll(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
+#endif
+#endif
+    long		tzsecs = NUM2LONG(rb_funcall2(obj, oj_utc_offset_id, 0, 0));
+    int			tzhour, tzmin;
+    char		tzsign = '+';
+    int			len;
+    
+    if (out->end - out->cur <= 36) {
+	assure_size(out, 36);
+    }
+    if (9 > out->opts->sec_prec) {
+	int	i;
+
+	// Rails does not round when reducing precision but instead floors,
+	for (i = 9 - out->opts->sec_prec; 0 < i; i--) {
+	    nsec = nsec / 10;
+	    one /= 10;
+	}
+	if (one <= nsec) {
+	    nsec -= one;
+	    sec++;
+	}
+    }
+    // 2012-01-05T23:58:07.123456000+09:00 or 2012/01/05 23:58:07 +0900
+    sec += tzsecs;
+    tm = gmtime(&sec);
+#if 1
+    if (0 > tzsecs) {
+        tzsign = '-';
+        tzhour = (int)(tzsecs / -3600);
+        tzmin = (int)(tzsecs / -60) - (tzhour * 60);
+    } else {
+        tzhour = (int)(tzsecs / 3600);
+        tzmin = (int)(tzsecs / 60) - (tzhour * 60);
+    }
+#else
+    if (0 > tm->tm_gmtoff) {
+        tzsign = '-';
+        tzhour = (int)(tm->tm_gmtoff / -3600);
+        tzmin = (int)(tm->tm_gmtoff / -60) - (tzhour * 60);
+    } else {
+        tzhour = (int)(tm->tm_gmtoff / 3600);
+        tzmin = (int)(tm->tm_gmtoff / 60) - (tzhour * 60);
+    }
+#endif
+    if (!xml_time) {
+	len = sprintf(buf, "%04d/%02d/%02d %02d:%02d:%02d %c%02d%02d",
+		      tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
+		      tm->tm_hour, tm->tm_min, tm->tm_sec, tzsign, tzhour, tzmin);
+    } else if (0 == out->opts->sec_prec) {
+	if (0 == tzsecs && rb_funcall2(obj, oj_utcq_id, 0, 0)) {
+	    len = sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02dZ",
+			  tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
+			  tm->tm_hour, tm->tm_min, tm->tm_sec);
+	} else {
+	    len = sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02d%c%02d:%02d",
+			  tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
+			  tm->tm_hour, tm->tm_min, tm->tm_sec,
+			  tzsign, tzhour, tzmin);
+	}
+    } else if (0 == tzsecs && rb_funcall2(obj, oj_utcq_id, 0, 0)) {
+	char	format[64] = "%04d-%02d-%02dT%02d:%02d:%02d.%09ldZ";
+
+	len = 30;
+	if (9 > out->opts->sec_prec) {
+	    format[32] = '0' + out->opts->sec_prec;
+	    len -= 9 - out->opts->sec_prec;
+	}
+	len = sprintf(buf, format,
+		      tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
+		      tm->tm_hour, tm->tm_min, tm->tm_sec, nsec);
+    } else {
+	char	format[64] = "%04d-%02d-%02dT%02d:%02d:%02d.%09ld%c%02d:%02d";
+
+	len = 35;
+	if (9 > out->opts->sec_prec) {
+	    format[32] = '0' + out->opts->sec_prec;
+	    len -= 9 - out->opts->sec_prec;
+	}
+	len = sprintf(buf, format,
+		      tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
+		      tm->tm_hour, tm->tm_min, tm->tm_sec, nsec,
+		      tzsign, tzhour, tzmin);
+    }
+    oj_dump_cstr(buf, len, 0, 0, out);
 }
 
 static void
@@ -543,6 +641,25 @@ rails_encode(int argc, VALUE *argv, VALUE self) {
 }
 
 static VALUE
+rails_use_standard_json_time_format(VALUE self, VALUE state) {
+    switch (state) {
+    case Qtrue:
+    case Qfalse:
+	break;
+    case Qnil:
+	state = Qfalse;
+	break;
+    default:
+	state = Qtrue;
+	break;
+    }
+    rb_iv_set(self, "@use_standard_json_time_format", state);
+    xml_time = Qtrue == state;
+
+    return state;
+}
+
+static VALUE
 rails_escape_html_entities_in_json(VALUE self, VALUE state) {
     rb_iv_set(self, "@escape_html_entities_in_json", state);
     escape_html = Qtrue == state;
@@ -551,10 +668,19 @@ rails_escape_html_entities_in_json(VALUE self, VALUE state) {
 }
 
 static VALUE
+rails_time_precision(VALUE self, VALUE prec) {
+    rb_iv_set(self, "@time_precision", prec);
+    oj_default_options.sec_prec = NUM2INT(prec);
+
+    return prec;
+}
+
+static VALUE
 rails_set_encoder(VALUE self) {
     VALUE	active;
     VALUE	json;
     VALUE	encoding;
+    VALUE	pv;
     
     if (rb_const_defined_at(rb_cObject, rb_intern("ActiveSupport"))) {
 	active = rb_const_get_at(rb_cObject, rb_intern("ActiveSupport"));
@@ -566,17 +692,17 @@ rails_set_encoder(VALUE self) {
     json = rb_const_get_at(active, rb_intern("JSON"));
     encoding = rb_const_get_at(json, rb_intern("Encoding"));
 
-    //rb_undef_method(active, "use_standard_json_time_format=");
-    //rb_define_module_function(active, "use_standard_json_time_format=", rails_use_standard_json_time_format, 1);
+    rb_undef_method(active, "use_standard_json_time_format=");
+    rb_define_module_function(encoding, "use_standard_json_time_format=", rails_use_standard_json_time_format, 1);
 
     rb_undef_method(encoding, "escape_html_entities_in_json=");
     rb_define_module_function(encoding, "escape_html_entities_in_json=", rails_escape_html_entities_in_json, 1);
 
-    /*
-    ActiceSupport.use_standard_json_time_format = true
-    ActiceSupport.escape_html_entities_in_json  = true
-    ActiceSupport.time_precision = 3
-    */
+    pv = rb_iv_get(encoding, "@time_precision");
+    oj_default_options.sec_prec = NUM2INT(pv);
+    rb_undef_method(encoding, "time_precision=");
+    rb_define_module_function(encoding, "time_precision=", rails_time_precision, 1);
+
     return Qnil;
 }
 
