@@ -277,6 +277,26 @@ class ScpTest < Minitest::Test
                   [:add_value, {}]], handler.calls)
   end
 
+  def test_double_io
+    handler = AllHandler.new()
+    json = %{{"one":true,"two":false}{"three":true,"four":false}}
+    Oj.sc_parse(handler, StringIO.new(json)) { |j| j }
+    assert_equal([[:hash_start],
+                  [:hash_key, 'one'],
+                  [:hash_set, 'one', true],
+                  [:hash_key, 'two'],
+                  [:hash_set, 'too', false],
+                  [:hash_end],
+                  [:add_value, {}],
+                  [:hash_start],
+                  [:hash_key, 'three'],
+                  [:hash_set, 'three', true],
+                  [:hash_key, 'four'],
+                  [:hash_set, 'four', false],
+                  [:hash_end],
+                  [:add_value, {}]], handler.calls)
+  end
+
   def test_none
     handler = NoHandler.new()
     Oj.sc_parse(handler, $json)
@@ -311,6 +331,37 @@ class ScpTest < Minitest::Test
                       [:hash_set, 'one', true],
                       [:hash_key, 'two'],
                       [:hash_set, 'too', false],
+                      [:hash_end],
+                      [:add_value, {}]], handler.calls)
+      else
+        read_io.close
+        write_io.write json
+        write_io.close
+        Process.exit(0)
+      end
+    end
+  end
+
+  def test_double_pipe
+    handler = AllHandler.new()
+    json = %{{"one":true,"two":false}{"three":true,"four":false}}
+    IO.pipe do |read_io, write_io|
+      if fork
+        write_io.close
+        Oj.sc_parse(handler, read_io) {|v| p v}
+        read_io.close
+        assert_equal([[:hash_start],
+                      [:hash_key, 'one'],
+                      [:hash_set, 'one', true],
+                      [:hash_key, 'two'],
+                      [:hash_set, 'too', false],
+                      [:hash_end],
+                      [:add_value, {}],
+                      [:hash_start],
+                      [:hash_key, 'three'],
+                      [:hash_set, 'three', true],
+                      [:hash_key, 'four'],
+                      [:hash_set, 'four', false],
                       [:hash_end],
                       [:add_value, {}]], handler.calls)
       else
