@@ -22,6 +22,15 @@ static bool	xml_time = true;
 
 static ROpt	create_opt(ROptTable rot, VALUE clas);
 
+/* Document-module: Oj::Rails
+ * 
+ * Module that provides rails and active support compatibility.
+ */
+/* Document-class: Oj::Rails::Encoder
+ *
+ * The Oj ActiveSupport compliant encoder. 
+ */
+
 ROpt
 oj_rails_get_opt(ROptTable rot, VALUE clas) {
     if (NULL == rot) {
@@ -441,7 +450,9 @@ optimize(int argc, VALUE *argv, ROptTable rot, bool on) {
 	// TBD recurse if there are subclasses
     }
 }
-/* @!method optimize(*classes)
+
+/* Document-class: Oj::Rails::Encoder
+ * @!method optimize(*classes)
  * 
  * Use Oj rails optimized routines to encode the specified classes. This
  * ignores the as_json() method on the class and uses an internal encoding
@@ -461,6 +472,18 @@ encoder_optimize(int argc, VALUE *argv, VALUE self) {
     return Qnil;
 }
 
+/* Document-module: Oj::Rails
+ * @!method optimize(*classes)
+ * 
+ * Use Oj rails optimized routines to encode the specified classes. This
+ * ignores the as_json() method on the class and uses an internal encoding
+ * instead. Passing in no classes indicates all should use the optimized
+ * version of encoding for all previously optimized classes. Passing in the
+ * Object class set a global switch that will then use the optimized behavior
+ * for all classes.
+ * 
+ * @param classes [Class] a list of classes to optimize
+ */
 static VALUE
 rails_optimize(int argc, VALUE *argv, VALUE self) {
     optimize(argc, argv, &ropts, true);
@@ -468,7 +491,8 @@ rails_optimize(int argc, VALUE *argv, VALUE self) {
     return Qnil;
 }
 
-/* @!method deoptimize(*classes)
+/* Document-class: Oj::Rails::Encoder
+ * @!method deoptimize(*classes)
  * 
  * Turn off Oj rails optimization on the specified classes.
  *
@@ -483,6 +507,13 @@ encoder_deoptimize(int argc, VALUE *argv, VALUE self) {
     return Qnil;
 }
 
+/* Document-module: Oj::Rails
+ * @!method deoptimize(*classes)
+ * 
+ * Turn off Oj rails optimization on the specified classes.
+ *
+ * @param classes [Class] a list of classes to deoptimize
+ */
 static VALUE
 rails_deoptimize(int argc, VALUE *argv, VALUE self) {
     optimize(argc, argv, &ropts, false);
@@ -490,7 +521,8 @@ rails_deoptimize(int argc, VALUE *argv, VALUE self) {
     return Qnil;
 }
 
-/* @!method optimized?(clas)
+/* Document-class: Oj::Rails::Encoder
+ * @!method optimized?(clas)
  * 
  * @param clas [Class] Class to check
  *
@@ -507,6 +539,11 @@ encoder_optimized(VALUE self, VALUE clas) {
     return (ro->on) ? Qtrue : Qfalse;
 }
 
+/* Document-module: Oj::Rails
+ * @!method optimized?(clas)
+ * 
+ * @param true if the specified Class is being aptimized.
+ */
 static VALUE
 rails_optimized(VALUE self, VALUE clas) {
     ROpt	ro = oj_rails_get_opt(&ropts, clas);
@@ -600,7 +637,8 @@ encode(VALUE obj, ROptTable ropts, Options opts, int argc, VALUE *argv) {
     return rstr;
 }
 
-/* @!method encode(obj)
+/* Document-class: Oj::Rails::Encoder
+ * @!method encode(obj)
  * 
  * @param obj [Object] object to encode
  *
@@ -675,6 +713,13 @@ rails_time_precision(VALUE self, VALUE prec) {
     return prec;
 }
 
+/* Document-module: Oj::Rails
+ * @!method set_encoder()
+ * 
+ * Sets the ActiveSupport.encoder to Oj::Rails::Encoder and wraps some of the
+ * formatting globals used by ActiveSupport to allow the use of those globals
+ * in the Oj::Rails optimizations.
+ */
 static VALUE
 rails_set_encoder(VALUE self) {
     VALUE	active;
@@ -706,6 +751,12 @@ rails_set_encoder(VALUE self) {
     return Qnil;
 }
 
+/* Document-module: Oj::Rails
+ * @!method set_decoder()
+ * 
+ * Sets the JSON.parse function to be the Oj::parse function which is json gem
+ * compatible.
+ */
 static VALUE
 rails_set_decoder(VALUE self) {
     VALUE	json;
@@ -732,10 +783,6 @@ rails_set_decoder(VALUE self) {
     return Qnil;
 }
 
-/* Document-module: Oj::Rails
- * 
- * Module that provides rails and active support compatibility.
- */
 void
 oj_mimic_rails_init(VALUE oj) {
     VALUE	rails = rb_define_module_under(oj, "Rails");

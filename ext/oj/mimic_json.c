@@ -702,8 +702,8 @@ mimic_state(VALUE self) {
     return state_class;
 }
 
-/* Document-method: mimic_JSON
- * @overload mimic_JSON() => Module
+/* Document-modue: Oj
+ * @!method mimic_JSON() => Module
  *
  * Creates the JSON module with methods and classes to mimic the JSON gem. After
  * this method is invoked calls that expect the JSON module will use Oj instead
