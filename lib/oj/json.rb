@@ -98,7 +98,8 @@ module JSON
   self.parser = ::JSON::Ext::Parser
   self.generator = ::JSON::Ext::Generator
 
-  # Taken directly from the json gem. Shamelessly copied. 
+  # Taken directly from the json gem. Shamelessly copied. It is similar in
+  # some ways to the Oj::Bag class or the Oj::EasyHash class.
   class GenericObject < OpenStruct
     class << self
       alias [] new

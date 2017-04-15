@@ -3,6 +3,10 @@
 
 A *fast* JSON parser and Object marshaller as a Ruby gem.
 
+Version 3.0 is out! 3.0 provides better json gem and Rails compatibility and
+optimization. There are some minor changes to the API but mostly by adding new
+functionality.
+
 ## Using
 
 ```ruby
@@ -25,11 +29,6 @@ puts "Same? #{h == h2}"
 # true
 ```
 
-By default Oj uses the :object mode which is used to marshal and unmarshal Ruby
-objects. Deserialize arbitrary JSON in object mode may lead to unexpected
-results. :compat mode is a better choice for rails and :strict mode is a better
-choice for general JSON parsing. See the options section below for details.
-
 ## Installation
 ```
 gem install oj
@@ -48,6 +47,8 @@ links.
 
  - {file:Options.md} for parse and dump options.
  - {file:Modes.md} for details on modes for strict JSON compliance, mimicing the JSON gem, and mimicing Rails and ActiveSupport behavior.
+ - {file:JsonGem.md} includes more details on json gem compatibility and use.
+ - {file:Rails.md} includes more details on Rails and ActiveSupport compatibility and use.
  - {file:Encoding.md} describes the :object encoding format.
  - {file:Compatibility.md} lists current compatibility with Rubys and Rails.
  - {file:Advanced.md} for fast parser and marshalling features.

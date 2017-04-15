@@ -23,14 +23,13 @@ Comparison Matrix
 go/src/github.com/iq4health/router/
 
 - refactor
- - what happened to obj mode loading time?
 
  - plan
-  - rails mode
-
   - custom mode
   - cleanup dump.c
-  
+  - parse
+   - handle rails and custom
+
   - reorg tests
    - isolated rails stuff
     - only need to verify JSON methods have beed defined and not overridden
@@ -39,45 +38,16 @@ go/src/github.com/iq4health/router/
 
   - create dump_custom, copy from compat
 
- - docs
-  - readme
-  - oj module
-  - Modes
-  - add
-   - Rails
-    - how to use
-   - JsonGem
-    - how to use
-   - make compat and rails section smaller in modes and refer to separate pages
-  
- - add use_to_hash option
-  
+ - load or parse with block alternatives should include json, start positions, and length
+  - can they be optional?
 
-- rail compat
- - fix struct
- - consider
-  - detecting active classes (how expensive is it) and calling as_json
-  - something like odd but with a faster lookup that has specially build active dumpers
-
- + Regexp
- + StringSpecial
-  - new friendly mode for XSS and hibit - hixss
- + Struct
- + Rational
- + Enumerable
-
- - add circular check for compat and just stop on compat and don't follow
+ - what happened to obj mode loading time?
 
  - Process::Status
  - ActiveSupport::TimeWithZone
  - ActiveModel::Errors
  - ActiveSupport::Multibyte::Chars
  - ActiveRecord::Relation
-
- - make regexp an odd
-
- - how about a const for rails options (separate from mimic or maybe the same set)
-  - or a function to set options to rails
 
 - debug
  - instrument for parsing floats/bigdecimal

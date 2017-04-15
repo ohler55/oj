@@ -31,8 +31,6 @@ static const char	nan_val[] = NAN_VAL;
 
 typedef unsigned long	ulong;
 
-static void	raise_strict(VALUE obj);
-static void	dump_hex(uint8_t c, Out out);
 static int	hash_cb_compat(VALUE key, VALUE value, Out out);
 static void	dump_hash(VALUE obj, VALUE clas, int depth, int mode, Out out);
 static void	dump_data_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok);
@@ -117,6 +115,11 @@ static char	rails_friendly_chars[256] = "\
 11111111111111111111111111111111\
 11111111111111111111111111111111\
 11311111111111111111111111111111";
+
+static void
+raise_strict(VALUE obj) {
+    rb_raise(rb_eTypeError, "Failed to dump %s Object to JSON in strict mode.", rb_class2name(rb_obj_class(obj)));
+}
 
 inline static size_t
 newline_friendly_size(const uint8_t *str, size_t len) {
@@ -1397,11 +1400,6 @@ dump_struct_comp(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_o
     }
 }
 
-static void
-raise_strict(VALUE obj) {
-    rb_raise(rb_eTypeError, "Failed to dump %s Object to JSON in strict mode.", rb_class2name(rb_obj_class(obj)));
-}
-
 void
 oj_dump_comp_val(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok) {
     int	type = rb_type(obj);
@@ -1465,6 +1463,7 @@ oj_dump_comp_val(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_o
 	}
     }
 }
+//////////////////////////////////
 
 void
 oj_dump_obj_to_json(VALUE obj, Options copts, Out out) {
@@ -1495,7 +1494,7 @@ oj_dump_obj_to_json_using_params(VALUE obj, Options copts, Out out, int argc, VA
     case CompatMode:	oj_dump_compat_val(obj, 0, out, Yes == copts->to_json);	break;
     case RailsMode:	oj_dump_rails_val(obj, 0, out, true);			break;
     default:		oj_dump_compat_val(obj, 0, out, true);	break;
-	//default:	oj_dump_comp_val(obj, 0, out, argc, argv, true);	break;
+	// TBD change default to custom mode
     }
     if (0 < out->indent) {
 	switch (*(out->cur - 1)) {
@@ -1588,7 +1587,24 @@ oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
     }
 }
 
-//////////////////////////////////
+void
+oj_dump_str(VALUE obj, int depth, Out out, bool as_ok) {
+#if HAS_ENCODING_SUPPORT
+    rb_encoding	*enc = rb_to_encoding(rb_obj_encoding(obj));
+
+    if (rb_utf8_encoding() != enc) {
+	obj = rb_str_conv_enc(obj, enc, rb_utf8_encoding());
+    }
+#endif
+    oj_dump_cstr(rb_string_value_ptr((VALUE*)&obj), RSTRING_LEN(obj), 0, 0, out);
+}
+
+void
+oj_dump_sym(VALUE obj, int depth, Out out, bool as_ok) {
+    const char	*sym = rb_id2name(SYM2ID(obj));
+    
+    oj_dump_cstr(sym, strlen(sym), 0, 0, out);
+}
 
 void
 oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
@@ -1781,6 +1797,79 @@ oj_grow_out(Out out, size_t len) {
     out->buf = buf;
     out->end = buf + size;
     out->cur = out->buf + pos;
+}
+
+void
+oj_dump_nil(VALUE obj, int depth, Out out, bool as_ok) {
+    assure_size(out, 4);
+    *out->cur++ = 'n';
+    *out->cur++ = 'u';
+    *out->cur++ = 'l';
+    *out->cur++ = 'l';
+    *out->cur = '\0';
+}
+
+void
+oj_dump_true(VALUE obj, int depth, Out out, bool as_ok) {
+    assure_size(out, 4);
+    *out->cur++ = 't';
+    *out->cur++ = 'r';
+    *out->cur++ = 'u';
+    *out->cur++ = 'e';
+    *out->cur = '\0';
+}
+
+void
+oj_dump_false(VALUE obj, int depth, Out out, bool as_ok) {
+    assure_size(out, 5);
+    *out->cur++ = 'f';
+    *out->cur++ = 'a';
+    *out->cur++ = 'l';
+    *out->cur++ = 's';
+    *out->cur++ = 'e';
+    *out->cur = '\0';
+}
+
+void
+oj_dump_fixnum(VALUE obj, int depth, Out out, bool as_ok) {
+    char	buf[32];
+    char	*b = buf + sizeof(buf) - 1;
+    long long	num = rb_num2ll(obj);
+    int		neg = 0;
+
+    if (0 > num) {
+	neg = 1;
+	num = -num;
+    }
+    *b-- = '\0';
+    if (0 < num) {
+	for (; 0 < num; num /= 10, b--) {
+	    *b = (num % 10) + '0';
+	}
+	if (neg) {
+	    *b = '-';
+	} else {
+	    b++;
+	}
+    } else {
+	*b = '0';
+    }
+    assure_size(out, (sizeof(buf) - (b - buf)));
+    for (; '\0' != *b; b++) {
+	*out->cur++ = *b;
+    }
+    *out->cur = '\0';
+}
+
+void
+oj_dump_bignum(VALUE obj, int depth, Out out, bool as_ok) {
+    volatile VALUE	rs = rb_big2str(obj, 10);
+    int			cnt = (int)RSTRING_LEN(rs);
+
+    assure_size(out, cnt);
+    memcpy(out->cur, rb_string_value_ptr((VALUE*)&rs), cnt);
+    out->cur += cnt;
+    *out->cur = '\0';
 }
 
 // Removed dependencies on math due to problems with CentOS 5.4.

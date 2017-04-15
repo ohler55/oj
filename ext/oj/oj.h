@@ -166,6 +166,7 @@ typedef struct _Options {
     char		time_format;	// TimeFormat
     char		bigdec_as_num;	// YesNo
     char		bigdec_load;	// BigLoad
+    char		to_hash;	// YesNo
     char		to_json;	// YesNo
     char		as_json;	// YesNo
     char		nilnil;		// YesNo

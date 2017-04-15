@@ -137,6 +137,7 @@ static VALUE	unicode_xss_sym;
 static VALUE	unix_sym;
 static VALUE	unix_zone_sym;
 static VALUE	use_as_json_sym;
+static VALUE	use_to_hash_sym;
 static VALUE	use_to_json_sym;
 static VALUE	word_sym;
 static VALUE	xmlschema_sym;
@@ -167,6 +168,7 @@ struct _Options	oj_default_options = {
     UnixZTime,	// time_format
     Yes,	// bigdec_as_num
     AutoDec,	// bigdec_load
+    No,		// to_hash
     No,		// to_json
     No,		// as_json
     No,		// nilnil
@@ -257,6 +259,7 @@ get_def_opts(VALUE self) {
     rb_hash_aset(opts, symbol_keys_sym, (Yes == oj_default_options.sym_key) ? Qtrue : ((No == oj_default_options.sym_key) ? Qfalse : Qnil));
     rb_hash_aset(opts, bigdecimal_as_decimal_sym, (Yes == oj_default_options.bigdec_as_num) ? Qtrue : ((No == oj_default_options.bigdec_as_num) ? Qfalse : Qnil));
     rb_hash_aset(opts, use_to_json_sym, (Yes == oj_default_options.to_json) ? Qtrue : ((No == oj_default_options.to_json) ? Qfalse : Qnil));
+    rb_hash_aset(opts, use_to_hash_sym, (Yes == oj_default_options.to_hash) ? Qtrue : ((No == oj_default_options.to_hash) ? Qfalse : Qnil));
     rb_hash_aset(opts, use_as_json_sym, (Yes == oj_default_options.as_json) ? Qtrue : ((No == oj_default_options.as_json) ? Qfalse : Qnil));
     rb_hash_aset(opts, nilnil_sym, (Yes == oj_default_options.nilnil) ? Qtrue : ((No == oj_default_options.nilnil) ? Qfalse : Qnil));
     rb_hash_aset(opts, empty_string_sym, (Yes == oj_default_options.empty_string) ? Qtrue : ((No == oj_default_options.empty_string) ? Qfalse : Qnil));
@@ -383,6 +386,7 @@ oj_parse_options(VALUE ropts, Options copts) {
 	{ symbol_keys_sym, &copts->sym_key },
 	{ class_cache_sym, &copts->class_cache },
 	{ bigdecimal_as_decimal_sym, &copts->bigdec_as_num },
+	{ use_to_hash_sym, &copts->to_hash },
 	{ use_to_json_sym, &copts->to_json },
 	{ use_as_json_sym, &copts->as_json },
 	{ nilnil_sym, &copts->nilnil },
@@ -1432,6 +1436,7 @@ Init_oj() {
     unix_sym = ID2SYM(rb_intern("unix"));			rb_gc_register_address(&unix_sym);
     unix_zone_sym = ID2SYM(rb_intern("unix_zone"));		rb_gc_register_address(&unix_zone_sym);
     use_as_json_sym = ID2SYM(rb_intern("use_as_json"));		rb_gc_register_address(&use_as_json_sym);
+    use_to_hash_sym = ID2SYM(rb_intern("use_to_hash"));		rb_gc_register_address(&use_to_hash_sym);
     use_to_json_sym = ID2SYM(rb_intern("use_to_json"));		rb_gc_register_address(&use_to_json_sym);
     word_sym = ID2SYM(rb_intern("word"));			rb_gc_register_address(&word_sym);
     xmlschema_sym = ID2SYM(rb_intern("xmlschema"));		rb_gc_register_address(&xmlschema_sym);

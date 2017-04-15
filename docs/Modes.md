@@ -23,7 +23,7 @@ for each mode. It is possible to mix but only for advanced users.
 ## :strict Mode
 
 Strict mode follows the JSON specifications and only supports the JSON native
-types, Boolean, nil, String, Hash, Array, and Number are encoded as
+types, Boolean, nil, String, Hash, Array, and Numbers are encoded as
 expected. Encountering any other type causes an Exception to be raised. This
 is the safest mode as it is just simple translation, no code outside Oj or the
 core Ruby is execution on loading. Very few options are supported by this mode
@@ -38,55 +38,16 @@ if a non-native type is encountered instead of raising an Exception.
 
 The `:compat` mode mimics the json gem. The json gem is built around the use
 of the `to_json(*)` method defined for a class. Oj attempts to provide the
-same functionality by being a drop in replacement with a few exceptions. First
-a description of the json gem behavior and then the differenecs between the
-json gem and the Oj.mimic_JSON behavior.
-
-The json gem monkey patches core and base library classes with a `to_json(*)`
-method. This allows calls such as `obj.to_json()` to be used to generate a
-JSON string. The json gem also provides the JSON.generate(), JSON.dump(), and
-JSON() functions. These functions generally act the same with some exceptions
-such as JSON.generate(), JSON(), and to_json raise an exception when
-attempting to encode infinity while JSON.dump() returns a the string
-"Infinity". The String class is also monkey patched with to_json_raw() and
-to_json_raw_object(). Oj in mimic mode mimics this behavior including the
-seemly inconsistent behavior with NaN and Infinity.
-
-Any class can define a to_json() method and JSON.generate(), JSON.dump(), and
-JSON() functions will call that method when an object of that type is
-encountered when traversing a Hash or Array. The core classes monkey patches
-can be over-ridden but unless the to_json() method is called directory the
-to_json() method will be ignored. Oj in mimic mode follow the same logic,
-
-The json gem includes additions. These additions change the behavior of some
-library and core classes. These additions also add the as_json() method and
-json_create() class method. They are activated by requiring the appropriate
-files. As an example, to get the modified to_json() for the Rational class
-this line would be added.
-
-```ruby
-require 'json/add/rational'
-```
-
-Oj in mimic mode does not include these files although it will support the
-modified to_json() methods. In keeping with the goal of providing a faster
-encoder Oj offers an alternative. To activate faster addition version of the
-to_json() method call
-
-```ruby
-Oj.add_to_json(Rational)
-```
-
-To revert back to the unoptimized version, just remove the Oj flag on that
-class.
-
-```ruby
-Oj.remove_to_json(Rational)
-```
+same functionality by being a drop in replacement with a few
+exceptions. {file:JsonGem.md} includes more details on compatibility and use.
 
 ## :rails Mode
 
-TBD
+The `:rails` mode mimics the ActiveSupport version 5 encoder. Rails and
+ActiveSupport are built around the use of the `as_json(*)` method defined for
+a class. Oj attempts to provide the same functionality by being a drop in
+replacement with a few exceptions. {file:Rails.md} includes more details on
+compatibility and use.
 
 ## :object Mode
 
@@ -119,7 +80,7 @@ information.
     | :allow_blank           | Boolean |         |         |       1 |       1 |         |       x |
     | :allow_gc              | Boolean |       x |       x |       x |       x |       x |       x |
     | :allow_invalid_unicode | Boolean |         |         |         |         |       x |       x |
-    | :allow_nan             | Boolean |         |         |       x |       x |       x |       x |
+    | :allow_nan             | Boolean |         |         |       x |         |       x |       x |
     | :array_class           | Class   |         |         |       x |       x |         |       x |
     | :array_nl              | String  |         |         |         |         |         |       x |
     | :ascii_only            | Boolean |       x |       x |       2 |       2 |       x |       x |
@@ -137,11 +98,11 @@ information.
     | :indent                | Integer |       x |       x |       3 |       3 |       x |       x |
     | :indent_str            | String  |         |         |       x |       x |         |       x |
     | :match_string          | Hash    |         |         |       x |       x |         |       x |
-    | :max_nesting           | Fixnum  |       4 |       4 |       x |       x |       4 |       4 |
+    | :max_nesting           | Fixnum  |       4 |       4 |       x |         |       4 |       4 |
     | :mode                  | Symbol  |       - |       - |       - |       - |       - |       - |
     | :nan                   | Symbol  |         |         |         |         |         |       x |
     | :nilnil                | Boolean |         |         |         |         |         |       x |
-    | :object_class          | Class   |         |         |       x |       x |         |       x |
+    | :object_class          | Class   |         |         |       x |         |         |       x |
     | :object_nl             | String  |         |         |       x |       x |         |       x |
     | :omit_nil              | Boolean |       x |       x |       x |       x |       x |       x |
     | :quirks_mode           | Boolean |         |         |       5 |         |         |       x |
@@ -150,7 +111,7 @@ information.
     | :space_before          | String  |         |         |       x |       x |         |       x |
     | :symbol_keys           | Boolean |       x |       x |       x |       x |       x |       x |
     | :time_format           | Symbol  |         |         |         |         |       x |       x |
-    | :use_as_json           | Boolean |         |         |         |       x |         |       x |
+    | :use_as_json           | Boolean |         |         |         |         |         |       x |
     | :use_to_hash           | Boolean |         |         |         |         |         |       x |
     | :use_to_json           | Boolean |         |         |         |         |         |       x |
      ----------------------------------------------------------------------------------------------

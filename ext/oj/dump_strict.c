@@ -34,79 +34,6 @@ raise_strict(VALUE obj) {
     rb_raise(rb_eTypeError, "Failed to dump %s Object to JSON in strict mode.\n", rb_class2name(rb_obj_class(obj)));
 }
 
-void
-oj_dump_nil(VALUE obj, int depth, Out out, bool as_ok) {
-    assure_size(out, 4);
-    *out->cur++ = 'n';
-    *out->cur++ = 'u';
-    *out->cur++ = 'l';
-    *out->cur++ = 'l';
-    *out->cur = '\0';
-}
-
-void
-oj_dump_true(VALUE obj, int depth, Out out, bool as_ok) {
-    assure_size(out, 4);
-    *out->cur++ = 't';
-    *out->cur++ = 'r';
-    *out->cur++ = 'u';
-    *out->cur++ = 'e';
-    *out->cur = '\0';
-}
-
-void
-oj_dump_false(VALUE obj, int depth, Out out, bool as_ok) {
-    assure_size(out, 5);
-    *out->cur++ = 'f';
-    *out->cur++ = 'a';
-    *out->cur++ = 'l';
-    *out->cur++ = 's';
-    *out->cur++ = 'e';
-    *out->cur = '\0';
-}
-
-void
-oj_dump_fixnum(VALUE obj, int depth, Out out, bool as_ok) {
-    char	buf[32];
-    char	*b = buf + sizeof(buf) - 1;
-    long long	num = rb_num2ll(obj);
-    int		neg = 0;
-
-    if (0 > num) {
-	neg = 1;
-	num = -num;
-    }
-    *b-- = '\0';
-    if (0 < num) {
-	for (; 0 < num; num /= 10, b--) {
-	    *b = (num % 10) + '0';
-	}
-	if (neg) {
-	    *b = '-';
-	} else {
-	    b++;
-	}
-    } else {
-	*b = '0';
-    }
-    assure_size(out, (sizeof(buf) - (b - buf)));
-    for (; '\0' != *b; b++) {
-	*out->cur++ = *b;
-    }
-    *out->cur = '\0';
-}
-
-void
-oj_dump_bignum(VALUE obj, int depth, Out out, bool as_ok) {
-    volatile VALUE	rs = rb_big2str(obj, 10);
-    int			cnt = (int)RSTRING_LEN(rs);
-
-    assure_size(out, cnt);
-    memcpy(out->cur, rb_string_value_ptr((VALUE*)&rs), cnt);
-    out->cur += cnt;
-    *out->cur = '\0';
-}
-
 // Removed dependencies on math due to problems with CentOS 5.4.
 static void
 dump_float(VALUE obj, int depth, Out out, bool as_ok) {
@@ -198,18 +125,6 @@ dump_float(VALUE obj, int depth, Out out, bool as_ok) {
     *out->cur = '\0';
 }
 
-void
-oj_dump_str(VALUE obj, int depth, Out out, bool as_ok) {
-#if HAS_ENCODING_SUPPORT
-    rb_encoding	*enc = rb_to_encoding(rb_obj_encoding(obj));
-
-    if (rb_utf8_encoding() != enc) {
-	obj = rb_str_conv_enc(obj, enc, rb_utf8_encoding());
-    }
-#endif
-    oj_dump_cstr(rb_string_value_ptr((VALUE*)&obj), RSTRING_LEN(obj), 0, 0, out);
-}
-
 static void
 dump_array(VALUE a, int depth, Out out, bool as_ok) {
     size_t	size;
@@ -279,13 +194,6 @@ dump_array(VALUE a, int depth, Out out, bool as_ok) {
 	*out->cur++ = ']';
     }
     *out->cur = '\0';
-}
-
-void
-oj_dump_sym(VALUE obj, int depth, Out out, bool as_ok) {
-    const char	*sym = rb_id2name(SYM2ID(obj));
-    
-    oj_dump_cstr(sym, strlen(sym), 0, 0, out);
 }
 
 static int
