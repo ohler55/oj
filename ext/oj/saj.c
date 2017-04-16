@@ -657,6 +657,10 @@ saj_parse(VALUE handler, char *json) {
  * if the JSON is malformed.
  * @param [Oj::Saj] handler Saj (responds to Oj::Saj methods) like handler
  * @param [IO|String] io IO Object to read from
+ * @deprecated The sc_parse() method along with the ScHandler is the preferred
+ * callback parser. It is slightly faster and handles streams while the
+ * saj_parse() methos requires a complete read before parsing.
+ * @see sc_parse
  */
 VALUE
 oj_saj_parse(int argc, VALUE *argv, VALUE self) {

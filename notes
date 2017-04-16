@@ -38,9 +38,10 @@ go/src/github.com/iq4health/router/
 
   - create dump_custom, copy from compat
 
- - load or parse with block alternatives should include json, start positions, and length
-  - can they be optional?
-
+ - docs
+  - give up on rdoc and yardoc
+  - web page only or md with conversion to html?
+ 
  - what happened to obj mode loading time?
 
  - Process::Status

@@ -593,7 +593,8 @@ colon(ParseInfo pi) {
 
 void
 oj_parse2(ParseInfo pi) {
-    int	first = 1;
+    int		first = 1;
+    long	start = 0;
 
     pi->cur = pi->json;
     err_init(&pi->err);
@@ -695,14 +696,13 @@ oj_parse2(ParseInfo pi) {
 	if (stack_empty(&pi->stack)) {
 	    if (Qundef != pi->proc) {
 		VALUE	args[3];
+		long	len = (pi->cur - pi->json) - start;
 
 		*args = stack_head_val(&pi->stack);
-		// TBD replace with position of start and length
-		args[1] = LONG2NUM(0);
-		args[2] = LONG2NUM(0);
+		args[1] = LONG2NUM(start);
+		args[2] = LONG2NUM(len);
 
 		if (Qnil == pi->proc) {
-		    //rb_yield(stack_head_val(&pi->stack));
 		    rb_yield_values2(3, args);
 		} else {
 #if HAS_PROC_WITH_BLOCK
@@ -715,6 +715,7 @@ oj_parse2(ParseInfo pi) {
 	    } else if (!pi->has_callbacks) {
 		first = 0;
 	    }
+	    start = pi->cur - pi->json;
 	}
     }
 }
@@ -894,7 +895,7 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
 	    ((char*)pi->json)[len] = '\0';
 	    /* skip UTF-8 BOM if present */
 	    if (0xEF == (uint8_t)*pi->json && 0xBB == (uint8_t)pi->json[1] && 0xBF == (uint8_t)pi->json[2]) {
-		pi->json += 3;
+		pi->cur += 3;
 	    }
 #endif
 	} else if (rb_respond_to(input, oj_read_id)) {

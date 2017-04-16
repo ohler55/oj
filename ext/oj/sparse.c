@@ -645,6 +645,7 @@ void
 oj_sparse2(ParseInfo pi) {
     int		first = 1;
     char	c;
+    long	start = 0;
 
     err_init(&pi->err);
     while (1) {
@@ -768,14 +769,18 @@ oj_sparse2(ParseInfo pi) {
 	}
 	if (stack_empty(&pi->stack)) {
 	    if (Qundef != pi->proc) {
+		VALUE	args[3];
+		long	len = pi->rd.pos - start;
+
+		*args = stack_head_val(&pi->stack);
+		args[1] = LONG2NUM(start);
+		args[2] = LONG2NUM(len);
+
 		if (Qnil == pi->proc) {
-		    rb_yield(stack_head_val(&pi->stack));
+		    rb_yield_values2(3, args);
 		} else {
 #if HAS_PROC_WITH_BLOCK
-		    VALUE	args[1];
-
-		    *args = stack_head_val(&pi->stack);
-		    rb_proc_call_with_block(pi->proc, 1, args, Qnil);
+		    rb_proc_call_with_block(pi->proc, 3, args, Qnil);
 #else
 		    oj_set_error_at(pi, rb_eNotImpError, __FILE__, __LINE__,
 				    "Calling a Proc with a block not supported in this version. Use func() {|x| } syntax instead.");
@@ -785,6 +790,7 @@ oj_sparse2(ParseInfo pi) {
 	    } else if (!pi->has_callbacks) {
 		first = 0;
 	    }
+	    start = pi->rd.pos;
 	}
     }
 }
