@@ -676,14 +676,16 @@ oj_parse2(ParseInfo pi) {
 	}
 	if (stack_empty(&pi->stack)) {
 	    if (Qundef != pi->proc) {
+		long pos = pi->cur - pi->json;
 		if (Qnil == pi->proc) {
-		    rb_yield(stack_head_val(&pi->stack));
+		    rb_yield_values(2, stack_head_val(&pi->stack), INT2NUM(pos));
 		} else {
 #if HAS_PROC_WITH_BLOCK
-		    VALUE	args[1];
+		    VALUE	args[2];
 
-		    *args = stack_head_val(&pi->stack);
-		    rb_proc_call_with_block(pi->proc, 1, args, Qnil);
+		    args[0] = stack_head_val(&pi->stack);
+		    args[1] = INT2NUM(pos);
+		    rb_proc_call_with_block(pi->proc, 2, args, Qnil);
 #else
 		    rb_raise(rb_eNotImpError,
 			     "Calling a Proc with a block not supported in this version. Use func() {|x| } syntax instead.");
