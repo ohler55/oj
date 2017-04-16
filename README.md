@@ -45,14 +45,14 @@ gem 'oj'
 For more details on options, modes, advanced features, and more follow these
 links.
 
- - [{file:Options.md}](Options.md) for parse and dump options.
- - [{file:Modes.md}](Modes.md) for details on modes for strict JSON compliance, mimicing the JSON gem, and mimicing Rails and ActiveSupport behavior.
- - [{file:JsonGem.md}](JsonGem.md) includes more details on json gem compatibility and use.
- - [{file:Rails.md}](Rails.md) includes more details on Rails and ActiveSupport compatibility and use.
- - [{file:Encoding.md}](Encoding.md) describes the :object encoding format.
- - [{file:Compatibility.md}](Compatibility.md) lists current compatibility with Rubys and Rails.
- - [{file:Advanced.md}](Advanced.md) for fast parser and marshalling features.
- - [{file:Security.md}](Security.md) for security considerations.
+ - [{file:Options.md}](docs/Options.md) for parse and dump options.
+ - [{file:Modes.md}](docs/Modes.md) for details on modes for strict JSON compliance, mimicing the JSON gem, and mimicing Rails and ActiveSupport behavior.
+ - [{file:JsonGem.md}](docs/JsonGem.md) includes more details on json gem compatibility and use.
+ - [{file:Rails.md}](docs/Rails.md) includes more details on Rails and ActiveSupport compatibility and use.
+ - [{file:Encoding.md}](docs/Encoding.md) describes the :object encoding format.
+ - [{file:Compatibility.md}](docs/Compatibility.md) lists current compatibility with Rubys and Rails.
+ - [{file:Advanced.md}](docs/Advanced.md) for fast parser and marshalling features.
+ - [{file:Security.md}](docs/Security.md) for security considerations.
 
 ## Releases
 
