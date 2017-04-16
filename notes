@@ -39,8 +39,7 @@ go/src/github.com/iq4health/router/
   - create dump_custom, copy from compat
 
  - docs
-  - give up on rdoc and yardoc
-  - web page only or md with conversion to html?
+  - try @!scope and @!parse or @!parse [c]
  
  - what happened to obj mode loading time?
 
