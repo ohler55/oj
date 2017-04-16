@@ -132,6 +132,7 @@ class Juice < Minitest::Test
       :symbol_keys=>true,
       :bigdecimal_as_decimal=>false,
       :use_to_json=>false,
+      :use_to_hash=>false,
       :use_as_json=>false,
       :nilnil=>true,
       :empty_string=>true,
@@ -151,8 +152,12 @@ class Juice < Minitest::Test
       :nan=>:huge,
       :hash_class=>Hash,
       :omit_nil=>false,
+      :allow_nan=>true,
+      :array_class=>Array,
     }
     Oj.default_options = alt
+    #keys = alt.keys
+    #Oj.default_options.keys.each { |k| puts k unless keys.include? k}
     opts = Oj.default_options()
     assert_equal(alt, opts);
 
@@ -193,11 +198,11 @@ class Juice < Minitest::Test
 
     n = Oj.load('1000.0000123456789')
     assert_equal(BigDecimal, n.class)
-    assert_equal('0.10000000123456789E4', n.to_s)
+    assert_equal('0.10000000123456789E4', n.to_s.upcase)
 
     n = Oj.load('-0.000012345678901234567')
     assert_equal(BigDecimal, n.class)
-    assert_equal('-0.12345678901234567E-4', n.to_s)
+    assert_equal('-0.12345678901234567E-4', n.to_s.upcase)
 
   end
 
@@ -333,7 +338,7 @@ class Juice < Minitest::Test
 {"b":2}
 }
     results = []
-    Oj.load(json) { |x| results << x }
+    Oj.load(json, :mode => :strict) { |x| results << x }
     assert_equal([{"a"=>1}, [1,2], [3,4], {"b"=>2}], results)
   end
 
@@ -719,7 +724,7 @@ class Juice < Minitest::Test
 
   def test_nilnil_false
     begin
-      Oj.load(nil)
+      Oj.load(nil, :nilnil => false)
     rescue Exception
       assert(true)
       return
@@ -729,7 +734,7 @@ class Juice < Minitest::Test
 
   def test_nilnil_true
     obj = Oj.load(nil, :nilnil => true)
-    assert_equal(nil, obj)
+    assert_nil(obj)
   end
 
   def test_empty_string_true
@@ -749,7 +754,7 @@ class Juice < Minitest::Test
 
   def test_quirks_null_mode
     assert_raises(Oj::ParseError) { Oj.load("null", :quirks_mode => false) }
-    assert_equal(nil, Oj.load("null", :quirks_mode => true))
+    assert_nil(Oj.load("null", :quirks_mode => true))
   end
 
   def test_quirks_bool_mode
@@ -799,7 +804,11 @@ class Juice < Minitest::Test
     json = Oj.dump(obj, :indent => 2)
     puts json if trace
     loaded = Oj.load(json)
-    assert_equal(obj, loaded)
+    if obj.nil?
+      assert_nil(loaded)
+    else
+      assert_equal(obj, loaded)
+    end
     loaded
   end
 

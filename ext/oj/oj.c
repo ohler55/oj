@@ -863,11 +863,13 @@ load(int argc, VALUE *argv, VALUE self) {
     }
     switch (mode) {
     case StrictMode:
-	return oj_strict_parse(argc, argv, self);
     case NullMode:
+	return oj_strict_parse(argc, argv, self);
     case CompatMode:
-    case CustomMode:
     case RailsMode:
+	return oj_compat_parse(argc, argv, self);
+    case CustomMode:
+	// TBD
 	return oj_compat_parse(argc, argv, self);
     case ObjectMode:
     default:

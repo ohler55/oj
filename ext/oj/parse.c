@@ -694,20 +694,25 @@ oj_parse2(ParseInfo pi) {
 	}
 	if (stack_empty(&pi->stack)) {
 	    if (Qundef != pi->proc) {
+		VALUE	args[3];
+
+		*args = stack_head_val(&pi->stack);
+		// TBD replace with position of start and length
+		args[1] = LONG2NUM(0);
+		args[2] = LONG2NUM(0);
+
 		if (Qnil == pi->proc) {
-		    rb_yield(stack_head_val(&pi->stack));
+		    //rb_yield(stack_head_val(&pi->stack));
+		    rb_yield_values2(3, args);
 		} else {
 #if HAS_PROC_WITH_BLOCK
-		    VALUE	args[1];
-
-		    *args = stack_head_val(&pi->stack);
-		    rb_proc_call_with_block(pi->proc, 1, args, Qnil);
+		    rb_proc_call_with_block(pi->proc, 3, args, Qnil);
 #else
 		    rb_raise(rb_eNotImpError,
 			     "Calling a Proc with a block not supported in this version. Use func() {|x| } syntax instead.");
 #endif
 		}
-	    } else {
+	    } else if (!pi->has_callbacks) {
 		first = 0;
 	    }
 	}

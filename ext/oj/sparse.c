@@ -782,7 +782,7 @@ oj_sparse2(ParseInfo pi) {
 		    return;
 #endif
 		}
-	    } else {
+	    } else if (!pi->has_callbacks) {
 		first = 0;
 	    }
 	}

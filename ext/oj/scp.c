@@ -214,6 +214,7 @@ oj_sc_parse(int argc, VALUE *argv, VALUE self) {
 	pi.add_value = noop_add_value;
 	pi.expect_value = 0;
     }
+    pi.has_callbacks = true;
 
     if (T_STRING == rb_type(input)) {
 	return oj_pi_parse(argc - 1, argv + 1, &pi, 0, 0, 1);

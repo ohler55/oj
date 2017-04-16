@@ -261,7 +261,7 @@ class ScpTest < Minitest::Test
   def test_double
     handler = AllHandler.new()
     json = %{{"one":true,"two":false}{"three":true,"four":false}}
-    Oj.sc_parse(handler, json) { |j| j }
+    Oj.sc_parse(handler, json)
     assert_equal([[:hash_start],
                   [:hash_key, 'one'],
                   [:hash_set, 'one', true],
@@ -281,7 +281,7 @@ class ScpTest < Minitest::Test
   def test_double_io
     handler = AllHandler.new()
     json = %{{"one":true,"two":false}{"three":true,"four":false}}
-    Oj.sc_parse(handler, StringIO.new(json)) { |j| j }
+    Oj.sc_parse(handler, StringIO.new(json))
     assert_equal([[:hash_start],
                   [:hash_key, 'one'],
                   [:hash_set, 'one', true],
