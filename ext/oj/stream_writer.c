@@ -9,6 +9,8 @@
 
 #include "oj.h"
 
+extern VALUE	Oj;
+
 static void
 stream_writer_free(void *ptr) {
     StreamWriter	sw;
@@ -35,7 +37,7 @@ stream_writer_write(StreamWriter sw) {
 	break;
     case FILE_IO:
 	if (size != write(sw->fd, sw->sw.out.buf, size)) {
-	    rb_raise(rb_eIOError, "Write failed. [%d:%s]\n", errno, strerror(errno));
+	    rb_raise(rb_eIOError, "Write failed. [_%d_:%s]\n", errno, strerror(errno));
 	}
 	break;
     default:
@@ -49,12 +51,12 @@ stream_writer_reset_buf(StreamWriter sw) {
     *sw->sw.out.cur = '\0';
 }
 
-/* Document-class: Oj::StreamWriter
- * @!method new(io, options)
+/* Document-method: new
+ * call-seq: new(io, options)
  *
  * Creates a new StreamWriter.
- * @param io [IO] stream to write to
- * @param options [Hash] formating options
+ * - *io* [_IO_] stream to write to
+ * - *options* [_Hash_] formating options
  */
 static VALUE
 stream_writer_new(int argc, VALUE *argv, VALUE self) {
@@ -93,13 +95,13 @@ stream_writer_new(int argc, VALUE *argv, VALUE self) {
     return Data_Wrap_Struct(oj_stream_writer_class, 0, stream_writer_free, sw);
 }
 
-/* Document-class: Oj::StreamWriter
- * @!method push_key(key)
+/* Document-method: push_key
+ * call-seq: push_key(key)
  *
  * Pushes a key onto the JSON document. The key will be used for the next push
  * if currently in a JSON object and ignored otherwise. If a key is provided on
  * the next push then that new key will be ignored.
- * @param key [String] the key pending for the next push
+ * - *key* [_String_] the key pending for the next push
  */
 static VALUE
 stream_writer_push_key(VALUE self, VALUE key) {
@@ -112,12 +114,12 @@ stream_writer_push_key(VALUE self, VALUE key) {
     return Qnil;
 }
 
-/* Document-class: Oj::StreamWriter
- * @!method push_object(key=nil)
+/* Document-method: push_object
+ * call-seq: push_object(key=nil)
  *
  * Pushes an object onto the JSON document. Future pushes will be to this object
  * until a pop() is called.
- * @param key [String] the key if adding to an object in the JSON document
+ * - *key* [_String_] the key if adding to an object in the JSON document
  */
 static VALUE
 stream_writer_push_object(int argc, VALUE *argv, VALUE self) {
@@ -144,12 +146,12 @@ stream_writer_push_object(int argc, VALUE *argv, VALUE self) {
     return Qnil;
 }
 
-/* Document-class: Oj::StreamWriter
- * @!method push_array(key=nil)
+/* Document-method: push_array
+ * call-seq: push_array(key=nil)
  *
  * Pushes an array onto the JSON document. Future pushes will be to this object
  * until a pop() is called.
- * @param key [String] the key if adding to an object in the JSON document
+ * - *key* [_String_] the key if adding to an object in the JSON document
  */
 static VALUE
 stream_writer_push_array(int argc, VALUE *argv, VALUE self) {
@@ -176,12 +178,12 @@ stream_writer_push_array(int argc, VALUE *argv, VALUE self) {
     return Qnil;
 }
 
-/* Document-class: Oj::StreamWriter
- * @!method push_value(value, key=nil)
+/* Document-method: push_value
+ * call-seq: push_value(value, key=nil)
  *
  * Pushes a value onto the JSON document.
- * @param value [Object] value to add to the JSON document
- * @param key [String] the key if adding to an object in the JSON document
+ * - *value* [_Object_] value to add to the JSON document
+ * - *key* [_String_] the key if adding to an object in the JSON document
  */
 static VALUE
 stream_writer_push_value(int argc, VALUE *argv, VALUE self) {
@@ -208,14 +210,14 @@ stream_writer_push_value(int argc, VALUE *argv, VALUE self) {
     return Qnil;
 }
 
-/* Document-class: Oj::StreamWriter
- * @!method push_json(value, key=nil)
+/* Document-method: push_json
+ * call-seq: push_json(value, key=nil)
  *
  * Pushes a string onto the JSON document. The String must be a valid JSON
  * encoded string. No additional checking is done to verify the validity of the
  * string.
- * @param value [Object] value to add to the JSON document
- * @param key [String] the key if adding to an object in the JSON document
+ * - *value* [_Object_] value to add to the JSON document
+ * - *key* [_String_] the key if adding to an object in the JSON document
  */
 static VALUE
 stream_writer_push_json(int argc, VALUE *argv, VALUE self) {
@@ -243,8 +245,8 @@ stream_writer_push_json(int argc, VALUE *argv, VALUE self) {
     return Qnil;
 }
 
-/* Document-class: Oj::StreamWriter
- * @!method pop()
+/* Document-method: pop
+ * call-seq: pop()
  *
  * Pops up a level in the JSON document closing the array or object that is
  * currently open.
@@ -259,8 +261,8 @@ stream_writer_pop(VALUE self) {
     return Qnil;
 }
 
-/* Document-class: Oj::StreamWriter
- * @!method pop_all()
+/* Document-method: pop_all
+ * call-seq: pop_all()
  *
  * Pops all level in the JSON document closing all the array or object that is
  * currently open.
@@ -284,8 +286,8 @@ stream_writer_pop_all(VALUE self) {
  * the elements to that array or object until a pop() is called.
  */
 void
-oj_stream_writer_init(VALUE oj) {
-    oj_stream_writer_class = rb_define_class_under(oj, "StreamWriter", rb_cObject);
+oj_stream_writer_init() {
+    oj_stream_writer_class = rb_define_class_under(Oj, "StreamWriter", rb_cObject);
     rb_define_module_function(oj_stream_writer_class, "new", stream_writer_new, -1);
     rb_define_method(oj_stream_writer_class, "push_key", stream_writer_push_key, 1);
     rb_define_method(oj_stream_writer_class, "push_object", stream_writer_push_object, -1);

@@ -1,7 +1,6 @@
 --title "Oj API Documentation"
 --readme README.md
 --charset utf-8
---markup markdown
 -
 docs/Advanced.md
 docs/Compatibility.md

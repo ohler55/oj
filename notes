@@ -37,9 +37,6 @@ go/src/github.com/iq4health/router/
     - can rails tests not be run for 1.9.3?
 
   - create dump_custom, copy from compat
-
- - docs
-  - try @!scope and @!parse or @!parse [c]
  
  - what happened to obj mode loading time?
 

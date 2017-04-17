@@ -42,16 +42,16 @@ static VALUE	state_class;
  */
 
 /* Document-method: parser=
- * @overload parser=(parser) -> nil
+ * call-seq: parser=(parser)
  * 
  * Does nothing other than provide compatibiltiy.
- * @param parser [Object] ignored
+ * - *parser* [_Object_] ignored
  */
 /* Document-method: generator=
- * @overload generator=(generator) -> nil
+ * call-seq: generator=(generator)
  * 
  * Does nothing other than provide compatibiltiy.
- * @param generator [Object] ignored
+ * - *generator* [_Object_] ignored
  */
 
 VALUE
@@ -173,15 +173,16 @@ mimic_limit_arg(VALUE a) {
     return NUM2INT(a);
 }
 
-/* Document-module: JSON
- * @!method dump(obj, anIO=nil, limit = nil)
+/* Document-method: dump
+ * call-seq: dump(obj, anIO=nil, limit=nil)
  * 
  * Encodes an object as a JSON String.
  * 
- * @param obj [Object] object to convert to encode as JSON
- * @param anIO [IO] an IO that allows writing
- * @param limit [Fixnum] ignored
- * @return [String]
+ * - *obj* [_Object_] object to convert to encode as JSON
+ * - *anIO* [_IO_] an IO that allows writing
+ * - *limit* [_Fixnum_] ignored
+ *
+ * Returns [_String_] a JSON string.
  */
 static VALUE
 mimic_dump(int argc, VALUE *argv, VALUE self) {
@@ -273,28 +274,30 @@ mimic_walk(VALUE key, VALUE obj, VALUE proc) {
     return ST_CONTINUE;
 }
 
-/* Document-module: JSON
- * @!method restore(source, proc=nil)
+/* Document-method: restore
+ * call-seq: restore(source, proc=nil)
  * 
  * Loads a Ruby Object from a JSON source that can be either a String or an
  * IO. If Proc is given or a block is providedit is called with each nested
  * element of the loaded Object.
  * 
- * @param source [String|IO] JSON source
- * @param proc [Proc] to yield to on each element or nil
- * @return [Object}
+ * - *source* [_String_|IO] JSON source
+ * - *proc* [_Proc_] to yield to on each element or nil
+ *
+ * Returns [_Object_] the decoded Object.
  */
 
-/* Document-module: JSON
- * @!method load(source, proc=nil)
+/* Document-method: load
+ * call-seq: load(source, proc=nil)
  * 
  * Loads a Ruby Object from a JSON source that can be either a String or an
  * IO. If Proc is given or a block is providedit is called with each nested
  * element of the loaded Object.
  * 
- * @param source [String|IO] JSON source
- * @param proc [Proc] to yield to on each element or nil
- * @return [Object}
+ * - *source* [_String_|IO] JSON source
+ * - *proc* [_Proc_] to yield to on each element or nil
+ *
+ * Returns [_Object_] the decode Object.
  */
 static VALUE
 mimic_load(int argc, VALUE *argv, VALUE self) {
@@ -316,15 +319,16 @@ mimic_load(int argc, VALUE *argv, VALUE self) {
     return obj;
 }
 
-/* Document-module: JSON
- * @!method [](obj, opts={})
+/* Document-method: []
+ * call-seq: [](obj, opts={})
  * 
  * If the obj argument is a String then it is assumed to be a JSON String and
  * parsed otherwise the obj is encoded as a JSON String.
  * 
- * @param obj [String|Hash|Array] object to convert
- * @param opts [Hash] same options as either generate or parse
- * @return [Object]
+ * - *obj* [_String_|Hash|Array] object to convert
+ * - *opts* [_Hash_] same options as either generate or parse
+ *
+ * Returns [_Object_]
  */
 static VALUE
 mimic_dump_load(int argc, VALUE *argv, VALUE self) {
@@ -371,30 +375,29 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
     return rstr;
 }
 
-/* Document-module: JSON
- * @!method fast_generate(obj, opts=nil)
+/* Document-method: fast_generate
+ * call-seq: fast_generate(obj, opts=nil)
  * Same as generate().
  * @see generate
  */
 
-/* Document-module: JSON
- * @!method generate(obj, opts=nil)
+/* Document-method: generate
+ * call-seq: generate(obj, opts=nil)
  * 
  * Encode obj as a JSON String. The obj argument must be a Hash, Array, or
  * respond to to_h or to_json. Options other than those listed such as
  * +:allow_nan+ or +:max_nesting+ are ignored.
  * 
- * @param obj [Object|Hash|Array] object to convert to a JSON String
- * @param opts [Hash] options
- * @option opts [String] :indent String to use for indentation
- * @option opts [String] :space String placed after a , or : delimiter
- * @option opts_before [String] :space  String placed before a : delimiter
- * @option opts [String] :object_nl String placed after a JSON object
- * @option opts [String] :array_nl String placed after a JSON array
- * @option opts [Boolean] :ascii_only if not nil or false then use only ascii
- *                      characters in the output. Note JSON.generate does
- *                      support this even if it is not documented.
- * @return [String]
+ * - *obj* [_Object_|Hash|Array] object to convert to a JSON String
+ * - *opts* [_Hash_] options
+ * - - *:indent* [_String_] String to use for indentation.
+ *   - *:space* [_String_] String placed after a , or : delimiter
+ *   - *:space_before*  [_String_] String placed before a : delimiter
+ *   - *:object_nl* [_String_] String placed after a JSON object
+ *   - *:array_nl* [_String_] String placed after a JSON array
+ *   - *:ascii_only* [_Boolean_] if not nil or false then use only ascii characters in the output. Note JSON.generate does support this even if it is not documented.
+ *
+ * Returns [_String_] generated JSON.
  */
 VALUE
 oj_mimic_generate(int argc, VALUE *argv, VALUE self) {
@@ -406,11 +409,13 @@ oj_mimic_generate(int argc, VALUE *argv, VALUE self) {
     return mimic_generate_core(argc, argv, &copts);
 }
 
-/* Document-module: JSON
- * @!method pretty_generate(obj, opts=nil) -> String
+/* Document-method: pretty_generate
+ *	call-seq: pretty_generate(obj, opts=nil)
+ *
  * Same as generate() but with different defaults for the spacing options.
  * @see generate
- * @return [String]
+ *
+ * Return [_String_] the generated JSON.
  */
 VALUE
 oj_mimic_pretty_generate(int argc, VALUE *argv, VALUE self) {
@@ -519,18 +524,19 @@ mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
     return oj_pi_parse(1, args, &pi, 0, 0, 0);
 }
 
-/* Document-module: JSON
- * @!method parse(source, opts=nil)
+/* Document-method: parse
+ * call-seq: parse(source, opts=nil)
  *
  * Parses a JSON String or IO into a Ruby Object.  Options other than those
  * listed such as +:allow_nan+ or +:max_nesting+ are ignored. +:object_class+ and
  * +:array_object+ are not supported.
  *
- * @param source [String|IO] source to parse
- * @param opts [Hash] options
- * @option opts [Boolean] :symbolize _names flag indicating JSON object keys should be Symbols instead of Strings
- * @option opts [Boolean] :create_additions flag indicating a key matching +create_id+ in a JSON object should trigger the creation of Ruby Object
- * @return [Object]
+ * - *source* [_String_|IO] source to parse
+ * - *opts* [_Hash_] options
+ *   - *:symbolize* [Boolean] _names flag indicating JSON object keys should be Symbols instead of Strings
+ *   - *:create_additions* [Boolean] flag indicating a key matching +create_id+ in a JSON object should trigger the creation of Ruby Object
+ *
+ * Returns [Object]
  * @see create_id=
  */
 VALUE
@@ -538,8 +544,8 @@ oj_mimic_parse(int argc, VALUE *argv, VALUE self) {
     return mimic_parse_core(argc, argv, self, false);
 }
 
-/* Document-module: JSON
- * @!method parse!(source, opts=nil)
+/* Document-method: parse!
+ * call-seq: parse!(source, opts=nil)
  *
  * Same as parse().
  * @see parse
@@ -549,14 +555,13 @@ mimic_parse_bang(int argc, VALUE *argv, VALUE self) {
     return mimic_parse_core(argc, argv, self, true);
 }
 
-/* Document-module: JSON
- * @!method recurse_proc(obj, &proc)
+/* Document-method: recurse_proc
+ * call-seq: recurse_proc(obj, &proc)
  * 
  * Yields to the proc for every element in the obj recursivly.
  * 
- * @param obj [Hash|Array] object to walk
- * @param proc [Proc] to yield to on each element
- * @return [nil]
+ * - *obj* [_Hash_|Array] object to walk
+ * - *proc* [_Proc_] to yield to on each element
  */
 static VALUE
 mimic_recurse_proc(VALUE self, VALUE obj) {
@@ -566,14 +571,15 @@ mimic_recurse_proc(VALUE self, VALUE obj) {
     return Qnil;
 }
 
-/* Document-module: JSON
- * @!method create_id=(id) -> String
+/* Document-method: create_id=
+ * call-seq: create_id=(id)
  *
  * Sets the create_id tag to look for in JSON document. That key triggers the
  * creation of a class with the same name.
  *
- * @param id [nil|String] new create_id
- * @return [String] the id
+ * - *id* [_nil_|String] new create_id
+ *
+ * Returns [_String_] the id.
  */
 static VALUE
 mimic_set_create_id(VALUE self, VALUE id) {
@@ -596,10 +602,10 @@ mimic_set_create_id(VALUE self, VALUE id) {
     return id;
 }
 
-/* Document-module: JSON
- * @!method create_id() -> String
+/* Document-method: create_id
+ * call-seq: create_id()
  *
- * @return [String] the create_id.
+ * Returns [_String_] the create_id.
  */
 static VALUE
 mimic_create_id(VALUE self) {
@@ -693,29 +699,19 @@ mimic_object_to_json(int argc, VALUE *argv, VALUE self) {
     return rstr;
 }
 
-/* Document-module: JSON
- * @!method state() -> JSON::State
+/* Document-method: state
+ *	call-seq: state()
  *
- * @return [Class] return the JSON::State class
+ * Returns [_JSON::State_] the JSON::State class.
  */
 static VALUE
 mimic_state(VALUE self) {
     return state_class;
 }
 
-/* Document-modue: Oj
- * @!method mimic_JSON() => Module
+/* Document-module: JSON
  *
- * Creates the JSON module with methods and classes to mimic the JSON gem. After
- * this method is invoked calls that expect the JSON module will use Oj instead
- * and be faster than the original JSON. Most options that could be passed to
- * the JSON methods are supported. The calls to set parser or generator will not
- * raise an Exception but will not have any effect. The method can also be
- * called after the json gem is loaded. The necessary methods on the json gem
- * will be replaced with Oj methods.
- *
- * Note that this also sets the default options of :mode to :compat and
- * :encoding to :ascii.
+ * A mimic of the json gem module.
  */
 VALUE
 oj_define_mimic_json(int argc, VALUE *argv, VALUE self) {
@@ -723,15 +719,15 @@ oj_define_mimic_json(int argc, VALUE *argv, VALUE self) {
     VALUE	dummy;
     VALUE	verbose;
     VALUE	json_error;
-    VALUE	mimic;
+    VALUE	json;
     VALUE	generator;
     
     // Either set the paths to indicate JSON has been loaded or replaces the
     // methods if it has been loaded.
     if (rb_const_defined_at(rb_cObject, rb_intern("JSON"))) {
-	mimic = rb_const_get_at(rb_cObject, rb_intern("JSON"));
+	json = rb_const_get_at(rb_cObject, rb_intern("JSON"));
     } else {
-	mimic = rb_define_module("JSON");
+	json = rb_define_module("JSON");
     }
     verbose = rb_gv_get("$VERBOSE");
     rb_gv_set("$VERBOSE", Qfalse);
@@ -748,10 +744,10 @@ oj_define_mimic_json(int argc, VALUE *argv, VALUE self) {
 	    rb_funcall2(Oj, rb_intern("mimic_loaded"), 0, 0);
 	}
     }
-    if (rb_const_defined_at(mimic, rb_intern("Ext"))) {
-	ext = rb_const_get_at(mimic, rb_intern("Ext"));
+    if (rb_const_defined_at(json, rb_intern("Ext"))) {
+	ext = rb_const_get_at(json, rb_intern("Ext"));
      } else {
-	ext = rb_define_module_under(mimic, "Ext");
+	ext = rb_define_module_under(json, "Ext");
     }
     if (rb_const_defined_at(ext, rb_intern("Generator"))) {
 	generator = rb_const_get_at(ext, rb_intern("Generator"));
@@ -765,27 +761,27 @@ oj_define_mimic_json(int argc, VALUE *argv, VALUE self) {
     state_class = rb_const_get_at(generator, rb_intern("State"));
     // TBD create all modules in mimic_loaded
 
-    rb_define_module_function(mimic, "create_id=", mimic_set_create_id, 1);
-    rb_define_module_function(mimic, "create_id", mimic_create_id, 0);
+    rb_define_module_function(json, "create_id=", mimic_set_create_id, 1);
+    rb_define_module_function(json, "create_id", mimic_create_id, 0);
 
-    rb_define_module_function(mimic, "dump", mimic_dump, -1);
-    rb_define_module_function(mimic, "load", mimic_load, -1);
-    rb_define_module_function(mimic, "restore", mimic_load, -1);
-    rb_define_module_function(mimic, "recurse_proc", mimic_recurse_proc, 1);
-    rb_define_module_function(mimic, "[]", mimic_dump_load, -1);
+    rb_define_module_function(json, "dump", mimic_dump, -1);
+    rb_define_module_function(json, "load", mimic_load, -1);
+    rb_define_module_function(json, "restore", mimic_load, -1);
+    rb_define_module_function(json, "recurse_proc", mimic_recurse_proc, 1);
+    rb_define_module_function(json, "[]", mimic_dump_load, -1);
 
-    rb_define_module_function(mimic, "generate", oj_mimic_generate, -1);
-    rb_define_module_function(mimic, "fast_generate", oj_mimic_generate, -1);
-    rb_define_module_function(mimic, "pretty_generate", oj_mimic_pretty_generate, -1);
+    rb_define_module_function(json, "generate", oj_mimic_generate, -1);
+    rb_define_module_function(json, "fast_generate", oj_mimic_generate, -1);
+    rb_define_module_function(json, "pretty_generate", oj_mimic_pretty_generate, -1);
     // For older versions of JSON, the deprecated unparse methods.
-    rb_define_module_function(mimic, "unparse", oj_mimic_generate, -1);
-    rb_define_module_function(mimic, "fast_unparse", oj_mimic_generate, -1);
-    rb_define_module_function(mimic, "pretty_unparse", oj_mimic_pretty_generate, -1);
+    rb_define_module_function(json, "unparse", oj_mimic_generate, -1);
+    rb_define_module_function(json, "fast_unparse", oj_mimic_generate, -1);
+    rb_define_module_function(json, "pretty_unparse", oj_mimic_pretty_generate, -1);
 
-    rb_define_module_function(mimic, "parse", oj_mimic_parse, -1);
-    rb_define_module_function(mimic, "parse!", mimic_parse_bang, -1);
+    rb_define_module_function(json, "parse", oj_mimic_parse, -1);
+    rb_define_module_function(json, "parse!", mimic_parse_bang, -1);
 
-    rb_define_module_function(mimic, "state", mimic_state, 0);
+    rb_define_module_function(json, "state", mimic_state, 0);
 
     rb_define_method(rb_cObject, "to_json", mimic_object_to_json, -1);
 
@@ -793,29 +789,29 @@ oj_define_mimic_json(int argc, VALUE *argv, VALUE self) {
 
     symbolize_names_sym = ID2SYM(rb_intern("symbolize_names"));	rb_gc_register_address(&symbolize_names_sym);
 
-    if (rb_const_defined_at(mimic, rb_intern("JSONError"))) {
-        json_error = rb_const_get(mimic, rb_intern("JSONError"));
+    if (rb_const_defined_at(json, rb_intern("JSONError"))) {
+        json_error = rb_const_get(json, rb_intern("JSONError"));
     } else {
-        json_error = rb_define_class_under(mimic, "JSONError", rb_eStandardError);
+        json_error = rb_define_class_under(json, "JSONError", rb_eStandardError);
     }
-    if (rb_const_defined_at(mimic, rb_intern("ParserError"))) {
-        oj_json_parser_error_class = rb_const_get(mimic, rb_intern("ParserError"));
+    if (rb_const_defined_at(json, rb_intern("ParserError"))) {
+        oj_json_parser_error_class = rb_const_get(json, rb_intern("ParserError"));
     } else {
-    	oj_json_parser_error_class = rb_define_class_under(mimic, "ParserError", json_error);
+    	oj_json_parser_error_class = rb_define_class_under(json, "ParserError", json_error);
     }
-    if (rb_const_defined_at(mimic, rb_intern("GeneratorError"))) {
-        oj_json_generator_error_class = rb_const_get(mimic, rb_intern("GeneratorError"));
+    if (rb_const_defined_at(json, rb_intern("GeneratorError"))) {
+        oj_json_generator_error_class = rb_const_get(json, rb_intern("GeneratorError"));
     } else {
-    	oj_json_generator_error_class = rb_define_class_under(mimic, "GeneratorError", json_error);
+    	oj_json_generator_error_class = rb_define_class_under(json, "GeneratorError", json_error);
     }
-    if (rb_const_defined_at(mimic, rb_intern("NestingError"))) {
-        rb_const_get(mimic, rb_intern("NestingError"));
+    if (rb_const_defined_at(json, rb_intern("NestingError"))) {
+        rb_const_get(json, rb_intern("NestingError"));
     } else {
-    	rb_define_class_under(mimic, "NestingError", json_error);
+    	rb_define_class_under(json, "NestingError", json_error);
     }
 
     oj_default_options = mimic_object_to_json_options;
     oj_default_options.to_json = Yes;
 
-    return mimic;
+    return json;
 }

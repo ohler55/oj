@@ -208,40 +208,42 @@ struct _Options	oj_default_options = {
     }
 };
 
-/* @overload default_options() => Hash
+/* Document-method: default_options()
+ *	call-seq: default_options()
  *
  * Returns the default load and dump options as a Hash. The options are
- * - indent: [Fixnum|String|nil] number of spaces to indent each element in an JSON document, zero or nil is no newline between JSON elements, negative indicates no newline between top level JSON elements in a stream, a String indicates the string should be used for indentation
- * - circular: [true|false|nil] support circular references while dumping
- * - auto_define: [true|false|nil] automatically define classes if they do not exist
- * - symbol_keys: [true|false|nil] use symbols instead of strings for hash keys
- * - escape_mode: [:newline|:json|:xss_safe|:ascii|unicode_xss|nil] determines the characters to escape
- * - class_cache: [true|false|nil] cache classes for faster parsing (if dynamically modifying classes or reloading classes then don't use this)
- * - mode: [:object|:strict|:compat|:null|:custom|:rails] load and dump modes to use for JSON
- * - time_format: [:unix|:unix_zone|:xmlschema|:ruby] time format when dumping in :compat and :object mode
- * - bigdecimal_as_decimal: [true|false|nil] dump BigDecimal as a decimal number or as a String
- * - bigdecimal_load: [:bigdecimal|:float|:auto] load decimals as BigDecimal instead of as a Float. :auto pick the most precise for the number of digits.
- * - create_id: [String|nil] create id for json compatible object encoding, default is 'json_create'
- * - second_precision: [Fixnum|nil] number of digits after the decimal when dumping the seconds portion of time
- * - float_precision: [Fixnum|nil] number of digits of precision when dumping floats, 0 indicates use Ruby
- * - use_to_json: [true|false|nil] call to_json() methods on dump, default is false
- * - use_as_json: [true|false|nil] call as_json() methods on dump, default is false
- * - nilnil: [true|false|nil] if true a nil input to load will return nil and not raise an Exception
- * - empty_string: [true|false|nil] if true an empty input will not raise an Exception
- * - allow_gc: [true|false|nil] allow or prohibit GC during parsing, default is true (allow)
- * - quirks_mode: [true,|false|nil] Allow single JSON values instead of documents, default is true (allow)
- * - allow_invalid_unicode: [true,|false|nil] Allow invalid unicode, default is false (don't allow)
- * - allow_nan: [true,|false|nil] Allow Nan, Infinity, and -Infinity to be parsed, default is true (allow)
- * - indent_str: [String|nil] String to use for indentation, overriding the indent option is not nil
- * - space: [String|nil] String to use for the space after the colon in JSON object fields
- * - space_before: [String|nil] String to use before the colon separator in JSON object fields
- * - object_nl: [String|nil] String to use after a JSON object field value
- * - array_nl: [String|nil] String to use after a JSON array value
- * - nan: [:null|:huge|:word|:raise|:auto] how to dump Infinity and NaN in null, strict, and compat mode. :null places a null, :huge places a huge number, :word places Infinity or NaN, :raise raises and exception, :auto uses default for each mode.
- * - hash_class: [Class|nil] Class to use instead of Hash on load, :object_class can also be used
- * - array_class: [Class|nil] Class to use instead of Array on load
- * - omit_nil: [true|false] if true Hash and Object attributes with nil values are omitted
- * @return [Hash] all current option settings.
+ * - *:indent* [_Fixnum_|_String_|_nil_] number of spaces to indent each element in an JSON document, zero or nil is no newline between JSON elements, negative indicates no newline between top level JSON elements in a stream, a String indicates the string should be used for indentation
+ * - *:circular* [_Boolean_|_nil_] support circular references while dumping
+ * - *:auto_define* [_Boolean_|_nil_] automatically define classes if they do not exist
+ * - *:symbol_keys* [_Boolean_|_nil_] use symbols instead of strings for hash keys
+ * - *:escape_mode* [_:newline_|_:json_|_:xss_safe_|_:ascii_|_unicode_xss_|_nil_] determines the characters to escape
+ * - *:class_cache* [_Boolean_|_nil_] cache classes for faster parsing (if dynamically modifying classes or reloading classes then don't use this)
+ * - *:mode* [_:object_|_:strict_|_:compat_|_:null_|_:custom_|_:rails_] load and dump modes to use for JSON
+ * - *:time_format* [_:unix_|_:unix_zone_|_:xmlschema_|_:ruby_] time format when dumping in :compat and :object mode
+ * - *:bigdecimal_as_decimal* [_Boolean_|_nil_] dump BigDecimal as a decimal number or as a String
+ * - *:bigdecimal_load* [_:bigdecimal_|_:float_|_:auto_] load decimals as BigDecimal instead of as a Float. :auto pick the most precise for the number of digits.
+ * - *:create_id* [_String_|_nil_] create id for json compatible object encoding, default is 'json_create'
+ * - *:second_precision* [_Fixnum_|_nil_] number of digits after the decimal when dumping the seconds portion of time
+ * - *:float_precision* [_Fixnum_|_nil_] number of digits of precision when dumping floats, 0 indicates use Ruby
+ * - *:use_to_json* [_Boolean_|_nil_] call to_json() methods on dump, default is false
+ * - *:use_as_json* [_Boolean_|_nil_] call as_json() methods on dump, default is false
+ * - *:nilnil* [_Boolean_|_nil_] if true a nil input to load will return nil and not raise an Exception
+ * - *:empty_string* [_Boolean_|_nil_] if true an empty input will not raise an Exception
+ * - *:allow_gc* [_Boolean_|_nil_] allow or prohibit GC during parsing, default is true (allow)
+ * - *:quirks_mode* [_true,_|_false_|_nil_] Allow single JSON values instead of documents, default is true (allow)
+ * - *:allow_invalid_unicode* [_true,_|_false_|_nil_] Allow invalid unicode, default is false (don't allow)
+ * - *:allow_nan* [_true,_|_false_|_nil_] Allow Nan, Infinity, and -Infinity to be parsed, default is true (allow)
+ * - *:indent_str* [_String_|_nil_] String to use for indentation, overriding the indent option is not nil
+ * - *:space* [_String_|_nil_] String to use for the space after the colon in JSON object fields
+ * - *:space_before* [_String_|_nil_] String to use before the colon separator in JSON object fields
+ * - *:object_nl* [_String_|_nil_] String to use after a JSON object field value
+ * - *:array_nl* [_String_|_nil_] String to use after a JSON array value
+ * - *:nan* [_:null_|_:huge_|_:word_|_:raise_|_:auto_] how to dump Infinity and NaN in null, strict, and compat mode. :null places a null, :huge places a huge number, :word places Infinity or NaN, :raise raises and exception, :auto uses default for each mode.
+ * - *:hash_class* [_Class_|_nil_] Class to use instead of Hash on load, :object_class can also be used
+ * - *:array_class* [_Class_|_nil_] Class to use instead of Array on load
+ * - *:omit_nil* [_true_|_false_] if true Hash and Object attributes with nil values are omitted
+ *
+ * Return [_Hash_] all current option settings.
  */
 static VALUE
 get_def_opts(VALUE self) {
@@ -319,56 +321,40 @@ get_def_opts(VALUE self) {
     return opts;
 }
 
-/* @!method default_options=(opts)
+/* Document-method: default_options=
+ *	call-seq: default_options=(opts)
  *
  * Sets the default options for load and dump.
- * @param  opts [Hash] options to change
- * @option opts [Fixnum|String|nil] :indent number of spaces to indent each element in a JSON document or the String to use for identation.
- * @option opts [true|false|nil] :circular support circular references while dumping
- * @option opts [true|false|nil] :auto _define automatically define classes if they do not exist
- * @option opts [true|false|nil] :symbol _keys convert hash keys to symbols
- * @option opts [true|false|nil] :class _cache cache classes for faster parsing
- * @option opts [:newline|:json|:xss_safe|:ascii|unicode_xss|nil] :escape mode encodes all high-bit characters as
- *        escaped sequences if :ascii, :json is standand UTF-8 JSON encoding,
- *        :newline is the same as :json but newlines are not escaped,
- *        :unicode_xss allows unicode but escapes &, <, and >, and any \u20xx characters along with some others,
- *        and :xss_safe escapes &, <, and >, and some others.
- * @option opts [true|false|nil] :bigdecimal_as_decimal dump BigDecimal as a decimal number or as a String
- * @option opts [:bigdecimal|:float|:auto|nil] :bigdecimal_load load decimals as BigDecimal instead of as a Float. :auto pick the most precise for the number of digits.
- * @option opts [:object|:strict|:compat|:null|:custom|:rails] load and dump mode to use for JSON
- *	  :strict raises an exception when a non-supported Object is
- *	  encountered. :compat attempts to extract variable values from an
- *	  Object using to_json() or to_hash() then it walks the Object's
- *	  variables if neither is found. The :object mode ignores to_hash()
- *	  and to_json() methods and encodes variables using code internal to
- *	  the Oj gem. The :null mode ignores non-supported Objects and
- *	  replaces them with a null. The :custom mode honors all dump options.
- *        The :rails more mimics rails and Active behavior.
- * @option opts [:unix|:xmlschema|:ruby] time format when dumping in :compat mode
- *        :unix decimal number denoting the number of seconds since 1/1/1970,
- *        :unix_zone decimal number denoting the number of seconds since 1/1/1970 plus the utc_offset in the exponent ,
- *        :xmlschema date-time format taken from XML Schema as a String,
- *        :ruby Time.to_s formatted String
- * @option opts [String|nil] :create_id create id for json compatible object encoding
- * @option opts [Fixnum|nil] :second_precision number of digits after the decimal when dumping the seconds portion of time
- * @option opts [Fixnum|nil] :float_precision number of digits of precision when dumping floats, 0 indicates use Ruby
- * @option opts [true|false|nil] :use_to_json call to_json() methods on dump, default is false
- * @option opts [true|false|nil] :use_as_json call as_json() methods on dump, default is false
- * @option opts [true|false|nil] :use_to_hash call to_hash() methods on dump, default is false
- * @option opts [true|false|nil] :nilnil if true a nil input to load will return nil and not raise an Exception
- * @option opts [true|false|nil] :allow_gc allow or prohibit GC during parsing, default is true (allow)
- * @option opts [true|false|nil] :quirks_mode allow single JSON values instead of documents, default is true (allow)
- * @option opts [true|false|nil] :allow_invalid_unicode allow invalid unicode, default is false (don't allow)
- * @option opts [true|false|nil] :allow_nan allow Nan, Infinity, and -Infinity, default is true (allow)
- * @option opts [String|nil] :space String to use for the space after the colon in JSON object fields
- * @option opts [String|nil] :space_before String to use before the colon separator in JSON object fields
- * @option opts [String|nil] :object_nl String to use after a JSON object field value
- * @option opts [String|nil] :array_nl String to use after a JSON array value
- * @option opts [:null|:huge|:word|:raise] :nan how to dump Infinity and NaN in null, strict, and compat mode. :null places a null, :huge places a huge number, :word places Infinity or NaN, :raise raises and exception, :auto uses default for each mode.
- * @option opts [Class|nil] :hash_class Class to use instead of Hash on load, :object_class can also be used
- * @option opts [Class|nil] :array_class Class to use instead of Array on load
- * @option opts [true|false] :omit _nil if true Hash and Object attributes with nil values are omitted
- * @return [nil]
+ * - *opts* [_Hash_] options to change
+ *   - *:indent* [_Fixnum_|_String_|_nil_] number of spaces to indent each element in a JSON document or the String to use for identation.
+ *   - :circular [_Boolean_|_nil_] support circular references while dumping.
+ *   - *:auto_define* [_Boolean_|_nil_] automatically define classes if they do not exist.
+ *   - *:symbol_keys* [_Boolean_|_nil_] convert hash keys to symbols.
+ *   - *:class_cache* [_Boolean_|_nil_] cache classes for faster parsing.
+ *   - *:escape* [_:newline_|_:json_|_:xss_safe_|_:ascii_|_unicode_xss_|_nil_] mode encodes all high-bit characters as escaped sequences if :ascii, :json is standand UTF-8 JSON encoding, :newline is the same as :json but newlines are not escaped, :unicode_xss allows unicode but escapes &, <, and >, and any \u20xx characters along with some others, and :xss_safe escapes &, <, and >, and some others.
+ *   - *:bigdecimal_as_decimal* [_Boolean_|_nil_] dump BigDecimal as a decimal number or as a String.
+ *   - *:bigdecimal_load* [_:bigdecimal_|_:float_|_:auto_|_nil_] load decimals as BigDecimal instead of as a Float. :auto pick the most precise for the number of digits.
+ *   - *:mode* [_:object_|_:strict_|_:compat_|_:null_|_:custom_|_:rails_] load and dump mode to use for JSON :strict raises an exception when a non-supported Object is encountered. :compat attempts to extract variable values from an Object using to_json() or to_hash() then it walks the Object's variables if neither is found. The :object mode ignores to_hash() and to_json() methods and encodes variables using code internal to the Oj gem. The :null mode ignores non-supported Objects and replaces them with a null. The :custom mode honors all dump options. The :rails more mimics rails and Active behavior.
+ *   - *:time_format* [_:unix_|_:xmlschema_|_:ruby_] time format when dumping in :compat mode :unix decimal number denoting the number of seconds since 1/1/1970, :unix_zone decimal number denoting the number of seconds since 1/1/1970 plus the utc_offset in the exponent, :xmlschema date-time format taken from XML Schema as a String, :ruby Time.to_s formatted String.
+ *   - *:create_id* [_String_|_nil_] create id for json compatible object encoding
+ *   - *:second_precision* [_Fixnum_|_nil_] number of digits after the decimal when dumping the seconds portion of time.
+ *   - *:float_precision* [_Fixnum_|_nil_] number of digits of precision when dumping floats, 0 indicates use Ruby.
+ *   - *:use_to_json* [_Boolean_|_nil_] call to_json() methods on dump, default is false.
+ *   - *:use_as_json* [_Boolean_|_nil_] call as_json() methods on dump, default is false.
+ *   - *:use_to_hash* [_Boolean_|_nil_] call to_hash() methods on dump, default is false.
+ *   - *:nilnil* [_Boolean_|_nil_] if true a nil input to load will return nil and not raise an Exception.
+ *   - *:allow_gc* [_Boolean_|_nil_] allow or prohibit GC during parsing, default is true (allow).
+ *   - *:quirks_mode* [_Boolean_|_nil_] allow single JSON values instead of documents, default is true (allow).
+ *   - *:allow_invalid_unicode* [_Boolean_|_nil_] allow invalid unicode, default is false (don't allow).
+ *   - *:allow_nan* [_Boolean_|_nil_] allow Nan, Infinity, and -Infinity, default is true (allow).
+ *   - *:space* [_String_|_nil_] String to use for the space after the colon in JSON object fields.
+ *   - *:space_before* [_String_|_nil_] String to use before the colon separator in JSON object fields.
+ *   - *:object_nl* [_String_|_nil_] String to use after a JSON object field value.
+ *   - *:array_nl* [_String_|_nil_] String to use after a JSON array value
+ *   - *:nan* [_:null_|_:huge_|_:word_|_:raise_] how to dump Infinity and NaN in null, strict, and compat mode. :null places a null, :huge places a huge number, :word places Infinity or NaN, :raise raises and exception, :auto uses default for each mode.
+ *   - *:hash_class* [_Class_|_nil_] Class to use instead of Hash on load, :object_class can also be used.
+ *   - *:array_class* [_Class_|_nil_] Class to use instead of Array on load.
+ *   - *:omit_nil* [_true_|_false_] if true Hash and Object attributes with nil values are omitted.
  */
 static VALUE
 set_def_opts(VALUE self, VALUE opts) {
@@ -715,72 +701,8 @@ oj_parse_opt_match_string(RxClass rc, VALUE ropts) {
     }
 }
 
-/* @!method strict_load(json, options)
- *
- * Parses a JSON document String into an Hash, Array, String, Fixnum, Float,
- * true, false, or nil. It parses using a mode that is strict in that it maps
- * each primitive JSON type to a similar Ruby type. The :create_id is not
- * honored in this mode. Note that a Ruby Hash is used to represent the JSON
- * Object type. These two are not the same since the JSON Object type can have
- * repeating entries with the same key and Ruby Hash can not.
- *
- * When used with a document that has multiple JSON elements the block, if
- * any, will be yielded to. If no block then the last element read will be
- * returned.
- *
- * Raises an exception if the JSON is malformed or the classes specified are not
- * valid. If the input is not a valid JSON document (an empty string is not a
- * valid JSON document) an exception is raised.
- *
- * A block can be provided with a single argument. That argument will be the
- * parsed JSON document. This is useful when parsing a string that includes
- * multiple JSON documents. The block can take up to 3 arguments, the parsed
- * object, the position in the string or stream of the start of the JSON for
- * that object, and the length of the JSON for that object plus trailing
- * whitespace.
- *
- * @param json [String|IO] JSON String or an Object that responds to read()
- * @param options [Hash] load options (same as default_options)
- * @yield [obj, start, len] after parsing a top level JSON object
- * @yieldparam [Hash|Array|String|Fixnum|Float|Boolean|nil] parsed object
- * @yieldparam [optional, Integer] start starrt position of parsed JSON for obj
- * @yieldparam [optional, Integer] len length of parsed JSON for obj
- * @return [Hash|Array|String|Fixnum|Float|Boolean|nil]
- */
-
-/* @!method compat_load(json, options)
- *
- * Parses a JSON document String into an Object, Hash, Array, String, Fixnum,
- * Float, true, false, or nil. It parses using a mode that is generally
- * compatible with other Ruby JSON parsers in that it will create objects based
- * on the :create_id value. It is not compatible in every way to every other
- * parser though as each parser has it's own variations.
- *
- * When used with a document that has multiple JSON elements the block, if
- * any, will be yielded to. If no block then the last element read will be
- * returned.
- *
- * Raises an exception if the JSON is malformed or the classes specified are not
- * valid. If the input is not a valid JSON document (an empty string is not a
- * valid JSON document) an exception is raised.
- *
- * A block can be provided with a single argument. That argument will be the
- * parsed JSON document. This is useful when parsing a string that includes
- * multiple JSON documents. The block can take up to 3 arguments, the parsed
- * object, the position in the string or stream of the start of the JSON for
- * that object, and the length of the JSON for that object plus trailing
- * whitespace.
- *
- * @param json [String|IO] JSON String or an Object that responds to read()
- * @param options [Hash] load options (same as default_options)
- * @yield [obj, start, len] after parsing a top level JSON object
- * @yieldparam [Hash|Array|String|Fixnum|Float|Boolean|nil] parsed object
- * @yieldparam [optional, Integer] start starrt position of parsed JSON for obj
- * @yieldparam [optional, Integer] len length of parsed JSON for obj
- * @return [Hash|Array|String|Fixnum|Float|Boolean|nil]
- */
-
-/* @!method load(json, options)
+/* Document-method: load
+ * call-seq: load(json, options) { _|_obj, start, len_|_ }
  *
  * Parses a JSON document String into a Object, Hash, Array, String, Fixnum,
  * Float, true, false, or nil according to the default mode or the mode
@@ -803,13 +725,14 @@ oj_parse_opt_match_string(RxClass rc, VALUE ropts) {
  * that object, and the length of the JSON for that object plus trailing
  * whitespace.
  *
- * @param json [String|IO] JSON String or an Object that responds to read()
- * @param options [Hash] load options (same as default_options)
- * @yield [obj, start, len] after parsing a top level JSON object
- * @yieldparam [Hash|Array|String|Fixnum|Float|Boolean|nil] parsed object
- * @yieldparam [optional, Integer] start starrt position of parsed JSON for obj
- * @yieldparam [optional, Integer] len length of parsed JSON for obj
- * @return [Hash|Array|String|Fixnum|Float|Boolean|nil]
+ * - *json* [_String_|_IO_] JSON String or an Object that responds to read()
+ * - *options* [_Hash_] load options (same as default_options)
+ *   - -
+ * - *obj* [_Hash_|_Array_|_String_|_Fixnum_|_Float_|_Boolean_|_nil_] parsed object.
+ * - *start* [_optional, _Integer_] start position of parsed JSON for obj.
+ * - *len* [_optional, _Integer_] length of parsed JSON for obj.
+ * 
+ * Returns [_Hash_|_Array_|_String_|_Fixnum_|_Float_|_Boolean_|_nil_]
  */
 static VALUE
 load(int argc, VALUE *argv, VALUE self) {
@@ -858,7 +781,8 @@ load(int argc, VALUE *argv, VALUE self) {
     return oj_object_parse(argc, argv, self);
 }
 
-/* @!method load_file(path, options)
+/* Document-method: load_file
+ * call-seq: load_file(path, options) { _|_obj, start, len_|_ }
  *
  * Parses a JSON document String into a Object, Hash, Array, String, Fixnum,
  * Float, true, false, or nil according to the default mode or the mode
@@ -883,13 +807,14 @@ load(int argc, VALUE *argv, VALUE self) {
  * that object, and the length of the JSON for that object plus trailing
  * whitespace.
  *
- * @param path [String] to a file containing a JSON document
- * @param options [Hash] load options (same as default_options)
- * @yield [obj, start, len] after parsing a top level JSON object
- * @yieldparam [Hash|Array|String|Fixnum|Float|Boolean|nil] parsed object
- * @yieldparam [optional, Integer] start starrt position of parsed JSON for obj
- * @yieldparam [optional, Integer] len length of parsed JSON for obj
- * @return [Object|Hash|Array|String|Fixnum|Float|Boolean|nil]
+ * - *path* [_String_] to a file containing a JSON document
+ * - *options* [_Hash_] load options (same as default_options)
+ *   - -
+ * - *obj* [_Hash_|_Array_|_String_|_Fixnum_|_Float_|_Boolean_|_nil_] parsed object.
+ * - *start* [_optional, _Integer_] start position of parsed JSON for obj.
+ * - *len* [_optional, _Integer_] length of parsed JSON for obj.
+ *
+ * Returns [_Object_|_Hash_|_Array_|_String_|_Fixnum_|_Float_|_Boolean_|_nil_]
  */
 static VALUE
 load_file(int argc, VALUE *argv, VALUE self) {
@@ -953,14 +878,16 @@ load_file(int argc, VALUE *argv, VALUE self) {
     return oj_pi_sparse(argc, argv, &pi, fd);
 }
 
-/* @overload safe_load(doc)
+/* Document-method: safe_load
+ * call-seq: safe_load(doc)
  *
  * Loads a JSON document in strict mode with :auto_define and :symbol_keys
  * turned off. This function should be safe to use with JSON received on an
  * unprotected public interface.
  *
- * @param doc [String|IO] JSON String or IO to load
- * @return [Hash|Array|String|Fixnum|Bignum|BigDecimal|nil|True|False]
+ * - *doc* [_String__|_IO_] JSON String or IO to load.
+ *
+ * Returns [_Hash_|_Array_|_String_|_Fixnum_|_Bignum_|_BigDecimal_|_nil_|_True_|_False_]
  */
 static VALUE
 safe_load(VALUE self, VALUE doc) {
@@ -980,18 +907,20 @@ safe_load(VALUE self, VALUE doc) {
     return oj_pi_parse(1, args, &pi, 0, 0, 1);
 }
 
-/* @overload saj_parse(handler, io)
+/* Document-method: saj_parse
+ * call-seq: saj_parse(handler, io)
  *
  * Parses an IO stream or file containing a JSON document. Raises an exception
  * if the JSON is malformed. This is a callback parser that calls the methods in
  * the handler if they exist. A sample is the Oj::Saj class which can be used as
  * a base class for the handler.
  *
- * @param handler [Oj::Saj] responds to Oj::Saj methods
- * @param io [IO|String] IO Object to read from
+ * - *handler* [_Oj::Saj_] responds to Oj::Saj methods
+ * - *io* [_IO_|_String_] IO Object to read from
  */
 
-/* @overload sc_parse(handler, io)
+/* Document-method: sc_parse
+ * call-seq: sc_parse(handler, io)
  *
  * Parses an IO stream or file containing a JSON document. Raises an exception
  * if the JSON is malformed. This is a callback parser (Simple Callback Parser)
@@ -1000,15 +929,16 @@ safe_load(VALUE self, VALUE doc) {
  * callback parser is slightly more efficient than the Saj callback parser and
  * requires less argument checking.
  *
- * @param handler [Oj::ScHandler] responds to Oj::ScHandler methods
- * @param io [IO|String] IO Object to read from
+ * - *handler* [_Oj_::ScHandler_] responds to Oj::ScHandler methods
+ * - *io* [_IO__|_String_] IO Object to read from
  */
 
-/* @overload dump(obj, options) => json-string
+/* Document-method: dump
+ * call-seq: dump(obj, options)
  *
  * Dumps an Object (obj) to a string.
- * @param obj [Object] Object to serialize as an JSON document String
- * @param options [Hash] same as default_options
+ * - *obj* [_Object_] Object to serialize as an JSON document String
+ * - *options* [_Hash_] same as default_options
  */
 static VALUE
 dump(int argc, VALUE *argv, VALUE self) {
@@ -1044,27 +974,23 @@ dump(int argc, VALUE *argv, VALUE self) {
     return rstr;
 }
 
-/* @overload to_json(obj, options) => json-string
+/* Document-method: to_json
+ * call-seq: to_json(obj, options)
  *
  * Dumps an Object (obj) to a string. If the object has a to_json method that
  * will be called. The mode is set to :compat.
- * @param obj [Object] Object to serialize as an JSON document String
- * @param options [Hash] 
- * @param :max [boolean] _nesting It true nesting is limited to 100. The option
- *                  to detect circular references is available but is not
- *                  compatible with the json gem., default is false
- * @param :allow [boolean] _nan If true non JSON compliant words such as Nan
- *                  and Infinity will be used as appropriate, default is true.
- * @param :quirks [boolean] _mode Allow single JSON values instead of
- *                  documents, default is true (allow).
- * @param :indent [String|nil] _str String to use for indentation, overriding
- *                     the indent option if not nil.
- * @param :space [String|nil] String to use for the space after the colon in
- *                     JSON object fields
- * @param :space [String|nil] _before String to use before the colon separator
- *                     in JSON object fields
- * @param :object [String|nil] _nl String to use after a JSON object field value
- * @param :array [String|nil] _nl String to use after a JSON array value
+ * - *obj* [_Object_] Object to serialize as an JSON document String
+ * - *options* [_Hash_] 
+ *   - *:max_nesting* [_boolean_] It true nesting is limited to 100. The option to detect circular references is available but is not compatible with the json gem., default is false
+ *   - *:allow_nan* [_boolean_] If true non JSON compliant words such as Nan and Infinity will be used as appropriate, default is true.
+ *   - *:quirks_mode* [_boolean_] Allow single JSON values instead of documents, default is true (allow).
+ *   - *:indent_str* [_String_|_nil_] String to use for indentation, overriding the indent option if not nil.
+ *   - *:space* [_String_|_nil_] String to use for the space after the colon in JSON object fields.
+ *   - *:space_before* [_String_|_nil_] String to use before the colon separator in JSON object fields.
+ *   - *:object_nl* [_String_|_nil_] String to use after a JSON object field value.
+ *   - *:array_nl* [_String_|_nil_] String to use after a JSON array value.
+ *
+ * Returns [_String_] the encoded JSON.
  */
 static VALUE
 to_json(int argc, VALUE *argv, VALUE self) {
@@ -1101,14 +1027,15 @@ to_json(int argc, VALUE *argv, VALUE self) {
     return rstr;
 }
 
-/* @overload to_file(file_path, obj, options)
+/* Document-method: to_file
+ * call-seq: to_file(file_path, obj, options)
  *
  * Dumps an Object to the specified file.
- * @param file [String] _path file path to write the JSON document to
- * @param obj [Object] Object to serialize as an JSON document String
- * @param options [Hash] formating options
- * @param :indent [Fixnum] format expected
- * @param :circular [true|false] allow circular references, default: false
+ * - *file* [_String_] _path file path to write the JSON document to
+ * - *obj* [_Object_] Object to serialize as an JSON document String
+ * - *options* [_Hash_] formating options
+ *   - *:indent* [_Fixnum_] format expected
+ *   - *:circular* [_Boolean_] allow circular references, default: false
  */
 static VALUE
 to_file(int argc, VALUE *argv, VALUE self) {
@@ -1123,14 +1050,15 @@ to_file(int argc, VALUE *argv, VALUE self) {
     return Qnil;
 }
 
-/* @overload to_stream(io, obj, options)
+/* Document-method: to_stream
+ * call-seq: to_stream(io, obj, options)
  *
  * Dumps an Object to the specified IO stream.
- * @param io [IO] IO stream to write the JSON document to
- * @param obj [Object] Object to serialize as an JSON document String
- * @param options [Hash] formating options
- * @param :indent [Fixnum] format expected
- * @param :circular [true|false] allow circular references, default: false
+ * - *io* [_IO_] IO stream to write the JSON document to
+ * - *obj* [_Object_] Object to serialize as an JSON document String
+ * - *options* [_Hash_] formating options
+ *   - *:indent* [_Fixnum_] format expected
+ *   - *:circular* [_Boolean_] allow circular references, default: false
  */
 static VALUE
 to_stream(int argc, VALUE *argv, VALUE self) {
@@ -1144,7 +1072,8 @@ to_stream(int argc, VALUE *argv, VALUE self) {
     return Qnil;
 }
 
-/* @overload register_odd(clas, create_object, create_method, *members)
+/* Document-method: register_odd
+ * call-seq: register_odd(clas, create_object, create_method, *members)
  *
  * Registers a class as special. This is useful for working around subclasses of
  * primitive types as is done with ActiveSupport classes. The use of this
@@ -1152,13 +1081,10 @@ to_stream(int argc, VALUE *argv, VALUE self) {
  * normal way. It is not intended as a hook for changing the output of all
  * classes as it is not optimized for large numbers of classes.
  *
- * @param clas [Class|Module] Class or Module to be made special
- * @param create_object [Object]  object to call the create method on
- * @param create_method [Symbol] method on the clas that will create a new
- *                 instance of the clas when given all the member values in the
- *                 order specified.
- * @param members [Symbol|String] methods used to get the member values from
- *                        instances of the clas
+ * - *clas* [_Class__|_Module_] Class or Module to be made special
+ * - *create_object* [_Object_]  object to call the create method on
+ * - *create_method* [_Symbol_] method on the clas that will create a new instance of the clas when given all the member values in the order specified.
+ * - *members* [_Symbol__|_String_] methods used to get the member values from instances of the clas.
  */
 static VALUE
 register_odd(int argc, VALUE *argv, VALUE self) {
@@ -1182,7 +1108,8 @@ register_odd(int argc, VALUE *argv, VALUE self) {
     return Qnil;
 }
 
-/* @!method register_odd_raw(clas, create_object, create_method, dump_method)
+/* Document-method: register_odd_raw
+ *	call-seq: register_odd_raw(clas, create_object, create_method, dump_method)
  *
  * Registers a class as special and expect the output to be a string that can be
  * included in the dumped JSON directly. This is useful for working around
@@ -1192,13 +1119,10 @@ register_odd(int argc, VALUE *argv, VALUE self) {
  * classes as it is not optimized for large numbers of classes. Be careful with
  * this option as the JSON may be incorrect if invalid JSON is returned.
  *
- * @param clas [Class|Module] Class or Module to be made special
- * @param create_object [Object] object to call the create method on
- * @param create_method [Symbol] method on the clas that will create a new
- *                 instance of the clas when given all the member values in the
- *                 order specified.
- * @param dump_method [Symbol|String] method to call on the object being
- *                        serialized to generate the raw JSON.
+ * - *clas* [_Class_|_Module_] Class or Module to be made special
+ * - *create_object* [_Object_] object to call the create method on
+ * - *create_method* [_Symbol_] method on the clas that will create a new instance of the clas when given all the member values in the order specified.
+ * - *dump_method* [_Symbol_|_String_] method to call on the object being serialized to generate the raw JSON.
  */
 static VALUE
 register_odd_raw(int argc, VALUE *argv, VALUE self) {
@@ -1221,6 +1145,201 @@ register_odd_raw(int argc, VALUE *argv, VALUE self) {
 
     return Qnil;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// RDoc entries must be in the same file as the rb_define_method and must be
+// directly above the C method function. The extern declaration is enough to
+// get it to work.
+////////////////////////////////////////////////////////////////////////////////
+
+/* Document-method: strict_load
+ * call-seq: strict_load(json, options) { _|_obj, start, len_|_ }
+ *
+ * Parses a JSON document String into an Hash, Array, String, Fixnum, Float,
+ * true, false, or nil. It parses using a mode that is strict in that it maps
+ * each primitive JSON type to a similar Ruby type. The :create_id is not
+ * honored in this mode. Note that a Ruby Hash is used to represent the JSON
+ * Object type. These two are not the same since the JSON Object type can have
+ * repeating entries with the same key and Ruby Hash can not.
+ *
+ * When used with a document that has multiple JSON elements the block, if
+ * any, will be yielded to. If no block then the last element read will be
+ * returned.
+ *
+ * Raises an exception if the JSON is malformed or the classes specified are not
+ * valid. If the input is not a valid JSON document (an empty string is not a
+ * valid JSON document) an exception is raised.
+ *
+ * A block can be provided with a single argument. That argument will be the
+ * parsed JSON document. This is useful when parsing a string that includes
+ * multiple JSON documents. The block can take up to 3 arguments, the parsed
+ * object, the position in the string or stream of the start of the JSON for
+ * that object, and the length of the JSON for that object plus trailing
+ * whitespace.
+ *
+ * - *json* [_String_|_IO_] JSON String or an Object that responds to read().
+ * - *options* [_Hash_] load options (same as default_options).
+ *   - -
+ * - *obj* [_Hash_|_Array_|_String_|_Fixnum_|_Float_|_Boolean_|_nil_] parsed object.
+ * - *start* [_optional, _Integer_] start position of parsed JSON for obj.
+ * - *len* [_optional, _Integer_] length of parsed JSON for obj.
+ *
+ * Returns [_Hash_|_Array_|_String_|_Fixnum_|_Float_|_Boolean_|_nil_]
+ */
+extern VALUE	oj_strict_parse(int argc, VALUE *argv, VALUE self);
+
+/* Document-method: compat_load
+ * call-seq: compat_load(json, options) { _|_obj, start, len_|_ }
+ *
+ * Parses a JSON document String into an Object, Hash, Array, String, Fixnum,
+ * Float, true, false, or nil. It parses using a mode that is generally
+ * compatible with other Ruby JSON parsers in that it will create objects based
+ * on the :create_id value. It is not compatible in every way to every other
+ * parser though as each parser has it's own variations.
+ *
+ * When used with a document that has multiple JSON elements the block, if
+ * any, will be yielded to. If no block then the last element read will be
+ * returned.
+ *
+ * Raises an exception if the JSON is malformed or the classes specified are not
+ * valid. If the input is not a valid JSON document (an empty string is not a
+ * valid JSON document) an exception is raised.
+ *
+ * A block can be provided with a single argument. That argument will be the
+ * parsed JSON document. This is useful when parsing a string that includes
+ * multiple JSON documents. The block can take up to 3 arguments, the parsed
+ * object, the position in the string or stream of the start of the JSON for
+ * that object, and the length of the JSON for that object plus trailing
+ * whitespace.
+ *
+ * - *json* [_String_|_IO_] JSON String or an Object that responds to read().
+ * - *options* [_Hash_] load options (same as default_options).
+ *   - -
+ * - *obj* [_Hash_|_Array_|_String_|_Fixnum_|_Float_|_Boolean_|_nil_] parsed object.
+ * - *start* [_optional, _Integer_] start position of parsed JSON for obj.
+ * - *len* [_optional, _Integer_] length of parsed JSON for obj.
+ *
+ * Returns [_Hash_|_Array_|_String_|_Fixnum_|_Float_|_Boolean_|_nil_]
+ */
+extern VALUE	oj_compat_parse(int argc, VALUE *argv, VALUE self);
+
+/* Document-method: object_load
+ * call-seq: object_load(json, options) { _|_obj, start, len_|_ }
+ *
+ * Parses a JSON document String into an Object, Hash, Array, String, Fixnum,
+ * Float, true, false, or nil. In the :object mode the JSON should have been
+ * generated by Oj.dump(). The parser will reconstitute the original marshalled
+ * or dumped Object. The :auto_define and :circular options have meaning with
+ * this parsing mode.
+ *
+ * Raises an exception if the JSON is malformed or the classes specified are not
+ * valid. If the input is not a valid JSON document (an empty string is not a
+ * valid JSON document) an exception is raised.
+ *
+ * Note: Oj is not able to automatically deserialize all classes that are a
+ * subclass of a Ruby Exception. Only exception that take one required string
+ * argument in the initialize() method are supported. This is an example of how
+ * to write an Exception subclass that supports both a single string intializer
+ * and an Exception as an argument. Additional optional arguments can be added
+ * as well.
+ *
+ * The reason for this restriction has to do with a design decision on the part
+ * of the Ruby developers. Exceptions are special Objects. They do not follow the
+ * rules of other Objects. Exceptions have 'mesg' and a 'bt' attribute. Note that
+ * these are not '@mesg' and '@bt'. They can not be set using the normal C or
+ * Ruby calls. The only way I have found to set the 'mesg' attribute is through
+ * the initializer. Unfortunately that means any subclass that provides a
+ * different initializer can not be automatically decoded. A way around this is
+ * to use a create function but this example shows an alternative.
+ *
+ * A block can be provided with a single argument. That argument will be the
+ * parsed JSON document. This is useful when parsing a string that includes
+ * multiple JSON documents. The block can take up to 3 arguments, the parsed
+ * object, the position in the string or stream of the start of the JSON for
+ * that object, and the length of the JSON for that object plus trailing
+ * whitespace.
+ *
+ * - *json* [_String_|_IO_] JSON String or an Object that responds to read().
+ * - *options* [_Hash_] load options (same as default_options).
+ *   - -
+ * - *obj* [_Hash_|_Array_|_String_|_Fixnum_|_Float_|_Boolean_|_nil_] parsed object.
+ * - *start* [_optional, _Integer_] start position of parsed JSON for obj.
+ * - *len* [_optional, _Integer_] length of parsed JSON for obj.
+ *
+ * Returns [_Hash_|_Array_|_String_|_Fixnum_|_Float_|_Boolean_|_nil_]
+ */
+extern VALUE	oj_object_parse(int argc, VALUE *argv, VALUE self);
+
+/* Document-method: add_to_json
+ * call-seq: add_to_json(*args)
+ *
+ * Override simple to_s dump behavior in :compat mode to instead use an
+ * optimized dump that includes the classname and attributes so that the
+ * object can be re-created on load. The format is the same as the json gem
+ * but does not use the ruby methods for encoding.
+ *
+ * The classes supported for optimization are: Array, BigDecimal, Complex,
+ * Date, DateTime, Exception, Hash, Integer, OpenStruct, Range, Rational,
+ * Regexp, Struct, and Time. Providing no classes will result in all those
+ * classes being optimized.q
+ *
+ * - *args( [_Class_] zero or more classes to optimize.
+ */
+extern VALUE	oj_add_to_json(int argc, VALUE *argv, VALUE self);
+
+/* @!method remove_to_json(*args)
+ *
+ * Reverts back to the to_s dump behavior in :compat mode to instead use an
+ * optimized dump that includes the classname and attributes so that the
+ * object can be re-created on load. The format is the same as the json gem
+ * but does not use the ruby methods for encoding.
+ *
+ * The classes supported for optimization are: Array, BigDecimal, Complex,
+ * Date, DateTime, Exception, Hash, Integer, OpenStruct, Range, Rational,
+ * Regexp, Struct, and Time. Providing no classes will result in all those
+ * classes being reverted from the optimized mode.
+ *
+ * - *args* [_Class_] zero or more classes to optimize.
+ */
+extern VALUE	oj_remove_to_json(int argc, VALUE *argv, VALUE self);
+
+/* Document-method: mimic_JSON
+ * call-seq: mimic_JSON()
+ *
+ * Creates the JSON module with methods and classes to mimic the JSON gem. After
+ * this method is invoked calls that expect the JSON module will use Oj instead
+ * and be faster than the original JSON. Most options that could be passed to
+ * the JSON methods are supported. The calls to set parser or generator will not
+ * raise an Exception but will not have any effect. The method can also be
+ * called after the json gem is loaded. The necessary methods on the json gem
+ * will be replaced with Oj methods.
+ *
+ * Note that this also sets the default options of :mode to :compat and
+ * :encoding to :ascii.
+ *
+ * Returns [_Module_] the JSON module.
+ */
+extern VALUE	oj_define_mimic_json(int argc, VALUE *argv, VALUE self);
+
+/* Document-method: generate
+ * call-seq: generate(obj, opts=nil)
+ * 
+ * Encode obj as a JSON String. The obj argument must be a Hash, Array, or
+ * respond to to_h or to_json. Options other than those listed such as
+ * +:allow_nan+ or +:max_nesting+ are ignored.
+ * 
+ * - *obj* [_Object__|_Hash_|_Array_] object to convert to a JSON String
+ * - *opts* [_Hash_] options
+ * - - *:indent* [_String_] String to use for indentation.
+ *   - *:space* [_String_] String placed after a , or : delimiter
+ *   - *:space * _before [_String_] String placed before a : delimiter
+ *   - *:object_nl* [_String_] String placed after a JSON object
+ *   - *:array_nl* [_String_] String placed after a JSON array
+ *   - *:ascii_only* [_Boolean_] if not nil or false then use only ascii characters in the output. Note JSON.generate does support this even if it is not documented.
+ *
+ * Returns [_String_]generated JSON.
+ */
+extern VALUE	oj_mimic_generate(int argc, VALUE *argv, VALUE self);
 
 /*
 extern void	oj_hash_test();
@@ -1257,6 +1376,7 @@ protect_require(VALUE x) {
 }
 
 /* Document-module: Oj
+ *
  * Optimized JSON (Oj), as the name implies was written to provide speed
  * optimized JSON handling.
  *
@@ -1264,22 +1384,22 @@ protect_require(VALUE x) {
  * global and options to methods allow additional behavior modifications. The
  * modes are:
  *
- * - :strict mode will only allow the 7 basic JSON types to be serialized. Any other Object
+ * - *:strict* mode will only allow the 7 basic JSON types to be serialized. Any other Object
  *   will raise an Exception. 
  * 
- * - :null mode is similar to the :strict mode except any Object that is not
+ * - *:null* mode is similar to the :strict mode except any Object that is not
  *   one of the JSON base types is replaced by a JSON null.
  * 
- * - :object mode will dump any Object as a JSON Object with keys that match
+ * - *:object* mode will dump any Object as a JSON Object with keys that match
  *   the Ruby Object's variable names without the '@' character. This is the
  *   highest performance mode.
  * 
- * - :compat or :json mode is the compatible mode for the json gem. It mimics
+ * - *:compat* or *:json* mode is the compatible mode for the json gem. It mimics
  *   the json gem including the options, defaults, and restrictions.
  *
- * - :rails is the compatibility mode for Rails or Active support.
+ * - *:rails* is the compatibility mode for Rails or Active support.
  *
- * - :custom is the most configurable mode.
+ * - *:custom* is the most configurable mode.
  */
 void
 Init_oj() {
@@ -1289,8 +1409,8 @@ Init_oj() {
 
     oj_cstack_class = rb_define_class_under(Oj, "CStack", rb_cObject);
 
-    oj_string_writer_init(Oj);
-    oj_stream_writer_init(Oj);
+    oj_string_writer_init();
+    oj_stream_writer_init();
 
     rb_require("date");
     // On Rubinius the require fails but can be done from a ruby file.
@@ -1462,7 +1582,7 @@ Init_oj() {
 
     oj_hash_init();
     oj_odd_init();
-    oj_mimic_rails_init(Oj);
+    oj_mimic_rails_init();
 
 #if USE_PTHREAD_MUTEX
     pthread_mutex_init(&oj_cache_mutex, 0);
@@ -1472,3 +1592,4 @@ Init_oj() {
 #endif
     oj_init_doc();
 }
+

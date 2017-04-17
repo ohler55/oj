@@ -8,7 +8,7 @@
 
 #include "dump.h"
 
-extern void	oj_mimic_rails_init(VALUE oj);
+extern void	oj_mimic_rails_init();
 extern ROpt	oj_rails_get_opt(ROptTable rot, VALUE clas);
 
 extern bool	oj_rails_hash_opt;
