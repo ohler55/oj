@@ -316,7 +316,7 @@ dump_unicode(const char *str, const char *end, Out out) {
     return str - 1;
 }
 
-// Returns 0 if not using circular references, -1 if not further writing is
+// Returns 0 if not using circular references, -1 if no further writing is
 // needed (duplicate), and a positive value if the object was added to the
 // cache.
 long
@@ -1493,8 +1493,8 @@ oj_dump_obj_to_json_using_params(VALUE obj, Options copts, Out out, int argc, VA
     case ObjectMode:	oj_dump_obj_val(obj, 0, out);				break;
     case CompatMode:	oj_dump_compat_val(obj, 0, out, Yes == copts->to_json);	break;
     case RailsMode:	oj_dump_rails_val(obj, 0, out, true);			break;
-    default:		oj_dump_compat_val(obj, 0, out, true);	break;
-	// TBD change default to custom mode
+    case CustomMode:	oj_dump_custom_val(obj, 0, out, true);			break;
+    default:		oj_dump_custom_val(obj, 0, out, true);			break;
     }
     if (0 < out->indent) {
 	switch (*(out->cur - 1)) {
@@ -1899,6 +1899,7 @@ oj_dump_float(VALUE obj, int depth, Out out, bool as_ok) {
 		case CompatMode:	nd = WordNan;	break;
 		case StrictMode:	nd = RaiseNan;	break;
 		case NullMode:		nd = NullNan;	break;
+		case CustomMode:	nd = NullNan;	break;
 		default:				break;
 		}
 	    }

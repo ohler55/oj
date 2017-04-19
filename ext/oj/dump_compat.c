@@ -3,31 +3,11 @@
  * All rights reserved.
  */
 
+#include "code.h"
 #include "dump.h"
 
 // Workaround in case INFINITY is not defined in math.h or if the OS is CentOS
 #define OJ_INFINITY (1.0/0.0)
-
-typedef void	(*AltFunc)(VALUE obj, int depth, Out out);
-
-typedef struct _Alt {
-    const char	*name;
-    VALUE	clas;
-    AltFunc	func;
-    bool	active;
-} *Alt;
-
-typedef struct _Attr {
-    const char	*name;
-    int		len;
-    VALUE	value;
-    long	num;
-} *Attr;
-
-typedef struct _NumAttr {
-    const char	*name;
-    long	value;
-} *NumAttr;
 
 bool	oj_use_hash_alt = false;
 bool	oj_use_array_alt = false;
@@ -68,69 +48,6 @@ dump_obj_classname(const char *classname, int depth, Out out) {
     memcpy(out->cur, classname, len);
     out->cur += len;
     *out->cur++ = '"';
-}
-
-static void
-dump_obj_attrs(const char *classname, Attr attrs, int depth, Out out) {
-    int		d2 = depth + 1;
-    int		d3 = d2 + 1;
-    size_t	sep_len = out->opts->dump_opts.before_size + out->opts->dump_opts.after_size + 2;
-    size_t	size = d3 * out->indent + 2;
-
-    dump_obj_classname(classname, depth, out);
-
-    for (; NULL != attrs->name; attrs++) {
-	assure_size(out, size + attrs->len + sep_len + 2);
-	*out->cur++ = ',';
-	fill_indent(out, d3);
-	*out->cur++ = '"';
-	memcpy(out->cur, attrs->name, attrs->len);
-	out->cur += attrs->len;
-	*out->cur++ = '"';
-	if (0 < out->opts->dump_opts.before_size) {
-	    strcpy(out->cur, out->opts->dump_opts.before_sep);
-	    out->cur += out->opts->dump_opts.before_size;
-	}
-	*out->cur++ = ':';
-	if (0 < out->opts->dump_opts.after_size) {
-	    strcpy(out->cur, out->opts->dump_opts.after_sep);
-	    out->cur += out->opts->dump_opts.after_size;
-	}
-	if (Qundef == attrs->value) {
-	    char	buf[32];
-	    char	*b = buf + sizeof(buf) - 1;
-	    int		neg = 0;
-	    long	num = attrs->num;
-	    
-	    if (0 > num) {
-		neg = 1;
-		num = -num;
-	    }
-	    *b-- = '\0';
-	    if (0 < num) {
-		for (; 0 < num; num /= 10, b--) {
-		    *b = (num % 10) + '0';
-		}
-		if (neg) {
-		    *b = '-';
-		} else {
-		    b++;
-		}
-	    } else {
-		*b = '0';
-	    }
-	    assure_size(out, (sizeof(buf) - (b - buf)));
-	    for (; '\0' != *b; b++) {
-		*out->cur++ = *b;
-	    }
-	} else {
-	    oj_dump_compat_val(attrs->value, d3, out, true);
-	}
-    }
-    assure_size(out, depth * out->indent + 2);
-    fill_indent(out, depth);
-    *out->cur++ = '}';
-    *out->cur = '\0';
 }
 
 static void
@@ -228,17 +145,10 @@ dump_array(VALUE a, int depth, Out out, bool as_ok) {
     }	
     cnt = (int)RARRAY_LEN(a);
     *out->cur++ = '[';
-    if (0 < id) {
-	oj_dump_nil(Qnil, 0, out, false);
-    }
-    size = 2;
-    assure_size(out, size);
+    assure_size(out, 2);
     if (0 == cnt) {
 	*out->cur++ = ']';
     } else {
-	if (0 < id) {
-	    *out->cur++ = ',';
-	}
 	if (out->opts->dump_opts.use) {
 	    size = d2 * out->opts->dump_opts.indent_size + out->opts->dump_opts.array_size + 1;
 	} else {
@@ -304,7 +214,7 @@ bigdecimal_alt(VALUE obj, int depth, Out out) {
     }
     attrs[0].value = rb_funcall(obj, _dump_id, 0);
 
-    dump_obj_attrs(rb_class2name(rb_obj_class(obj)), attrs, depth, out);
+    oj_code_attrs(obj, attrs, depth, out);
 }
 
 static ID	real_id = 0;
@@ -325,7 +235,7 @@ complex_alt(VALUE obj, int depth, Out out) {
     attrs[0].value = rb_funcall(obj, real_id, 0);
     attrs[1].value = rb_funcall(obj, imag_id, 0);
 
-    dump_obj_attrs(rb_class2name(rb_obj_class(obj)), attrs, depth, out);
+    oj_code_attrs(obj, attrs, depth, out);
 }
 
 static ID	year_id = 0;
@@ -353,7 +263,7 @@ date_alt(VALUE obj, int depth, Out out) {
     attrs[2].value = rb_funcall(obj, day_id, 0);
     attrs[3].value = rb_funcall(obj, start_id, 0);
 
-    dump_obj_attrs(rb_class2name(rb_obj_class(obj)), attrs, depth, out);
+    oj_code_attrs(obj, attrs, depth, out);
 }
 
 static ID	hour_id = 0;
@@ -393,7 +303,7 @@ datetime_alt(VALUE obj, int depth, Out out) {
     attrs[6].value = rb_funcall(rb_funcall(obj, offset_id, 0), oj_to_s_id, 0);
     attrs[7].value = rb_funcall(obj, start_id, 0);
 
-    dump_obj_attrs(rb_class2name(rb_obj_class(obj)), attrs, depth, out);
+    oj_code_attrs(obj, attrs, depth, out);
 }
 
 static ID	message_id = 0;
@@ -461,7 +371,7 @@ openstruct_alt(VALUE obj, int depth, Out out) {
     }
     attrs[0].value = rb_funcall(obj, table_id, 0);
 
-    dump_obj_attrs(rb_class2name(rb_obj_class(obj)), attrs, depth, out);
+    oj_code_attrs(obj, attrs, depth, out);
 }
 
 static void
@@ -514,7 +424,7 @@ rational_alt(VALUE obj, int depth, Out out) {
     attrs[0].value = rb_funcall(obj, numerator_id, 0);
     attrs[1].value = rb_funcall(obj, denominator_id, 0);
 
-    dump_obj_attrs(rb_class2name(rb_obj_class(obj)), attrs, depth, out);
+    oj_code_attrs(obj, attrs, depth, out);
 }
 
 static ID	options_id = 0;
@@ -534,7 +444,7 @@ regexp_alt(VALUE obj, int depth, Out out) {
     attrs[0].value = rb_funcall(obj, options_id, 0);
     attrs[1].value = rb_funcall(obj, source_id, 0);
 
-    dump_obj_attrs(rb_class2name(rb_obj_class(obj)), attrs, depth, out);
+    oj_code_attrs(obj, attrs, depth, out);
 }
 
 static void
@@ -549,43 +459,29 @@ time_alt(VALUE obj, int depth, Out out) {
     attrs[0].num = ts.tv_sec;
     attrs[1].num = ts.tv_nsec;
 
-    dump_obj_attrs(rb_class2name(rb_obj_class(obj)), attrs, depth, out);
+    oj_code_attrs(obj, attrs, depth, out);
 }
 
-static struct _Alt	alts[] = {
-    { "BigDecimal", Qnil, bigdecimal_alt, false },
-    { "Complex", Qnil, complex_alt, false },
+static struct _Code	codes[] = {
+    { "BigDecimal", Qnil, bigdecimal_alt, NULL, false },
+    { "Complex", Qnil, complex_alt, NULL, false },
     { "Date", Qnil, date_alt, false },
-    { "DateTime", Qnil, datetime_alt, false },
-    { "OpenStruct", Qnil, openstruct_alt, false },
-    { "Range", Qnil, range_alt, false },
-    { "Rational", Qnil, rational_alt, false },
-    { "Regexp", Qnil, regexp_alt, false },
-    { "Time", Qnil, time_alt, false },
+    { "DateTime", Qnil, datetime_alt, NULL, false },
+    { "OpenStruct", Qnil, openstruct_alt, NULL, false },
+    { "Range", Qnil, range_alt, NULL, false },
+    { "Rational", Qnil, rational_alt, NULL, false },
+    { "Regexp", Qnil, regexp_alt, NULL, false },
+    { "Time", Qnil, time_alt, NULL, false },
     // TBD the rest of the library classes
-    { NULL, Qundef, NULL, false },
+    { NULL, Qundef, NULL, NULL, false },
 };
-
-static bool
-dump_alt(VALUE obj, int depth, Out out) {
-    VALUE	clas = rb_obj_class(obj);
-    Alt		a = alts;
-
-    for (; NULL != a->name; a++) {
-	if (clas == a->clas && a->active) {
-	    a->func(obj, depth, out);
-	    return true;
-	}
-    }
-    return false;
-}
 
 VALUE
 oj_add_to_json(int argc, VALUE *argv, VALUE self) {
-    Alt	a;
+    Code	a;
 
     if (0 == argc) {
-	for (a = alts; NULL != a->name; a++) {
+	for (a = codes; NULL != a->name; a++) {
 	    if (Qnil == a->clas || Qundef == a->clas) {
 		a->clas = rb_const_get_at(rb_cObject, rb_intern(a->name));
 	    }
@@ -618,7 +514,7 @@ oj_add_to_json(int argc, VALUE *argv, VALUE self) {
 		oj_use_array_alt = true;
 		continue;
 	    }
-	    for (a = alts; NULL != a->name; a++) {
+	    for (a = codes; NULL != a->name; a++) {
 		if (Qnil == a->clas || Qundef == a->clas) {
 		    a->clas = rb_const_get_at(rb_cObject, rb_intern(a->name));
 		}
@@ -634,15 +530,8 @@ oj_add_to_json(int argc, VALUE *argv, VALUE self) {
 
 VALUE
 oj_remove_to_json(int argc, VALUE *argv, VALUE self) {
-    Alt	a = alts;
-
     if (0 == argc) {
-	for (; NULL != a->name; a++) {
-	    if (Qnil == a->clas || Qundef == a->clas) {
-		a->clas = rb_const_get_at(rb_cObject, rb_intern(a->name));
-	    }
-	    a->active = false;
-	}
+	oj_code_set_active(codes, Qnil, false);
 	use_struct_alt = false;
 	use_exception_alt = false;
 	use_bignum_alt = false;
@@ -670,15 +559,7 @@ oj_remove_to_json(int argc, VALUE *argv, VALUE self) {
 		oj_use_array_alt = false;
 		continue;
 	    }
-	    for (; NULL != a->name; a++) {
-		if (Qnil == a->clas || Qundef == a->clas) {
-		    a->clas = rb_const_get_at(rb_cObject, rb_intern(a->name));
-		}
-		if (*argv == a->clas) {
-		    a->active = false;
-		    break;
-		}
-	    }
+	    oj_code_set_active(codes, *argv, false);
 	}
     }
     return Qnil;
@@ -842,7 +723,7 @@ dump_hash(VALUE obj, int depth, Out out, bool as_ok) {
 // called.
 static void
 dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
-    if (dump_alt(obj, depth, out)) {
+    if (oj_code_dump(codes, obj, depth, out)) {
 	return;
     }
     if (use_exception_alt && rb_obj_is_kind_of(obj, rb_eException)) {
@@ -873,7 +754,7 @@ static void
 dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
     VALUE	clas = rb_obj_class(obj);
 
-    if (dump_alt(obj, depth, out)) {
+    if (oj_code_dump(codes, obj, depth, out)) {
 	return;
     }
     if (rb_cRange == clas) {

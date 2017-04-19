@@ -21,7 +21,7 @@ hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *o
 
     if (Qundef == rkey &&
 	Yes == pi->options.create_ok &&
-	0 != pi->options.create_id &&
+	NULL != pi->options.create_id &&
 	*pi->options.create_id == *key &&
 	(int)pi->options.create_id_len == klen &&
 	0 == strncmp(pi->options.create_id, key, klen)) {
@@ -60,12 +60,14 @@ hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *o
 
 static VALUE
 start_hash(ParseInfo pi) {
+    volatile VALUE	h;
+    
     if (Qnil != pi->options.hash_class) {
-	VALUE	foo = rb_class_new_instance(0, NULL, pi->options.hash_class);
-	
-	return foo;
+	h = rb_class_new_instance(0, NULL, pi->options.hash_class);
+    } else {
+	h = rb_hash_new();
     }
-    return rb_hash_new();
+    return h;
 }
 
 static void
@@ -235,9 +237,7 @@ oj_compat_parse_cstr(int argc, VALUE *argv, char *json, size_t len) {
     pi.max_depth = 0;
     pi.options.allow_nan = Yes;
     pi.options.nilnil = Yes;
-    oj_set_strict_callbacks(&pi);
-    pi.end_hash = end_hash;
-    pi.hash_set_cstr = hash_set_cstr;
+    oj_set_compat_callbacks(&pi);
 
     return oj_pi_parse(argc, argv, &pi, json, len, false);
 }

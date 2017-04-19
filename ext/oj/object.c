@@ -217,7 +217,7 @@ hat_cstr(ParseInfo pi, Val parent, Val kval, const char *str, size_t len) {
     if (2 == klen) {
 	switch (key[1]) {
 	case 'o': // object
-	    {	// name2class sets and error if the class is not found or created
+	    {	// name2class sets an error if the class is not found or created
 		VALUE	clas = oj_name2class(pi, str, len, Yes == pi->options.auto_define, rb_eArgError);
 
 		if (Qundef != clas) {
@@ -444,8 +444,8 @@ copy_ivars(VALUE target, VALUE src) {
     }
 }
 
-static void
-set_obj_ivar(Val parent, Val kval, VALUE value) {
+void
+oj_set_obj_ivar(Val parent, Val kval, VALUE value) {
     const char	*key = kval->key;
     int		klen = kval->klen;
     ID		var_id;
@@ -527,11 +527,11 @@ hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *o
 	if (4 == klen && 's' == *key && 'e' == key[1] && 'l' == key[2] && 'f' == key[3]) {
 	    rb_funcall(parent->val, oj_replace_id, 1, str_to_value(pi, str, len, orig));
 	} else {
-	    set_obj_ivar(parent, kval, str_to_value(pi, str, len, orig));
+	    oj_set_obj_ivar(parent, kval, str_to_value(pi, str, len, orig));
 	}
 	break;
     case T_OBJECT:
-	set_obj_ivar(parent, kval, str_to_value(pi, str, len, orig));
+	oj_set_obj_ivar(parent, kval, str_to_value(pi, str, len, orig));
 	break;
     case T_CLASS:
 	if (0 == parent->odd_args) {
@@ -577,7 +577,7 @@ hash_set_num(ParseInfo pi, Val kval, NumInfo ni) {
 	    !ni->infinity && !ni->neg && 1 == ni->div && 0 == ni->exp && 0 != pi->circ_array) { // fixnum
 	    oj_circ_array_set(pi->circ_array, parent->val, ni->i);
 	} else {
-	    set_obj_ivar(parent, kval, oj_num_as_value(ni));
+	    oj_set_obj_ivar(parent, kval, oj_num_as_value(ni));
 	}
 	break;
     case T_CLASS:
@@ -621,7 +621,7 @@ hash_set_value(ParseInfo pi, Val kval, VALUE value) {
 	    if (4 == klen && 's' == *key && 'e' == key[1] && 'l' == key[2] && 'f' == key[3]) {
 		rb_funcall(parent->val, oj_replace_id, 1, value);
 	    } else {
-		set_obj_ivar(parent, kval, value);
+		oj_set_obj_ivar(parent, kval, value);
 	    }
 	} else {
 	    if (3 <= klen && '^' == *key && '#' == key[1] && T_ARRAY == rb_type(value)) {
@@ -642,12 +642,12 @@ hash_set_value(ParseInfo pi, Val kval, VALUE value) {
 	if (4 == klen && 's' == *key && 'e' == key[1] && 'l' == key[2] && 'f' == key[3]) {
 	    rb_funcall(parent->val, oj_replace_id, 1, value);
 	} else {
-	    set_obj_ivar(parent, kval, value);
+	    oj_set_obj_ivar(parent, kval, value);
 	}
 	break;
     case T_STRING: // for subclassed strings
     case T_OBJECT:
-	set_obj_ivar(parent, kval, value);
+	oj_set_obj_ivar(parent, kval, value);
 	break;
     case T_MODULE:
     case T_CLASS:

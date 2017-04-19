@@ -23,9 +23,20 @@ Comparison Matrix
 go/src/github.com/iq4health/router/
 
 - refactor
-
  - plan
   - custom mode
+   - add class with classname in val_stack
+    - lookup class early
+    - is classname still needed with early lookup?
+
+   - code.[ch] - for custom, compat, and rails
+    - update dump_compat to use code
+   - move dump into custom?
+    - same with others?
+    - add decode functions
+   - exception encoding
+  - Enumerable
+  
   - cleanup dump.c
   - parse
    - handle rails and custom

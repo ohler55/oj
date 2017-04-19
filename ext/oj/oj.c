@@ -165,7 +165,7 @@ struct _Options	oj_default_options = {
     JSONEsc,	// escape_mode
     ObjectMode,	// mode
     Yes,	// class_cache
-    UnixZTime,	// time_format
+    UnixTime,	// time_format
     Yes,	// bigdec_as_num
     AutoDec,	// bigdec_load
     No,		// to_hash
@@ -772,8 +772,7 @@ load(int argc, VALUE *argv, VALUE self) {
     case RailsMode:
 	return oj_compat_parse(argc, argv, self);
     case CustomMode:
-	// TBD
-	return oj_compat_parse(argc, argv, self);
+	return oj_custom_parse(argc, argv, self);
     case ObjectMode:
     default:
 	break;
