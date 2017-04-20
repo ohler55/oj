@@ -238,7 +238,7 @@ the :compat and :rails mode.
 
 ### :use_to_hash [Boolean]
 
-Call `to_json()` methods on dump, default is false. The option is ignored in
+Call `to_hash()` methods on dump, default is false. The option is ignored in
 the :compat and :rails mode.
 
 ### :use_to_json [Boolean]

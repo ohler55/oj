@@ -22,10 +22,4 @@ serialize :metadata, Oj
 ```
 
 In version Rails 4.1, multi_json has been removed, and this patch is unnecessary and will no longer work.
-Instead, use the `oj_mimic_json` [gem](https://github.com/ohler55/oj_mimic_json) along with `oj` in your `Gemfile` to have Oj mimic the JSON gem and be used in its place by `ActiveSupport` JSON handling:
-
-```
-gem 'oj'
-gem 'oj_mimic_json'
-```
-
+See {file:Rails.md}.
