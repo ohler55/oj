@@ -3,6 +3,10 @@ require 'activesupport4/test_helper'
 require 'active_support/json'
 require 'active_support/time'
 
+require 'oj'
+
+Oj::Rails.set_decoder()
+
 class TestJSONDecoding < ActiveSupport::TestCase
   class Foo
     def self.json_create(object)

@@ -5,6 +5,12 @@ require 'active_support/core_ext/string/inflections'
 require 'active_support/json'
 require 'active_support/time'
 
+require 'oj'
+
+# Sets the ActiveSupport emcoder to be Oj and also wraps the setting of
+# globals.
+Oj::Rails.set_encoder()
+Oj::Rails.optimize(BigDecimal, Time, Range, Regexp)
 
 class TestJSONEncoding < ActiveSupport::TestCase
   class Foo
