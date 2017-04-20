@@ -280,20 +280,34 @@ class CustomJuice < Minitest::Test
     assert_equal(%|{"x":{"a":1}}|, json)
   end
 
-  def xtest_range
-    obj = 3..8
-    json = Oj.dump(obj)
-    puts "*** #{json}"
+  def test_complex
+    obj = Complex(2, 9)
+    dump_and_load(obj, false, :create_id => "^o", :create_additions => true)
   end
 
+  def test_rational
+    obj = Rational(2, 9)
+    dump_and_load(obj, false, :create_id => "^o", :create_additions => true)
+  end
+
+  def test_range
+    obj = 3..8
+    dump_and_load(obj, false, :create_id => "^o", :create_additions => true)
+  end
+
+  def xtest_date
+    obj = Date.new(2017, 1, 5)
+    dump_and_load(obj, true, :time_format => :ruby, :create_id => "^o", :create_additions => true)
+    dump_and_load(obj, true, :time_format => :unix, :create_id => "^o", :create_additions => true)
+    dump_and_load(obj, true, :time_format => :unix_zone, :create_id => "^o", :create_additions => true)
+    dump_and_load(obj, true, :time_format => :xmlschema, :create_id => "^o", :create_additions => true)
+  end
+
+
   # TBD
-  # BigDecimal
-  # Complex
   # Date
   # DateTime
   # OpenStruct
-  # Range
-  # Rational
   # Regexp
   # Time
 

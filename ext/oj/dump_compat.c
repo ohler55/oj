@@ -450,8 +450,8 @@ regexp_alt(VALUE obj, int depth, Out out) {
 static void
 time_alt(VALUE obj, int depth, Out out) {
     struct _Attr	attrs[] = {
-	{ "s", 1, Qundef, 0 },
-	{ "n", 1, Qundef, 0 },
+	{ "s", 1, Qundef, 0, Qundef },
+	{ "n", 1, Qundef, 0, Qundef },
 	{ NULL, 0, Qnil },
     };
     struct timespec	ts = rb_time_timespec(obj);

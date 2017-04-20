@@ -31,9 +31,9 @@ typedef struct _Attr {
 } *Attr;
 
 extern bool	oj_code_dump(Code codes, VALUE obj, int depth, Out out);
-extern bool	oj_code_load(Code codes, VALUE clas, VALUE args);
+extern VALUE	oj_code_load(Code codes, VALUE clas, VALUE args);
 extern void	oj_code_set_active(Code codes, VALUE clas, bool active);
-extern bool	oj_code_has(Code codes, VALUE clas);
+extern bool	oj_code_has(Code codes, VALUE clas, bool encode);
 
 extern void	oj_code_attrs(VALUE obj, Attr attrs, int depth, Out out);
 

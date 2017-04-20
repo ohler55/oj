@@ -68,7 +68,7 @@ oj_code_dump(Code codes, VALUE obj, int depth, Out out) {
     return false;
 }
 
-bool
+VALUE
 oj_code_load(Code codes, VALUE clas, VALUE args) {
     Code	c = codes;
 
@@ -107,7 +107,7 @@ oj_code_set_active(Code codes, VALUE clas, bool active) {
 }
 
 bool
-oj_code_has(Code codes, VALUE clas) {
+oj_code_has(Code codes, VALUE clas, bool encode) {
     Code	c = codes;
 
     for (; NULL != c->name; c++) {
@@ -118,7 +118,11 @@ oj_code_has(Code codes, VALUE clas) {
 	    c->clas = path2class(c->name);
 	}
 	if (clas == c->clas) {
-	    return c->active;
+	    if (encode) {
+		return c->active && NULL != c->encode;
+	    } else {
+		return c->active && NULL != c->decode;
+	    }
 	}
     }
     return false;

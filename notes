@@ -25,6 +25,13 @@ go/src/github.com/iq4health/router/
 - refactor
  - plan
   - custom mode
+   - time
+    - always with zone unless date
+     - need to pass in class or flag to encode and decode
+    - for unix with zone better to get the raw string before encoding
+     - *how to get that without indicator in key? maybe use the different keys and check class*
+      - use funcs from object.c
+     
    - add class with classname in val_stack
     - lookup class early
     - is classname still needed with early lookup?
