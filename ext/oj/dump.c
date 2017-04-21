@@ -157,30 +157,30 @@ static char	xss_friendly_chars[256] = "\
 33333333333333333333333333333333";
 
 inline static size_t
-newline_friendly_size(const uint8_t *str, size_t len) {
-    size_t	size = 0;
+newline_friendly_size(const uint8_t *str, const size_t len) {
+    size_t	size = 0, counter = len;
 
-    for (; 0 < len; str++, len--) {
+    for (; 0 < counter; str++, counter--) {
 	size += newline_friendly_chars[*str];
     }
     return size - len * (size_t)'0';
 }
 
 inline static size_t
-hibit_friendly_size(const uint8_t *str, size_t len) {
-    size_t	size = 0;
+hibit_friendly_size(const uint8_t *str, const size_t len) {
+    size_t	size = 0, counter = len;
 
-    for (; 0 < len; str++, len--) {
+    for (; 0 < counter; str++, counter--) {
 	size += hibit_friendly_chars[*str];
     }
     return size - len * (size_t)'0';
 }
 
 inline static size_t
-ascii_friendly_size(const uint8_t *str, size_t len) {
-    size_t	size = 0;
+ascii_friendly_size(const uint8_t *str, const size_t len) {
+    size_t	size = 0, counter = len;
 
-    for (; 0 < len; str++, len--) {
+    for (; 0 < counter; str++, counter--) {
 	size += ascii_friendly_chars[*str];
     }
     return size - len * (size_t)'0';
@@ -188,9 +188,9 @@ ascii_friendly_size(const uint8_t *str, size_t len) {
 
 inline static size_t
 xss_friendly_size(const uint8_t *str, size_t len) {
-    size_t	size = 0;
+    size_t	size = 0, counter = len;
 
-    for (; 0 < len; str++, len--) {
+    for (; 0 < counter; str++, counter--) {
 	size += xss_friendly_chars[*str];
     }
     return size - len * (size_t)'0';
