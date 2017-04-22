@@ -1,31 +1,6 @@
 /* compat.c
  * Copyright (c) 2012, Peter Ohler
  * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- * 
- *  - Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer.
- * 
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- * 
- *  - Neither the name of Peter Ohler nor the names of its contributors may be
- *    used to endorse or promote products derived from this software without
- *    specific prior written permission.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include <stdio.h>
@@ -45,10 +20,12 @@ hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *o
     volatile VALUE	rkey = kval->key_val;
 
     if (Qundef == rkey &&
-	0 != pi->options.create_id &&
+	Yes == pi->options.create_ok &&
+	NULL != pi->options.create_id &&
 	*pi->options.create_id == *key &&
 	(int)pi->options.create_id_len == klen &&
 	0 == strncmp(pi->options.create_id, key, klen)) {
+
 	parent->classname = oj_strndup(str, len);
 	parent->clen = len;
     } else {
@@ -62,8 +39,35 @@ hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *o
 		rkey = rb_str_intern(rkey);
 	    }
 	}
-	rb_hash_aset(parent->val, rkey, rstr);
+	if (Yes == pi->options.create_ok && NULL != pi->options.str_rx.head) {
+	    VALUE	clas = oj_rxclass_match(&pi->options.str_rx, str, len);
+
+	    if (Qnil != clas) {
+		rstr = rb_funcall(clas, oj_json_create_id, 1, rstr);
+	    }
+	}
+	if (rb_cHash != rb_obj_class(parent->val)) {
+	    // The rb_hash_set would still work but the unit tests for the
+	    // json gem require the less efficient []= method be called to set
+	    // values. Even using the store method to set the values will fail
+	    // the unit tests.
+	    rb_funcall(parent->val, rb_intern("[]="), 2, rkey, rstr);
+	} else {
+	    rb_hash_aset(parent->val, rkey, rstr);
+	}
     }
+}
+
+static VALUE
+start_hash(ParseInfo pi) {
+    volatile VALUE	h;
+    
+    if (Qnil != pi->options.hash_class) {
+	h = rb_class_new_instance(0, NULL, pi->options.hash_class);
+    } else {
+	h = rb_hash_new();
+    }
+    return h;
 }
 
 static void
@@ -71,11 +75,15 @@ end_hash(struct _ParseInfo *pi) {
     Val	parent = stack_peek(&pi->stack);
 
     if (0 != parent->classname) {
-	VALUE	clas;
+	volatile VALUE	clas;
 
-	clas = oj_name2class(pi, parent->classname, parent->clen, 0);
+	clas = oj_name2class(pi, parent->classname, parent->clen, 0, rb_eArgError);
 	if (Qundef != clas) { // else an error
-	    parent->val = rb_funcall(clas, oj_json_create_id, 1, parent->val);
+	    ID	creatable = rb_intern("json_creatable?");
+	    
+	    if (!rb_respond_to(clas, creatable) || Qtrue == rb_funcall(clas, creatable, 0)) {
+		parent->val = rb_funcall(clas, oj_json_create_id, 1, parent->val);
+	    }
 	}
 	if (0 != parent->classname) {
 	    xfree((char*)parent->classname);
@@ -99,28 +107,102 @@ calc_hash_key(ParseInfo pi, Val parent) {
 }
 
 static void
+add_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
+    volatile VALUE	rstr = rb_str_new(str, len);
+
+    rstr = oj_encode(rstr);
+    if (Yes == pi->options.create_ok && NULL != pi->options.str_rx.head) {
+	VALUE	clas = oj_rxclass_match(&pi->options.str_rx, str, len);
+
+	if (Qnil != clas) {
+	    pi->stack.head->val = rb_funcall(clas, oj_json_create_id, 1, rstr);
+	    return;
+	}
+    }
+    pi->stack.head->val = rstr;
+}
+
+static void
 add_num(ParseInfo pi, NumInfo ni) {
     pi->stack.head->val = oj_num_as_value(ni);
 }
 
 static void
 hash_set_num(struct _ParseInfo *pi, Val parent, NumInfo ni) {
-    rb_hash_aset(stack_peek(&pi->stack)->val, calc_hash_key(pi, parent), oj_num_as_value(ni));
+    if (!oj_use_hash_alt && rb_cHash != rb_obj_class(parent->val)) {
+	// The rb_hash_set would still work but the unit tests for the
+	// json gem require the less efficient []= method be called to set
+	// values. Even using the store method to set the values will fail
+	// the unit tests.
+	rb_funcall(stack_peek(&pi->stack)->val, rb_intern("[]="), 2, calc_hash_key(pi, parent), oj_num_as_value(ni));
+    } else {
+	rb_hash_aset(stack_peek(&pi->stack)->val, calc_hash_key(pi, parent), oj_num_as_value(ni));
+    }
+}
+
+static void
+hash_set_value(ParseInfo pi, Val parent, VALUE value) {
+    if (rb_cHash != rb_obj_class(parent->val)) {
+	// The rb_hash_set would still work but the unit tests for the
+	// json gem require the less efficient []= method be called to set
+	// values. Even using the store method to set the values will fail
+	// the unit tests.
+	rb_funcall(stack_peek(&pi->stack)->val, rb_intern("[]="), 2, calc_hash_key(pi, parent), value);
+    } else {
+	rb_hash_aset(stack_peek(&pi->stack)->val, calc_hash_key(pi, parent), value);
+    }
+}
+
+static VALUE
+start_array(ParseInfo pi) {
+    if (Qnil != pi->options.array_class) {
+	return rb_class_new_instance(0, NULL, pi->options.array_class);
+    }
+    return rb_ary_new();
 }
 
 static void
 array_append_num(ParseInfo pi, NumInfo ni) {
-    rb_ary_push(stack_peek(&pi->stack)->val, oj_num_as_value(ni));
+    Val	parent = stack_peek(&pi->stack);
+    
+    if (!oj_use_array_alt && rb_cArray != rb_obj_class(parent->val)) {
+	// The rb_ary_push would still work but the unit tests for the json
+	// gem require the less efficient << method be called to push the
+	// values.
+	rb_funcall(parent->val, rb_intern("<<"), 1, oj_num_as_value(ni));
+    } else {
+	rb_ary_push(parent->val, oj_num_as_value(ni));
+    }
 }
 
+static void
+array_append_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
+    volatile VALUE	rstr = rb_str_new(str, len);
+
+    rstr = oj_encode(rstr);
+    if (Yes == pi->options.create_ok && NULL != pi->options.str_rx.head) {
+	VALUE	clas = oj_rxclass_match(&pi->options.str_rx, str, len);
+
+	if (Qnil != clas) {
+	    rb_ary_push(stack_peek(&pi->stack)->val, rb_funcall(clas, oj_json_create_id, 1, rstr));
+	    return;
+	}
+    }
+    rb_ary_push(stack_peek(&pi->stack)->val, rstr);
+}
 
 void
 oj_set_compat_callbacks(ParseInfo pi) {
     oj_set_strict_callbacks(pi);
+    pi->start_hash = start_hash;
     pi->end_hash = end_hash;
     pi->hash_set_cstr = hash_set_cstr;
-    pi->add_num = add_num;
     pi->hash_set_num = hash_set_num;
+    pi->hash_set_value = hash_set_value;
+    pi->add_num = add_num;
+    pi->add_cstr = add_cstr;
+    pi->array_append_cstr = array_append_cstr;
+    pi->start_array = start_array;
     pi->array_append_num = array_append_num;
 }
 
@@ -128,13 +210,17 @@ VALUE
 oj_compat_parse(int argc, VALUE *argv, VALUE self) {
     struct _ParseInfo	pi;
 
+    parse_info_init(&pi);
     pi.options = oj_default_options;
     pi.handler = Qnil;
     pi.err_class = Qnil;
+    pi.max_depth = 0;
+    pi.options.allow_nan = Yes;
+    pi.options.nilnil = Yes;
     oj_set_compat_callbacks(&pi);
 
     if (T_STRING == rb_type(*argv)) {
-	return oj_pi_parse(argc, argv, &pi, 0, 0, 1);
+	return oj_pi_parse(argc, argv, &pi, 0, 0, false);
     } else {
 	return oj_pi_sparse(argc, argv, &pi, 0);
     }
@@ -144,12 +230,14 @@ VALUE
 oj_compat_parse_cstr(int argc, VALUE *argv, char *json, size_t len) {
     struct _ParseInfo	pi;
 
+    parse_info_init(&pi);
     pi.options = oj_default_options;
     pi.handler = Qnil;
     pi.err_class = Qnil;
-    oj_set_strict_callbacks(&pi);
-    pi.end_hash = end_hash;
-    pi.hash_set_cstr = hash_set_cstr;
+    pi.max_depth = 0;
+    pi.options.allow_nan = Yes;
+    pi.options.nilnil = Yes;
+    oj_set_compat_callbacks(&pi);
 
-    return oj_pi_parse(argc, argv, &pi, json, len, 1);
+    return oj_pi_parse(argc, argv, &pi, json, len, false);
 }

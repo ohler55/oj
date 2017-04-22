@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby -wW1
+#!/usr/bin/env ruby
 
 $: << '.'
 $: << '../lib'

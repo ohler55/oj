@@ -1,31 +1,6 @@
 /* object.c
  * Copyright (c) 2012, Peter Ohler
  * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- * 
- *  - Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer.
- * 
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- * 
- *  - Neither the name of Peter Ohler nor the names of its contributors may be
- *    used to endorse or promote products derived from this software without
- *    specific prior written permission.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include <stdio.h>
@@ -96,7 +71,7 @@ str_to_value(ParseInfo pi, const char *str, size_t len, const char *orig) {
 
 #if (RUBY_VERSION_MAJOR == 1 && RUBY_VERSION_MINOR == 8)
 static VALUE
-parse_xml_time(const char *str, int len) {
+oj_parse_xml_time(const char *str, int len) {
     return rb_funcall(rb_cTime, oj_parse_id, 1, rb_str_new(str, len));
 }
 #else
@@ -117,8 +92,8 @@ parse_num(const char *str, const char *end, int cnt) {
     return n;
 }
 
-static VALUE
-parse_xml_time(const char *str, int len) {
+VALUE
+oj_parse_xml_time(const char *str, int len) {
     VALUE	args[8];
     const char	*end = str + len;
     int		n;
@@ -242,8 +217,8 @@ hat_cstr(ParseInfo pi, Val parent, Val kval, const char *str, size_t len) {
     if (2 == klen) {
 	switch (key[1]) {
 	case 'o': // object
-	    {	// name2class sets and error if the class is not found or created
-		VALUE	clas = oj_name2class(pi, str, len, Yes == pi->options.auto_define);
+	    {	// name2class sets an error if the class is not found or created
+		VALUE	clas = oj_name2class(pi, str, len, Yes == pi->options.auto_define, rb_eArgError);
 
 		if (Qundef != clas) {
 		    parent->val = rb_obj_alloc(clas);
@@ -272,7 +247,7 @@ hat_cstr(ParseInfo pi, Val parent, Val kval, const char *str, size_t len) {
 	    break;
 	case 'c': // class
 	    {
-		VALUE	clas = oj_name2class(pi, str, len, Yes == pi->options.auto_define);
+		VALUE	clas = oj_name2class(pi, str, len, Yes == pi->options.auto_define, rb_eArgError);
 
 		if (Qundef == clas) {
 		    return 0;
@@ -282,7 +257,7 @@ hat_cstr(ParseInfo pi, Val parent, Val kval, const char *str, size_t len) {
 	    }
 	    break;
 	case 't': // time
-	    parent->val = parse_xml_time(str, len);
+	    parent->val = oj_parse_xml_time(str, len);
 	    break;
 	default:
 	    return 0;
@@ -309,11 +284,7 @@ hat_num(ParseInfo pi, Val parent, Val kval, NumInfo ni) {
 		    }
 		}
 		if (86400 == ni->exp) { // UTC time
-#if HAS_NANO_TIME
 		    parent->val = rb_time_nano_new(ni->i, (long)nsec);
-#else
-		    parent->val = rb_time_new(ni->i, (long)(nsec / 1000));
-#endif
 		    // Since the ruby C routines alway create local time, the
 		    // offset and then a convertion to UTC keeps makes the time
 		    // match the expected value.
@@ -321,24 +292,6 @@ hat_num(ParseInfo pi, Val parent, Val kval, NumInfo ni) {
 		} else if (ni->hasExp) {
 		    time_t	t = (time_t)(ni->i + ni->exp);
 		    struct tm	*st = gmtime(&t);
-#if RUBY_VERSION_MAJOR == 1 && RUBY_VERSION_MINOR == 8
-		    // The only methods that allow the UTC offset to be set in
-		    // 1.8.7 is the parse() and xmlschema() methods. The
-		    // xmlschema() method always returns a Time instance that is
-		    // UTC time. (true on some platforms anyway) Time.parse()
-		    // fails on other Ruby versions until 2.2.0.
-		    char	buf[64];
-		    int		z = (0 > ni->exp ? -ni->exp : ni->exp) / 60;
-		    int		tzhour = z / 60;
-		    int		tzmin = z - tzhour * 60;
-		    int		cnt;
-
-		    cnt = sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02d.%09ld%c%02d:%02d",
-				  1900 + st->tm_year, 1 + st->tm_mon, st->tm_mday,
-				  st->tm_hour, st->tm_min, st->tm_sec, (long)nsec,
-				  (0 > ni->exp ? '-' : '+'), tzhour, tzmin);
-		    parent->val = rb_funcall(rb_cTime, oj_parse_id, 1, rb_str_new(buf, cnt));
-#else
 		    VALUE	args[8];
 
 		    args[0] = LONG2NUM(1900 + st->tm_year);
@@ -346,20 +299,11 @@ hat_num(ParseInfo pi, Val parent, Val kval, NumInfo ni) {
 		    args[2] = LONG2NUM(st->tm_mday);
 		    args[3] = LONG2NUM(st->tm_hour);
 		    args[4] = LONG2NUM(st->tm_min);
-#if NO_TIME_ROUND_PAD
-		    args[5] = rb_float_new((double)st->tm_sec + ((double)nsec) / 1000000000.0);
-#else
 		    args[5] = rb_float_new((double)st->tm_sec + ((double)nsec + 0.5) / 1000000000.0);
-#endif
 		    args[6] = LONG2NUM(ni->exp);
 		    parent->val = rb_funcall2(rb_cTime, oj_new_id, 7, args);
-#endif
 		} else {
-#if HAS_NANO_TIME
 		    parent->val = rb_time_nano_new(ni->i, (long)nsec);
-#else
-		    parent->val = rb_time_new(ni->i, (long)(nsec / 1000));
-#endif
 		}
 	    }
 	    break;
@@ -410,7 +354,7 @@ hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, volatile VALUE
 		sc = rb_funcall2(rb_cStruct, oj_new_id, cnt, args);
 	    } else {
 		// If struct is not defined then we let this fail and raise an exception.
-		sc = oj_name2struct(pi, *RARRAY_PTR(value));
+		sc = oj_name2struct(pi, *RARRAY_PTR(value), rb_eArgError);
 	    }
             // Create a properly initialized struct instance without calling the initialize method.
             parent->val = rb_obj_alloc(sc);
@@ -469,8 +413,8 @@ copy_ivars(VALUE target, VALUE src) {
     }
 }
 
-static void
-set_obj_ivar(Val parent, Val kval, VALUE value) {
+void
+oj_set_obj_ivar(Val parent, Val kval, VALUE value) {
     const char	*key = kval->key;
     int		klen = kval->klen;
     ID		var_id;
@@ -552,11 +496,11 @@ hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *o
 	if (4 == klen && 's' == *key && 'e' == key[1] && 'l' == key[2] && 'f' == key[3]) {
 	    rb_funcall(parent->val, oj_replace_id, 1, str_to_value(pi, str, len, orig));
 	} else {
-	    set_obj_ivar(parent, kval, str_to_value(pi, str, len, orig));
+	    oj_set_obj_ivar(parent, kval, str_to_value(pi, str, len, orig));
 	}
 	break;
     case T_OBJECT:
-	set_obj_ivar(parent, kval, str_to_value(pi, str, len, orig));
+	oj_set_obj_ivar(parent, kval, str_to_value(pi, str, len, orig));
 	break;
     case T_CLASS:
 	if (0 == parent->odd_args) {
@@ -602,7 +546,7 @@ hash_set_num(ParseInfo pi, Val kval, NumInfo ni) {
 	    !ni->infinity && !ni->neg && 1 == ni->div && 0 == ni->exp && 0 != pi->circ_array) { // fixnum
 	    oj_circ_array_set(pi->circ_array, parent->val, ni->i);
 	} else {
-	    set_obj_ivar(parent, kval, oj_num_as_value(ni));
+	    oj_set_obj_ivar(parent, kval, oj_num_as_value(ni));
 	}
 	break;
     case T_CLASS:
@@ -646,7 +590,7 @@ hash_set_value(ParseInfo pi, Val kval, VALUE value) {
 	    if (4 == klen && 's' == *key && 'e' == key[1] && 'l' == key[2] && 'f' == key[3]) {
 		rb_funcall(parent->val, oj_replace_id, 1, value);
 	    } else {
-		set_obj_ivar(parent, kval, value);
+		oj_set_obj_ivar(parent, kval, value);
 	    }
 	} else {
 	    if (3 <= klen && '^' == *key && '#' == key[1] && T_ARRAY == rb_type(value)) {
@@ -667,12 +611,12 @@ hash_set_value(ParseInfo pi, Val kval, VALUE value) {
 	if (4 == klen && 's' == *key && 'e' == key[1] && 'l' == key[2] && 'f' == key[3]) {
 	    rb_funcall(parent->val, oj_replace_id, 1, value);
 	} else {
-	    set_obj_ivar(parent, kval, value);
+	    oj_set_obj_ivar(parent, kval, value);
 	}
 	break;
     case T_STRING: // for subclassed strings
     case T_OBJECT:
-	set_obj_ivar(parent, kval, value);
+	oj_set_obj_ivar(parent, kval, value);
 	break;
     case T_MODULE:
     case T_CLASS:
@@ -772,6 +716,7 @@ VALUE
 oj_object_parse(int argc, VALUE *argv, VALUE self) {
     struct _ParseInfo	pi;
 
+    parse_info_init(&pi);
     pi.options = oj_default_options;
     pi.handler = Qnil;
     pi.err_class = Qnil;
@@ -788,6 +733,7 @@ VALUE
 oj_object_parse_cstr(int argc, VALUE *argv, char *json, size_t len) {
     struct _ParseInfo	pi;
 
+    parse_info_init(&pi);
     pi.options = oj_default_options;
     pi.handler = Qnil;
     pi.err_class = Qnil;

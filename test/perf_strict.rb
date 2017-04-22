@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby -wW1
+#!/usr/bin/env ruby
 # encoding: UTF-8
 
 $: << '.'
@@ -116,6 +116,23 @@ unless $failed.has_key?('Oj:strict')
   perf.add('Oj:strict', 'strict_load') { Oj.strict_load($json) }
 end
 perf.add('Yajl', 'parse') { Yajl::Parser.parse($json) } unless $failed.has_key?('Yajl')
+perf.run($iter)
+
+puts '-' * 80
+puts "Strict Dump Performance"
+perf = Perf.new()
+unless $failed.has_key?('JSON::Ext')
+  perf.add('JSON::Ext', 'dump') { JSON.generate($obj) }
+  perf.before('JSON::Ext') { JSON.generator = JSON::Ext::Generator }
+end
+unless $failed.has_key?('JSON::Pure')
+  perf.add('JSON::Pure', 'generate') { JSON.generate($obj) }
+  perf.before('JSON::Pure') { JSON.generator = JSON::Pure::Generator }
+end
+unless $failed.has_key?('Oj:strict')
+  perf.add('Oj:strict', 'dump') { Oj.dump($obj, :mode => :strict) }
+end
+perf.add('Yajl', 'encode') { Yajl::Encoder.encode($obj) } unless $failed.has_key?('Yajl')
 perf.run($iter)
 
 puts

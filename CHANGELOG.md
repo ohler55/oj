@@ -1,9 +1,16 @@
 # CHANGELOG
 
-## 2.18.5 - 2017-03-21 (2.18.4 was a bad release)
-## 2.18.4 - 2017-03-21
+## 3.0.0 - 2017-04-22
 
-- Thanks to ianks for adding the :empty_string option.
+- Major changes focussed on json gem and Rails compatibility. A new :custom
+  mode was added as well. Starting with this release the json gem tests are
+  sbeing used to test the :compat mode and the ActiveSupport 5 tests are being
+  used to test the :rails mode.
+
+- Please give stereobooster a thank you for getting the tests set up and
+  helping out with json gem and Rails understanding. He also has some
+  benchmarks of Oj versus other options
+  [here](https://github.com/stereobooster/ruby-json-benchmark).
 
 ## 2.18.3 - 2017-03-14
 

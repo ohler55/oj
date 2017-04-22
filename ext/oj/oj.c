@@ -1,32 +1,6 @@
 /* oj.c
  * Copyright (c) 2012, Peter Ohler
- *
  * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- * 
- * - Redistributions of source code must retain the above copyright notice, this
- *   list of conditions and the following disclaimer.
- * 
- * - Redistributions in binary form must reproduce the above copyright notice,
- *   this list of conditions and the following disclaimer in the documentation
- *   and/or other materials provided with the distribution.
- * 
- * - Neither the name of Peter Ohler nor the names of its contributors may be
- *   used to endorse or promote products derived from this software without
- *   specific prior written permission.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include <stdlib.h>
@@ -41,7 +15,13 @@
 #include "parse.h"
 #include "hash.h"
 #include "odd.h"
+#include "dump.h"
+#include "mimic_rails.h"
 #include "encode.h"
+
+#if !HAS_ENCODING_SUPPORT || defined(RUBINIUS_RUBY)
+#define rb_eEncodingError	rb_eException
+#endif
 
 typedef struct _YesNoOpt {
     VALUE	sym;
@@ -57,10 +37,14 @@ ID	oj_array_append_id;
 ID	oj_array_end_id;
 ID	oj_array_start_id;
 ID	oj_as_json_id;
+ID	oj_begin_id;
+ID	oj_end_id;
+ID	oj_exclude_end_id;
 ID	oj_error_id;
 ID	oj_file_id;
 ID	oj_fileno_id;
 ID	oj_ftype_id;
+ID	oj_has_key_id;
 ID	oj_hash_end_id;
 ID	oj_hash_key_id;
 ID	oj_hash_set_id;
@@ -77,6 +61,7 @@ ID	oj_readpartial_id;
 ID	oj_replace_id;
 ID	oj_stat_id;
 ID	oj_string_id;
+ID	oj_to_h_id;
 ID	oj_to_hash_id;
 ID	oj_to_json_id;
 ID	oj_to_s_id;
@@ -90,13 +75,13 @@ ID	oj_utc_offset_id;
 ID	oj_utcq_id;
 ID	oj_write_id;
 
-static ID	has_key_id;
 
 VALUE	oj_bag_class;
 VALUE	oj_bigdecimal_class;
 VALUE	oj_cstack_class;
 VALUE	oj_date_class;
 VALUE	oj_datetime_class;
+VALUE	oj_enumerable_class;
 VALUE	oj_parse_error_class;
 VALUE	oj_stream_writer_class;
 VALUE	oj_string_writer_class;
@@ -105,9 +90,17 @@ VALUE	oj_struct_class;
 
 VALUE	oj_slash_string;
 
+VALUE	oj_allow_nan_sym;
+VALUE	oj_array_class_sym;
+VALUE	oj_create_additions_sym;
+VALUE	oj_hash_class_sym;
+VALUE	oj_indent_sym;
+VALUE	oj_object_class_sym;
+VALUE	oj_quirks_mode_sym;
+
+static VALUE	allow_blank_sym;
 static VALUE	allow_gc_sym;
 static VALUE	allow_invalid_unicode_sym;
-static VALUE	ascii_only_sym;
 static VALUE	ascii_sym;
 static VALUE	auto_define_sym;
 static VALUE	auto_sym;
@@ -118,45 +111,37 @@ static VALUE	circular_sym;
 static VALUE	class_cache_sym;
 static VALUE	compat_sym;
 static VALUE	create_id_sym;
+static VALUE	custom_sym;
+static VALUE	empty_string_sym;
 static VALUE	escape_mode_sym;
 static VALUE	float_prec_sym;
 static VALUE	float_sym;
-static VALUE	hash_class_sym;
 static VALUE	huge_sym;
-static VALUE	indent_sym;
-static VALUE	json_parser_error_class;
 static VALUE	json_sym;
+static VALUE	match_string_sym;
 static VALUE	mode_sym;
 static VALUE	nan_sym;
 static VALUE	newline_sym;
 static VALUE	nilnil_sym;
-static VALUE	empty_string_sym;
 static VALUE	null_sym;
 static VALUE	object_sym;
 static VALUE	omit_nil_sym;
-static VALUE	quirks_mode_sym;
+static VALUE	rails_sym;
 static VALUE	raise_sym;
 static VALUE	ruby_sym;
 static VALUE	sec_prec_sym;
 static VALUE	strict_sym;
 static VALUE	symbol_keys_sym;
 static VALUE	time_format_sym;
+static VALUE	unicode_xss_sym;
 static VALUE	unix_sym;
 static VALUE	unix_zone_sym;
 static VALUE	use_as_json_sym;
+static VALUE	use_to_hash_sym;
 static VALUE	use_to_json_sym;
 static VALUE	word_sym;
 static VALUE	xmlschema_sym;
 static VALUE	xss_safe_sym;
-
-static VALUE	array_nl_sym;
-static VALUE	create_additions_sym;
-static VALUE	object_nl_sym;
-static VALUE	space_before_sym;
-static VALUE	space_sym;
-static VALUE	symbolize_names_sym;
-
-static VALUE	mimic = Qnil;
 
 #if HAS_ENCODING_SUPPORT
 rb_encoding	*oj_utf8_encoding = 0;
@@ -169,6 +154,7 @@ pthread_mutex_t	oj_cache_mutex;
 #elif USE_RB_MUTEX
 VALUE oj_cache_mutex = Qnil;
 #endif
+
 static const char	json_class[] = "json_class";
 
 struct _Options	oj_default_options = {
@@ -179,22 +165,26 @@ struct _Options	oj_default_options = {
     JSONEsc,	// escape_mode
     ObjectMode,	// mode
     Yes,	// class_cache
-    UnixZTime,	// time_format
+    UnixTime,	// time_format
     Yes,	// bigdec_as_num
     AutoDec,	// bigdec_load
+    No,		// to_hash
     No,		// to_json
     No,		// as_json
     No,		// nilnil
     Yes,	// empty_string
     Yes,	// allow_gc
     Yes,	// quirks_mode
-    No,		// allow_invalid    
+    No,		// allow_invalid
+    No,		// create_ok
+    Yes,	// allow_nan
     json_class,	// create_id
     10,		// create_id_len
     9,		// sec_prec
-    15,		// float_prec
+    16,		// float_prec
     "%0.15g",	// float_fmt
     Qnil,	// hash_class
+    Qnil,	// array_class
     {		// dump_opts
 	false,	//use
 	"",	// indent
@@ -209,52 +199,60 @@ struct _Options	oj_default_options = {
 	0,	// array_size
 	AutoNan,// nan_dump
 	false,	// omit_nil
+	MAX_DEPTH, // max_depth
+    },
+    {		// str_rx
+	NULL,	// head
+	NULL,	// tail
+	{ '\0' }, // err
     }
 };
 
-static VALUE	define_mimic_json(int argc, VALUE *argv, VALUE self);
-
-/* call-seq: default_options() => Hash
+/* Document-method: default_options()
+ *	call-seq: default_options()
  *
  * Returns the default load and dump options as a Hash. The options are
- * - indent: [Fixnum|String|nil] number of spaces to indent each element in an JSON document, zero or nil is no newline between JSON elements, negative indicates no newline between top level JSON elements in a stream, a String indicates the string should be used for indentation
- * - circular: [true|false|nil] support circular references while dumping
- * - auto_define: [true|false|nil] automatically define classes if they do not exist
- * - symbol_keys: [true|false|nil] use symbols instead of strings for hash keys
- * - escape_mode: [:newline|:json|:xss_safe|:ascii|nil] determines the characters to escape
- * - class_cache: [true|false|nil] cache classes for faster parsing (if dynamically modifying classes or reloading classes then don't use this)
- * - mode: [:object|:strict|:compat|:null] load and dump modes to use for JSON
- * - time_format: [:unix|:unix_zone|:xmlschema|:ruby] time format when dumping in :compat and :object mode
- * - bigdecimal_as_decimal: [true|false|nil] dump BigDecimal as a decimal number or as a String
- * - bigdecimal_load: [:bigdecimal|:float|:auto] load decimals as BigDecimal instead of as a Float. :auto pick the most precise for the number of digits.
- * - create_id: [String|nil] create id for json compatible object encoding, default is 'json_create'
- * - second_precision: [Fixnum|nil] number of digits after the decimal when dumping the seconds portion of time
- * - float_precision: [Fixnum|nil] number of digits of precision when dumping floats, 0 indicates use Ruby
- * - use_to_json: [true|false|nil] call to_json() methods on dump, default is false
- * - use_as_json: [true|false|nil] call as_json() methods on dump, default is false
- * - nilnil: [true|false|nil] if true a nil input to load will return nil and not raise an Exception
- * - empty_string: [true|false|nil] if true an empty input will not raise an Exception
- * - allow_gc: [true|false|nil] allow or prohibit GC during parsing, default is true (allow)
- * - quirks_mode: [true,|false|nil] Allow single JSON values instead of documents, default is true (allow)
- * - allow_invalid_unicode: [true,|false|nil] Allow invalid unicode, default is false (don't allow)
- * - indent_str: [String|nil] String to use for indentation, overriding the indent option is not nil
- * - space: [String|nil] String to use for the space after the colon in JSON object fields
- * - space_before: [String|nil] String to use before the colon separator in JSON object fields
- * - object_nl: [String|nil] String to use after a JSON object field value
- * - array_nl: [String|nil] String to use after a JSON array value
- * - nan: [:null|:huge|:word|:raise|:auto] how to dump Infinity and NaN in null, strict, and compat mode. :null places a null, :huge places a huge number, :word places Infinity or NaN, :raise raises and exception, :auto uses default for each mode.
- * - hash_class: [Class|nil] Class to use instead of Hash on load
- * - omit_nil: [true|false] if true Hash and Object attributes with nil values are omitted
- * @return [Hash] all current option settings.
+ * - *:indent* [_Fixnum_|_String_|_nil_] number of spaces to indent each element in an JSON document, zero or nil is no newline between JSON elements, negative indicates no newline between top level JSON elements in a stream, a String indicates the string should be used for indentation
+ * - *:circular* [_Boolean_|_nil_] support circular references while dumping
+ * - *:auto_define* [_Boolean_|_nil_] automatically define classes if they do not exist
+ * - *:symbol_keys* [_Boolean_|_nil_] use symbols instead of strings for hash keys
+ * - *:escape_mode* [_:newline_|_:json_|_:xss_safe_|_:ascii_|_unicode_xss_|_nil_] determines the characters to escape
+ * - *:class_cache* [_Boolean_|_nil_] cache classes for faster parsing (if dynamically modifying classes or reloading classes then don't use this)
+ * - *:mode* [_:object_|_:strict_|_:compat_|_:null_|_:custom_|_:rails_] load and dump modes to use for JSON
+ * - *:time_format* [_:unix_|_:unix_zone_|_:xmlschema_|_:ruby_] time format when dumping in :compat and :object mode
+ * - *:bigdecimal_as_decimal* [_Boolean_|_nil_] dump BigDecimal as a decimal number or as a String
+ * - *:bigdecimal_load* [_:bigdecimal_|_:float_|_:auto_] load decimals as BigDecimal instead of as a Float. :auto pick the most precise for the number of digits.
+ * - *:create_id* [_String_|_nil_] create id for json compatible object encoding, default is 'json_create'
+ * - *:second_precision* [_Fixnum_|_nil_] number of digits after the decimal when dumping the seconds portion of time
+ * - *:float_precision* [_Fixnum_|_nil_] number of digits of precision when dumping floats, 0 indicates use Ruby
+ * - *:use_to_json* [_Boolean_|_nil_] call to_json() methods on dump, default is false
+ * - *:use_as_json* [_Boolean_|_nil_] call as_json() methods on dump, default is false
+ * - *:nilnil* [_Boolean_|_nil_] if true a nil input to load will return nil and not raise an Exception
+ * - *:empty_string* [_Boolean_|_nil_] if true an empty input will not raise an Exception
+ * - *:allow_gc* [_Boolean_|_nil_] allow or prohibit GC during parsing, default is true (allow)
+ * - *:quirks_mode* [_true,_|_false_|_nil_] Allow single JSON values instead of documents, default is true (allow)
+ * - *:allow_invalid_unicode* [_true,_|_false_|_nil_] Allow invalid unicode, default is false (don't allow)
+ * - *:allow_nan* [_true,_|_false_|_nil_] Allow Nan, Infinity, and -Infinity to be parsed, default is true (allow)
+ * - *:indent_str* [_String_|_nil_] String to use for indentation, overriding the indent option is not nil
+ * - *:space* [_String_|_nil_] String to use for the space after the colon in JSON object fields
+ * - *:space_before* [_String_|_nil_] String to use before the colon separator in JSON object fields
+ * - *:object_nl* [_String_|_nil_] String to use after a JSON object field value
+ * - *:array_nl* [_String_|_nil_] String to use after a JSON array value
+ * - *:nan* [_:null_|_:huge_|_:word_|_:raise_|_:auto_] how to dump Infinity and NaN in null, strict, and compat mode. :null places a null, :huge places a huge number, :word places Infinity or NaN, :raise raises and exception, :auto uses default for each mode.
+ * - *:hash_class* [_Class_|_nil_] Class to use instead of Hash on load, :object_class can also be used
+ * - *:array_class* [_Class_|_nil_] Class to use instead of Array on load
+ * - *:omit_nil* [_true_|_false_] if true Hash and Object attributes with nil values are omitted
+ *
+ * Return [_Hash_] all current option settings.
  */
 static VALUE
 get_def_opts(VALUE self) {
     VALUE	opts = rb_hash_new();
 
     if (0 == oj_default_options.dump_opts.indent_size) {
-	rb_hash_aset(opts, indent_sym, INT2FIX(oj_default_options.indent));
+	rb_hash_aset(opts, oj_indent_sym, INT2FIX(oj_default_options.indent));
     } else {
-	rb_hash_aset(opts, indent_sym, rb_str_new2(oj_default_options.dump_opts.indent_str));
+	rb_hash_aset(opts, oj_indent_sym, rb_str_new2(oj_default_options.dump_opts.indent_str));
     }
     rb_hash_aset(opts, sec_prec_sym, INT2FIX(oj_default_options.sec_prec));
     rb_hash_aset(opts, circular_sym, (Yes == oj_default_options.circular) ? Qtrue : ((No == oj_default_options.circular) ? Qfalse : Qnil));
@@ -263,18 +261,22 @@ get_def_opts(VALUE self) {
     rb_hash_aset(opts, symbol_keys_sym, (Yes == oj_default_options.sym_key) ? Qtrue : ((No == oj_default_options.sym_key) ? Qfalse : Qnil));
     rb_hash_aset(opts, bigdecimal_as_decimal_sym, (Yes == oj_default_options.bigdec_as_num) ? Qtrue : ((No == oj_default_options.bigdec_as_num) ? Qfalse : Qnil));
     rb_hash_aset(opts, use_to_json_sym, (Yes == oj_default_options.to_json) ? Qtrue : ((No == oj_default_options.to_json) ? Qfalse : Qnil));
+    rb_hash_aset(opts, use_to_hash_sym, (Yes == oj_default_options.to_hash) ? Qtrue : ((No == oj_default_options.to_hash) ? Qfalse : Qnil));
     rb_hash_aset(opts, use_as_json_sym, (Yes == oj_default_options.as_json) ? Qtrue : ((No == oj_default_options.as_json) ? Qfalse : Qnil));
     rb_hash_aset(opts, nilnil_sym, (Yes == oj_default_options.nilnil) ? Qtrue : ((No == oj_default_options.nilnil) ? Qfalse : Qnil));
     rb_hash_aset(opts, empty_string_sym, (Yes == oj_default_options.empty_string) ? Qtrue : ((No == oj_default_options.empty_string) ? Qfalse : Qnil));
     rb_hash_aset(opts, allow_gc_sym, (Yes == oj_default_options.allow_gc) ? Qtrue : ((No == oj_default_options.allow_gc) ? Qfalse : Qnil));
-    rb_hash_aset(opts, quirks_mode_sym, (Yes == oj_default_options.quirks_mode) ? Qtrue : ((No == oj_default_options.quirks_mode) ? Qfalse : Qnil));
+    rb_hash_aset(opts, oj_quirks_mode_sym, (Yes == oj_default_options.quirks_mode) ? Qtrue : ((No == oj_default_options.quirks_mode) ? Qfalse : Qnil));
     rb_hash_aset(opts, allow_invalid_unicode_sym, (Yes == oj_default_options.allow_invalid) ? Qtrue : ((No == oj_default_options.allow_invalid) ? Qfalse : Qnil));
+    rb_hash_aset(opts, oj_allow_nan_sym, (Yes == oj_default_options.allow_nan) ? Qtrue : ((No == oj_default_options.allow_nan) ? Qfalse : Qnil));
     rb_hash_aset(opts, float_prec_sym, INT2FIX(oj_default_options.float_prec));
     switch (oj_default_options.mode) {
     case StrictMode:	rb_hash_aset(opts, mode_sym, strict_sym);	break;
     case CompatMode:	rb_hash_aset(opts, mode_sym, compat_sym);	break;
     case NullMode:	rb_hash_aset(opts, mode_sym, null_sym);		break;
     case ObjectMode:
+    case CustomMode:	rb_hash_aset(opts, mode_sym, custom_sym);	break;
+    case RailsMode:	rb_hash_aset(opts, mode_sym, rails_sym);	break;
     default:		rb_hash_aset(opts, mode_sym, object_sym);	break;
     }
     switch (oj_default_options.escape_mode) {
@@ -282,6 +284,7 @@ get_def_opts(VALUE self) {
     case JSONEsc:	rb_hash_aset(opts, escape_mode_sym, json_sym);		break;
     case XSSEsc:	rb_hash_aset(opts, escape_mode_sym, xss_safe_sym);	break;
     case ASCIIEsc:	rb_hash_aset(opts, escape_mode_sym, ascii_sym);		break;
+    case JXEsc:		rb_hash_aset(opts, escape_mode_sym, unicode_xss_sym);	break;
     default:		rb_hash_aset(opts, escape_mode_sym, json_sym);		break;
     }
     switch (oj_default_options.time_format) {
@@ -298,10 +301,10 @@ get_def_opts(VALUE self) {
     default:		rb_hash_aset(opts, bigdecimal_load_sym, auto_sym);	break;
     }
     rb_hash_aset(opts, create_id_sym, (0 == oj_default_options.create_id) ? Qnil : rb_str_new2(oj_default_options.create_id));
-    rb_hash_aset(opts, space_sym, (0 == oj_default_options.dump_opts.after_size) ? Qnil : rb_str_new2(oj_default_options.dump_opts.after_sep));
-    rb_hash_aset(opts, space_before_sym, (0 == oj_default_options.dump_opts.before_size) ? Qnil : rb_str_new2(oj_default_options.dump_opts.before_sep));
-    rb_hash_aset(opts, object_nl_sym, (0 == oj_default_options.dump_opts.hash_size) ? Qnil : rb_str_new2(oj_default_options.dump_opts.hash_nl));
-    rb_hash_aset(opts, array_nl_sym, (0 == oj_default_options.dump_opts.array_size) ? Qnil : rb_str_new2(oj_default_options.dump_opts.array_nl));
+    rb_hash_aset(opts, oj_space_sym, (0 == oj_default_options.dump_opts.after_size) ? Qnil : rb_str_new2(oj_default_options.dump_opts.after_sep));
+    rb_hash_aset(opts, oj_space_before_sym, (0 == oj_default_options.dump_opts.before_size) ? Qnil : rb_str_new2(oj_default_options.dump_opts.before_sep));
+    rb_hash_aset(opts, oj_object_nl_sym, (0 == oj_default_options.dump_opts.hash_size) ? Qnil : rb_str_new2(oj_default_options.dump_opts.hash_nl));
+    rb_hash_aset(opts, oj_array_nl_sym, (0 == oj_default_options.dump_opts.array_size) ? Qnil : rb_str_new2(oj_default_options.dump_opts.array_nl));
 
     switch (oj_default_options.dump_opts.nan_dump) {
     case NullNan:	rb_hash_aset(opts, nan_sym, null_sym);	break;
@@ -312,56 +315,46 @@ get_def_opts(VALUE self) {
     default:		rb_hash_aset(opts, nan_sym, auto_sym);	break;
     }
     rb_hash_aset(opts, omit_nil_sym, oj_default_options.dump_opts.omit_nil ? Qtrue : Qfalse);
-    rb_hash_aset(opts, hash_class_sym, oj_default_options.hash_class);
+    rb_hash_aset(opts, oj_hash_class_sym, oj_default_options.hash_class);
+    rb_hash_aset(opts, oj_array_class_sym, oj_default_options.array_class);
     
     return opts;
 }
 
-/* call-seq: default_options=(opts)
+/* Document-method: default_options=
+ *	call-seq: default_options=(opts)
  *
  * Sets the default options for load and dump.
- * @param [Hash] opts options to change
- * @param [Fixnum|String|nil] :indent number of spaces to indent each element in a JSON document or the String to use for identation.
- * @param [true|false|nil] :circular support circular references while dumping
- * @param [true|false|nil] :auto_define automatically define classes if they do not exist
- * @param [true|false|nil] :symbol_keys convert hash keys to symbols
- * @param [true|false|nil] :class_cache cache classes for faster parsing
- * @param [:newline|:json|:xss_safe|:ascii|nil] :escape mode encodes all high-bit characters as
- *        escaped sequences if :ascii, :json is standand UTF-8 JSON encoding,
- *        :newline is the same as :json but newlines are not escaped,
- *        and :xss_safe escapes &, <, and >, and some others.
- * @param [true|false|nil] :bigdecimal_as_decimal dump BigDecimal as a decimal number or as a String
- * @param [:bigdecimal|:float|:auto|nil] :bigdecimal_load load decimals as BigDecimal instead of as a Float. :auto pick the most precise for the number of digits.
- * @param [:object|:strict|:compat|:null] load and dump mode to use for JSON
- *	  :strict raises an exception when a non-supported Object is
- *	  encountered. :compat attempts to extract variable values from an
- *	  Object using to_json() or to_hash() then it walks the Object's
- *	  variables if neither is found. The :object mode ignores to_hash()
- *	  and to_json() methods and encodes variables using code internal to
- *	  the Oj gem. The :null mode ignores non-supported Objects and
- *	  replaces them with a null.
- * @param [:unix|:xmlschema|:ruby] time format when dumping in :compat mode
- *        :unix decimal number denoting the number of seconds since 1/1/1970,
- *        :unix_zone decimal number denoting the number of seconds since 1/1/1970 plus the utc_offset in the exponent ,
- *        :xmlschema date-time format taken from XML Schema as a String,
- *        :ruby Time.to_s formatted String
- * @param [String|nil] :create_id create id for json compatible object encoding
- * @param [Fixnum|nil] :second_precision number of digits after the decimal when dumping the seconds portion of time
- * @param [Fixnum|nil] :float_precision number of digits of precision when dumping floats, 0 indicates use Ruby
- * @param [true|false|nil] :use_to_json call to_json() methods on dump, default is false
- * @param [true|false|nil] :use_as_json call as_json() methods on dump, default is false
- * @param [true|false|nil] :nilnil if true a nil input to load will return nil and not raise an Exception
- * @param [true|false|nil] :allow_gc allow or prohibit GC during parsing, default is true (allow)
- * @param [true|false|nil] :quirks_mode allow single JSON values instead of documents, default is true (allow)
- * @param [true|false|nil] :allow_invalid_unicode allow invalid unicode, default is false (don't allow)
- * @param [String|nil] :space String to use for the space after the colon in JSON object fields
- * @param [String|nil] :space_before String to use before the colon separator in JSON object fields
- * @param [String|nil] :object_nl String to use after a JSON object field value
- * @param [String|nil] :array_nl String to use after a JSON array value
- * @param [:null|:huge|:word|:raise] :nan how to dump Infinity and NaN in null, strict, and compat mode. :null places a null, :huge places a huge number, :word places Infinity or NaN, :raise raises and exception, :auto uses default for each mode.
- * @param [Class|nil] :hash_class Class to use instead of Hash on load
- * @param [true|false] :omit_nil if true Hash and Object attributes with nil values are omitted
- * @return [nil]
+ * - *opts* [_Hash_] options to change
+ *   - *:indent* [_Fixnum_|_String_|_nil_] number of spaces to indent each element in a JSON document or the String to use for identation.
+ *   - :circular [_Boolean_|_nil_] support circular references while dumping.
+ *   - *:auto_define* [_Boolean_|_nil_] automatically define classes if they do not exist.
+ *   - *:symbol_keys* [_Boolean_|_nil_] convert hash keys to symbols.
+ *   - *:class_cache* [_Boolean_|_nil_] cache classes for faster parsing.
+ *   - *:escape* [_:newline_|_:json_|_:xss_safe_|_:ascii_|_unicode_xss_|_nil_] mode encodes all high-bit characters as escaped sequences if :ascii, :json is standand UTF-8 JSON encoding, :newline is the same as :json but newlines are not escaped, :unicode_xss allows unicode but escapes &, <, and >, and any \u20xx characters along with some others, and :xss_safe escapes &, <, and >, and some others.
+ *   - *:bigdecimal_as_decimal* [_Boolean_|_nil_] dump BigDecimal as a decimal number or as a String.
+ *   - *:bigdecimal_load* [_:bigdecimal_|_:float_|_:auto_|_nil_] load decimals as BigDecimal instead of as a Float. :auto pick the most precise for the number of digits.
+ *   - *:mode* [_:object_|_:strict_|_:compat_|_:null_|_:custom_|_:rails_] load and dump mode to use for JSON :strict raises an exception when a non-supported Object is encountered. :compat attempts to extract variable values from an Object using to_json() or to_hash() then it walks the Object's variables if neither is found. The :object mode ignores to_hash() and to_json() methods and encodes variables using code internal to the Oj gem. The :null mode ignores non-supported Objects and replaces them with a null. The :custom mode honors all dump options. The :rails more mimics rails and Active behavior.
+ *   - *:time_format* [_:unix_|_:xmlschema_|_:ruby_] time format when dumping in :compat mode :unix decimal number denoting the number of seconds since 1/1/1970, :unix_zone decimal number denoting the number of seconds since 1/1/1970 plus the utc_offset in the exponent, :xmlschema date-time format taken from XML Schema as a String, :ruby Time.to_s formatted String.
+ *   - *:create_id* [_String_|_nil_] create id for json compatible object encoding
+ *   - *:second_precision* [_Fixnum_|_nil_] number of digits after the decimal when dumping the seconds portion of time.
+ *   - *:float_precision* [_Fixnum_|_nil_] number of digits of precision when dumping floats, 0 indicates use Ruby.
+ *   - *:use_to_json* [_Boolean_|_nil_] call to_json() methods on dump, default is false.
+ *   - *:use_as_json* [_Boolean_|_nil_] call as_json() methods on dump, default is false.
+ *   - *:use_to_hash* [_Boolean_|_nil_] call to_hash() methods on dump, default is false.
+ *   - *:nilnil* [_Boolean_|_nil_] if true a nil input to load will return nil and not raise an Exception.
+ *   - *:allow_gc* [_Boolean_|_nil_] allow or prohibit GC during parsing, default is true (allow).
+ *   - *:quirks_mode* [_Boolean_|_nil_] allow single JSON values instead of documents, default is true (allow).
+ *   - *:allow_invalid_unicode* [_Boolean_|_nil_] allow invalid unicode, default is false (don't allow).
+ *   - *:allow_nan* [_Boolean_|_nil_] allow Nan, Infinity, and -Infinity, default is true (allow).
+ *   - *:space* [_String_|_nil_] String to use for the space after the colon in JSON object fields.
+ *   - *:space_before* [_String_|_nil_] String to use before the colon separator in JSON object fields.
+ *   - *:object_nl* [_String_|_nil_] String to use after a JSON object field value.
+ *   - *:array_nl* [_String_|_nil_] String to use after a JSON array value
+ *   - *:nan* [_:null_|_:huge_|_:word_|_:raise_] how to dump Infinity and NaN in null, strict, and compat mode. :null places a null, :huge places a huge number, :word places Infinity or NaN, :raise raises and exception, :auto uses default for each mode.
+ *   - *:hash_class* [_Class_|_nil_] Class to use instead of Hash on load, :object_class can also be used.
+ *   - *:array_class* [_Class_|_nil_] Class to use instead of Array on load.
+ *   - *:omit_nil* [_true_|_false_] if true Hash and Object attributes with nil values are omitted.
  */
 static VALUE
 set_def_opts(VALUE self, VALUE opts) {
@@ -379,13 +372,17 @@ oj_parse_options(VALUE ropts, Options copts) {
 	{ symbol_keys_sym, &copts->sym_key },
 	{ class_cache_sym, &copts->class_cache },
 	{ bigdecimal_as_decimal_sym, &copts->bigdec_as_num },
+	{ use_to_hash_sym, &copts->to_hash },
 	{ use_to_json_sym, &copts->to_json },
 	{ use_as_json_sym, &copts->as_json },
 	{ nilnil_sym, &copts->nilnil },
+	{ allow_blank_sym, &copts->nilnil }, // same as nilnil
 	{ empty_string_sym, &copts->empty_string },
 	{ allow_gc_sym, &copts->allow_gc },
-	{ quirks_mode_sym, &copts->quirks_mode },
+	{ oj_quirks_mode_sym, &copts->quirks_mode },
 	{ allow_invalid_unicode_sym, &copts->allow_invalid },
+	{ oj_allow_nan_sym, &copts->allow_nan },
+	{ oj_create_additions_sym, &copts->create_ok },
 	{ Qnil, 0 }
     };
     YesNoOpt		o;
@@ -395,8 +392,8 @@ oj_parse_options(VALUE ropts, Options copts) {
     if (T_HASH != rb_type(ropts)) {
 	return;
     }
-    if (Qtrue == rb_funcall(ropts, has_key_id, 1, indent_sym)) {
-	v = rb_hash_lookup(ropts, indent_sym);
+    if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_indent_sym)) {
+	v = rb_hash_lookup(ropts, oj_indent_sym);
 	switch (rb_type(v)) {
 	case T_NIL:
 	    copts->dump_opts.indent_size = 0;
@@ -429,11 +426,10 @@ oj_parse_options(VALUE ropts, Options copts) {
 	    rb_raise(rb_eArgError, ":float_precision must be a Integer.");
 	}
 #else
-	if (rb_cFixnum != rb_obj_class(v)) {
+	if (T_FIXNUM != rb_type(v)) {
 	    rb_raise(rb_eArgError, ":float_precision must be a Fixnum.");
 	}
 #endif
-	Check_Type(v, T_FIXNUM);
 	n = FIX2INT(v);
 	if (0 >= n) {
 	    *copts->float_fmt = '\0';
@@ -454,7 +450,7 @@ oj_parse_options(VALUE ropts, Options copts) {
 	    rb_raise(rb_eArgError, ":second_precision must be a Integer.");
 	}
 #else
-	if (rb_cFixnum != rb_obj_class(v)) {
+	if (T_FIXNUM != rb_type(v)) {
 	    rb_raise(rb_eArgError, ":second_precision must be a Fixnum.");
 	}
 #endif
@@ -471,12 +467,16 @@ oj_parse_options(VALUE ropts, Options copts) {
 	    copts->mode = ObjectMode;
 	} else if (strict_sym == v) {
 	    copts->mode = StrictMode;
-	} else if (compat_sym == v) {
+	} else if (compat_sym == v || json_sym == v) {
 	    copts->mode = CompatMode;
 	} else if (null_sym == v) {
 	    copts->mode = NullMode;
+	} else if (custom_sym == v) {
+	    copts->mode = CustomMode;
+	} else if (rails_sym == v) {
+	    copts->mode = RailsMode;
 	} else {
-	    rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, or :null.");
+	    rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, :null, :custom, or :rails.");
 	}
     }
     if (Qnil != (v = rb_hash_lookup(ropts, time_format_sym))) {
@@ -501,8 +501,10 @@ oj_parse_options(VALUE ropts, Options copts) {
 	    copts->escape_mode = XSSEsc;
 	} else if (ascii_sym == v) {
 	    copts->escape_mode = ASCIIEsc;
+	} else if (unicode_xss_sym == v) {
+	    copts->escape_mode = JXEsc;
 	} else {
-	    rb_raise(rb_eArgError, ":encoding must be :newline, :json, :xss_safe, or :ascii.");
+	    rb_raise(rb_eArgError, ":encoding must be :newline, :json, :xss_safe, :unicode_xss, or :ascii.");
 	}
     }
     if (Qnil != (v = rb_hash_lookup(ropts, bigdecimal_load_sym))) {
@@ -516,7 +518,7 @@ oj_parse_options(VALUE ropts, Options copts) {
 	    rb_raise(rb_eArgError, ":bigdecimal_load must be :bigdecimal, :float, or :auto.");
 	}
     }
-    if (Qtrue == rb_funcall(ropts, has_key_id, 1, create_id_sym)) {
+    if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, create_id_sym)) {
 	v = rb_hash_lookup(ropts, create_id_sym);
 	if (Qnil == v) {
 	    if (json_class != oj_default_options.create_id) {
@@ -549,8 +551,8 @@ oj_parse_options(VALUE ropts, Options copts) {
 	    }
 	}
     }
-    if (Qtrue == rb_funcall(ropts, has_key_id, 1, space_sym)) {
-	if (Qnil == (v = rb_hash_lookup(ropts, space_sym))) {
+    if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_space_sym)) {
+	if (Qnil == (v = rb_hash_lookup(ropts, oj_space_sym))) {
 	    copts->dump_opts.after_size = 0;
 	    *copts->dump_opts.after_sep = '\0';
 	} else {
@@ -562,8 +564,8 @@ oj_parse_options(VALUE ropts, Options copts) {
 	    copts->dump_opts.after_size = (uint8_t)len;
 	}
     }
-    if (Qtrue == rb_funcall(ropts, has_key_id, 1, space_before_sym)) {
-	if (Qnil == (v = rb_hash_lookup(ropts, space_before_sym))) {
+    if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_space_before_sym)) {
+	if (Qnil == (v = rb_hash_lookup(ropts, oj_space_before_sym))) {
 	    copts->dump_opts.before_size = 0;
 	    *copts->dump_opts.before_sep = '\0';
 	} else {
@@ -575,8 +577,8 @@ oj_parse_options(VALUE ropts, Options copts) {
 	    copts->dump_opts.before_size = (uint8_t)len;
 	}
     }
-    if (Qtrue == rb_funcall(ropts, has_key_id, 1, object_nl_sym)) {
-	if (Qnil == (v = rb_hash_lookup(ropts, object_nl_sym))) {
+    if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_object_nl_sym)) {
+	if (Qnil == (v = rb_hash_lookup(ropts, oj_object_nl_sym))) {
 	    copts->dump_opts.hash_size = 0;
 	    *copts->dump_opts.hash_nl = '\0';
 	} else {
@@ -588,8 +590,8 @@ oj_parse_options(VALUE ropts, Options copts) {
 	    copts->dump_opts.hash_size = (uint8_t)len;
 	}
     }
-    if (Qtrue == rb_funcall(ropts, has_key_id, 1, array_nl_sym)) {
-	if (Qnil == (v = rb_hash_lookup(ropts, array_nl_sym))) {
+    if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_array_nl_sym)) {
+	if (Qnil == (v = rb_hash_lookup(ropts, oj_array_nl_sym))) {
 	    copts->dump_opts.array_size = 0;
 	    *copts->dump_opts.array_nl = '\0';
 	} else {
@@ -631,115 +633,76 @@ oj_parse_options(VALUE ropts, Options copts) {
 	}
     }
     // This is here only for backwards compatibility with the original Oj.
-    v = rb_hash_lookup(ropts, ascii_only_sym);
+    v = rb_hash_lookup(ropts, oj_ascii_only_sym);
     if (Qtrue == v) {
 	copts->escape_mode = ASCIIEsc;
     } else if (Qfalse == v) {
 	copts->escape_mode = JSONEsc;
     }
-    if (Qtrue == rb_funcall(ropts, has_key_id, 1, hash_class_sym)) {
-	if (Qnil == (v = rb_hash_lookup(ropts, hash_class_sym))) {
+    if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_hash_class_sym)) {
+	if (Qnil == (v = rb_hash_lookup(ropts, oj_hash_class_sym))) {
 	    copts->hash_class = Qnil;
 	} else {
 	    rb_check_type(v, T_CLASS);
 	    copts->hash_class = v;
 	}
     }
+    if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_object_class_sym)) {
+	if (Qnil == (v = rb_hash_lookup(ropts, oj_object_class_sym))) {
+	    copts->hash_class = Qnil;
+	} else {
+	    rb_check_type(v, T_CLASS);
+	    copts->hash_class = v;
+	}
+    }
+    if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_array_class_sym)) {
+	if (Qnil == (v = rb_hash_lookup(ropts, oj_array_class_sym))) {
+	    copts->array_class = Qnil;
+	} else {
+	    rb_check_type(v, T_CLASS);
+	    copts->array_class = v;
+	}
+    }
+    oj_parse_opt_match_string(&copts->str_rx, ropts);
 }
 
-/* Document-method: strict_load
- *	call-seq: strict_load(json, options) => Hash, Array, String, Fixnum, Float, true, false, or nil
- *
- * Parses a JSON document String into an Hash, Array, String, Fixnum, Float,
- * true, false, or nil. It parses using a mode that is strict in that it maps
- * each primitive JSON type to a similar Ruby type. The :create_id is not
- * honored in this mode. Note that a Ruby Hash is used to represent the JSON
- * Object type. These two are not the same since the JSON Object type can have
- * repeating entries with the same key and Ruby Hash can not.
- *
- * When used with a document that has multiple JSON elements the block, if
- * any, will be yielded to. If no block then the last element read will be
- * returned.
- *
- * Raises an exception if the JSON is malformed or the classes specified are not
- * valid. If the input is not a valid JSON document (an empty string is not a
- * valid JSON document) an exception is raised.
- *
- * A block can also be provided with a single argument. That argument will be
- * the parsed JSON document. This is useful when parsing a string that includes
- * multiple JSON documents.
- *
- * @param [String|IO] json JSON String or an Object that responds to read()
- * @param [Hash] options load options (same as default_options)
- */
+static int
+match_string_cb(VALUE key, VALUE value, RxClass rc) {
+    if (T_CLASS != rb_type(value)) {
+	rb_raise(rb_eArgError, "for :match_string, the hash values must be a Class.");
+    }
+    switch (rb_type(key)) {
+    case T_REGEXP:
+	oj_rxclass_rappend(rc, key, value);
+	break;
+    case T_STRING:
+	if (0 != oj_rxclass_append(rc, StringValuePtr(key), value)) {
+	    rb_raise(rb_eArgError, "%s", rc->err);
+	}
+	break;
+    default:
+	rb_raise(rb_eArgError, "for :match_string, keys must either a String or RegExp.");
+	break;
+    }
+    return ST_CONTINUE;
+}
 
-/* Document-method: compat_load
- *	call-seq: compat_load(json, options) => Object, Hash, Array, String, Fixnum, Float, true, false, or nil
- *
- * Parses a JSON document String into an Object, Hash, Array, String, Fixnum,
- * Float, true, false, or nil. It parses using a mode that is generally
- * compatible with other Ruby JSON parsers in that it will create objects based
- * on the :create_id value. It is not compatible in every way to every other
- * parser though as each parser has it's own variations.
- *
- * When used with a document that has multiple JSON elements the block, if
- * any, will be yielded to. If no block then the last element read will be
- * returned.
- *
- * Raises an exception if the JSON is malformed or the classes specified are not
- * valid. If the input is not a valid JSON document (an empty string is not a
- * valid JSON document) an exception is raised.
- *
- * A block can also be provided with a single argument. That argument will be
- * the parsed JSON document. This is useful when parsing a string that includes
- * multiple JSON documents.
- *
- * @param [String|IO] json JSON String or an Object that responds to read()
- * @param [Hash] options load options (same as default_options)
- */
+void
+oj_parse_opt_match_string(RxClass rc, VALUE ropts) {
+    VALUE	v;
 
-/* Document-method: object_load
- *	call-seq: object_load(json, options) => Object, Hash, Array, String, Fixnum, Float, true, false, or nil
- *
- * Parses a JSON document String into an Object, Hash, Array, String, Fixnum,
- * Float, true, false, or nil. In the :object mode the JSON should have been
- * generated by Oj.dump(). The parser will reconstitute the original marshalled
- * or dumped Object. The :auto_define and :circular options have meaning with
- * this parsing mode.
- *
- * When used with a document that has multiple JSON elements the block, if
- * any, will be yielded to. If no block then the last element read will be
- * returned.
- *
- * Raises an exception if the JSON is malformed or the classes specified are not
- * valid. If the input is not a valid JSON document (an empty string is not a
- * valid JSON document) an exception is raised.
- *
- * Note: Oj is not able to automatically deserialize all classes that are a
- * subclass of a Ruby Exception. Only exception that take one required string
- * argument in the initialize() method are supported. This is an example of how
- * to write an Exception subclass that supports both a single string intializer
- * and an Exception as an argument. Additional optional arguments can be added
- * as well.
- *
- * The reason for this restriction has to do with a design decision on the part
- * of the Ruby developers. Exceptions are special Objects. They do not follow the
- * rules of other Objects. Exceptions have 'mesg' and a 'bt' attribute. Note that
- * these are not '@mesg' and '@bt'. They can not be set using the normal C or
- * Ruby calls. The only way I have found to set the 'mesg' attribute is through
- * the initializer. Unfortunately that means any subclass that provides a
- * different initializer can not be automatically decoded. A way around this is
- * to use a create function but this example shows an alternative.
- *
- * A block can also be provided with a single argument. That argument will be
- * the parsed JSON document. This is useful when parsing a string that includes
- * multiple JSON documents.
- *
- * @param [String|IO] json JSON String or an Object that responds to read()
- * @param [Hash] options load options (same as default_options)
- */
+    if (Qnil != (v = rb_hash_lookup(ropts, match_string_sym))) {
+	rb_check_type(v, T_HASH);
+	// Zero out rc. Pattern are not appended but override.
+	rc->head = NULL;
+	rc->tail = NULL;
+	*rc->err = '\0';
+	rb_hash_foreach(v, match_string_cb, (VALUE)rc);
+    }
+}
 
-/* call-seq: load(json, options) => Object, Hash, Array, String, Fixnum, Float, true, false, or nil
+/* Document-method: load
+ * call-seq: load(json, options) { _|_obj, start, len_|_ }
  *
  * Parses a JSON document String into a Object, Hash, Array, String, Fixnum,
  * Float, true, false, or nil according to the default mode or the mode
@@ -755,12 +718,21 @@ oj_parse_options(VALUE ropts, Options copts) {
  * a file object is passed as the first argument. A stream input will be parsed
  * using a stream parser but others use the slightly faster string parser.
  *
- * A block can also be provided with a single argument. That argument will be
- * the parsed JSON document. This is useful when parsing a string that includes
- * multiple JSON documents.
+ * A block can be provided with a single argument. That argument will be the
+ * parsed JSON document. This is useful when parsing a string that includes
+ * multiple JSON documents. The block can take up to 3 arguments, the parsed
+ * object, the position in the string or stream of the start of the JSON for
+ * that object, and the length of the JSON for that object plus trailing
+ * whitespace.
  *
- * @param [String|IO] json JSON String or an Object that responds to read()
- * @param [Hash] options load options (same as default_options)
+ * - *json* [_String_|_IO_] JSON String or an Object that responds to read()
+ * - *options* [_Hash_] load options (same as default_options)
+ *   - -
+ * - *obj* [_Hash_|_Array_|_String_|_Fixnum_|_Float_|_Boolean_|_nil_] parsed object.
+ * - *start* [_optional, _Integer_] start position of parsed JSON for obj.
+ * - *len* [_optional, _Integer_] length of parsed JSON for obj.
+ * 
+ * Returns [_Hash_|_Array_|_String_|_Fixnum_|_Float_|_Boolean_|_nil_]
  */
 static VALUE
 load(int argc, VALUE *argv, VALUE self) {
@@ -779,21 +751,28 @@ load(int argc, VALUE *argv, VALUE self) {
 		mode = ObjectMode;
 	    } else if (strict_sym == v) {
 		mode = StrictMode;
-	    } else if (compat_sym == v) {
+	    } else if (compat_sym == v || json_sym == v) {
 		mode = CompatMode;
 	    } else if (null_sym == v) {
 		mode = NullMode;
+	    } else if (custom_sym == v) {
+		mode = CustomMode;
+	    } else if (rails_sym == v) {
+		mode = RailsMode;
 	    } else {
-		rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, or :null.");
+		rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, :null, :custom, or :rails.");
 	    }
 	}
     }
     switch (mode) {
     case StrictMode:
-	return oj_strict_parse(argc, argv, self);
     case NullMode:
+	return oj_strict_parse(argc, argv, self);
     case CompatMode:
+    case RailsMode:
 	return oj_compat_parse(argc, argv, self);
+    case CustomMode:
+	return oj_custom_parse(argc, argv, self);
     case ObjectMode:
     default:
 	break;
@@ -802,7 +781,7 @@ load(int argc, VALUE *argv, VALUE self) {
 }
 
 /* Document-method: load_file
- *   call-seq: load_file(path, options) => Object, Hash, Array, String, Fixnum, Float, true, false, or nil
+ * call-seq: load_file(path, options) { _|_obj, start, len_|_ }
  *
  * Parses a JSON document String into a Object, Hash, Array, String, Fixnum,
  * Float, true, false, or nil according to the default mode or the mode
@@ -820,12 +799,21 @@ load(int argc, VALUE *argv, VALUE self) {
  * This is a stream based parser which allows a large or huge file to be loaded
  * without pulling the whole file into memory.
  *
- * A block can also be provided with a single argument. That argument will be
- * the parsed JSON document. This is useful when parsing a string that includes
- * multiple JSON documents.
+ * A block can be provided with a single argument. That argument will be the
+ * parsed JSON document. This is useful when parsing a string that includes
+ * multiple JSON documents. The block can take up to 3 arguments, the parsed
+ * object, the position in the string or stream of the start of the JSON for
+ * that object, and the length of the JSON for that object plus trailing
+ * whitespace.
  *
- * @param [String] path path to a file containing a JSON document
- * @param [Hash] options load options (same as default_options)
+ * - *path* [_String_] to a file containing a JSON document
+ * - *options* [_Hash_] load options (same as default_options)
+ *   - -
+ * - *obj* [_Hash_|_Array_|_String_|_Fixnum_|_Float_|_Boolean_|_nil_] parsed object.
+ * - *start* [_optional, _Integer_] start position of parsed JSON for obj.
+ * - *len* [_optional, _Integer_] length of parsed JSON for obj.
+ *
+ * Returns [_Object_|_Hash_|_Array_|_String_|_Fixnum_|_Float_|_Boolean_|_nil_]
  */
 static VALUE
 load_file(int argc, VALUE *argv, VALUE self) {
@@ -838,9 +826,11 @@ load_file(int argc, VALUE *argv, VALUE self) {
 	rb_raise(rb_eArgError, "Wrong number of arguments to load().");
     }
     Check_Type(*argv, T_STRING);
+    parse_info_init(&pi);
     pi.options = oj_default_options;
     pi.handler = Qnil;
     pi.err_class = Qnil;
+    pi.max_depth = 0;
     if (2 <= argc) {
 	VALUE	ropts = argv[1];
 	VALUE	v;
@@ -851,12 +841,16 @@ load_file(int argc, VALUE *argv, VALUE self) {
 		mode = ObjectMode;
 	    } else if (strict_sym == v) {
 		mode = StrictMode;
-	    } else if (compat_sym == v) {
+	    } else if (compat_sym == v || json_sym == v) {
 		mode = CompatMode;
 	    } else if (null_sym == v) {
 		mode = NullMode;
+	    } else if (custom_sym == v) {
+		mode = CustomMode;
+	    } else if (rails_sym == v) {
+		mode = RailsMode;
 	    } else {
-		rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, or :null.");
+		rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, :null, :custom, :rails.");
 	    }
 	}
     }
@@ -870,6 +864,8 @@ load_file(int argc, VALUE *argv, VALUE self) {
 	return oj_pi_sparse(argc, argv, &pi, fd);
     case NullMode:
     case CompatMode:
+    case CustomMode:
+    case RailsMode:
 	oj_set_compat_callbacks(&pi);
 	return oj_pi_sparse(argc, argv, &pi, fd);
     case ObjectMode:
@@ -881,21 +877,25 @@ load_file(int argc, VALUE *argv, VALUE self) {
     return oj_pi_sparse(argc, argv, &pi, fd);
 }
 
-/* call-seq: safe_load(doc)
+/* Document-method: safe_load
+ * call-seq: safe_load(doc)
  *
  * Loads a JSON document in strict mode with :auto_define and :symbol_keys
  * turned off. This function should be safe to use with JSON received on an
  * unprotected public interface.
  *
- * @param [String|IO] doc JSON String or IO to load
- * @return [Hash|Array|String|Fixnum|Bignum|BigDecimal|nil|True|False]
+ * - *doc* [_String__|_IO_] JSON String or IO to load.
+ *
+ * Returns [_Hash_|_Array_|_String_|_Fixnum_|_Bignum_|_BigDecimal_|_nil_|_True_|_False_]
  */
 static VALUE
 safe_load(VALUE self, VALUE doc) {
     struct _ParseInfo	pi;
     VALUE		args[1];
 
+    parse_info_init(&pi);
     pi.err_class = Qnil;
+    pi.max_depth = 0;
     pi.options = oj_default_options;
     pi.options.auto_define = No;
     pi.options.sym_key = No;
@@ -906,18 +906,20 @@ safe_load(VALUE self, VALUE doc) {
     return oj_pi_parse(1, args, &pi, 0, 0, 1);
 }
 
-/* call-seq: saj_parse(handler, io)
+/* Document-method: saj_parse
+ * call-seq: saj_parse(handler, io)
  *
  * Parses an IO stream or file containing a JSON document. Raises an exception
  * if the JSON is malformed. This is a callback parser that calls the methods in
  * the handler if they exist. A sample is the Oj::Saj class which can be used as
  * a base class for the handler.
  *
- * @param [Oj::Saj] handler responds to Oj::Saj methods
- * @param [IO|String] io IO Object to read from
+ * - *handler* [_Oj::Saj_] responds to Oj::Saj methods
+ * - *io* [_IO_|_String_] IO Object to read from
  */
 
-/* call-seq: sc_parse(handler, io)
+/* Document-method: sc_parse
+ * call-seq: sc_parse(handler, io)
  *
  * Parses an IO stream or file containing a JSON document. Raises an exception
  * if the JSON is malformed. This is a callback parser (Simple Callback Parser)
@@ -926,15 +928,16 @@ safe_load(VALUE self, VALUE doc) {
  * callback parser is slightly more efficient than the Saj callback parser and
  * requires less argument checking.
  *
- * @param [Oj::ScHandler] handler responds to Oj::ScHandler methods
- * @param [IO|String] io IO Object to read from
+ * - *handler* [_Oj_::ScHandler_] responds to Oj::ScHandler methods
+ * - *io* [_IO__|_String_] IO Object to read from
  */
 
-/* call-seq: dump(obj, options) => json-string
+/* Document-method: dump
+ * call-seq: dump(obj, options)
  *
  * Dumps an Object (obj) to a string.
- * @param [Object] obj Object to serialize as an JSON document String
- * @param [Hash] options same as default_options
+ * - *obj* [_Object_] Object to serialize as an JSON document String
+ * - *options* [_Hash_] same as default_options
  */
 static VALUE
 dump(int argc, VALUE *argv, VALUE self) {
@@ -949,10 +952,15 @@ dump(int argc, VALUE *argv, VALUE self) {
     if (2 == argc) {
 	oj_parse_options(argv[1], &copts);
     }
+    if (CompatMode == copts.mode) {
+	copts.to_json = No;
+	copts.dump_opts.nan_dump = true;
+    }
     out.buf = buf;
     out.end = buf + sizeof(buf) - 10;
     out.allocated = 0;
     out.omit_nil = copts.dump_opts.omit_nil;
+    out.caller = CALLER_DUMP;
     oj_dump_obj_to_json(*argv, &copts, &out);
     if (0 == out.buf) {
 	rb_raise(rb_eNoMemError, "Not enough memory.");
@@ -965,15 +973,68 @@ dump(int argc, VALUE *argv, VALUE self) {
     return rstr;
 }
 
+/* Document-method: to_json
+ * call-seq: to_json(obj, options)
+ *
+ * Dumps an Object (obj) to a string. If the object has a to_json method that
+ * will be called. The mode is set to :compat.
+ * - *obj* [_Object_] Object to serialize as an JSON document String
+ * - *options* [_Hash_] 
+ *   - *:max_nesting* [_boolean_] It true nesting is limited to 100. The option to detect circular references is available but is not compatible with the json gem., default is false
+ *   - *:allow_nan* [_boolean_] If true non JSON compliant words such as Nan and Infinity will be used as appropriate, default is true.
+ *   - *:quirks_mode* [_boolean_] Allow single JSON values instead of documents, default is true (allow).
+ *   - *:indent_str* [_String_|_nil_] String to use for indentation, overriding the indent option if not nil.
+ *   - *:space* [_String_|_nil_] String to use for the space after the colon in JSON object fields.
+ *   - *:space_before* [_String_|_nil_] String to use before the colon separator in JSON object fields.
+ *   - *:object_nl* [_String_|_nil_] String to use after a JSON object field value.
+ *   - *:array_nl* [_String_|_nil_] String to use after a JSON array value.
+ *
+ * Returns [_String_] the encoded JSON.
+ */
+static VALUE
+to_json(int argc, VALUE *argv, VALUE self) {
+    char		buf[4096];
+    struct _Out		out;
+    struct _Options	copts = oj_default_options;
+    VALUE		rstr;
 
-/* call-seq: to_file(file_path, obj, options)
+    if (1 > argc) {
+	rb_raise(rb_eArgError, "wrong number of arguments (0 for 1).");
+    }
+    copts.dump_opts.nan_dump = false;
+    if (2 == argc) {
+	oj_parse_mimic_dump_options(argv[1], &copts);
+    }
+    copts.mode = CompatMode;
+    copts.to_json = Yes;
+    out.buf = buf;
+    out.end = buf + sizeof(buf) - 10;
+    out.allocated = 0;
+    out.omit_nil = copts.dump_opts.omit_nil;
+    // For obj.to_json or generate nan is not allowed but if called from dump
+    // it is.
+    copts.dump_opts.nan_dump = false;
+    oj_dump_obj_to_json(*argv, &copts, &out);
+    if (0 == out.buf) {
+	rb_raise(rb_eNoMemError, "Not enough memory.");
+    }
+    rstr = rb_str_new2(out.buf);
+    rstr = oj_encode(rstr);
+    if (out.allocated) {
+	xfree(out.buf);
+    }
+    return rstr;
+}
+
+/* Document-method: to_file
+ * call-seq: to_file(file_path, obj, options)
  *
  * Dumps an Object to the specified file.
- * @param [String] file_path file path to write the JSON document to
- * @param [Object] obj Object to serialize as an JSON document String
- * @param [Hash] options formating options
- * @param [Fixnum] :indent format expected
- * @param [true|false] :circular allow circular references, default: false
+ * - *file* [_String_] _path file path to write the JSON document to
+ * - *obj* [_Object_] Object to serialize as an JSON document String
+ * - *options* [_Hash_] formating options
+ *   - *:indent* [_Fixnum_] format expected
+ *   - *:circular* [_Boolean_] allow circular references, default: false
  */
 static VALUE
 to_file(int argc, VALUE *argv, VALUE self) {
@@ -988,14 +1049,15 @@ to_file(int argc, VALUE *argv, VALUE self) {
     return Qnil;
 }
 
-/* call-seq: to_stream(io, obj, options)
+/* Document-method: to_stream
+ * call-seq: to_stream(io, obj, options)
  *
  * Dumps an Object to the specified IO stream.
- * @param [IO] io IO stream to write the JSON document to
- * @param [Object] obj Object to serialize as an JSON document String
- * @param [Hash] options formating options
- * @param [Fixnum] :indent format expected
- * @param [true|false] :circular allow circular references, default: false
+ * - *io* [_IO_] IO stream to write the JSON document to
+ * - *obj* [_Object_] Object to serialize as an JSON document String
+ * - *options* [_Hash_] formating options
+ *   - *:indent* [_Fixnum_] format expected
+ *   - *:circular* [_Boolean_] allow circular references, default: false
  */
 static VALUE
 to_stream(int argc, VALUE *argv, VALUE self) {
@@ -1009,7 +1071,8 @@ to_stream(int argc, VALUE *argv, VALUE self) {
     return Qnil;
 }
 
-/* call-seq: register_odd(clas, create_object, create_method, *members)
+/* Document-method: register_odd
+ * call-seq: register_odd(clas, create_object, create_method, *members)
  *
  * Registers a class as special. This is useful for working around subclasses of
  * primitive types as is done with ActiveSupport classes. The use of this
@@ -1017,13 +1080,10 @@ to_stream(int argc, VALUE *argv, VALUE self) {
  * normal way. It is not intended as a hook for changing the output of all
  * classes as it is not optimized for large numbers of classes.
  *
- * @param [Class|Module] clas Class or Module to be made special
- * @param [Object] create_object object to call the create method on
- * @param [Symbol] create_method method on the clas that will create a new
- *                 instance of the clas when given all the member values in the
- *                 order specified.
- * @param [Symbol|String] members methods used to get the member values from
- *                        instances of the clas
+ * - *clas* [_Class__|_Module_] Class or Module to be made special
+ * - *create_object* [_Object_]  object to call the create method on
+ * - *create_method* [_Symbol_] method on the clas that will create a new instance of the clas when given all the member values in the order specified.
+ * - *members* [_Symbol__|_String_] methods used to get the member values from instances of the clas.
  */
 static VALUE
 register_odd(int argc, VALUE *argv, VALUE self) {
@@ -1047,7 +1107,8 @@ register_odd(int argc, VALUE *argv, VALUE self) {
     return Qnil;
 }
 
-/* call-seq: register_odd_raw(clas, create_object, create_method, dump_method)
+/* Document-method: register_odd_raw
+ *	call-seq: register_odd_raw(clas, create_object, create_method, dump_method)
  *
  * Registers a class as special and expect the output to be a string that can be
  * included in the dumped JSON directly. This is useful for working around
@@ -1057,13 +1118,10 @@ register_odd(int argc, VALUE *argv, VALUE self) {
  * classes as it is not optimized for large numbers of classes. Be careful with
  * this option as the JSON may be incorrect if invalid JSON is returned.
  *
- * @param [Class|Module] clas Class or Module to be made special
- * @param [Object] create_object object to call the create method on
- * @param [Symbol] create_method method on the clas that will create a new
- *                 instance of the clas when given all the member values in the
- *                 order specified.
- * @param [Symbol|String] dump_method method to call on the object being
- *                        serialized to generate the raw JSON.
+ * - *clas* [_Class_|_Module_] Class or Module to be made special
+ * - *create_object* [_Object_] object to call the create method on
+ * - *create_method* [_Symbol_] method on the clas that will create a new instance of the clas when given all the member values in the order specified.
+ * - *dump_method* [_Symbol_|_String_] method to call on the object being serialized to generate the raw JSON.
  */
 static VALUE
 register_odd_raw(int argc, VALUE *argv, VALUE self) {
@@ -1087,902 +1145,165 @@ register_odd_raw(int argc, VALUE *argv, VALUE self) {
     return Qnil;
 }
 
-static void
-str_writer_free(void *ptr) {
-    StrWriter	sw;
+////////////////////////////////////////////////////////////////////////////////
+// RDoc entries must be in the same file as the rb_define_method and must be
+// directly above the C method function. The extern declaration is enough to
+// get it to work.
+////////////////////////////////////////////////////////////////////////////////
 
-    if (0 == ptr) {
-	return;
-    }
-    sw = (StrWriter)ptr;
-    xfree(sw->out.buf);
-    xfree(sw->types);
-    xfree(ptr);
-}
-
-/* Document-class: Oj::StringWriter
- * 
- * Supports building a JSON document one element at a time. Build the document
- * by pushing values into the document. Pushing an array or an object will
- * create that element in the JSON document and subsequent pushes will add the
- * elements to that array or object until a pop() is called. When complete
- * calling to_s() will return the JSON document. Note tha calling to_s() before
- * construction is complete will return the document in it's current state.
- */
-
-static void
-str_writer_init(StrWriter sw) {
-    sw->opts = oj_default_options;
-    sw->depth = 0;
-    sw->types = ALLOC_N(char, 256);
-    sw->types_end = sw->types + 256;
-    *sw->types = '\0';
-    sw->keyWritten = 0;
-
-    sw->out.buf = ALLOC_N(char, 4096);
-    sw->out.end = sw->out.buf + 4086;
-    sw->out.allocated = 1;
-    sw->out.cur = sw->out.buf;
-    *sw->out.cur = '\0';
-    sw->out.circ_cnt = 0;
-    sw->out.hash_cnt = 0;
-    sw->out.opts = &sw->opts;
-    sw->out.indent = sw->opts.indent;
-    sw->out.depth = 0;
-}
-
-/* call-seq: new(options)
+/* Document-method: strict_load
+ * call-seq: strict_load(json, options) { _|_obj, start, len_|_ }
  *
- * Creates a new StringWriter.
- * @param [Hash] options formating options
- */
-static VALUE
-str_writer_new(int argc, VALUE *argv, VALUE self) {
-    StrWriter	sw = ALLOC(struct _StrWriter);
-    
-    str_writer_init(sw);
-    if (1 == argc) {
-	oj_parse_options(argv[0], &sw->opts);
-    }
-    sw->out.indent = sw->opts.indent;
-
-    return Data_Wrap_Struct(oj_string_writer_class, 0, str_writer_free, sw);
-}
-
-/* call-seq: push_key(key)
+ * Parses a JSON document String into an Hash, Array, String, Fixnum, Float,
+ * true, false, or nil. It parses using a mode that is strict in that it maps
+ * each primitive JSON type to a similar Ruby type. The :create_id is not
+ * honored in this mode. Note that a Ruby Hash is used to represent the JSON
+ * Object type. These two are not the same since the JSON Object type can have
+ * repeating entries with the same key and Ruby Hash can not.
  *
- * Pushes a key onto the JSON document. The key will be used for the next push
- * if currently in a JSON object and ignored otherwise. If a key is provided on
- * the next push then that new key will be ignored.
- * @param [String] key the key pending for the next push
- */
-static VALUE
-str_writer_push_key(VALUE self, VALUE key) {
-    StrWriter	sw = (StrWriter)DATA_PTR(self);
-
-    rb_check_type(key, T_STRING);
-    oj_str_writer_push_key(sw, StringValuePtr(key));
-
-    return Qnil;
-}
-
-/* call-seq: push_object(key=nil)
+ * When used with a document that has multiple JSON elements the block, if
+ * any, will be yielded to. If no block then the last element read will be
+ * returned.
  *
- * Pushes an object onto the JSON document. Future pushes will be to this object
- * until a pop() is called.
- * @param [String] key the key if adding to an object in the JSON document
- */
-static VALUE
-str_writer_push_object(int argc, VALUE *argv, VALUE self) {
-    StrWriter	sw = (StrWriter)DATA_PTR(self);
-
-    switch (argc) {
-    case 0:
-	oj_str_writer_push_object(sw, 0);
-	break;
-    case 1:
-	if (Qnil == argv[0]) {
-	    oj_str_writer_push_object(sw, 0);
-	} else {
-	    rb_check_type(argv[0], T_STRING);
-	    oj_str_writer_push_object(sw, StringValuePtr(argv[0]));
-	}
-	break;
-    default:
-	rb_raise(rb_eArgError, "Wrong number of argument to 'push_object'.");
-	break;
-    }
-    if (rb_block_given_p()) {
-	rb_yield(Qnil);
-	oj_str_writer_pop(sw);
-    }
-    return Qnil;
-}
-
-/* call-seq: push_array(key=nil)
+ * Raises an exception if the JSON is malformed or the classes specified are not
+ * valid. If the input is not a valid JSON document (an empty string is not a
+ * valid JSON document) an exception is raised.
  *
- * Pushes an array onto the JSON document. Future pushes will be to this object
- * until a pop() is called.
- * @param [String] key the key if adding to an object in the JSON document
- */
-static VALUE
-str_writer_push_array(int argc, VALUE *argv, VALUE self) {
-    StrWriter	sw = (StrWriter)DATA_PTR(self);
-
-    switch (argc) {
-    case 0:
-	oj_str_writer_push_array(sw, 0);
-	break;
-    case 1:
-	if (Qnil == argv[0]) {
-	    oj_str_writer_push_array(sw, 0);
-	} else {
-	    rb_check_type(argv[0], T_STRING);
-	    oj_str_writer_push_array(sw, StringValuePtr(argv[0]));
-	}
-	break;
-    default:
-	rb_raise(rb_eArgError, "Wrong number of argument to 'push_object'.");
-	break;
-    }
-    if (rb_block_given_p()) {
-	rb_yield(Qnil);
-	oj_str_writer_pop(sw);
-    }
-    return Qnil;
-}
-
-/* call-seq: push_value(value, key=nil)
+ * A block can be provided with a single argument. That argument will be the
+ * parsed JSON document. This is useful when parsing a string that includes
+ * multiple JSON documents. The block can take up to 3 arguments, the parsed
+ * object, the position in the string or stream of the start of the JSON for
+ * that object, and the length of the JSON for that object plus trailing
+ * whitespace.
  *
- * Pushes a value onto the JSON document.
- * @param [Object] value value to add to the JSON document
- * @param [String] key the key if adding to an object in the JSON document
- */
-static VALUE
-str_writer_push_value(int argc, VALUE *argv, VALUE self) {
-    switch (argc) {
-    case 1:
-	oj_str_writer_push_value((StrWriter)DATA_PTR(self), *argv, 0);
-	break;
-    case 2:
-	if (Qnil == argv[1]) {
-	    oj_str_writer_push_value((StrWriter)DATA_PTR(self), *argv, 0);
-	} else {
-	    rb_check_type(argv[1], T_STRING);
-	    oj_str_writer_push_value((StrWriter)DATA_PTR(self), *argv, StringValuePtr(argv[1]));
-	}
-	break;
-    default:
-	rb_raise(rb_eArgError, "Wrong number of argument to 'push_value'.");
-	break;
-    }
-    return Qnil;
-}
-
-/* call-seq: push_json(value, key=nil)
+ * - *json* [_String_|_IO_] JSON String or an Object that responds to read().
+ * - *options* [_Hash_] load options (same as default_options).
+ *   - -
+ * - *obj* [_Hash_|_Array_|_String_|_Fixnum_|_Float_|_Boolean_|_nil_] parsed object.
+ * - *start* [_optional, _Integer_] start position of parsed JSON for obj.
+ * - *len* [_optional, _Integer_] length of parsed JSON for obj.
  *
- * Pushes a string onto the JSON document. The String must be a valid JSON
- * encoded string. No additional checking is done to verify the validity of the
- * string.
- * @param [String] value JSON document to add to the JSON document
- * @param [String] key the key if adding to an object in the JSON document
+ * Returns [_Hash_|_Array_|_String_|_Fixnum_|_Float_|_Boolean_|_nil_]
  */
-static VALUE
-str_writer_push_json(int argc, VALUE *argv, VALUE self) {
-    rb_check_type(argv[0], T_STRING);
-    switch (argc) {
-    case 1:
-	oj_str_writer_push_json((StrWriter)DATA_PTR(self), StringValuePtr(*argv), 0);
-	break;
-    case 2:
-	if (Qnil == argv[1]) {
-	    oj_str_writer_push_json((StrWriter)DATA_PTR(self), StringValuePtr(*argv), 0);
-	} else {
-	    rb_check_type(argv[1], T_STRING);
-	    oj_str_writer_push_json((StrWriter)DATA_PTR(self), StringValuePtr(*argv), StringValuePtr(argv[1]));
-	}
-	break;
-    default:
-	rb_raise(rb_eArgError, "Wrong number of argument to 'push_json'.");
-	break;
-    }
-    return Qnil;
-}
+extern VALUE	oj_strict_parse(int argc, VALUE *argv, VALUE self);
 
-/* call-seq: pop()
+/* Document-method: compat_load
+ * call-seq: compat_load(json, options) { _|_obj, start, len_|_ }
  *
- * Pops up a level in the JSON document closing the array or object that is
- * currently open.
- */
-static VALUE
-str_writer_pop(VALUE self) {
-    oj_str_writer_pop((StrWriter)DATA_PTR(self));
-    return Qnil;
-}
-
-/* call-seq: pop_all()
+ * Parses a JSON document String into an Object, Hash, Array, String, Fixnum,
+ * Float, true, false, or nil. It parses using a mode that is generally
+ * compatible with other Ruby JSON parsers in that it will create objects based
+ * on the :create_id value. It is not compatible in every way to every other
+ * parser though as each parser has it's own variations.
  *
- * Pops all level in the JSON document closing all the array or object that is
- * currently open.
- */
-static VALUE
-str_writer_pop_all(VALUE self) {
-    oj_str_writer_pop_all((StrWriter)DATA_PTR(self));
-
-    return Qnil;
-}
-
-/* call-seq: reset()
+ * When used with a document that has multiple JSON elements the block, if
+ * any, will be yielded to. If no block then the last element read will be
+ * returned.
  *
- * Reset the writer back to the empty state.
- */
-static VALUE
-str_writer_reset(VALUE self) {
-    StrWriter	sw = (StrWriter)DATA_PTR(self);
-
-    sw->depth = 0;
-    *sw->types = '\0';
-    sw->keyWritten = 0;
-    sw->out.cur = sw->out.buf;
-    *sw->out.cur = '\0';
-
-    return Qnil;
-}
-
-/* call-seq: to_s()
+ * Raises an exception if the JSON is malformed or the classes specified are not
+ * valid. If the input is not a valid JSON document (an empty string is not a
+ * valid JSON document) an exception is raised.
  *
- * Returns the JSON document string in what ever state the construction is at.
- */
-static VALUE
-str_writer_to_s(VALUE self) {
-    StrWriter	sw = (StrWriter)DATA_PTR(self);
-    VALUE	rstr = rb_str_new(sw->out.buf, sw->out.cur - sw->out.buf);
-
-    return oj_encode(rstr);
-}
-
-// StreamWriter
-
-/* Document-class: Oj::StreamWriter
- * 
- * Supports building a JSON document one element at a time. Build the IO stream
- * document by pushing values into the document. Pushing an array or an object
- * will create that element in the JSON document and subsequent pushes will add
- * the elements to that array or object until a pop() is called.
- */
-
-static void
-stream_writer_free(void *ptr) {
-    StreamWriter	sw;
-
-    if (0 == ptr) {
-	return;
-    }
-    sw = (StreamWriter)ptr;
-    xfree(sw->sw.out.buf);
-    xfree(sw->sw.types);
-    xfree(ptr);
-}
-
-static void
-stream_writer_write(StreamWriter sw) {
-    ssize_t	size = sw->sw.out.cur - sw->sw.out.buf;
-
-    switch (sw->type) {
-    case STRING_IO:
-	rb_funcall(sw->stream, oj_write_id, 1, rb_str_new(sw->sw.out.buf, size));
-	break;
-    case STREAM_IO:
-	rb_funcall(sw->stream, oj_write_id, 1, rb_str_new(sw->sw.out.buf, size));
-	break;
-    case FILE_IO:
-	if (size != write(sw->fd, sw->sw.out.buf, size)) {
-	    rb_raise(rb_eIOError, "Write failed. [%d:%s]\n", errno, strerror(errno));
-	}
-	break;
-    default:
-	rb_raise(rb_eArgError, "expected an IO Object.");
-    }
-}
-
-static void
-stream_writer_reset_buf(StreamWriter sw) {
-    sw->sw.out.cur = sw->sw.out.buf;
-    *sw->sw.out.cur = '\0';
-}
-
-/* call-seq: new(io, options)
+ * A block can be provided with a single argument. That argument will be the
+ * parsed JSON document. This is useful when parsing a string that includes
+ * multiple JSON documents. The block can take up to 3 arguments, the parsed
+ * object, the position in the string or stream of the start of the JSON for
+ * that object, and the length of the JSON for that object plus trailing
+ * whitespace.
  *
- * Creates a new StreamWriter.
- * @param [IO] io stream to write to
- * @param [Hash] options formating options
- */
-static VALUE
-stream_writer_new(int argc, VALUE *argv, VALUE self) {
-    StreamWriterType	type = STREAM_IO;
-    int			fd = 0;
-    VALUE		stream = argv[0];
-    VALUE		clas = rb_obj_class(stream);
-    StreamWriter	sw;
-#if !IS_WINDOWS
-    VALUE		s;
-#endif
-    
-    if (oj_stringio_class == clas) {
-	type = STRING_IO;
-#if !IS_WINDOWS
-    } else if (rb_respond_to(stream, oj_fileno_id) &&
-	       Qnil != (s = rb_funcall(stream, oj_fileno_id, 0)) &&
-	       0 != (fd = FIX2INT(s))) {
-	type = FILE_IO;
-#endif
-    } else if (rb_respond_to(stream, oj_write_id)) {
-	type = STREAM_IO;
-    } else {
-	rb_raise(rb_eArgError, "expected an IO Object.");
-    }
-    sw = ALLOC(struct _StreamWriter);
-    str_writer_init(&sw->sw);
-    if (2 == argc) {
-	oj_parse_options(argv[1], &sw->sw.opts);
-    }
-    sw->sw.out.indent = sw->sw.opts.indent;
-    sw->stream = stream;
-    sw->type = type;
-    sw->fd = fd;
-
-    return Data_Wrap_Struct(oj_stream_writer_class, 0, stream_writer_free, sw);
-}
-
-/* call-seq: push_key(key)
+ * - *json* [_String_|_IO_] JSON String or an Object that responds to read().
+ * - *options* [_Hash_] load options (same as default_options).
+ *   - -
+ * - *obj* [_Hash_|_Array_|_String_|_Fixnum_|_Float_|_Boolean_|_nil_] parsed object.
+ * - *start* [_optional, _Integer_] start position of parsed JSON for obj.
+ * - *len* [_optional, _Integer_] length of parsed JSON for obj.
  *
- * Pushes a key onto the JSON document. The key will be used for the next push
- * if currently in a JSON object and ignored otherwise. If a key is provided on
- * the next push then that new key will be ignored.
- * @param [String] key the key pending for the next push
+ * Returns [_Hash_|_Array_|_String_|_Fixnum_|_Float_|_Boolean_|_nil_]
  */
-static VALUE
-stream_writer_push_key(VALUE self, VALUE key) {
-    StreamWriter	sw = (StreamWriter)DATA_PTR(self);
+extern VALUE	oj_compat_parse(int argc, VALUE *argv, VALUE self);
 
-    rb_check_type(key, T_STRING);
-    stream_writer_reset_buf(sw);
-    oj_str_writer_push_key(&sw->sw, StringValuePtr(key));
-    stream_writer_write(sw);
-    return Qnil;
-}
-
-/* call-seq: push_object(key=nil)
+/* Document-method: object_load
+ * call-seq: object_load(json, options) { _|_obj, start, len_|_ }
  *
- * Pushes an object onto the JSON document. Future pushes will be to this object
- * until a pop() is called.
- * @param [String] key the key if adding to an object in the JSON document
- */
-static VALUE
-stream_writer_push_object(int argc, VALUE *argv, VALUE self) {
-    StreamWriter	sw = (StreamWriter)DATA_PTR(self);
-
-    stream_writer_reset_buf(sw);
-    switch (argc) {
-    case 0:
-	oj_str_writer_push_object(&sw->sw, 0);
-	break;
-    case 1:
-	if (Qnil == argv[0]) {
-	    oj_str_writer_push_object(&sw->sw, 0);
-	} else {
-	    rb_check_type(argv[0], T_STRING);
-	    oj_str_writer_push_object(&sw->sw, StringValuePtr(argv[0]));
-	}
-	break;
-    default:
-	rb_raise(rb_eArgError, "Wrong number of argument to 'push_object'.");
-	break;
-    }
-    stream_writer_write(sw);
-    return Qnil;
-}
-
-/* call-seq: push_array(key=nil)
+ * Parses a JSON document String into an Object, Hash, Array, String, Fixnum,
+ * Float, true, false, or nil. In the :object mode the JSON should have been
+ * generated by Oj.dump(). The parser will reconstitute the original marshalled
+ * or dumped Object. The :auto_define and :circular options have meaning with
+ * this parsing mode.
  *
- * Pushes an array onto the JSON document. Future pushes will be to this object
- * until a pop() is called.
- * @param [String] key the key if adding to an object in the JSON document
- */
-static VALUE
-stream_writer_push_array(int argc, VALUE *argv, VALUE self) {
-    StreamWriter	sw = (StreamWriter)DATA_PTR(self);
-
-    stream_writer_reset_buf(sw);
-    switch (argc) {
-    case 0:
-	oj_str_writer_push_array(&sw->sw, 0);
-	break;
-    case 1:
-	if (Qnil == argv[0]) {
-	    oj_str_writer_push_array(&sw->sw, 0);
-	} else {
-	    rb_check_type(argv[0], T_STRING);
-	    oj_str_writer_push_array(&sw->sw, StringValuePtr(argv[0]));
-	}
-	break;
-    default:
-	rb_raise(rb_eArgError, "Wrong number of argument to 'push_object'.");
-	break;
-    }
-    stream_writer_write(sw);
-    return Qnil;
-}
-
-/* call-seq: push_value(value, key=nil)
+ * Raises an exception if the JSON is malformed or the classes specified are not
+ * valid. If the input is not a valid JSON document (an empty string is not a
+ * valid JSON document) an exception is raised.
  *
- * Pushes a value onto the JSON document.
- * @param [Object] value value to add to the JSON document
- * @param [String] key the key if adding to an object in the JSON document
- */
-static VALUE
-stream_writer_push_value(int argc, VALUE *argv, VALUE self) {
-    StreamWriter	sw = (StreamWriter)DATA_PTR(self);
-
-    stream_writer_reset_buf(sw);
-    switch (argc) {
-    case 1:
-	oj_str_writer_push_value((StrWriter)DATA_PTR(self), *argv, 0);
-	break;
-    case 2:
-	if (Qnil == argv[1]) {
-	    oj_str_writer_push_value((StrWriter)DATA_PTR(self), *argv, 0);
-	} else {
-	    rb_check_type(argv[1], T_STRING);
-	    oj_str_writer_push_value((StrWriter)DATA_PTR(self), *argv, StringValuePtr(argv[1]));
-	}
-	break;
-    default:
-	rb_raise(rb_eArgError, "Wrong number of argument to 'push_value'.");
-	break;
-    }
-    stream_writer_write(sw);
-    return Qnil;
-}
-
-/* call-seq: push_json(value, key=nil)
+ * Note: Oj is not able to automatically deserialize all classes that are a
+ * subclass of a Ruby Exception. Only exception that take one required string
+ * argument in the initialize() method are supported. This is an example of how
+ * to write an Exception subclass that supports both a single string intializer
+ * and an Exception as an argument. Additional optional arguments can be added
+ * as well.
  *
- * Pushes a string onto the JSON document. The String must be a valid JSON
- * encoded string. No additional checking is done to verify the validity of the
- * string.
- * @param [Object] value value to add to the JSON document
- * @param [String] key the key if adding to an object in the JSON document
- */
-static VALUE
-stream_writer_push_json(int argc, VALUE *argv, VALUE self) {
-    StreamWriter	sw = (StreamWriter)DATA_PTR(self);
-
-    rb_check_type(argv[0], T_STRING);
-    stream_writer_reset_buf(sw);
-    switch (argc) {
-    case 1:
-	oj_str_writer_push_json((StrWriter)DATA_PTR(self), StringValuePtr(*argv), 0);
-	break;
-    case 2:
-	if (Qnil == argv[0]) {
-	    oj_str_writer_push_json((StrWriter)DATA_PTR(self), StringValuePtr(*argv), 0);
-	} else {
-	    rb_check_type(argv[1], T_STRING);
-	    oj_str_writer_push_json((StrWriter)DATA_PTR(self), StringValuePtr(*argv), StringValuePtr(argv[1]));
-	}
-	break;
-    default:
-	rb_raise(rb_eArgError, "Wrong number of argument to 'push_json'.");
-	break;
-    }
-    stream_writer_write(sw);
-    return Qnil;
-}
-
-/* call-seq: pop()
+ * The reason for this restriction has to do with a design decision on the part
+ * of the Ruby developers. Exceptions are special Objects. They do not follow the
+ * rules of other Objects. Exceptions have 'mesg' and a 'bt' attribute. Note that
+ * these are not '@mesg' and '@bt'. They can not be set using the normal C or
+ * Ruby calls. The only way I have found to set the 'mesg' attribute is through
+ * the initializer. Unfortunately that means any subclass that provides a
+ * different initializer can not be automatically decoded. A way around this is
+ * to use a create function but this example shows an alternative.
  *
- * Pops up a level in the JSON document closing the array or object that is
- * currently open.
- */
-static VALUE
-stream_writer_pop(VALUE self) {
-    StreamWriter	sw = (StreamWriter)DATA_PTR(self);
-
-    stream_writer_reset_buf(sw);
-    oj_str_writer_pop(&sw->sw);
-    stream_writer_write(sw);
-    return Qnil;
-}
-
-/* call-seq: pop_all()
+ * A block can be provided with a single argument. That argument will be the
+ * parsed JSON document. This is useful when parsing a string that includes
+ * multiple JSON documents. The block can take up to 3 arguments, the parsed
+ * object, the position in the string or stream of the start of the JSON for
+ * that object, and the length of the JSON for that object plus trailing
+ * whitespace.
  *
- * Pops all level in the JSON document closing all the array or object that is
- * currently open.
+ * - *json* [_String_|_IO_] JSON String or an Object that responds to read().
+ * - *options* [_Hash_] load options (same as default_options).
+ *   - -
+ * - *obj* [_Hash_|_Array_|_String_|_Fixnum_|_Float_|_Boolean_|_nil_] parsed object.
+ * - *start* [_optional, _Integer_] start position of parsed JSON for obj.
+ * - *len* [_optional, _Integer_] length of parsed JSON for obj.
+ *
+ * Returns [_Hash_|_Array_|_String_|_Fixnum_|_Float_|_Boolean_|_nil_]
  */
-static VALUE
-stream_writer_pop_all(VALUE self) {
-    StreamWriter	sw = (StreamWriter)DATA_PTR(self);
+extern VALUE	oj_object_parse(int argc, VALUE *argv, VALUE self);
 
-    stream_writer_reset_buf(sw);
-    oj_str_writer_pop_all(&sw->sw);
-    stream_writer_write(sw);
+/* Document-method: add_to_json
+ * call-seq: add_to_json(*args)
+ *
+ * Override simple to_s dump behavior in :compat mode to instead use an
+ * optimized dump that includes the classname and attributes so that the
+ * object can be re-created on load. The format is the same as the json gem
+ * but does not use the ruby methods for encoding.
+ *
+ * The classes supported for optimization are: Array, BigDecimal, Complex,
+ * Date, DateTime, Exception, Hash, Integer, OpenStruct, Range, Rational,
+ * Regexp, Struct, and Time. Providing no classes will result in all those
+ * classes being optimized.q
+ *
+ * - *args( [_Class_] zero or more classes to optimize.
+ */
+extern VALUE	oj_add_to_json(int argc, VALUE *argv, VALUE self);
 
-    return Qnil;
-}
-
-// Mimic JSON section
-
-static VALUE
-mimic_dump(int argc, VALUE *argv, VALUE self) {
-    char		buf[4096];
-    struct _Out		out;
-    struct _Options	copts = oj_default_options;
-    VALUE		rstr;
-    
-    out.buf = buf;
-    out.end = buf + sizeof(buf) - 10;
-    out.allocated = 0;
-    out.omit_nil = copts.dump_opts.omit_nil;
-    oj_dump_obj_to_json(*argv, &copts, &out);
-    if (0 == out.buf) {
-	rb_raise(rb_eNoMemError, "Not enough memory.");
-    }
-    rstr = rb_str_new2(out.buf);
-    rstr = oj_encode(rstr);
-    if (2 <= argc && Qnil != argv[1]) {
-	VALUE	io = argv[1];
-	VALUE	args[1];
-
-	*args = rstr;
-	rb_funcall2(io, oj_write_id, 1, args);
-	rstr = io;
-    }
-    if (out.allocated) {
-	xfree(out.buf);
-    }
-    return rstr;
-}
-
-// This is the signature for the hash_foreach callback also.
-static int
-mimic_walk(VALUE key, VALUE obj, VALUE proc) {
-    switch (rb_type(obj)) {
-    case T_HASH:
-	rb_hash_foreach(obj, mimic_walk, proc);
-	break;
-    case T_ARRAY:
-	{
-	    size_t	cnt = RARRAY_LEN(obj);
-	    size_t	i;
-
-	    for (i = 0; i < cnt; i++) {
-		mimic_walk(Qnil, rb_ary_entry(obj, i), proc);
-	    }
-	    break;
-	}
-    default:
-	break;
-    }
-    if (Qnil == proc) {
-	if (rb_block_given_p()) {
-	    rb_yield(obj);
-	}
-    } else {
-#if HAS_PROC_WITH_BLOCK
-	VALUE	args[1];
-
-	*args = obj;
-	rb_proc_call_with_block(proc, 1, args, Qnil);
-#else
-	rb_raise(rb_eNotImpError, "Calling a Proc with a block not supported in this version. Use func() {|x| } syntax instead.");
-#endif
-    }
-    return ST_CONTINUE;
-}
-
-static VALUE
-mimic_load(int argc, VALUE *argv, VALUE self) {
-    struct _ParseInfo	pi;
-    VALUE		obj;
-    VALUE		p = Qnil;
-
-    pi.err_class = json_parser_error_class;
-    pi.options = oj_default_options;
-    oj_set_compat_callbacks(&pi);
-
-    obj = oj_pi_parse(argc, argv, &pi, 0, 0, 0);
-    if (2 <= argc) {
-	p = argv[1];
-    }
-    mimic_walk(Qnil, obj, p);
-
-    return obj;
-}
-
-static VALUE
-mimic_dump_load(int argc, VALUE *argv, VALUE self) {
-    if (1 > argc) {
-	rb_raise(rb_eArgError, "wrong number of arguments (0 for 1)");
-    } else if (T_STRING == rb_type(*argv)) {
-	return mimic_load(argc, argv, self);
-    } else {
-	return mimic_dump(argc, argv, self);
-    }
-    return Qnil;
-}
-
-static VALUE
-mimic_generate_core(int argc, VALUE *argv, Options copts) {
-    char	buf[4096];
-    struct _Out	out;
-    VALUE	rstr;
-    
-    out.buf = buf;
-    out.end = buf + sizeof(buf) - 10;
-    out.allocated = 0;
-    out.omit_nil = copts->dump_opts.omit_nil;
-    if (2 == argc && Qnil != argv[1]) {
-	VALUE	ropts = argv[1];
-	VALUE	v;
-	size_t	len;
-
-	if (T_HASH != rb_type(ropts)) {
-	    rb_raise(rb_eArgError, "options must be a hash.");
-	}
-	if (Qnil != (v = rb_hash_lookup(ropts, indent_sym))) { // TBD fixnum also ok
-	    rb_check_type(v, T_STRING);
-	    if (sizeof(copts->dump_opts.indent_str) <= (len = RSTRING_LEN(v))) {
-		rb_raise(rb_eArgError, "indent string is limited to %lu characters.", sizeof(copts->dump_opts.indent_str));
-	    }
-	    strcpy(copts->dump_opts.indent_str, StringValuePtr(v));
-	    copts->dump_opts.indent_size = (uint8_t)len;
-	    copts->dump_opts.use = true;
-	}
-	if (Qnil != (v = rb_hash_lookup(ropts, space_sym))) {
-	    rb_check_type(v, T_STRING);
-	    if (sizeof(copts->dump_opts.after_sep) <= (len = RSTRING_LEN(v))) {
-		rb_raise(rb_eArgError, "space string is limited to %lu characters.", sizeof(copts->dump_opts.after_sep));
-	    }
-	    strcpy(copts->dump_opts.after_sep, StringValuePtr(v));
-	    copts->dump_opts.after_size = (uint8_t)len;
-	    copts->dump_opts.use = true;
-	}
-	if (Qnil != (v = rb_hash_lookup(ropts, space_before_sym))) {
-	    rb_check_type(v, T_STRING);
-	    if (sizeof(copts->dump_opts.before_sep) <= (len = RSTRING_LEN(v))) {
-		rb_raise(rb_eArgError, "space_before string is limited to %lu characters.", sizeof(copts->dump_opts.before_sep));
-	    }
-	    strcpy(copts->dump_opts.before_sep, StringValuePtr(v));
-	    copts->dump_opts.before_size = (uint8_t)len;
-	    copts->dump_opts.use = true;
-	}
-	if (Qnil != (v = rb_hash_lookup(ropts, object_nl_sym))) {
-	    rb_check_type(v, T_STRING);
-	    if (sizeof(copts->dump_opts.hash_nl) <= (len = RSTRING_LEN(v))) {
-		rb_raise(rb_eArgError, "object_nl string is limited to %lu characters.", sizeof(copts->dump_opts.hash_nl));
-	    }
-	    strcpy(copts->dump_opts.hash_nl, StringValuePtr(v));
-	    copts->dump_opts.hash_size = (uint8_t)len;
-	    copts->dump_opts.use = true;
-	}
-	if (Qnil != (v = rb_hash_lookup(ropts, array_nl_sym))) {
-	    rb_check_type(v, T_STRING);
-	    if (sizeof(copts->dump_opts.array_nl) <= (len = RSTRING_LEN(v))) {
-		rb_raise(rb_eArgError, "array_nl string is limited to %lu characters.", sizeof(copts->dump_opts.array_nl));
-	    }
-	    strcpy(copts->dump_opts.array_nl, StringValuePtr(v));
-	    copts->dump_opts.array_size = (uint8_t)len;
-	    copts->dump_opts.use = true;
-	}
-	if (Qnil != (v = rb_hash_lookup(ropts, ascii_only_sym))) {
-	    // generate seems to assume anything except nil and false are true.
-	    if (Qfalse == v || Qnil == v) {
-		copts->escape_mode = JSONEsc;
-	    } else {
-		copts->escape_mode = ASCIIEsc;
-	    }
-	}
-	// :allow_nan is not supported as Oj always allows_nan
-	// :max_nesting is always set to 100
-    }
-    oj_dump_obj_to_json(*argv, copts, &out);
-    if (0 == out.buf) {
-	rb_raise(rb_eNoMemError, "Not enough memory.");
-    }
-    rstr = rb_str_new2(out.buf);
-    rstr = oj_encode(rstr);
-    if (out.allocated) {
-	xfree(out.buf);
-    }
-    return rstr;
-}
-
-static VALUE
-mimic_generate(int argc, VALUE *argv, VALUE self) {
-    struct _Options	copts = oj_default_options;
-
-    return mimic_generate_core(argc, argv, &copts);
-}
-
-static VALUE
-mimic_pretty_generate(int argc, VALUE *argv, VALUE self) {
-    struct _Options	copts = oj_default_options;
-
-    strcpy(copts.dump_opts.indent_str, "  ");
-    copts.dump_opts.indent_size = (uint8_t)strlen(copts.dump_opts.indent_str);
-    strcpy(copts.dump_opts.before_sep, "");
-    copts.dump_opts.before_size = (uint8_t)strlen(copts.dump_opts.before_sep);
-    strcpy(copts.dump_opts.after_sep, " ");
-    copts.dump_opts.after_size = (uint8_t)strlen(copts.dump_opts.after_sep);
-    strcpy(copts.dump_opts.hash_nl, "\n");
-    copts.dump_opts.hash_size = (uint8_t)strlen(copts.dump_opts.hash_nl);
-    strcpy(copts.dump_opts.array_nl, "\n");
-    copts.dump_opts.array_size = (uint8_t)strlen(copts.dump_opts.array_nl);
-    copts.dump_opts.use = true;
-
-    return mimic_generate_core(argc, argv, &copts);
-}
-
-static VALUE
-mimic_parse(int argc, VALUE *argv, VALUE self) {
-    struct _ParseInfo	pi;
-    VALUE		args[1];
-
-    if (argc < 1) {
-	rb_raise(rb_eArgError, "Wrong number of arguments to parse.");
-    }
-    oj_set_compat_callbacks(&pi);
-    pi.err_class = json_parser_error_class;
-    pi.options = oj_default_options;
-    pi.options.auto_define = No;
-    pi.options.quirks_mode = No;
-    pi.options.allow_invalid = No;
-    pi.options.empty_string = No;
-
-    if (2 <= argc) {
-	VALUE	ropts = argv[1];
-	VALUE	v;
-
-	if (T_HASH != rb_type(ropts)) {
-	    rb_raise(rb_eArgError, "options must be a hash.");
-	}
-	if (Qnil != (v = rb_hash_lookup(ropts, symbolize_names_sym))) {
-	    pi.options.sym_key = (Qtrue == v) ? Yes : No;
-	}
-
-	if (Qnil != (v = rb_hash_lookup(ropts, quirks_mode_sym))) {
-	    pi.options.quirks_mode = (Qtrue == v) ? Yes : No;
-	}
-
-	if (Qnil != (v = rb_hash_lookup(ropts, create_additions_sym))) {
-	    if (Qfalse == v) {
-		oj_set_strict_callbacks(&pi);
-	    }
-	}
-	// :allow_nan is not supported as Oj always allows nan
-	// :max_nesting is ignored as Oj has not nesting limit
-	// :object_class is always Hash
-	// :array_class is always Array
-    }
-    *args = *argv;
-
-    return oj_pi_parse(1, args, &pi, 0, 0, 0);
-}
-
-static VALUE
-mimic_recurse_proc(VALUE self, VALUE obj) {
-    rb_need_block();
-    mimic_walk(Qnil, obj, Qnil);
-
-    return Qnil;
-}
-
-static VALUE
-no_op1(VALUE self, VALUE obj) {
-    return Qnil;
-}
-
-static VALUE
-mimic_set_create_id(VALUE self, VALUE id) {
-    Check_Type(id, T_STRING);
-
-    if (0 != oj_default_options.create_id) {
-	if (json_class != oj_default_options.create_id) {
-	    xfree((char*)oj_default_options.create_id);
-	}
-	oj_default_options.create_id = 0;
-	oj_default_options.create_id_len = 0;
-    }
-    if (Qnil != id) {
-	size_t	len = RSTRING_LEN(id) + 1;
-
-	oj_default_options.create_id = ALLOC_N(char, len);
-	strcpy((char*)oj_default_options.create_id, StringValuePtr(id));
-	oj_default_options.create_id_len = len - 1;
-    }
-    return id;
-}
-
-static VALUE
-mimic_create_id(VALUE self) {
-    if (0 != oj_default_options.create_id) {
-	return oj_encode(rb_str_new_cstr(oj_default_options.create_id));
-    }
-    return rb_str_new_cstr(json_class);
-}
-
-static struct _Options	mimic_object_to_json_options = {
-    0,		// indent
-    No,		// circular
-    No,		// auto_define
-    No,		// sym_key
-    JSONEsc,	// escape_mode
-    CompatMode,	// mode
-    No,		// class_cache
-    RubyTime,	// time_format
-    No,		// bigdec_as_num
-    FloatDec,	// bigdec_load
-    No,		// to_json
-    Yes,	// as_json
-    Yes,	// nilnil
-    Yes,	// empty_string
-    Yes,	// allow_gc
-    Yes,	// quirks_mode
-    No,		// allow_invalid
-    json_class,	// create_id
-    10,		// create_id_len
-    9,		// sec_prec
-    15,		// float_prec
-    "%0.15g",	// float_fmt
-    Qnil,	// hash_class
-    {		// dump_opts
-	false,	//use
-	"",	// indent
-	"",	// before_sep
-	"",	// after_sep
-	"",	// hash_nl
-	"",	// array_nl
-	0,	// indent_size
-	0,	// before_size
-	0,	// after_size
-	0,	// hash_size
-	0,	// array_size
-	AutoNan,// nan_dump
-	false,	// omit_nil
-    }
-};
-
-static VALUE
-mimic_object_to_json(int argc, VALUE *argv, VALUE self) {
-    char		buf[4096];
-    struct _Out		out;
-    VALUE		rstr;
-    struct _Options	copts = oj_default_options;
-
-    out.buf = buf;
-    out.end = buf + sizeof(buf) - 10;
-    out.allocated = 0;
-    out.omit_nil = copts.dump_opts.omit_nil;
-    // Have to turn off to_json to avoid the Active Support recursion problem.
-    copts.to_json = No;
-    // To be strict the mimic_object_to_json_options should be used but people
-    // seem to prefer the option of changing that.
-    //oj_dump_obj_to_json(self, &mimic_object_to_json_options, &out);
-    oj_dump_obj_to_json_using_params(self, &copts, &out, argc, argv);
-    if (0 == out.buf) {
-	rb_raise(rb_eNoMemError, "Not enough memory.");
-    }
-    rstr = rb_str_new2(out.buf);
-    rstr = oj_encode(rstr);
-    if (out.allocated) {
-	xfree(out.buf);
-    }
-    return rstr;
-}
-
+/* @!method remove_to_json(*args)
+ *
+ * Reverts back to the to_s dump behavior in :compat mode to instead use an
+ * optimized dump that includes the classname and attributes so that the
+ * object can be re-created on load. The format is the same as the json gem
+ * but does not use the ruby methods for encoding.
+ *
+ * The classes supported for optimization are: Array, BigDecimal, Complex,
+ * Date, DateTime, Exception, Hash, Integer, OpenStruct, Range, Rational,
+ * Regexp, Struct, and Time. Providing no classes will result in all those
+ * classes being reverted from the optimized mode.
+ *
+ * - *args* [_Class_] zero or more classes to optimize.
+ */
+extern VALUE	oj_remove_to_json(int argc, VALUE *argv, VALUE self);
 
 /* Document-method: mimic_JSON
- *    call-seq: mimic_JSON() => Module
+ * call-seq: mimic_JSON()
  *
  * Creates the JSON module with methods and classes to mimic the JSON gem. After
  * this method is invoked calls that expect the JSON module will use Oj instead
@@ -1994,97 +1315,30 @@ mimic_object_to_json(int argc, VALUE *argv, VALUE self) {
  *
  * Note that this also sets the default options of :mode to :compat and
  * :encoding to :ascii.
+ *
+ * Returns [_Module_] the JSON module.
  */
-static VALUE
-define_mimic_json(int argc, VALUE *argv, VALUE self) {
-    VALUE	ext;
-    VALUE	dummy;
-    VALUE	verbose;
-    VALUE	json_error;
-    
-    // Either set the paths to indicate JSON has been loaded or replaces the
-    // methods if it has been loaded.
-    if (rb_const_defined_at(rb_cObject, rb_intern("JSON"))) {
-	mimic = rb_const_get_at(rb_cObject, rb_intern("JSON"));
-    } else {
-	mimic = rb_define_module("JSON");
-    }
-    verbose = rb_gv_get("$VERBOSE");
-    rb_gv_set("$VERBOSE", Qfalse);
-    rb_define_module_function(rb_cObject, "JSON", mimic_dump_load, -1);
-    if (rb_const_defined_at(mimic, rb_intern("Ext"))) {
-	ext = rb_const_get_at(mimic, rb_intern("Ext"));
-     } else {
-	ext = rb_define_module_under(mimic, "Ext");
-    }
-    if (!rb_const_defined_at(ext, rb_intern("Parser"))) {
-	dummy = rb_define_class_under(ext, "Parser", rb_cObject);
-    }
-    if (!rb_const_defined_at(ext, rb_intern("Generator"))) {
-	dummy = rb_define_class_under(ext, "Generator", rb_cObject);
-    }
-    // convince Ruby that the json gem has already been loaded
-    dummy = rb_gv_get("$LOADED_FEATURES");
-    if (rb_type(dummy) == T_ARRAY) {
-	rb_ary_push(dummy, rb_str_new2("json"));
-	if (0 < argc) {
-	    VALUE	mimic_args[1];
+extern VALUE	oj_define_mimic_json(int argc, VALUE *argv, VALUE self);
 
-	    *mimic_args = *argv;
-	    rb_funcall2(Oj, rb_intern("mimic_loaded"), 1, mimic_args);
-	} else {
-	    rb_funcall2(Oj, rb_intern("mimic_loaded"), 0, 0);
-	}
-    }
-    rb_define_module_function(mimic, "parser=", no_op1, 1);
-    rb_define_module_function(mimic, "generator=", no_op1, 1);
-    rb_define_module_function(mimic, "create_id=", mimic_set_create_id, 1);
-    rb_define_module_function(mimic, "create_id", mimic_create_id, 0);
-
-    rb_define_module_function(mimic, "dump", mimic_dump, -1);
-    rb_define_module_function(mimic, "load", mimic_load, -1);
-    rb_define_module_function(mimic, "restore", mimic_load, -1);
-    rb_define_module_function(mimic, "recurse_proc", mimic_recurse_proc, 1);
-    rb_define_module_function(mimic, "[]", mimic_dump_load, -1);
-
-    rb_define_module_function(mimic, "generate", mimic_generate, -1);
-    rb_define_module_function(mimic, "fast_generate", mimic_generate, -1);
-    rb_define_module_function(mimic, "pretty_generate", mimic_pretty_generate, -1);
-    /* for older versions of JSON, the deprecated unparse methods */
-    rb_define_module_function(mimic, "unparse", mimic_generate, -1);
-    rb_define_module_function(mimic, "fast_unparse", mimic_generate, -1);
-    rb_define_module_function(mimic, "pretty_unparse", mimic_pretty_generate, -1);
-
-    rb_define_module_function(mimic, "parse", mimic_parse, -1);
-    rb_define_module_function(mimic, "parse!", mimic_parse, -1);
-
-    rb_define_method(rb_cObject, "to_json", mimic_object_to_json, -1);
-
-    rb_gv_set("$VERBOSE", verbose);
-
-    create_additions_sym = ID2SYM(rb_intern("create_additions"));	rb_gc_register_address(&create_additions_sym);
-    symbolize_names_sym = ID2SYM(rb_intern("symbolize_names"));		rb_gc_register_address(&symbolize_names_sym);
-
-    if (rb_const_defined_at(mimic, rb_intern("JSONError"))) {
-        json_error = rb_const_get(mimic, rb_intern("JSONError"));
-    } else {
-        json_error = rb_define_class_under(mimic, "JSONError", rb_eStandardError);
-    }
-    if (rb_const_defined_at(mimic, rb_intern("ParserError"))) {
-        json_parser_error_class = rb_const_get(mimic, rb_intern("ParserError"));
-    } else {
-    	json_parser_error_class = rb_define_class_under(mimic, "ParserError", json_error);
-    }
-
-    if (!rb_const_defined_at(mimic, rb_intern("State"))) {
-        rb_define_class_under(mimic, "State", rb_cObject);
-    }
-
-    oj_default_options = mimic_object_to_json_options;
-    oj_default_options.to_json = Yes;
-
-    return mimic;
-}
+/* Document-method: generate
+ * call-seq: generate(obj, opts=nil)
+ * 
+ * Encode obj as a JSON String. The obj argument must be a Hash, Array, or
+ * respond to to_h or to_json. Options other than those listed such as
+ * +:allow_nan+ or +:max_nesting+ are ignored.
+ * 
+ * - *obj* [_Object__|_Hash_|_Array_] object to convert to a JSON String
+ * - *opts* [_Hash_] options
+ * - - *:indent* [_String_] String to use for indentation.
+ *   - *:space* [_String_] String placed after a , or : delimiter
+ *   - *:space * _before [_String_] String placed before a : delimiter
+ *   - *:object_nl* [_String_] String placed after a JSON object
+ *   - *:array_nl* [_String_] String placed after a JSON array
+ *   - *:ascii_only* [_Boolean_] if not nil or false then use only ascii characters in the output. Note JSON.generate does support this even if it is not documented.
+ *
+ * Returns [_String_]generated JSON.
+ */
+extern VALUE	oj_mimic_generate(int argc, VALUE *argv, VALUE self);
 
 /*
 extern void	oj_hash_test();
@@ -2120,36 +1374,43 @@ protect_require(VALUE x) {
     return Qnil;
 }
 
-void Init_oj() {
+/* Document-module: Oj
+ *
+ * Optimized JSON (Oj), as the name implies was written to provide speed
+ * optimized JSON handling.
+ *
+ * Oj uses modes to control how object are encoded and decoded. In addition
+ * global and options to methods allow additional behavior modifications. The
+ * modes are:
+ *
+ * - *:strict* mode will only allow the 7 basic JSON types to be serialized. Any other Object
+ *   will raise an Exception. 
+ * 
+ * - *:null* mode is similar to the :strict mode except any Object that is not
+ *   one of the JSON base types is replaced by a JSON null.
+ * 
+ * - *:object* mode will dump any Object as a JSON Object with keys that match
+ *   the Ruby Object's variable names without the '@' character. This is the
+ *   highest performance mode.
+ * 
+ * - *:compat* or *:json* mode is the compatible mode for the json gem. It mimics
+ *   the json gem including the options, defaults, and restrictions.
+ *
+ * - *:rails* is the compatibility mode for Rails or Active support.
+ *
+ * - *:custom* is the most configurable mode.
+ */
+void
+Init_oj() {
     int	err = 0;
 
     Oj = rb_define_module("Oj");
 
     oj_cstack_class = rb_define_class_under(Oj, "CStack", rb_cObject);
 
-    oj_string_writer_class = rb_define_class_under(Oj, "StringWriter", rb_cObject);
-    rb_define_module_function(oj_string_writer_class, "new", str_writer_new, -1);
-    rb_define_method(oj_string_writer_class, "push_key", str_writer_push_key, 1);
-    rb_define_method(oj_string_writer_class, "push_object", str_writer_push_object, -1);
-    rb_define_method(oj_string_writer_class, "push_array", str_writer_push_array, -1);
-    rb_define_method(oj_string_writer_class, "push_value", str_writer_push_value, -1);
-    rb_define_method(oj_string_writer_class, "push_json", str_writer_push_json, -1);
-    rb_define_method(oj_string_writer_class, "pop", str_writer_pop, 0);
-    rb_define_method(oj_string_writer_class, "pop_all", str_writer_pop_all, 0);
-    rb_define_method(oj_string_writer_class, "reset", str_writer_reset, 0);
-    rb_define_method(oj_string_writer_class, "to_s", str_writer_to_s, 0);
+    oj_string_writer_init();
+    oj_stream_writer_init();
 
-    oj_stream_writer_class = rb_define_class_under(Oj, "StreamWriter", rb_cObject);
-    rb_define_module_function(oj_stream_writer_class, "new", stream_writer_new, -1);
-    rb_define_method(oj_stream_writer_class, "push_key", stream_writer_push_key, 1);
-    rb_define_method(oj_stream_writer_class, "push_object", stream_writer_push_object, -1);
-    rb_define_method(oj_stream_writer_class, "push_array", stream_writer_push_array, -1);
-    rb_define_method(oj_stream_writer_class, "push_value", stream_writer_push_value, -1);
-    rb_define_method(oj_stream_writer_class, "push_json", stream_writer_push_json, -1);
-    rb_define_method(oj_stream_writer_class, "pop", stream_writer_pop, 0);
-    rb_define_method(oj_stream_writer_class, "pop_all", stream_writer_pop_all, 0);
-
-    rb_require("time");
     rb_require("date");
     // On Rubinius the require fails but can be done from a ruby file.
     rb_protect(protect_require, Qnil, &err);
@@ -2170,7 +1431,7 @@ void Init_oj() {
     rb_define_module_function(Oj, "default_options", get_def_opts, 0);
     rb_define_module_function(Oj, "default_options=", set_def_opts, 1);
 
-    rb_define_module_function(Oj, "mimic_JSON", define_mimic_json, -1);
+    rb_define_module_function(Oj, "mimic_JSON", oj_define_mimic_json, -1);
     rb_define_module_function(Oj, "load", load, -1);
     rb_define_module_function(Oj, "load_file", load_file, -1);
     rb_define_module_function(Oj, "safe_load", safe_load, 1);
@@ -2179,8 +1440,17 @@ void Init_oj() {
     rb_define_module_function(Oj, "object_load", oj_object_parse, -1);
 
     rb_define_module_function(Oj, "dump", dump, -1);
+
     rb_define_module_function(Oj, "to_file", to_file, -1);
     rb_define_module_function(Oj, "to_stream", to_stream, -1);
+    // JSON gem compatibility
+    rb_define_module_function(Oj, "to_json", to_json, -1);
+    rb_define_module_function(Oj, "generate", oj_mimic_generate, -1);
+    rb_define_module_function(Oj, "fast_generate", oj_mimic_generate, -1);
+
+    rb_define_module_function(Oj, "add_to_json", oj_add_to_json, -1);
+    rb_define_module_function(Oj, "remove_to_json", oj_remove_to_json, -1);
+
     rb_define_module_function(Oj, "register_odd", register_odd, -1);
     rb_define_module_function(Oj, "register_odd_raw", register_odd_raw, -1);
 
@@ -2193,6 +1463,9 @@ void Init_oj() {
     oj_array_start_id = rb_intern("array_start");
     oj_as_json_id = rb_intern("as_json");
     oj_error_id = rb_intern("error");
+    oj_begin_id = rb_intern("begin");
+    oj_end_id = rb_intern("end");
+    oj_exclude_end_id = rb_intern("exclude_end?");
     oj_file_id = rb_intern("file?");
     oj_fileno_id = rb_intern("fileno");
     oj_ftype_id = rb_intern("ftype");
@@ -2213,6 +1486,7 @@ void Init_oj() {
     oj_stat_id = rb_intern("stat");
     oj_string_id = rb_intern("string");
     oj_to_hash_id = rb_intern("to_hash");
+    oj_to_h_id = rb_intern("to_h");
     oj_to_json_id = rb_intern("to_json");
     oj_to_s_id = rb_intern("to_s");
     oj_to_sym_id = rb_intern("to_sym");
@@ -2224,7 +1498,7 @@ void Init_oj() {
     oj_utc_offset_id = rb_intern("utc_offset");
     oj_utcq_id = rb_intern("utc?");
     oj_write_id = rb_intern("write");
-    has_key_id = rb_intern("has_key?");
+    oj_has_key_id = rb_intern("has_key?");
 
     rb_require("oj/bag");
     rb_require("oj/error");
@@ -2236,64 +1510,78 @@ void Init_oj() {
     oj_bigdecimal_class = rb_const_get(rb_cObject, rb_intern("BigDecimal"));
     oj_date_class = rb_const_get(rb_cObject, rb_intern("Date"));
     oj_datetime_class = rb_const_get(rb_cObject, rb_intern("DateTime"));
+    oj_enumerable_class = rb_const_get(rb_cObject, rb_intern("Enumerable"));
     oj_parse_error_class = rb_const_get_at(Oj, rb_intern("ParseError"));
     oj_stringio_class = rb_const_get(rb_cObject, rb_intern("StringIO"));
     oj_struct_class = rb_const_get(rb_cObject, rb_intern("Struct"));
-    json_parser_error_class = Qnil; // replaced if mimic is called
+    oj_json_parser_error_class = rb_eEncodingError;    // replaced if mimic is called
+    oj_json_generator_error_class = rb_eEncodingError; // replaced if mimic is called
 
-    allow_gc_sym = ID2SYM(rb_intern("allow_gc"));	rb_gc_register_address(&allow_gc_sym);
-    array_nl_sym = ID2SYM(rb_intern("array_nl"));	rb_gc_register_address(&array_nl_sym);
-    ascii_only_sym = ID2SYM(rb_intern("ascii_only"));	rb_gc_register_address(&ascii_only_sym);
-    ascii_sym = ID2SYM(rb_intern("ascii"));		rb_gc_register_address(&ascii_sym);
-    auto_define_sym = ID2SYM(rb_intern("auto_define"));	rb_gc_register_address(&auto_define_sym);
-    auto_sym = ID2SYM(rb_intern("auto"));		rb_gc_register_address(&auto_sym);
-    bigdecimal_as_decimal_sym = ID2SYM(rb_intern("bigdecimal_as_decimal"));rb_gc_register_address(&bigdecimal_as_decimal_sym);
-    bigdecimal_load_sym = ID2SYM(rb_intern("bigdecimal_load"));rb_gc_register_address(&bigdecimal_load_sym);
-    bigdecimal_sym = ID2SYM(rb_intern("bigdecimal"));	rb_gc_register_address(&bigdecimal_sym);
-    circular_sym = ID2SYM(rb_intern("circular"));	rb_gc_register_address(&circular_sym);
-    class_cache_sym = ID2SYM(rb_intern("class_cache"));	rb_gc_register_address(&class_cache_sym);
-    compat_sym = ID2SYM(rb_intern("compat"));		rb_gc_register_address(&compat_sym);
-    create_id_sym = ID2SYM(rb_intern("create_id"));	rb_gc_register_address(&create_id_sym);
-    escape_mode_sym = ID2SYM(rb_intern("escape_mode"));	rb_gc_register_address(&escape_mode_sym);
-    float_prec_sym = ID2SYM(rb_intern("float_precision"));rb_gc_register_address(&float_prec_sym);
-    float_sym = ID2SYM(rb_intern("float"));		rb_gc_register_address(&float_sym);
-    hash_class_sym = ID2SYM(rb_intern("hash_class"));	rb_gc_register_address(&hash_class_sym);
-    huge_sym = ID2SYM(rb_intern("huge"));		rb_gc_register_address(&huge_sym);
-    indent_sym = ID2SYM(rb_intern("indent"));		rb_gc_register_address(&indent_sym);
-    json_sym = ID2SYM(rb_intern("json"));		rb_gc_register_address(&json_sym);
-    mode_sym = ID2SYM(rb_intern("mode"));		rb_gc_register_address(&mode_sym);
-    nan_sym = ID2SYM(rb_intern("nan"));			rb_gc_register_address(&nan_sym);
-    newline_sym = ID2SYM(rb_intern("newline"));		rb_gc_register_address(&newline_sym);
-    nilnil_sym = ID2SYM(rb_intern("nilnil"));		rb_gc_register_address(&nilnil_sym);
-    empty_string_sym = ID2SYM(rb_intern("empty_string"));rb_gc_register_address(&empty_string_sym);
-    null_sym = ID2SYM(rb_intern("null"));		rb_gc_register_address(&null_sym);
-    object_nl_sym = ID2SYM(rb_intern("object_nl"));	rb_gc_register_address(&object_nl_sym);
-    object_sym = ID2SYM(rb_intern("object"));		rb_gc_register_address(&object_sym);
-    omit_nil_sym = ID2SYM(rb_intern("omit_nil"));	rb_gc_register_address(&omit_nil_sym);
-    quirks_mode_sym = ID2SYM(rb_intern("quirks_mode"));	rb_gc_register_address(&quirks_mode_sym);
+    allow_blank_sym = ID2SYM(rb_intern("allow_blank"));		rb_gc_register_address(&allow_blank_sym);
+    allow_gc_sym = ID2SYM(rb_intern("allow_gc"));		rb_gc_register_address(&allow_gc_sym);
     allow_invalid_unicode_sym = ID2SYM(rb_intern("allow_invalid_unicode"));rb_gc_register_address(&allow_invalid_unicode_sym);
-    raise_sym = ID2SYM(rb_intern("raise"));		rb_gc_register_address(&raise_sym);
-    ruby_sym = ID2SYM(rb_intern("ruby"));		rb_gc_register_address(&ruby_sym);
-    sec_prec_sym = ID2SYM(rb_intern("second_precision"));rb_gc_register_address(&sec_prec_sym);
-    space_before_sym = ID2SYM(rb_intern("space_before"));rb_gc_register_address(&space_before_sym);
-    space_sym = ID2SYM(rb_intern("space"));		rb_gc_register_address(&space_sym);
-    strict_sym = ID2SYM(rb_intern("strict"));		rb_gc_register_address(&strict_sym);
-    symbol_keys_sym = ID2SYM(rb_intern("symbol_keys"));	rb_gc_register_address(&symbol_keys_sym);
-    time_format_sym = ID2SYM(rb_intern("time_format"));	rb_gc_register_address(&time_format_sym);
-    unix_sym = ID2SYM(rb_intern("unix"));		rb_gc_register_address(&unix_sym);
-    unix_zone_sym = ID2SYM(rb_intern("unix_zone"));	rb_gc_register_address(&unix_zone_sym);
-    use_as_json_sym = ID2SYM(rb_intern("use_as_json"));	rb_gc_register_address(&use_as_json_sym);
-    use_to_json_sym = ID2SYM(rb_intern("use_to_json"));	rb_gc_register_address(&use_to_json_sym);
-    word_sym = ID2SYM(rb_intern("word"));		rb_gc_register_address(&word_sym);
-    xmlschema_sym = ID2SYM(rb_intern("xmlschema"));	rb_gc_register_address(&xmlschema_sym);
-    xss_safe_sym = ID2SYM(rb_intern("xss_safe"));	rb_gc_register_address(&xss_safe_sym);
+    ascii_sym = ID2SYM(rb_intern("ascii"));			rb_gc_register_address(&ascii_sym);
+    auto_define_sym = ID2SYM(rb_intern("auto_define"));		rb_gc_register_address(&auto_define_sym);
+    auto_sym = ID2SYM(rb_intern("auto"));			rb_gc_register_address(&auto_sym);
+    bigdecimal_as_decimal_sym = ID2SYM(rb_intern("bigdecimal_as_decimal"));rb_gc_register_address(&bigdecimal_as_decimal_sym);
+    bigdecimal_load_sym = ID2SYM(rb_intern("bigdecimal_load"));	rb_gc_register_address(&bigdecimal_load_sym);
+    bigdecimal_sym = ID2SYM(rb_intern("bigdecimal"));		rb_gc_register_address(&bigdecimal_sym);
+    circular_sym = ID2SYM(rb_intern("circular"));		rb_gc_register_address(&circular_sym);
+    class_cache_sym = ID2SYM(rb_intern("class_cache"));		rb_gc_register_address(&class_cache_sym);
+    compat_sym = ID2SYM(rb_intern("compat"));			rb_gc_register_address(&compat_sym);
+    create_id_sym = ID2SYM(rb_intern("create_id"));		rb_gc_register_address(&create_id_sym);
+    custom_sym = ID2SYM(rb_intern("custom"));			rb_gc_register_address(&custom_sym);
+    empty_string_sym = ID2SYM(rb_intern("empty_string"));	rb_gc_register_address(&empty_string_sym);
+    escape_mode_sym = ID2SYM(rb_intern("escape_mode"));		rb_gc_register_address(&escape_mode_sym);
+    float_prec_sym = ID2SYM(rb_intern("float_precision"));	rb_gc_register_address(&float_prec_sym);
+    float_sym = ID2SYM(rb_intern("float"));			rb_gc_register_address(&float_sym);
+    huge_sym = ID2SYM(rb_intern("huge"));			rb_gc_register_address(&huge_sym);
+    json_sym = ID2SYM(rb_intern("json"));			rb_gc_register_address(&json_sym);
+    match_string_sym = ID2SYM(rb_intern("match_string"));	rb_gc_register_address(&match_string_sym);
+    mode_sym = ID2SYM(rb_intern("mode"));			rb_gc_register_address(&mode_sym);
+    nan_sym = ID2SYM(rb_intern("nan"));				rb_gc_register_address(&nan_sym);
+    newline_sym = ID2SYM(rb_intern("newline"));			rb_gc_register_address(&newline_sym);
+    nilnil_sym = ID2SYM(rb_intern("nilnil"));			rb_gc_register_address(&nilnil_sym);
+    null_sym = ID2SYM(rb_intern("null"));			rb_gc_register_address(&null_sym);
+    object_sym = ID2SYM(rb_intern("object"));			rb_gc_register_address(&object_sym);
+    oj_allow_nan_sym = ID2SYM(rb_intern("allow_nan"));		rb_gc_register_address(&oj_allow_nan_sym);
+    oj_array_class_sym = ID2SYM(rb_intern("array_class"));	rb_gc_register_address(&oj_array_class_sym);
+    oj_array_nl_sym = ID2SYM(rb_intern("array_nl"));		rb_gc_register_address(&oj_array_nl_sym);
+    oj_ascii_only_sym = ID2SYM(rb_intern("ascii_only"));	rb_gc_register_address(&oj_ascii_only_sym);
+    oj_create_additions_sym = ID2SYM(rb_intern("create_additions"));rb_gc_register_address(&oj_create_additions_sym);
+    oj_hash_class_sym = ID2SYM(rb_intern("hash_class"));	rb_gc_register_address(&oj_hash_class_sym);
+    oj_indent_sym = ID2SYM(rb_intern("indent"));		rb_gc_register_address(&oj_indent_sym);
+    oj_max_nesting_sym = ID2SYM(rb_intern("max_nesting"));	rb_gc_register_address(&oj_max_nesting_sym);
+    oj_object_class_sym = ID2SYM(rb_intern("object_class"));	rb_gc_register_address(&oj_object_class_sym);
+    oj_object_nl_sym = ID2SYM(rb_intern("object_nl"));		rb_gc_register_address(&oj_object_nl_sym);
+    oj_quirks_mode_sym = ID2SYM(rb_intern("quirks_mode"));	rb_gc_register_address(&oj_quirks_mode_sym);
+    oj_space_before_sym = ID2SYM(rb_intern("space_before"));	rb_gc_register_address(&oj_space_before_sym);
+    oj_space_sym = ID2SYM(rb_intern("space"));			rb_gc_register_address(&oj_space_sym);
+    omit_nil_sym = ID2SYM(rb_intern("omit_nil"));		rb_gc_register_address(&omit_nil_sym);
+    rails_sym = ID2SYM(rb_intern("rails"));			rb_gc_register_address(&rails_sym);
+    raise_sym = ID2SYM(rb_intern("raise"));			rb_gc_register_address(&raise_sym);
+    ruby_sym = ID2SYM(rb_intern("ruby"));			rb_gc_register_address(&ruby_sym);
+    sec_prec_sym = ID2SYM(rb_intern("second_precision"));	rb_gc_register_address(&sec_prec_sym);
+    strict_sym = ID2SYM(rb_intern("strict"));			rb_gc_register_address(&strict_sym);
+    symbol_keys_sym = ID2SYM(rb_intern("symbol_keys"));		rb_gc_register_address(&symbol_keys_sym);
+    time_format_sym = ID2SYM(rb_intern("time_format"));		rb_gc_register_address(&time_format_sym);
+    unicode_xss_sym = ID2SYM(rb_intern("unicode_xss"));		rb_gc_register_address(&unicode_xss_sym);
+    unix_sym = ID2SYM(rb_intern("unix"));			rb_gc_register_address(&unix_sym);
+    unix_zone_sym = ID2SYM(rb_intern("unix_zone"));		rb_gc_register_address(&unix_zone_sym);
+    use_as_json_sym = ID2SYM(rb_intern("use_as_json"));		rb_gc_register_address(&use_as_json_sym);
+    use_to_hash_sym = ID2SYM(rb_intern("use_to_hash"));		rb_gc_register_address(&use_to_hash_sym);
+    use_to_json_sym = ID2SYM(rb_intern("use_to_json"));		rb_gc_register_address(&use_to_json_sym);
+    word_sym = ID2SYM(rb_intern("word"));			rb_gc_register_address(&word_sym);
+    xmlschema_sym = ID2SYM(rb_intern("xmlschema"));		rb_gc_register_address(&xmlschema_sym);
+    xss_safe_sym = ID2SYM(rb_intern("xss_safe"));		rb_gc_register_address(&xss_safe_sym);
 
-    oj_slash_string = rb_str_new2("/");			rb_gc_register_address(&oj_slash_string);
+    oj_slash_string = rb_str_new2("/");				rb_gc_register_address(&oj_slash_string);
 
     oj_default_options.mode = ObjectMode;
 
     oj_hash_init();
     oj_odd_init();
+    oj_mimic_rails_init();
 
 #if USE_PTHREAD_MUTEX
     pthread_mutex_init(&oj_cache_mutex, 0);
@@ -2304,139 +1592,3 @@ void Init_oj() {
     oj_init_doc();
 }
 
-// mimic JSON documentation
-
-/* Document-module: JSON
- * 
- * JSON is a JSON parser. This module when defined by the Oj module is a
- * faster replacement for the original.
- */
-/* Document-module: JSON::Ext
- * 
- * The Ext module is a placeholder in the mimic JSON module used for
- * compatibility only.
- */
-/* Document-class: JSON::Ext::Parser
- * 
- * The JSON::Ext::Parser is a placeholder in the mimic JSON module used for
- * compatibility only.
- */
-/* Document-class: JSON::Ext::Generator
- * 
- * The JSON::Ext::Generator is a placeholder in the mimic JSON module used for
- * compatibility only.
- */
-
-/* Document-method: create_id=
- *   call-seq: create_id=(id) -> String
- *
- * Sets the create_id tag to look for in JSON document. That key triggers the
- * creation of a class with the same name.
- *
- * @param [nil|String] id new create_id
- * @return the id
- */
-/* Document-method: parser=
- *   call-seq: parser=(parser) -> nil
- * 
- * Does nothing other than provide compatibiltiy.
- * @param [Object] parser ignored
- */
-/* Document-method: generator=
- *   call-seq: generator=(generator) -> nil
- * 
- * Does nothing other than provide compatibiltiy.
- * @param [Object] generator ignored
- */
-/* Document-method: dump
- *   call-seq: dump(obj, anIO=nil, limit = nil) -> String
- * 
- * Encodes an object as a JSON String.
- * 
- * @param [Object] obj object to convert to encode as JSON
- * @param [IO] anIO an IO that allows writing
- * @param [Fixnum] limit ignored
- */
-/* Document-method: load
- *   call-seq: load(source, proc=nil) -> Object
- * 
- * Loads a Ruby Object from a JSON source that can be either a String or an
- * IO. If Proc is given or a block is providedit is called with each nested
- * element of the loaded Object.
- * 
- * @param [String|IO] source JSON source
- * @param [Proc] proc to yield to on each element or nil
- */
-/* Document-method: restore
- *   call-seq: restore(source, proc=nil) -> Object
- * 
- * Loads a Ruby Object from a JSON source that can be either a String or an
- * IO. If Proc is given or a block is providedit is called with each nested
- * element of the loaded Object.
- * 
- * @param [String|IO] source JSON source
- * @param [Proc] proc to yield to on each element or nil
- */
-/* Document-method: recurse_proc
- *   call-seq: recurse_proc(obj, &proc) -> nil
- * 
- * Yields to the proc for every element in the obj recursivly.
- * 
- * @param [Hash|Array] obj object to walk
- * @param [Proc] proc to yield to on each element
- */
-/* Document-method: []
- *   call-seq: [](obj, opts={}) -> Object
- * 
- * If the obj argument is a String then it is assumed to be a JSON String and
- * parsed otherwise the obj is encoded as a JSON String.
- * 
- * @param [String|Hash|Array] obj object to convert
- * @param [Hash] opts same options as either generate or parse
- */
-/* Document-method: generate
- *   call-seq: generate(obj, opts=nil) -> String
- * 
- * Encode obj as a JSON String. The obj argument must be a Hash, Array, or
- * respond to to_h or to_json. Options other than those listed such as
- * +:allow_nan+ or +:max_nesting+ are ignored.
- * 
- * @param [Object|Hash|Array] obj object to convert to a JSON String
- * @param [Hash] opts options
- * @param [String] :indent String to use for indentation
- * @param [String] :space String placed after a , or : delimiter
- * @param [String] :space_before String placed before a : delimiter
- * @param [String] :object_nl String placed after a JSON object
- * @param [String] :array_nl String placed after a JSON array
- * @param [true|false] :ascii_only if not nil or false then use only ascii
- *                      characters in the output. Note JSON.generate does
- *                      support this even if it is not documented.
- */
-/* Document-method: fast_generate
- *   call-seq: fast_generate(obj, opts=nil) -> String
- * Same as generate().
- * @see generate
- */
-/* Document-method: pretty_generate
- *   call-seq: pretty_generate(obj, opts=nil) -> String
- * Same as generate() but with different defaults for the spacing options.
- * @see generate
- */
-/* Document-method: parse
- *   call-seq: parse(source, opts=nil) -> Object
- *
- * Parses a JSON String or IO into a Ruby Object.  Options other than those
- * listed such as +:allow_nan+ or +:max_nesting+ are ignored. +:object_class+ and
- * +:array_object+ are not supported.
- *
- * @param [String|IO] source source to parse
- * @param [Hash] opts options
- * @param [true|false] :symbolize_names flag indicating JSON object keys should be Symbols instead of Strings
- * @param [true|false] :create_additions flag indicating a key matching +create_id+ in a JSON object should trigger the creation of Ruby Object
- * @see create_id=
- */
-/* Document-method: parse!
- *   call-seq: parse!(source, opts=nil) -> Object
- * Same as parse().
- * @see parse
- */

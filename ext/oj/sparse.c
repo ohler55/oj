@@ -35,6 +35,7 @@
 #include <math.h>
 
 #include "oj.h"
+#include "encode.h"
 #include "parse.h"
 #include "buf.h"
 #include "hash.h" // for oj_strndup()
@@ -252,6 +253,17 @@ read_escaped_str(ParseInfo pi) {
 	    case '"':	buf_append(&buf, '"');	break;
 	    case '/':	buf_append(&buf, '/');	break;
 	    case '\\':	buf_append(&buf, '\\');	break;
+	    case '\'':
+		// The json gem claims this is not an error despite the
+		// ECMA-404 indicating it is not valid.
+		if (CompatMode == pi->options.mode) {
+		    buf_append(&buf, '\'');
+		} else {
+		    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "invalid escaped character");
+		    buf_cleanup(&buf);
+		    return;
+		}
+		break;
 	    case 'u':
 		if (0 == (code = read_hex(pi)) && err_has(&pi->err)) {
 		    buf_cleanup(&buf);
@@ -428,15 +440,22 @@ read_num(ParseInfo pi) {
 	c = reader_get(&pi->rd);
     }
     if ('I' == c) {
-	if (0 != reader_expect(&pi->rd, "nfinity")) {
+	if (No == pi->options.allow_nan) {
+	    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number or other value");
+	    return;
+	} else if (0 != reader_expect(&pi->rd, "nfinity")) {
 	    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number or other value");
 	    return;
 	}
 	ni.infinity = 1;
     } else {
 	int	dec_cnt = 0;
+	bool	zero1 = false;
 
 	for (; '0' <= c && c <= '9'; c = reader_get(&pi->rd)) {
+	    if (0 == ni.i && '0' == c) {
+		zero1 = true;
+	    }
 	    if (0 < ni.i) {
 		dec_cnt++;
 	    }
@@ -445,6 +464,13 @@ read_num(ParseInfo pi) {
 	    } else {
 		int	d = (c - '0');
 
+		if (0 < d) {
+		    if (zero1 && CompatMode == pi->options.mode) {
+			oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number");
+			return;
+		    }
+		    zero1 = false;
+		}
 		ni.i = ni.i * 10 + d;
 		if (INT64_MAX <= ni.i || DEC_MAX < dec_cnt) {
 		    ni.big = 1;
@@ -453,6 +479,9 @@ read_num(ParseInfo pi) {
 	}
 	if ('.' == c) {
 	    c = reader_get(&pi->rd);
+	    if (c < '0' || '9' < c) {
+		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number");
+	    }
 	    for (; '0' <= c && c <= '9'; c = reader_get(&pi->rd)) {
 		int	d = (c - '0');
 
@@ -616,9 +645,17 @@ void
 oj_sparse2(ParseInfo pi) {
     int		first = 1;
     char	c;
+    long	start = 0;
 
     err_init(&pi->err);
     while (1) {
+	if (0 < pi->max_depth && pi->max_depth <= pi->stack.tail - pi->stack.head - 1) {
+	    VALUE	err_clas = oj_get_json_err_class("NestingError");
+	    
+	    oj_set_error_at(pi, err_clas, __FILE__, __LINE__, "Too deeply nested.");
+	    pi->err_class = err_clas;
+	    return;
+	}
 	c = reader_next_non_white(&pi->rd);
 	if (!first && '\0' != c) {
 	    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "unexpected characters after the JSON document");
@@ -657,12 +694,25 @@ oj_sparse2(ParseInfo pi) {
 	case '7':
 	case '8':
 	case '9':
-	case 'I':
 	    reader_backup(&pi->rd);
 	    read_num(pi);
 	    break;
+	case 'I':
+	    if (Yes == pi->options.allow_nan) {
+		reader_backup(&pi->rd);
+		read_num(pi);
+	    } else {
+		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "unexpected character");
+		return;
+	    }
+	    break;
 	case 'N':
-	    read_nan(pi);
+	    if (Yes == pi->options.allow_nan) {
+		read_nan(pi);
+	    } else {
+		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "unexpected character");
+		return;
+	    }
 	    break;
 	case 't':
 	    read_true(pi);
@@ -719,23 +769,28 @@ oj_sparse2(ParseInfo pi) {
 	}
 	if (stack_empty(&pi->stack)) {
 	    if (Qundef != pi->proc) {
+		VALUE	args[3];
+		long	len = pi->rd.pos - start;
+
+		*args = stack_head_val(&pi->stack);
+		args[1] = LONG2NUM(start);
+		args[2] = LONG2NUM(len);
+
 		if (Qnil == pi->proc) {
-		    rb_yield(stack_head_val(&pi->stack));
+		    rb_yield_values2(3, args);
 		} else {
 #if HAS_PROC_WITH_BLOCK
-		    VALUE	args[1];
-
-		    *args = stack_head_val(&pi->stack);
-		    rb_proc_call_with_block(pi->proc, 1, args, Qnil);
+		    rb_proc_call_with_block(pi->proc, 3, args, Qnil);
 #else
 		    oj_set_error_at(pi, rb_eNotImpError, __FILE__, __LINE__,
 				    "Calling a Proc with a block not supported in this version. Use func() {|x| } syntax instead.");
 		    return;
 #endif
 		}
-	    } else {
+	    } else if (!pi->has_callbacks) {
 		first = 0;
 	    }
+	    start = pi->rd.pos;
 	}
     }
 }
@@ -758,11 +813,19 @@ oj_pi_sparse(int argc, VALUE *argv, ParseInfo pi, int fd) {
 	rb_raise(rb_eArgError, "Wrong number of arguments to parse.");
     }
     input = argv[0];
-    if (2 == argc) {
-	oj_parse_options(argv[1], &pi->options);
+    if (2 <= argc) {
+	if (T_HASH == rb_type(argv[1])) {
+	    oj_parse_options(argv[1], &pi->options);
+	} else if (3 <= argc && T_HASH == rb_type(argv[2])) {
+	    oj_parse_options(argv[2], &pi->options);
+	}
     }
-    if (Qnil == input && Yes == pi->options.nilnil) {
-	return Qnil;
+    if (Qnil == input) {
+	if (Yes == pi->options.nilnil) {
+	    return Qnil;
+	} else {
+	    rb_raise(rb_eTypeError, "Nil is not a valid JSON source.");
+	}
     }
     if (rb_block_given_p()) {
 	pi->proc = Qnil;
@@ -829,6 +892,19 @@ oj_pi_sparse(int argc, VALUE *argv, ParseInfo pi, int fd) {
 	if (Qnil != pi->err_class) {
 	    pi->err.clas = pi->err_class;
 	}
+	if (CompatMode == pi->options.mode) {
+	    // The json gem requires the error message be UTF-8 encoded. In
+	    // additional the complete JSON source should be returned but that
+	    // is not possible without stored all the bytes read and reading
+	    // the remaining bytes on the stream. Both seem like a very bad
+	    // idea.
+	    VALUE	args[] = { oj_encode(rb_str_new2(pi->err.msg)) };
+
+	    rb_exc_raise(rb_class_new_instance(1, args, pi->err.clas));
+	} else {
+	    oj_err_raise(&pi->err);
+	}
+
 	oj_err_raise(&pi->err);
     }
     return result;

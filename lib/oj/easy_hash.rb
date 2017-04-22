@@ -33,10 +33,18 @@ module Oj
     # @raise [ArgumentError] if an argument is given. Zero arguments expected.
     # @raise [NoMethodError] if the instance variable is not defined.
     def method_missing(m, *args, &block)
-      raise ArgumentError.new("wrong number of arguments (#{args.size} for 0 with #{m}) to method #{m}") unless args.nil? or args.empty?
-      return fetch(m, nil) if has_key?(m)
-      return fetch(m.to_s, nil) if has_key?(m.to_s)
-      return fetch(m.to_sym, nil) if has_key?(m.to_sym)
+      if m.to_s.end_with?('=')
+        raise ArgumentError.new("wrong number of arguments (#{args.size} for 1 with #{m}) to method #{m}") if args.nil? or 1 != args.length
+        m = m[0..-2]
+        return store(m.to_s, args[0]) if has_key?(m.to_s)
+        return store(m.to_sym, args[0]) if has_key?(m.to_sym)
+        return store(m, args[0])
+      else
+        raise ArgumentError.new("wrong number of arguments (#{args.size} for 0 with #{m}) to method #{m}") unless args.nil? or args.empty?
+        return fetch(m, nil) if has_key?(m)
+        return fetch(m.to_s, nil) if has_key?(m.to_s)
+        return fetch(m.to_sym, nil) if has_key?(m.to_sym)
+      end
       raise NoMethodError.new("undefined method #{m}", m)
     end
 
