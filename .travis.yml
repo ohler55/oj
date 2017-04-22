@@ -4,17 +4,13 @@ env:
   global:
     - MAKE="make -j 2"
 
-cache:
-  - ccache
-  - bundler
-
 language: ruby
 rvm:
   - 1.9.3
   - 2.1.10
   - 2.2.6
   - 2.3.3
-  - 2.4.0
+  - 2.4.1
 
 gemfile:
   - gemfiles/no_rails.gemfile
@@ -22,11 +18,14 @@ gemfile:
   - gemfiles/rails_4.2.gemfile
   - gemfiles/rails_5.gemfile
 
+
 matrix:
   fast_finish: true
   allow_failures:
-    - rvm: 2.4.0
     - rvm: 1.9.3
+    - rvm: 2.1.10
+    - rvm: 2.2.6
+    
   exclude:
     - gemfile: gemfiles/rails_5.gemfile
       rvm: 2.1.10
@@ -43,4 +42,4 @@ matrix:
     - gemfile: gemfiles/no_rails.gemfile
       rvm: 2.3.3
     - gemfile: gemfiles/no_rails.gemfile
-      rvm: 2.4.0
+      rvm: 2.4.1
