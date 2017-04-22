@@ -13,17 +13,17 @@ Gem::Specification.new do |s|
   s.description = %{The fastest JSON parser and object serializer. }
   s.licenses = ['MIT']
 
-  s.files = Dir["{lib,ext,test}/**/*.{rb,h,c}"] + ['LICENSE', 'README.md']
+  s.files = Dir["{lib,ext,test}/**/*.{rb,h,c}"] + ['LICENSE', 'README.md'] + Dir["docs/*.md"]
   s.test_files = Dir["test/**/*.rb"]
   s.extensions = ["ext/oj/extconf.rb"]
 
   s.has_rdoc = true
-  s.extra_rdoc_files = ['README.md']
-  s.rdoc_options = ['--main', 'README.md']
+  s.extra_rdoc_files = ['README.md'] + Dir["docs/*.md"]
+  s.rdoc_options = ['--title', 'Oj', '--main', 'README.md']
 
   s.rubyforge_project = 'oj'
 
   s.add_development_dependency 'rake-compiler', '~> 0.9'
   s.add_development_dependency 'minitest', '~> 5'
-  s.add_development_dependency 'wwtd'
+  s.add_development_dependency 'wwtd', '~> 0'
 end

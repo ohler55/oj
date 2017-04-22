@@ -1,31 +1,6 @@
 /* oj.h
  * Copyright (c) 2011, Peter Ohler
  * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- * 
- * - Redistributions of source code must retain the above copyright notice, this
- *   list of conditions and the following disclaimer.
- * 
- * - Redistributions in binary form must reproduce the above copyright notice,
- *   this list of conditions and the following disclaimer in the documentation
- *   and/or other materials provided with the distribution.
- * 
- * - Neither the name of Peter Ohler nor the names of its contributors may be
- *   used to endorse or promote products derived from this software without
- *   specific prior written permission.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #ifndef __OJ_H__
@@ -45,8 +20,8 @@ extern "C" {
 #include "ruby/encoding.h"
 #endif
 
-#include "stdint.h"
-#include "stdbool.h"
+#include <stdint.h>
+#include <stdbool.h>
 
 #if USE_PTHREAD_MUTEX
 #include <pthread.h>
@@ -66,6 +41,7 @@ enum st_retval {ST_CONTINUE = 0, ST_STOP = 1, ST_DELETE = 2, ST_CHECK};
 #endif
 #endif
 
+#include "rxclass.h"
 #include "err.h"
 
 #define INF_VAL		"3.0e14159265358979323846"
@@ -82,7 +58,9 @@ typedef enum {
     StrictMode	= 's',
     ObjectMode	= 'o',
     NullMode	= 'n',
-    CompatMode	= 'c'
+    CompatMode	= 'c',
+    RailsMode	= 'r',
+    CustomMode	= 'C',
 } Mode;
 
 typedef enum {
@@ -96,7 +74,9 @@ typedef enum {
     NLEsc	= 'n',
     JSONEsc	= 'j',
     XSSEsc	= 'x',
-    ASCIIEsc	= 'a'
+    ASCIIEsc	= 'a',
+    JXEsc	= 'r', // json
+    RailsEsc	= 'R', // rails non escape
 } Encoding;
 
 typedef enum {
@@ -126,6 +106,13 @@ typedef enum {
     FILE_IO	= 'f',
 } StreamWriterType;
 
+typedef enum {
+    CALLER_DUMP		= 'd',
+    CALLER_TO_JSON	= 't',
+    CALLER_GENERATE	= 'g',
+    // Add the fast versions if necessary. Maybe unparse as well if needed.
+} DumpCaller;
+
 typedef struct _DumpOpts {
     bool	use;
     char	indent_str[16];
@@ -140,6 +127,7 @@ typedef struct _DumpOpts {
     uint8_t	array_size;
     char	nan_dump;	// NanDump
     bool	omit_nil;
+    int		max_depth;
 } *DumpOpts;
 
 typedef struct _Options {
@@ -153,6 +141,7 @@ typedef struct _Options {
     char		time_format;	// TimeFormat
     char		bigdec_as_num;	// YesNo
     char		bigdec_load;	// BigLoad
+    char		to_hash;	// YesNo
     char		to_json;	// YesNo
     char		as_json;	// YesNo
     char		nilnil;		// YesNo
@@ -160,27 +149,51 @@ typedef struct _Options {
     char		allow_gc;	// allow GC during parse
     char		quirks_mode;	// allow single JSON values instead of documents
     char		allow_invalid;	// YesNo - allow invalid unicode
+    char		create_ok;	// YesNo allow create_id
+    char		allow_nan;	// YEsyNo for parsing only
     const char		*create_id;	// 0 or string
     size_t		create_id_len;	// length of create_id
     int			sec_prec;	// second precision when dumping time
     char		float_prec;	// float precision, linked to float_fmt
     char		float_fmt[7];	// float format for dumping, if empty use Ruby
     VALUE		hash_class;	// class to use in place of Hash on load
+    VALUE		array_class;	// class to use in place of Array on load
     struct _DumpOpts	dump_opts;
+    struct _RxClass	str_rx;
 } *Options;
 
+struct _Out;
+typedef void	(*DumpFunc)(VALUE obj, int depth, struct _Out *out, bool as_ok);
+
+// rails optimize
+typedef struct _ROpt {
+    VALUE	clas;
+    bool	on;
+    DumpFunc	dump;
+} *ROpt;
+
+typedef struct _ROptTable {
+    int			len;
+    int			alen;
+    ROpt		table;
+} *ROptTable;
+
 typedef struct _Out {
-    char	*buf;
-    char	*end;
-    char	*cur;
-    Cache8	circ_cache;
-    slot_t	circ_cnt;
-    int		indent;
-    int		depth; // used by dump_hash
-    Options	opts;
-    uint32_t	hash_cnt;
-    int		allocated;
-    bool	omit_nil;
+    char		*buf;
+    char		*end;
+    char		*cur;
+    Cache8		circ_cache;
+    slot_t		circ_cnt;
+    int			indent;
+    int			depth; // used by dump_hash
+    Options		opts;
+    uint32_t		hash_cnt;
+    int			allocated;
+    bool		omit_nil;
+    int			argc;
+    VALUE		*argv;
+    DumpCaller		caller; // used for the mimic json only
+    ROptTable		ropts;
 } *Out;
 
 typedef struct _StrWriter {
@@ -229,10 +242,12 @@ extern VALUE	oj_strict_parse(int argc, VALUE *argv, VALUE self);
 extern VALUE	oj_strict_sparse(int argc, VALUE *argv, VALUE self);
 extern VALUE	oj_compat_parse(int argc, VALUE *argv, VALUE self);
 extern VALUE	oj_object_parse(int argc, VALUE *argv, VALUE self);
+extern VALUE	oj_custom_parse(int argc, VALUE *argv, VALUE self);
 
 extern VALUE	oj_strict_parse_cstr(int argc, VALUE *argv, char *json, size_t len);
 extern VALUE	oj_compat_parse_cstr(int argc, VALUE *argv, char *json, size_t len);
 extern VALUE	oj_object_parse_cstr(int argc, VALUE *argv, char *json, size_t len);
+extern VALUE	oj_custom_parse_cstr(int argc, VALUE *argv, char *json, size_t len);
 
 extern void	oj_parse_options(VALUE ropts, Options copts);
 
@@ -252,6 +267,19 @@ extern void	oj_str_writer_pop(StrWriter sw);
 extern void	oj_str_writer_pop_all(StrWriter sw);
 
 extern void	oj_init_doc(void);
+extern void	oj_string_writer_init();
+extern void	oj_stream_writer_init();
+extern void	oj_str_writer_init(StrWriter sw);
+extern VALUE	oj_define_mimic_json(int argc, VALUE *argv, VALUE self);
+extern VALUE	oj_mimic_generate(int argc, VALUE *argv, VALUE self);
+extern VALUE	oj_mimic_pretty_generate(int argc, VALUE *argv, VALUE self);
+extern void	oj_parse_mimic_dump_options(VALUE ropts, Options copts);
+
+extern VALUE	oj_mimic_parse(int argc, VALUE *argv, VALUE self);
+extern VALUE	oj_get_json_err_class(const char *err_classname);
+extern void	oj_parse_opt_match_string(RxClass rc, VALUE ropts);
+
+extern VALUE	oj_rails_encode(int argc, VALUE *argv, VALUE self);
 
 extern VALUE	Oj;
 extern struct _Options	oj_default_options;
@@ -267,10 +295,27 @@ extern VALUE	oj_cstack_class;
 extern VALUE	oj_date_class;
 extern VALUE	oj_datetime_class;
 extern VALUE	oj_doc_class;
+extern VALUE	oj_enumerable_class;
+extern VALUE	oj_json_generator_error_class;
+extern VALUE	oj_json_parser_error_class;
 extern VALUE	oj_stream_writer_class;
 extern VALUE	oj_string_writer_class;
 extern VALUE	oj_stringio_class;
 extern VALUE	oj_struct_class;
+
+extern VALUE	oj_allow_nan_sym;
+extern VALUE	oj_array_class_sym;
+extern VALUE	oj_array_nl_sym;
+extern VALUE	oj_ascii_only_sym;
+extern VALUE	oj_create_additions_sym;
+extern VALUE	oj_hash_class_sym;
+extern VALUE	oj_indent_sym;
+extern VALUE	oj_max_nesting_sym;
+extern VALUE	oj_object_class_sym;
+extern VALUE	oj_object_nl_sym;
+extern VALUE	oj_quirks_mode_sym;
+extern VALUE	oj_space_before_sym;
+extern VALUE	oj_space_sym;
 
 extern VALUE	oj_slash_string;
 
@@ -279,10 +324,14 @@ extern ID	oj_array_append_id;
 extern ID	oj_array_end_id;
 extern ID	oj_array_start_id;
 extern ID	oj_as_json_id;
+extern ID	oj_begin_id;
+extern ID	oj_end_id;
 extern ID	oj_error_id;
+extern ID	oj_exclude_end_id;
 extern ID	oj_file_id;
 extern ID	oj_fileno_id;
 extern ID	oj_ftype_id;
+extern ID	oj_has_key_id;
 extern ID	oj_hash_end_id;
 extern ID	oj_hash_key_id;
 extern ID	oj_hash_set_id;
@@ -299,6 +348,7 @@ extern ID	oj_readpartial_id;
 extern ID	oj_replace_id;
 extern ID	oj_stat_id;
 extern ID	oj_string_id;
+extern ID	oj_to_h_id;
 extern ID	oj_to_hash_id;
 extern ID	oj_to_json_id;
 extern ID	oj_to_s_id;
@@ -311,6 +361,9 @@ extern ID	oj_utc_id;
 extern ID	oj_utc_offset_id;
 extern ID	oj_utcq_id;
 extern ID	oj_write_id;
+
+extern bool	oj_use_hash_alt;
+extern bool	oj_use_array_alt;
 
 #if USE_PTHREAD_MUTEX
 extern pthread_mutex_t	oj_cache_mutex;
