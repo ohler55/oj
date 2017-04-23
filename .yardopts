@@ -2,14 +2,14 @@
 --readme README.md
 --charset utf-8
 -
-docs/Advanced.md
-docs/Compatibility.md
-docs/Custom.md
-docs/Encoding.md
-docs/JsonGem.md
-docs/Modes.md
-docs/Options.md
-docs/Rails.md
-docs/Security.md
+pages/Advanced.md
+pages/Compatibility.md
+pages/Custom.md
+pages/Encoding.md
+pages/JsonGem.md
+pages/Modes.md
+pages/Options.md
+pages/Rails.md
+pages/Security.md
 CHANGELOG.md
 LICENSE

@@ -39,7 +39,7 @@ if a non-native type is encountered instead of raising an Exception.
 The `:compat` mode mimics the json gem. The json gem is built around the use
 of the `to_json(*)` method defined for a class. Oj attempts to provide the
 same functionality by being a drop in replacement with a few
-exceptions. [{file:JsonGem.md}](docs/JsonGem.md) includes more details on
+exceptions. [{file:JsonGem.md}](pages/JsonGem.md) includes more details on
 compatibility and use.
 
 ## :rails Mode
@@ -47,7 +47,7 @@ compatibility and use.
 The `:rails` mode mimics the ActiveSupport version 5 encoder. Rails and
 ActiveSupport are built around the use of the `as_json(*)` method defined for
 a class. Oj attempts to provide the same functionality by being a drop in
-replacement with a few exceptions. [{file:Rails.md}](docs/Rails.md) includes
+replacement with a few exceptions. [{file:Rails.md}](pages/Rails.md) includes
 more details on compatibility and use.
 
 ## :object Mode
@@ -58,7 +58,7 @@ default mode unless changed in the Oj default options. In :object mode Oj
 generates JSON that follows conventions which allow Class and other
 information such as Object IDs for circular reference detection to be encoded
 in a JSON document. The formatting follows the rules describe on the
-[{file:Encoding.md}](docs/Encoding.md) page.
+[{file:Encoding.md}](pages/Encoding.md) page.
 
 ## :custom Mode
 
@@ -68,7 +68,7 @@ some special aspect that makes it unique. For example, the `:object` mode has
 it's own unique format for object dumping and loading. The `:compat` mode
 mimic the json gem including methods called for encoding and inconsistencies
 between `JSON.dump()`, `JSON.generate()`, and `JSON()`. More details on the
-[{file:Custom.md}](docs/Custom.md) page.
+[{file:Custom.md}](pages/Custom.md) page.
 
 ## Options Matrix
 
