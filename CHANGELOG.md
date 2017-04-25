@@ -4,7 +4,7 @@
 
 - Major changes focussed on json gem and Rails compatibility. A new :custom
   mode was added as well. Starting with this release the json gem tests are
-  sbeing used to test the :compat mode and the ActiveSupport 5 tests are being
+  being used to test the :compat mode and the ActiveSupport 5 tests are being
   used to test the :rails mode.
 
 - Please give stereobooster a thank you for getting the tests set up and
