@@ -16,7 +16,7 @@
 #include "hash.h"
 #include "odd.h"
 #include "dump.h"
-#include "mimic_rails.h"
+#include "rails.h"
 #include "encode.h"
 
 #if !HAS_ENCODING_SUPPORT || defined(RUBINIUS_RUBY)

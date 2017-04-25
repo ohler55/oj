@@ -624,7 +624,7 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 		oj_dump_cstr(buf, strlen(attr) + 1, 0, 0, out);
 	    }
 	    *out->cur++ = ':';
-	    oj_dump_obj_val(value, d2, out, 0, 0, true);
+	    oj_dump_obj_val(value, d2, out, true);
 	    assure_size(out, 2);
 	}
 #endif

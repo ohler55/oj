@@ -37,4 +37,6 @@ extern bool	oj_code_has(Code codes, VALUE clas, bool encode);
 
 extern void	oj_code_attrs(VALUE obj, Attr attrs, int depth, Out out);
 
+extern struct _Code	oj_compat_codes[];
+
 #endif /* __OJ_CODE_H__ */

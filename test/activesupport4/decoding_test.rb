@@ -76,8 +76,11 @@ class TestJSONDecoding < ActiveSupport::TestCase
       prev = ActiveSupport.parse_json_times
       ActiveSupport.parse_json_times = true
       silence_warnings do
-        assert_equal expected, ActiveSupport::JSON.decode(json), "JSON decoding \
-        failed for #{json}"
+        if expected.nil?
+          assert_nil ActiveSupport::JSON.decode(json), "JSON decoding failed for #{json}"
+        else
+          assert_equal expected, ActiveSupport::JSON.decode(json), "JSON decoding failed for #{json}"
+        end
       end
       ActiveSupport.parse_json_times = prev
     end
