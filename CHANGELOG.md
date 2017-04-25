@@ -1,6 +1,10 @@
 # CHANGELOG
 
-## 3.0.0 - 2017-04-22
+## 3.0.1 - 2017-04-25
+
+- Fixed compile error with help from Dylan Johnson.
+
+## 3.0.0 - 2017-04-24
 
 - Major changes focussed on json gem and Rails compatibility. A new :custom
   mode was added as well. Starting with this release the json gem tests are
