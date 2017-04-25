@@ -1,5 +1,8 @@
-sudo: false
+os:
+  - linux
+  - osx
 
+sudo: false
 env:
   global:
     - MAKE="make -j 2"
@@ -25,7 +28,7 @@ matrix:
     - rvm: 1.9.3
     - rvm: 2.1.10
     - rvm: 2.2.6
-    
+
   exclude:
     - gemfile: gemfiles/rails_5.gemfile
       rvm: 2.1.10
