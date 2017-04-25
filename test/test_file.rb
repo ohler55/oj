@@ -145,7 +145,7 @@ class FileJuice < Minitest::Test
 
   # Object with to_json()
   def test_json_object_compat
-    Oj.default_options = { :mode => :compat, :use_to_json => true }
+    Oj.default_options = { :mode => :compat, :use_to_json => true, :create_additions => true }
     obj = Jeez.new(true, 58)
     json = Oj.dump(obj, :indent => 2)
     assert(%{{"json_class":"FileJuice::Jeez","x":true,"y":58}
@@ -228,6 +228,8 @@ class FileJuice < Minitest::Test
       end
       assert_equal(obj.utc?, loaded.utc?)
       assert_equal(obj.utc_offset, loaded.utc_offset)
+    elsif obj.nil?
+      assert_nil(loaded)
     else
       assert_equal(obj, loaded)
     end

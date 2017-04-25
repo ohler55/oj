@@ -33,7 +33,7 @@ class DocTest < Minitest::Test
     json = %{null}
     Oj::Doc.open(json) do |doc|
       assert_equal(NilClass, doc.type)
-      assert_equal(nil, doc.fetch())
+      assert_nil(doc.fetch())
     end
   end
 
@@ -80,7 +80,7 @@ class DocTest < Minitest::Test
   def test_fixnum
     json = %{12345}
     Oj::Doc.open(json) do |doc|
-      assert_equal(Fixnum, doc.type)
+      assert_equal(Integer, doc.type)
       assert_equal(12345, doc.fetch())
     end
   end
@@ -209,10 +209,10 @@ class DocTest < Minitest::Test
       [['/', Hash],
        ['/array', Array],
        ['/array/1', Hash],
-       ['/array/1/num', Fixnum],
+       ['/array/1/num', Integer],
        ['/array/1/string', String],
        ['/array/1/hash/h2/a', Array],
-       ['/array/1/hash/../num', Fixnum],
+       ['/array/1/hash/../num', Integer],
        ['/array/1/hash/../..', Array],
       ].each do |path,type|
         assert_equal(type, doc.type(path))
@@ -233,7 +233,11 @@ class DocTest < Minitest::Test
        ['/array/1/hash/../..', 'array'],
       ].each do |path,key|
         doc.move(path)
-        assert_equal(key, doc.local_key())
+        if key.nil?
+          assert_nil(doc.local_key())
+        else
+          assert_equal(key, doc.local_key())
+        end
       end
     end
   end

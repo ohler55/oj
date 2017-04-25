@@ -953,7 +953,6 @@ dump(int argc, VALUE *argv, VALUE self) {
 	oj_parse_options(argv[1], &copts);
     }
     if (CompatMode == copts.mode) {
-	copts.to_json = No;
 	copts.dump_opts.nan_dump = true;
     }
     out.buf = buf;
