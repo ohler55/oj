@@ -47,10 +47,6 @@ extern void	oj_dump_custom_val(VALUE obj, int depth, Out out, bool as_ok);
 extern VALUE	oj_add_to_json(int argc, VALUE *argv, VALUE self);
 extern VALUE	oj_remove_to_json(int argc, VALUE *argv, VALUE self);
 
-// TBD remove when refactor complete
-extern void	oj_dump_comp_val(VALUE obj, int depth, Out out, int argc, VALUE *argv, bool as_ok);
-
-
 inline static void
 assure_size(Out out, size_t len) {
     if (out->end - out->cur <= (long)len) {
