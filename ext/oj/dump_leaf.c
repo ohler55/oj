@@ -10,8 +10,6 @@
 
 static void	dump_leaf(Leaf leaf, int depth, Out out);
 
-extern void	dump_cstr(const char *str, size_t cnt, int is_sym, int escape1, Out out);
-
 static void
 grow(Out out, size_t len) {
     size_t  size = out->end - out->buf;
@@ -52,10 +50,10 @@ static void
 dump_leaf_str(Leaf leaf, Out out) {
     switch (leaf->value_type) {
     case STR_VAL:
-	dump_cstr(leaf->str, strlen(leaf->str), 0, 0, out);
+	oj_dump_cstr(leaf->str, strlen(leaf->str), 0, 0, out);
 	break;
     case RUBY_VAL:
-	dump_cstr(rb_string_value_cstr(&leaf->value), RSTRING_LEN(leaf->value), 0, 0, out);
+	oj_dump_cstr(rb_string_value_cstr(&leaf->value), RSTRING_LEN(leaf->value), 0, 0, out);
 	break;
     case COL_VAL:
     default:
@@ -160,7 +158,7 @@ dump_leaf_hash(Leaf leaf, int depth, Out out) {
 		grow(out, size);
 	    }
 	    fill_indent(out, d2);
-	    dump_cstr(e->key, strlen(e->key), 0, 0, out);
+	    oj_dump_cstr(e->key, strlen(e->key), 0, 0, out);
 	    *out->cur++ = ':';
 	    dump_leaf(e, d2, out);
 	    if (e->next != first) {
