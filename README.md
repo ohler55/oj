@@ -63,7 +63,7 @@ See [{file:CHANGELOG.md}](CHANGELOG.md)
 
 ## Links
 
- - *Documentation*: http://www.ohler.com/oj, http://rubydoc.info/gems/oj
+ - *Documentation*: http://www.ohler.com/oj/doc, http://rubydoc.info/gems/oj
 
 - *GitHub* *repo*: https://github.com/ohler55/oj
 
