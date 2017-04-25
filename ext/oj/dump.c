@@ -529,6 +529,7 @@ oj_dump_obj_to_json_using_params(VALUE obj, Options copts, Out out, int argc, VA
     out->indent = copts->indent;
     out->argc = argc;
     out->argv = argv;
+    out->ropts = NULL;
     if (Yes == copts->circular) {
 	oj_cache8_new(&out->circ_cache);
     }

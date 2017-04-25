@@ -23,6 +23,9 @@ Comparison Matrix
 - put oj_100x60.jpg or maybe transparent gif in oj_misc
  - update readme
 
+- json gem bugs PR
+ - 
+
  - what happened to obj mode loading time?
 
  - Process::Status
