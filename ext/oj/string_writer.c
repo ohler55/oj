@@ -158,6 +158,7 @@ oj_str_writer_push_value(StrWriter sw, VALUE val, const char *key) {
 	}
     }
     oj_dump_comp_val(val, sw->depth, &sw->out, 0, 0, true);
+    oj_dump_custom_val(val, sw->depth, &sw->out, true);
 }
 
 void
