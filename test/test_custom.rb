@@ -209,8 +209,7 @@ class CustomJuice < Minitest::Test
 
   def test_object
     obj = Jeez.new(true, 58)
-    json = Oj.dump(obj, :create_id => "^o", :use_to_json => false, :use_as_json => false, :use_to_hash => false)
-    #puts "*** #{json}"
+    Oj.dump(obj, :create_id => "^o", :use_to_json => false, :use_as_json => false, :use_to_hash => false)
     dump_and_load(obj, false, :create_id => "^o", :create_additions => true)
   end
 
