@@ -770,7 +770,8 @@ rails_set_decoder(VALUE self) {
     } else {
     	oj_json_parser_error_class = rb_define_class_under(json, "ParserError", json_error);
     }
-    rb_undef_method(json, "parse");
+    //rb_undef_method(json, "parse");
+    rb_undef(json, rb_intern("parse"));
     rb_define_module_function(json, "parse", oj_mimic_parse, -1);
     
     return Qnil;
