@@ -203,7 +203,11 @@ class CustomJuice < Minitest::Test
   end
 
   def test_bigdecimal
-    assert_equal('0.314159265358979323846e1', Oj.dump(BigDecimal.new('3.14159265358979323846'), :bigdecimal_load => true))
+    if '2.4.0' <= RUBY_VERSION
+      assert_equal('0.314159265358979323846e1', Oj.dump(BigDecimal.new('3.14159265358979323846'), :bigdecimal_load => true))
+    else
+      assert_equal('0.314159265358979323846E1', Oj.dump(BigDecimal.new('3.14159265358979323846'), :bigdecimal_load => true))
+    end
     dump_and_load(BigDecimal.new('3.14159265358979323846'), false, :bigdecimal_load => true)
   end
 
