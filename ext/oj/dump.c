@@ -538,7 +538,7 @@ oj_dump_obj_to_json_using_params(VALUE obj, Options copts, Out out, int argc, VA
     case NullMode:	oj_dump_null_val(obj, 0, out);				break;
     case ObjectMode:	oj_dump_obj_val(obj, 0, out);				break;
     case CompatMode:	oj_dump_compat_val(obj, 0, out, Yes == copts->to_json);	break;
-    case RailsMode:	oj_dump_rails_val(obj, 0, out, true);			break;
+    case RailsMode:	oj_dump_rails_val(obj, 0, out);				break;
     case CustomMode:	oj_dump_custom_val(obj, 0, out, true);			break;
     default:		oj_dump_custom_val(obj, 0, out, true);			break;
     }

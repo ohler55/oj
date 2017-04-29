@@ -40,12 +40,15 @@ specific to Oj such as the :circular option which it used to detect circular
 references while encoding.
 
 By default Oj acts like the ActiveSupport encoder and honors any changes in
-the as_json() methods. There are also optimized encoders for some
+the as_json() methods. There are some optimized Oj encoders for some
 classes. When the optimized encoder it toggled the as_json() methods will not
 be called for that class but instead the optimized version will be called. The
 optimized version is the same as the ActiveSupport default encoding for a
 given class. The optimized versions are toggled with the optimize() and
-deoptimize() methods.
+deoptimize() methods. There is a default optimized version for every class
+that takes the visible attributes and encodes them but that may not be the
+same as what Rails uses. Trial an error is the best approach for classes not
+listed here.
 
 The classes that can be put in optimized mode are:
 

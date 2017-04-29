@@ -462,7 +462,7 @@ time_alt(VALUE obj, int depth, Out out) {
     oj_code_attrs(obj, attrs, depth, out);
 }
 
-static struct _Code	codes[] = {
+struct _Code	oj_compat_codes[] = {
     { "BigDecimal", Qnil, bigdecimal_alt, NULL, false },
     { "Complex", Qnil, complex_alt, NULL, false },
     { "Date", Qnil, date_alt, false },
@@ -481,7 +481,7 @@ oj_add_to_json(int argc, VALUE *argv, VALUE self) {
     Code	a;
 
     if (0 == argc) {
-	for (a = codes; NULL != a->name; a++) {
+	for (a = oj_compat_codes; NULL != a->name; a++) {
 	    if (Qnil == a->clas || Qundef == a->clas) {
 		a->clas = rb_const_get_at(rb_cObject, rb_intern(a->name));
 	    }
@@ -514,7 +514,7 @@ oj_add_to_json(int argc, VALUE *argv, VALUE self) {
 		oj_use_array_alt = true;
 		continue;
 	    }
-	    for (a = codes; NULL != a->name; a++) {
+	    for (a = oj_compat_codes; NULL != a->name; a++) {
 		if (Qnil == a->clas || Qundef == a->clas) {
 		    a->clas = rb_const_get_at(rb_cObject, rb_intern(a->name));
 		}
@@ -531,7 +531,7 @@ oj_add_to_json(int argc, VALUE *argv, VALUE self) {
 VALUE
 oj_remove_to_json(int argc, VALUE *argv, VALUE self) {
     if (0 == argc) {
-	oj_code_set_active(codes, Qnil, false);
+	oj_code_set_active(oj_compat_codes, Qnil, false);
 	use_struct_alt = false;
 	use_exception_alt = false;
 	use_bignum_alt = false;
@@ -559,7 +559,7 @@ oj_remove_to_json(int argc, VALUE *argv, VALUE self) {
 		oj_use_array_alt = false;
 		continue;
 	    }
-	    oj_code_set_active(codes, *argv, false);
+	    oj_code_set_active(oj_compat_codes, *argv, false);
 	}
     }
     return Qnil;
@@ -723,7 +723,7 @@ dump_hash(VALUE obj, int depth, Out out, bool as_ok) {
 // called.
 static void
 dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
-    if (oj_code_dump(codes, obj, depth, out)) {
+    if (oj_code_dump(oj_compat_codes, obj, depth, out)) {
 	return;
     }
     if (use_exception_alt && rb_obj_is_kind_of(obj, rb_eException)) {
@@ -754,7 +754,7 @@ static void
 dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
     VALUE	clas = rb_obj_class(obj);
 
-    if (oj_code_dump(codes, obj, depth, out)) {
+    if (oj_code_dump(oj_compat_codes, obj, depth, out)) {
 	return;
     }
     if (rb_cRange == clas) {
@@ -865,7 +865,6 @@ dump_bignum(VALUE obj, int depth, Out out, bool as_ok) {
     out->cur += cnt;
     *out->cur = '\0';
 }
-
 
 static DumpFunc	compat_funcs[] = {
     NULL,	 	// RUBY_T_NONE   = 0x00,

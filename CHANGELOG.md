@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.0.3 - 2017-04-28
+
+- Improved compatibility with a json gem and Rails combination when json adds are used.
+
 ## 3.0.2 - 2017-04-27
 
 - Fixed crash due to unset var with dump to Rails mode.
