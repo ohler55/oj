@@ -4,6 +4,8 @@
 
 - Improved compatibility with a json gem and Rails combination when json adds are used.
 
+- Fixed compile problem on Windows.
+
 ## 3.0.2 - 2017-04-27
 
 - Fixed crash due to unset var with dump to Rails mode.
