@@ -6,16 +6,20 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <regex.h>
 #include <string.h>
 #include <stdio.h>
+#if !IS_WINDOWS
+#include <regex.h>
+#endif
 
 #include "rxclass.h"
 
 typedef struct _RxC {
     struct _RxC	*next;
     VALUE	rrx;
+#if !IS_WINDOWS
     regex_t	rx;
+#endif
     VALUE	clas;
     char	src[256];
 } *RxC;
@@ -33,10 +37,12 @@ oj_rxclass_cleanup(RxClass rc) {
 
     while (NULL != (rxc = rc->head)) {
 	rc->head = rc->head->next;
+#if !IS_WINDOWS
 	if (Qnil == rxc->rrx) {
 	    regfree(&rxc->rx);
 	}
 	xfree(rxc);
+#endif
     }
 }
 
@@ -58,25 +64,29 @@ oj_rxclass_rappend(RxClass rc, VALUE rx, VALUE clas) {
 // Attempt to compile the expression. If it fails populate the error code..
 int
 oj_rxclass_append(RxClass rc, const char *expr, VALUE clas) {
-    // Use mallow and not ALLOC_N to avoid pulliing ruby.h which conflicts
-    // with regex_t.
     RxC	rxc;
+#if !IS_WINDOWS
     int	err;
     int	flags = 0;
-    
+#endif
     if (sizeof(rxc->src) <= strlen(expr)) {
-	snprintf(rc->err, sizeof(rc->err), "expressions must be less than %lu chracter", sizeof(rxc->src));
+	snprintf(rc->err, sizeof(rc->err), "expressions must be less than %lu characters", sizeof(rxc->src));
 	return EINVAL;
     }
     rxc = ALLOC_N(struct _RxC, 1);
     rxc->next = 0;
-    rxc->rrx = Qnil;
     rxc->clas = clas;
+
+#if IS_WINDOWS
+    rxc->rrx = rb_funcall(rb_cRegexp, rb_intern("new"), 1, rb_str_new2(expr));
+#else
+    rxc->rrx = Qnil;
     if (0 != (err = regcomp(&rxc->rx, expr, flags))) {
 	regerror(err, &rxc->rx, rc->err, sizeof(rc->err));
 	free(rxc);
 	return err;
     }
+#endif
     if (NULL == rc->tail) {
 	rc->head = rxc;
     } else {
@@ -102,12 +112,14 @@ oj_rxclass_match(RxClass rc, const char *str, int len) {
 		return rxc->clas;
 	    }
 	} else if (len < (int)sizeof(buf)) {
+#if !IS_WINDOWS
 	    // string is not \0 terminated so copy and atempt a match
 	    memcpy(buf, str, len);
 	    buf[len] = '\0';
 	    if (0 == regexec(&rxc->rx, buf, 0, NULL, 0)) { // match
 		return rxc->clas;
 	    }
+#endif
 	} else {
 	    // TBD allocate a larger buffer and attempt
 	}
@@ -126,7 +138,9 @@ oj_rxclass_copy(RxClass src, RxClass dest) {
 	    if (Qnil != rxc->rrx) {
 		oj_rxclass_rappend(dest, rxc->rrx, rxc->clas);
 	    } else {
+#if !IS_WINDOWS
 		oj_rxclass_append(dest, rxc->src, rxc->clas);
+#endif
 	    }
 	}
     }

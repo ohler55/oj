@@ -113,7 +113,7 @@ oj_parse_mimic_dump_options(VALUE ropts, Options copts) {
     if (Qnil != (v = rb_hash_lookup(ropts, oj_indent_sym))) {
 	rb_check_type(v, T_STRING);
 	if (sizeof(copts->dump_opts.indent_str) <= (len = RSTRING_LEN(v))) {
-	    rb_raise(rb_eArgError, "indent string is limited to %lu characters.", sizeof(copts->dump_opts.indent_str));
+	    rb_raise(rb_eArgError, "indent string is limited to %lu characters.", (unsigned long)sizeof(copts->dump_opts.indent_str));
 	}
 	strcpy(copts->dump_opts.indent_str, StringValuePtr(v));
 	copts->dump_opts.indent_size = (uint8_t)len;
@@ -122,7 +122,7 @@ oj_parse_mimic_dump_options(VALUE ropts, Options copts) {
     if (Qnil != (v = rb_hash_lookup(ropts, oj_space_sym))) {
 	rb_check_type(v, T_STRING);
 	if (sizeof(copts->dump_opts.after_sep) <= (len = RSTRING_LEN(v))) {
-	    rb_raise(rb_eArgError, "space string is limited to %lu characters.", sizeof(copts->dump_opts.after_sep));
+	    rb_raise(rb_eArgError, "space string is limited to %lu characters.", (unsigned long)sizeof(copts->dump_opts.after_sep));
 	}
 	strcpy(copts->dump_opts.after_sep, StringValuePtr(v));
 	copts->dump_opts.after_size = (uint8_t)len;
@@ -131,7 +131,7 @@ oj_parse_mimic_dump_options(VALUE ropts, Options copts) {
     if (Qnil != (v = rb_hash_lookup(ropts, oj_space_before_sym))) {
 	rb_check_type(v, T_STRING);
 	if (sizeof(copts->dump_opts.before_sep) <= (len = RSTRING_LEN(v))) {
-	    rb_raise(rb_eArgError, "space_before string is limited to %lu characters.", sizeof(copts->dump_opts.before_sep));
+	    rb_raise(rb_eArgError, "space_before string is limited to %lu characters.", (unsigned long)sizeof(copts->dump_opts.before_sep));
 	}
 	strcpy(copts->dump_opts.before_sep, StringValuePtr(v));
 	copts->dump_opts.before_size = (uint8_t)len;
@@ -140,7 +140,7 @@ oj_parse_mimic_dump_options(VALUE ropts, Options copts) {
     if (Qnil != (v = rb_hash_lookup(ropts, oj_object_nl_sym))) {
 	rb_check_type(v, T_STRING);
 	if (sizeof(copts->dump_opts.hash_nl) <= (len = RSTRING_LEN(v))) {
-	    rb_raise(rb_eArgError, "object_nl string is limited to %lu characters.", sizeof(copts->dump_opts.hash_nl));
+	    rb_raise(rb_eArgError, "object_nl string is limited to %lu characters.", (unsigned long)sizeof(copts->dump_opts.hash_nl));
 	}
 	strcpy(copts->dump_opts.hash_nl, StringValuePtr(v));
 	copts->dump_opts.hash_size = (uint8_t)len;
@@ -149,7 +149,7 @@ oj_parse_mimic_dump_options(VALUE ropts, Options copts) {
     if (Qnil != (v = rb_hash_lookup(ropts, oj_array_nl_sym))) {
 	rb_check_type(v, T_STRING);
 	if (sizeof(copts->dump_opts.array_nl) <= (len = RSTRING_LEN(v))) {
-	    rb_raise(rb_eArgError, "array_nl string is limited to %lu characters.", sizeof(copts->dump_opts.array_nl));
+	    rb_raise(rb_eArgError, "array_nl string is limited to %lu characters.", (unsigned long)sizeof(copts->dump_opts.array_nl));
 	}
 	strcpy(copts->dump_opts.array_nl, StringValuePtr(v));
 	copts->dump_opts.array_size = (uint8_t)len;
