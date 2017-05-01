@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.0.4 - 2017-05-01
+
+- Fixed compile problem on Windows again.
+
 ## 3.0.3 - 2017-04-28
 
 - Improved compatibility with a json gem and Rails combination when json adds are used.
