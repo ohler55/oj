@@ -834,18 +834,25 @@ dump_as_json(VALUE obj, int depth, Out out, bool as_ok) {
     } else {
 	ja = rb_funcall(obj, oj_as_json_id, 0);
     }
+    out->argc = 0;
     if (ja == obj || !as_ok) {
 	// Once as_json is call it should never be called again on the same
 	// object with as_ok.
 	dump_rails_val(ja, depth, out, false);
     } else {
-	dump_rails_val(ja, depth, out, true);
+	int	type = rb_type(ja);
+
+	if (T_HASH == type || T_ARRAY == type) {
+	    dump_rails_val(ja, depth, out, true);
+	} else {
+	    dump_rails_val(ja, depth, out, true);
+	}
     }
 }
 
 static void
 dump_to_hash(VALUE obj, int depth, Out out) {
-    dump_rails_val(rb_funcall(obj, oj_to_hash_id, 0), depth, out, false);
+    dump_rails_val(rb_funcall(obj, oj_to_hash_id, 0), depth, out, true);
 }
 
 static void
@@ -925,7 +932,7 @@ dump_array(VALUE a, int depth, Out out, bool as_ok) {
 	    } else {
 		fill_indent(out, d2);
 	    }
-	    dump_rails_val(rb_ary_entry(a, i), d2, out, as_ok);
+	    dump_rails_val(rb_ary_entry(a, i), d2, out, true);
 	    if (i < cnt) {
 		*out->cur++ = ',';
 	    }
@@ -1004,7 +1011,7 @@ hash_cb(VALUE key, VALUE value, Out out) {
 	    out->cur += out->opts->dump_opts.after_size;
 	}
     }
-    dump_rails_val(value, depth, out, false);
+    dump_rails_val(value, depth, out, true);
     out->depth = depth;
     *out->cur++ = ',';
 
@@ -1022,7 +1029,11 @@ dump_hash(VALUE obj, int depth, Out out, bool as_ok) {
 	    return;
 	}
     }
-    if (as_ok && !oj_rails_hash_opt && rb_respond_to(obj, oj_as_json_id)) {
+    // Nothing good can come from calling as_json on a hash which is supposed
+    // to be a primitive so if the type is a hash and the class is also a hash
+    // then do not call as_json.
+    //if (!oj_rails_hash_opt && as_ok && rb_cHash != rb_obj_class(obj) && rb_respond_to(obj, oj_as_json_id)) {
+    if (!oj_rails_hash_opt && as_ok && rb_respond_to(obj, oj_as_json_id)) {
 	dump_as_json(obj, depth, out, false);
 	return;
     }
@@ -1065,6 +1076,7 @@ dump_hash(VALUE obj, int depth, Out out, bool as_ok) {
 static void
 dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
     if (oj_code_dump(oj_compat_codes, obj, depth, out)) {
+	out->argc = 0;
 	return;
     }
     if (as_ok) {
@@ -1090,6 +1102,7 @@ dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
 static void
 dump_as_string(VALUE obj, int depth, Out out, bool as_ok) {
     if (oj_code_dump(oj_compat_codes, obj, depth, out)) {
+	out->argc = 0;
 	return;
     }
     oj_dump_obj_to_s(obj, out);
