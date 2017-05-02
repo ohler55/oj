@@ -4,6 +4,8 @@
 
 - Fixed compile problem on Windows again.
 
+- Fixed issue with TimeWithZone not being encoded correctly when a member of an object.
+
 ## 3.0.3 - 2017-04-28
 
 - Improved compatibility with a json gem and Rails combination when json adds are used.

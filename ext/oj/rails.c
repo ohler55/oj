@@ -839,13 +839,7 @@ dump_as_json(VALUE obj, int depth, Out out, bool as_ok) {
 	// object with as_ok.
 	dump_rails_val(ja, depth, out, false);
     } else {
-	int	type = rb_type(ja);
-
-	if (T_HASH == type || T_ARRAY == type) {
-	    dump_rails_val(ja, depth, out, false);
-	} else {
-	    dump_rails_val(ja, depth, out, true);
-	}
+	dump_rails_val(ja, depth, out, true);
     }
 }
 
