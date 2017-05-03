@@ -1,4 +1,4 @@
-# [![{}j](http://www.ohler.com/dev/images/oj_hel_fire_64.png)](http://www.ohler.com/oj) gem
+# [![{}j](http://www.ohler.com/dev/images/oj_comet_64.png)](http://www.ohler.com/oj) gem
 
 [![Build Status](https://img.shields.io/travis/ohler55/oj/master.svg)](http://travis-ci.org/ohler55/oj?branch=master) ![Gem](https://img.shields.io/gem/v/oj.svg) ![Gem](https://img.shields.io/gem/dt/oj.svg)
 

@@ -754,10 +754,12 @@ oj_define_mimic_json(int argc, VALUE *argv, VALUE self) {
      } else {
 	generator = rb_define_module_under(ext, "Generator");
     }
-
+    if (!rb_const_defined_at(generator, rb_intern("State"))) {
+	rb_require("oj/state");
+    }
+    
     // convince Ruby that the json gem has already been loaded
     // Pull in the JSON::State mimic file.
-    rb_require("oj/state");
     state_class = rb_const_get_at(generator, rb_intern("State"));
     // TBD create all modules in mimic_loaded
 

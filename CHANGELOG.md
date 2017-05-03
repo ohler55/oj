@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 3.0.5 - 2017-05-02
+
+- No change in the Oj::Rails.optimize() API but additional classes are now supported.
+
+- Added ActiveSupport::TimeWithZone optimization to rails mode.
+
+- Added ActiveRecord::Base optimization to rails mode which allows optimization of any class inheriting from ActiveRecord::Base.
+
 ## 3.0.4 - 2017-05-01
 
 - Fixed compile problem on Windows again.

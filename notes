@@ -27,13 +27,7 @@ Comparison Matrix
  - 
 
 - rails
- - always allow as_ok except for hash
- - focus on options, not as_ok
- - as_ok only ok for hash and array the first time, others, always
- - zero out args after first call?
-  - first call to as_json or if optimized, that call
-
-
+   
  - what happened to obj mode loading time?
 
  - Process::Status

@@ -10,7 +10,7 @@ require 'oj'
 
 Oj::Rails.set_encoder()
 Oj::Rails.set_decoder()
-Oj::Rails.optimize(Array, BigDecimal, Hash, Range, Regexp, Time)
+Oj::Rails.optimize(Array, BigDecimal, Hash, Range, Regexp, Time, ActiveSupport::TimeWithZone)
 ```
 
 Some of the Oj options are supported as arguments to the encoder if called
@@ -58,6 +58,9 @@ The classes that can be put in optimized mode are:
  * Range
  * Regexp
  * Time
+ * ActiveSupport::TimeWithZone
+ * any class inheriting from ActiveRecord::Base
+ * any other class where all attributes should be dumped
 
 The ActiveSupport decoder is the JSON.parse() method. Calling the
 Oj::Rails.set_decoder() method replaces that method with the Oj equivelant.

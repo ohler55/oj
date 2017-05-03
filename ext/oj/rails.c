@@ -211,22 +211,10 @@ dump_bigdecimal(VALUE obj, int depth, Out out, bool as_ok) {
 }
 
 static void
-dump_time(VALUE obj, int depth, Out out, bool as_ok) {
+dump_sec_nano(VALUE obj, time_t sec, long nsec, Out out) {
     char		buf[64];
     struct tm		*tm;
     long		one = 1000000000;
-#if HAS_RB_TIME_TIMESPEC
-    struct timespec	ts = rb_time_timespec(obj);
-    time_t		sec = ts.tv_sec;
-    long		nsec = ts.tv_nsec;
-#else
-    time_t		sec = NUM2LONG(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
-#if HAS_NANO_TIME
-    long long		nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
-#else
-    long long		nsec = rb_num2ll(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
-#endif
-#endif
     long		tzsecs = NUM2LONG(rb_funcall2(obj, oj_utc_offset_id, 0, 0));
     int			tzhour, tzmin;
     char		tzsign = '+';
@@ -251,7 +239,6 @@ dump_time(VALUE obj, int depth, Out out, bool as_ok) {
     // 2012-01-05T23:58:07.123456000+09:00 or 2012/01/05 23:58:07 +0900
     sec += tzsecs;
     tm = gmtime(&sec);
-#if 1
     if (0 > tzsecs) {
         tzsign = '-';
         tzhour = (int)(tzsecs / -3600);
@@ -260,16 +247,6 @@ dump_time(VALUE obj, int depth, Out out, bool as_ok) {
         tzhour = (int)(tzsecs / 3600);
         tzmin = (int)(tzsecs / 60) - (tzhour * 60);
     }
-#else
-    if (0 > tm->tm_gmtoff) {
-        tzsign = '-';
-        tzhour = (int)(tm->tm_gmtoff / -3600);
-        tzmin = (int)(tm->tm_gmtoff / -60) - (tzhour * 60);
-    } else {
-        tzhour = (int)(tm->tm_gmtoff / 3600);
-        tzmin = (int)(tm->tm_gmtoff / 60) - (tzhour * 60);
-    }
-#endif
     if (!xml_time) {
 	len = sprintf(buf, "%04d/%02d/%02d %02d:%02d:%02d %c%02d%02d",
 		      tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
@@ -313,6 +290,34 @@ dump_time(VALUE obj, int depth, Out out, bool as_ok) {
 }
 
 static void
+dump_time(VALUE obj, int depth, Out out, bool as_ok) {
+#if HAS_RB_TIME_TIMESPEC
+    struct timespec	ts = rb_time_timespec(obj);
+    time_t		sec = ts.tv_sec;
+    long		nsec = ts.tv_nsec;
+#else
+    time_t		sec = NUM2LONG(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+#if HAS_NANO_TIME
+    long long		nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+#else
+    long long		nsec = rb_num2ll(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
+#endif
+#endif
+    dump_sec_nano(obj, sec, nsec, out);
+}
+
+static void
+dump_timewithzone(VALUE obj, int depth, Out out, bool as_ok) {
+    time_t	sec = NUM2LONG(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+#if HAS_NANO_TIME
+    long long	nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+#else
+    long long	nsec = rb_num2ll(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
+#endif
+    dump_sec_nano(obj, sec, nsec, out);
+}
+
+static void
 dump_to_s(VALUE obj, int depth, Out out, bool as_ok) {
     volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
@@ -329,8 +334,19 @@ static struct _NamedFunc	dump_map[] = {
     { "Range", dump_to_s },
     { "Regexp", dump_to_s },
     { "Time", dump_time },
+    { "ActiveSupport::TimeWithZone", dump_timewithzone },
     { NULL, NULL },
 };
+
+static VALUE	activerecord_base = Qundef;
+
+static void
+dump_activerecord(VALUE obj, int depth, Out out, bool as_ok) {
+    volatile VALUE	attrs = rb_funcall(obj, rb_intern("attributes"), 0);
+
+    out->argc = 0;
+    dump_rails_val(attrs, depth, out, true);
+}
 
 static ROpt
 create_opt(ROptTable rot, VALUE clas) {
@@ -338,7 +354,7 @@ create_opt(ROptTable rot, VALUE clas) {
     NamedFunc	nf;
     const char	*classname = rb_class2name(clas);
     int		olen = rot->len;
-    
+
     rot->len++;
     if (NULL == rot->table) {
 	rot->alen = 256;
@@ -373,7 +389,17 @@ create_opt(ROptTable rot, VALUE clas) {
 	}
     }
     if (ro->dump == dump_obj_attrs) {
-	if (Qtrue == rb_class_inherited_p(clas, rb_cStruct)) { // check before enumerable
+	if (Qundef == activerecord_base) {
+	    // If not defined let an exception be raised.
+	    VALUE	ar = rb_const_get_at(rb_cObject, rb_intern("ActiveRecord"));
+
+	    if (Qundef != ar) {
+		activerecord_base = rb_const_get_at(ar, rb_intern("Base"));
+	    }
+	}
+	if (Qundef != activerecord_base && Qtrue == rb_class_inherited_p(clas, activerecord_base)) {
+	    ro->dump = dump_activerecord;
+	} else if (Qtrue == rb_class_inherited_p(clas, rb_cStruct)) { // check before enumerable
 	    ro->dump = dump_struct;
 	} else if (Qtrue == rb_class_inherited_p(clas, rb_mEnumerable)) {
 	    ro->dump = dump_enumerable;
@@ -898,7 +924,8 @@ dump_array(VALUE a, int depth, Out out, bool as_ok) {
 	    return;
 	}
     }
-    if (as_ok && !oj_rails_array_opt && rb_respond_to(a, oj_as_json_id)) {
+    //if (!oj_rails_array_opt && as_ok && 0 < out->argc && rb_respond_to(a, oj_as_json_id)) {
+    if (as_ok && 0 < out->argc && rb_respond_to(a, oj_as_json_id)) {
 	dump_as_json(a, depth, out, false);
 	return;
     }
@@ -1029,11 +1056,8 @@ dump_hash(VALUE obj, int depth, Out out, bool as_ok) {
 	    return;
 	}
     }
-    // Nothing good can come from calling as_json on a hash which is supposed
-    // to be a primitive so if the type is a hash and the class is also a hash
-    // then do not call as_json.
-    //if (!oj_rails_hash_opt && as_ok && rb_cHash != rb_obj_class(obj) && rb_respond_to(obj, oj_as_json_id)) {
-    if (!oj_rails_hash_opt && as_ok && rb_respond_to(obj, oj_as_json_id)) {
+    //if (!oj_rails_hash_opt && 0 < out->argc && as_ok && rb_respond_to(obj, oj_as_json_id)) {
+    if (0 < out->argc && as_ok && rb_respond_to(obj, oj_as_json_id)) {
 	dump_as_json(obj, depth, out, false);
 	return;
     }
