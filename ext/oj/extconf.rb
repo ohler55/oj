@@ -63,6 +63,6 @@ end
 
 $CPPFLAGS += ' -Wall'
 #puts "*** $CPPFLAGS: #{$CPPFLAGS}"
-create_makefile("#{extension_name}/#{extension_name}")
+create_makefile(File.join(extension_name, extension_name))
 
-%x{make clean}
+#%x{make clean}
