@@ -70,7 +70,7 @@ oj_rxclass_append(RxClass rc, const char *expr, VALUE clas) {
     int	flags = 0;
 #endif
     if (sizeof(rxc->src) <= strlen(expr)) {
-	snprintf(rc->err, sizeof(rc->err), "expressions must be less than %lu characters", sizeof(rxc->src));
+	snprintf(rc->err, sizeof(rc->err), "expressions must be less than %lu characters", (unsigned long)sizeof(rxc->src));
 	return EINVAL;
     }
     rxc = ALLOC_N(struct _RxC, 1);

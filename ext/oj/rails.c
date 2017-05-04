@@ -339,13 +339,15 @@ static struct _NamedFunc	dump_map[] = {
 };
 
 static VALUE	activerecord_base = Qundef;
+static ID	attributes_id = 0;
 
 static void
 dump_activerecord(VALUE obj, int depth, Out out, bool as_ok) {
-    volatile VALUE	attrs = rb_funcall(obj, rb_intern("attributes"), 0);
-
+    if (0 == attributes_id) {
+	attributes_id = rb_intern("@attributes");
+    }
     out->argc = 0;
-    dump_rails_val(attrs, depth, out, true);
+    dump_rails_val(rb_ivar_get(obj, attributes_id), depth, out, true);
 }
 
 static ROpt
