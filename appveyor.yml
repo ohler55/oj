@@ -1,0 +1,49 @@
+# https://www.appveyor.com/docs/lang/ruby/
+
+version: 3.0.{build}-{branch}
+
+image: Visual Studio 2015
+
+cache:
+  - vendor/bundle
+
+platform:
+  - x86
+
+# environment:
+#   matrix:
+#     - RUBY_VERSION: 200
+#     - RUBY_VERSION: 193
+
+environment:
+  APPVEYOR_RDP_PASSWORD: fixm3-wtf
+  PATH: c:\Ruby%RUBY_VERSION%\DevKit\mingw\bin;C:\Ruby%RUBY_VERSION%\bin;C:\Ruby%RUBY_VERSION%\DevKit\bin;C:\mingw-w64\x86_64-6.3.0-posix-seh-rt_v5-rev1;%PATH%
+  matrix:
+    - RUBY_VERSION: 23
+    - RUBY_VERSION: 23-x64
+    - RUBY_VERSION: 22
+    - RUBY_VERSION: 21
+
+build: off
+
+before_build:
+  - gem update --system
+  - ruby -v
+  - make -v
+  - bundle -v
+
+build_script:
+  - echo %PATH%
+  - cd C:\projects\oj\ext\oj
+  - bundle config --local path vendor/bundle
+  - bundle install
+  - bundle exec rake
+
+matrix:
+  allow_failures:
+    - RUBY_VERSION: 23
+    - RUBY_VERSION: 23-x64
+    - RUBY_VERSION: 22
+    - RUBY_VERSION: 21
+  fast_finish: true
+
