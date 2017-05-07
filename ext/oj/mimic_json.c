@@ -363,7 +363,8 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
     if (No == copts->nilnil && Qnil == *argv) {
 	rb_raise(rb_eTypeError, "nil not allowed.");
     }
-    oj_dump_obj_to_json(*argv, copts, &out);
+    oj_dump_obj_to_json_using_params(*argv, copts, &out, argc - 1, argv + 1);
+
     if (0 == out.buf) {
 	rb_raise(rb_eNoMemError, "Not enough memory.");
     }

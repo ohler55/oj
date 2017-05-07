@@ -29,7 +29,7 @@ class CompatJuice < Minitest::Test
     end
     alias == eql?
 
-    def to_json()
+    def to_json(*a)
       %|{"json_class":"#{self.class.to_s}","x":#{@x},"y":#{@y}}|
     end
 
@@ -37,6 +37,15 @@ class CompatJuice < Minitest::Test
       self.new(h['x'], h['y'])
     end
   end # Jeez
+
+  class Argy
+    def initialize()
+    end
+
+    def to_json(*a)
+      %|{"args":"#{a}"}|
+    end
+  end # Argy
 
   module One
     module Two
@@ -445,6 +454,11 @@ class CompatJuice < Minitest::Test
   def test_range
     json = Oj.dump(1..7)
     assert_equal('"1..7"', json)
+  end
+
+  def test_arg_passing
+    json = Oj.to_json(Argy.new(), :max_nesting=> 40)
+    assert_equal(%|{"args":"[{:max_nesting=>40}]"}|, json)
   end
 
   def dump_and_load(obj, trace=false)

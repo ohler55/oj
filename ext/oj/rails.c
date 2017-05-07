@@ -871,11 +871,18 @@ static void
 dump_as_json(VALUE obj, int depth, Out out, bool as_ok) {
     volatile VALUE	ja;
 
-    if (0 < out->argc) {
-	ja = rb_funcall2(obj, oj_as_json_id, out->argc, out->argv);
-    } else {
+    // Some classes elect to not take an options argument so check the arity
+    // of as_json.
+#if HAS_METHOD_ARITY
+    if (0 == rb_obj_method_arity(obj, oj_as_json_id)) {
 	ja = rb_funcall(obj, oj_as_json_id, 0);
+    } else {
+	ja = rb_funcall2(obj, oj_as_json_id, out->argc, out->argv);
     }
+#else
+    ja = rb_funcall2(obj, oj_as_json_id, out->argc, out->argv);
+#endif
+
     out->argc = 0;
     if (ja == obj || !as_ok) {
 	// Once as_json is call it should never be called again on the same

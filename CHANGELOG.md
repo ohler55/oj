@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.0.6 - 2017-05-07
+
+- Added Oj.opimize_rails().
+
+- Fixed argument passing bug on calls to to_json().
+
 ## 3.0.5 - 2017-05-02
 
 - No change in the Oj::Rails.optimize() API but additional classes are now supported.

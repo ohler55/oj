@@ -118,7 +118,16 @@ dump_to_json(VALUE obj, Out out) {
     const char		*s;
     int			len;
 
+#if HAS_METHOD_ARITY
+    if (0 == rb_obj_method_arity(obj, oj_to_json_id)) {
+	rs = rb_funcall(obj, oj_to_json_id, 0);
+    } else {
+	rs = rb_funcall2(obj, oj_to_json_id, out->argc, out->argv);
+    }
+#else
     rs = rb_funcall2(obj, oj_to_json_id, out->argc, out->argv);
+#endif
+
     s = rb_string_value_ptr((VALUE*)&rs);
     len = (int)RSTRING_LEN(rs);
 
@@ -731,18 +740,8 @@ dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
 	return;
     }
     if (as_ok && rb_respond_to(obj, oj_to_json_id)) {
-	volatile VALUE	rs;
-	const char	*s;
-	int		len;
+	dump_to_json(obj, out);
 
-	rs = rb_funcall(obj, oj_to_json_id, 0);
-	s = rb_string_value_ptr((VALUE*)&rs);
-	len = (int)RSTRING_LEN(rs);
-
-	assure_size(out, len + 1);
-	memcpy(out->cur, s, len);
-	out->cur += len;
-	*out->cur = '\0';
 	return;
     }
     // Nothing else matched so encode as a JSON object with Ruby obj members
@@ -772,15 +771,7 @@ dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
 	return;
     }
     if (as_ok && rb_respond_to(obj, oj_to_json_id)) {
-	volatile VALUE	rs = rb_funcall(obj, oj_to_json_id, 0);
-	const char	*s;
-	int		len;
-
-	s = rb_string_value_ptr((VALUE*)&rs);
-	len = (int)RSTRING_LEN(rs);
-	assure_size(out, len);
-	memcpy(out->cur, s, len);
-	out->cur += len;
+	dump_to_json(obj, out);
 
 	return;
     }

@@ -448,7 +448,15 @@ dump_common(VALUE obj, int depth, Out out) {
 	const char	*s;
 	int		len;
 
-	rs = rb_funcall(obj, oj_to_json_id, 0);
+#if HAS_METHOD_ARITY
+	if (0 == rb_obj_method_arity(obj, oj_to_json_id)) {
+	    rs = rb_funcall(obj, oj_to_json_id, 0);
+	} else {
+	    rs = rb_funcall2(obj, oj_to_json_id, out->argc, out->argv);
+	}
+#else
+	rs = rb_funcall2(obj, oj_to_json_id, out->argc, out->argv);
+#endif
 	s = rb_string_value_ptr((VALUE*)&rs);
 	len = (int)RSTRING_LEN(rs);
 
@@ -458,30 +466,18 @@ dump_common(VALUE obj, int depth, Out out) {
 	*out->cur = '\0';
     } else if (Yes == out->opts->as_json && rb_respond_to(obj, oj_as_json_id)) {
 	volatile VALUE	aj;
-	int		arity;
 
-#if HAS_METHOD_ARITY
-	arity = rb_obj_method_arity(obj, oj_as_json_id);
-#else
-	arity = out->argc;
-#endif
 	// Some classes elect to not take an options argument so check the arity
 	// of as_json.
-	switch (arity) {
-	case 0:
+#if HAS_METHOD_ARITY
+	if (0 == rb_obj_method_arity(obj, oj_as_json_id)) {
 	    aj = rb_funcall(obj, oj_as_json_id, 0);
-	    break;
-	case 1:
-	    if (1 <= out->argc) {
-		aj = rb_funcall2(obj, oj_as_json_id, 1, (VALUE*)out->argv);
-	    } else {
-		aj = rb_funcall(obj, oj_as_json_id, 1, Qnil);
-	    }
-	    break;
-	default:
+	} else {
 	    aj = rb_funcall2(obj, oj_as_json_id, out->argc, out->argv);
-	    break;
 	}
+#else
+	aj = rb_funcall2(obj, oj_as_json_id, out->argc, out->argv);
+#endif
 	// Catch the obvious brain damaged recursive dumping.
 	if (aj == obj) {
 	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);

@@ -960,7 +960,7 @@ dump(int argc, VALUE *argv, VALUE self) {
     out.allocated = 0;
     out.omit_nil = copts.dump_opts.omit_nil;
     out.caller = CALLER_DUMP;
-    oj_dump_obj_to_json(*argv, &copts, &out);
+    oj_dump_obj_to_json_using_params(*argv, &copts, &out, argc - 1,argv + 1);
     if (0 == out.buf) {
 	rb_raise(rb_eNoMemError, "Not enough memory.");
     }
@@ -982,7 +982,7 @@ dump(int argc, VALUE *argv, VALUE self) {
  *   - *:max_nesting* [_boolean_] It true nesting is limited to 100. The option to detect circular references is available but is not compatible with the json gem., default is false
  *   - *:allow_nan* [_boolean_] If true non JSON compliant words such as Nan and Infinity will be used as appropriate, default is true.
  *   - *:quirks_mode* [_boolean_] Allow single JSON values instead of documents, default is true (allow).
- *   - *:indent_str* [_String_|_nil_] String to use for indentation, overriding the indent option if not nil.
+ *   - *:indent* [_String_|_nil_] String to use for indentation, overriding the indent option if not nil.
  *   - *:space* [_String_|_nil_] String to use for the space after the colon in JSON object fields.
  *   - *:space_before* [_String_|_nil_] String to use before the colon separator in JSON object fields.
  *   - *:object_nl* [_String_|_nil_] String to use after a JSON object field value.
@@ -1013,7 +1013,8 @@ to_json(int argc, VALUE *argv, VALUE self) {
     // For obj.to_json or generate nan is not allowed but if called from dump
     // it is.
     copts.dump_opts.nan_dump = false;
-    oj_dump_obj_to_json(*argv, &copts, &out);
+    oj_dump_obj_to_json_using_params(*argv, &copts, &out, argc - 1,argv + 1);
+
     if (0 == out.buf) {
 	rb_raise(rb_eNoMemError, "Not enough memory.");
     }
