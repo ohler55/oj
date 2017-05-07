@@ -156,7 +156,7 @@ dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
     *out->cur++ = '{';
     for (i = 0; i < cnt; i++) {
 	name = rb_id2name(SYM2ID(rb_ary_entry(ma, i)));
-	len = strlen(name);
+	len = (int)strlen(name);
 	assure_size(out, size + sep_len + 6);
 	if (0 < i) {
 	    *out->cur++ = ',';
@@ -821,6 +821,20 @@ rails_set_decoder(VALUE self) {
     rb_define_module_function(json, "parse", oj_mimic_parse, -1);
     rb_gv_set("$VERBOSE", verbose);
     
+    return Qnil;
+}
+
+/* Document-module: Oj.optimize_rails()
+ *
+ * Sets the Oj as the Rails encoder and decoder. Oj::Rails.optimize is also
+ * called.
+ */
+VALUE
+oj_optimize_rails(VALUE self) {
+    rails_set_encoder(self);
+    rails_set_decoder(self);
+    rails_optimize(0, NULL, self);
+
     return Qnil;
 }
 

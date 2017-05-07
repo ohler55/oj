@@ -1456,6 +1456,8 @@ Init_oj() {
     rb_define_module_function(Oj, "saj_parse", oj_saj_parse, -1);
     rb_define_module_function(Oj, "sc_parse", oj_sc_parse, -1);
 
+    rb_define_module_function(Oj, "optimize_rails", oj_optimize_rails, 0);
+
     oj_add_value_id = rb_intern("add_value");
     oj_array_append_id = rb_intern("array_append");
     oj_array_end_id = rb_intern("array_end");

@@ -764,7 +764,7 @@ oj_num_as_value(NumInfo ni) {
 	} else {
 	    // All these machinations are to get rounding to work better.
 	    long double	d = (long double)ni->i * (long double)ni->div + (long double)ni->num;
-	    int		x = ni->exp - ni->di;
+	    int		x = (int)((int64_t)ni->exp - ni->di);
 
 	    // Rounding sometimes cuts off the last digit even if there are only
 	    // 15 digits. This attempts to fix those few cases where this

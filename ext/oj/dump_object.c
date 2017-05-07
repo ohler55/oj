@@ -40,7 +40,7 @@ dump_data(VALUE obj, int depth, Out out, bool as_ok) {
 	if (oj_bigdecimal_class == clas) {
 	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 	    const char		*str = rb_string_value_ptr((VALUE*)&rstr);
-	    int			len = RSTRING_LEN(rstr);
+	    int			len = (int)RSTRING_LEN(rstr);
 
 	    if (Yes == out->opts->bigdec_as_num) {
 		oj_dump_raw(str, len, out);
@@ -70,7 +70,7 @@ dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
     if (oj_bigdecimal_class == clas) {
 	volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 	const char	*str = rb_string_value_ptr((VALUE*)&rstr);
-	int		len = RSTRING_LEN(rstr);
+	int		len = (int)RSTRING_LEN(rstr);
 	    
 	if (0 == strcasecmp("Infinity", str)) {
 	    str = oj_nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, true, &len);
@@ -416,7 +416,7 @@ dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
 	    rb_raise(rb_eEncodingError, "Invalid type for raw JSON.\n");
 	} else {	    
 	    const char	*s = rb_string_value_ptr((VALUE*)&v);
-	    int		len = RSTRING_LEN(v);
+	    int		len = (int)RSTRING_LEN(v);
 	    const char	*name = rb_id2name(*odd->attrs);
 	    size_t	nlen = strlen(name);
 

@@ -257,7 +257,7 @@ hat_cstr(ParseInfo pi, Val parent, Val kval, const char *str, size_t len) {
 	    }
 	    break;
 	case 't': // time
-	    parent->val = oj_parse_xml_time(str, len);
+	    parent->val = oj_parse_xml_time(str, (int)len);
 	    break;
 	default:
 	    return 0;

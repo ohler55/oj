@@ -40,7 +40,7 @@ hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *o
 	    }
 	}
 	if (Yes == pi->options.create_ok && NULL != pi->options.str_rx.head) {
-	    VALUE	clas = oj_rxclass_match(&pi->options.str_rx, str, len);
+	    VALUE	clas = oj_rxclass_match(&pi->options.str_rx, str, (int)len);
 
 	    if (Qnil != clas) {
 		rstr = rb_funcall(clas, oj_json_create_id, 1, rstr);
@@ -112,7 +112,7 @@ add_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
 
     rstr = oj_encode(rstr);
     if (Yes == pi->options.create_ok && NULL != pi->options.str_rx.head) {
-	VALUE	clas = oj_rxclass_match(&pi->options.str_rx, str, len);
+	VALUE	clas = oj_rxclass_match(&pi->options.str_rx, str, (int)len);
 
 	if (Qnil != clas) {
 	    pi->stack.head->val = rb_funcall(clas, oj_json_create_id, 1, rstr);
@@ -181,7 +181,7 @@ array_append_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
 
     rstr = oj_encode(rstr);
     if (Yes == pi->options.create_ok && NULL != pi->options.str_rx.head) {
-	VALUE	clas = oj_rxclass_match(&pi->options.str_rx, str, len);
+	VALUE	clas = oj_rxclass_match(&pi->options.str_rx, str, (int)len);
 
 	if (Qnil != clas) {
 	    rb_ary_push(stack_peek(&pi->stack)->val, rb_funcall(clas, oj_json_create_id, 1, rstr));

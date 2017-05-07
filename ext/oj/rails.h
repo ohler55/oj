@@ -14,4 +14,7 @@ extern ROpt	oj_rails_get_opt(ROptTable rot, VALUE clas);
 extern bool	oj_rails_hash_opt;
 extern bool	oj_rails_array_opt;
 
+extern VALUE	oj_optimize_rails(VALUE self);
+
+
 #endif /* __OJ_RAILS_H__ */

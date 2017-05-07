@@ -108,7 +108,7 @@ dump_float(VALUE obj, int depth, Out out, bool as_ok) {
 	} else if (0 == out->opts->float_prec) {
 	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-	    cnt = RSTRING_LEN(rstr);
+	    cnt = (int)RSTRING_LEN(rstr);
 	    if ((int)sizeof(buf) <= cnt) {
 		cnt = sizeof(buf) - 1;
 	    }

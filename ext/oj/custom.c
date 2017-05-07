@@ -34,7 +34,7 @@ static void
 bigdecimal_dump(VALUE obj, int depth, Out out) {
     volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
     const char		*str = rb_string_value_ptr((VALUE*)&rstr);
-    int			len = RSTRING_LEN(rstr);
+    int			len = (int)RSTRING_LEN(rstr);
 
     if (0 == strcasecmp("Infinity", str)) {
 	str = oj_nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, true, &len);
@@ -373,7 +373,7 @@ dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
 	    rb_raise(rb_eEncodingError, "Invalid type for raw JSON.\n");
 	} else {	    
 	    const char	*s = rb_string_value_ptr((VALUE*)&v);
-	    int		len = RSTRING_LEN(v);
+	    int		len = (int)RSTRING_LEN(v);
 	    const char	*name = rb_id2name(*odd->attrs);
 	    size_t	nlen = strlen(name);
 
@@ -904,7 +904,7 @@ hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *o
 	    }
 	}
 	if (Yes == pi->options.create_ok && NULL != pi->options.str_rx.head) {
-	    VALUE	clas = oj_rxclass_match(&pi->options.str_rx, str, len);
+	    VALUE	clas = oj_rxclass_match(&pi->options.str_rx, str, (int)len);
 
 	    if (Qnil != clas) {
 		rstr = rb_funcall(clas, oj_json_create_id, 1, rstr);
@@ -916,7 +916,7 @@ hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *o
 	    break;
 	case T_HASH:
 	    if (4 == parent->klen && NULL != parent->key && rb_cTime == parent->clas && 0 == strncmp("time", parent->key, 4)) {
-		if (Qnil == (parent->val = oj_parse_xml_time(str, len))) {
+		if (Qnil == (parent->val = oj_parse_xml_time(str, (int)len))) {
 		    parent->val = rb_funcall(rb_cTime, rb_intern("parse"), 1, rb_str_new(str, len));
 		}
 	    } else {
@@ -1038,7 +1038,7 @@ array_append_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
 
     rstr = oj_encode(rstr);
     if (Yes == pi->options.create_ok && NULL != pi->options.str_rx.head) {
-	VALUE	clas = oj_rxclass_match(&pi->options.str_rx, str, len);
+	VALUE	clas = oj_rxclass_match(&pi->options.str_rx, str, (int)len);
 
 	if (Qnil != clas) {
 	    rb_ary_push(stack_peek(&pi->stack)->val, rb_funcall(clas, oj_json_create_id, 1, rstr));
