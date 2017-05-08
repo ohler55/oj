@@ -2,7 +2,7 @@
 
 ## 3.0.6 - 2017-05-07
 
-- Added Oj.opimize_rails().
+- Added Oj.optimize_rails().
 
 - Fixed argument passing bug on calls to to_json().
 
