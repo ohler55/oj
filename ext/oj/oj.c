@@ -1340,6 +1340,13 @@ extern VALUE	oj_define_mimic_json(int argc, VALUE *argv, VALUE self);
  */
 extern VALUE	oj_mimic_generate(int argc, VALUE *argv, VALUE self);
 
+/* Document-module: Oj.optimize_rails()
+ *
+ * Sets the Oj as the Rails encoder and decoder. Oj::Rails.optimize is also
+ * called.
+ */
+extern VALUE	oj_optimize_rails(VALUE self);
+
 /*
 extern void	oj_hash_test();
 

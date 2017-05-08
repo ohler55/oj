@@ -13,6 +13,12 @@ Oj::Rails.set_decoder()
 Oj::Rails.optimize(Array, BigDecimal, Hash, Range, Regexp, Time, ActiveSupport::TimeWithZone)
 ```
 
+or simply call
+
+```ruby
+Oj.optimize_rails()
+```
+
 Some of the Oj options are supported as arguments to the encoder if called
 from Oj::Rails.encode() but when using the Oj::Rails::Encoder class the
 encode() method does not support optional arguments as required by the
