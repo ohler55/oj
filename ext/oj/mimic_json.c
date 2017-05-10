@@ -421,7 +421,35 @@ oj_mimic_generate(int argc, VALUE *argv, VALUE self) {
 VALUE
 oj_mimic_pretty_generate(int argc, VALUE *argv, VALUE self) {
     struct _Options	copts = oj_default_options;
+    VALUE		rargs[2];
+    volatile VALUE	h;
 
+    // Some (all?) json gem to_json methods need a State instance and not just
+    // a Hash. I haven't dug deep enough to find out why but using a State
+    // instance and not a Hash gives the desired behavior.
+    *rargs = *argv;
+    if (1 == argc) {
+	h = rb_hash_new();
+    } else {
+	h = argv[1];
+    }
+    if (Qfalse == rb_funcall(h, oj_has_key_id, 1, oj_indent_sym)) {
+	rb_hash_aset(h, oj_indent_sym, rb_str_new2("  "));
+    }
+    if (Qfalse == rb_funcall(h, oj_has_key_id, 1, oj_space_before_sym)) {
+	rb_hash_aset(h, oj_space_before_sym, rb_str_new2(""));
+    }
+    if (Qfalse == rb_funcall(h, oj_has_key_id, 1, oj_space_sym)) {
+	rb_hash_aset(h, oj_space_sym, rb_str_new2(" "));
+    }
+    if (Qfalse == rb_funcall(h, oj_has_key_id, 1, oj_object_nl_sym)) {
+	rb_hash_aset(h, oj_object_nl_sym, rb_str_new2("\n"));
+    }
+    if (Qfalse == rb_funcall(h, oj_has_key_id, 1, oj_array_nl_sym)) {
+	rb_hash_aset(h, oj_array_nl_sym, rb_str_new2("\n"));
+    }
+    rargs[1] = rb_funcall(state_class, oj_new_id, 1, h);
+    
     copts.str_rx.head = NULL;
     copts.str_rx.tail = NULL;
     strcpy(copts.dump_opts.indent_str, "  ");
@@ -436,7 +464,7 @@ oj_mimic_pretty_generate(int argc, VALUE *argv, VALUE self) {
     copts.dump_opts.array_size = (uint8_t)strlen(copts.dump_opts.array_nl);
     copts.dump_opts.use = true;
 
-    return mimic_generate_core(argc, argv, &copts);
+    return mimic_generate_core(2, rargs, &copts);
 }
 
 static VALUE
