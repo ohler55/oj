@@ -53,7 +53,7 @@ optimized version is the same as the ActiveSupport default encoding for a
 given class. The optimized versions are toggled with the optimize() and
 deoptimize() methods. There is a default optimized version for every class
 that takes the visible attributes and encodes them but that may not be the
-same as what Rails uses. Trial an error is the best approach for classes not
+same as what Rails uses. Trial and error is the best approach for classes not
 listed here.
 
 The classes that can be put in optimized mode are:
@@ -65,6 +65,7 @@ The classes that can be put in optimized mode are:
  * Regexp
  * Time
  * ActiveSupport::TimeWithZone
+ * ActionController::Parameters
  * any class inheriting from ActiveRecord::Base
  * any other class where all attributes should be dumped
 

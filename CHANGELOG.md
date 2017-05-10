@@ -5,6 +5,8 @@
 - Changed JSON.pretty_generate options to a State instead of a Hash to get the
   json gen to_json method to accept formatting options.
 
+- Added optimization for ActionController::Parameters
+
 ## 3.0.6 - 2017-05-07
 
 - Added Oj.optimize_rails().
