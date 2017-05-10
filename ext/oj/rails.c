@@ -324,17 +324,29 @@ dump_to_s(VALUE obj, int depth, Out out, bool as_ok) {
     oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
 }
 
+static ID	parameters_id = 0;
+
+static void
+dump_actioncontroller_parameters(VALUE obj, int depth, Out out, bool as_ok) {
+    if (0 == parameters_id) {
+	parameters_id = rb_intern("@parameters");
+    }
+    out->argc = 0;
+    dump_rails_val(rb_ivar_get(obj, parameters_id), depth, out, true);
+}
+
 typedef struct _NamedFunc {
     const char	*name;
     DumpFunc	func;
 } *NamedFunc;
 
 static struct _NamedFunc	dump_map[] = {
+    { "ActionController::Parameters", dump_actioncontroller_parameters },
+    { "ActiveSupport::TimeWithZone", dump_timewithzone },
     { "BigDecimal", dump_bigdecimal },
     { "Range", dump_to_s },
     { "Regexp", dump_to_s },
     { "Time", dump_time },
-    { "ActiveSupport::TimeWithZone", dump_timewithzone },
     { NULL, NULL },
 };
 
