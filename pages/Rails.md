@@ -61,6 +61,7 @@ Oj::Rails.optimize is called with no arguments are:
 
  * Array
  * BigDecimal
+ * Float
  * Hash
  * Range
  * Regexp
@@ -72,3 +73,16 @@ Oj::Rails.optimize is called with no arguments are:
 
 The ActiveSupport decoder is the JSON.parse() method. Calling the
 Oj::Rails.set_decoder() method replaces that method with the Oj equivelant.
+
+### Notes:
+
+1. Optimized Floats set the significant digits to 16. This is different than
+   Ruby which is used by the json gem and by Rails. Ruby varies the
+   significant digits which can be either 16 or 17 depending on the value.
+
+2. Optimized Hashs do not collapse keys that become the same in the output. As
+   an example, a non-String object that has a to_s() method will become the
+   return value of the to_s() method in the output without checking to see if
+   that has already been used. This could occur is a mix of String and Symbols
+   are used as keys or if a other non-String objects such as Numerics are mixed
+   with numbers as Strings.

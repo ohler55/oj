@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 3.0.8 - 2017-05-16
+
+- Float significant digits now match Ruby's unless optimized and then significant digits are set to 16.
+
+- Rails Hash post merging of identical keys after calling as_json is preserved only for un-optimized Hashs.
+
+- Raise an exception to match json gem behavior on invalid unicode.
+
 ## 3.0.7 - 2017-05-10
 
 - Changed JSON.pretty_generate options to a State instead of a Hash to get the

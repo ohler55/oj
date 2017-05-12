@@ -157,11 +157,15 @@ inline static size_t
 hixss_friendly_size(const uint8_t *str, size_t len) {
     size_t	size = 0;
     size_t	i = len;
-
+    bool	check = false;
+    
     for (; 0 < i; str++, i--) {
 	size += hixss_friendly_chars[*str];
+	if (0 != (0x80 & *str)) {
+	    check = true;
+	}
     }
-    return size - len * (size_t)'0';
+    return size - len * (size_t)'0' + check;
 }
 
 inline static size_t
@@ -277,6 +281,34 @@ dump_unicode(const char *str, const char *end, Out out) {
 	*out->cur++ = hex_chars[(uint8_t)(code >> (i * 4)) & 0x0F];
     }	
     return str - 1;
+}
+
+static const char*
+check_unicode(const char *str, const char *end) {
+    uint8_t	b = *(uint8_t*)str;
+    int		cnt;
+    
+    if (0xC0 == (0xE0 & b)) {
+	cnt = 1;
+    } else if (0xE0 == (0xF0 & b)) {
+	cnt = 2;
+    } else if (0xF0 == (0xF8 & b)) {
+	cnt = 3;
+    } else if (0xF8 == (0xFC & b)) {
+	cnt = 4;
+    } else if (0xFC == (0xFE & b)) {
+	cnt = 5;
+    } else {
+	rb_raise(oj_json_generator_error_class, "Invalid Unicode");
+    }
+    str++;
+    for (; 0 < cnt; cnt--, str++) {
+	b = *(uint8_t*)str;
+	if (end <= str || 0x80 != (0xC0 & b)) {
+	    rb_raise(oj_json_generator_error_class, "Invalid Unicode");
+	}
+    }
+    return str;
 }
 
 // Returns 0 if not using circular references, -1 if no further writing is
@@ -707,6 +739,7 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
 	*out->cur++ = '"';
     } else {
 	const char	*end = str + cnt;
+	const char	*check_start = str;
 
 	if (is_sym) {
 	    *out->cur++ = ':';
@@ -714,6 +747,15 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
 	for (; str < end; str++) {
 	    switch (cmap[(uint8_t)*str]) {
 	    case '1':
+		if (JXEsc == out->opts->escape_mode && check_start <= str) {
+		    if (0 != (0x80 & (uint8_t)*str)) {
+			if (0xC0 == (0xC0 & (uint8_t)*str)) {
+			    check_start = check_unicode(str, end);
+			} else {
+			    rb_raise(oj_json_generator_error_class, "Invalid Unicode");
+			}
+		    }
+		}
 		*out->cur++ = *str;
 		break;
 	    case '2':
@@ -734,6 +776,7 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
 			str = dump_unicode(str, end, out);
 		    } else {
 			*out->cur++ = *str;
+			check_start = str + 3;
 		    }
 		    break;
 		}
@@ -773,7 +816,7 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
 		    break;
 		case 2:
 		    if (0xE0 != (0xF0 & c)) {
-			rb_raise(oj_json_generator_error_class, "Partial character in string. 2");
+			rb_raise(oj_json_generator_error_class, "Partial character in string.");
 		    }
 		    break;
 		case 3:

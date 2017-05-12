@@ -1000,6 +1000,7 @@ to_json(int argc, VALUE *argv, VALUE self) {
     if (1 > argc) {
 	rb_raise(rb_eArgError, "wrong number of arguments (0 for 1).");
     }
+    copts.escape_mode = JXEsc;
     copts.dump_opts.nan_dump = false;
     if (2 == argc) {
 	oj_parse_mimic_dump_options(argv[1], &copts);
@@ -1600,4 +1601,3 @@ Init_oj() {
 #endif
     oj_init_doc();
 }
-

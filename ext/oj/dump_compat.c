@@ -5,6 +5,7 @@
 
 #include "code.h"
 #include "dump.h"
+#include "rails.h"
 
 // Workaround in case INFINITY is not defined in math.h or if the OS is CentOS
 #define OJ_INFINITY (1.0/0.0)
@@ -612,9 +613,13 @@ dump_float(VALUE obj, int depth, Out out, bool as_ok) {
     } else if (d == (double)(long long int)d) {
 	//cnt = snprintf(buf, sizeof(buf), "%.1Lf", (long double)d);
 	cnt = snprintf(buf, sizeof(buf), "%.1f", d);
-    } else {
-	//cnt = snprintf(buf, sizeof(buf), "%0.16Lg", (long double)d);
+    } else if (oj_rails_float_opt) {
 	cnt = snprintf(buf, sizeof(buf), "%0.16g", d);
+    } else {
+	volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+
+	strcpy(buf, rb_string_value_ptr((VALUE*)&rstr));
+	cnt = RSTRING_LEN(rstr);
     }
     assure_size(out, cnt);
     for (b = buf; '\0' != *b; b++) {

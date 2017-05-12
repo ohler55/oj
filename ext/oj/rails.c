@@ -19,6 +19,7 @@ typedef struct _Encoder {
 
 bool	oj_rails_hash_opt = false;
 bool	oj_rails_array_opt = false;
+bool	oj_rails_float_opt = false;
 
 static void	dump_rails_val(VALUE obj, int depth, Out out, bool as_ok);
 
@@ -186,7 +187,6 @@ dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
     *out->cur++ = '}';
     *out->cur = '\0';
 }
-
 
 static ID	to_a_id = 0;
 
@@ -484,11 +484,12 @@ optimize(int argc, VALUE *argv, ROptTable rot, bool on) {
 	    oj_rails_hash_opt = on;
 	} else if (rb_cArray == *argv) {
 	    oj_rails_array_opt = on;
+	} else if (rb_cFloat == *argv) {
+	    oj_rails_float_opt = on;
 	} else if (NULL != (ro = oj_rails_get_opt(rot, *argv)) ||
 		   NULL != (ro = create_opt(rot, *argv))) {
 	    ro->on = on;
 	}
-	// TBD recurse if there are subclasses
     }
 }
 
@@ -936,8 +937,13 @@ dump_float(VALUE obj, int depth, Out out, bool as_ok) {
 	    cnt = 4;
 	} else if (d == (double)(long long int)d) {
 	    cnt = snprintf(buf, sizeof(buf), "%.1f", d);
-	} else {
+	} else if (oj_rails_float_opt) {
 	    cnt = snprintf(buf, sizeof(buf), "%0.16g", d);
+	} else {
+	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+
+	    strcpy(buf, rb_string_value_ptr((VALUE*)&rstr));
+	    cnt = RSTRING_LEN(rstr);
 	}
     }
     assure_size(out, cnt);
@@ -1091,8 +1097,7 @@ dump_hash(VALUE obj, int depth, Out out, bool as_ok) {
 	    return;
 	}
     }
-    //if (!oj_rails_hash_opt && 0 < out->argc && as_ok && rb_respond_to(obj, oj_as_json_id)) {
-    if (0 < out->argc && as_ok && rb_respond_to(obj, oj_as_json_id)) {
+    if ((!oj_rails_hash_opt || 0 < out->argc) && as_ok && rb_respond_to(obj, oj_as_json_id)) {
 	dump_as_json(obj, depth, out, false);
 	return;
     }

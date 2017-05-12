@@ -283,7 +283,6 @@ class CompatJuice < Minitest::Test
     end
     x = Oj.load('Infinity', :mode => :compat)
     assert_equal('Infinity', x.to_s)
-
   end
 
   # Time
@@ -459,6 +458,24 @@ class CompatJuice < Minitest::Test
   def test_arg_passing
     json = Oj.to_json(Argy.new(), :max_nesting=> 40)
     assert_equal(%|{"args":"[{:max_nesting=>40}]"}|, json)
+  end
+
+  def test_bad_unicode
+    begin
+      Oj.to_json("\xE4xy")
+      fail()
+    rescue Exception
+      assert(true)
+    end
+  end
+
+  def test_bad_unicode_start
+    begin
+      Oj.to_json("\x8abc")
+      fail()
+    rescue Exception
+      assert(true)
+    end
   end
 
   def dump_and_load(obj, trace=false)

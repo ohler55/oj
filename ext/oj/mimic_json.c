@@ -669,7 +669,7 @@ static struct _Options	mimic_object_to_json_options = {
     10,		// create_id_len
     3,		// sec_prec
     16,		// float_prec
-    "%0.15g",	// float_fmt
+    "%0.16g",	// float_fmt
     Qnil,	// hash_class
     Qnil,	// array_class
     {		// dump_opts
