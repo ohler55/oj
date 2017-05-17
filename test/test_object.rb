@@ -283,6 +283,13 @@ class ObjectJuice < Minitest::Test
     Oj.default_options = opts
   end
 
+  def test_colon_in_object_value
+    expected = {:k => ':'}
+    json = '{"k":":"}'
+    obj = Oj.load(json)
+    assert_equal(expected, obj)
+  end
+
   def test_unicode
     # hits the 3 normal ranges and one extended surrogate pair
     json = %{"\\u019f\\u05e9\\u3074\\ud834\\udd1e"}
