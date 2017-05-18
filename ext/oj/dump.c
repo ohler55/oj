@@ -775,8 +775,8 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
 		    if (0x80 == (uint8_t)str[1] && (0xa8 == (uint8_t)str[2] || 0xa9 == (uint8_t)str[2])) {
 			str = dump_unicode(str, end, out);
 		    } else {
+			check_start = check_unicode(str, end);
 			*out->cur++ = *str;
-			check_start = str + 3;
 		    }
 		    break;
 		}

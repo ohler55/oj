@@ -619,7 +619,7 @@ dump_float(VALUE obj, int depth, Out out, bool as_ok) {
 	volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
 	strcpy(buf, rb_string_value_ptr((VALUE*)&rstr));
-	cnt = RSTRING_LEN(rstr);
+	cnt = (int)RSTRING_LEN(rstr);
     }
     assure_size(out, cnt);
     for (b = buf; '\0' != *b; b++) {

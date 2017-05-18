@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.0.9 - 2017-05-17
+
+- Missed catching invalid unicodes beginning with \xE2. Fixed.
+
+- In :compat mode a non-string and non IO value is converted to a string with a call to to_s.
+
 ## 3.0.8 - 2017-05-16
 
 - Float significant digits now match Ruby's unless optimized and then significant digits are set to 16.

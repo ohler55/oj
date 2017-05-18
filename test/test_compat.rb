@@ -47,6 +47,15 @@ class CompatJuice < Minitest::Test
     end
   end # Argy
 
+  class Stringy
+    def initialize()
+    end
+
+    def to_s()
+      %|[1,2]|
+    end
+  end # Stringy
+
   module One
     module Two
       module Three
@@ -275,12 +284,7 @@ class CompatJuice < Minitest::Test
   end
 
   def test_infinity
-    begin
-      Oj.load('Infinity', :mode => :strict)
-      fail()
-    rescue Oj::ParseError
-      assert(true)
-    end
+    assert_raises(Oj::ParseError) { Oj.load('Infinity', :mode => :strict) }
     x = Oj.load('Infinity', :mode => :compat)
     assert_equal('Infinity', x.to_s)
   end
@@ -461,21 +465,20 @@ class CompatJuice < Minitest::Test
   end
 
   def test_bad_unicode
-    begin
-      Oj.to_json("\xE4xy")
-      fail()
-    rescue Exception
-      assert(true)
-    end
+    assert_raises() { Oj.to_json("\xE4xy") }
+  end
+
+  def test_bad_unicode_e2
+    assert_raises() { Oj.to_json("L\xE2m ") }
   end
 
   def test_bad_unicode_start
-    begin
-      Oj.to_json("\x8abc")
-      fail()
-    rescue Exception
-      assert(true)
-    end
+    assert_raises() { Oj.to_json("\x8abc") }
+  end
+
+  def test_parse_to_s
+    s = Stringy.new
+    assert_equal([1,2], Oj.load(s, :mode => :compat))
   end
 
   def dump_and_load(obj, trace=false)

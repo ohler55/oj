@@ -489,6 +489,7 @@ mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
     pi.options.create_ok = No;
     pi.options.allow_nan = (bang ? Yes : No);
     pi.options.nilnil = No;
+    pi.options.mode = CompatMode;
     pi.max_depth = 100;
 
     if (2 <= argc) {
@@ -550,7 +551,11 @@ mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
     }
     *args = *argv;
 
-    return oj_pi_parse(1, args, &pi, 0, 0, 0);
+    if (T_STRING == rb_type(*args)) {
+	return oj_pi_parse(1, args, &pi, 0, 0, false);
+    } else {
+	return oj_pi_sparse(1, args, &pi, 0);
+    }
 }
 
 /* Document-method: parse

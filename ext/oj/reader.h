@@ -26,7 +26,7 @@ typedef struct _Reader {
     };
 } *Reader;
 
-extern void	oj_reader_init(Reader reader, VALUE io, int fd);
+extern void	oj_reader_init(Reader reader, VALUE io, int fd, bool to_s);
 extern int	oj_reader_read(Reader reader);
 
 static inline char

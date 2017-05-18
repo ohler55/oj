@@ -29,7 +29,7 @@ static int		read_from_io_partial(Reader reader);
 //static int		read_from_str(Reader reader);
 
 void
-oj_reader_init(Reader reader, VALUE io, int fd) {
+oj_reader_init(Reader reader, VALUE io, int fd, bool to_s) {
     VALUE	io_class = rb_obj_class(io);
     VALUE	stat;
     VALUE	ftype;
@@ -76,7 +76,15 @@ oj_reader_init(Reader reader, VALUE io, int fd) {
     } else if (rb_respond_to(io, oj_read_id)) {
 	reader->read_func = read_from_io;
 	reader->io = io;
-    } else {
+    } else if (to_s) {
+	volatile VALUE	rstr = rb_funcall(io, oj_to_s_id, 0);
+	
+	reader->read_func = 0;
+	reader->in_str = StringValuePtr(rstr);
+	reader->head = (char*)reader->in_str;
+	reader->tail = reader->head;
+	reader->read_end = reader->head + RSTRING_LEN(rstr);
+    } else {	
 	rb_raise(rb_eArgError, "parser io argument must be a String or respond to readpartial() or read().\n");
     }
 }

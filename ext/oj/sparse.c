@@ -832,7 +832,7 @@ oj_pi_sparse(int argc, VALUE *argv, ParseInfo pi, int fd) {
     } else {
 	pi->proc = Qundef;
     }
-    oj_reader_init(&pi->rd, input, fd);
+    oj_reader_init(&pi->rd, input, fd, CompatMode == pi->options.mode);
     pi->json = 0; // indicates reader is in use
 
     if (Yes == pi->options.circular) {
