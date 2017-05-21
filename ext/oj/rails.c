@@ -475,6 +475,10 @@ optimize(int argc, VALUE *argv, ROptTable rot, bool on) {
     if (0 == argc) {
 	int	i;
 	
+	oj_rails_hash_opt = on;
+	oj_rails_array_opt = on;
+	oj_rails_float_opt = on;
+
 	for (i = 0; i < rot->len; i++) {
 	    rot->table[i].on = on;
 	}

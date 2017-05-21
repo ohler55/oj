@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.0.10 - 2017-05-22
+
+- Oj.optimize_rails failed to include Hash and Array in the optimization. It does now.
+
 ## 3.0.9 - 2017-05-17
 
 - Missed catching invalid unicodes beginning with \xE2. Fixed.

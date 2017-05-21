@@ -8,7 +8,7 @@ require 'activesupport5/encoding_test_cases'
 
 require 'oj'
 
-# Sets the ActiveSupport emcoder to be Oj and also wraps the setting of
+# Sets the ActiveSupport encoder to be Oj and also wraps the setting of
 # globals.
 Oj::Rails.set_encoder()
 Oj::Rails.optimize(Hash, Array, BigDecimal, Time, Range, Regexp, ActiveSupport::TimeWithZone)
