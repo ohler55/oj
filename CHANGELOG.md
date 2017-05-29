@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 3.0.11 - 2017-05-29
+
+- If rails in required and Oj.mimic_JSON is called without calling
+  Oj.optimize_rails nil.to_json failed. That has been fixed.
+
 ## 3.0.10 - 2017-05-22
 
 - Oj.optimize_rails failed to include Hash and Array in the optimization. It does now.

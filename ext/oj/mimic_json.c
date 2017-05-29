@@ -155,6 +155,9 @@ oj_parse_mimic_dump_options(VALUE ropts, Options copts) {
 	copts->dump_opts.array_size = (uint8_t)len;
 	copts->dump_opts.use = true;
     }
+    if (Qnil != (v = rb_hash_lookup(ropts, oj_quirks_mode_sym))) {
+	copts->quirks_mode = (Qtrue == v) ? Yes : No;
+    }
     if (Qnil != (v = rb_hash_lookup(ropts, oj_ascii_only_sym))) {
 	// generate seems to assume anything except nil and false are true.
 	if (Qfalse == v) {
@@ -198,9 +201,11 @@ mimic_dump(int argc, VALUE *argv, VALUE self) {
     out.allocated = 0;
     out.caller = CALLER_DUMP;
     
+    /* seems like this is not correct
     if (No == copts.nilnil && Qnil == *argv) {
 	rb_raise(rb_eTypeError, "nil not allowed.");
     }
+    */
     copts.dump_opts.max_depth = MAX_DEPTH; // when using dump there is no limit
     out.omit_nil = copts.dump_opts.omit_nil;
     if (2 <= argc) {
@@ -347,7 +352,7 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
     char	buf[4096];
     struct _Out	out;
     VALUE	rstr;
-    
+
     out.buf = buf;
     out.end = buf + sizeof(buf) - 10;
     out.allocated = 0;
@@ -360,9 +365,11 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
     if (2 == argc && Qnil != argv[1]) {
 	oj_parse_mimic_dump_options(argv[1], copts);
     }
+    /* seems like this is not correct
     if (No == copts->nilnil && Qnil == *argv) {
 	rb_raise(rb_eTypeError, "nil not allowed.");
     }
+    */
     oj_dump_obj_to_json_using_params(*argv, copts, &out, argc - 1, argv + 1);
 
     if (0 == out.buf) {
