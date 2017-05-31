@@ -7,8 +7,6 @@ A *fast* JSON parser and Object marshaller as a Ruby gem.
 Version 3.0 is out! 3.0 provides better json gem and Rails compatibility. It
 also provides additional optimization options.
 
-Please check out issue #364 and help pick or suggest a image to represent Oj.
-
 ## Using
 
 ```ruby
