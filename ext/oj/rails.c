@@ -760,7 +760,7 @@ rails_time_precision(VALUE self, VALUE prec) {
 }
 
 /* Document-method: set_encoder
- *call-seq: set_encoder()
+ *	call-seq: set_encoder()
  * 
  * Sets the ActiveSupport.encoder to Oj::Rails::Encoder and wraps some of the
  * formatting globals used by ActiveSupport to allow the use of those globals

@@ -155,7 +155,7 @@ pthread_mutex_t	oj_cache_mutex;
 VALUE oj_cache_mutex = Qnil;
 #endif
 
-static const char	json_class[] = "json_class";
+const char	oj_json_class[] = "json_class";
 
 struct _Options	oj_default_options = {
     0,		// indent
@@ -178,7 +178,7 @@ struct _Options	oj_default_options = {
     No,		// allow_invalid
     No,		// create_ok
     Yes,	// allow_nan
-    json_class,	// create_id
+    oj_json_class,	// create_id
     10,		// create_id_len
     9,		// sec_prec
     16,		// float_prec
@@ -521,7 +521,7 @@ oj_parse_options(VALUE ropts, Options copts) {
     if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, create_id_sym)) {
 	v = rb_hash_lookup(ropts, create_id_sym);
 	if (Qnil == v) {
-	    if (json_class != oj_default_options.create_id) {
+	    if (oj_json_class != oj_default_options.create_id && NULL != copts->create_id) {
 		xfree((char*)oj_default_options.create_id);
 	    }
 	    copts->create_id = NULL;

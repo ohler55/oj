@@ -10,7 +10,7 @@
 
 static VALUE	symbolize_names_sym;
 
-static const char	json_class[] = "json_class";
+extern const char	oj_json_class[];
 
 VALUE	oj_array_nl_sym;
 VALUE	oj_ascii_only_sym;
@@ -626,11 +626,11 @@ static VALUE
 mimic_set_create_id(VALUE self, VALUE id) {
     Check_Type(id, T_STRING);
 
-    if (0 != oj_default_options.create_id) {
-	if (json_class != oj_default_options.create_id) {
+    if (NULL != oj_default_options.create_id) {
+	if (oj_json_class != oj_default_options.create_id && NULL != oj_default_options.create_id) {
 	    xfree((char*)oj_default_options.create_id);
 	}
-	oj_default_options.create_id = 0;
+	oj_default_options.create_id = NULL;
 	oj_default_options.create_id_len = 0;
     }
     if (Qnil != id) {
@@ -650,10 +650,10 @@ mimic_set_create_id(VALUE self, VALUE id) {
  */
 static VALUE
 mimic_create_id(VALUE self) {
-    if (0 != oj_default_options.create_id) {
+    if (NULL != oj_default_options.create_id) {
 	return oj_encode(rb_str_new_cstr(oj_default_options.create_id));
     }
-    return rb_str_new_cstr(json_class);
+    return rb_str_new_cstr(oj_json_class);
 }
 
 static struct _Options	mimic_object_to_json_options = {
@@ -677,7 +677,7 @@ static struct _Options	mimic_object_to_json_options = {
     No,		// allow_invalid
     No,		// create_ok
     No,		// allow_nan
-    json_class,	// create_id
+    oj_json_class,// create_id
     10,		// create_id_len
     3,		// sec_prec
     16,		// float_prec

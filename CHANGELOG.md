@@ -1,9 +1,11 @@
 # CHANGELOG
 
-## 3.0.11 - 2017-05-29
+## 3.0.11 - 2017-06-02
 
 - If rails in required and Oj.mimic_JSON is called without calling
   Oj.optimize_rails nil.to_json failed. That has been fixed.
+
+- Fixed crash on setting create_id to nil after mimic_JSON.
 
 ## 3.0.10 - 2017-05-22
 
