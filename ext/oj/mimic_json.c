@@ -750,6 +750,54 @@ mimic_state(VALUE self) {
     return state_class;
 }
 
+void
+oj_mimic_json_methods(VALUE json) {
+    VALUE	json_error;
+
+    rb_define_module_function(json, "create_id=", mimic_set_create_id, 1);
+    rb_define_module_function(json, "create_id", mimic_create_id, 0);
+
+    rb_define_module_function(json, "dump", mimic_dump, -1);
+    rb_define_module_function(json, "load", mimic_load, -1);
+    rb_define_module_function(json, "restore", mimic_load, -1);
+    rb_define_module_function(json, "recurse_proc", mimic_recurse_proc, 1);
+    rb_define_module_function(json, "[]", mimic_dump_load, -1);
+
+    rb_define_module_function(json, "generate", oj_mimic_generate, -1);
+    rb_define_module_function(json, "fast_generate", oj_mimic_generate, -1);
+    rb_define_module_function(json, "pretty_generate", oj_mimic_pretty_generate, -1);
+    // For older versions of JSON, the deprecated unparse methods.
+    rb_define_module_function(json, "unparse", oj_mimic_generate, -1);
+    rb_define_module_function(json, "fast_unparse", oj_mimic_generate, -1);
+    rb_define_module_function(json, "pretty_unparse", oj_mimic_pretty_generate, -1);
+
+    rb_define_module_function(json, "parse", oj_mimic_parse, -1);
+    rb_define_module_function(json, "parse!", mimic_parse_bang, -1);
+
+    rb_define_module_function(json, "state", mimic_state, 0);
+
+    if (rb_const_defined_at(json, rb_intern("JSONError"))) {
+        json_error = rb_const_get(json, rb_intern("JSONError"));
+    } else {
+        json_error = rb_define_class_under(json, "JSONError", rb_eStandardError);
+    }
+    if (rb_const_defined_at(json, rb_intern("ParserError"))) {
+        oj_json_parser_error_class = rb_const_get(json, rb_intern("ParserError"));
+    } else {
+    	oj_json_parser_error_class = rb_define_class_under(json, "ParserError", json_error);
+    }
+    if (rb_const_defined_at(json, rb_intern("GeneratorError"))) {
+        oj_json_generator_error_class = rb_const_get(json, rb_intern("GeneratorError"));
+    } else {
+    	oj_json_generator_error_class = rb_define_class_under(json, "GeneratorError", json_error);
+    }
+    if (rb_const_defined_at(json, rb_intern("NestingError"))) {
+        rb_const_get(json, rb_intern("NestingError"));
+    } else {
+    	rb_define_class_under(json, "NestingError", json_error);
+    }
+}
+
 /* Document-module: JSON
  *
  * A mimic of the json gem module.
@@ -759,7 +807,6 @@ oj_define_mimic_json(int argc, VALUE *argv, VALUE self) {
     VALUE	ext;
     VALUE	dummy;
     VALUE	verbose;
-    VALUE	json_error;
     VALUE	json;
     VALUE	generator;
     
@@ -804,54 +851,13 @@ oj_define_mimic_json(int argc, VALUE *argv, VALUE self) {
     state_class = rb_const_get_at(generator, rb_intern("State"));
     // TBD create all modules in mimic_loaded
 
-    rb_define_module_function(json, "create_id=", mimic_set_create_id, 1);
-    rb_define_module_function(json, "create_id", mimic_create_id, 0);
-
-    rb_define_module_function(json, "dump", mimic_dump, -1);
-    rb_define_module_function(json, "load", mimic_load, -1);
-    rb_define_module_function(json, "restore", mimic_load, -1);
-    rb_define_module_function(json, "recurse_proc", mimic_recurse_proc, 1);
-    rb_define_module_function(json, "[]", mimic_dump_load, -1);
-
-    rb_define_module_function(json, "generate", oj_mimic_generate, -1);
-    rb_define_module_function(json, "fast_generate", oj_mimic_generate, -1);
-    rb_define_module_function(json, "pretty_generate", oj_mimic_pretty_generate, -1);
-    // For older versions of JSON, the deprecated unparse methods.
-    rb_define_module_function(json, "unparse", oj_mimic_generate, -1);
-    rb_define_module_function(json, "fast_unparse", oj_mimic_generate, -1);
-    rb_define_module_function(json, "pretty_unparse", oj_mimic_pretty_generate, -1);
-
-    rb_define_module_function(json, "parse", oj_mimic_parse, -1);
-    rb_define_module_function(json, "parse!", mimic_parse_bang, -1);
-
-    rb_define_module_function(json, "state", mimic_state, 0);
+    oj_mimic_json_methods(json);
 
     rb_define_method(rb_cObject, "to_json", mimic_object_to_json, -1);
 
     rb_gv_set("$VERBOSE", verbose);
 
     symbolize_names_sym = ID2SYM(rb_intern("symbolize_names"));	rb_gc_register_address(&symbolize_names_sym);
-
-    if (rb_const_defined_at(json, rb_intern("JSONError"))) {
-        json_error = rb_const_get(json, rb_intern("JSONError"));
-    } else {
-        json_error = rb_define_class_under(json, "JSONError", rb_eStandardError);
-    }
-    if (rb_const_defined_at(json, rb_intern("ParserError"))) {
-        oj_json_parser_error_class = rb_const_get(json, rb_intern("ParserError"));
-    } else {
-    	oj_json_parser_error_class = rb_define_class_under(json, "ParserError", json_error);
-    }
-    if (rb_const_defined_at(json, rb_intern("GeneratorError"))) {
-        oj_json_generator_error_class = rb_const_get(json, rb_intern("GeneratorError"));
-    } else {
-    	oj_json_generator_error_class = rb_define_class_under(json, "GeneratorError", json_error);
-    }
-    if (rb_const_defined_at(json, rb_intern("NestingError"))) {
-        rb_const_get(json, rb_intern("NestingError"));
-    } else {
-    	rb_define_class_under(json, "NestingError", json_error);
-    }
 
     oj_default_options = mimic_object_to_json_options;
     oj_default_options.to_json = Yes;

@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 3.1.0 - 2017-06-04
+
+- Added Oj::Rails.mimic_JSON which mimics the json gem when used with
+  ActiveSupport which monkey patches the same to_json methods does. Basically
+  this changes the JSON.parse and other JSON entry points for encoding and
+  decoding.
+
+- Oj.optimize_rails now calls Oj::Rails.mimic_JSON.
+
 ## 3.0.11 - 2017-06-02
 
 - If rails in required and Oj.mimic_JSON is called without calling

@@ -11,7 +11,8 @@ require 'oj'
 # Sets the ActiveSupport encoder to be Oj and also wraps the setting of
 # globals.
 Oj::Rails.set_encoder()
-Oj::Rails.optimize(Hash, Array, BigDecimal, Time, Range, Regexp, ActiveSupport::TimeWithZone)
+#Oj::Rails.optimize(Hash, Array, BigDecimal, Time, Range, Regexp, ActiveSupport::TimeWithZone)
+Oj::Rails.optimize()
 
 class TestJSONEncoding < ActiveSupport::TestCase
   include TimeZoneTestHelpers

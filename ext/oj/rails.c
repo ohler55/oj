@@ -21,6 +21,8 @@ bool	oj_rails_hash_opt = false;
 bool	oj_rails_array_opt = false;
 bool	oj_rails_float_opt = false;
 
+extern void	oj_mimic_json_methods(VALUE json);
+
 static void	dump_rails_val(VALUE obj, int depth, Out out, bool as_ok);
 
 extern VALUE	Oj;
@@ -537,6 +539,27 @@ rails_optimize(int argc, VALUE *argv, VALUE self) {
     return Qnil;
 }
 
+/* Document-module: mimic_JSON
+ *	call-seq: mimic_JSON()
+ *
+ * Sets the JSON method to use Oj similar to Oj.mimic_JSON except with the
+ * ActiveSupport monkey patches instead of the json gem monkey patches.
+ */
+VALUE
+rails_mimic_json(VALUE self) {
+    VALUE	json;
+    
+    if (rb_const_defined_at(rb_cObject, rb_intern("JSON"))) {
+	json = rb_const_get_at(rb_cObject, rb_intern("JSON"));
+    } else {
+	json = rb_define_module("JSON");
+    }
+    oj_mimic_json_methods(json);
+    // TBD
+
+    return Qnil;
+}
+
 /* Document-method: deoptimize
  *	call-seq: deoptimize(*classes)
  * 
@@ -851,6 +874,7 @@ oj_optimize_rails(VALUE self) {
     rails_set_encoder(self);
     rails_set_decoder(self);
     rails_optimize(0, NULL, self);
+    rails_mimic_json(self);
 
     return Qnil;
 }
@@ -874,6 +898,7 @@ oj_mimic_rails_init() {
     rb_define_module_function(rails, "optimize", rails_optimize, -1);
     rb_define_module_function(rails, "deoptimize", rails_deoptimize, -1);
     rb_define_module_function(rails, "optimized?", rails_optimized, 1);
+    rb_define_module_function(rails, "mimic_JSON?", rails_mimic_json, 0);
 
     rb_define_module_function(rails, "set_encoder", rails_set_encoder, 0);
     rb_define_module_function(rails, "set_decoder", rails_set_decoder, 0);
