@@ -898,7 +898,7 @@ oj_mimic_rails_init() {
     rb_define_module_function(rails, "optimize", rails_optimize, -1);
     rb_define_module_function(rails, "deoptimize", rails_deoptimize, -1);
     rb_define_module_function(rails, "optimized?", rails_optimized, 1);
-    rb_define_module_function(rails, "mimic_JSON?", rails_mimic_json, 0);
+    rb_define_module_function(rails, "mimic_JSON", rails_mimic_json, 0);
 
     rb_define_module_function(rails, "set_encoder", rails_set_encoder, 0);
     rb_define_module_function(rails, "set_decoder", rails_set_decoder, 0);
