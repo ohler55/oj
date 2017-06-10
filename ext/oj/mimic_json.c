@@ -753,6 +753,8 @@ mimic_state(VALUE self) {
 void
 oj_mimic_json_methods(VALUE json) {
     VALUE	json_error;
+    VALUE	generator;
+    VALUE	ext;
 
     rb_define_module_function(json, "create_id=", mimic_set_create_id, 1);
     rb_define_module_function(json, "create_id", mimic_create_id, 0);
@@ -796,6 +798,22 @@ oj_mimic_json_methods(VALUE json) {
     } else {
     	rb_define_class_under(json, "NestingError", json_error);
     }
+
+    if (rb_const_defined_at(json, rb_intern("Ext"))) {
+	ext = rb_const_get_at(json, rb_intern("Ext"));
+     } else {
+	ext = rb_define_module_under(json, "Ext");
+    }
+    if (rb_const_defined_at(ext, rb_intern("Generator"))) {
+	generator = rb_const_get_at(ext, rb_intern("Generator"));
+     } else {
+	generator = rb_define_module_under(ext, "Generator");
+    }
+    if (!rb_const_defined_at(generator, rb_intern("State"))) {
+	rb_require("oj/state");
+    }
+    // Pull in the JSON::State mimic file.
+    state_class = rb_const_get_at(generator, rb_intern("State"));
 }
 
 /* Document-module: JSON
@@ -804,11 +822,9 @@ oj_mimic_json_methods(VALUE json) {
  */
 VALUE
 oj_define_mimic_json(int argc, VALUE *argv, VALUE self) {
-    VALUE	ext;
     VALUE	dummy;
     VALUE	verbose;
     VALUE	json;
-    VALUE	generator;
     
     // Either set the paths to indicate JSON has been loaded or replaces the
     // methods if it has been loaded.
@@ -832,23 +848,7 @@ oj_define_mimic_json(int argc, VALUE *argv, VALUE self) {
 	    rb_funcall2(Oj, rb_intern("mimic_loaded"), 0, 0);
 	}
     }
-    if (rb_const_defined_at(json, rb_intern("Ext"))) {
-	ext = rb_const_get_at(json, rb_intern("Ext"));
-     } else {
-	ext = rb_define_module_under(json, "Ext");
-    }
-    if (rb_const_defined_at(ext, rb_intern("Generator"))) {
-	generator = rb_const_get_at(ext, rb_intern("Generator"));
-     } else {
-	generator = rb_define_module_under(ext, "Generator");
-    }
-    if (!rb_const_defined_at(generator, rb_intern("State"))) {
-	rb_require("oj/state");
-    }
-    
-    // convince Ruby that the json gem has already been loaded
-    // Pull in the JSON::State mimic file.
-    state_class = rb_const_get_at(generator, rb_intern("State"));
+
     // TBD create all modules in mimic_loaded
 
     oj_mimic_json_methods(json);

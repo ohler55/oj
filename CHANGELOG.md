@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 3.1.2 - 2017-06-10
+
+- StringWriter was passing incorrect arguments to to_json and as_json. Fixed.
+
+- StringWriter now accepts the mode option. This means it also defaults to the
+  default_options mode instead of the custom mode.
+
+- JSON.pretty_generate when in rails mode now loads the JSON::State class correctly.
+
 ## 3.1.1 - 2017-06-09
 
 - Custom mode not honors the :creat_additions option for time.

@@ -66,6 +66,10 @@ oj_str_writer_init(StrWriter sw) {
     sw->out.opts = &sw->opts;
     sw->out.indent = sw->opts.indent;
     sw->out.depth = 0;
+    sw->out.argc = 0;
+    sw->out.argv = NULL;
+    sw->out.caller = 0;
+    sw->out.ropts = NULL;
 }
 
 void
@@ -140,24 +144,34 @@ oj_str_writer_push_array(StrWriter sw, const char *key) {
 
 void
 oj_str_writer_push_value(StrWriter sw, VALUE val, const char *key) {
+    Out	out = &sw->out;
+    
     if (sw->keyWritten) {
 	sw->keyWritten = 0;
     } else {
 	long	size;
 
 	key_check(sw, key);
-	size = sw->depth * sw->out.indent + 3;
-	assure_size(&sw->out, size);
+	size = sw->depth * out->indent + 3;
+	assure_size(out, size);
 	maybe_comma(sw);
 	if (0 < sw->depth) {
 	    fill_indent(&sw->out, sw->depth);
 	}
 	if (0 != key) {
-	    oj_dump_cstr(key, strlen(key), 0, 0, &sw->out);
-	    *sw->out.cur++ = ':';
+	    oj_dump_cstr(key, strlen(key), 0, 0, out);
+	    *out->cur++ = ':';
 	}
     }
-    oj_dump_custom_val(val, sw->depth, &sw->out, true);
+    switch (out->opts->mode) {
+    case StrictMode:	oj_dump_strict_val(val, sw->depth, out);				break;
+    case NullMode:	oj_dump_null_val(val, sw->depth, out);					break;
+    case ObjectMode:	oj_dump_obj_val(val, sw->depth, out);					break;
+    case CompatMode:	oj_dump_compat_val(val, sw->depth, out, Yes == out->opts->to_json);	break;
+    case RailsMode:	oj_dump_rails_val(val, sw->depth, out);					break;
+    case CustomMode:	oj_dump_custom_val(val, sw->depth, out, true);				break;
+    default:		oj_dump_custom_val(val, sw->depth, out, true);				break;
+    }
 }
 
 void
@@ -236,7 +250,11 @@ str_writer_free(void *ptr) {
 /* Document-method: new
  * call-seq: new(io, options)
  *
- * Creates a new StringWriter.
+ * Creates a new StringWriter. Options are supported according the the
+ * specified mode or the mode in the default options. Note that if mimic_JSON
+ * or Oj.optimize_rails has not been called then the behavior of the modes may
+ * not be the same as if they were.
+ *
  * - *io* [_IO_] stream to write to
  * - *options* [_Hash_] formating options
  */
@@ -248,6 +266,8 @@ str_writer_new(int argc, VALUE *argv, VALUE self) {
     if (1 == argc) {
 	oj_parse_options(argv[0], &sw->opts);
     }
+    sw->out.argc = argc - 1;
+    sw->out.argv = argv + 1;
     sw->out.indent = sw->opts.indent;
 
     return Data_Wrap_Struct(oj_string_writer_class, 0, str_writer_free, sw);
