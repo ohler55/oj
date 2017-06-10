@@ -35,7 +35,7 @@ extern VALUE	oj_code_load(Code codes, VALUE clas, VALUE args);
 extern void	oj_code_set_active(Code codes, VALUE clas, bool active);
 extern bool	oj_code_has(Code codes, VALUE clas, bool encode);
 
-extern void	oj_code_attrs(VALUE obj, Attr attrs, int depth, Out out);
+extern void	oj_code_attrs(VALUE obj, Attr attrs, int depth, Out out, bool with_class);
 
 extern struct _Code	oj_compat_codes[];
 

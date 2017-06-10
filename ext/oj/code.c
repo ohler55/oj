@@ -132,40 +132,48 @@ oj_code_has(Code codes, VALUE clas, bool encode) {
 }
 
 void
-oj_code_attrs(VALUE obj, Attr attrs, int depth, Out out) {
+oj_code_attrs(VALUE obj, Attr attrs, int depth, Out out, bool with_class) {
     int		d2 = depth + 1;
     int		d3 = d2 + 1;
     size_t	sep_len = out->opts->dump_opts.before_size + out->opts->dump_opts.after_size + 2;
     const char	*classname = rb_obj_classname(obj);
     size_t	len = strlen(classname);
     size_t	size = d2 * out->indent + 10 + len + out->opts->create_id_len + sep_len;
-
+    bool	no_comma = true;
+    
     assure_size(out, size);
     *out->cur++ = '{';
-    fill_indent(out, d2);
-    *out->cur++ = '"';
-    memcpy(out->cur, out->opts->create_id, out->opts->create_id_len);
-    out->cur += out->opts->create_id_len;
-    *out->cur++ = '"';
-    if (0 < out->opts->dump_opts.before_size) {
-	strcpy(out->cur, out->opts->dump_opts.before_sep);
-	out->cur += out->opts->dump_opts.before_size;
-    }
-    *out->cur++ = ':';
-    if (0 < out->opts->dump_opts.after_size) {
-	strcpy(out->cur, out->opts->dump_opts.after_sep);
-	out->cur += out->opts->dump_opts.after_size;
-    }
-    *out->cur++ = '"';
-    memcpy(out->cur, classname, len);
-    out->cur += len;
-    *out->cur++ = '"';
 
+    if (with_class) {
+	fill_indent(out, d2);
+	*out->cur++ = '"';
+	memcpy(out->cur, out->opts->create_id, out->opts->create_id_len);
+	out->cur += out->opts->create_id_len;
+	*out->cur++ = '"';
+	if (0 < out->opts->dump_opts.before_size) {
+	    strcpy(out->cur, out->opts->dump_opts.before_sep);
+	    out->cur += out->opts->dump_opts.before_size;
+	}
+	*out->cur++ = ':';
+	if (0 < out->opts->dump_opts.after_size) {
+	    strcpy(out->cur, out->opts->dump_opts.after_sep);
+	    out->cur += out->opts->dump_opts.after_size;
+	}
+	*out->cur++ = '"';
+	memcpy(out->cur, classname, len);
+	out->cur += len;
+	*out->cur++ = '"';
+	no_comma = false;
+    }
     size = d3 * out->indent + 2;
     for (; NULL != attrs->name; attrs++) {
 	assure_size(out, size + attrs->len + sep_len + 2);
-	*out->cur++ = ',';
-	fill_indent(out, d3);
+	if (no_comma) {
+	    no_comma = false;
+	} else {
+	    *out->cur++ = ',';
+	}
+	fill_indent(out, d2);
 	*out->cur++ = '"';
 	memcpy(out->cur, attrs->name, attrs->len);
 	out->cur += attrs->len;

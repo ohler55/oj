@@ -224,7 +224,7 @@ bigdecimal_alt(VALUE obj, int depth, Out out) {
     }
     attrs[0].value = rb_funcall(obj, _dump_id, 0);
 
-    oj_code_attrs(obj, attrs, depth, out);
+    oj_code_attrs(obj, attrs, depth, out, true);
 }
 
 static ID	real_id = 0;
@@ -245,7 +245,7 @@ complex_alt(VALUE obj, int depth, Out out) {
     attrs[0].value = rb_funcall(obj, real_id, 0);
     attrs[1].value = rb_funcall(obj, imag_id, 0);
 
-    oj_code_attrs(obj, attrs, depth, out);
+    oj_code_attrs(obj, attrs, depth, out, true);
 }
 
 static ID	year_id = 0;
@@ -273,7 +273,7 @@ date_alt(VALUE obj, int depth, Out out) {
     attrs[2].value = rb_funcall(obj, day_id, 0);
     attrs[3].value = rb_funcall(obj, start_id, 0);
 
-    oj_code_attrs(obj, attrs, depth, out);
+    oj_code_attrs(obj, attrs, depth, out, true);
 }
 
 static ID	hour_id = 0;
@@ -313,7 +313,7 @@ datetime_alt(VALUE obj, int depth, Out out) {
     attrs[6].value = rb_funcall(rb_funcall(obj, offset_id, 0), oj_to_s_id, 0);
     attrs[7].value = rb_funcall(obj, start_id, 0);
 
-    oj_code_attrs(obj, attrs, depth, out);
+    oj_code_attrs(obj, attrs, depth, out, true);
 }
 
 static ID	message_id = 0;
@@ -381,7 +381,7 @@ openstruct_alt(VALUE obj, int depth, Out out) {
     }
     attrs[0].value = rb_funcall(obj, table_id, 0);
 
-    oj_code_attrs(obj, attrs, depth, out);
+    oj_code_attrs(obj, attrs, depth, out, true);
 }
 
 static void
@@ -434,7 +434,7 @@ rational_alt(VALUE obj, int depth, Out out) {
     attrs[0].value = rb_funcall(obj, numerator_id, 0);
     attrs[1].value = rb_funcall(obj, denominator_id, 0);
 
-    oj_code_attrs(obj, attrs, depth, out);
+    oj_code_attrs(obj, attrs, depth, out, true);
 }
 
 static ID	options_id = 0;
@@ -454,7 +454,7 @@ regexp_alt(VALUE obj, int depth, Out out) {
     attrs[0].value = rb_funcall(obj, options_id, 0);
     attrs[1].value = rb_funcall(obj, source_id, 0);
 
-    oj_code_attrs(obj, attrs, depth, out);
+    oj_code_attrs(obj, attrs, depth, out, true);
 }
 
 static void
@@ -469,7 +469,7 @@ time_alt(VALUE obj, int depth, Out out) {
     attrs[0].num = ts.tv_sec;
     attrs[1].num = ts.tv_nsec;
 
-    oj_code_attrs(obj, attrs, depth, out);
+    oj_code_attrs(obj, attrs, depth, out, true);
 }
 
 struct _Code	oj_compat_codes[] = {

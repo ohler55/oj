@@ -26,7 +26,7 @@ dump_obj_str(VALUE obj, int depth, Out out) {
     };
     attrs->value = rb_funcall(obj, oj_to_s_id, 0);
 
-    oj_code_attrs(obj, attrs, depth, out);
+    oj_code_attrs(obj, attrs, depth, out, Yes == out->opts->create_ok);
 }
 
 
@@ -64,7 +64,7 @@ complex_dump(VALUE obj, int depth, Out out) {
     attrs[0].value = rb_funcall(obj, real_id, 0);
     attrs[1].value = rb_funcall(obj, imag_id, 0);
 
-    oj_code_attrs(obj, attrs, depth, out);
+    oj_code_attrs(obj, attrs, depth, out, Yes == out->opts->create_ok);
 }
 
 static VALUE
@@ -84,7 +84,7 @@ date_dump(VALUE obj, int depth, Out out) {
     };
     attrs->value = rb_funcall(obj, rb_intern("iso8601"), 0);
 
-    oj_code_attrs(obj, attrs, depth, out);
+    oj_code_attrs(obj, attrs, depth, out, Yes == out->opts->create_ok);
 }
 
 static VALUE
@@ -120,7 +120,7 @@ openstruct_dump(VALUE obj, int depth, Out out) {
     }
     attrs->value = rb_funcall(obj, table_id, 0);
 
-    oj_code_attrs(obj, attrs, depth, out);
+    oj_code_attrs(obj, attrs, depth, out, Yes == out->opts->create_ok);
 }
 
 static VALUE
@@ -143,7 +143,7 @@ range_dump(VALUE obj, int depth, Out out) {
     attrs[1].value = rb_funcall(obj, oj_end_id, 0);
     attrs[2].value = rb_funcall(obj, oj_exclude_end_id, 0);
 
-    oj_code_attrs(obj, attrs, depth, out);
+    oj_code_attrs(obj, attrs, depth, out, Yes == out->opts->create_ok);
 }
 
 static VALUE
@@ -174,7 +174,7 @@ rational_dump(VALUE obj, int depth, Out out) {
     attrs[0].value = rb_funcall(obj, numerator_id, 0);
     attrs[1].value = rb_funcall(obj, denominator_id, 0);
 
-    oj_code_attrs(obj, attrs, depth, out);
+    oj_code_attrs(obj, attrs, depth, out, Yes == out->opts->create_ok);
 }
 
 static VALUE
@@ -199,13 +199,23 @@ regexp_load(VALUE clas, VALUE args) {
 
 static void
 time_dump(VALUE obj, int depth, Out out) {
-    struct _Attr	attrs[] = {
-	{ "time", 4, Qundef, 0, Qundef },
-	{ NULL, 0, Qnil },
-    };
-    attrs->time = obj;
+    if (Yes == out->opts->create_ok) {
+	struct _Attr	attrs[] = {
+	    { "time", 4, Qundef, 0, Qundef },
+	    { NULL, 0, Qnil },
+	};
+	attrs->time = obj;
 
-    oj_code_attrs(obj, attrs, depth, out);
+	oj_code_attrs(obj, attrs, depth, out, true);
+    } else {
+	switch (out->opts->time_format) {
+	case RubyTime:	oj_dump_ruby_time(obj, out);	break;
+	case XmlTime:	oj_dump_xml_time(obj, out);	break;
+	case UnixZTime:	oj_dump_time(obj, out, true);	break;
+	case UnixTime:
+	default:	oj_dump_time(obj, out, false);	break;
+	}
+    }
 }
 
 static VALUE
@@ -340,7 +350,7 @@ dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
 
     assure_size(out, 2);
     *out->cur++ = '{';
-    if (NULL != out->opts->create_id) {
+    if (NULL != out->opts->create_id && Yes == out->opts->create_ok) {
 	const char	*classname = rb_class2name(clas);
 	int		clen = (int)strlen(classname);
 	size_t		sep_len = out->opts->dump_opts.before_size + out->opts->dump_opts.after_size + 2;
@@ -557,7 +567,7 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 
     assure_size(out, 2);
     *out->cur++ = '{';
-    if (Qundef != clas) {
+    if (Qundef != clas && NULL != out->opts->create_id && Yes == out->opts->create_ok) {
 	size_t		sep_len = out->opts->dump_opts.before_size + out->opts->dump_opts.after_size + 2;
 	const char	*classname = rb_obj_classname(obj);
 	size_t		len = strlen(classname);
