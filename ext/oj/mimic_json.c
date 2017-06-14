@@ -200,7 +200,9 @@ mimic_dump(int argc, VALUE *argv, VALUE self) {
     out.end = buf + sizeof(buf) - 10;
     out.allocated = 0;
     out.caller = CALLER_DUMP;
-    
+    copts.escape_mode = JXEsc;
+    copts.mode = CompatMode;
+
     /* seems like this is not correct
     if (No == copts.nilnil && Qnil == *argv) {
 	rb_raise(rb_eTypeError, "nil not allowed.");
