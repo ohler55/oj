@@ -738,18 +738,21 @@ class Juice < Minitest::Test
   end
 
   def test_empty_string_true
-    10.times do
-      result = Oj.load(gen_whitespaced_string, :empty_string => true)
-      assert_nil(result)
-    end
+    result = Oj.load(gen_whitespaced_string, :empty_string => true)
+    assert_nil(result)
   end
 
   def test_empty_string_false
-    10.times do
-      assert_raises(Oj::ParseError) do
-        Oj.load(gen_whitespaced_string, :empty_string => false)
-      end
+    # Could be either a Oj::ParseError or an EncodingError depending on
+    # whether mimic_JSON has been called. Since we don't know when the test
+    # will be called either is okay.
+    begin
+      Oj.load(gen_whitespaced_string, :empty_string => false)
+    rescue Exception => e
+      assert(Oj::ParseError == e.class || EncodingError == e.class)
+      return
     end
+    assert(false, "*** expected an exception")
   end
 
   def test_quirks_null_mode
