@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.1.3 - 2017-06-13
+
+- JSON.dump used the default mode instead of :compat mode. That has been fixed.
+
+- Updated docs on Oj.mimic_JSON to note the :encoding is set to :unicode_xss and not :ascii.
+
 ## 3.1.2 - 2017-06-10
 
 - StringWriter was passing incorrect arguments to to_json and as_json. Fixed.

@@ -274,7 +274,7 @@ get_def_opts(VALUE self) {
     case StrictMode:	rb_hash_aset(opts, mode_sym, strict_sym);	break;
     case CompatMode:	rb_hash_aset(opts, mode_sym, compat_sym);	break;
     case NullMode:	rb_hash_aset(opts, mode_sym, null_sym);		break;
-    case ObjectMode:
+    case ObjectMode:	rb_hash_aset(opts, mode_sym, object_sym);	break;
     case CustomMode:	rb_hash_aset(opts, mode_sym, custom_sym);	break;
     case RailsMode:	rb_hash_aset(opts, mode_sym, rails_sym);	break;
     default:		rb_hash_aset(opts, mode_sym, object_sym);	break;
@@ -1315,7 +1315,7 @@ extern VALUE	oj_remove_to_json(int argc, VALUE *argv, VALUE self);
  * will be replaced with Oj methods.
  *
  * Note that this also sets the default options of :mode to :compat and
- * :encoding to :ascii.
+ * :encoding to :unicode_xss.
  *
  * Returns [_Module_] the JSON module.
  */
