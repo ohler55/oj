@@ -816,6 +816,8 @@ oj_mimic_json_methods(VALUE json) {
     }
     // Pull in the JSON::State mimic file.
     state_class = rb_const_get_at(generator, rb_intern("State"));
+
+    symbolize_names_sym = ID2SYM(rb_intern("symbolize_names"));	rb_gc_register_address(&symbolize_names_sym);
 }
 
 /* Document-module: JSON
@@ -858,8 +860,6 @@ oj_define_mimic_json(int argc, VALUE *argv, VALUE self) {
     rb_define_method(rb_cObject, "to_json", mimic_object_to_json, -1);
 
     rb_gv_set("$VERBOSE", verbose);
-
-    symbolize_names_sym = ID2SYM(rb_intern("symbolize_names"));	rb_gc_register_address(&symbolize_names_sym);
 
     oj_default_options = mimic_object_to_json_options;
     oj_default_options.to_json = Yes;
