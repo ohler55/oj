@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.1.4 - 2017-06-16
+
+- :symbolize_names now works with Oj::Rails.mimic_JSON.
+
 ## 3.1.3 - 2017-06-13
 
 - JSON.dump used the default mode instead of :compat mode. That has been fixed.
