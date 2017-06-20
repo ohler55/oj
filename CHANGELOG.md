@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 3.2.0 - 2017-06-20
+
+- A buffer_size option was added to StringWriter and StreamWriter. That option
+  also sets the suggested flush limit for StreamWriter.
+
 ## 3.1.4 - 2017-06-16
 
 - :symbolize_names now works with Oj::Rails.mimic_JSON.

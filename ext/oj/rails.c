@@ -658,7 +658,7 @@ encode(VALUE obj, ROptTable ropts, Options opts, int argc, VALUE *argv) {
     }
     out.buf = buf;
     out.end = buf + sizeof(buf) - 10;
-    out.allocated = 0;
+    out.allocated = false;
     out.omit_nil = copts.dump_opts.omit_nil;
     out.caller = 0;
     out.cur = out.buf;

@@ -48,7 +48,7 @@ maybe_comma(StrWriter sw) {
 
 // Used by stream writer also.
 void
-oj_str_writer_init(StrWriter sw) {
+oj_str_writer_init(StrWriter sw, int buf_size) {
     sw->opts = oj_default_options;
     sw->depth = 0;
     sw->types = ALLOC_N(char, 256);
@@ -56,9 +56,14 @@ oj_str_writer_init(StrWriter sw) {
     *sw->types = '\0';
     sw->keyWritten = 0;
 
-    sw->out.buf = ALLOC_N(char, 4096);
-    sw->out.end = sw->out.buf + 4086;
-    sw->out.allocated = 1;
+    if (0 == buf_size) {
+	buf_size = 4096;
+    } else if (buf_size < 1024) {
+	buf_size = 1024;
+    }
+    sw->out.buf = ALLOC_N(char, buf_size);
+    sw->out.end = sw->out.buf + buf_size - 10;
+    sw->out.allocated = true;
     sw->out.cur = sw->out.buf;
     *sw->out.cur = '\0';
     sw->out.circ_cnt = 0;
@@ -255,6 +260,11 @@ str_writer_free(void *ptr) {
  * or Oj.optimize_rails has not been called then the behavior of the modes may
  * not be the same as if they were.
  *
+ * In addition to the regular dump options for the various modes a
+ * _:buffer_size_ option is available. It should be set to a positive
+ * integer. It is considered a hint of how large the initial internal buffer
+ * should be.
+ *
  * - *io* [_IO_] stream to write to
  * - *options* [_Hash_] formating options
  */
@@ -262,7 +272,7 @@ static VALUE
 str_writer_new(int argc, VALUE *argv, VALUE self) {
     StrWriter	sw = ALLOC(struct _StrWriter);
     
-    oj_str_writer_init(sw);
+    oj_str_writer_init(sw, 0);
     if (1 == argc) {
 	oj_parse_options(argv[0], &sw->opts);
     }

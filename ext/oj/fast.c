@@ -92,7 +92,7 @@ static char*	read_quoted_value(ParseInfo pi);
 static void	skip_comment(ParseInfo pi);
 
 static VALUE	protect_open_proc(VALUE x);
-static VALUE	parse_json(VALUE clas, char *json, int given, int allocated);
+static VALUE	parse_json(VALUE clas, char *json, bool given, bool allocated);
 static void	each_leaf(Doc doc, VALUE self);
 static int	move_step(Doc doc, const char *path, int loc);
 static Leaf	get_doc_leaf(Doc doc, const char *path);
@@ -779,7 +779,7 @@ free_doc_cb(void *x) {
 }
 
 static VALUE
-parse_json(VALUE clas, char *json, int given, int allocated) {
+parse_json(VALUE clas, char *json, bool given, bool allocated) {
     struct _ParseInfo	pi;
     VALUE		result = Qnil;
     Doc			doc;
@@ -1594,7 +1594,7 @@ doc_dump(int argc, VALUE *argv, VALUE self) {
 
 	    out.buf = buf;
 	    out.end = buf + sizeof(buf) - 10;
-	    out.allocated = 0;
+	    out.allocated = false;
 	    out.omit_nil = oj_default_options.dump_opts.omit_nil;
 	    oj_dump_leaf_to_json(leaf, &oj_default_options, &out);
 	    rjson = rb_str_new2(out.buf);

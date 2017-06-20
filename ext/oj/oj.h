@@ -188,7 +188,7 @@ typedef struct _Out {
     int			depth; // used by dump_hash
     Options		opts;
     uint32_t		hash_cnt;
-    int			allocated;
+    bool		allocated;
     bool		omit_nil;
     int			argc;
     VALUE		*argv;
@@ -203,6 +203,7 @@ typedef struct _StrWriter {
     char		*types;	// DumpType
     char		*types_end;
     int			keyWritten;
+    
 } *StrWriter;
 
 typedef struct _StreamWriter {
@@ -210,6 +211,7 @@ typedef struct _StreamWriter {
     StreamWriterType	type;
     VALUE		stream;
     int			fd;
+    int			flush_limit; // indicator of when to flush
 } *StreamWriter;
 
 enum {
@@ -269,7 +271,7 @@ extern void	oj_str_writer_pop_all(StrWriter sw);
 extern void	oj_init_doc(void);
 extern void	oj_string_writer_init();
 extern void	oj_stream_writer_init();
-extern void	oj_str_writer_init(StrWriter sw);
+extern void	oj_str_writer_init(StrWriter sw, int buf_size);
 extern VALUE	oj_define_mimic_json(int argc, VALUE *argv, VALUE self);
 extern VALUE	oj_mimic_generate(int argc, VALUE *argv, VALUE self);
 extern VALUE	oj_mimic_pretty_generate(int argc, VALUE *argv, VALUE self);
