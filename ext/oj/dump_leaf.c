@@ -24,7 +24,7 @@ grow(Out out, size_t len) {
 	buf = REALLOC_N(out->buf, char, (size + BUFFER_EXTRA));
     } else {
 	buf = ALLOC_N(char, (size + BUFFER_EXTRA));
-	out->allocated = 1;
+	out->allocated = true;
 	memcpy(buf, out->buf, out->end - out->buf + BUFFER_EXTRA);
     }
     if (0 == buf) {
@@ -214,7 +214,7 @@ oj_dump_leaf_to_json(Leaf leaf, Options copts, Out out) {
     if (0 == out->buf) {
 	out->buf = ALLOC_N(char, 4096);
 	out->end = out->buf + 4095 - BUFFER_EXTRA; // 1 less than end plus extra for possible errors
-	out->allocated = 1;
+	out->allocated = true;
     }
     out->cur = out->buf;
     out->circ_cnt = 0;
@@ -233,7 +233,7 @@ oj_write_leaf_to_file(Leaf leaf, const char *path, Options copts) {
 
     out.buf = buf;
     out.end = buf + sizeof(buf) - BUFFER_EXTRA;
-    out.allocated = 0;
+    out.allocated = false;
     out.omit_nil = copts->dump_opts.omit_nil;
     oj_dump_leaf_to_json(leaf, copts, &out);
     size = out.cur - out.buf;

@@ -552,7 +552,7 @@ oj_dump_obj_to_json_using_params(VALUE obj, Options copts, Out out, int argc, VA
     if (0 == out->buf) {
 	out->buf = ALLOC_N(char, 4096);
 	out->end = out->buf + 4095 - BUFFER_EXTRA; // 1 less than end plus extra for possible errors
-	out->allocated = 1;
+	out->allocated = true;
     }
     out->cur = out->buf;
     out->circ_cnt = 0;
@@ -600,7 +600,7 @@ oj_write_obj_to_file(VALUE obj, const char *path, Options copts) {
 
     out.buf = buf;
     out.end = buf + sizeof(buf) - BUFFER_EXTRA;
-    out.allocated = 0;
+    out.allocated = false;
     out.omit_nil = copts->dump_opts.omit_nil;
     oj_dump_obj_to_json(obj, copts, &out);
     size = out.cur - out.buf;
@@ -635,7 +635,7 @@ oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
 
     out.buf = buf;
     out.end = buf + sizeof(buf) - BUFFER_EXTRA;
-    out.allocated = 0;
+    out.allocated = false;
     out.omit_nil = copts->dump_opts.omit_nil;
     oj_dump_obj_to_json(obj, copts, &out);
     size = out.cur - out.buf;
@@ -873,7 +873,7 @@ oj_grow_out(Out out, size_t len) {
 	buf = REALLOC_N(out->buf, char, (size + BUFFER_EXTRA));
     } else {
 	buf = ALLOC_N(char, (size + BUFFER_EXTRA));
-	out->allocated = 1;
+	out->allocated = true;
 	memcpy(buf, out->buf, out->end - out->buf + BUFFER_EXTRA);
     }
     if (0 == buf) {

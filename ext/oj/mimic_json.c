@@ -198,7 +198,7 @@ mimic_dump(int argc, VALUE *argv, VALUE self) {
     copts.str_rx.tail = NULL;
     out.buf = buf;
     out.end = buf + sizeof(buf) - 10;
-    out.allocated = 0;
+    out.allocated = false;
     out.caller = CALLER_DUMP;
     copts.escape_mode = JXEsc;
     copts.mode = CompatMode;
@@ -357,7 +357,7 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
 
     out.buf = buf;
     out.end = buf + sizeof(buf) - 10;
-    out.allocated = 0;
+    out.allocated = false;
     out.omit_nil = copts->dump_opts.omit_nil;
     out.caller = CALLER_GENERATE;
     // For obj.to_json or generate nan is not allowed but if called from dump
@@ -720,7 +720,7 @@ mimic_object_to_json(int argc, VALUE *argv, VALUE self) {
     copts.str_rx.tail = NULL;
     out.buf = buf;
     out.end = buf + sizeof(buf) - 10;
-    out.allocated = 0;
+    out.allocated = false;
     out.omit_nil = copts.dump_opts.omit_nil;
     copts.mode = CompatMode;
     copts.to_json = No;

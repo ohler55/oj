@@ -957,7 +957,7 @@ dump(int argc, VALUE *argv, VALUE self) {
     }
     out.buf = buf;
     out.end = buf + sizeof(buf) - 10;
-    out.allocated = 0;
+    out.allocated = false;
     out.omit_nil = copts.dump_opts.omit_nil;
     out.caller = CALLER_DUMP;
     oj_dump_obj_to_json_using_params(*argv, &copts, &out, argc - 1,argv + 1);
@@ -1009,7 +1009,7 @@ to_json(int argc, VALUE *argv, VALUE self) {
     copts.to_json = Yes;
     out.buf = buf;
     out.end = buf + sizeof(buf) - 10;
-    out.allocated = 0;
+    out.allocated = false;
     out.omit_nil = copts.dump_opts.omit_nil;
     // For obj.to_json or generate nan is not allowed but if called from dump
     // it is.

@@ -297,6 +297,61 @@ class OjWriter < Minitest::Test
     assert_equal(%|{"a1":{},"a2":{"b":{}},"a3":{"a4":37}}\n|, output.string())
   end
 
+  def push_stuff(w, pop_all=true)
+    w.push_object()
+    w.push_object("a1")
+    w.pop()
+    w.push_object("a2")
+    w.push_array("b")
+    w.push_value(7)
+    w.push_value(true)
+    w.push_value("string")
+    w.pop()
+    w.pop()
+    w.push_object("a3")
+    if pop_all
+      w.pop_all()
+    else
+      w.pop()
+      w.pop()
+    end
+  end
+
+  def test_stream_writer_buf_small
+    output = StringIO.open("", "w+")
+    w = Oj::StreamWriter.new(output, :indent => 0, :buffer_size => 20)
+    push_stuff(w)
+    assert_equal(%|{"a1":{},"a2":{"b":[7,true,"string"]},"a3":{}}\n|, output.string())
+  end
+
+  def test_stream_writer_buf_large
+    output = StringIO.open("", "w+")
+    w = Oj::StreamWriter.new(output, :indent => 0, :buffer_size => 16000)
+    push_stuff(w)
+    assert_equal(%|{"a1":{},"a2":{"b":[7,true,"string"]},"a3":{}}\n|, output.string())
+  end
+
+  def test_stream_writer_buf_flush
+    output = StringIO.open("", "w+")
+    w = Oj::StreamWriter.new(output, :indent => 0, :buffer_size => 4096)
+    push_stuff(w, false)
+    # no flush so nothing should be in the output yet
+    assert_equal("", output.string())
+    w.flush()
+    assert_equal(%|{"a1":{},"a2":{"b":[7,true,"string"]},"a3":{}}\n|, output.string())
+  end
+  
+  def test_stream_writer_buf_flush_small
+    output = StringIO.open("", "w+")
+    w = Oj::StreamWriter.new(output, :indent => 0, :buffer_size => 30)
+    push_stuff(w, false)
+    # flush should be called at 30 bytes but since the writes are chunky flush
+    # is called after adding "string".
+    assert_equal(%|{"a1":{},"a2":{"b":[7,true,"string"|, output.string())
+    w.flush()
+    assert_equal(%|{"a1":{},"a2":{"b":[7,true,"string"]},"a3":{}}\n|, output.string())
+  end
+
   def test_stream_writer_push_null_value_with_key
     output = StringIO.open("", "w+")
     w = Oj::StreamWriter.new(output, :indent => 0)
