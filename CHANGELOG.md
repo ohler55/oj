@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.2.1 - 2017-06-29
+
+- Made json gem NaN dumping more consistent.
+
 ## 3.2.0 - 2017-06-20
 
 - A buffer_size option was added to StringWriter and StreamWriter. That option
