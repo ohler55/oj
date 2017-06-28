@@ -953,7 +953,7 @@ dump(int argc, VALUE *argv, VALUE self) {
 	oj_parse_options(argv[1], &copts);
     }
     if (CompatMode == copts.mode) {
-	copts.dump_opts.nan_dump = true;
+	copts.dump_opts.nan_dump = WordNan;
     }
     out.buf = buf;
     out.end = buf + sizeof(buf) - 10;
@@ -1001,7 +1001,7 @@ to_json(int argc, VALUE *argv, VALUE self) {
 	rb_raise(rb_eArgError, "wrong number of arguments (0 for 1).");
     }
     copts.escape_mode = JXEsc;
-    copts.dump_opts.nan_dump = false;
+    copts.dump_opts.nan_dump = RaiseNan;
     if (2 == argc) {
 	oj_parse_mimic_dump_options(argv[1], &copts);
     }
@@ -1013,8 +1013,7 @@ to_json(int argc, VALUE *argv, VALUE self) {
     out.omit_nil = copts.dump_opts.omit_nil;
     // For obj.to_json or generate nan is not allowed but if called from dump
     // it is.
-    copts.dump_opts.nan_dump = false;
-    oj_dump_obj_to_json_using_params(*argv, &copts, &out, argc - 1,argv + 1);
+    oj_dump_obj_to_json_using_params(*argv, &copts, &out, argc - 1, argv + 1);
 
     if (0 == out.buf) {
 	rb_raise(rb_eNoMemError, "Not enough memory.");

@@ -108,7 +108,11 @@ oj_parse_mimic_dump_options(VALUE ropts, Options copts) {
 	}
     }
     if (Qnil != (v = rb_hash_lookup(ropts, oj_allow_nan_sym))) {
-	copts->dump_opts.nan_dump = (Qtrue == v);
+	if (Qtrue == v) {
+	    copts->dump_opts.nan_dump = WordNan;
+	} else {
+	    copts->dump_opts.nan_dump = RaiseNan;
+	}
     }
     if (Qnil != (v = rb_hash_lookup(ropts, oj_indent_sym))) {
 	rb_check_type(v, T_STRING);
@@ -362,7 +366,7 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
     out.caller = CALLER_GENERATE;
     // For obj.to_json or generate nan is not allowed but if called from dump
     // it is.
-    copts->dump_opts.nan_dump = false;
+    copts->dump_opts.nan_dump = RaiseNan;
     copts->mode = CompatMode;
     if (2 == argc && Qnil != argv[1]) {
 	oj_parse_mimic_dump_options(argv[1], copts);
@@ -698,7 +702,7 @@ static struct _Options	mimic_object_to_json_options = {
 	0,	// after_size
 	0,	// hash_size
 	0,	// array_size
-	AutoNan,// nan_dump
+	RaiseNan,// nan_dump
 	false,	// omit_nil
 	100, // max_depth
     },

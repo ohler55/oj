@@ -593,19 +593,19 @@ dump_float(VALUE obj, int depth, Out out, bool as_ok) {
 	*b++ = '\0';
 	cnt = 3;
     } else if (OJ_INFINITY == d) {
-	if (out->opts->dump_opts.nan_dump) {
+	if (WordNan == out->opts->dump_opts.nan_dump) {
 	    strcpy(buf, "Infinity");
 	} else {
 	    raise_json_err("Infinity not allowed in JSON.", "GeneratorError");
 	}
     } else if (-OJ_INFINITY == d) {
-	if (out->opts->dump_opts.nan_dump) {
+	if (WordNan == out->opts->dump_opts.nan_dump) {
 	    strcpy(buf, "-Infinity");
 	} else {
 	    raise_json_err("-Infinity not allowed in JSON.", "GeneratorError");
 	}
     } else if (isnan(d)) {
-	if (out->opts->dump_opts.nan_dump) {
+	if (WordNan == out->opts->dump_opts.nan_dump) {
 	    strcpy(buf, "NaN");
 	} else {
 	    raise_json_err("NaN not allowed in JSON.", "GeneratorError");
