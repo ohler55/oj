@@ -949,11 +949,11 @@ dump(int argc, VALUE *argv, VALUE self) {
     if (1 > argc) {
 	rb_raise(rb_eArgError, "wrong number of arguments (0 for 1).");
     }
-    if (2 == argc) {
-	oj_parse_options(argv[1], &copts);
-    }
     if (CompatMode == copts.mode) {
 	copts.dump_opts.nan_dump = WordNan;
+    }
+    if (2 == argc) {
+	oj_parse_options(argv[1], &copts);
     }
     out.buf = buf;
     out.end = buf + sizeof(buf) - 10;
