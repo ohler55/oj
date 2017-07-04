@@ -1,8 +1,10 @@
 # CHANGELOG
 
-## 3.2.1 - 2017-06-29
+## 3.2.1 - 2017-07-04
 
 - Made json gem NaN dumping more consistent.
+
+- Fixed :null mode to not revert to strict mode.
 
 ## 3.2.0 - 2017-06-20
 
