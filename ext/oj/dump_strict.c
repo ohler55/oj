@@ -167,7 +167,11 @@ dump_array(VALUE a, int depth, Out out, bool as_ok) {
 	    } else {
 		fill_indent(out, d2);
 	    }
-	    oj_dump_strict_val(rb_ary_entry(a, i), d2, out);
+	    if (NullMode == out->opts->mode) {
+		oj_dump_null_val(rb_ary_entry(a, i), d2, out);
+	    } else {
+		oj_dump_strict_val(rb_ary_entry(a, i), d2, out);
+	    }
 	    if (i < cnt) {
 		*out->cur++ = ',';
 	    }
@@ -203,7 +207,7 @@ hash_cb(VALUE key, VALUE value, Out out) {
     int		rtype = rb_type(key);
     
     if (rtype != T_STRING && rtype != T_SYMBOL) {
-	rb_raise(rb_eTypeError, "In :strict mode all Hash keys must be Strings or Symbols, not %s.\n", rb_class2name(rb_obj_class(key)));
+	rb_raise(rb_eTypeError, "In :strict and :null mode all Hash keys must be Strings or Symbols, not %s.\n", rb_class2name(rb_obj_class(key)));
     }
     if (out->omit_nil && Qnil == value) {
 	return ST_CONTINUE;
@@ -249,7 +253,11 @@ hash_cb(VALUE key, VALUE value, Out out) {
 	    out->cur += out->opts->dump_opts.after_size;
 	}
     }
-    oj_dump_strict_val(value, depth, out);
+    if (NullMode == out->opts->mode) {
+	oj_dump_null_val(value, depth, out);
+    } else {
+	oj_dump_strict_val(value, depth, out);
+    }
     out->depth = depth;
     *out->cur++ = ',';
 

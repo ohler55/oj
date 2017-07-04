@@ -222,7 +222,7 @@ struct _Options	oj_default_options = {
  * - *:time_format* [_:unix_|_:unix_zone_|_:xmlschema_|_:ruby_] time format when dumping in :compat and :object mode
  * - *:bigdecimal_as_decimal* [_Boolean_|_nil_] dump BigDecimal as a decimal number or as a String
  * - *:bigdecimal_load* [_:bigdecimal_|_:float_|_:auto_] load decimals as BigDecimal instead of as a Float. :auto pick the most precise for the number of digits.
- * - *:create_id* [_String_|_nil_] create id for json compatible object encoding, default is 'json_create'
+ * - *:create_id* [_String_|_nil_] create id for json compatible object encoding, default is 'json_class'
  * - *:second_precision* [_Fixnum_|_nil_] number of digits after the decimal when dumping the seconds portion of time
  * - *:float_precision* [_Fixnum_|_nil_] number of digits of precision when dumping floats, 0 indicates use Ruby
  * - *:use_to_json* [_Boolean_|_nil_] call to_json() methods on dump, default is false

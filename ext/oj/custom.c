@@ -564,6 +564,7 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
     size_t	size = 0;
     int		d2 = depth + 1;
     int		cnt;
+    bool	class_written = false;
 
     assure_size(out, 2);
     *out->cur++ = '{';
@@ -592,9 +593,10 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	memcpy(out->cur, classname, len);
 	out->cur += len;
 	*out->cur++ = '"';
+	class_written = true;
     }
     cnt = (int)rb_ivar_count(obj);
-    if (Qundef != clas && 0 < cnt) {
+    if (class_written) {
 	*out->cur++ = ',';
     }
     if (0 == cnt && Qundef == clas) {
