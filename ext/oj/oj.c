@@ -139,6 +139,7 @@ static VALUE	unix_zone_sym;
 static VALUE	use_as_json_sym;
 static VALUE	use_to_hash_sym;
 static VALUE	use_to_json_sym;
+static VALUE	wab_sym;
 static VALUE	word_sym;
 static VALUE	xmlschema_sym;
 static VALUE	xss_safe_sym;
@@ -218,7 +219,7 @@ struct _Options	oj_default_options = {
  * - *:symbol_keys* [_Boolean_|_nil_] use symbols instead of strings for hash keys
  * - *:escape_mode* [_:newline_|_:json_|_:xss_safe_|_:ascii_|_unicode_xss_|_nil_] determines the characters to escape
  * - *:class_cache* [_Boolean_|_nil_] cache classes for faster parsing (if dynamically modifying classes or reloading classes then don't use this)
- * - *:mode* [_:object_|_:strict_|_:compat_|_:null_|_:custom_|_:rails_] load and dump modes to use for JSON
+ * - *:mode* [_:object_|_:strict_|_:compat_|_:null_|_:custom_|_:rails_|_:wab_] load and dump modes to use for JSON
  * - *:time_format* [_:unix_|_:unix_zone_|_:xmlschema_|_:ruby_] time format when dumping in :compat and :object mode
  * - *:bigdecimal_as_decimal* [_Boolean_|_nil_] dump BigDecimal as a decimal number or as a String
  * - *:bigdecimal_load* [_:bigdecimal_|_:float_|_:auto_] load decimals as BigDecimal instead of as a Float. :auto pick the most precise for the number of digits.
@@ -277,6 +278,7 @@ get_def_opts(VALUE self) {
     case ObjectMode:	rb_hash_aset(opts, mode_sym, object_sym);	break;
     case CustomMode:	rb_hash_aset(opts, mode_sym, custom_sym);	break;
     case RailsMode:	rb_hash_aset(opts, mode_sym, rails_sym);	break;
+    case WabMode:	rb_hash_aset(opts, mode_sym, wab_sym);		break;
     default:		rb_hash_aset(opts, mode_sym, object_sym);	break;
     }
     switch (oj_default_options.escape_mode) {
@@ -334,7 +336,7 @@ get_def_opts(VALUE self) {
  *   - *:escape* [_:newline_|_:json_|_:xss_safe_|_:ascii_|_unicode_xss_|_nil_] mode encodes all high-bit characters as escaped sequences if :ascii, :json is standand UTF-8 JSON encoding, :newline is the same as :json but newlines are not escaped, :unicode_xss allows unicode but escapes &, <, and >, and any \u20xx characters along with some others, and :xss_safe escapes &, <, and >, and some others.
  *   - *:bigdecimal_as_decimal* [_Boolean_|_nil_] dump BigDecimal as a decimal number or as a String.
  *   - *:bigdecimal_load* [_:bigdecimal_|_:float_|_:auto_|_nil_] load decimals as BigDecimal instead of as a Float. :auto pick the most precise for the number of digits.
- *   - *:mode* [_:object_|_:strict_|_:compat_|_:null_|_:custom_|_:rails_] load and dump mode to use for JSON :strict raises an exception when a non-supported Object is encountered. :compat attempts to extract variable values from an Object using to_json() or to_hash() then it walks the Object's variables if neither is found. The :object mode ignores to_hash() and to_json() methods and encodes variables using code internal to the Oj gem. The :null mode ignores non-supported Objects and replaces them with a null. The :custom mode honors all dump options. The :rails more mimics rails and Active behavior.
+ *   - *:mode* [_:object_|_:strict_|_:compat_|_:null_|_:custom_|_:rails_|_:wab_] load and dump mode to use for JSON :strict raises an exception when a non-supported Object is encountered. :compat attempts to extract variable values from an Object using to_json() or to_hash() then it walks the Object's variables if neither is found. The :object mode ignores to_hash() and to_json() methods and encodes variables using code internal to the Oj gem. The :null mode ignores non-supported Objects and replaces them with a null. The :custom mode honors all dump options. The :rails more mimics rails and Active behavior.
  *   - *:time_format* [_:unix_|_:xmlschema_|_:ruby_] time format when dumping in :compat mode :unix decimal number denoting the number of seconds since 1/1/1970, :unix_zone decimal number denoting the number of seconds since 1/1/1970 plus the utc_offset in the exponent, :xmlschema date-time format taken from XML Schema as a String, :ruby Time.to_s formatted String.
  *   - *:create_id* [_String_|_nil_] create id for json compatible object encoding
  *   - *:second_precision* [_Fixnum_|_nil_] number of digits after the decimal when dumping the seconds portion of time.
@@ -463,7 +465,9 @@ oj_parse_options(VALUE ropts, Options copts) {
 	copts->sec_prec = n;
     }
     if (Qnil != (v = rb_hash_lookup(ropts, mode_sym))) {
-	if (object_sym == v) {
+	if (wab_sym == v) {
+	    copts->mode = WabMode;
+	} else if (object_sym == v) {
 	    copts->mode = ObjectMode;
 	} else if (strict_sym == v) {
 	    copts->mode = StrictMode;
@@ -476,7 +480,7 @@ oj_parse_options(VALUE ropts, Options copts) {
 	} else if (rails_sym == v) {
 	    copts->mode = RailsMode;
 	} else {
-	    rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, :null, :custom, or :rails.");
+	    rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, :null, :custom, :rails, or :wab.");
 	}
     }
     if (Qnil != (v = rb_hash_lookup(ropts, time_format_sym))) {
@@ -759,8 +763,10 @@ load(int argc, VALUE *argv, VALUE self) {
 		mode = CustomMode;
 	    } else if (rails_sym == v) {
 		mode = RailsMode;
+	    } else if (wab_sym == v) {
+		mode = WabMode;
 	    } else {
-		rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, :null, :custom, or :rails.");
+		rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, :null, :custom, :rails, or :wab.");
 	    }
 	}
     }
@@ -773,6 +779,8 @@ load(int argc, VALUE *argv, VALUE self) {
 	return oj_compat_parse(argc, argv, self);
     case CustomMode:
 	return oj_custom_parse(argc, argv, self);
+    case WabMode:
+	return oj_wab_parse(argc, argv, self);
     case ObjectMode:
     default:
 	break;
@@ -849,8 +857,10 @@ load_file(int argc, VALUE *argv, VALUE self) {
 		mode = CustomMode;
 	    } else if (rails_sym == v) {
 		mode = RailsMode;
+	    } else if (wab_sym == v) {
+		mode = WabMode;
 	    } else {
-		rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, :null, :custom, :rails.");
+		rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, :null, :custom, :rails, or :wab.");
 	    }
 	}
     }
@@ -867,6 +877,9 @@ load_file(int argc, VALUE *argv, VALUE self) {
     case CustomMode:
     case RailsMode:
 	oj_set_compat_callbacks(&pi);
+	return oj_pi_sparse(argc, argv, &pi, fd);
+    case WabMode:
+	oj_set_wab_callbacks(&pi);
 	return oj_pi_sparse(argc, argv, &pi, fd);
     case ObjectMode:
     default:
@@ -1269,6 +1282,42 @@ extern VALUE	oj_compat_parse(int argc, VALUE *argv, VALUE self);
  */
 extern VALUE	oj_object_parse(int argc, VALUE *argv, VALUE self);
 
+/* Document-method: wab_load
+ * call-seq: wab_load(json, options) { _|_obj, start, len_|_ }
+ *
+ * Parses a JSON document String into an Hash, Array, String, Fixnum, Float,
+ * true, false, or nil. It parses using a mode that is :wab in that it maps
+ * each primitive JSON type to a similar Ruby type. The :create_id is not
+ * honored in this mode. Note that a Ruby Hash is used to represent the JSON
+ * Object type. These two are not the same since the JSON Object type can have
+ * repeating entries with the same key and Ruby Hash can not.
+ *
+ * When used with a document that has multiple JSON elements the block, if
+ * any, will be yielded to. If no block then the last element read will be
+ * returned.
+ *
+ * Raises an exception if the JSON is malformed or the classes specified are not
+ * valid. If the input is not a valid JSON document (an empty string is not a
+ * valid JSON document) an exception is raised.
+ *
+ * A block can be provided with a single argument. That argument will be the
+ * parsed JSON document. This is useful when parsing a string that includes
+ * multiple JSON documents. The block can take up to 3 arguments, the parsed
+ * object, the position in the string or stream of the start of the JSON for
+ * that object, and the length of the JSON for that object plus trailing
+ * whitespace.
+ *
+ * - *json* [_String_|_IO_] JSON String or an Object that responds to read().
+ * - *options* [_Hash_] load options (same as default_options).
+ *   - -
+ * - *obj* [_Hash_|_Array_|_String_|_Fixnum_|_Float_|_Boolean_|_nil_] parsed object.
+ * - *start* [_optional, _Integer_] start position of parsed JSON for obj.
+ * - *len* [_optional, _Integer_] length of parsed JSON for obj.
+ *
+ * Returns [_Hash_|_Array_|_String_|_Fixnum_|_Float_|_Boolean_|_nil_]
+ */
+extern VALUE	oj_wab_parse(int argc, VALUE *argv, VALUE self);
+
 /* Document-method: add_to_json
  * call-seq: add_to_json(*args)
  *
@@ -1406,6 +1455,8 @@ protect_require(VALUE x) {
  * - *:rails* is the compatibility mode for Rails or Active support.
  *
  * - *:custom* is the most configurable mode.
+ *
+ * - *:wab* specifically for WAB data exchange.
  */
 void
 Init_oj() {
@@ -1445,6 +1496,7 @@ Init_oj() {
     rb_define_module_function(Oj, "strict_load", oj_strict_parse, -1);
     rb_define_module_function(Oj, "compat_load", oj_compat_parse, -1);
     rb_define_module_function(Oj, "object_load", oj_object_parse, -1);
+    rb_define_module_function(Oj, "wab_load", oj_wab_parse, -1);
 
     rb_define_module_function(Oj, "dump", dump, -1);
 
@@ -1580,6 +1632,7 @@ Init_oj() {
     use_as_json_sym = ID2SYM(rb_intern("use_as_json"));		rb_gc_register_address(&use_as_json_sym);
     use_to_hash_sym = ID2SYM(rb_intern("use_to_hash"));		rb_gc_register_address(&use_to_hash_sym);
     use_to_json_sym = ID2SYM(rb_intern("use_to_json"));		rb_gc_register_address(&use_to_json_sym);
+    wab_sym = ID2SYM(rb_intern("wab"));				rb_gc_register_address(&wab_sym);
     word_sym = ID2SYM(rb_intern("word"));			rb_gc_register_address(&word_sym);
     xmlschema_sym = ID2SYM(rb_intern("xmlschema"));		rb_gc_register_address(&xmlschema_sym);
     xss_safe_sym = ID2SYM(rb_intern("xss_safe"));		rb_gc_register_address(&xss_safe_sym);

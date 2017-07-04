@@ -572,6 +572,7 @@ oj_dump_obj_to_json_using_params(VALUE obj, Options copts, Out out, int argc, VA
     case CompatMode:	oj_dump_compat_val(obj, 0, out, Yes == copts->to_json);	break;
     case RailsMode:	oj_dump_rails_val(obj, 0, out);				break;
     case CustomMode:	oj_dump_custom_val(obj, 0, out, true);			break;
+    case WabMode:	oj_dump_wab_val(obj, 0, out);				break;
     default:		oj_dump_custom_val(obj, 0, out, true);			break;
     }
     if (0 < out->indent) {
@@ -680,7 +681,7 @@ oj_dump_str(VALUE obj, int depth, Out out, bool as_ok) {
 void
 oj_dump_sym(VALUE obj, int depth, Out out, bool as_ok) {
     const char	*sym = rb_id2name(SYM2ID(obj));
-    
+
     oj_dump_cstr(sym, strlen(sym), 0, 0, out);
 }
 

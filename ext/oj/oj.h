@@ -61,6 +61,7 @@ typedef enum {
     CompatMode	= 'c',
     RailsMode	= 'r',
     CustomMode	= 'C',
+    WabMode	= 'w',
 } Mode;
 
 typedef enum {
@@ -245,6 +246,7 @@ extern VALUE	oj_strict_sparse(int argc, VALUE *argv, VALUE self);
 extern VALUE	oj_compat_parse(int argc, VALUE *argv, VALUE self);
 extern VALUE	oj_object_parse(int argc, VALUE *argv, VALUE self);
 extern VALUE	oj_custom_parse(int argc, VALUE *argv, VALUE self);
+extern VALUE	oj_wab_parse(int argc, VALUE *argv, VALUE self);
 
 extern VALUE	oj_strict_parse_cstr(int argc, VALUE *argv, char *json, size_t len);
 extern VALUE	oj_compat_parse_cstr(int argc, VALUE *argv, char *json, size_t len);

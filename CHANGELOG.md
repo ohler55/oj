@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.3.0 - 2017-07-05
+
+- Added the :wab mode to support the [WABuR](https://github.com/ohler55/wabur)
+  project. The :wab mode only allows the indent option and is faster due to
+  not having to check the multitude of options the other modes support.
+
 ## 3.2.1 - 2017-07-04
 
 - Made json gem NaN dumping more consistent.
@@ -32,7 +38,7 @@
 
 ## 3.1.1 - 2017-06-09
 
-- Custom mode not honors the :creat_additions option for time.
+- Custom mode now honors the :create_additions option for time.
 
 ## 3.1.0 - 2017-06-04
 

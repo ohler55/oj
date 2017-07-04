@@ -80,6 +80,7 @@ extern VALUE	oj_num_as_value(NumInfo ni);
 extern void	oj_set_strict_callbacks(ParseInfo pi);
 extern void	oj_set_object_callbacks(ParseInfo pi);
 extern void	oj_set_compat_callbacks(ParseInfo pi);
+extern void	oj_set_wab_callbacks(ParseInfo pi);
 
 extern void	oj_sparse2(ParseInfo pi);
 extern VALUE	oj_pi_sparse(int argc, VALUE *argv, ParseInfo pi, int fd);
