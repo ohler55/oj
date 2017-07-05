@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "oj.h"
@@ -28,6 +29,8 @@ static char	hex_chars[256] = "\
 ................................";
 
 static VALUE	wab_uuid_clas = Qundef;
+static VALUE	uri_clas = Qundef;
+static VALUE	uri_http_clas = Qundef;
 
 ///// dump functions /////
 
@@ -45,6 +48,34 @@ resolve_wab_uuid_class() {
 	}
     }
     return wab_uuid_clas;
+}
+
+static VALUE
+resolve_uri_class() {
+    if (Qundef == uri_clas) {
+
+	uri_clas = Qnil;
+	if (rb_const_defined_at(rb_cObject, rb_intern("URI"))) {
+	    uri_clas = rb_const_get_at(rb_cObject, rb_intern("URI"));
+	}
+    }
+    return uri_clas;
+}
+
+static VALUE
+resolve_uri_http_class() {
+    if (Qundef == uri_http_clas) {
+	volatile VALUE	uri_module;
+
+	uri_http_clas = Qnil;
+	if (rb_const_defined_at(rb_cObject, rb_intern("URI"))) {
+	    uri_module = rb_const_get_at(rb_cObject, rb_intern("URI"));
+	    if (rb_const_defined_at(uri_module, rb_intern("HTTP"))) {
+		uri_http_clas = rb_const_get(uri_module, rb_intern("HTTP"));
+	    }
+	}
+    }
+    return uri_http_clas;
 }
 
 static void
@@ -199,6 +230,8 @@ dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
 	oj_dump_raw(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), out);
     } else if (resolve_wab_uuid_class() == clas) {
 	oj_dump_str(rb_funcall(obj, oj_to_s_id, 0), depth, out, false);
+    } else if (resolve_uri_http_class() == clas) {
+	oj_dump_str(rb_funcall(obj, oj_to_s_id, 0), depth, out, false);
     } else {
 	raise_wab(obj);
     }
@@ -302,22 +335,105 @@ uuid_check(const char *str, int len) {
     return true;
 }
 
+static const char*
+read_num(const char *s, int len, int *vp) {
+    uint32_t	v = 0;
+
+    for (; 0 < len; len--, s++) {
+	if ('0' <= *s && *s <= '9') {
+	    v = v * 10 + *s - '0';
+	} else {
+	    return NULL;
+	}
+    }
+    *vp = (int)v;
+
+    return s;
+}
+
+static VALUE
+time_parse(const char *s, int len) {
+    struct tm	tm;
+    bool	neg = false;
+    long	nsecs = 0;
+    int		i;
+    time_t	secs;
+    
+    memset(&tm, 0, sizeof(tm));
+    if ('-' == *s) {
+	s++;
+	neg = true;
+    }
+    if (NULL == (s = read_num(s, 4, &tm.tm_year))) {
+	return Qnil;
+    }
+    if (neg) {
+	tm.tm_year = -tm.tm_year;
+	neg = false;
+    }
+    tm.tm_year -= 1900;
+    s++;
+    if (NULL == (s = read_num(s, 2, &tm.tm_mon))) {
+	return Qnil;
+    }
+    tm.tm_mon--;
+    s++;
+    if (NULL == (s = read_num(s, 2, &tm.tm_mday))) {
+	return Qnil;
+    }
+    s++;
+    if (NULL == (s = read_num(s, 2, &tm.tm_hour))) {
+	return Qnil;
+    }
+    s++;
+    if (NULL == (s = read_num(s, 2, &tm.tm_min))) {
+	return Qnil;
+    }
+    s++;
+    if (NULL == (s = read_num(s, 2, &tm.tm_sec))) {
+	return Qnil;
+    }
+    s++;
+
+    for (i = 9; 0 < i; i--, s++) {
+	if ('0' <= *s && *s <= '9') {
+	    nsecs = nsecs * 10 + *s - '0';
+	} else {
+	    return Qnil;
+	}
+    }
+    secs = (time_t)timegm(&tm);
+
+    return rb_funcall(rb_time_nano_new(secs, nsecs), oj_utc_id, 0);
+}
+
+static VALUE
+protect_uri(VALUE rstr) {
+    return rb_funcall(resolve_uri_class(), oj_parse_id, 1, rstr);
+}
+
 static VALUE
 cstr_to_rstr(const char *str, size_t len) {
     volatile VALUE	v = Qnil;
-
+    
     if (30 == len && '-' == str[4] && '-' == str[7] && 'T' == str[10] && ':' == str[13] && ':' == str[16]  && '.' == str[19] && 'Z' == str[29]) {
-	// TBD is it a time
-	printf("*** could be time\n");
+	if (Qnil != (v = time_parse(str, len))) {
+	    return v;
+	}
     }
     if (36 == len && '-' == str[8] && '-' == str[13] && '-' == str[18] && '-' == str[23] && uuid_check(str, len) && Qnil != resolve_wab_uuid_class()) {
 	return rb_funcall(wab_uuid_clas, oj_new_id, 1, rb_str_new(str, len));
     }
-    // TBD check for URI
     v = rb_str_new(str, len);
-    v = oj_encode(v);
+    if (7 < len && 0 == strncasecmp("http://", str, 7)) {
+	int		err = 0;
+	volatile VALUE	uri = rb_protect(protect_uri, v, &err);
 
-    return v;
+	if (0 == err) {
+	    return uri;
+	}
+    }
+    return oj_encode(v);
 }
 
 static void

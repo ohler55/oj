@@ -12,6 +12,7 @@ require 'minitest/autorun'
 require 'stringio'
 require 'date'
 require 'bigdecimal'
+require 'uri'
 require 'oj'
 
 # Simple version of WAB::UUID for testing.
@@ -156,7 +157,6 @@ class WabJuice < Minitest::Test
 
   # BigDecimal
   def test_bigdecimal_wab
-    Oj.default_options = { :bigdecimal_load => true}
     dump_and_load(BigDecimal.new('3.14159265358979323846'), false)
   end
 
@@ -208,13 +208,23 @@ class WabJuice < Minitest::Test
     t = Time.gm(2017, 1, 5, 23, 58, 7, 123456.789)
     json = Oj.dump(t, mode: :wab)
     assert_equal('"2017-01-05T23:58:07.123456789Z"', json)
-    dump_and_load(t, false)
+    # must load and convert to json as the Time#== does not match identical
+    # times due to the way it tracks fractional seconds.
+    loaded = Oj.wab_load(json);
+    assert_equal(json, Oj.dump(loaded, mode: :wab), "json mismatch after load")
   end
 
   def test_uuid
     u = ::WAB::UUID.new('123e4567-e89b-12d3-a456-426655440000')
     json = Oj.dump(u, mode: :wab)
     assert_equal('"123e4567-e89b-12d3-a456-426655440000"', json)
+    dump_and_load(u, false)
+  end
+
+  def test_uri
+    u = URI('http://opo.technology/sample')
+    json = Oj.dump(u, mode: :wab)
+    assert_equal('"http://opo.technology/sample"', json)
     dump_and_load(u, false)
   end
 
