@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.3.1 - 2017-07-06
+
+- Some exceptions such as NoMethodError have an invisible attribute where the
+  key name is NULL. Not an empty string but NULL. That is now detected and
+  dealt with.
+
 ## 3.3.0 - 2017-07-05
 
 - Added the :wab mode to support the [WABuR](https://github.com/ohler55/wabur)

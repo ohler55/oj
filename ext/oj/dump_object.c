@@ -352,6 +352,11 @@ dump_attr_cb(ID key, VALUE value, Out out) {
     if (out->omit_nil && Qnil == value) {
 	return ST_CONTINUE;
     }
+    // Some exceptions such as NoMethodError have an invisible attribute where
+    // the key name is NULL. Not an empty string but NULL.
+    if (NULL == attr) {
+	attr = "";
+    }
 #if HAS_EXCEPTION_MAGIC
     if (0 == strcmp("bt", attr) || 0 == strcmp("mesg", attr)) {
 	return ST_CONTINUE;

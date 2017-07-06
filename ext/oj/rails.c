@@ -90,6 +90,11 @@ dump_attr_cb(ID key, VALUE value, Out out) {
     size_t	size = depth * out->indent + 1;
     const char	*attr = rb_id2name(key);
 
+    // Some exceptions such as NoMethodError have an invisible attribute where
+    // the key name is NULL. Not an empty string but NULL.
+    if (NULL == attr) {
+	attr = "";
+    }
 #if HAS_EXCEPTION_MAGIC
     if (0 == strcmp("bt", attr) || 0 == strcmp("mesg", attr)) {
 	return ST_CONTINUE;

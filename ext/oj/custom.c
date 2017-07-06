@@ -532,7 +532,11 @@ dump_attr_cb(ID key, VALUE value, Out out) {
     }
     size = depth * out->indent + 1;
     attr = rb_id2name(key);
-
+    // Some exceptions such as NoMethodError have an invisible attribute where
+    // the key name is NULL. Not an empty string but NULL.
+    if (NULL == attr) {
+	attr = "";
+    }
 #if HAS_EXCEPTION_MAGIC
     if (0 == strcmp("bt", attr) || 0 == strcmp("mesg", attr)) {
 	return ST_CONTINUE;
@@ -648,7 +652,7 @@ static void
 dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
     long	id = oj_check_circular(obj, out);
     VALUE	clas;
-    
+
     if (0 > id) {
 	oj_dump_nil(Qnil, depth, out, false);
     } else if (Qnil != (clas = dump_common(obj, depth, out))) {
@@ -861,7 +865,7 @@ static DumpFunc	custom_funcs[] = {
 void
 oj_dump_custom_val(VALUE obj, int depth, Out out, bool as_ok) {
     int	type = rb_type(obj);
-    
+
     if (MAX_DEPTH < depth) {
 	rb_raise(rb_eNoMemError, "Too deeply nested.\n");
     }
