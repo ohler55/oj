@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.3.2 - 2017-07-11
+
+- Fixed Windows compile issue regarding timegm().
+
 ## 3.3.1 - 2017-07-06
 
 - Some exceptions such as NoMethodError have an invisible attribute where the

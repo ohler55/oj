@@ -214,7 +214,7 @@ dump_time(VALUE obj, Out out) {
 
     len = sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02d.%09ldZ",
 		  tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
-		  tm->tm_hour, tm->tm_min, tm->tm_sec, nsec);
+		  tm->tm_hour, tm->tm_min, tm->tm_sec, (long)nsec);
     oj_dump_cstr(buf, len, 0, 0, out);
 }
 
@@ -271,8 +271,6 @@ oj_dump_wab_val(VALUE obj, int depth, Out out) {
     }
     if (0 < type && type <= RUBY_T_FIXNUM) {
 	DumpFunc	f = wab_funcs[type];
-
-	//printf("*** type %02x\n", type);
 
 	if (NULL != f) {
 	    f(obj, depth, out, false);
@@ -402,8 +400,15 @@ time_parse(const char *s, int len) {
 	    return Qnil;
 	}
     }
+#if IS_WINDOWS
+    secs = (time_t)mktime(&tm);
+    memset(&tm, 0, sizeof(tm));
+    tm.tm_year = 70;
+    tm.tm_mday = 1;
+    secs -= (time_t)mktime(&tm);
+#else
     secs = (time_t)timegm(&tm);
-
+#endif
     return rb_funcall(rb_time_nano_new(secs, nsecs), oj_utc_id, 0);
 }
 
