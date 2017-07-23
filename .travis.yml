@@ -22,7 +22,6 @@ gemfile:
   - gemfiles/rails_4.2.gemfile
   - gemfiles/rails_5.gemfile
 
-
 matrix:
   fast_finish: true
   allow_failures:

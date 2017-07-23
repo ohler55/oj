@@ -23,10 +23,6 @@ environment:
 
 build: off
 
-install:
-  - set PATH=C:\Ruby%RUBY_VERSION%\bin;%PATH%
-  - gem install oj
-
 before_build:
   - gem update --system
   - ruby -v

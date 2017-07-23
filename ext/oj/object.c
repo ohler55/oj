@@ -294,14 +294,20 @@ hat_num(ParseInfo pi, Val parent, Val kval, NumInfo ni) {
 		    struct tm	*st = gmtime(&t);
 		    VALUE	args[8];
 
-		    args[0] = LONG2NUM(1900 + st->tm_year);
-		    args[1] = LONG2NUM(1 + st->tm_mon);
-		    args[2] = LONG2NUM(st->tm_mday);
-		    args[3] = LONG2NUM(st->tm_hour);
-		    args[4] = LONG2NUM(st->tm_min);
-		    args[5] = rb_float_new((double)st->tm_sec + ((double)nsec + 0.5) / 1000000000.0);
-		    args[6] = LONG2NUM(ni->exp);
-		    parent->val = rb_funcall2(rb_cTime, oj_new_id, 7, args);
+		    // Windows does not support dates before 1970 so ignore
+		    // the zone and do the best we can.
+		    if (NULL == st) {
+			parent->val = rb_time_nano_new(ni->i, (long)nsec);
+		    } else {
+			args[0] = LONG2NUM((long)(1900 + st->tm_year));
+			args[1] = LONG2NUM(1 + st->tm_mon);
+			args[2] = LONG2NUM(st->tm_mday);
+			args[3] = LONG2NUM(st->tm_hour);
+			args[4] = LONG2NUM(st->tm_min);
+			args[5] = rb_float_new((double)st->tm_sec + ((double)nsec + 0.5) / 1000000000.0);
+			args[6] = LONG2NUM(ni->exp);
+			parent->val = rb_funcall2(rb_cTime, oj_new_id, 7, args);
+		    }
 		} else {
 		    parent->val = rb_time_nano_new(ni->i, (long)nsec);
 		}
