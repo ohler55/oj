@@ -1,6 +1,6 @@
 # [![{}j](http://www.ohler.com/dev/images/oj_comet_64.svg)](http://www.ohler.com/oj) gem
 
-[![Build Status](https://img.shields.io/travis/ohler55/oj/master.svg)](http://travis-ci.org/ohler55/oj?branch=master) ![Gem](https://img.shields.io/gem/v/oj.svg) ![Gem](https://img.shields.io/gem/dt/oj.svg)
+[![Build Status](https://img.shields.io/travis/ohler55/oj/master.svg)](http://travis-ci.org/ohler55/oj?branch=master) [![AppVeyor](https://img.shields.io/appveyor/ci/ohler55/oj/master.svg)](https://ci.appveyor.com/project/ohler55/oj) ![Gem](https://img.shields.io/gem/v/oj.svg) ![Gem](https://img.shields.io/gem/dt/oj.svg)
 
 A *fast* JSON parser and Object marshaller as a Ruby gem.
 
