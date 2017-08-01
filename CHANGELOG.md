@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.3.3 - 2017-08-01
+
+- Allow nil as a second argument to parse when mimicking the json gem. This is
+  a special case where the gem does not raise an exception on a non-Hash
+  second argument.
+
 ## 3.3.2 - 2017-07-11
 
 - Fixed Windows compile issue regarding timegm().

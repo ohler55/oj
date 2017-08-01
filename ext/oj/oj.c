@@ -749,24 +749,26 @@ load(int argc, VALUE *argv, VALUE self) {
 	VALUE	ropts = argv[1];
 	VALUE	v;
 
-	Check_Type(ropts, T_HASH);
-	if (Qnil != (v = rb_hash_lookup(ropts, mode_sym))) {
-	    if (object_sym == v) {
-		mode = ObjectMode;
-	    } else if (strict_sym == v) {
-		mode = StrictMode;
-	    } else if (compat_sym == v || json_sym == v) {
-		mode = CompatMode;
-	    } else if (null_sym == v) {
-		mode = NullMode;
-	    } else if (custom_sym == v) {
-		mode = CustomMode;
-	    } else if (rails_sym == v) {
-		mode = RailsMode;
-	    } else if (wab_sym == v) {
-		mode = WabMode;
-	    } else {
-		rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, :null, :custom, :rails, or :wab.");
+	if (Qnil != ropts || CompatMode != mode) {
+	    Check_Type(ropts, T_HASH);
+	    if (Qnil != (v = rb_hash_lookup(ropts, mode_sym))) {
+		if (object_sym == v) {
+		    mode = ObjectMode;
+		} else if (strict_sym == v) {
+		    mode = StrictMode;
+		} else if (compat_sym == v || json_sym == v) {
+		    mode = CompatMode;
+		} else if (null_sym == v) {
+		    mode = NullMode;
+		} else if (custom_sym == v) {
+		    mode = CustomMode;
+		} else if (rails_sym == v) {
+		    mode = RailsMode;
+		} else if (wab_sym == v) {
+		    mode = WabMode;
+		} else {
+		    rb_raise(rb_eArgError, ":mode must be :object, :strict, :compat, :null, :custom, :rails, or :wab.");
+		}
 	    }
 	}
     }

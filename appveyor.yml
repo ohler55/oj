@@ -1,6 +1,6 @@
 # https://www.appveyor.com/docs/lang/ruby/
 
-version: 3.0.{build}-{branch}
+version: 3.3.2-{build}-{branch}
 
 image: Visual Studio 2015
 

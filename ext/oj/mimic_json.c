@@ -92,6 +92,8 @@ oj_parse_mimic_dump_options(VALUE ropts, Options copts) {
 	    ropts = rb_funcall(ropts, oj_to_hash_id, 0);
 	} else if (rb_respond_to(ropts, oj_to_h_id)) {
 	    ropts = rb_funcall(ropts, oj_to_h_id, 0);
+	} else if (Qnil == ropts) {
+	    return;
 	} else {
 	    rb_raise(rb_eArgError, "options must be a hash.");
 	}
@@ -505,7 +507,7 @@ mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
     pi.options.mode = CompatMode;
     pi.max_depth = 100;
 
-    if (2 <= argc) {
+    if (2 <= argc && Qnil != argv[1]) {
 	VALUE	ropts = argv[1];
 	VALUE	v;
 
