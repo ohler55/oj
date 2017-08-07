@@ -37,7 +37,7 @@ dflags = {
   'HAS_DATA_OBJECT_WRAP' => ('ruby' == type && '2' == version[0] && '3' <= version[1]) ? 1 : 0,
   'HAS_METHOD_ARITY' =>  ('rubinius' == type) ? 0 : 1,
   'HAS_STRUCT_MEMBERS' =>  ('rubinius' == type) ? 0 : 1,
-  'UNIFY_FIXNUM_AND_BIGNUM' => ('ruby' == type && '2' == version[0] && '4' <= version[1]) ? 1 : 0,
+  'UNIFY_FIXNUM_AND_BIGNUM' => ('ruby' == type && '2' == version[0] && '4' == version[1] && '1' >= version[2]) ? 1 : 0,
 }
 # This is a monster hack to get around issues with 1.9.3-p0 on CentOS 5.4. SO
 # some reason math.h and string.h contents are not processed. Might be a
