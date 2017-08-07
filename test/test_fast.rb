@@ -5,24 +5,23 @@ $: << File.dirname(__FILE__)
 
 require 'helper'
 
-$json1 = %|{
-  "array": [
-    {
-      "num"   : 3,
-      "string": "message",
-      "hash"  : {
-        "h2"  : {
-          "a" : [ 1, 2, 3 ]
-        }
-      }
-    }
-  ],
-  "boolean" : true
-}|
-
 class DocTest < Minitest::Test
   def setup
     @default_options = Oj.default_options
+    @json1 = %|{
+      "array": [
+        {
+          "num"   : 3,
+          "string": "message",
+          "hash"  : {
+            "h2"  : {
+              "a" : [ 1, 2, 3 ]
+            }
+          }
+        }
+      ],
+      "boolean" : true
+    }|
   end
 
   def teardown
@@ -160,7 +159,7 @@ class DocTest < Minitest::Test
   end
 
   def test_move
-    Oj::Doc.open($json1) do |doc|
+    Oj::Doc.open(@json1) do |doc|
       [ '/',
         '/array',
         '/boolean',
@@ -193,7 +192,7 @@ class DocTest < Minitest::Test
   end
 
   def test_move_relative
-    Oj::Doc.open($json1) do |doc|
+    Oj::Doc.open(@json1) do |doc|
       [['/', 'array', '/array'],
        ['/array', '1/num', '/array/1/num'],
        ['/array/1/hash', 'h2/a', '/array/1/hash/h2/a'],
@@ -214,7 +213,7 @@ class DocTest < Minitest::Test
     else
       num_class = Fixnum
     end
-    Oj::Doc.open($json1) do |doc|
+    Oj::Doc.open(@json1) do |doc|
       [['/', Hash],
        ['/array', Array],
        ['/array/1', Hash],
@@ -230,7 +229,7 @@ class DocTest < Minitest::Test
   end
 
   def test_local_key
-    Oj::Doc.open($json1) do |doc|
+    Oj::Doc.open(@json1) do |doc|
       [['/', nil],
        ['/array', 'array'],
        ['/array/1', 1],
@@ -252,7 +251,7 @@ class DocTest < Minitest::Test
   end
 
   def test_fetch_move
-    Oj::Doc.open($json1) do |doc|
+    Oj::Doc.open(@json1) do |doc|
       [['/array/1/num', 3],
        ['/array/1/string', 'message'],
        ['/array/1/hash/h2/a', [1, 2, 3]],
@@ -270,7 +269,7 @@ class DocTest < Minitest::Test
   end
 
   def test_fetch_path
-    Oj::Doc.open($json1) do |doc|
+    Oj::Doc.open(@json1) do |doc|
       [['/array/1/num', 3],
        ['/array/1/string', 'message'],
        ['/array/1/hash/h2/a', [1, 2, 3]],
@@ -287,7 +286,7 @@ class DocTest < Minitest::Test
   end
 
   def test_move_fetch_path
-    Oj::Doc.open($json1) do |doc|
+    Oj::Doc.open(@json1) do |doc|
       [['/array/1', 'num', 3],
        ['/array/1', 'string', 'message'],
        ['/array/1/hash', 'h2/a', [1, 2, 3]],
@@ -299,7 +298,7 @@ class DocTest < Minitest::Test
   end
 
   def test_home
-    Oj::Doc.open($json1) do |doc|
+    Oj::Doc.open(@json1) do |doc|
       doc.move('/array/1/num')
       doc.home()
       assert_equal('/', doc.where?)
@@ -307,7 +306,7 @@ class DocTest < Minitest::Test
   end
 
   def test_each_value_root
-    Oj::Doc.open($json1) do |doc|
+    Oj::Doc.open(@json1) do |doc|
       values = []
       doc.each_value() { |v| values << v.to_s }
       assert_equal(['1', '2', '3', '3', 'message', 'true'], values.sort)
@@ -315,7 +314,7 @@ class DocTest < Minitest::Test
   end
 
   def test_each_value_move
-    Oj::Doc.open($json1) do |doc|
+    Oj::Doc.open(@json1) do |doc|
       doc.move('/array/1/hash')
       values = []
       doc.each_value() { |v| values << v.to_s }
@@ -324,7 +323,7 @@ class DocTest < Minitest::Test
   end
 
   def test_each_value_path
-    Oj::Doc.open($json1) do |doc|
+    Oj::Doc.open(@json1) do |doc|
       values = []
       doc.each_value('/array/1/hash') { |v| values << v.to_s }
       assert_equal(['1', '2', '3'], values.sort)
@@ -332,7 +331,7 @@ class DocTest < Minitest::Test
   end
 
   def test_each_child_move
-    Oj::Doc.open($json1) do |doc|
+    Oj::Doc.open(@json1) do |doc|
       locations = []
       doc.move('/array/1/hash/h2/a')
       doc.each_child() { |d| locations << d.where? }
@@ -345,7 +344,7 @@ class DocTest < Minitest::Test
   end
 
   def test_each_child_path
-    Oj::Doc.open($json1) do |doc|
+    Oj::Doc.open(@json1) do |doc|
       locations = []
       doc.each_child('/array/1/hash/h2/a') { |d| locations << d.where? }
       assert_equal(['/array/1/hash/h2/a/1', '/array/1/hash/h2/a/2', '/array/1/hash/h2/a/3'], locations)
