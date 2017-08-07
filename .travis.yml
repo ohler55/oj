@@ -9,7 +9,6 @@ env:
 
 language: ruby
 rvm:
-  - 1.9.3
   - 2.1.10
   - 2.2.6
   - 2.3.3
@@ -25,19 +24,12 @@ gemfile:
 matrix:
   fast_finish: true
   allow_failures:
-    - rvm: 1.9.3
     - rvm: 2.1.10
     - rvm: 2.2.6
 
   exclude:
     - gemfile: gemfiles/rails_5.gemfile
       rvm: 2.1.10
-    - gemfile: gemfiles/rails_4.1.gemfile
-      rvm: 1.9.3
-    - gemfile: gemfiles/rails_4.2.gemfile
-      rvm: 1.9.3
-    - gemfile: gemfiles/rails_5.gemfile
-      rvm: 1.9.3
     - gemfile: gemfiles/no_rails.gemfile
       rvm: 2.1.10
     - gemfile: gemfiles/no_rails.gemfile
