@@ -36,8 +36,6 @@ class SharedMimicTest < Minitest::Test
     @expected_time_string =
       if defined?(Rails)
         %{"2014-05-13T16:53:20.000Z"}
-      elsif RUBY_VERSION.start_with?('1.8')
-        %{"Tue May 13 16:53:20 UTC 2014"}
       else
         %{"2014-05-13 16:53:20 UTC"}
       end
@@ -145,7 +143,7 @@ class SharedMimicTest < Minitest::Test
     Oj.mimic_JSON
     children = []
     json = %{{"a":1,"b":[true,false]}}
-    if 'rubinius' == $ruby || '1.8.7' == RUBY_VERSION
+    if 'rubinius' == $ruby
       obj = JSON.load(json) {|x| children << x }
     else
       p = Proc.new {|x| children << x }
