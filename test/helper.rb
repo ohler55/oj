@@ -8,7 +8,6 @@ $VERBOSE = true
   $LOAD_PATH.unshift File.expand_path("../../#{dir}", __FILE__)
 end
 
-require 'rubygems' if RUBY_VERSION.start_with?('1.8.')
 require 'minitest'
 require 'minitest/autorun'
 require 'stringio'
