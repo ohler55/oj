@@ -214,11 +214,7 @@ class Juice < Minitest::Test
     Oj.default_options = { :float_precision => 5 }
     assert_equal('1.4055', Oj.dump(1.405460727))
     Oj.default_options = { :float_precision => 0 }
-    if RUBY_VERSION.start_with?('1.8')
-      assert_equal('1405460727.72387', Oj.dump(1405460727.723866))
-    else
-      assert_equal('1405460727.723866', Oj.dump(1405460727.723866))
-    end
+    assert_equal('1405460727.723866', Oj.dump(1405460727.723866))
     Oj.default_options = { :float_precision => 15 }
     assert_equal('0.56', Oj.dump(0.56))
     assert_equal('0.5773', Oj.dump(0.5773))
