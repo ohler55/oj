@@ -91,7 +91,7 @@ static char	hixss_friendly_chars[256] = "\
 11111111111111111111111111111111\
 11111111111111111111111111111111\
 11111111111111111111111111111111\
-11311111111111111111111111111111";
+11611111111111111111111111111111";
 
 // Rails HTML non-escape
 static char	rails_friendly_chars[256] = "\
@@ -102,7 +102,7 @@ static char	rails_friendly_chars[256] = "\
 11111111111111111111111111111111\
 11111111111111111111111111111111\
 11111111111111111111111111111111\
-11311111111111111111111111111111";
+11611111111111111111111111111111";
 
 static void
 raise_strict(VALUE obj) {
@@ -741,7 +741,7 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
     } else {
 	const char	*end = str + cnt;
 	const char	*check_start = str;
-
+	
 	if (is_sym) {
 	    *out->cur++ = ':';
 	}
@@ -784,11 +784,24 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
 		str = dump_unicode(str, end, out);
 		break;
 	    case '6': // control characters
-		*out->cur++ = '\\';
-		*out->cur++ = 'u';
-		*out->cur++ = '0';
-		*out->cur++ = '0';
-		dump_hex((uint8_t)*str, out);
+		if (*(uint8_t*)str < 0x80) {
+		    *out->cur++ = '\\';
+		    *out->cur++ = 'u';
+		    *out->cur++ = '0';
+		    *out->cur++ = '0';
+		    dump_hex((uint8_t)*str, out);
+		} else {
+		    if (0xe2 == (uint8_t)*str && JXEsc == out->opts->escape_mode && 2 <= end - str) {
+			if (0x80 == (uint8_t)str[1] && (0xa8 == (uint8_t)str[2] || 0xa9 == (uint8_t)str[2])) {
+			    str = dump_unicode(str, end, out);
+			} else {
+			    check_start = check_unicode(str, end);
+			    *out->cur++ = *str;
+			}
+			break;
+		    }
+		    str = dump_unicode(str, end, out);
+		}
 		break;
 	    default:
 		break; // ignore, should never happen if the table is correct

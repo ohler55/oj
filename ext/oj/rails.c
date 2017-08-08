@@ -647,7 +647,7 @@ encode(VALUE obj, ROptTable ropts, Options opts, int argc, VALUE *argv) {
     char		buf[4096];
     struct _Out		out;
     struct _Options	copts = *opts;
-    VALUE		rstr = Qnil;
+    volatile VALUE	rstr = Qnil;
     struct _OO		oo;
     int			line = 0;
 

@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.3.5 - 2017-08-08
+
+- Fixed a memory error when using rails string encoding of certain unicode characters.
+
 ## 3.3.4 - 2017-08-03
 
 - Oj::Rails.mimic_JSON now uses Float for JSON.parse for large decimals instead of BigDecimal.
