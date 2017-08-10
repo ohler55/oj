@@ -761,7 +761,7 @@ oj_sparse2(ParseInfo pi) {
 	case '\0':
 	    return;
 	default:
-	    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "unexpected character");
+	    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "unexpected character '%c' [0x%02x]", c, c);
 	    return;
 	}
 	if (err_has(&pi->err)) {
