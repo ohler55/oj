@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 3.3.5 - 2017-08-08
+## 3.3.5 - 2017-08-11
 
 - Fixed a memory error when using rails string encoding of certain unicode characters.
 
