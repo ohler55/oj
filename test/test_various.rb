@@ -734,7 +734,7 @@ class Juice < Minitest::Test
   end
 
   def test_empty_string_true
-    result = Oj.load(gen_whitespaced_string, :empty_string => true)
+    result = Oj.load(gen_whitespaced_string, :empty_string => true, mode: :strict)
     assert_nil(result)
   end
 

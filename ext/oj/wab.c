@@ -422,11 +422,11 @@ cstr_to_rstr(const char *str, size_t len) {
     volatile VALUE	v = Qnil;
     
     if (30 == len && '-' == str[4] && '-' == str[7] && 'T' == str[10] && ':' == str[13] && ':' == str[16]  && '.' == str[19] && 'Z' == str[29]) {
-	if (Qnil != (v = time_parse(str, len))) {
+	if (Qnil != (v = time_parse(str, (int)len))) {
 	    return v;
 	}
     }
-    if (36 == len && '-' == str[8] && '-' == str[13] && '-' == str[18] && '-' == str[23] && uuid_check(str, len) && Qnil != resolve_wab_uuid_class()) {
+    if (36 == len && '-' == str[8] && '-' == str[13] && '-' == str[18] && '-' == str[23] && uuid_check(str, (int)len) && Qnil != resolve_wab_uuid_class()) {
 	return rb_funcall(wab_uuid_clas, oj_new_id, 1, rb_str_new(str, len));
     }
     v = rb_str_new(str, len);
