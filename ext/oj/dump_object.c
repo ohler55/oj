@@ -729,9 +729,9 @@ dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
 	int	cnt;
 #if UNIFY_FIXNUM_AND_BIGNUM
 	cnt = (int)NUM2LONG(RSTRUCT_LEN(obj));
-#else // UNIFY_FIXNUM_AND_INTEGER
+#else // UNIFY_FIXNUM_AND_BIGNUM
 	cnt = (int)RSTRUCT_LEN(obj);
-#endif // UNIFY_FIXNUM_AND_INTEGER
+#endif // UNIFY_FIXNUM_AND_BIGNUM
 	
 	for (i = 0; i < cnt; i++) {
 	    v = RSTRUCT_GET(obj, i);

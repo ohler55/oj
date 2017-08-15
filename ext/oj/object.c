@@ -368,9 +368,9 @@ hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, volatile VALUE
 #ifdef RSTRUCT_LEN
 #if UNIFY_FIXNUM_AND_BIGNUM
 	    slen = (int)NUM2LONG(RSTRUCT_LEN(parent->val));
-#else // UNIFY_FIXNUM_AND_INTEGER
+#else // UNIFY_FIXNUM_AND_BIGNUM
 	    slen = (int)RSTRUCT_LEN(parent->val);
-#endif // UNIFY_FIXNUM_AND_INTEGER
+#endif // UNIFY_FIXNUM_AND_BIGNUM
 #else
 	    slen = FIX2INT(rb_funcall2(parent->val, oj_length_id, 0, 0));
 #endif
