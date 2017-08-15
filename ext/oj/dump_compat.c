@@ -793,11 +793,11 @@ dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
 	    raise_json_err("Only named structs are supported.", "JSONError");
 	}
 #ifdef RSTRUCT_LEN
-#if UNIFY_FIXNUM_AND_BIGNUM
+#if RSTRUCT_LEN_RETURNS_INTEGER_OBJECT
 	cnt = (int)NUM2LONG(RSTRUCT_LEN(obj));
-#else // UNIFY_FIXNUM_AND_BIGNUM
+#else // RSTRUCT_LEN_RETURNS_INTEGER_OBJECT
 	cnt = (int)RSTRUCT_LEN(obj);
-#endif // UNIFY_FIXNUM_AND_BIGNUM
+#endif // RSTRUCT_LEN_RETURNS_INTEGER_OBJECT
 #else
 	// This is a bit risky as a struct in C ruby is not the same as a Struct
 	// class in interpreted Ruby so length() may not be defined.

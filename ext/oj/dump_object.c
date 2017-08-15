@@ -727,11 +727,11 @@ dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
     {
 	VALUE	v;
 	int	cnt;
-#if UNIFY_FIXNUM_AND_BIGNUM
+#if RSTRUCT_LEN_RETURNS_INTEGER_OBJECT
 	cnt = (int)NUM2LONG(RSTRUCT_LEN(obj));
-#else // UNIFY_FIXNUM_AND_BIGNUM
+#else // RSTRUCT_LEN_RETURNS_INTEGER_OBJECT
 	cnt = (int)RSTRUCT_LEN(obj);
-#endif // UNIFY_FIXNUM_AND_BIGNUM
+#endif // RSTRUCT_LEN_RETURNS_INTEGER_OBJECT
 	
 	for (i = 0; i < cnt; i++) {
 	    v = RSTRUCT_GET(obj, i);
