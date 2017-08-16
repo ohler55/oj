@@ -32,7 +32,6 @@ dflags = {
   'IS_WINDOWS' => is_windows ? 1 : 0,
   'USE_PTHREAD_MUTEX' => is_windows ? 0 : 1,
   'USE_RB_MUTEX' => (is_windows && !('1' == version[0] && '8' == version[1])) ? 1 : 0,
-  'DATETIME_1_8' => ('ruby' == type && ('1' == version[0] && '8' == version[1])) ? 1 : 0,
   'NO_TIME_ROUND_PAD' => ('rubinius' == type) ? 1 : 0,
   'HAS_DATA_OBJECT_WRAP' => ('ruby' == type && '2' == version[0] && '3' <= version[1]) ? 1 : 0,
   'HAS_METHOD_ARITY' =>  ('rubinius' == type) ? 0 : 1,
