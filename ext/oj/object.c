@@ -366,11 +366,11 @@ hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, volatile VALUE
             parent->val = rb_obj_alloc(sc);
             // If the JSON array has more entries than the struct class allows, we record an error.
 #ifdef RSTRUCT_LEN
-#if UNIFY_FIXNUM_AND_BIGNUM
+#if RSTRUCT_LEN_RETURNS_INTEGER_OBJECT
 	    slen = (int)NUM2LONG(RSTRUCT_LEN(parent->val));
-#else // UNIFY_FIXNUM_AND_BIGNUM
+#else // RSTRUCT_LEN_RETURNS_INTEGER_OBJECT
 	    slen = (int)RSTRUCT_LEN(parent->val);
-#endif // UNIFY_FIXNUM_AND_BIGNUM
+#endif // RSTRUCT_LEN_RETURNS_INTEGER_OBJECT
 #else
 	    slen = FIX2INT(rb_funcall2(parent->val, oj_length_id, 0, 0));
 #endif
