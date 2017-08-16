@@ -44,9 +44,6 @@ get_datetime_secs(VALUE obj) {
     long long	num = rb_num2ll(rb_funcall(rfrac, numerator_id, 0));
     long long	den = rb_num2ll(rb_funcall(rfrac, denominator_id, 0));
 
-#if DATETIME_1_8
-    num *= 86400;
-#endif
     num += sec * den;
 
     return rb_funcall(rb_cObject, rational_id, 2, rb_ll2inum(num), rb_ll2inum(den));
