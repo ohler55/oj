@@ -33,7 +33,7 @@ task :test_all => [:clean, :compile] do
   # tests.
   if RUBY_VERSION >= '2.4'
     Dir.glob('test/json_gem/*_test.rb').each do |file|
-      cmd = "REAL_JSON_GEM=1 ruby -Itest #{file}"
+      cmd = "REAL_JSON_GEM=1 bundle exec ruby -Itest #{file}"
       puts "\n" + "#"*90
       puts cmd
       Bundler.with_clean_env do
