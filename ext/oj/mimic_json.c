@@ -507,7 +507,7 @@ mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
     pi.options.mode = CompatMode;
     pi.max_depth = 100;
 
-    if (2 <= argc && Qnil != ropts) {
+    if (Qnil != ropts) {
 	VALUE	v;
 
 	if (T_HASH != rb_type(ropts)) {
