@@ -487,9 +487,7 @@ mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
     struct _ParseInfo	pi;
     VALUE		args[1];
 
-    if (argc < 1) {
-	rb_raise(rb_eArgError, "Wrong number of arguments to parse.");
-    }
+    rb_scan_args(argc, argv, "11", NULL, NULL);
     parse_info_init(&pi);
     oj_set_compat_callbacks(&pi);
     // TBD
