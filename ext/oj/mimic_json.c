@@ -485,9 +485,10 @@ oj_mimic_pretty_generate(int argc, VALUE *argv, VALUE self) {
 static VALUE
 mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
     struct _ParseInfo	pi;
+    VALUE		ropts;
     VALUE		args[1];
 
-    rb_scan_args(argc, argv, "11", NULL, NULL);
+    rb_scan_args(argc, argv, "11", NULL, &ropts);
     parse_info_init(&pi);
     oj_set_compat_callbacks(&pi);
     // TBD
@@ -506,8 +507,7 @@ mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
     pi.options.mode = CompatMode;
     pi.max_depth = 100;
 
-    if (2 <= argc && Qnil != argv[1]) {
-	VALUE	ropts = argv[1];
+    if (2 <= argc && Qnil != ropts) {
 	VALUE	v;
 
 	if (T_HASH != rb_type(ropts)) {
