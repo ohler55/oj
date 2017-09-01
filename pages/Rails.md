@@ -87,3 +87,7 @@ Oj::Rails.set_decoder() method replaces that method with the Oj equivelant.
    that has already been used. This could occur is a mix of String and Symbols
    are used as keys or if a other non-String objects such as Numerics are mixed
    with numbers as Strings.
+
+3. To verify Oj is being used turn on trace and then set the
+   `Tracer.display_c_call = true` to see calls to C extensions.
+   
