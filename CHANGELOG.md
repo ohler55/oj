@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.3.6 - 2017-09-22
+
+  - Numerous fixes and cleanup to support Ruby 2.4.2.
+
 ## 3.3.5 - 2017-08-11
 
 - Fixed a memory error when using rails string encoding of certain unicode characters.
