@@ -1,7 +1,7 @@
 # Oj Modes
 
 Oj uses modes to switch the load and dump behavior. Initially Oj supported on
-the :object mode which uses a format that allows Juby object encoding and
+the :object mode which uses a format that allows Ruby object encoding and
 decoding in a manner that lets almost any Ruby object be encoded and decoded
 without monkey patching the object classes. From that start other demands were
 made the were best met by giving Oj multiple modes of operation. The current
