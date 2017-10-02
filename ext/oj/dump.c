@@ -689,6 +689,7 @@ void
 oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
     size_t	size;
     char	*cmap;
+    const char	*orig = str;
 
     switch (out->opts->escape_mode) {
     case NLEsc:
@@ -817,7 +818,15 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
 	// 0x110xxxxx for 2 characters, 0x1110xxxx for 3, and 0x11110xxx for
 	// 4.
 	if (0 != (0x40 & c)) {
-	    rb_raise(oj_json_generator_error_class, "Partial character in string. 1");
+	    char	buf[1024];
+	    char	*b = buf;
+	    const char	*s = orig;
+
+	    for (; s < s + cnt; s++) {
+		b += sprintf(b, " %02x", *s);
+	    }
+	    *b = '\0';
+	    rb_raise(oj_json_generator_error_class, "Partial character in string. %s", buf);
 	}
 	for (i = 1; i < (int)cnt && i < 4; i++) {
 	    c = str[-1 - i];

@@ -845,10 +845,13 @@ oj_pi_sparse(int argc, VALUE *argv, ParseInfo pi, int fd) {
     }
     // GC can run at any time. When it runs any Object created by C will be
     // freed. We protect against this by wrapping the value stack in a ruby
-    // data object and poviding a mark function for ruby objects on the
+    // data object and providing a mark function for ruby objects on the
     // value stack (while it is in scope).
     wrapped_stack = oj_stack_init(&pi->stack);
     rb_protect(protect_parse, (VALUE)pi, &line);
+    if (Qundef == pi->stack.head->val && No == pi->options.empty_string) {
+	oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "Empty input");
+    }
     result = stack_head_val(&pi->stack);
     DATA_PTR(wrapped_stack) = 0;
     if (No == pi->options.allow_gc) {
