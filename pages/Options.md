@@ -91,18 +91,21 @@ specifying the class for an encoded object. The default is `json_create`.
 
 ### :empty_string [Boolean]
 
-If true an empty input will not raise an Exception. The default differs
-according to the mode and in some cases the function used to load or dump. The
-defaults are:
+If true an empty or all whitespace input will not raise an Exception. The
+default_options will be honored for :null, :strict, and :custom modes. Ignored
+for :custom and :wab. The :compat has a more complex set of rules. The JSON
+gem compatibility is best described by examples.
 
- - :null - true
- - :strict - true
- - :compat or :json - true
-    - JSON.parse() - false
-    - JSON.load() - true (or what ever is set in the defaults)
- - :rails - TBD
- - :object - true
- - :custom - true
+```
+JSON.parse('') => raise
+JSON.parse(' ') => raise
+JSON.load('') => nil
+JSON.load('', nil, allow_blank: false) => raise
+JSON.load('', nil, allow_blank: true) => nil
+JSON.load(' ') => raise
+JSON.load(' ', nil, allow_blank: false) => raise
+JSON.load(' ', nil, allow_blank: true) => raise
+```
 
 ### :escape_mode [Symbol]
 

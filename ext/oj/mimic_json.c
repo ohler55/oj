@@ -795,6 +795,7 @@ oj_mimic_json_methods(VALUE json) {
     } else {
     	oj_json_parser_error_class = rb_define_class_under(json, "ParserError", json_error);
     }
+    printf("*** setting parse error to %lx %s\n", oj_json_parser_error_class, rb_class2name(oj_json_parser_error_class));
     if (rb_const_defined_at(json, rb_intern("GeneratorError"))) {
         oj_json_generator_error_class = rb_const_get(json, rb_intern("GeneratorError"));
     } else {

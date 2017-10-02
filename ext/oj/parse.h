@@ -93,15 +93,15 @@ parse_info_init(ParseInfo pi) {
 static inline bool
 empty_ok(Options options) {
     switch (options->mode) {
-    case StrictMode:
-    case NullMode:
     case ObjectMode:
-    case CustomMode:
     case WabMode:
 	return true;
     case CompatMode:
     case RailsMode:
 	return false;
+    case StrictMode:
+    case NullMode:
+    case CustomMode:
     default:
 	break;
     }
