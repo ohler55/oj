@@ -317,7 +317,7 @@ mimic_load(int argc, VALUE *argv, VALUE self) {
     VALUE	obj;
     VALUE	p = Qnil;
 
-    obj = oj_compat_parse(argc, argv, self);
+    obj = oj_compat_load(argc, argv, self);
     if (2 <= argc) {
 	if (rb_cProc == rb_obj_class(argv[1])) {
 	    p = argv[1];
@@ -491,7 +491,7 @@ mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
     rb_scan_args(argc, argv, "11", NULL, &ropts);
     parse_info_init(&pi);
     oj_set_compat_callbacks(&pi);
-    // TBD
+
     pi.err_class = oj_json_parser_error_class;
     //pi.err_class = Qnil;
 
@@ -678,7 +678,7 @@ static struct _Options	mimic_object_to_json_options = {
     No,		// to_json
     No,		// as_json
     No,		// nilnil
-    Yes,	// empty_string
+    No,		// empty_string
     Yes,	// allow_gc
     Yes,	// quirks_mode
     No,		// allow_invalid

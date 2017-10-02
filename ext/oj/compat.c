@@ -217,8 +217,30 @@ oj_compat_parse(int argc, VALUE *argv, VALUE self) {
     pi.max_depth = 0;
     pi.options.allow_nan = Yes;
     pi.options.nilnil = Yes;
+    pi.options.empty_string = No;
     oj_set_compat_callbacks(&pi);
 
+    if (T_STRING == rb_type(*argv)) {
+	return oj_pi_parse(argc, argv, &pi, 0, 0, false);
+    } else {
+	return oj_pi_sparse(argc, argv, &pi, 0);
+    }
+}
+
+VALUE
+oj_compat_load(int argc, VALUE *argv, VALUE self) {
+    struct _ParseInfo	pi;
+
+    parse_info_init(&pi);
+    pi.options = oj_default_options;
+    pi.handler = Qnil;
+    pi.err_class = Qnil;
+    pi.max_depth = 0;
+    pi.options.allow_nan = Yes;
+    pi.options.nilnil = Yes;
+    pi.options.empty_string = Yes;
+    oj_set_compat_callbacks(&pi);
+    
     if (T_STRING == rb_type(*argv)) {
 	return oj_pi_parse(argc, argv, &pi, 0, 0, false);
     } else {

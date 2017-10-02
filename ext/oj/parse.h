@@ -90,4 +90,22 @@ parse_info_init(ParseInfo pi) {
     memset(pi, 0, sizeof(struct _ParseInfo));
 }
 
+static inline bool
+empty_ok(Options options) {
+    switch (options->mode) {
+    case StrictMode:
+    case NullMode:
+    case ObjectMode:
+    case CustomMode:
+    case WabMode:
+	return true;
+    case CompatMode:
+    case RailsMode:
+	return false;
+    default:
+	break;
+    }
+    return Yes == options->empty_string;
+}
+
 #endif /* __OJ_PARSE_H__ */

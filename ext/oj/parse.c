@@ -859,6 +859,11 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
 	pi->end = json + len;
 	free_json = 1;
     } else if (T_STRING == rb_type(input)) {
+	if (CompatMode == pi->options.mode) {
+	    if (No == pi->options.nilnil && 0 == RSTRING_LEN(input)) {
+		rb_raise(oj_json_parser_error_class, "An empty string is not a valid JSON string.");
+	    }
+	}
 	oj_pi_set_input_str(pi, &input);
     } else if (Qnil == input) {
 	if (Yes == pi->options.nilnil) {
@@ -916,7 +921,7 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
     // value stack (while it is in scope).
     wrapped_stack = oj_stack_init(&pi->stack);
     rb_protect(protect_parse, (VALUE)pi, &line);
-    if (Qundef == pi->stack.head->val && No == pi->options.empty_string) {
+    if (Qundef == pi->stack.head->val && !empty_ok(&pi->options) && No == pi->options.nilnil) {
 	oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "Empty input");
     }
     result = stack_head_val(&pi->stack);

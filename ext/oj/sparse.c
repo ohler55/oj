@@ -826,6 +826,8 @@ oj_pi_sparse(int argc, VALUE *argv, ParseInfo pi, int fd) {
 	} else {
 	    rb_raise(rb_eTypeError, "Nil is not a valid JSON source.");
 	}
+    } else if (CompatMode == pi->options.mode && T_STRING == rb_type(input) && No == pi->options.nilnil && 0 == RSTRING_LEN(input)) {
+	rb_raise(oj_json_parser_error_class, "An empty string is not a valid JSON string.");
     }
     if (rb_block_given_p()) {
 	pi->proc = Qnil;
@@ -849,7 +851,7 @@ oj_pi_sparse(int argc, VALUE *argv, ParseInfo pi, int fd) {
     // value stack (while it is in scope).
     wrapped_stack = oj_stack_init(&pi->stack);
     rb_protect(protect_parse, (VALUE)pi, &line);
-    if (Qundef == pi->stack.head->val && No == pi->options.empty_string) {
+    if (Qundef == pi->stack.head->val && !empty_ok(&pi->options)) {
 	oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "Empty input");
     }
     result = stack_head_val(&pi->stack);

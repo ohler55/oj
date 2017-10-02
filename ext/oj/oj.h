@@ -244,6 +244,7 @@ extern VALUE	oj_sc_parse(int argc, VALUE *argv, VALUE self);
 extern VALUE	oj_strict_parse(int argc, VALUE *argv, VALUE self);
 extern VALUE	oj_strict_sparse(int argc, VALUE *argv, VALUE self);
 extern VALUE	oj_compat_parse(int argc, VALUE *argv, VALUE self);
+extern VALUE	oj_compat_load(int argc, VALUE *argv, VALUE self);
 extern VALUE	oj_object_parse(int argc, VALUE *argv, VALUE self);
 extern VALUE	oj_custom_parse(int argc, VALUE *argv, VALUE self);
 extern VALUE	oj_wab_parse(int argc, VALUE *argv, VALUE self);
