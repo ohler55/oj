@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.3.7 - 2017-10-02
+
+  - Handle invalid unicode characters better for single byte strings.
+
+  - Parsers for empty strings handle errors more consistently.
+
 ## 3.3.6 - 2017-09-22
 
   - Numerous fixes and cleanup to support Ruby 2.4.2.
