@@ -972,7 +972,7 @@ dump_float(VALUE obj, int depth, Out out, bool as_ok) {
 	} else if (d == (double)(long long int)d) {
 	    cnt = snprintf(buf, sizeof(buf), "%.1f", d);
 	} else if (oj_rails_float_opt) {
-	    cnt = snprintf(buf, sizeof(buf), "%0.16g", d);
+	    cnt = oj_dump_float_printf(buf, sizeof(buf), obj, d, "%0.16g");
 	} else {
 	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 

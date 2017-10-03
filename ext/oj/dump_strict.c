@@ -115,7 +115,7 @@ dump_float(VALUE obj, int depth, Out out, bool as_ok) {
 	    strncpy(buf, rb_string_value_ptr((VALUE*)&rstr), cnt);
 	    buf[cnt] = '\0';
 	} else {
-	    cnt = snprintf(buf, sizeof(buf), out->opts->float_fmt, d);
+	    cnt = oj_dump_float_printf(buf, sizeof(buf), obj, d, out->opts->float_fmt);
 	}
     }
     assure_size(out, cnt);
