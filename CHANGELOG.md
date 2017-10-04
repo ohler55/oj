@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.3.8 - 2017-10-04
+
+  - Fixed Rail mimic precision bug.
+
 ## 3.3.7 - 2017-10-02
 
   - Handle invalid unicode characters better for single byte strings.

@@ -1110,11 +1110,26 @@ oj_dump_float(VALUE obj, int depth, Out out, bool as_ok) {
 	strncpy(buf, rb_string_value_ptr((VALUE*)&rstr), cnt);
 	buf[cnt] = '\0';
     } else {
-	cnt = snprintf(buf, sizeof(buf), out->opts->float_fmt, d);
+	cnt = oj_dump_float_printf(buf, sizeof(buf), obj, d, out->opts->float_fmt);
     }
     assure_size(out, cnt);
     for (b = buf; '\0' != *b; b++) {
 	*out->cur++ = *b;
     }
     *out->cur = '\0';
+}
+
+int
+oj_dump_float_printf(char *buf, size_t blen, VALUE obj, double d, const char *format) {
+    int	cnt = snprintf(buf, blen, format, d);
+
+    // Round off issues at 16 significant digits so check for obvious ones of
+    // 0001 and 9999.
+    if (17 <= cnt && (0 == strcmp("0001", buf + cnt - 4) || 0 == strcmp("9999", buf + cnt - 4))) {
+	volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+
+	strcpy(buf, rb_string_value_ptr((VALUE*)&rstr));
+	cnt = (int)RSTRING_LEN(rstr);
+    }
+    return cnt;
 }
