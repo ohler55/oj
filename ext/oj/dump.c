@@ -814,6 +814,21 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
 	uint8_t	c = (uint8_t)*(str - 1);
 	int	i;
 	
+	{
+	    char	buf[256];
+	    char	*b = buf;
+	    const char	*s = orig;
+	    int		cnt2 = cnt;
+
+	    if (10 < cnt2) {
+		cnt2 = 10;
+	    }
+	    for (; s < s + cnt2; s++) {
+		b += sprintf(b, " %02x", *s);
+	    }
+	    *b = '\0';
+	    printf("*** dumping string '%s'\n", buf);
+	}
 	// Last utf-8 characters must be 0x10xxxxxx. The start must be
 	// 0x110xxxxx for 2 characters, 0x1110xxxx for 3, and 0x11110xxx for
 	// 4.
