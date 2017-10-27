@@ -685,6 +685,23 @@ oj_dump_sym(VALUE obj, int depth, Out out, bool as_ok) {
     oj_dump_cstr(sym, strlen(sym), 0, 0, out);
 }
 
+static void
+debug_raise(const char *orig, size_t cnt, int line) {
+    char	buf[1024];
+    char	*b = buf;
+    const char	*s = orig;
+    const char	*s_end = s + cnt;
+
+    if (32 < s_end - s) {
+	s_end = s + 32;
+    }
+    for (; s < s_end; s++) {
+	b += sprintf(b, " %02x", *s);
+    }
+    *b = '\0';
+    rb_raise(oj_json_generator_error_class, "Partial character in string. %s @ %d", buf, line);
+}
+
 void
 oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
     size_t	size;
@@ -810,41 +827,34 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
 	}
 	*out->cur++ = '"'; 
     }
-    if (JXEsc == out->opts->escape_mode && 0 != (0x80 & *(str - 1))) {
+    if (JXEsc == out->opts->escape_mode && 0 < str - orig && 0 != (0x80 & *(str - 1))) {
 	uint8_t	c = (uint8_t)*(str - 1);
 	int	i;
+	int	scnt = str - orig;
 	
 	// Last utf-8 characters must be 0x10xxxxxx. The start must be
 	// 0x110xxxxx for 2 characters, 0x1110xxxx for 3, and 0x11110xxx for
 	// 4.
 	if (0 != (0x40 & c)) {
-	    char	buf[1024];
-	    char	*b = buf;
-	    const char	*s = orig;
-
-	    for (; s < s + cnt; s++) {
-		b += sprintf(b, " %02x", *s);
-	    }
-	    *b = '\0';
-	    rb_raise(oj_json_generator_error_class, "Partial character in string. %s", buf);
+	    debug_raise(orig, cnt, __LINE__);
 	}
-	for (i = 1; i < (int)cnt && i < 4; i++) {
+	for (i = 1; i < (int)scnt && i < 4; i++) {
 	    c = str[-1 - i];
 	    if (0x80 != (0xC0 & c)) {
 		switch (i) {
 		case 1:
 		    if (0xC0 != (0xE0 & c)) {
-			rb_raise(oj_json_generator_error_class, "Partial character in string.");
+			debug_raise(orig, cnt, __LINE__);
 		    }
 		    break;
 		case 2:
 		    if (0xE0 != (0xF0 & c)) {
-			rb_raise(oj_json_generator_error_class, "Partial character in string.");
+			debug_raise(orig, cnt, __LINE__);
 		    }
 		    break;
 		case 3:
 		    if (0xF0 != (0xF8 & c)) {
-			rb_raise(oj_json_generator_error_class, "Partial character in string.");
+			debug_raise(orig, cnt, __LINE__);
 		    }
 		    break;
 		default: // can't get here
@@ -853,8 +863,8 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
 		break;
 	    }
 	}
-	if (i == (int)cnt || 4 <= i) {
-	    rb_raise(oj_json_generator_error_class, "Partial character in string.");
+	if (i == (int)scnt || 4 <= i) {
+	    debug_raise(orig, cnt, __LINE__);
 	}
     }
     *out->cur = '\0';

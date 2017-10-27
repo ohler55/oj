@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.3.9 - 2017-10-27
+
+  - Fixed bug where empty strings were sometimes marked as invalid.
+
 ## 3.3.8 - 2017-10-04
 
   - Fixed Rail mimic precision bug.
