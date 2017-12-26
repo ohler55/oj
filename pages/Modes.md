@@ -94,7 +94,7 @@ information.
     | :array_nl              | String  |         |         |         |         |         |       x |         |
     | :ascii_only            | Boolean |       x |       x |       2 |       2 |       x |       x |         |
     | :auto_define           | Boolean |         |         |         |         |       x |       x |         |
-    | :bigdecimal_as_decimal | Boolean |         |         |         |         |       x |       x |         |
+    | :bigdecimal_as_decimal | Boolean |         |         |         |         |         |       x |         |
     | :bigdecimal_load       | Boolean |         |         |         |         |         |       x |         |
     | :circular              | Boolean |       x |       x |       x |       x |       x |       x |         |
     | :class_cache           | Boolean |         |         |         |         |       x |       x |         |

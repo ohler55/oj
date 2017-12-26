@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.3.10 - 2017-12-27
+
+  - Re-activated the bigdecimal_as_decimal option in custom mode.
+
 ## 3.3.9 - 2017-10-27
 
   - Fixed bug where empty strings were sometimes marked as invalid.
