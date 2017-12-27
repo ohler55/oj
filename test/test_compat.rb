@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-# encoding: UTF-8
+# encoding: utf-8
 
 $: << File.dirname(__FILE__)
 $oj_dir = File.dirname(File.expand_path(File.dirname(__FILE__)))
@@ -275,12 +275,8 @@ class CompatJuice < Minitest::Test
     # BigDecimals are dumped as strings and can not be restored to the
     # original value.
     json = Oj.dump(BigDecimal.new('3.14159265358979323846'))
-    if RUBY_VERSION >= '2.4.0'
-      # 2.4.0 changes the exponent to lowercase
-      assert_equal('"0.314159265358979323846e1"', json)
-    else
-      assert_equal('"0.314159265358979323846E1"', json)
-    end
+    # 2.4.0 changes the exponent to lowercase
+    assert_equal('"0.314159265358979323846e1"', json.downcase)
   end
 
   def test_infinity
