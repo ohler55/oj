@@ -167,7 +167,7 @@ struct _Options	oj_default_options = {
     ObjectMode,	// mode
     Yes,	// class_cache
     UnixTime,	// time_format
-    Yes,	// bigdec_as_num
+    NotSet,	// bigdec_as_num
     AutoDec,	// bigdec_load
     No,		// to_hash
     No,		// to_json
@@ -545,13 +545,16 @@ oj_parse_options(VALUE ropts, Options copts) {
 	}
     }
     for (o = ynos; 0 != o->attr; o++) {
-	if (Qnil != (v = rb_hash_lookup(ropts, o->sym))) {
-	    if (Qtrue == v) {
+	if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, o->sym)) {
+	    v = rb_hash_lookup(ropts, o->sym);
+	    if (Qnil == v) {
+		*o->attr = NotSet;
+	    } else if (Qtrue == v) {
 		*o->attr = Yes;
 	    } else if (Qfalse == v) {
 		*o->attr = No;
 	    } else {
-		rb_raise(rb_eArgError, "%s must be true or false.", rb_id2name(SYM2ID(o->sym)));
+		rb_raise(rb_eArgError, "%s must be true, false, or nil.", rb_id2name(SYM2ID(o->sym)));
 	    }
 	}
     }

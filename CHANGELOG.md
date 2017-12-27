@@ -2,7 +2,7 @@
 
 ## 3.3.10 - 2017-12-27
 
-  - Re-activated the bigdecimal_as_decimal option in custom mode.
+  - Re-activated the bigdecimal_as_decimal option in custom mode and made the selection active for Rails mode.
 
 ## 3.3.9 - 2017-10-27
 

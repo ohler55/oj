@@ -42,7 +42,7 @@ dump_data(VALUE obj, int depth, Out out, bool as_ok) {
 	    const char		*str = rb_string_value_ptr((VALUE*)&rstr);
 	    int			len = (int)RSTRING_LEN(rstr);
 
-	    if (Yes == out->opts->bigdec_as_num) {
+	    if (No != out->opts->bigdec_as_num) {
 		oj_dump_raw(str, len, out);
 	    } else if (0 == strcasecmp("Infinity", str)) {
 		str = oj_nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, true, &len);

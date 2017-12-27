@@ -830,7 +830,7 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
     if (JXEsc == out->opts->escape_mode && 0 < str - orig && 0 != (0x80 & *(str - 1))) {
 	uint8_t	c = (uint8_t)*(str - 1);
 	int	i;
-	int	scnt = str - orig;
+	int	scnt = (int)(str - orig);
 	
 	// Last utf-8 characters must be 0x10xxxxxx. The start must be
 	// 0x110xxxxx for 2 characters, 0x1110xxxx for 3, and 0x11110xxx for

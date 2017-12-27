@@ -212,6 +212,8 @@ dump_bigdecimal(VALUE obj, int depth, Out out, bool as_ok) {
 
     if ('I' == *str || 'N' == *str || ('-' == *str && 'I' == str[1])) {
 	oj_dump_nil(Qnil, depth, out, false);
+    } else if (Yes == out->opts->bigdec_as_num) {
+	oj_dump_raw(str, RSTRING_LEN(rstr), out);
     } else {
 	oj_dump_cstr(str, RSTRING_LEN(rstr), 0, 0, out);
     }
