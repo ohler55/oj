@@ -341,7 +341,7 @@ hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, volatile VALUE
             volatile VALUE	sc;
 	    volatile VALUE	e1;
 	    int			slen;
-	    
+
 	    if (0 == len) {
 		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "Invalid struct data");
 		return 1;
@@ -380,14 +380,14 @@ hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, volatile VALUE
             } else {
 		int	i;
 
-		for (i = 0; i < slen; i++) {
+		for (i = 0; i < len - 1; i++) {
 		    rb_struct_aset(parent->val, INT2FIX(i), RARRAY_PTR(value)[i + 1]);
 		}
             }
 	    return 1;
 	} else if (3 <= klen && '#' == key[1]) {
 	    volatile VALUE	*a;
-	
+
 	    if (2 != len) {
 		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "invalid hash pair");
 		return 1;
@@ -602,7 +602,7 @@ hash_set_value(ParseInfo pi, Val kval, VALUE value) {
 	    if (3 <= klen && '^' == *key && '#' == key[1] && T_ARRAY == rb_type(value)) {
 		long		len = RARRAY_LEN(value);
 		volatile VALUE	*a = RARRAY_PTR(value);
-	
+
 		if (2 != len) {
 		    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "invalid hash pair");
 		    return;
@@ -683,7 +683,7 @@ array_append_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
 		rb_ary_push(stack_peek(&pi->stack)->val, oj_circ_array_get(pi->circ_array, i));
 		return;
 	    }
-	    
+
 	}
     }
     rb_ary_push(stack_peek(&pi->stack)->val, str_to_value(pi, str, len, orig));
