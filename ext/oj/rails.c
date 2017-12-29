@@ -480,14 +480,23 @@ encoder_new(int argc, VALUE *argv, VALUE self) {
 static void
 optimize(int argc, VALUE *argv, ROptTable rot, bool on) {
     ROpt	ro;
-    
+
     if (0 == argc) {
-	int	i;
+	int		i;
+	NamedFunc	nf;
+	VALUE		clas;
 	
 	oj_rails_hash_opt = on;
 	oj_rails_array_opt = on;
 	oj_rails_float_opt = on;
 
+	for (nf = dump_map; NULL != nf->name; nf++) {
+	    if (Qnil != (clas = rb_eval_string_protect(nf->name, NULL))) {
+		if (NULL == oj_rails_get_opt(rot, clas)) {
+		    create_opt(rot, clas);
+		}
+	    }
+	}
 	for (i = 0; i < rot->len; i++) {
 	    rot->table[i].on = on;
 	}
