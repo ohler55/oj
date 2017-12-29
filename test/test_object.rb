@@ -345,19 +345,19 @@ class ObjectJuice < Minitest::Test
 
   # BigDecimal
   def test_bigdecimal_object
-    dump_and_load(BigDecimal.new('3.14159265358979323846'), false)
+    dump_and_load(BigDecimal('3.14159265358979323846'), false)
   end
 
   def test_bigdecimal_load
-    orig = BigDecimal.new('80.51')
+    orig = BigDecimal('80.51')
     json = Oj.dump(orig, :mode => :object, :bigdecimal_as_decimal => true)
     bg = Oj.load(json, :mode => :object, :bigdecimal_load => true)
     assert_equal(BigDecimal, bg.class)
     assert_equal(orig, bg)
     # Infinity is the same for Float and BigDecimal
-    json = Oj.dump(BigDecimal.new('Infinity'), :mode => :object)
+    json = Oj.dump(BigDecimal('Infinity'), :mode => :object)
     assert_equal('Infinity', json)
-    json = Oj.dump(BigDecimal.new('-Infinity'), :mode => :object)
+    json = Oj.dump(BigDecimal('-Infinity'), :mode => :object)
     assert_equal('-Infinity', json)
   end
 

@@ -477,6 +477,45 @@ encoder_new(int argc, VALUE *argv, VALUE self) {
     return Data_Wrap_Struct(encoder_class, encoder_mark, encoder_free, e);
 }
 
+static VALUE
+resolve_classpath(const char *name) {
+    char	class_name[1024];
+    VALUE	clas;
+    char	*end = class_name + sizeof(class_name) - 1;
+    char	*s;
+    const char	*n = name;
+    ID		cid;
+
+    clas = rb_cObject;
+    for (s = class_name; '\0' != *n; n++) {
+	if (':' == *n) {
+	    *s = '\0';
+	    n++;
+	    if (':' != *n) {
+		return Qnil;
+	    }
+	    cid = rb_intern(class_name);
+	    if (!rb_const_defined_at(clas, cid)) {
+		return Qnil;
+	    }
+	    clas = rb_const_get_at(clas, cid);
+	    s = class_name;
+	} else if (end <= s) {
+	    return Qnil;
+	} else {
+	    *s++ = *n;
+	}
+    }
+    *s = '\0';
+    cid = rb_intern(class_name);
+    if (!rb_const_defined_at(clas, cid)) {
+	return Qnil;
+    }
+    clas = rb_const_get_at(clas, cid);
+
+    return clas;
+}
+
 static void
 optimize(int argc, VALUE *argv, ROptTable rot, bool on) {
     ROpt	ro;
@@ -491,7 +530,7 @@ optimize(int argc, VALUE *argv, ROptTable rot, bool on) {
 	oj_rails_float_opt = on;
 
 	for (nf = dump_map; NULL != nf->name; nf++) {
-	    if (Qnil != (clas = rb_eval_string_protect(nf->name, NULL))) {
+	    if (Qnil != (clas = resolve_classpath(nf->name))) {
 		if (NULL == oj_rails_get_opt(rot, clas)) {
 		    create_opt(rot, clas);
 		}

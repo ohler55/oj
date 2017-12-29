@@ -12,8 +12,8 @@ rvm:
   - 2.1.10
   - 2.2.6
   - 2.3.3
-  - 2.4.0
-  - 2.4.1
+  - 2.4.2
+  - 2.5.0
   - ruby-head
 
 gemfile:
@@ -39,24 +39,13 @@ matrix:
     - gemfile: gemfiles/no_rails.gemfile
       rvm: 2.3.3
     - gemfile: gemfiles/no_rails.gemfile
-      rvm: 2.4.1
-    - gemfile: gemfiles/no_rails.gemfile
-      rvm: 2.4.0
-    - gemfile: gemfiles/rails_5.gemfile
-      rvm: 2.4.1
-      os: osx
+      rvm: 2.4.2
     - gemfile: gemfiles/rails_4.1.gemfile
-      rvm: 2.4.1
+      rvm: 2.4.2
       os: osx
     - gemfile: gemfiles/rails_4.2.gemfile
-      rvm: 2.4.1
+      rvm: 2.4.2
       os: osx
-    - gemfile: gemfiles/rails_5.gemfile
-      rvm: 2.4.0
-      os: linux
-    - gemfile: gemfiles/rails_4.1.gemfile
-      rvm: 2.4.0
-      os: linux
     - gemfile: gemfiles/rails_4.2.gemfile
-      rvm: 2.4.0
+      rvm: 2.4.2
       os: linux

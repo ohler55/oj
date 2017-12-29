@@ -203,9 +203,9 @@ class CustomJuice < Minitest::Test
   end
 
   def test_bigdecimal
-    assert_equal('0.314159265358979323846e1', Oj.dump(BigDecimal.new('3.14159265358979323846'), bigdecimal_as_decimal: true).downcase())
-    assert_equal('"0.314159265358979323846e1"', Oj.dump(BigDecimal.new('3.14159265358979323846'), bigdecimal_as_decimal: false).downcase())
-    dump_and_load(BigDecimal.new('3.14159265358979323846'), false, :bigdecimal_load => true)
+    assert_equal('0.314159265358979323846e1', Oj.dump(BigDecimal('3.14159265358979323846'), bigdecimal_as_decimal: true).downcase())
+    assert_equal('"0.314159265358979323846e1"', Oj.dump(BigDecimal('3.14159265358979323846'), bigdecimal_as_decimal: false).downcase())
+    dump_and_load(BigDecimal('3.14159265358979323846'), false, :bigdecimal_load => true)
   end
 
   def test_object
