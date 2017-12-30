@@ -94,7 +94,7 @@ information.
     | :array_nl              | String  |         |         |         |         |         |       x |         |
     | :ascii_only            | Boolean |       x |       x |       2 |       2 |       x |       x |         |
     | :auto_define           | Boolean |         |         |         |         |       x |       x |         |
-    | :bigdecimal_as_decimal | Boolean |         |         |         |         |       x |       x |         |
+    | :bigdecimal_as_decimal | Boolean |         |         |         |       3 |       x |       x |         |
     | :bigdecimal_load       | Boolean |         |         |         |         |         |       x |         |
     | :circular              | Boolean |       x |       x |       x |       x |       x |       x |         |
     | :class_cache           | Boolean |         |         |         |         |       x |       x |         |
@@ -104,17 +104,17 @@ information.
     | :escape_mode           | Symbol  |         |         |         |         |         |       x |         |
     | :float_precision       | Fixnum  |       x |       x |         |         |         |       x |         |
     | :hash_class            | Class   |         |         |       x |       x |         |       x |         |
-    | :indent                | Integer |       x |       x |       3 |       3 |       x |       x |       x |
+    | :indent                | Integer |       x |       x |       3 |       4 |       x |       x |       x |
     | :indent_str            | String  |         |         |       x |       x |         |       x |         |
     | :match_string          | Hash    |         |         |       x |       x |         |       x |         |
-    | :max_nesting           | Fixnum  |       4 |       4 |       x |         |       4 |       4 |         |
+    | :max_nesting           | Fixnum  |       4 |       4 |       x |         |       5 |       4 |         |
     | :mode                  | Symbol  |       - |       - |       - |       - |       - |       - |         |
     | :nan                   | Symbol  |         |         |         |         |         |       x |         |
     | :nilnil                | Boolean |         |         |         |         |         |       x |         |
     | :object_class          | Class   |         |         |       x |         |         |       x |         |
     | :object_nl             | String  |         |         |       x |       x |         |       x |         |
     | :omit_nil              | Boolean |       x |       x |       x |       x |       x |       x |         |
-    | :quirks_mode           | Boolean |         |         |       5 |         |         |       x |         |
+    | :quirks_mode           | Boolean |         |         |       6 |         |         |       x |         |
     | :second_precision      | Fixnum  |         |         |         |         |       x |       x |         |
     | :space                 | String  |         |         |       x |       x |         |       x |         |
     | :space_before          | String  |         |         |       x |       x |         |       x |         |
@@ -129,19 +129,23 @@ information.
 
  2. The :ascii_only options is an undocumented json gem option.
 
- 3. The integer indent value in the default options will be honored by since
+ 3. By default the bigdecimal_as decimal is not set and the default encoding
+    for Rails is as a string. Setting the value to true will encode a
+    BigDecimal as a number which breaks compatibility.
+
+ 4. The integer indent value in the default options will be honored by since
     the json gem expects a String type the indent in calls to 'to_json()',
     'Oj.generate()', or 'Oj.generate_fast()' expect a String and not an
     integer.
 
- 4. The max_nesting option is for the json gem and rails only. It exists for
+ 5. The max_nesting option is for the json gem and rails only. It exists for
     compatibility. For other Oj dump modes the maximum nesting is set to over
     1000. If reference loops exist in the object being dumped then using the
     `:circular` option is a far better choice. It adds a slight overhead but
     detects an object that appears more than once in a dump and does not dump
     that object a second time.
 
- 5. The quirks mode option is no longer supported in the most recent json
+ 6. The quirks mode option is no longer supported in the most recent json
     gem. It is supported by Oj for backward compatibility with older json gem
     versions.
 

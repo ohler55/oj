@@ -757,7 +757,7 @@ oj_num_as_value(NumInfo ni) {
 	}
     } else { // decimal
 	if (ni->big) {
-	    rnum = rb_funcall(oj_bigdecimal_class, oj_new_id, 1, rb_str_new(ni->str, ni->len));
+	    rnum = rb_funcall(rb_cObject, oj_bigdecimal_id, 1, rb_str_new(ni->str, ni->len));
 	    if (ni->no_big) {
 		rnum = rb_funcall(rnum, rb_intern("to_f"), 0);
 	    }
@@ -770,7 +770,7 @@ oj_num_as_value(NumInfo ni) {
 	    // 15 digits. This attempts to fix those few cases where this
 	    // occurs.
 	    if ((long double)INT64_MAX > d && (int64_t)d != (ni->i * ni->div + ni->num)) {
-		rnum = rb_funcall(oj_bigdecimal_class, oj_new_id, 1, rb_str_new(ni->str, ni->len));
+		rnum = rb_funcall(rb_cObject, oj_bigdecimal_id, 1, rb_str_new(ni->str, ni->len));
 		if (ni->no_big) {
 		    rnum = rb_funcall(rnum, rb_intern("to_f"), 0);
 		}

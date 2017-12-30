@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.3.10 - 2017-12-29
+
+  - Re-activated the bigdecimal_as_decimal option in custom mode and made the selection active for Rails mode.
+
+  - Fixed bug in optimize_rails that did not optimize all classes as expected.
+
 ## 3.3.9 - 2017-10-27
 
   - Fixed bug where empty strings were sometimes marked as invalid.

@@ -42,6 +42,8 @@ bigdecimal_dump(VALUE obj, int depth, Out out) {
     } else if (0 == strcasecmp("-Infinity", str)) {
 	str = oj_nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, false, &len);
 	oj_dump_raw(str, len, out);
+    } else if (No == out->opts->bigdec_as_num) {
+	oj_dump_cstr(str, len, 0, 0, out);
     } else {
 	oj_dump_raw(str, len, out);
     }

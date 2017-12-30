@@ -38,6 +38,7 @@ ID	oj_array_end_id;
 ID	oj_array_start_id;
 ID	oj_as_json_id;
 ID	oj_begin_id;
+ID	oj_bigdecimal_id;
 ID	oj_end_id;
 ID	oj_exclude_end_id;
 ID	oj_error_id;
@@ -167,7 +168,7 @@ struct _Options	oj_default_options = {
     ObjectMode,	// mode
     Yes,	// class_cache
     UnixTime,	// time_format
-    Yes,	// bigdec_as_num
+    NotSet,	// bigdec_as_num
     AutoDec,	// bigdec_load
     No,		// to_hash
     No,		// to_json
@@ -545,13 +546,16 @@ oj_parse_options(VALUE ropts, Options copts) {
 	}
     }
     for (o = ynos; 0 != o->attr; o++) {
-	if (Qnil != (v = rb_hash_lookup(ropts, o->sym))) {
-	    if (Qtrue == v) {
+	if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, o->sym)) {
+	    v = rb_hash_lookup(ropts, o->sym);
+	    if (Qnil == v) {
+		*o->attr = NotSet;
+	    } else if (Qtrue == v) {
 		*o->attr = Yes;
 	    } else if (Qfalse == v) {
 		*o->attr = No;
 	    } else {
-		rb_raise(rb_eArgError, "%s must be true or false.", rb_id2name(SYM2ID(o->sym)));
+		rb_raise(rb_eArgError, "%s must be true, false, or nil.", rb_id2name(SYM2ID(o->sym)));
 	    }
 	}
     }
@@ -1525,13 +1529,15 @@ Init_oj() {
     oj_array_end_id = rb_intern("array_end");
     oj_array_start_id = rb_intern("array_start");
     oj_as_json_id = rb_intern("as_json");
-    oj_error_id = rb_intern("error");
     oj_begin_id = rb_intern("begin");
+    oj_bigdecimal_id = rb_intern("BigDecimal");
     oj_end_id = rb_intern("end");
+    oj_error_id = rb_intern("error");
     oj_exclude_end_id = rb_intern("exclude_end?");
     oj_file_id = rb_intern("file?");
     oj_fileno_id = rb_intern("fileno");
     oj_ftype_id = rb_intern("ftype");
+    oj_has_key_id = rb_intern("has_key?");
     oj_hash_end_id = rb_intern("hash_end");
     oj_hash_key_id = rb_intern("hash_key");
     oj_hash_set_id = rb_intern("hash_set");
@@ -1548,8 +1554,8 @@ Init_oj() {
     oj_replace_id = rb_intern("replace");
     oj_stat_id = rb_intern("stat");
     oj_string_id = rb_intern("string");
-    oj_to_hash_id = rb_intern("to_hash");
     oj_to_h_id = rb_intern("to_h");
+    oj_to_hash_id = rb_intern("to_hash");
     oj_to_json_id = rb_intern("to_json");
     oj_to_s_id = rb_intern("to_s");
     oj_to_sym_id = rb_intern("to_sym");
@@ -1561,7 +1567,6 @@ Init_oj() {
     oj_utc_offset_id = rb_intern("utc_offset");
     oj_utcq_id = rb_intern("utc?");
     oj_write_id = rb_intern("write");
-    oj_has_key_id = rb_intern("has_key?");
 
     rb_require("oj/bag");
     rb_require("oj/error");

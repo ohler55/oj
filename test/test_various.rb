@@ -486,13 +486,13 @@ class Juice < Minitest::Test
   def test_bigdecimal_null
     mode = Oj.default_options[:mode]
     Oj.default_options = {:mode => :null}
-    dump_and_load(BigDecimal.new('3.14159265358979323846'), false)
+    dump_and_load(BigDecimal('3.14159265358979323846'), false)
     Oj.default_options = {:mode => mode}
   end
 
   def test_infinity
     n = Oj.load('Infinity', :mode => :object)
-    assert_equal(BigDecimal.new('Infinity').to_f, n);
+    assert_equal(BigDecimal('Infinity').to_f, n);
     x = Oj.load('Infinity', :mode => :compat)
     assert_equal('Infinity', x.to_s)
   end

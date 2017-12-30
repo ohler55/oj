@@ -212,6 +212,8 @@ dump_bigdecimal(VALUE obj, int depth, Out out, bool as_ok) {
 
     if ('I' == *str || 'N' == *str || ('-' == *str && 'I' == str[1])) {
 	oj_dump_nil(Qnil, depth, out, false);
+    } else if (Yes == out->opts->bigdec_as_num) {
+	oj_dump_raw(str, RSTRING_LEN(rstr), out);
     } else {
 	oj_dump_cstr(str, RSTRING_LEN(rstr), 0, 0, out);
     }
@@ -475,17 +477,65 @@ encoder_new(int argc, VALUE *argv, VALUE self) {
     return Data_Wrap_Struct(encoder_class, encoder_mark, encoder_free, e);
 }
 
+static VALUE
+resolve_classpath(const char *name) {
+    char	class_name[1024];
+    VALUE	clas;
+    char	*end = class_name + sizeof(class_name) - 1;
+    char	*s;
+    const char	*n = name;
+    ID		cid;
+
+    clas = rb_cObject;
+    for (s = class_name; '\0' != *n; n++) {
+	if (':' == *n) {
+	    *s = '\0';
+	    n++;
+	    if (':' != *n) {
+		return Qnil;
+	    }
+	    cid = rb_intern(class_name);
+	    if (!rb_const_defined_at(clas, cid)) {
+		return Qnil;
+	    }
+	    clas = rb_const_get_at(clas, cid);
+	    s = class_name;
+	} else if (end <= s) {
+	    return Qnil;
+	} else {
+	    *s++ = *n;
+	}
+    }
+    *s = '\0';
+    cid = rb_intern(class_name);
+    if (!rb_const_defined_at(clas, cid)) {
+	return Qnil;
+    }
+    clas = rb_const_get_at(clas, cid);
+
+    return clas;
+}
+
 static void
 optimize(int argc, VALUE *argv, ROptTable rot, bool on) {
     ROpt	ro;
-    
+
     if (0 == argc) {
-	int	i;
+	int		i;
+	NamedFunc	nf;
+	VALUE		clas;
 	
 	oj_rails_hash_opt = on;
 	oj_rails_array_opt = on;
 	oj_rails_float_opt = on;
 
+	for (nf = dump_map; NULL != nf->name; nf++) {
+	    if (Qnil != (clas = resolve_classpath(nf->name))) {
+		if (NULL == oj_rails_get_opt(rot, clas)) {
+		    create_opt(rot, clas);
+		}
+	    }
+	}
 	for (i = 0; i < rot->len; i++) {
 	    rot->table[i].on = on;
 	}
