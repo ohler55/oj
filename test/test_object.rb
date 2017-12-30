@@ -805,6 +805,14 @@ class ObjectJuice < Minitest::Test
     assert_equal(h2['b'].__id__, h2.__id__)
   end
 
+
+  def test_json_object_missing_fields
+    json = %{{ "^u": [ "ObjectJuice::Stuck",1]}}
+
+    obj = Oj.load(json, mode: :object)
+    assert_nil(obj['b'])
+  end
+
   def test_circular_array
     a = [7]
     a << a
@@ -895,11 +903,11 @@ class ObjectJuice < Minitest::Test
     json = Oj.dump(jam, :omit_nil => true, :mode => :object)
     assert_equal(%|{"^o":"ObjectJuice::Jam","x":{"a":1}}|, json)
   end
-  
+
   def test_odd_date
     dump_and_load(Date.new(2012, 6, 19), false)
   end
-  
+
   def test_odd_datetime
     dump_and_load(DateTime.new(2012, 6, 19, 13, 5, Rational(4, 3)), false)
     dump_and_load(DateTime.new(2012, 6, 19, 13, 5, Rational(7123456789, 1000000000)), false)
