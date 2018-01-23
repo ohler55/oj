@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-# encoding: UTF-8
+# encoding: utf-8
 
 $: << File.dirname(__FILE__)
 
@@ -154,6 +154,7 @@ class Juice < Minitest::Test
       :omit_nil=>false,
       :allow_nan=>true,
       :array_class=>Array,
+      :ignore=>nil,
     }
     Oj.default_options = alt
     #keys = alt.keys

@@ -161,6 +161,7 @@ typedef struct _Options {
     VALUE		array_class;	// class to use in place of Array on load
     struct _DumpOpts	dump_opts;
     struct _RxClass	str_rx;
+    VALUE		*ignore;	// Qnil terminated array of classes or NULL
 } *Options;
 
 struct _Out;

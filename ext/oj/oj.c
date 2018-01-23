@@ -118,6 +118,7 @@ static VALUE	escape_mode_sym;
 static VALUE	float_prec_sym;
 static VALUE	float_sym;
 static VALUE	huge_sym;
+static VALUE	ignore_sym;
 static VALUE	json_sym;
 static VALUE	match_string_sym;
 static VALUE	mode_sym;
@@ -207,7 +208,8 @@ struct _Options	oj_default_options = {
 	NULL,	// head
 	NULL,	// tail
 	{ '\0' }, // err
-    }
+    },
+    NULL,	// ignore
 };
 
 /* Document-method: default_options()
@@ -244,6 +246,7 @@ struct _Options	oj_default_options = {
  * - *:hash_class* [_Class_|_nil_] Class to use instead of Hash on load, :object_class can also be used
  * - *:array_class* [_Class_|_nil_] Class to use instead of Array on load
  * - *:omit_nil* [_true_|_false_] if true Hash and Object attributes with nil values are omitted
+ * - *:ignore* [_nil_|Array] either nil or an Array of classes to ignore when dumping
  *
  * Return [_Hash_] all current option settings.
  */
@@ -320,7 +323,18 @@ get_def_opts(VALUE self) {
     rb_hash_aset(opts, omit_nil_sym, oj_default_options.dump_opts.omit_nil ? Qtrue : Qfalse);
     rb_hash_aset(opts, oj_hash_class_sym, oj_default_options.hash_class);
     rb_hash_aset(opts, oj_array_class_sym, oj_default_options.array_class);
-    
+
+    if (NULL == oj_default_options.ignore) {
+	rb_hash_aset(opts, ignore_sym, Qnil);
+    } else {
+	VALUE		*vp;
+	volatile VALUE	a = rb_ary_new();
+	
+	for (vp = oj_default_options.ignore; Qnil != *vp; vp++) {
+	    rb_ary_push(a, *vp);
+	}
+	rb_hash_aset(opts, ignore_sym, a);
+    }
     return opts;
 }
 
@@ -358,6 +372,7 @@ get_def_opts(VALUE self) {
  *   - *:hash_class* [_Class_|_nil_] Class to use instead of Hash on load, :object_class can also be used.
  *   - *:array_class* [_Class_|_nil_] Class to use instead of Array on load.
  *   - *:omit_nil* [_true_|_false_] if true Hash and Object attributes with nil values are omitted.
+ *   - *:ignore* [_nil_|Array] either nil or an Array of classes to ignore when dumping
  */
 static VALUE
 set_def_opts(VALUE self, VALUE opts) {
@@ -672,6 +687,25 @@ oj_parse_options(VALUE ropts, Options copts) {
 	}
     }
     oj_parse_opt_match_string(&copts->str_rx, ropts);
+    if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, ignore_sym)) {
+	xfree(copts->ignore);
+	copts->ignore = NULL;
+	if (Qnil != (v = rb_hash_lookup(ropts, ignore_sym))) {
+	    int	cnt;
+
+	    rb_check_type(v, T_ARRAY);
+	    cnt = (int)RARRAY_LEN(v);
+	    if (0 < cnt) {
+		int	i;
+		
+		copts->ignore = ALLOC_N(VALUE, cnt + 1);
+		for (i = 0; i < cnt; i++) {
+		    copts->ignore[i] = rb_ary_entry(v, i);
+		}
+		copts->ignore[i] = Qnil;
+	    }
+	}
+    }
 }
 
 static int
@@ -1604,6 +1638,7 @@ Init_oj() {
     float_prec_sym = ID2SYM(rb_intern("float_precision"));	rb_gc_register_address(&float_prec_sym);
     float_sym = ID2SYM(rb_intern("float"));			rb_gc_register_address(&float_sym);
     huge_sym = ID2SYM(rb_intern("huge"));			rb_gc_register_address(&huge_sym);
+    ignore_sym = ID2SYM(rb_intern("ignore"));			rb_gc_register_address(&ignore_sym);
     json_sym = ID2SYM(rb_intern("json"));			rb_gc_register_address(&json_sym);
     match_string_sym = ID2SYM(rb_intern("match_string"));	rb_gc_register_address(&match_string_sym);
     mode_sym = ID2SYM(rb_intern("mode"));			rb_gc_register_address(&mode_sym);

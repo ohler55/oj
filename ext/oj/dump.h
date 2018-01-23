@@ -50,6 +50,8 @@ extern VALUE	oj_remove_to_json(int argc, VALUE *argv, VALUE self);
 
 extern int	oj_dump_float_printf(char *buf, size_t blen, VALUE obj, double d, const char *format);
 
+extern bool	oj_dump_ignore(Options opts, VALUE obj);
+
 inline static void
 assure_size(Out out, size_t len) {
     if (out->end - out->cur <= (long)len) {

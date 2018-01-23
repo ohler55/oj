@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.4.0 - 2018-01-24
+
+  - Option to ignore specific classes in :object and :custom mode added.
+
 ## 3.3.10 - 2017-12-30
 
   - Re-activated the bigdecimal_as_decimal option in custom mode and made the selection active for Rails mode.
