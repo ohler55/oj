@@ -130,6 +130,11 @@ The number of digits of precision when dumping floats, 0 indicates use Ruby dire
 
 Class to use instead of Hash on load. This is the same as the :object_class.
 
+### :ignore [Array]
+
+Ignore all the classes in the Array when dumping. A value of nil indicates
+ignore nothing.
+
 ### :indent [Fixnum]
 
 Number of spaces to indent each element in a JSON document, zero is no newline

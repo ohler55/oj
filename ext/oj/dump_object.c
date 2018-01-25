@@ -615,7 +615,7 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	    value = rb_ivar_get(obj, vid);
 
 	    if (oj_dump_ignore(out->opts, value)) {
-		return continue;
+		continue;
 	    }
 	    if (out->omit_nil && Qnil == value) {
 		continue;

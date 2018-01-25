@@ -104,6 +104,7 @@ information.
     | :escape_mode           | Symbol  |         |         |         |         |         |       x |         |
     | :float_precision       | Fixnum  |       x |       x |         |         |         |       x |         |
     | :hash_class            | Class   |         |         |       x |       x |         |       x |         |
+    | :ignore                | Array   |         |         |         |         |       x |       x |         |
     | :indent                | Integer |       x |       x |       3 |       4 |       x |       x |       x |
     | :indent_str            | String  |         |         |       x |       x |         |       x |         |
     | :match_string          | Hash    |         |         |       x |       x |         |       x |         |

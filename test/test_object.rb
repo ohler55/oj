@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-# encoding: UTF-8
+# encoding: utf-8
 
 $: << File.dirname(__FILE__)
 
@@ -759,6 +759,15 @@ class ObjectJuice < Minitest::Test
 } == json)
     obj2 = Oj.load(json, :mode => :object, :class_cache => false)
     assert_equal(obj, obj2)
+  end
+
+  def test_ignore
+    obj = Jeez.new(true, 58)
+    json = Oj.dump({ 'a' => 7, 'b' => obj }, :mode => :object, :indent => 2, :ignore => [ Jeez ])
+    assert_equal(%|{
+  "a":7
+}
+|, json)
   end
 
   def test_exception
