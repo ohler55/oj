@@ -610,7 +610,6 @@ rails_mimic_json(VALUE self) {
 	json = rb_define_module("JSON");
     }
     oj_mimic_json_methods(json);
-    // TBD
 
     return Qnil;
 }
