@@ -20,6 +20,11 @@ or simply call
 Oj.optimize_rails()
 ```
 
+Either of those steps will setup Oj to mimic Rails but it will not change the
+default mode type as the mode type is only used when calling the Oj encoding
+directly. If Rails mode is also desired then use the `Oj.default_options` to
+change the default mode.
+
 Some of the Oj options are supported as arguments to the encoder if called
 from Oj::Rails.encode() but when using the Oj::Rails::Encoder class the
 encode() method does not support optional arguments as required by the
