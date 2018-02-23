@@ -78,7 +78,7 @@ Oj::Rails.optimize is called with no arguments are:
  * any other class where all attributes should be dumped
 
 The ActiveSupport decoder is the JSON.parse() method. Calling the
-Oj::Rails.set_decoder() method replaces that method with the Oj equivelant.
+Oj::Rails.set_decoder() method replaces that method with the Oj equivalent.
 
 ### Notes:
 

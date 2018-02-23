@@ -44,13 +44,13 @@ static VALUE	state_class;
 /* Document-method: parser=
  * call-seq: parser=(parser)
  * 
- * Does nothing other than provide compatibiltiy.
+ * Does nothing other than provide compatibility.
  * - *parser* [_Object_] ignored
  */
 /* Document-method: generator=
  * call-seq: generator=(generator)
  * 
- * Does nothing other than provide compatibiltiy.
+ * Does nothing other than provide compatibility.
  * - *generator* [_Object_] ignored
  */
 
@@ -606,7 +606,7 @@ mimic_parse_bang(int argc, VALUE *argv, VALUE self) {
 /* Document-method: recurse_proc
  * call-seq: recurse_proc(obj, &proc)
  * 
- * Yields to the proc for every element in the obj recursivly.
+ * Yields to the proc for every element in the obj recursively.
  * 
  * - *obj* [_Hash_|Array] object to walk
  * - *proc* [_Proc_] to yield to on each element

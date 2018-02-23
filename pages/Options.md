@@ -80,7 +80,7 @@ dynamically modifying classes or reloading classes then don't use this.
 
 ### :create_additions
 
-A flag indicating the :create_id key when encounterd during parsing should
+A flag indicating the :create_id key when encountered during parsing should
 creating an Object mactching the class name specified in the value associated
 with the key.
 
