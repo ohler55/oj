@@ -52,7 +52,7 @@ static void	skip_comment(ParseInfo pi);
  * a SAX parser because it uses callback when document elements are
  * encountered.
  *
- * Parsing is very tolerant. Lack of headers and even mispelled element
+ * Parsing is very tolerant. Lack of headers and even misspelled element
  * endings are passed over without raising an error. A best attempt is made in
  * all cases to parse the string.
  */

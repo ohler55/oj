@@ -271,7 +271,7 @@
 
 ## 2.14.1 - 2015-12-15
 
-- Fixed bug that reverted to BigDecimal when a decimal had preceeding zeros after the decimal point.
+- Fixed bug that reverted to BigDecimal when a decimal had preceding zeros after the decimal point.
 
 ## 2.14.0 - 2015-12-04
 
@@ -826,7 +826,7 @@
 ## 1.1.0 - 2012-03-27
 
 - Errors are not longer raised when comments are encountered in JSON documents.
-- Oj can now mimic JSON. With some expections calling JSON.mimic_JSON will allow all JSON calls to use OJ instead of JSON. This gives a speedup of more than 2x on parsing and 5x for generating over the JSON::Ext module.
+- Oj can now mimic JSON. With some exceptions calling JSON.mimic_JSON will allow all JSON calls to use OJ instead of JSON. This gives a speedup of more than 2x on parsing and 5x for generating over the JSON::Ext module.
 - Oj::Doc now allows a document to be left open and then closed with the Oj::Doc.close() class.
 - Changed the default encoding to UTF-8 instead of the Ruby default String encoding.
 

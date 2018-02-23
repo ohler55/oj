@@ -78,7 +78,7 @@ Oj::Rails.optimize is called with no arguments are:
  * any other class where all attributes should be dumped
 
 The ActiveSupport decoder is the JSON.parse() method. Calling the
-Oj::Rails.set_decoder() method replaces that method with the Oj equivelant.
+Oj::Rails.set_decoder() method replaces that method with the Oj equivalent.
 
 ### Notes:
 
@@ -93,6 +93,22 @@ Oj::Rails.set_decoder() method replaces that method with the Oj equivelant.
    are used as keys or if a other non-String objects such as Numerics are mixed
    with numbers as Strings.
 
-3. To verify Oj is being used turn on trace and then set the
-   `Tracer.display_c_call = true` to see calls to C extensions.
-   
+3. To verify Oj is being used, turn on C extension tracing.
+   Set `tracer = TracePoint.new(:c_call) do |tp| p [tp.lineno, tp.event, tp.defined_class, tp.method_id] end`
+   or, in older Rubies, set `Tracer.display_c_call = true`.
+
+   For example:
+
+     ```
+     require 'active_support/core_ext'
+     require 'active_support/json'
+     require 'oj'
+     Oj.optimize_rails
+     tracer.enable { Time.now.to_json }
+     # prints output including
+     ....
+     [20, :c_call, #<Class:Oj::Rails::Encoder>, :new]
+     [20, :c_call, Oj::Rails::Encoder, :encode]
+     ....
+     => "\"2018-02-23T12:13:42.493-06:00\""
+     ```

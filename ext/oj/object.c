@@ -286,7 +286,7 @@ hat_num(ParseInfo pi, Val parent, Val kval, NumInfo ni) {
 		if (86400 == ni->exp) { // UTC time
 		    parent->val = rb_time_nano_new(ni->i, (long)nsec);
 		    // Since the ruby C routines alway create local time, the
-		    // offset and then a convertion to UTC keeps makes the time
+		    // offset and then a conversion to UTC keeps makes the time
 		    // match the expected value.
 		    parent->val = rb_funcall2(parent->val, oj_utc_id, 0, 0);
 		} else if (ni->hasExp) {

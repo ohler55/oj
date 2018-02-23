@@ -10,7 +10,7 @@ in a JSON document. The formatting follows these rules.
  * JSON native types, true, false, nil, String, Hash, Array, and Number are
    encoded normally.
 
- * A Symbol is encoded as a JSON string with a preceeding `':'` character.
+ * A Symbol is encoded as a JSON string with a preceding `':'` character.
 
  * The `'^'` character denotes a special key value when in a JSON Object sequence.
 
@@ -28,7 +28,7 @@ in a JSON document. The formatting follows these rules.
  * A `"^o"` JSON Object key indicates the value should be converted to a Ruby
    Object. The first entry in the JSON Object must be a class with the `"^o"`
    key. After that each entry is treated as a variable of the Object where the
-   key is the variable name without the preceeding `'@'`. An example is
+   key is the variable name without the preceding `'@'`. An example is
    `{"^o":"Oj::Bag","x":58,"y":"marbles"}`. `"^O"`is the same except that it
    is for built in or odd classes that don't obey the normal Ruby
    rules. Examples are Rational, Date, and DateTime.
@@ -40,7 +40,7 @@ in a JSON document. The formatting follows these rules.
    `{"^u":["Range",1,7,false]}`.
 
  * When encoding an Object, if the variable name does not begin with an
-   `'@'`character then the name preceeded by a `'~'` character. This occurs in
+   `'@'`character then the name preceded by a `'~'` character. This occurs in
    the Exception class. An example is `{"^o":"StandardError","~mesg":"A
    Message","~bt":[".\/tests.rb:345:in 'test_exception'"]}`.
 

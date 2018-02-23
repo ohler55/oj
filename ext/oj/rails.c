@@ -1271,7 +1271,7 @@ static DumpFunc	rails_funcs[] = {
     dump_obj,		// RUBY_T_DATA     = 0x0c,
     NULL, 		// RUBY_T_MATCH    = 0x0d,
     // Rails raises a stack error on Complex and Rational. It also corrupts
-    // something whic causes a segfault on the next call. Oj will not mimic
+    // something which causes a segfault on the next call. Oj will not mimic
     // that behavior.
     dump_as_string, 	// RUBY_T_COMPLEX  = 0x0e,
     dump_as_string, 	// RUBY_T_RATIONAL = 0x0f,
