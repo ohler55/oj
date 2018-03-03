@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.5.0 - 2018-03-04
+
+  - A trace option is now available in all modes. The format roughly follows the Ruby trace format.
+
 ## 3.4.0 - 2018-01-24
 
   - Option to ignore specific classes in :object and :custom mode added.

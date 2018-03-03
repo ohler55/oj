@@ -14,6 +14,7 @@
 #include "oj.h"
 #include "parse.h"
 #include "resolve.h"
+#include "trace.h"
 
 extern void	oj_set_obj_ivar(Val parent, Val kval, VALUE value);
 extern VALUE	oj_parse_xml_time(const char *str, int len); // from object.c
@@ -874,6 +875,9 @@ void
 oj_dump_custom_val(VALUE obj, int depth, Out out, bool as_ok) {
     int	type = rb_type(obj);
 
+    if (Yes == out->opts->trace) {
+	oj_trace("dump", obj, __FILE__, __LINE__, depth, true);
+    }
     if (MAX_DEPTH < depth) {
 	rb_raise(rb_eNoMemError, "Too deeply nested.\n");
     }
@@ -882,10 +886,16 @@ oj_dump_custom_val(VALUE obj, int depth, Out out, bool as_ok) {
 
 	if (NULL != f) {
 	    f(obj, depth, out, true);
+	    if (Yes == out->opts->trace) {
+		oj_trace("dump", obj, __FILE__, __LINE__, depth, false);
+	    }
 	    return;
 	}
     }
     oj_dump_nil(Qnil, depth, out, false);
+    if (Yes == out->opts->trace) {
+	oj_trace("dump", Qnil, __FILE__, __LINE__, depth, false);
+    }
 }
 
 ///// load functions /////

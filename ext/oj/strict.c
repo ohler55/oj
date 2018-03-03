@@ -12,6 +12,7 @@
 #include "err.h"
 #include "parse.h"
 #include "encode.h"
+#include "trace.h"
 
 static void
 noop_end(struct _ParseInfo *pi) {

@@ -11,6 +11,7 @@
 #include "resolve.h"
 #include "hash.h"
 #include "encode.h"
+#include "trace.h"
 
 static void
 hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *orig) {

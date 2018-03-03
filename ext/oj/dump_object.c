@@ -5,6 +5,7 @@
 
 #include "dump.h"
 #include "odd.h"
+#include "trace.h"
 
 static const char	hex_chars[17] = "0123456789abcdef";
 
@@ -816,6 +817,9 @@ void
 oj_dump_obj_val(VALUE obj, int depth, Out out) {
     int	type = rb_type(obj);
     
+    if (Yes == out->opts->trace) {
+	oj_trace("dump", obj, __FILE__, __LINE__, depth, true);
+    }
     if (MAX_DEPTH < depth) {
 	rb_raise(rb_eNoMemError, "Too deeply nested.\n");
     }
@@ -824,8 +828,14 @@ oj_dump_obj_val(VALUE obj, int depth, Out out) {
 
 	if (NULL != f) {
 	    f(obj, depth, out, false);
+	    if (Yes == out->opts->trace) {
+		oj_trace("dump", obj, __FILE__, __LINE__, depth, false);
+	    }
 	    return;
 	}
     }
     oj_dump_nil(Qnil, depth, out, false);
+    if (Yes == out->opts->trace) {
+	oj_trace("dump", Qnil, __FILE__, __LINE__, depth, false);
+    }
 }

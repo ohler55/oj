@@ -14,6 +14,7 @@
 #include "parse.h"
 #include "encode.h"
 #include "dump.h"
+#include "trace.h"
 
 // Workaround in case INFINITY is not defined in math.h or if the OS is CentOS
 #define OJ_INFINITY (1.0/0.0)
@@ -266,6 +267,9 @@ void
 oj_dump_wab_val(VALUE obj, int depth, Out out) {
     int	type = rb_type(obj);
     
+    if (Yes == out->opts->trace) {
+	oj_trace("dump", obj, __FILE__, __LINE__, depth, true);
+    }
     if (MAX_DEPTH < depth) {
 	rb_raise(rb_eNoMemError, "Too deeply nested.\n");
     }
@@ -274,6 +278,9 @@ oj_dump_wab_val(VALUE obj, int depth, Out out) {
 
 	if (NULL != f) {
 	    f(obj, depth, out, false);
+	    if (Yes == out->opts->trace) {
+		oj_trace("dump", obj, __FILE__, __LINE__, depth, false);
+	    }
 	    return;
 	}
     }

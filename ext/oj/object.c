@@ -13,6 +13,7 @@
 #include "hash.h"
 #include "odd.h"
 #include "encode.h"
+#include "trace.h"
 
 inline static long
 read_long(const char *str, size_t len) {

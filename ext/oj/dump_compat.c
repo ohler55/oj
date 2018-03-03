@@ -6,6 +6,7 @@
 #include "code.h"
 #include "dump.h"
 #include "rails.h"
+#include "trace.h"
 
 // Workaround in case INFINITY is not defined in math.h or if the OS is CentOS
 #define OJ_INFINITY (1.0/0.0)
@@ -901,7 +902,10 @@ set_state_depth(VALUE state, int depth) {
 void
 oj_dump_compat_val(VALUE obj, int depth, Out out, bool as_ok) {
     int	type = rb_type(obj);
-    
+
+    if (Yes == out->opts->trace) {
+	oj_trace("dump", obj, __FILE__, __LINE__, depth, true);
+    }
     if (out->opts->dump_opts.max_depth <= depth) {
 	// When JSON.dump is called then an ArgumentError is expected and the
 	// limit is the depth inclusive. If JSON.generate is called then a
@@ -924,8 +928,14 @@ oj_dump_compat_val(VALUE obj, int depth, Out out, bool as_ok) {
 
 	if (NULL != f) {
 	    f(obj, depth, out, as_ok);
+	    if (Yes == out->opts->trace) {
+		oj_trace("dump", obj, __FILE__, __LINE__, depth, false);
+	    }
 	    return;
 	}
     }
     oj_dump_nil(Qnil, depth, out, false);
+    if (Yes == out->opts->trace) {
+	oj_trace("dump", Qnil, __FILE__, __LINE__, depth, false);
+    }
 }

@@ -152,6 +152,7 @@ typedef struct _Options {
     char		allow_invalid;	// YesNo - allow invalid unicode
     char		create_ok;	// YesNo allow create_id
     char		allow_nan;	// YEsyNo for parsing only
+    char		trace;		// YesNo
     const char		*create_id;	// 0 or string
     size_t		create_id_len;	// length of create_id
     int			sec_prec;	// second precision when dumping time
@@ -322,6 +323,7 @@ extern VALUE	oj_object_nl_sym;
 extern VALUE	oj_quirks_mode_sym;
 extern VALUE	oj_space_before_sym;
 extern VALUE	oj_space_sym;
+extern VALUE	oj_trace_sym;
 
 extern VALUE	oj_slash_string;
 
