@@ -226,6 +226,11 @@ compatibility. Using just indent as an integer gives better performance.
 
 Use symbols instead of strings for hash keys. :symbolize_names is an alias.
 
+### :trace
+
+When true dump and load functions are traced by printing beginning and ending
+of blocks and of specific calls.
+
 ### :time_format [Symbol]
 
 The :time_format when dumping.

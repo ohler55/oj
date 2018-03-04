@@ -225,7 +225,7 @@ struct _Options	oj_default_options = {
  * - *:escape_mode* [_:newline_|_:json_|_:xss_safe_|_:ascii_|_unicode_xss_|_nil_] determines the characters to escape
  * - *:class_cache* [_Boolean_|_nil_] cache classes for faster parsing (if dynamically modifying classes or reloading classes then don't use this)
  * - *:mode* [_:object_|_:strict_|_:compat_|_:null_|_:custom_|_:rails_|_:wab_] load and dump modes to use for JSON
- * - *:time_format* [_:unix_|_:unix_zone_|_:xmlschema_|_:ruby_] time format when dumping in :compat and :object mode
+ * - *:time_format* [_:unix_|_:unix_zone_|_:xmlschema_|_:ruby_] time format when dumping
  * - *:bigdecimal_as_decimal* [_Boolean_|_nil_] dump BigDecimal as a decimal number or as a String
  * - *:bigdecimal_load* [_:bigdecimal_|_:float_|_:auto_] load decimals as BigDecimal instead of as a Float. :auto pick the most precise for the number of digits.
  * - *:create_id* [_String_|_nil_] create id for json compatible object encoding, default is 'json_class'
@@ -244,7 +244,7 @@ struct _Options	oj_default_options = {
  * - *:space_before* [_String_|_nil_] String to use before the colon separator in JSON object fields
  * - *:object_nl* [_String_|_nil_] String to use after a JSON object field value
  * - *:array_nl* [_String_|_nil_] String to use after a JSON array value
- * - *:nan* [_:null_|_:huge_|_:word_|_:raise_|_:auto_] how to dump Infinity and NaN in null, strict, and compat mode. :null places a null, :huge places a huge number, :word places Infinity or NaN, :raise raises and exception, :auto uses default for each mode.
+ * - *:nan* [_:null_|_:huge_|_:word_|_:raise_|_:auto_] how to dump Infinity and NaN. :null places a null, :huge places a huge number, :word places Infinity or NaN, :raise raises and exception, :auto uses default for each mode.
  * - *:hash_class* [_Class_|_nil_] Class to use instead of Hash on load, :object_class can also be used
  * - *:array_class* [_Class_|_nil_] Class to use instead of Array on load
  * - *:omit_nil* [_true_|_false_] if true Hash and Object attributes with nil values are omitted

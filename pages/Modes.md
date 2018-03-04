@@ -120,6 +120,7 @@ information.
     | :space                 | String  |         |         |       x |       x |         |       x |         |
     | :space_before          | String  |         |         |       x |       x |         |       x |         |
     | :symbol_keys           | Boolean |       x |       x |       x |       x |       x |       x |         |
+    | :trace                 | Boolean |       x |       x |       x |       x |       x |       x |       x |
     | :time_format           | Symbol  |         |         |         |         |       x |       x |         |
     | :use_as_json           | Boolean |         |         |         |         |         |       x |         |
     | :use_to_hash           | Boolean |         |         |         |         |         |       x |         |

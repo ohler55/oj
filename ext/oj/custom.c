@@ -876,7 +876,7 @@ oj_dump_custom_val(VALUE obj, int depth, Out out, bool as_ok) {
     int	type = rb_type(obj);
 
     if (Yes == out->opts->trace) {
-	oj_trace("dump", obj, __FILE__, __LINE__, depth, true);
+	oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceIn);
     }
     if (MAX_DEPTH < depth) {
 	rb_raise(rb_eNoMemError, "Too deeply nested.\n");
@@ -887,14 +887,14 @@ oj_dump_custom_val(VALUE obj, int depth, Out out, bool as_ok) {
 	if (NULL != f) {
 	    f(obj, depth, out, true);
 	    if (Yes == out->opts->trace) {
-		oj_trace("dump", obj, __FILE__, __LINE__, depth, false);
+		oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceOut);
 	    }
 	    return;
 	}
     }
     oj_dump_nil(Qnil, depth, out, false);
     if (Yes == out->opts->trace) {
-	oj_trace("dump", Qnil, __FILE__, __LINE__, depth, false);
+	oj_trace("dump", Qnil, __FILE__, __LINE__, depth, TraceOut);
     }
 }
 
@@ -956,6 +956,9 @@ hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *o
 	default:
 	    break;
 	}
+	if (Yes == pi->options.trace) {
+	    oj_trace_parse_call("set_string", pi, __FILE__, __LINE__, rstr);
+	}
     }
 }
 
@@ -972,6 +975,9 @@ end_hash(struct _ParseInfo *pi) {
 	    parent->val = rb_funcall(parent->clas, oj_json_create_id, 1, parent->val);
 	}
 	parent->clas = Qundef;
+    }
+    if (Yes == pi->options.trace) {
+	oj_trace_parse_hash_end(pi, __FILE__, __LINE__);
     }
 }
 
@@ -991,11 +997,12 @@ calc_hash_key(ParseInfo pi, Val parent) {
 
 static void
 hash_set_num(struct _ParseInfo *pi, Val kval, NumInfo ni) {
-    Val	parent = stack_peek(&pi->stack);
+    Val			parent = stack_peek(&pi->stack);
+    volatile VALUE	rval = oj_num_as_value(ni);
 
     switch (rb_type(parent->val)) {
     case T_OBJECT:
-	oj_set_obj_ivar(parent, kval, oj_num_as_value(ni));
+	oj_set_obj_ivar(parent, kval, rval);
 	break;
     case T_HASH:
 	if (4 == parent->klen && NULL != parent->key && rb_cTime == parent->clas && 0 == strncmp("time", parent->key, 4)) {
@@ -1030,12 +1037,16 @@ hash_set_num(struct _ParseInfo *pi, Val kval, NumInfo ni) {
 	    } else {
 		parent->val = rb_time_nano_new(ni->i, (long)nsec);
 	    }
+	    rval = parent->val;
 	} else {
-	    rb_hash_aset(parent->val, calc_hash_key(pi, kval), oj_num_as_value(ni));
+	    rb_hash_aset(parent->val, calc_hash_key(pi, kval), rval);
 	}
 	break;
     default:
 	break;
+    }
+    if (Yes == pi->options.trace) {
+	oj_trace_parse_call("set_string", pi, __FILE__, __LINE__, rval);
     }
 }
 
@@ -1053,13 +1064,20 @@ hash_set_value(ParseInfo pi, Val kval, VALUE value) {
     default:
 	break;
     }
+    if (Yes == pi->options.trace) {
+	oj_trace_parse_call("set_value", pi, __FILE__, __LINE__, value);
+    }
 }
 
 static void
 array_append_num(ParseInfo pi, NumInfo ni) {
-    Val	parent = stack_peek(&pi->stack);
+    Val			parent = stack_peek(&pi->stack);
+    volatile VALUE	rval = oj_num_as_value(ni);
     
-    rb_ary_push(parent->val, oj_num_as_value(ni));
+    rb_ary_push(parent->val, rval);
+    if (Yes == pi->options.trace) {
+	oj_trace_parse_call("append_number", pi, __FILE__, __LINE__, rval);
+    }
 }
 
 static void
@@ -1076,6 +1094,9 @@ array_append_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
 	}
     }
     rb_ary_push(stack_peek(&pi->stack)->val, rstr);
+    if (Yes == pi->options.trace) {
+	oj_trace_parse_call("append_string", pi, __FILE__, __LINE__, rstr);
+    }
 }
 
 void

@@ -9,6 +9,18 @@
 #include <stdbool.h>
 #include <ruby.h>
 
-extern void	oj_trace(const char *func, VALUE obj, const char *file, int line, int depth, bool in);
+typedef enum {
+    TraceIn	= '{',
+    TraceOut	= '}',
+    TraceCall	= '-',
+} TraceWhere;
+
+struct _ParseInfo;
+
+extern void	oj_trace(const char *func, VALUE obj, const char *file, int line, int depth, TraceWhere where);
+extern void	oj_trace_parse_in(const char *func, struct _ParseInfo *pi, const char *file, int line);
+extern void	oj_trace_parse_call(const char *func, struct _ParseInfo *pi, const char *file, int line, VALUE obj);
+extern void	oj_trace_parse_hash_end(struct _ParseInfo *pi, const char *file, int line);
+extern void	oj_trace_parse_array_end(struct _ParseInfo *pi, const char *file, int line);
 
 #endif /* __OJ_TRACE_H__ */

@@ -56,6 +56,9 @@ hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *o
 	} else {
 	    rb_hash_aset(parent->val, rkey, rstr);
 	}
+	if (Yes == pi->options.trace) {
+	    oj_trace_parse_call("set_string", pi, __FILE__, __LINE__, rstr);
+	}
     }
 }
 
@@ -67,6 +70,9 @@ start_hash(ParseInfo pi) {
 	h = rb_class_new_instance(0, NULL, pi->options.hash_class);
     } else {
 	h = rb_hash_new();
+    }
+    if (Yes == pi->options.trace) {
+	oj_trace_parse_in("start_hash", pi, __FILE__, __LINE__);
     }
     return h;
 }
@@ -90,6 +96,9 @@ end_hash(struct _ParseInfo *pi) {
 	    xfree((char*)parent->classname);
 	    parent->classname = 0;
 	}
+    }
+    if (Yes == pi->options.trace) {
+	oj_trace_parse_hash_end(pi, __FILE__, __LINE__);
     }
 }
 
@@ -121,23 +130,34 @@ add_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
 	}
     }
     pi->stack.head->val = rstr;
+    if (Yes == pi->options.trace) {
+	oj_trace_parse_call("add_string", pi, __FILE__, __LINE__, rstr);
+    }
 }
 
 static void
 add_num(ParseInfo pi, NumInfo ni) {
     pi->stack.head->val = oj_num_as_value(ni);
+    if (Yes == pi->options.trace) {
+	oj_trace_parse_call("add_number", pi, __FILE__, __LINE__, pi->stack.head->val);
+    }
 }
 
 static void
 hash_set_num(struct _ParseInfo *pi, Val parent, NumInfo ni) {
+    volatile VALUE	rval = oj_num_as_value(ni);
+    
     if (!oj_use_hash_alt && rb_cHash != rb_obj_class(parent->val)) {
 	// The rb_hash_set would still work but the unit tests for the
 	// json gem require the less efficient []= method be called to set
 	// values. Even using the store method to set the values will fail
 	// the unit tests.
-	rb_funcall(stack_peek(&pi->stack)->val, rb_intern("[]="), 2, calc_hash_key(pi, parent), oj_num_as_value(ni));
+	rb_funcall(stack_peek(&pi->stack)->val, rb_intern("[]="), 2, calc_hash_key(pi, parent), rval);
     } else {
-	rb_hash_aset(stack_peek(&pi->stack)->val, calc_hash_key(pi, parent), oj_num_as_value(ni));
+	rb_hash_aset(stack_peek(&pi->stack)->val, calc_hash_key(pi, parent), rval);
+    }
+    if (Yes == pi->options.trace) {
+	oj_trace_parse_call("set_number", pi, __FILE__, __LINE__, rval);
     }
 }
 
@@ -152,6 +172,9 @@ hash_set_value(ParseInfo pi, Val parent, VALUE value) {
     } else {
 	rb_hash_aset(stack_peek(&pi->stack)->val, calc_hash_key(pi, parent), value);
     }
+    if (Yes == pi->options.trace) {
+	oj_trace_parse_call("set_value", pi, __FILE__, __LINE__, value);
+    }
 }
 
 static VALUE
@@ -159,20 +182,27 @@ start_array(ParseInfo pi) {
     if (Qnil != pi->options.array_class) {
 	return rb_class_new_instance(0, NULL, pi->options.array_class);
     }
+    if (Yes == pi->options.trace) {
+	oj_trace_parse_in("start_array", pi, __FILE__, __LINE__);
+    }
     return rb_ary_new();
 }
 
 static void
 array_append_num(ParseInfo pi, NumInfo ni) {
-    Val	parent = stack_peek(&pi->stack);
+    Val			parent = stack_peek(&pi->stack);
+    volatile VALUE	rval = oj_num_as_value(ni);
     
     if (!oj_use_array_alt && rb_cArray != rb_obj_class(parent->val)) {
 	// The rb_ary_push would still work but the unit tests for the json
 	// gem require the less efficient << method be called to push the
 	// values.
-	rb_funcall(parent->val, rb_intern("<<"), 1, oj_num_as_value(ni));
+	rb_funcall(parent->val, rb_intern("<<"), 1, rval);
     } else {
-	rb_ary_push(parent->val, oj_num_as_value(ni));
+	rb_ary_push(parent->val, rval);
+    }
+    if (Yes == pi->options.trace) {
+	oj_trace_parse_call("append_number", pi, __FILE__, __LINE__, rval);
     }
 }
 
@@ -190,6 +220,9 @@ array_append_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
 	}
     }
     rb_ary_push(stack_peek(&pi->stack)->val, rstr);
+    if (Yes == pi->options.trace) {
+	oj_trace_parse_call("append_string", pi, __FILE__, __LINE__, rstr);
+    }
 }
 
 void
