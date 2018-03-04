@@ -7,6 +7,7 @@
 #include "encode.h"
 #include "code.h"
 #include "encode.h"
+#include "trace.h"
 
 #define OJ_INFINITY (1.0/0.0)
 
@@ -1287,6 +1288,9 @@ static void
 dump_rails_val(VALUE obj, int depth, Out out, bool as_ok) {
     int	type = rb_type(obj);
 
+    if (Yes == out->opts->trace) {
+	oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceIn);
+    }
     if (MAX_DEPTH < depth) {
 	rb_raise(rb_eNoMemError, "Too deeply nested.\n");
     }
@@ -1295,10 +1299,16 @@ dump_rails_val(VALUE obj, int depth, Out out, bool as_ok) {
 
 	if (NULL != f) {
 	    f(obj, depth, out, as_ok);
+	    if (Yes == out->opts->trace) {
+		oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceOut);
+	    }
 	    return;
 	}
     }
     oj_dump_nil(Qnil, depth, out, false);
+    if (Yes == out->opts->trace) {
+	oj_trace("dump", Qnil, __FILE__, __LINE__, depth, TraceOut);
+    }
 }
 
 void

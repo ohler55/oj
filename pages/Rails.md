@@ -93,9 +93,11 @@ Oj::Rails.set_decoder() method replaces that method with the Oj equivalent.
    are used as keys or if a other non-String objects such as Numerics are mixed
    with numbers as Strings.
 
-3. To verify Oj is being used, turn on C extension tracing.
-   Set `tracer = TracePoint.new(:c_call) do |tp| p [tp.lineno, tp.event, tp.defined_class, tp.method_id] end`
-   or, in older Rubies, set `Tracer.display_c_call = true`.
+3. To verify Oj is being used turn on the Oj `:trace` option. Similar to the
+   Ruby Tracer Oj will then print out trace information. Another approach is
+   to turn on C extension tracing.  Set `tracer = TracePoint.new(:c_call) do
+   |tp| p [tp.lineno, tp.event, tp.defined_class, tp.method_id] end` or, in
+   older Rubies, set `Tracer.display_c_call = true`.
 
    For example:
 
