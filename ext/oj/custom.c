@@ -464,6 +464,9 @@ dump_common(VALUE obj, int depth, Out out) {
 	const char	*s;
 	int		len;
 
+	if (Yes == out->opts->trace) {
+	    oj_trace("to_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyIn);
+	}
 #if HAS_METHOD_ARITY
 	if (0 == rb_obj_method_arity(obj, oj_to_json_id)) {
 	    rs = rb_funcall(obj, oj_to_json_id, 0);
@@ -473,6 +476,9 @@ dump_common(VALUE obj, int depth, Out out) {
 #else
 	rs = rb_funcall2(obj, oj_to_json_id, out->argc, out->argv);
 #endif
+	if (Yes == out->opts->trace) {
+	    oj_trace("to_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyOut);
+	}
 	s = rb_string_value_ptr((VALUE*)&rs);
 	len = (int)RSTRING_LEN(rs);
 
@@ -483,6 +489,9 @@ dump_common(VALUE obj, int depth, Out out) {
     } else if (Yes == out->opts->as_json && rb_respond_to(obj, oj_as_json_id)) {
 	volatile VALUE	aj;
 
+	if (Yes == out->opts->trace) {
+	    oj_trace("as_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyIn);
+	}
 	// Some classes elect to not take an options argument so check the arity
 	// of as_json.
 #if HAS_METHOD_ARITY
@@ -494,6 +503,9 @@ dump_common(VALUE obj, int depth, Out out) {
 #else
 	aj = rb_funcall2(obj, oj_as_json_id, out->argc, out->argv);
 #endif
+	if (Yes == out->opts->trace) {
+	    oj_trace("as_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyOut);
+	}
 	// Catch the obvious brain damaged recursive dumping.
 	if (aj == obj) {
 	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);

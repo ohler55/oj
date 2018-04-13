@@ -10,9 +10,11 @@
 #include <ruby.h>
 
 typedef enum {
-    TraceIn	= '{',
-    TraceOut	= '}',
-    TraceCall	= '-',
+    TraceIn		= '}',
+    TraceOut		= '{',
+    TraceCall		= '-',
+    TraceRubyIn		= '>',
+    TraceRubyOut	= '<',
 } TraceWhere;
 
 struct _ParseInfo;

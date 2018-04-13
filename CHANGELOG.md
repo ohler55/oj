@@ -1,10 +1,10 @@
 # CHANGELOG
 
-## 3.5.1 - 2018-04-16
+## 3.5.1 - 2018-04-14
 
   - Fixed issue with \u0000 terminating keys early.
 
-  - Add trace for calls to `to_json`, 'as_json`, and other key Ruby calls that pass control back to objects being dumped.
+  - Add trace for calls to `to_json` and 'as_json`.
 
 ## 3.5.0 - 2018-03-04
 

@@ -120,6 +120,9 @@ dump_to_json(VALUE obj, Out out) {
     const char		*s;
     int			len;
 
+    if (Yes == out->opts->trace) {
+	oj_trace("to_json", obj, __FILE__, __LINE__, 0, TraceRubyIn);
+    }
 #if HAS_METHOD_ARITY
     if (0 == rb_obj_method_arity(obj, oj_to_json_id)) {
 	rs = rb_funcall(obj, oj_to_json_id, 0);
@@ -129,6 +132,9 @@ dump_to_json(VALUE obj, Out out) {
 #else
     rs = rb_funcall2(obj, oj_to_json_id, out->argc, out->argv);
 #endif
+    if (Yes == out->opts->trace) {
+	oj_trace("to_json", obj, __FILE__, __LINE__, 0, TraceRubyOut);
+    }
 
     s = rb_string_value_ptr((VALUE*)&rs);
     len = (int)RSTRING_LEN(rs);

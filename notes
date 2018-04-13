@@ -19,7 +19,7 @@ Comparison Matrix
            ---------  ---------  ---------
            Oj:strict       1.00       3.48
            JSON::Ext       0.29       1.00
-           
+
 - big decimal
  - just in custom mode, maybe in strict?
 
