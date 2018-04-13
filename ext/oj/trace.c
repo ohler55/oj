@@ -15,7 +15,9 @@ fill_indent(char *indent, int depth) {
     } else if (depth < 0) {
 	depth = 0;
     }
-    memset(indent, ' ', depth);
+    if (0 < depth) {
+	memset(indent, ' ', depth);
+    }
     indent[depth] = '\0';
 }
 
