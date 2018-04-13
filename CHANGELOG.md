@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.5.1 - 2018-04-16
+
+  - Fixed issue with \u0000 terminating keys early.
+
+  - Add trace for calls to `to_json`, 'as_json`, and other key Ruby calls that pass control back to objects being dumped.
+
 ## 3.5.0 - 2018-03-04
 
   - A trace option is now available in all modes. The format roughly follows the Ruby trace format.

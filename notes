@@ -23,6 +23,9 @@ Comparison Matrix
 - big decimal
  - just in custom mode, maybe in strict?
 
+ - encode_big_decimal_as_string
+  - add as fix for rails change
+
 
 - rails
    

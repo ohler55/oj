@@ -286,8 +286,10 @@ read_escaped_str(ParseInfo pi, const char *start) {
 	case NEXT_HASH_NEW:
 	case NEXT_HASH_KEY:
 	    if (Qundef == (parent->key_val = pi->hash_key(pi, buf.head, buf_len(&buf)))) {
-		parent->key = strdup(buf.head);
 		parent->klen = buf_len(&buf);
+		parent->key = malloc(parent->klen + 1);
+		memcpy((char*)parent->key, buf.head, parent->klen);
+		*(char*)(parent->key + parent->klen) = '\0';
 	    } else {
 		parent->key = "";
 		parent->klen = 0;
