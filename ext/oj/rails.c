@@ -345,6 +345,49 @@ dump_actioncontroller_parameters(VALUE obj, int depth, Out out, bool as_ok) {
     dump_rails_val(rb_ivar_get(obj, parameters_id), depth, out, true);
 }
 
+static const char**
+columns_array(VALUE rcols, int *ccnt) {
+    volatile VALUE	v;
+    const char		**cols;
+    int			i;
+    int			cnt = RARRAY_LEN(rcols);
+    
+    *ccnt = cnt;
+    cols = ALLOC_N(const char*, cnt);
+    for (i = 0; i < cnt; i++) {
+	v = rb_ary_entry(rcols, i);
+	// TBD should this check the type?
+	cols[i] = StringValuePtr(v);
+    }
+    return cols;
+}
+
+static ID	rows_id = 0;
+static ID	columns_id = 0;
+
+static void
+dump_activesupport_result(VALUE obj, int depth, Out out, bool as_ok) {
+    volatile VALUE	rows;
+    const char		**cols;
+    int			ccnt = 0;
+    int			i, rcnt;
+    
+    if (0 == rows_id) {
+	rows_id = rb_intern("@rows");
+	columns_id = rb_intern("@columns");
+    }
+    out->argc = 0;
+    cols = columns_array(rb_ivar_get(obj, columns_id), &ccnt);
+    rows = rb_ivar_get(obj, rows_id);
+    rcnt = RARRAY_LEN(rows);
+    for (i = 0; i < rcnt; i++) {
+	// TBD similar to dump_array
+	// call func to dump_row
+	//     dump_rails_val(rb_ivar_get(obj, parameters_id), depth, out, true);
+    }
+    free(cols);
+}
+
 typedef struct _NamedFunc {
     const char	*name;
     DumpFunc	func;
@@ -352,6 +395,7 @@ typedef struct _NamedFunc {
 
 static struct _NamedFunc	dump_map[] = {
     { "ActionController::Parameters", dump_actioncontroller_parameters },
+    { "ActiveSupport::Result", dump_activesupport_result },
     { "ActiveSupport::TimeWithZone", dump_timewithzone },
     { "BigDecimal", dump_bigdecimal },
     { "Range", dump_to_s },
