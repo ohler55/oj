@@ -356,7 +356,7 @@ columns_array(VALUE rcols, int *ccnt) {
     StrLen		cp;
     StrLen		cols;
     int			i;
-    int			cnt = RARRAY_LEN(rcols);
+    int			cnt = (int)RARRAY_LEN(rcols);
     
     *ccnt = cnt;
     cols = ALLOC_N(struct _StrLen, cnt);
@@ -366,7 +366,7 @@ columns_array(VALUE rcols, int *ccnt) {
 	    v = rb_funcall(v, oj_to_s_id, 0);
 	}
 	cp->str = StringValuePtr(v);
-	cp->len = RSTRING_LEN(v);
+	cp->len = (int)RSTRING_LEN(v);
     }
     return cols;
 }

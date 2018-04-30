@@ -36,7 +36,7 @@ void
 oj_trace_parse_call(const char *func, ParseInfo pi, const char *file, int line, VALUE obj) {
     char	fmt[64];
     char	indent[MAX_INDENT];
-    int		depth = stack_size(&pi->stack) * 2;
+    int		depth = (int)(stack_size(&pi->stack) * 2);
     
     fill_indent(indent, depth);
     sprintf(fmt, "#0:%%13s:%%3d:Oj:-:%%%ds %%s %%s\n", depth);
@@ -47,7 +47,7 @@ void
 oj_trace_parse_in(const char *func, ParseInfo pi, const char *file, int line) {
     char	fmt[64];
     char	indent[MAX_INDENT];
-    int		depth = stack_size(&pi->stack) * 2;
+    int		depth = (int)(stack_size(&pi->stack) * 2);
     
     fill_indent(indent, depth);
     sprintf(fmt, "#0:%%13s:%%3d:Oj:}:%%%ds %%s\n", depth);
@@ -58,7 +58,7 @@ void
 oj_trace_parse_hash_end(ParseInfo pi, const char *file, int line) {
     char	fmt[64];
     char	indent[MAX_INDENT];
-    int		depth = stack_size(&pi->stack) * 2 - 2;
+    int		depth = (int)(stack_size(&pi->stack) * 2 - 2);
     Val		v = stack_peek(&pi->stack);
     VALUE	obj = v->val;
     
@@ -71,7 +71,7 @@ void
 oj_trace_parse_array_end(ParseInfo pi, const char *file, int line) {
     char	fmt[64];
     char	indent[MAX_INDENT];
-    int		depth = stack_size(&pi->stack) * 2;
+    int		depth = (int)(stack_size(&pi->stack) * 2);
     
     fill_indent(indent, depth);
     sprintf(fmt, "#0:%%13s:%%3d:Oj:{:%%%ds array_ned\n", depth);
