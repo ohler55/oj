@@ -336,6 +336,11 @@ dump_to_s(VALUE obj, int depth, Out out, bool as_ok) {
 
 static ID	parameters_id = 0;
 
+typedef struct _StrLen {
+    const char	*str;
+    int		len;
+} *StrLen;
+
 static void
 dump_actioncontroller_parameters(VALUE obj, int depth, Out out, bool as_ok) {
     if (0 == parameters_id) {
@@ -345,32 +350,92 @@ dump_actioncontroller_parameters(VALUE obj, int depth, Out out, bool as_ok) {
     dump_rails_val(rb_ivar_get(obj, parameters_id), depth, out, true);
 }
 
-static const char**
+static StrLen
 columns_array(VALUE rcols, int *ccnt) {
     volatile VALUE	v;
-    const char		**cols;
+    StrLen		cp;
+    StrLen		cols;
     int			i;
     int			cnt = RARRAY_LEN(rcols);
     
     *ccnt = cnt;
-    cols = ALLOC_N(const char*, cnt);
-    for (i = 0; i < cnt; i++) {
+    cols = ALLOC_N(struct _StrLen, cnt);
+    for (i = 0, cp = cols; i < cnt; i++, cp++) {
 	v = rb_ary_entry(rcols, i);
-	// TBD should this check the type?
-	cols[i] = StringValuePtr(v);
+	if (T_STRING != rb_type(v)) {
+	    v = rb_funcall(v, oj_to_s_id, 0);
+	}
+	cp->str = StringValuePtr(v);
+	cp->len = RSTRING_LEN(v);
     }
     return cols;
+}
+
+static void
+dump_row(VALUE row, StrLen cols, int ccnt, int depth, Out out) {
+    size_t	size;
+    int		d2 = depth + 1;
+    int		i;
+				   
+    assure_size(out, 2);
+    *out->cur++ = '{';
+    size = depth * out->indent + 3;
+    for (i = 0; i < ccnt; i++, cols++) {
+	assure_size(out, size);
+	if (out->opts->dump_opts.use) {
+	    if (0 < out->opts->dump_opts.array_size) {
+		strcpy(out->cur, out->opts->dump_opts.array_nl);
+		out->cur += out->opts->dump_opts.array_size;
+	    }
+	    if (0 < out->opts->dump_opts.indent_size) {
+		int	i;
+		for (i = d2; 0 < i; i--) {
+		    strcpy(out->cur, out->opts->dump_opts.indent_str);
+		    out->cur += out->opts->dump_opts.indent_size;
+		}
+	    }
+	} else {
+	    fill_indent(out, d2);
+	}
+	oj_dump_cstr(cols->str, cols->len, 0, 0, out);
+	*out->cur++ = ':';
+	dump_rails_val(rb_ary_entry(row, i), depth, out, true);
+	if (i < ccnt - 1) {
+	    *out->cur++ = ',';
+	}
+    }
+    size = depth * out->indent + 1;
+    assure_size(out, size);
+    if (out->opts->dump_opts.use) {
+	if (0 < out->opts->dump_opts.array_size) {
+	    strcpy(out->cur, out->opts->dump_opts.array_nl);
+	    out->cur += out->opts->dump_opts.array_size;
+	}
+	if (0 < out->opts->dump_opts.indent_size) {
+	    int	i;
+
+	    for (i = depth; 0 < i; i--) {
+		strcpy(out->cur, out->opts->dump_opts.indent_str);
+		out->cur += out->opts->dump_opts.indent_size;
+	    }
+	}
+    } else {
+	fill_indent(out, depth);
+    }
+    *out->cur++ = '}';
 }
 
 static ID	rows_id = 0;
 static ID	columns_id = 0;
 
 static void
-dump_activesupport_result(VALUE obj, int depth, Out out, bool as_ok) {
+dump_activerecord_result(VALUE obj, int depth, Out out, bool as_ok) {
     volatile VALUE	rows;
-    const char		**cols;
+    StrLen		cols;
     int			ccnt = 0;
     int			i, rcnt;
+    size_t		size;
+    int			d2 = depth + 1;
     
     if (0 == rows_id) {
 	rows_id = rb_intern("@rows");
@@ -380,12 +445,56 @@ dump_activesupport_result(VALUE obj, int depth, Out out, bool as_ok) {
     cols = columns_array(rb_ivar_get(obj, columns_id), &ccnt);
     rows = rb_ivar_get(obj, rows_id);
     rcnt = RARRAY_LEN(rows);
-    for (i = 0; i < rcnt; i++) {
-	// TBD similar to dump_array
-	// call func to dump_row
-	//     dump_rails_val(rb_ivar_get(obj, parameters_id), depth, out, true);
+    assure_size(out, 2);
+    *out->cur++ = '[';
+    if (out->opts->dump_opts.use) {
+	size = d2 * out->opts->dump_opts.indent_size + out->opts->dump_opts.array_size + 1;
+    } else {
+	size = d2 * out->indent + 2;
     }
-    free(cols);
+    assure_size(out, 2);
+    for (i = 0; i < rcnt; i++) {
+	assure_size(out, size);
+	if (out->opts->dump_opts.use) {
+	    if (0 < out->opts->dump_opts.array_size) {
+		strcpy(out->cur, out->opts->dump_opts.array_nl);
+		out->cur += out->opts->dump_opts.array_size;
+	    }
+	    if (0 < out->opts->dump_opts.indent_size) {
+		int	i;
+		for (i = d2; 0 < i; i--) {
+		    strcpy(out->cur, out->opts->dump_opts.indent_str);
+		    out->cur += out->opts->dump_opts.indent_size;
+		}
+	    }
+	} else {
+	    fill_indent(out, d2);
+	}
+	dump_row(rb_ary_entry(rows, i), cols, ccnt, d2, out);
+	if (i < rcnt - 1) {
+	    *out->cur++ = ',';
+	}
+    }
+    xfree(cols);
+    size = depth * out->indent + 1;
+    assure_size(out, size);
+    if (out->opts->dump_opts.use) {
+	if (0 < out->opts->dump_opts.array_size) {
+	    strcpy(out->cur, out->opts->dump_opts.array_nl);
+	    out->cur += out->opts->dump_opts.array_size;
+	}
+	if (0 < out->opts->dump_opts.indent_size) {
+	    int	i;
+
+	    for (i = depth; 0 < i; i--) {
+		strcpy(out->cur, out->opts->dump_opts.indent_str);
+		out->cur += out->opts->dump_opts.indent_size;
+	    }
+	}
+    } else {
+	fill_indent(out, depth);
+    }
+    *out->cur++ = ']';
 }
 
 typedef struct _NamedFunc {
@@ -395,7 +504,7 @@ typedef struct _NamedFunc {
 
 static struct _NamedFunc	dump_map[] = {
     { "ActionController::Parameters", dump_actioncontroller_parameters },
-    { "ActiveSupport::Result", dump_activesupport_result },
+    { "ActiveRecord::Result", dump_activerecord_result },
     { "ActiveSupport::TimeWithZone", dump_timewithzone },
     { "BigDecimal", dump_bigdecimal },
     { "Range", dump_to_s },
