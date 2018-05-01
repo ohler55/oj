@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.6.0 - 2018-05-01
+
+  - Add optimization for Rails ActiveRecord::Result encoding.
+
 ## 3.5.1 - 2018-04-14
 
   - Fixed issue with \u0000 terminating keys early.
