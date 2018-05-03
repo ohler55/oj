@@ -21,9 +21,6 @@
 // Workaround in case INFINITY is not defined in math.h or if the OS is CentOS
 #define OJ_INFINITY (1.0/0.0)
 
-// Extra padding at end of buffer.
-#define BUFFER_EXTRA 10
-
 typedef unsigned long	ulong;
 
 static const char	inf_val[] = INF_VAL;

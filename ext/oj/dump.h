@@ -13,7 +13,7 @@
 #define MAX_DEPTH 1000
 
 // Extra padding at end of buffer.
-#define BUFFER_EXTRA 10
+#define BUFFER_EXTRA 64
 
 extern void	oj_dump_nil(VALUE obj, int depth, Out out, bool as_ok);
 extern void	oj_dump_true(VALUE obj, int depth, Out out, bool as_ok);

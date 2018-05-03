@@ -896,14 +896,14 @@ void
 oj_grow_out(Out out, size_t len) {
     size_t  size = out->end - out->buf;
     long    pos = out->cur - out->buf;
-    char    *buf;
+    char    *buf = out->buf;
 	
     size *= 2;
     if (size <= len * 2 + pos) {
 	size += len;
     }
     if (out->allocated) {
-	buf = REALLOC_N(out->buf, char, (size + BUFFER_EXTRA));
+	REALLOC_N(buf, char, (size + BUFFER_EXTRA));
     } else {
 	buf = ALLOC_N(char, (size + BUFFER_EXTRA));
 	out->allocated = true;
