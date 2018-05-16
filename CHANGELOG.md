@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.6.1 - 2018-05-16
+
+  - Fixed realloc bug in rails dump.
+
 ## 3.6.0 - 2018-05-01
 
   - Add optimization for Rails ActiveRecord::Result encoding.
