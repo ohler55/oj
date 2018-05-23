@@ -1141,7 +1141,7 @@ dump_as_json(VALUE obj, int depth, Out out, bool as_ok) {
 
     out->argc = 0;
     if (ja == obj || !as_ok) {
-	// Once as_json is call it should never be called again on the same
+	// Once as_json is called it should never be called again on the same
 	// object with as_ok.
 	dump_rails_val(ja, depth, out, false);
     } else {
@@ -1415,6 +1415,16 @@ dump_as_string(VALUE obj, int depth, Out out, bool as_ok) {
     oj_dump_obj_to_s(obj, out);
 }
 
+static void
+dump_regexp(VALUE obj, int depth, Out out, bool as_ok) {
+    if (as_ok && 0 < out->argc && rb_respond_to(obj, oj_as_json_id)) {
+	dump_as_json(obj, depth, out, false);
+	return;
+    }
+    dump_as_string(obj, depth, out, as_ok);
+}
+
+
 static DumpFunc	rails_funcs[] = {
     NULL,	 	// RUBY_T_NONE     = 0x00,
     dump_obj,		// RUBY_T_OBJECT   = 0x01,
@@ -1422,7 +1432,8 @@ static DumpFunc	rails_funcs[] = {
     oj_dump_class,	// RUBY_T_MODULE   = 0x03,
     dump_float, 	// RUBY_T_FLOAT    = 0x04,
     oj_dump_str, 	// RUBY_T_STRING   = 0x05,
-    dump_as_string,	// RUBY_T_REGEXP   = 0x06,
+    dump_regexp,	// RUBY_T_REGEXP   = 0x06,
+    //dump_as_string,	// RUBY_T_REGEXP   = 0x06,
     dump_array,		// RUBY_T_ARRAY    = 0x07,
     dump_hash,	 	// RUBY_T_HASH     = 0x08,
     dump_obj,		// RUBY_T_STRUCT   = 0x09,
