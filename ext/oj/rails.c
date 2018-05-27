@@ -319,11 +319,13 @@ dump_time(VALUE obj, int depth, Out out, bool as_ok) {
 static void
 dump_timewithzone(VALUE obj, int depth, Out out, bool as_ok) {
     time_t	sec = NUM2LONG(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
-#if HAS_NANO_TIME
-    long long	nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
-#else
-    long long	nsec = rb_num2ll(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
-#endif
+    long long	nsec = 0;
+
+    if (rb_respond_to(obj, oj_tv_nsec_id)) {
+	nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+    } else if (rb_respond_to(obj, oj_tv_usec_id)) {
+	nsec = rb_num2ll(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
+    }
     dump_sec_nano(obj, sec, nsec, out);
 }
 
@@ -1408,13 +1410,9 @@ dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
     if (as_ok) {
 	ROpt	ro;
 
-	printf("*** %s dunped as ok %d\n", rb_obj_classname(obj), out->depth);
-
 	if (NULL != (ro = oj_rails_get_opt(out->ropts, rb_obj_class(obj))) && ro->on) {
 	    ro->dump(obj, depth, out, as_ok);
 	} else if (rb_respond_to(obj, oj_as_json_id)) {
-	    printf("*** %s dunped as json\n", rb_obj_classname(obj));
-
 	    dump_as_json(obj, depth, out, true);
 	} else if (rb_respond_to(obj, oj_to_hash_id)) {
 	    dump_to_hash(obj, depth, out);
