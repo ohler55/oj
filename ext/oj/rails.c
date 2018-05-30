@@ -319,11 +319,13 @@ dump_time(VALUE obj, int depth, Out out, bool as_ok) {
 static void
 dump_timewithzone(VALUE obj, int depth, Out out, bool as_ok) {
     time_t	sec = NUM2LONG(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
-#if HAS_NANO_TIME
-    long long	nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
-#else
-    long long	nsec = rb_num2ll(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
-#endif
+    long long	nsec = 0;
+
+    if (rb_respond_to(obj, oj_tv_nsec_id)) {
+	nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+    } else if (rb_respond_to(obj, oj_tv_usec_id)) {
+	nsec = rb_num2ll(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
+    }
     dump_sec_nano(obj, sec, nsec, out);
 }
 
@@ -502,13 +504,70 @@ typedef struct _NamedFunc {
     DumpFunc	func;
 } *NamedFunc;
 
+static void
+dump_as_string(VALUE obj, int depth, Out out, bool as_ok) {
+    if (oj_code_dump(oj_compat_codes, obj, depth, out)) {
+	out->argc = 0;
+	return;
+    }
+    oj_dump_obj_to_s(obj, out);
+}
+
+static void
+dump_as_json(VALUE obj, int depth, Out out, bool as_ok) {
+    volatile VALUE	ja;
+
+    if (Yes == out->opts->trace) {
+	oj_trace("as_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyIn);
+    }
+    // Some classes elect to not take an options argument so check the arity
+    // of as_json.
+#if HAS_METHOD_ARITY
+    if (0 == rb_obj_method_arity(obj, oj_as_json_id)) {
+	ja = rb_funcall(obj, oj_as_json_id, 0);
+    } else {
+	ja = rb_funcall2(obj, oj_as_json_id, out->argc, out->argv);
+    }
+#else
+    ja = rb_funcall2(obj, oj_as_json_id, out->argc, out->argv);
+#endif
+    if (Yes == out->opts->trace) {
+	oj_trace("as_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyOut);
+    }
+
+    out->argc = 0;
+    if (ja == obj || !as_ok) {
+	// Once as_json is called it should never be called again on the same
+	// object with as_ok.
+	dump_rails_val(ja, depth, out, false);
+    } else {
+	int	type = rb_type(ja);
+
+	if (T_HASH == type || T_ARRAY == type) {
+	    dump_rails_val(ja, depth, out, true);
+	} else {
+	    dump_rails_val(ja, depth, out, true);
+	}
+    }
+}
+
+static void
+dump_regexp(VALUE obj, int depth, Out out, bool as_ok) {
+    if (as_ok && rb_respond_to(obj, oj_as_json_id)) {
+	dump_as_json(obj, depth, out, false);
+	return;
+    }
+    dump_as_string(obj, depth, out, as_ok);
+}
+
 static struct _NamedFunc	dump_map[] = {
     { "ActionController::Parameters", dump_actioncontroller_parameters },
     { "ActiveRecord::Result", dump_activerecord_result },
     { "ActiveSupport::TimeWithZone", dump_timewithzone },
     { "BigDecimal", dump_bigdecimal },
     { "Range", dump_to_s },
-    { "Regexp", dump_to_s },
+    { "Regexp", dump_regexp },
+    //{ "Regexp", dump_to_s },
     { "Time", dump_time },
     { NULL, NULL },
 };
@@ -1118,44 +1177,6 @@ oj_mimic_rails_init() {
 }
 
 static void
-dump_as_json(VALUE obj, int depth, Out out, bool as_ok) {
-    volatile VALUE	ja;
-
-    if (Yes == out->opts->trace) {
-	oj_trace("as_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyIn);
-    }
-    // Some classes elect to not take an options argument so check the arity
-    // of as_json.
-#if HAS_METHOD_ARITY
-    if (0 == rb_obj_method_arity(obj, oj_as_json_id)) {
-	ja = rb_funcall(obj, oj_as_json_id, 0);
-    } else {
-	ja = rb_funcall2(obj, oj_as_json_id, out->argc, out->argv);
-    }
-#else
-    ja = rb_funcall2(obj, oj_as_json_id, out->argc, out->argv);
-#endif
-    if (Yes == out->opts->trace) {
-	oj_trace("as_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyOut);
-    }
-
-    out->argc = 0;
-    if (ja == obj || !as_ok) {
-	// Once as_json is call it should never be called again on the same
-	// object with as_ok.
-	dump_rails_val(ja, depth, out, false);
-    } else {
-	int	type = rb_type(ja);
-
-	if (T_HASH == type || T_ARRAY == type) {
-	    dump_rails_val(ja, depth, out, true);
-	} else {
-	    dump_rails_val(ja, depth, out, true);
-	}
-    }
-}
-
-static void
 dump_to_hash(VALUE obj, int depth, Out out) {
     dump_rails_val(rb_funcall(obj, oj_to_hash_id, 0), depth, out, true);
 }
@@ -1388,7 +1409,7 @@ dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
     }
     if (as_ok) {
 	ROpt	ro;
-	
+
 	if (NULL != (ro = oj_rails_get_opt(out->ropts, rb_obj_class(obj))) && ro->on) {
 	    ro->dump(obj, depth, out, as_ok);
 	} else if (rb_respond_to(obj, oj_as_json_id)) {
@@ -1406,15 +1427,6 @@ dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
     }
 }
 
-static void
-dump_as_string(VALUE obj, int depth, Out out, bool as_ok) {
-    if (oj_code_dump(oj_compat_codes, obj, depth, out)) {
-	out->argc = 0;
-	return;
-    }
-    oj_dump_obj_to_s(obj, out);
-}
-
 static DumpFunc	rails_funcs[] = {
     NULL,	 	// RUBY_T_NONE     = 0x00,
     dump_obj,		// RUBY_T_OBJECT   = 0x01,
@@ -1422,7 +1434,8 @@ static DumpFunc	rails_funcs[] = {
     oj_dump_class,	// RUBY_T_MODULE   = 0x03,
     dump_float, 	// RUBY_T_FLOAT    = 0x04,
     oj_dump_str, 	// RUBY_T_STRING   = 0x05,
-    dump_as_string,	// RUBY_T_REGEXP   = 0x06,
+    dump_regexp,	// RUBY_T_REGEXP   = 0x06,
+    //dump_as_string,	// RUBY_T_REGEXP   = 0x06,
     dump_array,		// RUBY_T_ARRAY    = 0x07,
     dump_hash,	 	// RUBY_T_HASH     = 0x08,
     dump_obj,		// RUBY_T_STRUCT   = 0x09,

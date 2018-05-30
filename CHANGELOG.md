@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.6.2 - 2018-05-30
+
+  - Regex encoded correctly for rails when using `to_json`.
+
 ## 3.6.1 - 2018-05-16
 
   - Fixed realloc bug in rails dump.
