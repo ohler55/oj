@@ -4,6 +4,8 @@
 
   - Regex encoded correctly for rails when using `to_json`.
 
+  - ActiveSupport::TimeWithZone optimization fixed.
+
 ## 3.6.1 - 2018-05-16
 
   - Fixed realloc bug in rails dump.
