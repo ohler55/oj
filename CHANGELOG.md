@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.6.3 - 2018-06-21
+
+  - Fixed compat dump compilation error on Windows.
+
 ## 3.6.2 - 2018-05-30
 
   - Regex encoded correctly for rails when using `to_json`.
