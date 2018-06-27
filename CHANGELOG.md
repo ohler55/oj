@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.6.4 - 2018-06-28
+
+  - JSON.generate() now sets the `to_json` option as expected.
+
 ## 3.6.3 - 2018-06-21
 
   - Fixed compat dump compilation error on Windows.

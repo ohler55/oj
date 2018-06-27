@@ -370,6 +370,7 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
     // it is.
     copts->dump_opts.nan_dump = RaiseNan;
     copts->mode = CompatMode;
+    copts->to_json = Yes;
     if (2 == argc && Qnil != argv[1]) {
 	oj_parse_mimic_dump_options(argv[1], copts);
     }
