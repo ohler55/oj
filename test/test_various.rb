@@ -145,6 +145,7 @@ class Juice < Minitest::Test
       :time_format=>:unix_zone,
       :bigdecimal_load=>:float,
       :create_id=>'classy',
+      :create_additions=>true,
       :space=>'z',
       :array_nl=>'a',
       :object_nl=>'o',
