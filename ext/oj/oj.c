@@ -229,6 +229,7 @@ struct _Options	oj_default_options = {
  * - *:bigdecimal_as_decimal* [_Boolean_|_nil_] dump BigDecimal as a decimal number or as a String
  * - *:bigdecimal_load* [_:bigdecimal_|_:float_|_:auto_] load decimals as BigDecimal instead of as a Float. :auto pick the most precise for the number of digits.
  * - *:create_id* [_String_|_nil_] create id for json compatible object encoding, default is 'json_class'
+ * - *:create_additions* [_Boolean_|_nil_] if true allow creation of instances using create_id on load.
  * - *:second_precision* [_Fixnum_|_nil_] number of digits after the decimal when dumping the seconds portion of time
  * - *:float_precision* [_Fixnum_|_nil_] number of digits of precision when dumping floats, 0 indicates use Ruby
  * - *:use_to_json* [_Boolean_|_nil_] call to_json() methods on dump, default is false
@@ -268,6 +269,7 @@ get_def_opts(VALUE self) {
     rb_hash_aset(opts, auto_define_sym, (Yes == oj_default_options.auto_define) ? Qtrue : ((No == oj_default_options.auto_define) ? Qfalse : Qnil));
     rb_hash_aset(opts, symbol_keys_sym, (Yes == oj_default_options.sym_key) ? Qtrue : ((No == oj_default_options.sym_key) ? Qfalse : Qnil));
     rb_hash_aset(opts, bigdecimal_as_decimal_sym, (Yes == oj_default_options.bigdec_as_num) ? Qtrue : ((No == oj_default_options.bigdec_as_num) ? Qfalse : Qnil));
+    rb_hash_aset(opts, oj_create_additions_sym, (Yes == oj_default_options.create_ok) ? Qtrue : ((No == oj_default_options.create_ok) ? Qfalse : Qnil));
     rb_hash_aset(opts, use_to_json_sym, (Yes == oj_default_options.to_json) ? Qtrue : ((No == oj_default_options.to_json) ? Qfalse : Qnil));
     rb_hash_aset(opts, use_to_hash_sym, (Yes == oj_default_options.to_hash) ? Qtrue : ((No == oj_default_options.to_hash) ? Qfalse : Qnil));
     rb_hash_aset(opts, use_as_json_sym, (Yes == oj_default_options.as_json) ? Qtrue : ((No == oj_default_options.as_json) ? Qfalse : Qnil));
@@ -358,6 +360,7 @@ get_def_opts(VALUE self) {
  *   - *:mode* [_:object_|_:strict_|_:compat_|_:null_|_:custom_|_:rails_|_:wab_] load and dump mode to use for JSON :strict raises an exception when a non-supported Object is encountered. :compat attempts to extract variable values from an Object using to_json() or to_hash() then it walks the Object's variables if neither is found. The :object mode ignores to_hash() and to_json() methods and encodes variables using code internal to the Oj gem. The :null mode ignores non-supported Objects and replaces them with a null. The :custom mode honors all dump options. The :rails more mimics rails and Active behavior.
  *   - *:time_format* [_:unix_|_:xmlschema_|_:ruby_] time format when dumping in :compat mode :unix decimal number denoting the number of seconds since 1/1/1970, :unix_zone decimal number denoting the number of seconds since 1/1/1970 plus the utc_offset in the exponent, :xmlschema date-time format taken from XML Schema as a String, :ruby Time.to_s formatted String.
  *   - *:create_id* [_String_|_nil_] create id for json compatible object encoding
+ *   - *:create_additions* [_Boolean_|_nil_] if true allow creation of instances using create_id on load.
  *   - *:second_precision* [_Fixnum_|_nil_] number of digits after the decimal when dumping the seconds portion of time.
  *   - *:float_precision* [_Fixnum_|_nil_] number of digits of precision when dumping floats, 0 indicates use Ruby.
  *   - *:use_to_json* [_Boolean_|_nil_] call to_json() methods on dump, default is false.

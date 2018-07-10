@@ -859,9 +859,6 @@ oj_define_mimic_json(int argc, VALUE *argv, VALUE self) {
 	    rb_funcall2(Oj, rb_intern("mimic_loaded"), 0, 0);
 	}
     }
-
-    // TBD create all modules in mimic_loaded
-
     oj_mimic_json_methods(json);
 
     rb_define_method(rb_cObject, "to_json", mimic_object_to_json, -1);
