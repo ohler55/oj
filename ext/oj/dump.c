@@ -347,19 +347,29 @@ oj_dump_time(VALUE obj, Out out, int withZone) {
     char		*dot;
     int			neg = 0;
     long		one = 1000000000;
+    time_t		sec;
+    long long		nsec;
+
+    {
+	VALUE	foo = rb_funcall2(obj, oj_tv_sec_id, 0, 0);
+	printf("*** tv_secs class: %s\n", rb_obj_classname(foo));
+    }
 #if HAS_RB_TIME_TIMESPEC
-    struct timespec	ts = rb_time_timespec(obj);
-    time_t		sec = ts.tv_sec;
-    long		nsec = ts.tv_nsec;
+    {
+	struct timespec	ts = rb_time_timespec(obj);
+	sec = ts.tv_sec;
+	nsec = ts.tv_nsec;
+    }
 #else
-    time_t		sec = NUM2LONG(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+    sec = NUM2LONG(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
 #if HAS_NANO_TIME
-    long long		nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+    nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
 #else
-    long long		nsec = rb_num2ll(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
+    nsec = rb_num2ll(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
 #endif
 #endif
-    
+
+    printf("*** dump time - sec: %ld nsec: %lld\n", sec, nsec);
     *b-- = '\0';
     if (withZone) {
 	long	tzsecs = NUM2LONG(rb_funcall2(obj, oj_utc_offset_id, 0, 0));
