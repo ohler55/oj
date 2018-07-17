@@ -375,6 +375,7 @@ oj_dump_time(VALUE obj, Out out, int withZone) {
 	} else {
 	    sec = NUM2LONG(rsec);
 	}
+    }
 #if HAS_NANO_TIME
     nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
 #else
