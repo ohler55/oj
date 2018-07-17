@@ -362,7 +362,7 @@ oj_dump_time(VALUE obj, Out out, int withZone) {
     }
 #else
 #ifdef IS_WINDOWS
-    printf("*** this is on windows\n);
+    printf("*** this is on windows\n");
 #endif
     {
 	// TBD windows weirdness or just 32 bit issues?
