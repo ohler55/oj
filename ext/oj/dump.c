@@ -339,21 +339,41 @@ oj_check_circular(VALUE obj, Out out) {
     return (long)id;
 }
 
+time_t
+oj_sec_from_time_hard_way(VALUE obj) {
+    time_t	sec;
+#ifdef IS_WINDOWS
+    // Windows thinks anything that takes more then 32 bits is a Bignum
+    // and will not convert it to a long so if its windows convert to a
+    // string then back to number. Horrible since Bignum is a deprecated
+    // class.
+    volatile VALUE	rsec = rb_funcall2(obj, oj_tv_sec_id, 0, 0);
+
+    if (0 == strcmp("Bignum", rb_obj_classname(rsec))) {
+	volatile VALUE	num_str = rb_funcall2(rsec, oj_to_s_id, 0, 0);
+
+	sec = strtoll(StringValuePtr(num_str), NULL, 10);
+    } else {
+	sec = NUM2LONG(rsec);
+    }
+#else
+    sec = NUM2LONG(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+#endif
+
+    return sec;
+}
+
 void
 oj_dump_time(VALUE obj, Out out, int withZone) {
-    char		buf[64];
-    char		*b = buf + sizeof(buf) - 1;
-    long		size;
-    char		*dot;
-    int			neg = 0;
-    long		one = 1000000000;
-    time_t		sec;
-    long long		nsec;
+    char	buf[64];
+    char	*b = buf + sizeof(buf) - 1;
+    long	size;
+    char	*dot;
+    int		neg = 0;
+    long	one = 1000000000;
+    time_t	sec;
+    long long	nsec;
 
-    {
-	VALUE	foo = rb_funcall2(obj, oj_tv_sec_id, 0, 0);
-	printf("*** tv_secs class: %s\n", rb_obj_classname(foo));
-    }
 #if HAS_RB_TIME_TIMESPEC
     {
 	struct timespec	ts = rb_time_timespec(obj);
@@ -361,21 +381,7 @@ oj_dump_time(VALUE obj, Out out, int withZone) {
 	nsec = ts.tv_nsec;
     }
 #else
-#ifdef IS_WINDOWS
-    printf("*** this is on windows\n");
-#endif
-    {
-	// TBD windows weirdness or just 32 bit issues?
-	volatile VALUE	rsec = rb_funcall2(obj, oj_tv_sec_id, 0, 0);
-
-	if (0 == strcmp("Bignum", rb_obj_classname(rsec))) {
-	    volatile VALUE	num_str = rb_funcall2(rsec, oj_to_s_id, 0, 0);
-
-	    sec = strtoll(StringValuePtr(num_str), NULL, 10);
-	} else {
-	    sec = NUM2LONG(rsec);
-	}
-    }
+    sec = oj_sec_from_time_hard_way(obj);
 #if HAS_NANO_TIME
     nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
 #else
@@ -383,7 +389,6 @@ oj_dump_time(VALUE obj, Out out, int withZone) {
 #endif
 #endif
 
-    printf("*** dump time - sec: %ld nsec: %lld\n", sec, nsec);
     *b-- = '\0';
     if (withZone) {
 	long	tzsecs = NUM2LONG(rb_funcall2(obj, oj_utc_offset_id, 0, 0));
@@ -462,24 +467,29 @@ oj_dump_ruby_time(VALUE obj, Out out) {
 
 void
 oj_dump_xml_time(VALUE obj, Out out) {
-    char		buf[64];
-    struct tm		*tm;
-    long		one = 1000000000;
+    char	buf[64];
+    struct tm	*tm;
+    long	one = 1000000000;
+    time_t	sec;
+    long long	nsec;
+    long	tzsecs = NUM2LONG(rb_funcall2(obj, oj_utc_offset_id, 0, 0));
+    int		tzhour, tzmin;
+    char	tzsign = '+';
+
 #if HAS_RB_TIME_TIMESPEC
-    struct timespec	ts = rb_time_timespec(obj);
-    time_t		sec = ts.tv_sec;
-    long		nsec = ts.tv_nsec;
+    {
+	struct timespec	ts = rb_time_timespec(obj);
+	sec = ts.tv_sec;
+	nsec = ts.tv_nsec;
+    }
 #else
-    time_t		sec = NUM2LONG(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+    sec = oj_sec_from_time_hard_way(obj);
 #if HAS_NANO_TIME
-    long long		nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+    nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
 #else
-    long long		nsec = rb_num2ll(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
+    nsec = rb_num2ll(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
 #endif
 #endif
-    long		tzsecs = NUM2LONG(rb_funcall2(obj, oj_utc_offset_id, 0, 0));
-    int			tzhour, tzmin;
-    char		tzsign = '+';
 
     assure_size(out, 36);
     if (9 > out->opts->sec_prec) {

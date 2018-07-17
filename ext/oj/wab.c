@@ -193,21 +193,26 @@ dump_hash(VALUE obj, int depth, Out out, bool as_ok) {
 
 static void
 dump_time(VALUE obj, Out out) {
-    char		buf[64];
-    struct tm		*tm;
+    char	buf[64];
+    struct tm	*tm;
+    int		len;
+    time_t	sec;
+    long long	nsec;
+
 #if HAS_RB_TIME_TIMESPEC
-    struct timespec	ts = rb_time_timespec(obj);
-    time_t		sec = ts.tv_sec;
-    long		nsec = ts.tv_nsec;
+    {
+	struct timespec	ts = rb_time_timespec(obj);
+	sec = ts.tv_sec;
+	nsec = ts.tv_nsec;
+    }
 #else
-    time_t		sec = NUM2LONG(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+    sec = oj_sec_from_time_hard_way(obj);
 #if HAS_NANO_TIME
-    long long		nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+    nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
 #else
-    long long		nsec = rb_num2ll(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
+    nsec = rb_num2ll(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
 #endif
 #endif
-    int			len;
 
     assure_size(out, 36);
     // 2012-01-05T23:58:07.123456000Z
