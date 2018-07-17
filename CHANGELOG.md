@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.6.5 - 2018-07-26
+
+  - Fixed GC issue with Oj::Doc.
+  
+  - Fixed issue with time encoding with Windows.
+
 ## 3.6.4 - 2018-07-10
 
   - JSON.generate() now sets the `to_json` option as expected.

@@ -407,6 +407,12 @@ class Juice < Minitest::Test
     assert_equal('null', json)
   end
 
+  def test_time_neg
+    t = Time.parse("1900-01-01 00:18:59 UTC")
+    json = Oj.dump(t, :mode => :custom, :time_format => :unix)
+    assert_equal('-2208987661.000000000', json)
+  end
+
   # Class
   def test_class_null
     json = Oj.dump(Juice, :mode => :null)

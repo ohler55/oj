@@ -341,25 +341,30 @@ oj_check_circular(VALUE obj, Out out) {
 
 void
 oj_dump_time(VALUE obj, Out out, int withZone) {
-    char		buf[64];
-    char		*b = buf + sizeof(buf) - 1;
-    long		size;
-    char		*dot;
-    int			neg = 0;
-    long		one = 1000000000;
+    char	buf[64];
+    char	*b = buf + sizeof(buf) - 1;
+    long	size;
+    char	*dot;
+    int		neg = 0;
+    long	one = 1000000000;
+    time_t	sec;
+    long long	nsec;
+
 #if HAS_RB_TIME_TIMESPEC
-    struct timespec	ts = rb_time_timespec(obj);
-    time_t		sec = ts.tv_sec;
-    long		nsec = ts.tv_nsec;
+    {
+	struct timespec	ts = rb_time_timespec(obj);
+	sec = ts.tv_sec;
+	nsec = ts.tv_nsec;
+    }
 #else
-    time_t		sec = NUM2LONG(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+    sec = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
 #if HAS_NANO_TIME
-    long long		nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+    nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
 #else
-    long long		nsec = rb_num2ll(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
+    nsec = rb_num2ll(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
 #endif
 #endif
-    
+
     *b-- = '\0';
     if (withZone) {
 	long	tzsecs = NUM2LONG(rb_funcall2(obj, oj_utc_offset_id, 0, 0));
@@ -438,24 +443,29 @@ oj_dump_ruby_time(VALUE obj, Out out) {
 
 void
 oj_dump_xml_time(VALUE obj, Out out) {
-    char		buf[64];
-    struct tm		*tm;
-    long		one = 1000000000;
+    char	buf[64];
+    struct tm	*tm;
+    long	one = 1000000000;
+    time_t	sec;
+    long long	nsec;
+    long	tzsecs = NUM2LONG(rb_funcall2(obj, oj_utc_offset_id, 0, 0));
+    int		tzhour, tzmin;
+    char	tzsign = '+';
+
 #if HAS_RB_TIME_TIMESPEC
-    struct timespec	ts = rb_time_timespec(obj);
-    time_t		sec = ts.tv_sec;
-    long		nsec = ts.tv_nsec;
+    {
+	struct timespec	ts = rb_time_timespec(obj);
+	sec = ts.tv_sec;
+	nsec = ts.tv_nsec;
+    }
 #else
-    time_t		sec = NUM2LONG(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+    sec = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
 #if HAS_NANO_TIME
-    long long		nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+    nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
 #else
-    long long		nsec = rb_num2ll(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
+    nsec = rb_num2ll(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
 #endif
 #endif
-    long		tzsecs = NUM2LONG(rb_funcall2(obj, oj_utc_offset_id, 0, 0));
-    int			tzhour, tzmin;
-    char		tzsign = '+';
 
     assure_size(out, 36);
     if (9 > out->opts->sec_prec) {
@@ -524,7 +534,7 @@ oj_dump_xml_time(VALUE obj, Out out) {
 	}
 	sprintf(buf, format,
 		tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
-		tm->tm_hour, tm->tm_min, tm->tm_sec, nsec);
+		tm->tm_hour, tm->tm_min, tm->tm_sec, (long)nsec);
 	oj_dump_cstr(buf, len, 0, 0, out);
     } else {
 	char	format[64] = "%04d-%02d-%02dT%02d:%02d:%02d.%09ld%c%02d:%02d";
@@ -536,7 +546,7 @@ oj_dump_xml_time(VALUE obj, Out out) {
 	}
 	sprintf(buf, format,
 		tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
-		tm->tm_hour, tm->tm_min, tm->tm_sec, nsec,
+		tm->tm_hour, tm->tm_min, tm->tm_sec, (long)nsec,
 		tzsign, tzhour, tzmin);
 	oj_dump_cstr(buf, len, 0, 0, out);
     }
