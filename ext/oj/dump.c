@@ -361,7 +361,20 @@ oj_dump_time(VALUE obj, Out out, int withZone) {
 	nsec = ts.tv_nsec;
     }
 #else
-    sec = NUM2LONG(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+#ifdef IS_WINDOWS
+    printf("*** this is on windows\n);
+#endif
+    {
+	// TBD windows weirdness or just 32 bit issues?
+	volatile VALUE	rsec = rb_funcall2(obj, oj_tv_sec_id, 0, 0);
+
+	if (0 == strcmp("Bignum", rb_obj_classname(rsec))) {
+	    volatile VALUE	num_str = rb_funcall2(rsec, oj_to_s_id, 0, 0);
+
+	    sec = strtoll(StringValuePtr(num_str), NULL, 10);
+	} else {
+	    sec = NUM2LONG(rsec);
+	}
 #if HAS_NANO_TIME
     nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
 #else
