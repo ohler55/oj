@@ -321,7 +321,7 @@ class CustomJuice < Minitest::Test
     dump_and_load(obj, false, :time_format => :unix, :create_id => "^o", :create_additions => true)
     dump_and_load_inspect(obj, false, :time_format => :unix_zone, :create_id => "^o", :create_additions => true)
     dump_and_load_inspect(obj, false, :time_format => :xmlschema, :create_id => "^o", :create_additions => true)
-    dump_and_load_inspect(obj, false, :time_format => :ruby, :create_id => "^o", :create_additions => true)
+    dump_and_load_inspect(obj, true, :time_format => :ruby, :create_id => "^o", :create_additions => true)
   end
 
   def dump_and_load(obj, trace=false, options={})
