@@ -342,7 +342,7 @@ oj_check_circular(VALUE obj, Out out) {
 time_t
 oj_sec_from_time_hard_way(VALUE obj) {
     time_t	sec;
-#ifdef IS_WINDOWS
+#if IS_WINDOWS
     // Windows thinks anything that takes more then 32 bits is a Bignum
     // and will not convert it to a long so if its windows convert to a
     // string then back to number. Horrible since Bignum is a deprecated
