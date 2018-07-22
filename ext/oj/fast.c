@@ -115,7 +115,7 @@ static VALUE	doc_each_value(int argc, VALUE *argv, VALUE self);
 static VALUE	doc_dump(int argc, VALUE *argv, VALUE self);
 static VALUE	doc_size(VALUE self);
 
-VALUE	oj_doc_class = 0;
+VALUE	oj_doc_class = Qundef;
 
 // This is only for CentOS 5.4 with Ruby 1.9.3-p0.
 #ifdef NEEDS_STPCPY
@@ -358,7 +358,7 @@ leaf_float_value(Leaf leaf) {
 
 static VALUE
 leaf_array_value(Doc doc, Leaf leaf) {
-    VALUE	a = rb_ary_new();
+    volatile VALUE	a = rb_ary_new();
 
     if (0 != leaf->elements) {
 	Leaf	first = leaf->elements->next;
@@ -374,12 +374,12 @@ leaf_array_value(Doc doc, Leaf leaf) {
 
 static VALUE
 leaf_hash_value(Doc doc, Leaf leaf) {
-    VALUE	h = rb_hash_new();
+    volatile VALUE	h = rb_hash_new();
 
     if (0 != leaf->elements) {
-	Leaf	first = leaf->elements->next;
-	Leaf	e = first;
-	VALUE	key;
+	Leaf		first = leaf->elements->next;
+	Leaf		e = first;
+	volatile VALUE	key;
 
 	do {
 	    key = rb_str_new2(e->key);
@@ -778,17 +778,51 @@ free_doc_cb(void *x) {
     }
 }
 
+static void
+mark_leaf(Leaf leaf) {
+    switch (leaf->value_type) {
+    case COL_VAL:
+	if (NULL != leaf->elements) {
+	    Leaf	first = leaf->elements->next;
+	    Leaf	e = first;
+
+	    do {
+		mark_leaf(e);
+		e = e->next;
+	    } while (e != first);
+	}
+	break;
+    case RUBY_VAL:
+	rb_gc_mark(leaf->value);
+	break;
+
+    default:
+	break;
+    }
+}
+
+static void
+mark_doc(void *ptr) {
+    if (NULL != ptr) {
+	Doc	doc = (Doc)ptr;
+	
+	rb_gc_mark(doc->self);
+	mark_leaf(doc->data);
+    }
+}
+
 static VALUE
 parse_json(VALUE clas, char *json, bool given, bool allocated) {
     struct _ParseInfo	pi;
-    VALUE		result = Qnil;
+    volatile VALUE	result = Qnil;
     Doc			doc;
     int			ex = 0;
+    volatile VALUE	self;
 
     if (given) {
 	doc = ALLOCA_N(struct _Doc, 1);
     } else {
-	doc = ALLOC_N(struct _Doc, 1);
+	doc = ALLOC(struct _Doc);
     }
     /* skip UTF-8 BOM if present */
     if (0xEF == (uint8_t)*json && 0xBB == (uint8_t)json[1] && 0xBF == (uint8_t)json[2]) {
@@ -814,17 +848,16 @@ parse_json(VALUE clas, char *json, bool given, bool allocated) {
 #endif
     // last arg is free func void* func(void*)
 #if HAS_DATA_OBJECT_WRAP
-    doc->self = rb_data_object_wrap(clas, doc, 0, free_doc_cb);
+    self = rb_data_object_wrap(clas, doc, mark_doc, free_doc_cb);
 #else
-    doc->self = rb_data_object_alloc(clas, doc, 0, free_doc_cb);
+    self = rb_data_object_alloc(clas, doc, mark_doc, free_doc_cb);
 #endif
-    rb_gc_register_address(&doc->self);
+    doc->self = self;
     doc->json = json;
     DATA_PTR(doc->self) = doc;
     result = rb_protect(protect_open_proc, (VALUE)&pi, &ex);
     if (given || 0 != ex) {
-	rb_gc_unregister_address(&doc->self);
-	DATA_PTR(doc->self) = 0;
+	DATA_PTR(doc->self) = NULL;
 	doc_free(pi.doc);
 	if (allocated && 0 != ex) { // will jump so caller will not free
 	    xfree(json);
@@ -1118,11 +1151,11 @@ each_value(Doc doc, Leaf leaf) {
  */
 static VALUE
 doc_open(VALUE clas, VALUE str) {
-    char	*json;
-    size_t	len;
-    VALUE	obj;
-    int		given = rb_block_given_p();
-    int		allocate;
+    char		*json;
+    size_t		len;
+    volatile VALUE	obj;
+    int			given = rb_block_given_p();
+    int			allocate;
 
     Check_Type(str, T_STRING);
     len = RSTRING_LEN(str) + 1;
@@ -1160,13 +1193,13 @@ doc_open(VALUE clas, VALUE str) {
  */
 static VALUE
 doc_open_file(VALUE clas, VALUE filename) {
-    char	*path;
-    char	*json;
-    FILE	*f;
-    size_t	len;
-    VALUE	obj;
-    int		given = rb_block_given_p();
-    int		allocate;
+    char		*path;
+    char		*json;
+    FILE		*f;
+    size_t		len;
+    volatile VALUE	obj;
+    int			given = rb_block_given_p();
+    int			allocate;
 
     Check_Type(filename, T_STRING);
     path = StringValuePtr(filename);
@@ -1261,6 +1294,7 @@ doc_where(VALUE self) {
 	    *p++ = '/';
 	}
 	*--p = '\0';
+
 	return rb_str_new(path, p - path);
     }
 }
@@ -1275,9 +1309,9 @@ doc_where(VALUE self) {
  */
 static VALUE
 doc_local_key(VALUE self) {
-    Doc		doc = self_doc(self);
-    Leaf	leaf = *doc->where;
-    VALUE	key = Qnil;
+    Doc			doc = self_doc(self);
+    Leaf		leaf = *doc->where;
+    volatile VALUE	key = Qnil;
 
     if (T_HASH == leaf->parent_type) {
 	key = rb_str_new2(leaf->key);
@@ -1361,10 +1395,10 @@ doc_type(int argc, VALUE *argv, VALUE self) {
  */
 static VALUE
 doc_fetch(int argc, VALUE *argv, VALUE self) {
-    Doc		doc;
-    Leaf	leaf;
-    VALUE	val = Qnil;
-    const char	*path = 0;
+    Doc			doc;
+    Leaf		leaf;
+    volatile VALUE	val = Qnil;
+    const char		*path = 0;
 
     doc = self_doc(self);
     if (1 <= argc) {
@@ -1586,7 +1620,7 @@ doc_dump(int argc, VALUE *argv, VALUE self) {
 	}
     }
     if (0 != (leaf = get_doc_leaf(doc, path))) {
-	VALUE	rjson;
+	volatile VALUE	rjson;
 
 	if (0 == filename) {
 	    char	buf[4096];
