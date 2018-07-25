@@ -349,6 +349,12 @@ oj_sec_from_time_hard_way(VALUE obj) {
     // class.
     volatile VALUE	rsec = rb_funcall2(obj, oj_tv_sec_id, 0, 0);
 
+    // TBD debug only
+    {
+	volatile VALUE	rs = rb_funcall2(rsec, oj_to_s_id, 0, 0);
+
+	printf("*** time seconds class %s '%s'\n", rb_obj_classname(rsec), StringValuePtr(rs));
+    }
     if (0 == strcmp("Bignum", rb_obj_classname(rsec))) {
 	volatile VALUE	num_str = rb_funcall2(rsec, oj_to_s_id, 0, 0);
 
@@ -357,6 +363,7 @@ oj_sec_from_time_hard_way(VALUE obj) {
 	sec = NUM2LONG(rsec);
     }
 #else
+    printf("*** not windows time seconds\n");
     sec = NUM2LONG(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
 #endif
 
@@ -462,6 +469,11 @@ void
 oj_dump_ruby_time(VALUE obj, Out out) {
     volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
+    { // TBD debug only
+	const char	*s = rb_string_value_ptr((VALUE*)&rstr);
+	
+	printf("*** ruby_time '%s' strlen: %d rlen: %d\n", s, (int)strlen(s), (int)RSTRING_LEN(rstr));
+    }
     oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
 }
 
