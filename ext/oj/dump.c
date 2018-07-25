@@ -343,28 +343,23 @@ time_t
 oj_sec_from_time_hard_way(VALUE obj) {
     time_t	sec;
 #if IS_WINDOWS
-    // Windows thinks anything that takes more then 32 bits is a Bignum
-    // and will not convert it to a long so if its windows convert to a
-    // string then back to number. Horrible since Bignum is a deprecated
-    // class.
+
+    sec = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+#if 0
+    // Windows does not handle conversion of larger numbers to a long so
+    // convert to a string then back to number.
     volatile VALUE	rsec = rb_funcall2(obj, oj_tv_sec_id, 0, 0);
+    volatile VALUE	num_str = rb_funcall2(rsec, oj_to_s_id, 0, 0);
 
     // TBD debug only
-    {
-	volatile VALUE	rs = rb_funcall2(rsec, oj_to_s_id, 0, 0);
+    printf("*** time seconds class %s '%s'\n", rb_obj_classname(rsec), StringValuePtr(num_str));
 
-	printf("*** time seconds class %s '%s'\n", rb_obj_classname(rsec), StringValuePtr(rs));
-    }
-    if (0 == strcmp("Bignum", rb_obj_classname(rsec))) {
-	volatile VALUE	num_str = rb_funcall2(rsec, oj_to_s_id, 0, 0);
-
-	sec = strtoll(StringValuePtr(num_str), NULL, 10);
-    } else {
-	sec = NUM2LONG(rsec);
-    }
+    sec = strtoll(StringValuePtr(num_str), NULL, 10);
+#endif
+    
 #else
     printf("*** not windows time seconds\n");
-    sec = NUM2LONG(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+    sec = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
 #endif
 
     return sec;
@@ -570,7 +565,7 @@ oj_dump_xml_time(VALUE obj, Out out) {
 	}
 	sprintf(buf, format,
 		tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
-		tm->tm_hour, tm->tm_min, tm->tm_sec, nsec);
+		tm->tm_hour, tm->tm_min, tm->tm_sec, (long)nsec);
 	oj_dump_cstr(buf, len, 0, 0, out);
     } else {
 	char	format[64] = "%04d-%02d-%02dT%02d:%02d:%02d.%09ld%c%02d:%02d";
@@ -582,7 +577,7 @@ oj_dump_xml_time(VALUE obj, Out out) {
 	}
 	sprintf(buf, format,
 		tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
-		tm->tm_hour, tm->tm_min, tm->tm_sec, nsec,
+		tm->tm_hour, tm->tm_min, tm->tm_sec, (long)nsec,
 		tzsign, tzhour, tzmin);
 	oj_dump_cstr(buf, len, 0, 0, out);
     }
