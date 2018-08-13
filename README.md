@@ -67,7 +67,7 @@ See [{file:CHANGELOG.md}](CHANGELOG.md)
 
 - *RubyGems* *repo*: https://rubygems.org/gems/oj
 
-Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announcements and news about the Oj gem.
+Follow [@peterohler on Twitter](http://twitter.com/peterohler) for announcements and news about the Oj gem.
 
 #### Performance Comparisons
 
