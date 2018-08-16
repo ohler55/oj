@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.6.6 - 2018-08-16
+
+  - Fixed Debian build issues on several playforms.
+  
+  - `oj_slash_string` is now frozen.
+
 ## 3.6.5 - 2018-07-26
 
   - Fixed GC issue with Oj::Doc.

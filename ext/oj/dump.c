@@ -347,13 +347,14 @@ oj_dump_time(VALUE obj, Out out, int withZone) {
     char	*dot;
     int		neg = 0;
     long	one = 1000000000;
-    time_t	sec;
+    long long	sec;
     long long	nsec;
 
 #if HAS_RB_TIME_TIMESPEC
     {
 	struct timespec	ts = rb_time_timespec(obj);
-	sec = ts.tv_sec;
+
+	sec = (long long)ts.tv_sec;
 	nsec = ts.tv_nsec;
     }
 #else

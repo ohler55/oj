@@ -1691,6 +1691,7 @@ Init_oj() {
     xss_safe_sym = ID2SYM(rb_intern("xss_safe"));		rb_gc_register_address(&xss_safe_sym);
 
     oj_slash_string = rb_str_new2("/");				rb_gc_register_address(&oj_slash_string);
+    OBJ_FREEZE(oj_slash_string);
 
     oj_default_options.mode = ObjectMode;
 
