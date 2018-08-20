@@ -2,7 +2,7 @@
 
 ## 3.6.6 - 2018-08-16
 
-  - Fixed Debian build issues on several playforms.
+  - Fixed Debian build issues on several platforms.
   
   - `oj_slash_string` is now frozen.
 
