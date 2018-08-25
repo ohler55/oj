@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.6.7 - 2018-08-26
+
+  - Fixed incorrect check in StreamWriter whenn adding raw JSON.
+
 ## 3.6.6 - 2018-08-16
 
   - Fixed Debian build issues on several playforms.

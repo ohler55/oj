@@ -271,7 +271,7 @@ stream_writer_push_json(int argc, VALUE *argv, VALUE self) {
 	oj_str_writer_push_json((StrWriter)DATA_PTR(self), StringValuePtr(*argv), 0);
 	break;
     case 2:
-	if (Qnil == argv[0]) {
+	if (Qnil == argv[1]) {
 	    oj_str_writer_push_json((StrWriter)DATA_PTR(self), StringValuePtr(*argv), 0);
 	} else {
 	    rb_check_type(argv[1], T_STRING);
