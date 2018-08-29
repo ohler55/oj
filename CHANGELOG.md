@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.6.8 - 2018-09-07
+
+  - Stopped setting the default options when optimze rails is called as the documentaiton has indicated.
+  
+  - In custom mode `Date` and `DateTime` instances default to use the `:time_format` option is the `:create_additions` option is false.
+
 ## 3.6.7 - 2018-08-26
 
   - Fixed incorrect check in StreamWriter whenn adding raw JSON.

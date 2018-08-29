@@ -451,7 +451,7 @@ dump_activerecord_result(VALUE obj, int depth, Out out, bool as_ok) {
     out->argc = 0;
     cols = columns_array(rb_ivar_get(obj, columns_id), &ccnt);
     rows = rb_ivar_get(obj, rows_id);
-    rcnt = RARRAY_LEN(rows);
+    rcnt = (int)RARRAY_LEN(rows);
     assure_size(out, 2);
     *out->cur++ = '[';
     if (out->opts->dump_opts.use) {
@@ -828,7 +828,7 @@ rails_mimic_json(VALUE self) {
 	json = rb_define_module("JSON");
     }
     oj_mimic_json_methods(json);
-    oj_default_options.mode = RailsMode;
+    //oj_default_options.mode = RailsMode;
 
     return Qnil;
 }
