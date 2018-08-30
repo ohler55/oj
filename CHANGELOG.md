@@ -2,18 +2,18 @@
 
 ## 3.6.7 - 2018-08-26
 
-  - Fixed incorrect check in StreamWriter whenn adding raw JSON.
+  - Fixed incorrect check in StreamWriter when adding raw JSON.
 
 ## 3.6.6 - 2018-08-16
 
   - Fixed Debian build issues on several platforms.
-  
+
   - `oj_slash_string` is now frozen.
 
 ## 3.6.5 - 2018-07-26
 
   - Fixed GC issue with Oj::Doc.
-  
+
   - Fixed issue with time encoding with Windows.
 
 ## 3.6.4 - 2018-07-10
@@ -942,4 +942,3 @@
 ## 0.5 - 2012-02-19
 
 - This is the first release with a version of 0.5 indicating it is only half done. Basic load() and dump() is supported for Hash, Array, NilClass, TrueClass, FalseClass, Fixnum, Float, Symbol, and String Objects.
-
