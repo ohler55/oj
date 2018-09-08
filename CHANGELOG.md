@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 3.6.8 - 2018-09-07
+## 3.6.8 - 2018-09-08
 
   - Stopped setting the default options when optimze rails is called as the documentaiton has indicated.
   
