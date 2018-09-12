@@ -691,9 +691,12 @@ oj_dump_str(VALUE obj, int depth, Out out, bool as_ok) {
 
 void
 oj_dump_sym(VALUE obj, int depth, Out out, bool as_ok) {
-    const char	*sym = rb_id2name(SYM2ID(obj));
+    // This causes a memory leak in 2.5.1. Maybe in other versions as well.
+    //const char	*sym = rb_id2name(SYM2ID(obj));
 
-    oj_dump_cstr(sym, strlen(sym), 0, 0, out);
+    volatile VALUE	s = rb_sym_to_s(obj);
+
+    oj_dump_cstr(rb_string_value_ptr((VALUE*)&s), RSTRING_LEN(s), 0, 0, out);
 }
 
 static void

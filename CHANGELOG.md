@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.6.9 - 2018-09-12
+
+  - `SYM2ID(sym)` causes a memory leak. A work around is now used.
+
 ## 3.6.8 - 2018-09-08
 
   - Stopped setting the default options when optimze rails is called as the documentaiton has indicated.
