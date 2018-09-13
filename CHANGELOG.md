@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.6.10 - 2018-09-13
+
+  - additional occurances of `SYM2ID(sym)` replaced.
+
 ## 3.6.9 - 2018-09-12
 
   - `SYM2ID(sym)` causes a memory leak. A work around is now used.
