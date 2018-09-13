@@ -1158,7 +1158,7 @@ doc_open(VALUE clas, VALUE str) {
     int			allocate;
 
     Check_Type(str, T_STRING);
-    len = RSTRING_LEN(str) + 1;
+    len = (int)RSTRING_LEN(str) + 1;
     allocate = (SMALL_XML < len || !given);
     if (allocate) {
 	json = ALLOC_N(char, len);

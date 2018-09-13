@@ -164,8 +164,10 @@ dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
     assure_size(out, 2);
     *out->cur++ = '{';
     for (i = 0; i < cnt; i++) {
-	name = rb_id2name(SYM2ID(rb_ary_entry(ma, i)));
-	len = (int)strlen(name);
+	volatile VALUE	s = rb_sym_to_s(rb_ary_entry(ma, i));
+
+	name = rb_string_value_ptr((VALUE*)&s);
+	len = (int)RSTRING_LEN(s);
 	assure_size(out, size + sep_len + 6);
 	if (0 < i) {
 	    *out->cur++ = ',';
@@ -214,9 +216,9 @@ dump_bigdecimal(VALUE obj, int depth, Out out, bool as_ok) {
     if ('I' == *str || 'N' == *str || ('-' == *str && 'I' == str[1])) {
 	oj_dump_nil(Qnil, depth, out, false);
     } else if (Yes == out->opts->bigdec_as_num) {
-	oj_dump_raw(str, RSTRING_LEN(rstr), out);
+	oj_dump_raw(str, (int)RSTRING_LEN(rstr), out);
     } else {
-	oj_dump_cstr(str, RSTRING_LEN(rstr), 0, 0, out);
+	oj_dump_cstr(str, (int)RSTRING_LEN(rstr), 0, 0, out);
     }
 }
 
@@ -338,7 +340,7 @@ static void
 dump_to_s(VALUE obj, int depth, Out out, bool as_ok) {
     volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-    oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
+    oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), (int)RSTRING_LEN(rstr), 0, 0, out);
 }
 
 static ID	parameters_id = 0;

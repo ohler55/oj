@@ -439,7 +439,7 @@ void
 oj_dump_ruby_time(VALUE obj, Out out) {
     volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-    oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
+    oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), (int)RSTRING_LEN(rstr), 0, 0, out);
 }
 
 void
@@ -686,7 +686,7 @@ oj_dump_str(VALUE obj, int depth, Out out, bool as_ok) {
 	obj = rb_str_conv_enc(obj, enc, rb_utf8_encoding());
     }
 #endif
-    oj_dump_cstr(rb_string_value_ptr((VALUE*)&obj), RSTRING_LEN(obj), 0, 0, out);
+    oj_dump_cstr(rb_string_value_ptr((VALUE*)&obj), (int)RSTRING_LEN(obj), 0, 0, out);
 }
 
 void
@@ -696,7 +696,7 @@ oj_dump_sym(VALUE obj, int depth, Out out, bool as_ok) {
 
     volatile VALUE	s = rb_sym_to_s(obj);
 
-    oj_dump_cstr(rb_string_value_ptr((VALUE*)&s), RSTRING_LEN(s), 0, 0, out);
+    oj_dump_cstr(rb_string_value_ptr((VALUE*)&s), (int)RSTRING_LEN(s), 0, 0, out);
 }
 
 static void
@@ -895,7 +895,7 @@ void
 oj_dump_obj_to_s(VALUE obj, Out out) {
     volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-    oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
+    oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), (int)RSTRING_LEN(rstr), 0, 0, out);
 }
 
 void

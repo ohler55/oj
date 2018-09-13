@@ -204,7 +204,7 @@ dump_str_class(VALUE obj, VALUE clas, int depth, Out out) {
 	dump_obj_attrs(obj, clas, 0, depth, out);
     } else {
 	const char	*s = rb_string_value_ptr((VALUE*)&obj);
-	size_t		len = RSTRING_LEN(obj);
+	size_t		len = (int)RSTRING_LEN(obj);
 	char		s1 = s[1];
 
 	oj_dump_cstr(s, len, 0, (':' == *s || ('^' == *s && ('r' == s1 || 'i' == s1))), out);
@@ -218,9 +218,9 @@ dump_str(VALUE obj, int depth, Out out, bool as_ok) {
 
 static void
 dump_sym(VALUE obj, int depth, Out out, bool as_ok) {
-    const char	*sym = rb_id2name(SYM2ID(obj));
-    
-    oj_dump_cstr(sym, strlen(sym), 1, 0, out);
+    volatile VALUE	s = rb_sym_to_s(obj);
+
+    oj_dump_cstr(rb_string_value_ptr((VALUE*)&s), (int)RSTRING_LEN(s), 1, 0, out);
 }
 
 static int
@@ -544,7 +544,7 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	*out->cur++ = 'f';
 	*out->cur++ = '"';
 	*out->cur++ = ':';
-	oj_dump_cstr(rb_string_value_ptr((VALUE*)&obj), RSTRING_LEN(obj), 0, 0, out);
+	oj_dump_cstr(rb_string_value_ptr((VALUE*)&obj), (int)RSTRING_LEN(obj), 0, 0, out);
 	break;
     case T_ARRAY:
 	assure_size(out, d2 * out->indent + 14);
@@ -709,8 +709,10 @@ dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
 
 	*out->cur++ = '[';
 	for (i = 0; i < cnt; i++) {
-	    name = rb_id2name(SYM2ID(rb_ary_entry(ma, i)));
-	    len = strlen(name);
+	    volatile VALUE	s = rb_sym_to_s(rb_ary_entry(ma, i));
+
+	    name = rb_string_value_ptr((VALUE*)&s);
+	    len = (int)RSTRING_LEN(s);
 	    size = len + 3;
 	    assure_size(out, size);
 	    if (0 < i) {

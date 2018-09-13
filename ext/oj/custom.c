@@ -118,7 +118,7 @@ date_dump(VALUE obj, int depth, Out out) {
 	case RubyTime:
 	case XmlTime:
 	    v = rb_funcall(obj, rb_intern("iso8601"), 0);
-	    oj_dump_cstr(rb_string_value_ptr((VALUE*)&v), RSTRING_LEN(v), 0, 0, out);
+	    oj_dump_cstr(rb_string_value_ptr((VALUE*)&v), (int)RSTRING_LEN(v), 0, 0, out);
 	    break;
 	case UnixZTime:
 	    v = rb_funcall(obj, rb_intern("to_time"), 0);
@@ -544,7 +544,7 @@ dump_common(VALUE obj, int depth, Out out) {
 	if (aj == obj) {
 	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-	    oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), false, false, out);
+	    oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), (int)RSTRING_LEN(rstr), false, false, out);
 	} else {
 	    oj_dump_custom_val(aj, depth, out, true);
 	}
@@ -843,8 +843,10 @@ dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
 	    v = rb_struct_aref(obj, INT2FIX(i));
 #endif
 	    if (ma != Qnil) {
-		name = rb_id2name(SYM2ID(rb_ary_entry(ma, i)));
-		len = strlen(name);
+		volatile VALUE	s = rb_sym_to_s(rb_ary_entry(ma, i));
+
+		name = rb_string_value_ptr((VALUE*)&s);
+		len = (int)RSTRING_LEN(s);
 	    } else {
 		len = snprintf(num_id, sizeof(num_id), "%d", i);
 		name = num_id;
