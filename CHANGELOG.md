@@ -1,8 +1,14 @@
 # CHANGELOG
 
+## 3.6.11 - 2018-09-21
+
+  - Added the JSON path to parse error messages.
+
+  - BigDecimal parse errors now return Oj::ParseError instead of ArgumentError.
+
 ## 3.6.10 - 2018-09-13
 
-  - additional occurances of `SYM2ID(sym)` replaced.
+  - Additional occurances of `SYM2ID(sym)` replaced.
 
 ## 3.6.9 - 2018-09-12
 

@@ -29,7 +29,7 @@ class Juice < Minitest::Test
     end
     alias == eql?
 
-  end# Jam
+  end # Jam
 
   class Jeez < Jam
     def initialize(x, y)
@@ -43,7 +43,7 @@ class Juice < Minitest::Test
     def self.json_create(h)
       self.new(h['x'], h['y'])
     end
-  end# Jeez
+  end # Jeez
 
   # contributed by sauliusg to fix as_json
   class Orange < Jam
@@ -86,7 +86,7 @@ class Juice < Minitest::Test
     def self.json_create(h)
       self.new(h['x'], h['y'])
     end
-  end# Jazz
+  end # Jazz
 
   def setup
     @default_options = Oj.default_options
@@ -659,6 +659,29 @@ class Juice < Minitest::Test
   def test_quirks_string_mode
     assert_raises(Oj::ParseError) { Oj.load('"string"', :quirks_mode => false) }
     assert_equal('string', Oj.load('"string"', :quirks_mode => true))
+  end
+
+  def test_error_path
+    msg = ''
+    assert_raises(Oj::ParseError) {
+      begin
+	Oj.load(%|{
+  "first": [
+    1, 2, { "third": 123x }
+  ]
+}|)
+      rescue Oj::ParseError => e
+	msg = e.message
+	raise e
+      end
+    }
+    assert_equal('first[2].third', msg.split('(')[1].split(')')[0])
+  end
+
+  def test_bad_bignum
+    if '2.4.0' < RUBY_VERSION
+      assert_raises(Oj::ParseError) { Oj.load(%|{ "big": -e123456789 }|) }
+    end
   end
 
   def test_quirks_array_mode

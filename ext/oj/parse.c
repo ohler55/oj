@@ -796,12 +796,42 @@ oj_num_as_value(NumInfo ni) {
 void
 oj_set_error_at(ParseInfo pi, VALUE err_clas, const char* file, int line, const char *format, ...) {
     va_list	ap;
-    char	msg[128];
+    char	msg[256];
+    char	*p = msg;
+    char	*end = p + sizeof(msg) - 2;
+    char	*start;
+    Val		vp;
 
     va_start(ap, format);
-    vsnprintf(msg, sizeof(msg) - 1, format, ap);
+    p += vsnprintf(msg, sizeof(msg) - 1, format, ap);
     va_end(ap);
     pi->err.clas = err_clas;
+    if (p + 3 < end) {
+	*p++ = ' ';
+	*p++ = '(';
+	start = p;
+	for (vp = pi->stack.head; vp < pi->stack.tail; vp++) {
+	    if (end <= p + 1 + vp->klen) {
+		break;
+	    }
+	    if (NULL != vp->key) {
+		if (start < p) {
+		    *p++ = '.';
+		}
+		memcpy(p, vp->key, vp->klen);
+		p += vp->klen;
+	    } else {
+		if (RUBY_T_ARRAY == rb_type(vp->val)) {
+		    if (end <= p + 12) {
+			break;
+		    }
+		    p += snprintf(p, end - p, "[%ld]", RARRAY_LEN(vp->val));
+		}		    
+	    }
+	}
+	*p++ = ')';
+    }
+    *p = '\0';
     if (0 == pi->json) {
 	oj_err_set(&pi->err, err_clas, "%s at line %d, column %d [%s:%d]", msg, pi->rd.line, pi->rd.col, file, line);
     } else {
@@ -936,23 +966,31 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
     if (!err_has(&pi->err)) {
 	// If the stack is not empty then the JSON terminated early.
 	Val	v;
+	VALUE	err_class = oj_parse_error_class;
 
-	if (0 != (v = stack_peek(&pi->stack))) {
+	if (0 != line) {
+	    VALUE	ec = rb_obj_class(rb_errinfo());
+
+	    if (rb_eArgError != ec) {
+		err_class = ec;
+	    }
+	}
+	if (NULL != (v = stack_peek(&pi->stack))) {
 	    switch (v->next) {
 	    case NEXT_ARRAY_NEW:
 	    case NEXT_ARRAY_ELEMENT:
 	    case NEXT_ARRAY_COMMA:
-		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "Array not terminated");
+		oj_set_error_at(pi, err_class, __FILE__, __LINE__, "Array not terminated");
 		break;
 	    case NEXT_HASH_NEW:
 	    case NEXT_HASH_KEY:
 	    case NEXT_HASH_COLON:
 	    case NEXT_HASH_VALUE:
 	    case NEXT_HASH_COMMA:
-		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "Hash/Object not terminated");
+		oj_set_error_at(pi, err_class, __FILE__, __LINE__, "Hash/Object not terminated");
 		break;
 	    default:
-		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not terminated");
+		oj_set_error_at(pi, err_class, __FILE__, __LINE__, "not terminated");
 	    }
 	}
     }
@@ -968,9 +1006,6 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
     stack_cleanup(&pi->stack);
     if (pi->str_rx.head != oj_default_options.str_rx.head) {
 	oj_rxclass_cleanup(&pi->str_rx);
-    }
-    if (0 != line) {
-	rb_jump_tag(line);
     }
     if (err_has(&pi->err)) {
 	if (Qnil != pi->err_class) {
@@ -992,6 +1027,8 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
 	} else {
 	    oj_err_raise(&pi->err);
 	}
+    } else if (0 != line) {
+	rb_jump_tag(line);
     }
     if (pi->options.quirks_mode == No) {
 	switch (rb_type(result)) {
