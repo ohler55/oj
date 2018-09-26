@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 3.6.11 - 2018-09-21
+## 3.6.11 - 2018-09-26
 
   - Added the JSON path to parse error messages.
 
