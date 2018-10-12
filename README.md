@@ -40,6 +40,10 @@ or in Bundler:
 gem 'oj'
 ```
 
+## Support
+
+[Get supported Oj with a Tidelift Subscription.](https://tidelift.com/subscription/pkg/rubygems-oj?utm_source=rubygems-oj&utm_medium=referral&utm_campaign=readme)
+
 ## Further Reading
 
 For more details on options, modes, advanced features, and more follow these
