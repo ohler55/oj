@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.6.12 - 2018-10-16
+
+  - Fixed random `:omit_nil` setting with StringWriter and StreamWriter.
+
 ## 3.6.11 - 2018-09-26
 
   - Added the JSON path to parse error messages.
