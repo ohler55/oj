@@ -84,48 +84,49 @@ options available in each mode. An `x` in the matrix indicates the option is
 supported in that mode. A number indicates the footnotes describe additional
 information.
 
-    | Option                 | type    | :null   | :strict | :compat | :rails  | :object | :custom |  :wab   |
-    | ---------------------- | ------- | ------- | ------- | ------- | ------- | ------- | ------- | ------- |
-    | :allow_blank           | Boolean |         |         |       1 |       1 |         |       x |         |
-    | :allow_gc              | Boolean |       x |       x |       x |       x |       x |       x |         |
-    | :allow_invalid_unicode | Boolean |         |         |         |         |       x |       x |         |
-    | :allow_nan             | Boolean |         |         |       x |         |       x |       x |         |
-    | :array_class           | Class   |         |         |       x |       x |         |       x |         |
-    | :array_nl              | String  |         |         |         |         |         |       x |         |
-    | :ascii_only            | Boolean |       x |       x |       2 |       2 |       x |       x |         |
-    | :auto_define           | Boolean |         |         |         |         |       x |       x |         |
-    | :bigdecimal_as_decimal | Boolean |         |         |         |       3 |       x |       x |         |
-    | :bigdecimal_load       | Boolean |         |         |         |         |         |       x |         |
-    | :circular              | Boolean |       x |       x |       x |       x |       x |       x |         |
-    | :class_cache           | Boolean |         |         |         |         |       x |       x |         |
-    | :create_additions      | Boolean |         |         |       x |       x |         |       x |         |
-    | :create_id             | String  |         |         |       x |       x |         |       x |         |
-    | :empty_string          | Boolean |         |         |         |         |         |       x |         |
-    | :escape_mode           | Symbol  |         |         |         |         |         |       x |         |
-    | :float_precision       | Fixnum  |       x |       x |         |         |         |       x |         |
-    | :hash_class            | Class   |         |         |       x |       x |         |       x |         |
-    | :ignore                | Array   |         |         |         |         |       x |       x |         |
-    | :indent                | Integer |       x |       x |       3 |       4 |       x |       x |       x |
-    | :indent_str            | String  |         |         |       x |       x |         |       x |         |
-    | :match_string          | Hash    |         |         |       x |       x |         |       x |         |
-    | :max_nesting           | Fixnum  |       4 |       4 |       x |         |       5 |       4 |         |
-    | :mode                  | Symbol  |       - |       - |       - |       - |       - |       - |         |
-    | :nan                   | Symbol  |         |         |         |         |         |       x |         |
-    | :nilnil                | Boolean |         |         |         |         |         |       x |         |
-    | :object_class          | Class   |         |         |       x |         |         |       x |         |
-    | :object_nl             | String  |         |         |       x |       x |         |       x |         |
-    | :omit_nil              | Boolean |       x |       x |       x |       x |       x |       x |         |
-    | :quirks_mode           | Boolean |         |         |       6 |         |         |       x |         |
-    | :second_precision      | Fixnum  |         |         |         |         |       x |       x |         |
-    | :space                 | String  |         |         |       x |       x |         |       x |         |
-    | :space_before          | String  |         |         |       x |       x |         |       x |         |
-    | :symbol_keys           | Boolean |       x |       x |       x |       x |       x |       x |         |
-    | :trace                 | Boolean |       x |       x |       x |       x |       x |       x |       x |
-    | :time_format           | Symbol  |         |         |         |         |       x |       x |         |
-    | :use_as_json           | Boolean |         |         |         |         |         |       x |         |
-    | :use_to_hash           | Boolean |         |         |         |         |         |       x |         |
-    | :use_to_json           | Boolean |         |         |         |         |         |       x |         |
-     --------------------------------------------------------------------------------------------------------
+    | Option                   | type    | :null   | :strict | :compat | :rails  | :object | :custom |  :wab   |
+    | ------------------------ | ------- | ------- | ------- | ------- | ------- | ------- | ------- | ------- |
+    | :allow_blank             | Boolean |         |         |       1 |       1 |         |       x |         |
+    | :allow_gc                | Boolean |       x |       x |       x |       x |       x |       x |         |
+    | :allow_invalid_unicode   | Boolean |         |         |         |         |       x |       x |         |
+    | :allow_nan               | Boolean |         |         |       x |         |       x |       x |         |
+    | :array_class             | Class   |         |         |       x |       x |         |       x |         |
+    | :array_nl                | String  |         |         |         |         |         |       x |         |
+    | :ascii_only              | Boolean |       x |       x |       2 |       2 |       x |       x |         |
+    | :auto_define             | Boolean |         |         |         |         |       x |       x |         |
+    | :bigdecimal_as_decimal   | Boolean |         |         |         |       3 |       x |       x |         |
+    | :bigdecimal_load         | Boolean |         |         |         |         |         |       x |         |
+    | :circular                | Boolean |       x |       x |       x |       x |       x |       x |         |
+    | :class_cache             | Boolean |         |         |         |         |       x |       x |         |
+    | :create_additions        | Boolean |         |         |       x |       x |         |       x |         |
+    | :create_id               | String  |         |         |       x |       x |         |       x |         |
+    | :empty_string            | Boolean |         |         |         |         |         |       x |         |
+    | :escape_mode             | Symbol  |         |         |         |         |         |       x |         |
+    | :float_precision         | Fixnum  |       x |       x |         |         |         |       x |         |
+    | :hash_class              | Class   |         |         |       x |       x |         |       x |         |
+    | :ignore                  | Array   |         |         |         |         |       x |       x |         |
+    | :indent                  | Integer |       x |       x |       3 |       4 |       x |       x |       x |
+    | :indent_str              | String  |         |         |       x |       x |         |       x |         |
+    | :match_string            | Hash    |         |         |       x |       x |         |       x |         |
+    | :max_nesting             | Fixnum  |       4 |       4 |       x |         |       5 |       4 |         |
+    | :mode                    | Symbol  |       - |       - |       - |       - |       - |       - |         |
+    | :nan                     | Symbol  |         |         |         |         |         |       x |         |
+    | :nilnil                  | Boolean |         |         |         |         |         |       x |         |
+    | :object_class            | Class   |         |         |       x |         |         |       x |         |
+    | :object_nl               | String  |         |         |       x |       x |         |       x |         |
+    | :omit_nil                | Boolean |       x |       x |       x |       x |       x |       x |         |
+    | :quirks_mode             | Boolean |         |         |       6 |         |         |       x |         |
+    | :second_precision        | Fixnum  |         |         |         |         |       x |       x |         |
+    | :space                   | String  |         |         |       x |       x |         |       x |         |
+    | :space_before            | String  |         |         |       x |       x |         |       x |         |
+    | :symbol_keys             | Boolean |       x |       x |       x |       x |       x |       x |         |
+    | :trace                   | Boolean |       x |       x |       x |       x |       x |       x |       x |
+    | :time_format             | Symbol  |         |         |         |         |       x |       x |         |
+    | :use_as_json             | Boolean |         |         |         |         |         |       x |         |
+    | :use_to_hash             | Boolean |         |         |         |         |         |       x |         |
+    | :use_to_json             | Boolean |         |         |         |         |         |       x |         |
+    | :javascript_safe_numbers | Boolean |       x |       x |       x |       x |       x |       x |       x |
+     ----------------------------------------------------------------------------------------------------------
 
  1. :allow_blank an alias for :nilnil.
 

@@ -259,5 +259,9 @@ the :compat and :rails mode.
 Call `to_json()` methods on dump, default is false. The option is ignored in
 the :compat and :rails mode.
 
+### :javascript_safe_numbers [Boolean]
+
+Dump numbers greater than JavaScript Number.MAX_SAFE_INTEGER as strings
+
 
 
