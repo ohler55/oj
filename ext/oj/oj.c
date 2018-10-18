@@ -121,6 +121,7 @@ static VALUE	float_sym;
 static VALUE	huge_sym;
 static VALUE	ignore_sym;
 static VALUE	json_sym;
+static VALUE	javascript_safe_numbers_sym;
 static VALUE	match_string_sym;
 static VALUE	mode_sym;
 static VALUE	nan_sym;
@@ -183,6 +184,7 @@ struct _Options	oj_default_options = {
     No,		// create_ok
     Yes,	// allow_nan
     No,		// trace
+    No,     // javascript_safe_numbers
     oj_json_class,	// create_id
     10,		// create_id_len
     9,		// sec_prec
@@ -250,6 +252,7 @@ struct _Options	oj_default_options = {
  * - *:array_class* [_Class_|_nil_] Class to use instead of Array on load
  * - *:omit_nil* [_true_|_false_] if true Hash and Object attributes with nil values are omitted
  * - *:ignore* [_nil_|Array] either nil or an Array of classes to ignore when dumping
+ * - *:javascript_safe_numbers* [_Boolean_|nil] dump numbers greater than javascript Number.MAX_SAFE_INTEGER as string
  * - *:trace* [_true,_|_false_] Trace all load and dump calls, default is false (trace is off)
  *
  * Return [_Hash_] all current option settings.
@@ -279,6 +282,7 @@ get_def_opts(VALUE self) {
     rb_hash_aset(opts, oj_quirks_mode_sym, (Yes == oj_default_options.quirks_mode) ? Qtrue : ((No == oj_default_options.quirks_mode) ? Qfalse : Qnil));
     rb_hash_aset(opts, allow_invalid_unicode_sym, (Yes == oj_default_options.allow_invalid) ? Qtrue : ((No == oj_default_options.allow_invalid) ? Qfalse : Qnil));
     rb_hash_aset(opts, oj_allow_nan_sym, (Yes == oj_default_options.allow_nan) ? Qtrue : ((No == oj_default_options.allow_nan) ? Qfalse : Qnil));
+    rb_hash_aset(opts, javascript_safe_numbers_sym, (Yes == oj_default_options.javascript_safe_numbers) ? Qtrue : ((No == oj_default_options.javascript_safe_numbers) ? Qfalse : Qnil));
     rb_hash_aset(opts, oj_trace_sym, (Yes == oj_default_options.trace) ? Qtrue : ((No == oj_default_options.trace) ? Qfalse : Qnil));
     rb_hash_aset(opts, float_prec_sym, INT2FIX(oj_default_options.float_prec));
     switch (oj_default_options.mode) {
@@ -401,6 +405,7 @@ oj_parse_options(VALUE ropts, Options copts) {
 	{ use_to_hash_sym, &copts->to_hash },
 	{ use_to_json_sym, &copts->to_json },
 	{ use_as_json_sym, &copts->as_json },
+	{ javascript_safe_numbers_sym, &copts->javascript_safe_numbers },
 	{ nilnil_sym, &copts->nilnil },
 	{ allow_blank_sym, &copts->nilnil }, // same as nilnil
 	{ empty_string_sym, &copts->empty_string },
@@ -1650,6 +1655,7 @@ Init_oj() {
     huge_sym = ID2SYM(rb_intern("huge"));			rb_gc_register_address(&huge_sym);
     ignore_sym = ID2SYM(rb_intern("ignore"));			rb_gc_register_address(&ignore_sym);
     json_sym = ID2SYM(rb_intern("json"));			rb_gc_register_address(&json_sym);
+    javascript_safe_numbers_sym = ID2SYM(rb_intern("javascript_safe_numbers"));			rb_gc_register_address(&javascript_safe_numbers_sym);
     match_string_sym = ID2SYM(rb_intern("match_string"));	rb_gc_register_address(&match_string_sym);
     mode_sym = ID2SYM(rb_intern("mode"));			rb_gc_register_address(&mode_sym);
     nan_sym = ID2SYM(rb_intern("nan"));				rb_gc_register_address(&nan_sym);

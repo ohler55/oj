@@ -968,12 +968,23 @@ oj_dump_fixnum(VALUE obj, int depth, Out out, bool as_ok) {
     char	*b = buf + sizeof(buf) - 1;
     long long	num = rb_num2ll(obj);
     int		neg = 0;
+	int		dump_as_string = 0;
 
     if (0 > num) {
 	neg = 1;
 	num = -num;
     }
+
+	if (JAVASCRIPT_MAX_SAFE_INTEGER < num && out->opts->javascript_safe_numbers == Yes) {
+	dump_as_string = 1;
+	}
+
     *b-- = '\0';
+
+	if (dump_as_string) {
+	*b-- = '"';
+	}
+
     if (0 < num) {
 	for (; 0 < num; num /= 10, b--) {
 	    *b = (num % 10) + '0';
@@ -986,6 +997,11 @@ oj_dump_fixnum(VALUE obj, int depth, Out out, bool as_ok) {
     } else {
 	*b = '0';
     }
+
+	if (dump_as_string) {
+	*--b = '"';
+	}
+
     assure_size(out, (sizeof(buf) - (b - buf)));
     for (; '\0' != *b; b++) {
 	*out->cur++ = *b;
