@@ -971,7 +971,7 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
 	if (0 != line) {
 	    VALUE	ec = rb_obj_class(rb_errinfo());
 
-	    if (rb_eArgError != ec) {
+	    if (rb_eArgError != ec && 0 != ec) {
 		err_class = ec;
 	    }
 	}
@@ -1008,6 +1008,7 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
 	oj_rxclass_cleanup(&pi->str_rx);
     }
     if (err_has(&pi->err)) {
+	rb_set_errinfo(Qnil);
 	if (Qnil != pi->err_class) {
 	    pi->err.clas = pi->err_class;
 	}

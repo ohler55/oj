@@ -844,7 +844,8 @@ oj_pi_sparse(int argc, VALUE *argv, ParseInfo pi, int fd) {
 	if (0 != line) {
 	    VALUE	ec = rb_obj_class(rb_errinfo());
 
-	    if (rb_eArgError != ec) {
+	    // Sometimes the claass of the error is 0 which seems broken.
+	    if (rb_eArgError != ec && 0 != ec) {
 		err_class = ec;
 	    }
 	}
@@ -876,7 +877,8 @@ oj_pi_sparse(int argc, VALUE *argv, ParseInfo pi, int fd) {
 	close(fd);
     }
     if (err_has(&pi->err)) {
-	if (Qnil != pi->err_class) {
+	rb_set_errinfo(Qnil);
+	if (Qnil != pi->err_class && 0 != pi->err_class) {
 	    pi->err.clas = pi->err_class;
 	}
 	if (CompatMode == pi->options.mode) {
