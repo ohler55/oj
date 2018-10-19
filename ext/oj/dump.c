@@ -970,7 +970,7 @@ oj_dump_fixnum(VALUE obj, int depth, Out out, bool as_ok) {
     int		neg = 0;
 	bool	dump_as_string = false;
 
-	if (out->opts->fixnum_range_on == Yes && (out->opts->fixnum_range_max < num || out->opts->fixnum_range_min > num)) {
+	if (out->opts->integer_range_on == Yes && (out->opts->integer_range_max < num || out->opts->integer_range_min > num)) {
 	dump_as_string = true;
 	}
 
@@ -1015,7 +1015,7 @@ oj_dump_bignum(VALUE obj, int depth, Out out, bool as_ok) {
     int			cnt = (int)RSTRING_LEN(rs);
 	bool		dump_as_string = false;
 
-	if (out->opts->fixnum_range_on == Yes) { 
+	if (out->opts->integer_range_on == Yes) {
 	dump_as_string = 1; // Bignum cannot be inside a Fixnum range
 	assure_size(out, cnt + 2);
 	*out->cur++ = '"';

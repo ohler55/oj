@@ -117,7 +117,7 @@ static VALUE	create_id_sym;
 static VALUE	custom_sym;
 static VALUE	empty_string_sym;
 static VALUE	escape_mode_sym;
-static VALUE	fixnum_range_sym;
+static VALUE	integer_range_sym;
 static VALUE	float_prec_sym;
 static VALUE	float_sym;
 static VALUE	huge_sym;
@@ -186,9 +186,9 @@ struct _Options	oj_default_options = {
     No,		// create_ok
     Yes,	// allow_nan
     No,		// trace
-    No,     // fixnum_range_on
-    0,      // fixnum_range_min
-    0,      // fixnum_range_max
+    No,     // integer_range_on
+    0,      // integer_range_min
+    0,      // integer_range_max
     oj_json_class,	// create_id
     10,		// create_id_len
     9,		// sec_prec
@@ -298,18 +298,18 @@ get_def_opts(VALUE self) {
     case WabMode:	rb_hash_aset(opts, mode_sym, wab_sym);		break;
     default:		rb_hash_aset(opts, mode_sym, object_sym);	break;
     }
-    switch (oj_default_options.fixnum_range_on) {
+    switch (oj_default_options.integer_range_on) {
     case Yes:
         {
         VALUE range = rb_obj_alloc(rb_cRange);
-        VALUE min = LONG2FIX(oj_default_options.fixnum_range_min);
-        VALUE max = LONG2FIX(oj_default_options.fixnum_range_max);
+        VALUE min = LONG2FIX(oj_default_options.integer_range_min);
+        VALUE max = LONG2FIX(oj_default_options.integer_range_max);
         rb_ivar_set(range, oj_begin_id, min);
         rb_ivar_set(range, oj_end_id, max);
-        rb_hash_aset(opts, fixnum_range_sym, range);	
+        rb_hash_aset(opts, integer_range_sym, range);
         }
     break;
-    case No:	rb_hash_aset(opts, fixnum_range_sym, Qnil);	break;
+    case No:	rb_hash_aset(opts, integer_range_sym, Qnil);	break;
     }
     switch (oj_default_options.escape_mode) {
     case NLEsc:		rb_hash_aset(opts, escape_mode_sym, newline_sym);	break;
@@ -737,7 +737,7 @@ oj_parse_options(VALUE ropts, Options copts) {
 	}
     }
 
-    if (Qnil != (v = rb_hash_lookup(ropts, fixnum_range_sym))) {
+    if (Qnil != (v = rb_hash_lookup(ropts, integer_range_sym))) {
         VALUE is_a_range;
         VALUE min;
         VALUE max;
@@ -746,32 +746,35 @@ oj_parse_options(VALUE ropts, Options copts) {
         {
             case T_SYMBOL:
                 if (v != max_safe_sym) {
-            	    rb_raise(rb_eArgError, ":fixnum_range must be a range of Fixnum or :max_safe.");
+            	    rb_raise(rb_eArgError, ":integer_range must be a range of Fixnum or :max_safe.");
                 }
-                copts->fixnum_range_on = Yes;
-                copts->fixnum_range_min = -JAVASCRIPT_MAX_SAFE_INTEGER;
-                copts->fixnum_range_max = JAVASCRIPT_MAX_SAFE_INTEGER;
+                copts->integer_range_on = Yes;
+                copts->integer_range_min = -JAVASCRIPT_MAX_SAFE_INTEGER;
+                copts->integer_range_max = JAVASCRIPT_MAX_SAFE_INTEGER;
             break;
             case T_STRUCT:
                 is_a_range = rb_funcall(v, oj_is_a_id, 1, rb_cRange);
 
                 if (is_a_range != Qtrue) {
-            	    rb_raise(rb_eArgError, ":fixnum_range must be a range of Fixnum or :max_safe.");
+            	    rb_raise(rb_eArgError, ":integer_range must be a range of Fixnum or :max_safe.");
                 }
                 
                 min = rb_funcall(v, oj_begin_id, 0);
                 max = rb_funcall(v, oj_end_id, 0);
                 
                 if (TYPE(min) != T_FIXNUM || TYPE(max) != T_FIXNUM) {
-            	    rb_raise(rb_eArgError, ":fixnum_range range bounds is not Fixnum.");
+            	    rb_raise(rb_eArgError, ":integer_range range bounds is not Fixnum.");
                 }
 
-                copts->fixnum_range_on = Yes;
-                copts->fixnum_range_min = FIX2LONG(min);
-                copts->fixnum_range_max = FIX2LONG(max);
+                copts->integer_range_on = Yes;
+                copts->integer_range_min = FIX2LONG(min);
+                copts->integer_range_max = FIX2LONG(max);
             break;
+            case T_NIL:
+                copts->integer_range_on = No;
+            break
             default:
-                rb_raise(rb_eArgError, ":fixnum_range must be a range of Fixnum or :max_safe.");
+                rb_raise(rb_eArgError, ":integer_range must be a range of Fixnum or :max_safe.");
         }
     }
 }
@@ -1705,7 +1708,7 @@ Init_oj() {
     custom_sym = ID2SYM(rb_intern("custom"));			rb_gc_register_address(&custom_sym);
     empty_string_sym = ID2SYM(rb_intern("empty_string"));	rb_gc_register_address(&empty_string_sym);
     escape_mode_sym = ID2SYM(rb_intern("escape_mode"));		rb_gc_register_address(&escape_mode_sym);
-    fixnum_range_sym = ID2SYM(rb_intern("fixnum_range"));	rb_gc_register_address(&fixnum_range_sym);
+    integer_range_sym = ID2SYM(rb_intern("integer_range"));	rb_gc_register_address(&integer_range_sym);
     float_prec_sym = ID2SYM(rb_intern("float_precision"));	rb_gc_register_address(&float_prec_sym);
     float_sym = ID2SYM(rb_intern("float"));			rb_gc_register_address(&float_sym);
     huge_sym = ID2SYM(rb_intern("huge"));			rb_gc_register_address(&huge_sym);
