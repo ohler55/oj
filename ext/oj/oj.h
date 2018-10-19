@@ -155,8 +155,8 @@ typedef struct _Options {
     char		allow_nan;	// YEsyNo for parsing only
     char		trace;		// YesNo
     char		integer_range_on; // YesNo - dump numbers outside range as string
-    long        integer_range_min;
-    long 		integer_range_max;
+    long long   integer_range_min;
+    long long   integer_range_max;
     const char		*create_id;	// 0 or string
     size_t		create_id_len;	// length of create_id
     int			sec_prec;	// second precision when dumping time
