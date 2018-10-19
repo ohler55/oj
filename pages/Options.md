@@ -147,6 +147,15 @@ Indentation for each element when dumping. The default is an empty
 string. Primarily intended for json gem compatibility. Using just indent as an
 integer gives better performance.
 
+### :integer_range [Range]|[Symbol]
+
+Dump integers outside range as strings. 
+
+  - `:max_safe` use predefined range (-9007199254740992..9007199254740992) 
+  where numbers greater than JavaScript Number.MAX_SAFE_INTEGER dumps as strings.  
+
+Note: range bounds must be Fixnum.
+
 ### :match_string
 
 Provides a means to detect strings that should be used to create non-String
@@ -258,10 +267,4 @@ the :compat and :rails mode.
 
 Call `to_json()` methods on dump, default is false. The option is ignored in
 the :compat and :rails mode.
-
-### :javascript_safe_numbers [Boolean]
-
-Dump numbers greater than JavaScript Number.MAX_SAFE_INTEGER as strings
-
-
 
