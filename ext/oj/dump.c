@@ -964,20 +964,20 @@ oj_dump_false(VALUE obj, int depth, Out out, bool as_ok) {
 
 void
 oj_dump_fixnum(VALUE obj, int depth, Out out, bool as_ok) {
-    char	buf[32];
+    char	buf[34];
     char	*b = buf + sizeof(buf) - 1;
     long long	num = rb_num2ll(obj);
     int		neg = 0;
-	int		dump_as_string = 0;
+	bool	dump_as_string = false;
+
+	if (out->opts->fixnum_range_on == Yes && (out->opts->fixnum_range_max < num || out->opts->fixnum_range_min > num)) {
+	dump_as_string = true;
+	}
 
     if (0 > num) {
 	neg = 1;
 	num = -num;
     }
-
-	if (JAVASCRIPT_MAX_SAFE_INTEGER < num && out->opts->javascript_safe_numbers == Yes) {
-	dump_as_string = 1;
-	}
 
     *b-- = '\0';
 
@@ -1013,10 +1013,23 @@ void
 oj_dump_bignum(VALUE obj, int depth, Out out, bool as_ok) {
     volatile VALUE	rs = rb_big2str(obj, 10);
     int			cnt = (int)RSTRING_LEN(rs);
+	bool		dump_as_string = false;
 
-    assure_size(out, cnt);
+	if (out->opts->fixnum_range_on == Yes) { 
+	dump_as_string = 1; // Bignum cannot be inside a Fixnum range
+	assure_size(out, cnt + 2);
+	*out->cur++ = '"';
+	} else {
+	assure_size(out, cnt);
+	}
+
     memcpy(out->cur, rb_string_value_ptr((VALUE*)&rs), cnt);
     out->cur += cnt;
+
+	if(dump_as_string) {
+	*out->cur++ = '"';
+	}
+
     *out->cur = '\0';
 }
 

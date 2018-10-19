@@ -52,6 +52,7 @@ ID	oj_hash_set_id;
 ID	oj_hash_start_id;
 ID	oj_iconv_id;
 ID	oj_instance_variables_id;
+ID	oj_is_a_id;
 ID	oj_json_create_id;
 ID	oj_length_id;
 ID	oj_new_id;
@@ -116,13 +117,14 @@ static VALUE	create_id_sym;
 static VALUE	custom_sym;
 static VALUE	empty_string_sym;
 static VALUE	escape_mode_sym;
+static VALUE	fixnum_range_sym;
 static VALUE	float_prec_sym;
 static VALUE	float_sym;
 static VALUE	huge_sym;
 static VALUE	ignore_sym;
 static VALUE	json_sym;
-static VALUE	javascript_safe_numbers_sym;
 static VALUE	match_string_sym;
+static VALUE	max_safe_sym;
 static VALUE	mode_sym;
 static VALUE	nan_sym;
 static VALUE	newline_sym;
@@ -184,7 +186,9 @@ struct _Options	oj_default_options = {
     No,		// create_ok
     Yes,	// allow_nan
     No,		// trace
-    No,     // javascript_safe_numbers
+    No,     // fixnum_range_on
+    0,      // fixnum_range_min
+    0,      // fixnum_range_max
     oj_json_class,	// create_id
     10,		// create_id_len
     9,		// sec_prec
@@ -282,7 +286,6 @@ get_def_opts(VALUE self) {
     rb_hash_aset(opts, oj_quirks_mode_sym, (Yes == oj_default_options.quirks_mode) ? Qtrue : ((No == oj_default_options.quirks_mode) ? Qfalse : Qnil));
     rb_hash_aset(opts, allow_invalid_unicode_sym, (Yes == oj_default_options.allow_invalid) ? Qtrue : ((No == oj_default_options.allow_invalid) ? Qfalse : Qnil));
     rb_hash_aset(opts, oj_allow_nan_sym, (Yes == oj_default_options.allow_nan) ? Qtrue : ((No == oj_default_options.allow_nan) ? Qfalse : Qnil));
-    rb_hash_aset(opts, javascript_safe_numbers_sym, (Yes == oj_default_options.javascript_safe_numbers) ? Qtrue : ((No == oj_default_options.javascript_safe_numbers) ? Qfalse : Qnil));
     rb_hash_aset(opts, oj_trace_sym, (Yes == oj_default_options.trace) ? Qtrue : ((No == oj_default_options.trace) ? Qfalse : Qnil));
     rb_hash_aset(opts, float_prec_sym, INT2FIX(oj_default_options.float_prec));
     switch (oj_default_options.mode) {
@@ -294,6 +297,19 @@ get_def_opts(VALUE self) {
     case RailsMode:	rb_hash_aset(opts, mode_sym, rails_sym);	break;
     case WabMode:	rb_hash_aset(opts, mode_sym, wab_sym);		break;
     default:		rb_hash_aset(opts, mode_sym, object_sym);	break;
+    }
+    switch (oj_default_options.fixnum_range_on) {
+    case Yes:
+        {
+        VALUE range = rb_obj_alloc(rb_cRange);
+        VALUE min = LONG2FIX(oj_default_options.fixnum_range_min);
+        VALUE max = LONG2FIX(oj_default_options.fixnum_range_max);
+        rb_ivar_set(range, oj_begin_id, min);
+        rb_ivar_set(range, oj_end_id, max);
+        rb_hash_aset(opts, fixnum_range_sym, range);	
+        }
+    break;
+    case No:	rb_hash_aset(opts, fixnum_range_sym, Qnil);	break;
     }
     switch (oj_default_options.escape_mode) {
     case NLEsc:		rb_hash_aset(opts, escape_mode_sym, newline_sym);	break;
@@ -406,7 +422,6 @@ oj_parse_options(VALUE ropts, Options copts) {
 	{ use_to_hash_sym, &copts->to_hash },
 	{ use_to_json_sym, &copts->to_json },
 	{ use_as_json_sym, &copts->as_json },
-	{ javascript_safe_numbers_sym, &copts->javascript_safe_numbers },
 	{ nilnil_sym, &copts->nilnil },
 	{ allow_blank_sym, &copts->nilnil }, // same as nilnil
 	{ empty_string_sym, &copts->empty_string },
@@ -720,6 +735,44 @@ oj_parse_options(VALUE ropts, Options copts) {
 		copts->ignore[i] = Qnil;
 	    }
 	}
+    }
+
+    if (Qnil != (v = rb_hash_lookup(ropts, fixnum_range_sym))) {
+        VALUE is_a_range;
+        VALUE min;
+        VALUE max;
+    
+        switch (TYPE(v))
+        {
+            case T_SYMBOL:
+                if (v != max_safe_sym) {
+            	    rb_raise(rb_eArgError, ":fixnum_range must be a range of Fixnum or :max_safe.");
+                }
+                copts->fixnum_range_on = Yes;
+                copts->fixnum_range_min = -JAVASCRIPT_MAX_SAFE_INTEGER;
+                copts->fixnum_range_max = JAVASCRIPT_MAX_SAFE_INTEGER;
+            break;
+            case T_STRUCT:
+                is_a_range = rb_funcall(v, oj_is_a_id, 1, rb_cRange);
+
+                if (is_a_range != Qtrue) {
+            	    rb_raise(rb_eArgError, ":fixnum_range must be a range of Fixnum or :max_safe.");
+                }
+                
+                min = rb_funcall(v, oj_begin_id, 0);
+                max = rb_funcall(v, oj_end_id, 0);
+                
+                if (TYPE(min) != T_FIXNUM || TYPE(max) != T_FIXNUM) {
+            	    rb_raise(rb_eArgError, ":fixnum_range range bounds is not Fixnum.");
+                }
+
+                copts->fixnum_range_on = Yes;
+                copts->fixnum_range_min = FIX2LONG(min);
+                copts->fixnum_range_max = FIX2LONG(max);
+            break;
+            default:
+                rb_raise(rb_eArgError, ":fixnum_range must be a range of Fixnum or :max_safe.");
+        }
     }
 }
 
@@ -1594,6 +1647,7 @@ Init_oj() {
     oj_hash_start_id = rb_intern("hash_start");
     oj_iconv_id = rb_intern("iconv");
     oj_instance_variables_id = rb_intern("instance_variables");
+    oj_is_a_id = rb_intern("is_a?");
     oj_json_create_id = rb_intern("json_create");
     oj_length_id = rb_intern("length");
     oj_new_id = rb_intern("new");
@@ -1651,12 +1705,13 @@ Init_oj() {
     custom_sym = ID2SYM(rb_intern("custom"));			rb_gc_register_address(&custom_sym);
     empty_string_sym = ID2SYM(rb_intern("empty_string"));	rb_gc_register_address(&empty_string_sym);
     escape_mode_sym = ID2SYM(rb_intern("escape_mode"));		rb_gc_register_address(&escape_mode_sym);
+    fixnum_range_sym = ID2SYM(rb_intern("fixnum_range"));	rb_gc_register_address(&fixnum_range_sym);
     float_prec_sym = ID2SYM(rb_intern("float_precision"));	rb_gc_register_address(&float_prec_sym);
     float_sym = ID2SYM(rb_intern("float"));			rb_gc_register_address(&float_sym);
     huge_sym = ID2SYM(rb_intern("huge"));			rb_gc_register_address(&huge_sym);
     ignore_sym = ID2SYM(rb_intern("ignore"));			rb_gc_register_address(&ignore_sym);
     json_sym = ID2SYM(rb_intern("json"));			rb_gc_register_address(&json_sym);
-    javascript_safe_numbers_sym = ID2SYM(rb_intern("javascript_safe_numbers"));			rb_gc_register_address(&javascript_safe_numbers_sym);
+    max_safe_sym = ID2SYM(rb_intern("max_safe"));			rb_gc_register_address(&max_safe_sym);
     match_string_sym = ID2SYM(rb_intern("match_string"));	rb_gc_register_address(&match_string_sym);
     mode_sym = ID2SYM(rb_intern("mode"));			rb_gc_register_address(&mode_sym);
     nan_sym = ID2SYM(rb_intern("nan"));				rb_gc_register_address(&nan_sym);

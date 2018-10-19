@@ -686,7 +686,9 @@ static struct _Options	mimic_object_to_json_options = {
     No,		// create_ok
     No,		// allow_nan
     No,		// trace
-    No,     // javascript_safe_numbers
+    No,     // fixnum_range
+    0,      // fixnum_range_min
+    0,      // fixnum_range_max
     oj_json_class,// create_id
     10,		// create_id_len
     3,		// sec_prec
