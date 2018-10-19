@@ -772,9 +772,13 @@ oj_parse_options(VALUE ropts, Options copts) {
             break;
             case T_NIL:
                 copts->integer_range_on = No;
-            break
+            break;
             default:
+                if (v == Qfalse) {
+                copts->integer_range_on = No;
+                } else {
                 rb_raise(rb_eArgError, ":integer_range must be a range of Fixnum or :max_safe.");
+                }
         }
     }
 }

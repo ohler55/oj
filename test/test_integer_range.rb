@@ -67,5 +67,13 @@ class IntegerRangeTest < Minitest::Test
       assert_equal(exp, Oj.dump(test, mode: mode, integer_range: (-1..1)), "Invalid mode #{mode}")
     end
   end
+
+  def test_accept_nil_and_false
+    test = {safe:0, unsafe: 10000000000000000000}
+    exp = '{"safe":0,"unsafe":10000000000000000000}'
+
+    assert_equal(exp, Oj.dump(test, integer_range: nil))
+    assert_equal(exp, Oj.dump(test, integer_range: false))
+  end
 end
 
