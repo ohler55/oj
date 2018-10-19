@@ -256,7 +256,7 @@ struct _Options	oj_default_options = {
  * - *:array_class* [_Class_|_nil_] Class to use instead of Array on load
  * - *:omit_nil* [_true_|_false_] if true Hash and Object attributes with nil values are omitted
  * - *:ignore* [_nil_|Array] either nil or an Array of classes to ignore when dumping
- * - *:javascript_safe_numbers* [_Boolean_|nil] dump numbers greater than javascript Number.MAX_SAFE_INTEGER as string
+ * - *:integer_range* [_Range_|:max_safe] Dump integers outside range as strings. :max_safe use predefined range (-9007199254740992..9007199254740992)
  * - *:trace* [_true,_|_false_] Trace all load and dump calls, default is false (trace is off)
  *
  * Return [_Hash_] all current option settings.
@@ -400,7 +400,7 @@ get_def_opts(VALUE self) {
  *   - *:array_class* [_Class_|_nil_] Class to use instead of Array on load.
  *   - *:omit_nil* [_true_|_false_] if true Hash and Object attributes with nil values are omitted.
  *   - *:ignore* [_nil_|Array] either nil or an Array of classes to ignore when dumping
- *   - *:javascript_safe_numbers* [_Boolean_|nil] dump numbers greater than javascript Number.MAX_SAFE_INTEGER as string
+ *   - *:integer_range* [_Range_|:max_safe] Dump integers outside range as strings. :max_safe use predefined range (-9007199254740992..9007199254740992)
  *   - *:trace* [_Boolean_] turn trace on or off.
  */
 static VALUE

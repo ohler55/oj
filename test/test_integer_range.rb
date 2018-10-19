@@ -62,9 +62,9 @@ class IntegerRangeTest < Minitest::Test
       assert_equal(exp, Oj.dump(test, mode: mode), "Invalid mode #{mode}")
     end
 
-    exp = '{":safe":0,":unsafe":"10000000000000000000"}'
+    exp = '{":safe":0,":unsafe":10000000000000000000}'
     [:object].each do |mode|
-      assert_equal(exp, Oj.dump(test, mode: mode, integer_range: (-1..1)), "Invalid mode #{mode}")
+      assert_equal(exp, Oj.dump(test, mode: mode), "Invalid mode #{mode}")
     end
   end
 
