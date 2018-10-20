@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.6.13 - 2018-10-21
+
+  - Fixed issue where exceptions were not being cleared on parsing.
+  
+  - Added addition unicode dump error information.
+
 ## 3.6.12 - 2018-10-16
 
   - Fixed random `:omit_nil` setting with StringWriter and StreamWriter.

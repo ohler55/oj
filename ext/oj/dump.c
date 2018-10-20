@@ -230,12 +230,37 @@ dump_hex(uint8_t c, Out out) {
     *out->cur++ = hex_chars[d];
 }
 
+static void
+raise_invalid_unicode(const char *str, int len, int pos) {
+    char	buf[len + 1];
+    char	c;
+    char	code[32];
+    char	*cp = code;
+    int		i;
+    uint8_t	d;
+
+    *cp++ = '[';
+    for (i = pos; i < len && i - pos < 5; i++) {
+	c = str[i];
+	d = (c >> 4) & 0x0F;
+	*cp++ = hex_chars[d];
+	d = c & 0x0F;
+	*cp++ = hex_chars[d];
+	*cp++ = ' ';
+    }
+    cp--;
+    *cp++ = ']';
+    *cp = '\0';
+    strncpy(buf, str, len);
+    rb_raise(oj_json_generator_error_class, "Invalid Unicode %s at %d in '%s'", code, pos, buf);
+}
+
 static const char*
-dump_unicode(const char *str, const char *end, Out out) {
+dump_unicode(const char *str, const char *end, Out out, const char *orig) {
     uint32_t	code = 0;
     uint8_t	b = *(uint8_t*)str;
     int		i, cnt;
-    
+
     if (0xC0 == (0xE0 & b)) {
 	cnt = 1;
 	code = b & 0x0000001F;
@@ -253,13 +278,13 @@ dump_unicode(const char *str, const char *end, Out out) {
 	code = b & 0x00000001;
     } else {
 	cnt = 0;
-	rb_raise(oj_json_generator_error_class, "Invalid Unicode");
+	raise_invalid_unicode(orig, (int)(end - orig), (int)(str - orig));
     }
     str++;
     for (; 0 < cnt; cnt--, str++) {
 	b = *(uint8_t*)str;
 	if (end <= str || 0x80 != (0xC0 & b)) {
-	    rb_raise(oj_json_generator_error_class, "Invalid Unicode");
+	    raise_invalid_unicode(orig, (int)(end - orig), (int)(str - orig));
 	}
 	code = (code << 6) | (b & 0x0000003F);
     }
@@ -284,7 +309,7 @@ dump_unicode(const char *str, const char *end, Out out) {
 }
 
 static const char*
-check_unicode(const char *str, const char *end) {
+check_unicode(const char *str, const char *end, const char *orig) {
     uint8_t	b = *(uint8_t*)str;
     int		cnt;
     
@@ -299,13 +324,13 @@ check_unicode(const char *str, const char *end) {
     } else if (0xFC == (0xFE & b)) {
 	cnt = 5;
     } else {
-	rb_raise(oj_json_generator_error_class, "Invalid Unicode");
+	raise_invalid_unicode(orig, (int)(end - orig), (int)(str - orig));
     }
     str++;
     for (; 0 < cnt; cnt--, str++) {
 	b = *(uint8_t*)str;
 	if (end <= str || 0x80 != (0xC0 & b)) {
-	    rb_raise(oj_json_generator_error_class, "Invalid Unicode");
+	    raise_invalid_unicode(orig, (int)(end - orig), (int)(str - orig));
 	}
     }
     return str;
@@ -783,9 +808,9 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
 		if (JXEsc == out->opts->escape_mode && check_start <= str) {
 		    if (0 != (0x80 & (uint8_t)*str)) {
 			if (0xC0 == (0xC0 & (uint8_t)*str)) {
-			    check_start = check_unicode(str, end);
+			    check_start = check_unicode(str, end, orig);
 			} else {
-			    rb_raise(oj_json_generator_error_class, "Invalid Unicode");
+			    raise_invalid_unicode(orig, (int)(end - orig), (int)(str - orig));
 			}
 		    }
 		}
@@ -806,14 +831,14 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
 	    case '3': // Unicode
 		if (0xe2 == (uint8_t)*str && JXEsc == out->opts->escape_mode && 2 <= end - str) {
 		    if (0x80 == (uint8_t)str[1] && (0xa8 == (uint8_t)str[2] || 0xa9 == (uint8_t)str[2])) {
-			str = dump_unicode(str, end, out);
+			str = dump_unicode(str, end, out, orig);
 		    } else {
-			check_start = check_unicode(str, end);
+			check_start = check_unicode(str, end, orig);
 			*out->cur++ = *str;
 		    }
 		    break;
 		}
-		str = dump_unicode(str, end, out);
+		str = dump_unicode(str, end, out, orig);
 		break;
 	    case '6': // control characters
 		if (*(uint8_t*)str < 0x80) {
@@ -825,14 +850,14 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
 		} else {
 		    if (0xe2 == (uint8_t)*str && JXEsc == out->opts->escape_mode && 2 <= end - str) {
 			if (0x80 == (uint8_t)str[1] && (0xa8 == (uint8_t)str[2] || 0xa9 == (uint8_t)str[2])) {
-			    str = dump_unicode(str, end, out);
+			    str = dump_unicode(str, end, out, orig);
 			} else {
-			    check_start = check_unicode(str, end);
+			    check_start = check_unicode(str, end, orig);
 			    *out->cur++ = *str;
 			}
 			break;
 		    }
-		    str = dump_unicode(str, end, out);
+		    str = dump_unicode(str, end, out, orig);
 		}
 		break;
 	    default:

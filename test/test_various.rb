@@ -393,6 +393,12 @@ class Juice < Minitest::Test
     out = Oj.dump(x)
     assert_equal(json, out)
   end
+  def test_dump_invalid_utf8
+    Oj.default_options = { :escape_mode => :ascii }
+    assert_raises(EncodingError) {
+      Oj.dump(["abc\xbe\x1f\x11"], mode: :strict)
+    }
+  end
 
   # Symbol
   def test_symbol_null
