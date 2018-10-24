@@ -1016,7 +1016,7 @@ oj_dump_bignum(VALUE obj, int depth, Out out, bool as_ok) {
 	bool		dump_as_string = false;
 
 	if (out->opts->integer_range_on == Yes) {
-	dump_as_string = 1; // Bignum cannot be inside a Fixnum range
+	dump_as_string = true; // Bignum cannot be inside of Fixnum range
 	assure_size(out, cnt + 2);
 	*out->cur++ = '"';
 	} else {

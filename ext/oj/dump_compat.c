@@ -870,6 +870,7 @@ dump_bignum(VALUE obj, int depth, Out out, bool as_ok) {
     // this must use to_s to pass the json gem unit tests.
     volatile VALUE	rs;
     int			cnt;
+	bool		dump_as_string = false;
 
     if (use_bignum_alt) {
 	rs = rb_big2str(obj, 10);
@@ -878,9 +879,22 @@ dump_bignum(VALUE obj, int depth, Out out, bool as_ok) {
     }
     rb_check_type(rs, T_STRING);
     cnt = (int)RSTRING_LEN(rs);
-    assure_size(out, cnt);
+
+	if (out->opts->integer_range_on == Yes) {
+	dump_as_string = true; // Bignum cannot be inside of Fixnum range
+	assure_size(out, cnt + 2);
+	*out->cur++ = '"';
+	} else {
+	assure_size(out, cnt);
+	}
+
     memcpy(out->cur, rb_string_value_ptr((VALUE*)&rs), cnt);
     out->cur += cnt;
+
+	if(dump_as_string) {
+	*out->cur++ = '"';
+	}
+
     *out->cur = '\0';
 }
 
