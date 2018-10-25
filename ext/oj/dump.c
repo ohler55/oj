@@ -970,7 +970,8 @@ oj_dump_fixnum(VALUE obj, int depth, Out out, bool as_ok) {
     int		neg = 0;
 	bool	dump_as_string = false;
 
-	if (out->opts->integer_range_max < num || out->opts->integer_range_min > num) {
+	if (out->opts->integer_range_max != 0 && out->opts->integer_range_min != 0 &&
+		(out->opts->integer_range_max < num || out->opts->integer_range_min > num)) {
 	dump_as_string = true;
 	}
 
