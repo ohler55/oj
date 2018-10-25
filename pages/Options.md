@@ -147,13 +147,9 @@ Indentation for each element when dumping. The default is an empty
 string. Primarily intended for json gem compatibility. Using just indent as an
 integer gives better performance.
 
-### :integer_range [Range]|[Symbol]
+### :integer_range [Range]
 
 Dump integers outside range as strings. 
-
-  - `:max_safe` use predefined range (-9007199254740992..9007199254740992) 
-  where numbers greater than JavaScript Number.MAX_SAFE_INTEGER dumps as strings.  
-
 Note: range bounds must be Fixnum.
 
 ### :match_string

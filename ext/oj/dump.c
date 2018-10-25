@@ -964,13 +964,13 @@ oj_dump_false(VALUE obj, int depth, Out out, bool as_ok) {
 
 void
 oj_dump_fixnum(VALUE obj, int depth, Out out, bool as_ok) {
-    char	buf[34];
+    char	buf[32];
     char	*b = buf + sizeof(buf) - 1;
     long long	num = rb_num2ll(obj);
     int		neg = 0;
 	bool	dump_as_string = false;
 
-	if (out->opts->integer_range_on == Yes && (out->opts->integer_range_max < num || out->opts->integer_range_min > num)) {
+	if (out->opts->integer_range_max < num || out->opts->integer_range_min > num) {
 	dump_as_string = true;
 	}
 
@@ -1015,8 +1015,8 @@ oj_dump_bignum(VALUE obj, int depth, Out out, bool as_ok) {
     int			cnt = (int)RSTRING_LEN(rs);
 	bool		dump_as_string = false;
 
-	if (out->opts->integer_range_on == Yes) {
-	dump_as_string = true; // Bignum cannot be inside of Fixnum range
+	if (out->opts->integer_range_max != 0 || out->opts->integer_range_min != 0) { // Bignum cannot be inside of Fixnum range
+	dump_as_string = true; 
 	assure_size(out, cnt + 2);
 	*out->cur++ = '"';
 	} else {

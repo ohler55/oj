@@ -124,7 +124,6 @@ static VALUE	huge_sym;
 static VALUE	ignore_sym;
 static VALUE	json_sym;
 static VALUE	match_string_sym;
-static VALUE	max_safe_sym;
 static VALUE	mode_sym;
 static VALUE	nan_sym;
 static VALUE	newline_sym;
@@ -186,7 +185,6 @@ struct _Options	oj_default_options = {
     No,		// create_ok
     Yes,	// allow_nan
     No,		// trace
-    No,     // integer_range_on
     0,      // integer_range_min
     0,      // integer_range_max
     oj_json_class,	// create_id
@@ -256,7 +254,7 @@ struct _Options	oj_default_options = {
  * - *:array_class* [_Class_|_nil_] Class to use instead of Array on load
  * - *:omit_nil* [_true_|_false_] if true Hash and Object attributes with nil values are omitted
  * - *:ignore* [_nil_|Array] either nil or an Array of classes to ignore when dumping
- * - *:integer_range* [_Range_|:max_safe] Dump integers outside range as strings. :max_safe use predefined range (-9007199254740992..9007199254740992)
+ * - *:integer_range* [_Range_] Dump integers outside range as strings. 
  * - *:trace* [_true,_|_false_] Trace all load and dump calls, default is false (trace is off)
  *
  * Return [_Hash_] all current option settings.
@@ -298,18 +296,17 @@ get_def_opts(VALUE self) {
     case WabMode:	rb_hash_aset(opts, mode_sym, wab_sym);		break;
     default:		rb_hash_aset(opts, mode_sym, object_sym);	break;
     }
-    switch (oj_default_options.integer_range_on) {
-    case Yes:
-        {
-        VALUE range = rb_obj_alloc(rb_cRange);
-        VALUE min = LONG2FIX(oj_default_options.integer_range_min);
-        VALUE max = LONG2FIX(oj_default_options.integer_range_max);
-        rb_ivar_set(range, oj_begin_id, min);
-        rb_ivar_set(range, oj_end_id, max);
-        rb_hash_aset(opts, integer_range_sym, range);
-        }
-    break;
-    case No:	rb_hash_aset(opts, integer_range_sym, Qnil);	break;
+    
+    if (oj_default_options.integer_range_max != 0 || oj_default_options.integer_range_min != 0) {
+    VALUE range = rb_obj_alloc(rb_cRange);
+    VALUE min = LONG2FIX(oj_default_options.integer_range_min);
+    VALUE max = LONG2FIX(oj_default_options.integer_range_max);
+    rb_ivar_set(range, oj_begin_id, min);
+    rb_ivar_set(range, oj_end_id, max);
+    rb_hash_aset(opts, integer_range_sym, range);
+    }
+    else {
+    rb_hash_aset(opts, integer_range_sym, Qnil);
     }
     switch (oj_default_options.escape_mode) {
     case NLEsc:		rb_hash_aset(opts, escape_mode_sym, newline_sym);	break;
@@ -400,7 +397,7 @@ get_def_opts(VALUE self) {
  *   - *:array_class* [_Class_|_nil_] Class to use instead of Array on load.
  *   - *:omit_nil* [_true_|_false_] if true Hash and Object attributes with nil values are omitted.
  *   - *:ignore* [_nil_|Array] either nil or an Array of classes to ignore when dumping
- *   - *:integer_range* [_Range_|:max_safe] Dump integers outside range as strings. :max_safe use predefined range (-9007199254740992..9007199254740992)
+ *   - *:integer_range* [_Range_] Dump integers outside range as strings. 
  *   - *:trace* [_Boolean_] turn trace on or off.
  */
 static VALUE
@@ -744,19 +741,11 @@ oj_parse_options(VALUE ropts, Options copts) {
     
         switch (TYPE(v))
         {
-            case T_SYMBOL:
-                if (v != max_safe_sym) {
-            	    rb_raise(rb_eArgError, ":integer_range must be a range of Fixnum or :max_safe.");
-                }
-                copts->integer_range_on = Yes;
-                copts->integer_range_min = -JAVASCRIPT_MAX_SAFE_INTEGER;
-                copts->integer_range_max = JAVASCRIPT_MAX_SAFE_INTEGER;
-            break;
             case T_STRUCT:
-                is_a_range = rb_funcall(v, oj_is_a_id, 1, rb_cRange);
+                is_a_range = rb_funcall(v, oj_is_a_id, 1, rb_obj_class(v));
 
                 if (is_a_range != Qtrue) {
-            	    rb_raise(rb_eArgError, ":integer_range must be a range of Fixnum or :max_safe.");
+            	    rb_raise(rb_eArgError, ":integer_range must be a range of Fixnum.");
                 }
                 
                 min = rb_funcall(v, oj_begin_id, 0);
@@ -766,18 +755,19 @@ oj_parse_options(VALUE ropts, Options copts) {
             	    rb_raise(rb_eArgError, ":integer_range range bounds is not Fixnum.");
                 }
 
-                copts->integer_range_on = Yes;
                 copts->integer_range_min = FIX2LONG(min);
                 copts->integer_range_max = FIX2LONG(max);
             break;
             case T_NIL:
-                copts->integer_range_on = No;
+                copts->integer_range_min = 0;
+                copts->integer_range_max = 0;
             break;
             default:
                 if (v == Qfalse) {
-                copts->integer_range_on = No;
+                copts->integer_range_min = 0;
+                copts->integer_range_max = 0;
                 } else {
-                rb_raise(rb_eArgError, ":integer_range must be a range of Fixnum or :max_safe.");
+                rb_raise(rb_eArgError, ":integer_range must be a range of Fixnum.");
                 }
         }
     }
@@ -1718,7 +1708,6 @@ Init_oj() {
     huge_sym = ID2SYM(rb_intern("huge"));			rb_gc_register_address(&huge_sym);
     ignore_sym = ID2SYM(rb_intern("ignore"));			rb_gc_register_address(&ignore_sym);
     json_sym = ID2SYM(rb_intern("json"));			rb_gc_register_address(&json_sym);
-    max_safe_sym = ID2SYM(rb_intern("max_safe"));			rb_gc_register_address(&max_safe_sym);
     match_string_sym = ID2SYM(rb_intern("match_string"));	rb_gc_register_address(&match_string_sym);
     mode_sym = ID2SYM(rb_intern("mode"));			rb_gc_register_address(&mode_sym);
     nan_sym = ID2SYM(rb_intern("nan"));				rb_gc_register_address(&nan_sym);

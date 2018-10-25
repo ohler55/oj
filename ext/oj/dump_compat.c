@@ -880,7 +880,7 @@ dump_bignum(VALUE obj, int depth, Out out, bool as_ok) {
     rb_check_type(rs, T_STRING);
     cnt = (int)RSTRING_LEN(rs);
 
-	if (out->opts->integer_range_on == Yes) {
+	if (out->opts->integer_range_min != 0 || out->opts->integer_range_max != 0) {
 	dump_as_string = true; // Bignum cannot be inside of Fixnum range
 	assure_size(out, cnt + 2);
 	*out->cur++ = '"';

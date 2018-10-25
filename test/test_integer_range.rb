@@ -28,12 +28,6 @@ class IntegerRangeTest < Minitest::Test
     assert_equal(exp, Oj.dump(test, integer_range: (-1..1)))
   end
 
-  def test_max_safe
-    test = {s: 9007199254740993, s2: -9007199254740993, u: -9007199254740994, u2: 9007199254740994}
-    exp = '{"s":"9007199254740993","s2":"-9007199254740993","u":"-9007199254740994","u2":"9007199254740994"}'
-    assert_equal(exp, Oj.dump(test, integer_range: :max_safe))
-  end
-
   def test_bignum
     test = {u: -10000000000000000000, u2: 10000000000000000000}
     exp = '{"u":"-10000000000000000000","u2":"10000000000000000000"}'

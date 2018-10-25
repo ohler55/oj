@@ -47,7 +47,6 @@ enum st_retval {ST_CONTINUE = 0, ST_STOP = 1, ST_DELETE = 2, ST_CHECK};
 #define INF_VAL		"3.0e14159265358979323846"
 #define NINF_VAL	"-3.0e14159265358979323846"
 #define NAN_VAL		"3.3e14159265358979323846"
-#define JAVASCRIPT_MAX_SAFE_INTEGER     9007199254740992L
 
 typedef enum {
     Yes	   = 'y',
@@ -154,9 +153,8 @@ typedef struct _Options {
     char		create_ok;	// YesNo allow create_id
     char		allow_nan;	// YEsyNo for parsing only
     char		trace;		// YesNo
-    char		integer_range_on; // YesNo - dump numbers outside range as string
-    long long   integer_range_min;
-    long long   integer_range_max;
+    int64_t     integer_range_min; // dump numbers outside range as string
+    int64_t     integer_range_max;
     const char		*create_id;	// 0 or string
     size_t		create_id_len;	// length of create_id
     int			sec_prec;	// second precision when dumping time
