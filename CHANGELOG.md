@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 3.6.13 - 2018-10-21
+## 3.6.13 - 2018-10-25
 
   - Fixed issue where exceptions were not being cleared on parsing.
   
