@@ -107,6 +107,7 @@ information.
     | :ignore                | Array   |         |         |         |         |       x |       x |         |
     | :indent                | Integer |       x |       x |       3 |       4 |       x |       x |       x |
     | :indent_str            | String  |         |         |       x |       x |         |       x |         |
+    | :integer_range         | Range   |       x |       x |       x |       x |       x |       x |       x |
     | :match_string          | Hash    |         |         |       x |       x |         |       x |         |
     | :max_nesting           | Fixnum  |       4 |       4 |       x |         |       5 |       4 |         |
     | :mode                  | Symbol  |       - |       - |       - |       - |       - |       - |         |

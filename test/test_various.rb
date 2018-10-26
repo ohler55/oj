@@ -154,6 +154,7 @@ class Juice < Minitest::Test
       :hash_class=>Hash,
       :omit_nil=>false,
       :allow_nan=>true,
+      :integer_range=>nil,
       :array_class=>Array,
       :ignore=>nil,
       :trace=>true,

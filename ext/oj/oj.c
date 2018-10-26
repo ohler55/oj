@@ -116,6 +116,7 @@ static VALUE	create_id_sym;
 static VALUE	custom_sym;
 static VALUE	empty_string_sym;
 static VALUE	escape_mode_sym;
+static VALUE	integer_range_sym;
 static VALUE	float_prec_sym;
 static VALUE	float_sym;
 static VALUE	huge_sym;
@@ -183,6 +184,8 @@ struct _Options	oj_default_options = {
     No,		// create_ok
     Yes,	// allow_nan
     No,		// trace
+    0,      // integer_range_min
+    0,      // integer_range_max
     oj_json_class,	// create_id
     10,		// create_id_len
     9,		// sec_prec
@@ -250,6 +253,7 @@ struct _Options	oj_default_options = {
  * - *:array_class* [_Class_|_nil_] Class to use instead of Array on load
  * - *:omit_nil* [_true_|_false_] if true Hash and Object attributes with nil values are omitted
  * - *:ignore* [_nil_|Array] either nil or an Array of classes to ignore when dumping
+ * - *:integer_range* [_Range_] Dump integers outside range as strings. 
  * - *:trace* [_true,_|_false_] Trace all load and dump calls, default is false (trace is off)
  *
  * Return [_Hash_] all current option settings.
@@ -290,6 +294,18 @@ get_def_opts(VALUE self) {
     case RailsMode:	rb_hash_aset(opts, mode_sym, rails_sym);	break;
     case WabMode:	rb_hash_aset(opts, mode_sym, wab_sym);		break;
     default:		rb_hash_aset(opts, mode_sym, object_sym);	break;
+    }
+    
+    if (oj_default_options.integer_range_max != 0 || oj_default_options.integer_range_min != 0) {
+    VALUE range = rb_obj_alloc(rb_cRange);
+    VALUE min = LONG2FIX(oj_default_options.integer_range_min);
+    VALUE max = LONG2FIX(oj_default_options.integer_range_max);
+    rb_ivar_set(range, oj_begin_id, min);
+    rb_ivar_set(range, oj_end_id, max);
+    rb_hash_aset(opts, integer_range_sym, range);
+    }
+    else {
+    rb_hash_aset(opts, integer_range_sym, Qnil);
     }
     switch (oj_default_options.escape_mode) {
     case NLEsc:		rb_hash_aset(opts, escape_mode_sym, newline_sym);	break;
@@ -380,6 +396,7 @@ get_def_opts(VALUE self) {
  *   - *:array_class* [_Class_|_nil_] Class to use instead of Array on load.
  *   - *:omit_nil* [_true_|_false_] if true Hash and Object attributes with nil values are omitted.
  *   - *:ignore* [_nil_|Array] either nil or an Array of classes to ignore when dumping
+ *   - *:integer_range* [_Range_] Dump integers outside range as strings. 
  *   - *:trace* [_Boolean_] turn trace on or off.
  */
 static VALUE
@@ -714,6 +731,21 @@ oj_parse_options(VALUE ropts, Options copts) {
 		copts->ignore[i] = Qnil;
 	    }
 	}
+    }
+    if (Qnil != (v = rb_hash_lookup(ropts, integer_range_sym))) {
+    if (TYPE(v) == T_STRUCT && rb_obj_class(v) == rb_cRange) {
+        VALUE min = rb_funcall(v, oj_begin_id, 0);
+        VALUE max = rb_funcall(v, oj_end_id, 0);
+
+        if (TYPE(min) != T_FIXNUM || TYPE(max) != T_FIXNUM) {
+            rb_raise(rb_eArgError, ":integer_range range bounds is not Fixnum.");
+        }
+
+        copts->integer_range_min = FIX2LONG(min);
+        copts->integer_range_max = FIX2LONG(max);
+    } else if (Qfalse != v) {
+        rb_raise(rb_eArgError, ":integer_range must be a range of Fixnum.");
+    }
     }
 }
 
@@ -1645,6 +1677,7 @@ Init_oj() {
     custom_sym = ID2SYM(rb_intern("custom"));			rb_gc_register_address(&custom_sym);
     empty_string_sym = ID2SYM(rb_intern("empty_string"));	rb_gc_register_address(&empty_string_sym);
     escape_mode_sym = ID2SYM(rb_intern("escape_mode"));		rb_gc_register_address(&escape_mode_sym);
+    integer_range_sym = ID2SYM(rb_intern("integer_range"));	rb_gc_register_address(&integer_range_sym);
     float_prec_sym = ID2SYM(rb_intern("float_precision"));	rb_gc_register_address(&float_prec_sym);
     float_sym = ID2SYM(rb_intern("float"));			rb_gc_register_address(&float_sym);
     huge_sym = ID2SYM(rb_intern("huge"));			rb_gc_register_address(&huge_sym);

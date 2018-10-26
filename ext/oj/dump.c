@@ -993,12 +993,24 @@ oj_dump_fixnum(VALUE obj, int depth, Out out, bool as_ok) {
     char	*b = buf + sizeof(buf) - 1;
     long long	num = rb_num2ll(obj);
     int		neg = 0;
+	bool	dump_as_string = false;
+
+	if (out->opts->integer_range_max != 0 && out->opts->integer_range_min != 0 &&
+		(out->opts->integer_range_max < num || out->opts->integer_range_min > num)) {
+	dump_as_string = true;
+	}
 
     if (0 > num) {
 	neg = 1;
 	num = -num;
     }
+
     *b-- = '\0';
+
+	if (dump_as_string) {
+	*b-- = '"';
+	}
+
     if (0 < num) {
 	for (; 0 < num; num /= 10, b--) {
 	    *b = (num % 10) + '0';
@@ -1011,6 +1023,11 @@ oj_dump_fixnum(VALUE obj, int depth, Out out, bool as_ok) {
     } else {
 	*b = '0';
     }
+
+	if (dump_as_string) {
+	*--b = '"';
+	}
+
     assure_size(out, (sizeof(buf) - (b - buf)));
     for (; '\0' != *b; b++) {
 	*out->cur++ = *b;
@@ -1022,10 +1039,23 @@ void
 oj_dump_bignum(VALUE obj, int depth, Out out, bool as_ok) {
     volatile VALUE	rs = rb_big2str(obj, 10);
     int			cnt = (int)RSTRING_LEN(rs);
+	bool		dump_as_string = false;
 
-    assure_size(out, cnt);
+	if (out->opts->integer_range_max != 0 || out->opts->integer_range_min != 0) { // Bignum cannot be inside of Fixnum range
+	dump_as_string = true; 
+	assure_size(out, cnt + 2);
+	*out->cur++ = '"';
+	} else {
+	assure_size(out, cnt);
+	}
+
     memcpy(out->cur, rb_string_value_ptr((VALUE*)&rs), cnt);
     out->cur += cnt;
+
+	if(dump_as_string) {
+	*out->cur++ = '"';
+	}
+
     *out->cur = '\0';
 }
 
