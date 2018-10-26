@@ -85,7 +85,7 @@ supported in that mode. A number indicates the footnotes describe additional
 information.
 
     | Option                 | type    | :null   | :strict | :compat | :rails  | :object | :custom |  :wab   |
-    | -----------------------| ------- | ------- | ------- | ------- | ------- | ------- | ------- | ------- |
+    | ---------------------- | ------- | ------- | ------- | ------- | ------- | ------- | ------- | ------- |
     | :allow_blank           | Boolean |         |         |       1 |       1 |         |       x |         |
     | :allow_gc              | Boolean |       x |       x |       x |       x |       x |       x |         |
     | :allow_invalid_unicode | Boolean |         |         |         |         |       x |       x |         |

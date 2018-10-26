@@ -52,7 +52,6 @@ ID	oj_hash_set_id;
 ID	oj_hash_start_id;
 ID	oj_iconv_id;
 ID	oj_instance_variables_id;
-ID	oj_is_a_id;
 ID	oj_json_create_id;
 ID	oj_length_id;
 ID	oj_new_id;
@@ -733,43 +732,20 @@ oj_parse_options(VALUE ropts, Options copts) {
 	    }
 	}
     }
-
     if (Qnil != (v = rb_hash_lookup(ropts, integer_range_sym))) {
-        VALUE is_a_range;
-        VALUE min;
-        VALUE max;
-    
-        switch (TYPE(v))
-        {
-            case T_STRUCT:
-                is_a_range = rb_funcall(v, oj_is_a_id, 1, rb_obj_class(v));
+    if (TYPE(v) == T_STRUCT && rb_obj_class(v) == rb_cRange) {
+        VALUE min = rb_funcall(v, oj_begin_id, 0);
+        VALUE max = rb_funcall(v, oj_end_id, 0);
 
-                if (is_a_range != Qtrue) {
-            	    rb_raise(rb_eArgError, ":integer_range must be a range of Fixnum.");
-                }
-                
-                min = rb_funcall(v, oj_begin_id, 0);
-                max = rb_funcall(v, oj_end_id, 0);
-                
-                if (TYPE(min) != T_FIXNUM || TYPE(max) != T_FIXNUM) {
-            	    rb_raise(rb_eArgError, ":integer_range range bounds is not Fixnum.");
-                }
-
-                copts->integer_range_min = FIX2LONG(min);
-                copts->integer_range_max = FIX2LONG(max);
-            break;
-            case T_NIL:
-                copts->integer_range_min = 0;
-                copts->integer_range_max = 0;
-            break;
-            default:
-                if (v == Qfalse) {
-                copts->integer_range_min = 0;
-                copts->integer_range_max = 0;
-                } else {
-                rb_raise(rb_eArgError, ":integer_range must be a range of Fixnum.");
-                }
+        if (TYPE(min) != T_FIXNUM || TYPE(max) != T_FIXNUM) {
+            rb_raise(rb_eArgError, ":integer_range range bounds is not Fixnum.");
         }
+
+        copts->integer_range_min = FIX2LONG(min);
+        copts->integer_range_max = FIX2LONG(max);
+    } else if (Qfalse != v) {
+        rb_raise(rb_eArgError, ":integer_range must be a range of Fixnum.");
+    }
     }
 }
 
@@ -1644,7 +1620,6 @@ Init_oj() {
     oj_hash_start_id = rb_intern("hash_start");
     oj_iconv_id = rb_intern("iconv");
     oj_instance_variables_id = rb_intern("instance_variables");
-    oj_is_a_id = rb_intern("is_a?");
     oj_json_create_id = rb_intern("json_create");
     oj_length_id = rb_intern("length");
     oj_new_id = rb_intern("new");
