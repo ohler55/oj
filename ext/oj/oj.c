@@ -184,8 +184,8 @@ struct _Options	oj_default_options = {
     No,		// create_ok
     Yes,	// allow_nan
     No,		// trace
-    0,      // integer_range_min
-    0,      // integer_range_max
+    0,		// integer_range_min
+    0,		// integer_range_max
     oj_json_class,	// create_id
     10,		// create_id_len
     9,		// sec_prec

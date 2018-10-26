@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.7.0 - 2018-10-27
+
+  - Thanks to Ziaw for adding a integer range where integers outside that range are written as strings.
+  
 ## 3.6.13 - 2018-10-25
 
   - Fixed issue where exceptions were not being cleared on parsing.
