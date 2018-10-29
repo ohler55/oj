@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 3.7.0 - 2018-10-27
+## 3.7.0 - 2018-10-29
 
   - Thanks to Ziaw for adding a integer range where integers outside that range are written as strings.
   
