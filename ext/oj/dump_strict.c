@@ -14,10 +14,6 @@
 #include "dump.h"
 #include "trace.h"
 
-#if !HAS_ENCODING_SUPPORT || defined(RUBINIUS_RUBY)
-#define rb_eEncodingError	rb_eException
-#endif
-
 // Workaround in case INFINITY is not defined in math.h or if the OS is CentOS
 #define OJ_INFINITY (1.0/0.0)
 

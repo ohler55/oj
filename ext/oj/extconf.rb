@@ -7,7 +7,6 @@ dir_config(extension_name)
 parts = RUBY_DESCRIPTION.split(' ')
 type = parts[0]
 type = type[4..-1] if type.start_with?('tcs-')
-type = 'ree' if 'ruby' == type && RUBY_DESCRIPTION.include?('Ruby Enterprise Edition')
 is_windows = RbConfig::CONFIG['host_os'] =~ /(mingw|mswin)/
 platform = RUBY_PLATFORM
 version = RUBY_VERSION.split('.')
@@ -28,21 +27,10 @@ dflags = {
 			       'mipsel-linux-gnu'].include?(platform) &&
 			     'ruby' == type &&
 			     ('1.9.3' == RUBY_VERSION || '2' <= version[0])) ? 1 : 0,
-  'HAS_ENCODING_SUPPORT' => (('ruby' == type || 'rubinius' == type) &&
-                             (('1' == version[0] && '9' == version[1]) || '2' <= version[0])) ? 1 : 0,
   'HAS_NANO_TIME' => ('ruby' == type && ('1' == version[0] && '9' == version[1]) || '2' <= version[0]) ? 1 : 0,
-  'HAS_IVAR_HELPERS' => ('ruby' == type && !is_windows && (('1' == version[0] && '9' == version[1]) || '2' <= version[0])) ? 1 : 0,
-  'HAS_EXCEPTION_MAGIC' => ('ruby' == type && ('1' == version[0] && '9' == version[1])) ? 0 : 1,
-  'HAS_PROC_WITH_BLOCK' => ('ruby' == type && (('1' == version[0] && '9' == version[1]) || '2' <= version[0])) ? 1 : 0,
-  'HAS_TOP_LEVEL_ST_H' => ('ree' == type || ('ruby' == type &&  '1' == version[0] && '8' == version[1])) ? 1 : 0,
-  'NEEDS_RATIONAL' => ('1' == version[0] && '8' == version[1]) ? 1 : 0,
+  'HAS_IVAR_HELPERS' => is_windows ? 0 : 1,
   'IS_WINDOWS' => is_windows ? 1 : 0,
-  'USE_PTHREAD_MUTEX' => is_windows ? 0 : 1,
-  'USE_RB_MUTEX' => (is_windows && !('1' == version[0] && '8' == version[1])) ? 1 : 0,
-  'NO_TIME_ROUND_PAD' => ('rubinius' == type) ? 1 : 0,
   'HAS_DATA_OBJECT_WRAP' => ('ruby' == type && '2' == version[0] && '3' <= version[1]) ? 1 : 0,
-  'HAS_METHOD_ARITY' =>  ('rubinius' == type) ? 0 : 1,
-  'HAS_STRUCT_MEMBERS' =>  ('rubinius' == type) ? 0 : 1,
   'RSTRUCT_LEN_RETURNS_INTEGER_OBJECT' => ('ruby' == type && '2' == version[0] && '4' == version[1] && '1' >= version[2]) ? 1 : 0,
 }
 # This is a monster hack to get around issues with 1.9.3-p0 on CentOS 5.4. SO
@@ -71,4 +59,4 @@ $CPPFLAGS += ' -Wall'
 #puts "*** $CPPFLAGS: #{$CPPFLAGS}"
 create_makefile(File.join(extension_name, extension_name))
 
-#%x{make clean}
+%x{make clean}

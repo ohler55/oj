@@ -19,10 +19,6 @@
 #include "rails.h"
 #include "encode.h"
 
-#if !HAS_ENCODING_SUPPORT || defined(RUBINIUS_RUBY)
-#define rb_eEncodingError	rb_eException
-#endif
-
 typedef struct _YesNoOpt {
     VALUE	sym;
     char	*attr;
@@ -148,15 +144,11 @@ static VALUE	word_sym;
 static VALUE	xmlschema_sym;
 static VALUE	xss_safe_sym;
 
-#if HAS_ENCODING_SUPPORT
 rb_encoding	*oj_utf8_encoding = 0;
-#else
-VALUE		oj_utf8_encoding = Qnil;
-#endif
 
-#if USE_PTHREAD_MUTEX
+#if HAVE_LIBPTHREAD
 pthread_mutex_t	oj_cache_mutex;
-#elif USE_RB_MUTEX
+#else
 VALUE oj_cache_mutex = Qnil;
 #endif
 
@@ -1488,23 +1480,6 @@ hash_test(VALUE self) {
 }
 */
 
-#if !HAS_ENCODING_SUPPORT
-static VALUE
-iconv_encoder(VALUE x) {
-    VALUE	iconv;
-
-    rb_require("iconv");
-    iconv = rb_const_get(rb_cObject, rb_intern("Iconv"));
-
-    return rb_funcall(iconv, rb_intern("new"), 2, rb_str_new2("ASCII//TRANSLIT"), rb_str_new2("UTF-8"));
-}
-
-static VALUE
-iconv_rescue(VALUE x) {
-    return Qnil;
-}
-#endif
-
 static VALUE
 protect_require(VALUE x) {
     rb_require("time");
@@ -1554,17 +1529,8 @@ Init_oj() {
     rb_require("date");
     // On Rubinius the require fails but can be done from a ruby file.
     rb_protect(protect_require, Qnil, &err);
-#if NEEDS_RATIONAL
-    rb_require("rational");
-#endif
     rb_require("stringio");
-#if HAS_ENCODING_SUPPORT
     oj_utf8_encoding = rb_enc_find("UTF-8");
-#else
-    // need an option to turn this on
-    oj_utf8_encoding = rb_rescue(iconv_encoder, Qnil, iconv_rescue, Qnil);
-    oj_utf8_encoding = Qnil;
-#endif
 
     //rb_define_module_function(Oj, "hash_test", hash_test, 0);
 
@@ -1732,9 +1698,9 @@ Init_oj() {
     oj_odd_init();
     oj_mimic_rails_init();
 
-#if USE_PTHREAD_MUTEX
+#if HAVE_LIBPTHREAD
     pthread_mutex_init(&oj_cache_mutex, 0);
-#elif USE_RB_MUTEX
+#else
     oj_cache_mutex = rb_mutex_new();
     rb_gc_register_address(&oj_cache_mutex);
 #endif

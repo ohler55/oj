@@ -16,14 +16,12 @@ extern "C" {
 #define RSTRING_NOT_MODIFIED
 
 #include "ruby.h"
-#if HAS_ENCODING_SUPPORT
 #include "ruby/encoding.h"
-#endif
 
 #include <stdint.h>
 #include <stdbool.h>
 
-#if USE_PTHREAD_MUTEX
+#if HAVE_LIBPTHREAD
 #include <pthread.h>
 #endif
 #include "cache8.h"
@@ -33,12 +31,7 @@ extern "C" {
 #undef T_COMPLEX
 enum st_retval {ST_CONTINUE = 0, ST_STOP = 1, ST_DELETE = 2, ST_CHECK};
 #else
-#if HAS_TOP_LEVEL_ST_H
-// Only on travis, local is where it is for all others. Seems to vary depending on the travis machine picked up.
-#include "st.h"
-#else
 #include "ruby/st.h"
-#endif
 #endif
 
 #include "rxclass.h"
@@ -292,11 +285,7 @@ extern VALUE	oj_rails_encode(int argc, VALUE *argv, VALUE self);
 
 extern VALUE	Oj;
 extern struct _Options	oj_default_options;
-#if HAS_ENCODING_SUPPORT
 extern rb_encoding	*oj_utf8_encoding;
-#else
-extern VALUE		oj_utf8_encoding;
-#endif
 
 extern VALUE	oj_bag_class;
 extern VALUE	oj_bigdecimal_class;
@@ -376,9 +365,9 @@ extern ID	oj_write_id;
 extern bool	oj_use_hash_alt;
 extern bool	oj_use_array_alt;
 
-#if USE_PTHREAD_MUTEX
+#if HAVE_LIBPTHREAD
 extern pthread_mutex_t	oj_cache_mutex;
-#elif USE_RB_MUTEX
+#else
 extern VALUE	oj_cache_mutex;
 #endif
 

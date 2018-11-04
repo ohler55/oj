@@ -756,13 +756,7 @@ oj_sparse2(ParseInfo pi) {
 		if (Qnil == pi->proc) {
 		    rb_yield_values2(3, args);
 		} else {
-#if HAS_PROC_WITH_BLOCK
 		    rb_proc_call_with_block(pi->proc, 3, args, Qnil);
-#else
-		    oj_set_error_at(pi, rb_eNotImpError, __FILE__, __LINE__,
-				    "Calling a Proc with a block not supported in this version. Use func() {|x| } syntax instead.");
-		    return;
-#endif
 		}
 	    } else if (!pi->has_callbacks) {
 		first = 0;

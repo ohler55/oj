@@ -501,15 +501,11 @@ dump_common(VALUE obj, int depth, Out out) {
 	if (Yes == out->opts->trace) {
 	    oj_trace("to_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyIn);
 	}
-#if HAS_METHOD_ARITY
 	if (0 == rb_obj_method_arity(obj, oj_to_json_id)) {
 	    rs = rb_funcall(obj, oj_to_json_id, 0);
 	} else {
 	    rs = rb_funcall2(obj, oj_to_json_id, out->argc, out->argv);
 	}
-#else
-	rs = rb_funcall2(obj, oj_to_json_id, out->argc, out->argv);
-#endif
 	if (Yes == out->opts->trace) {
 	    oj_trace("to_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyOut);
 	}
@@ -528,15 +524,11 @@ dump_common(VALUE obj, int depth, Out out) {
 	}
 	// Some classes elect to not take an options argument so check the arity
 	// of as_json.
-#if HAS_METHOD_ARITY
 	if (0 == rb_obj_method_arity(obj, oj_as_json_id)) {
 	    aj = rb_funcall(obj, oj_as_json_id, 0);
 	} else {
 	    aj = rb_funcall2(obj, oj_as_json_id, out->argc, out->argv);
 	}
-#else
-	aj = rb_funcall2(obj, oj_as_json_id, out->argc, out->argv);
-#endif
 	if (Yes == out->opts->trace) {
 	    oj_trace("as_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyOut);
 	}
@@ -592,11 +584,9 @@ dump_attr_cb(ID key, VALUE value, Out out) {
     if (NULL == attr) {
 	attr = "";
     }
-#if HAS_EXCEPTION_MAGIC
     if (0 == strcmp("bt", attr) || 0 == strcmp("mesg", attr)) {
 	return ST_CONTINUE;
     }
-#endif
     assure_size(out, size);
     fill_indent(out, depth);
     if ('@' == *attr) {
@@ -671,7 +661,6 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
     if (',' == *(out->cur - 1)) {
 	out->cur--; // backup to overwrite last comma
     }
-#if HAS_EXCEPTION_MAGIC
     if (rb_obj_is_kind_of(obj, rb_eException)) {
 	volatile VALUE	rv;
 
@@ -695,7 +684,6 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	oj_dump_custom_val(rv, d2, out, true);
 	assure_size(out, 2);
     }
-#endif
     out->depth = depth;
 
     fill_indent(out, depth);
@@ -821,9 +809,7 @@ dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
 	*out->cur++ = '{';
 	fill_indent(out, d2);
 	size = d3 * out->indent + 2;
-#if HAS_STRUCT_MEMBERS
 	ma = rb_struct_s_members(clas);
-#endif
 
 #ifdef RSTRUCT_LEN
 #if RSTRUCT_LEN_RETURNS_INTEGER_OBJECT

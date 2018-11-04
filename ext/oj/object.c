@@ -439,9 +439,9 @@ oj_set_obj_ivar(Val parent, Val kval, VALUE value) {
 	    rb_funcall(parent->val, rb_intern("set_backtrace"), 1, value);
 	}
     }
-#if USE_PTHREAD_MUTEX
+#if HAVE_LIBPTHREAD
     pthread_mutex_lock(&oj_cache_mutex);
-#elif USE_RB_MUTEX
+#else
     rb_mutex_lock(oj_cache_mutex);
 #endif
     if (0 == (var_id = oj_attr_hash_get(key, klen, &slot))) {
@@ -473,9 +473,9 @@ oj_set_obj_ivar(Val parent, Val kval, VALUE value) {
 	}
 	*slot = var_id;
     }
-#if USE_PTHREAD_MUTEX
+#if HAVE_LIBPTHREAD
     pthread_mutex_unlock(&oj_cache_mutex);
-#elif USE_RB_MUTEX
+#else
     rb_mutex_unlock(oj_cache_mutex);
 #endif
     rb_ivar_set(parent->val, var_id, value);

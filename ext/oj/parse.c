@@ -707,12 +707,7 @@ oj_parse2(ParseInfo pi) {
 		if (Qnil == pi->proc) {
 		    rb_yield_values2(3, args);
 		} else {
-#if HAS_PROC_WITH_BLOCK
 		    rb_proc_call_with_block(pi->proc, 3, args, Qnil);
-#else
-		    rb_raise(rb_eNotImpError,
-			     "Calling a Proc with a block not supported in this version. Use func() {|x| } syntax instead.");
-#endif
 		}
 	    } else if (!pi->has_callbacks) {
 		first = 0;
@@ -850,13 +845,11 @@ extern int oj_utf8_index;
 
 static void
 oj_pi_set_input_str(ParseInfo pi, volatile VALUE *inputp) {
-#if HAS_ENCODING_SUPPORT
     rb_encoding	*enc = rb_to_encoding(rb_obj_encoding(*inputp));
 
     if (rb_utf8_encoding() != enc) {
 	*inputp = rb_str_conv_enc(*inputp, enc, rb_utf8_encoding());
     }
-#endif
     pi->json = rb_string_value_ptr((VALUE*)inputp);
     pi->end = pi->json + RSTRING_LEN(*inputp);
 }

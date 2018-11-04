@@ -275,14 +275,10 @@ mimic_walk(VALUE key, VALUE obj, VALUE proc) {
 	    rb_yield(obj);
 	}
     } else {
-#if HAS_PROC_WITH_BLOCK
 	VALUE	args[1];
 
 	*args = obj;
 	rb_proc_call_with_block(proc, 1, args, Qnil);
-#else
-	rb_raise(rb_eNotImpError, "Calling a Proc with a block not supported in this version. Use func() {|x| } syntax instead.");
-#endif
     }
     return ST_CONTINUE;
 }

@@ -96,11 +96,9 @@ dump_attr_cb(ID key, VALUE value, Out out) {
     if (NULL == attr) {
 	attr = "";
     }
-#if HAS_EXCEPTION_MAGIC
     if (0 == strcmp("bt", attr) || 0 == strcmp("mesg", attr)) {
 	return ST_CONTINUE;
     }
-#endif
     assure_size(out, size);
     fill_indent(out, depth);
     if ('@' == *attr) {
@@ -529,15 +527,11 @@ dump_as_json(VALUE obj, int depth, Out out, bool as_ok) {
     }
     // Some classes elect to not take an options argument so check the arity
     // of as_json.
-#if HAS_METHOD_ARITY
     if (0 == rb_obj_method_arity(obj, oj_as_json_id)) {
 	ja = rb_funcall(obj, oj_as_json_id, 0);
     } else {
 	ja = rb_funcall2(obj, oj_as_json_id, out->argc, out->argv);
     }
-#else
-    ja = rb_funcall2(obj, oj_as_json_id, out->argc, out->argv);
-#endif
     if (Yes == out->opts->trace) {
 	oj_trace("as_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyOut);
     }
@@ -1024,11 +1018,11 @@ rails_encode(int argc, VALUE *argv, VALUE self) {
 
 static VALUE
 rails_use_standard_json_time_format(VALUE self, VALUE state) {
-    switch (state) {
-    case Qtrue:
-    case Qfalse:
+    switch ((unsigned long)state) {
+    case (unsigned long)Qtrue:
+    case (unsigned long)Qfalse:
 	break;
-    case Qnil:
+    case (unsigned long)Qnil:
 	state = Qfalse;
 	break;
     default:

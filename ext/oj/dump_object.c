@@ -364,11 +364,9 @@ dump_attr_cb(ID key, VALUE value, Out out) {
     if (NULL == attr) {
 	attr = "";
     }
-#if HAS_EXCEPTION_MAGIC
     if (0 == strcmp("bt", attr) || 0 == strcmp("mesg", attr)) {
 	return ST_CONTINUE;
     }
-#endif
     assure_size(out, size);
     fill_indent(out, depth);
     if ('@' == *attr) {
@@ -644,7 +642,6 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	    assure_size(out, 2);
 	}
 #endif
-#if HAS_EXCEPTION_MAGIC
 	if (rb_obj_is_kind_of(obj, rb_eException)) {
 	    volatile VALUE	rv;
 
@@ -669,7 +666,6 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	    oj_dump_obj_val(rv, d2, out);
 	    assure_size(out, 2);
 	}
-#endif
 	out->depth = depth;
     }
     fill_indent(out, depth);
@@ -701,7 +697,6 @@ dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
     *out->cur++ = '"';
     *out->cur++ = ':';
     *out->cur++ = '[';
-#if HAS_STRUCT_MEMBERS
     if ('#' == *class_name) {
 	VALUE		ma = rb_struct_s_members(clas);
 	const char	*name;
@@ -725,9 +720,6 @@ dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
 	}
 	*out->cur++ = ']';
     } else {
-#else
-    if (true) {
-#endif
 	fill_indent(out, d3);
 	*out->cur++ = '"';
 	memcpy(out->cur, class_name, len);
