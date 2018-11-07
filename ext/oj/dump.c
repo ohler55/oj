@@ -375,7 +375,7 @@ oj_dump_time(VALUE obj, Out out, int withZone) {
     long long	sec;
     long long	nsec;
 
-#if HAS_RB_TIME_TIMESPEC
+#ifdef HAVE_RB_TIME_TIMESPEC
     {
 	struct timespec	ts = rb_time_timespec(obj);
 
@@ -384,11 +384,7 @@ oj_dump_time(VALUE obj, Out out, int withZone) {
     }
 #else
     sec = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
-#if HAS_NANO_TIME
     nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
-#else
-    nsec = rb_num2ll(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
-#endif
 #endif
 
     *b-- = '\0';
@@ -478,7 +474,7 @@ oj_dump_xml_time(VALUE obj, Out out) {
     int		tzhour, tzmin;
     char	tzsign = '+';
 
-#if HAS_RB_TIME_TIMESPEC
+#ifdef HAVE_RB_TIME_TIMESPEC
     {
 	struct timespec	ts = rb_time_timespec(obj);
 	sec = ts.tv_sec;
@@ -486,11 +482,7 @@ oj_dump_xml_time(VALUE obj, Out out) {
     }
 #else
     sec = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
-#if HAS_NANO_TIME
     nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
-#else
-    nsec = rb_num2ll(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
-#endif
 #endif
 
     assure_size(out, 36);

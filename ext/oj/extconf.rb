@@ -19,31 +19,15 @@ dflags = {
   'RUBY_VERSION_MAJOR' => version[0],
   'RUBY_VERSION_MINOR' => version[1],
   'RUBY_VERSION_MICRO' => version[2],
-  'HAS_RB_TIME_TIMESPEC' => (!is_windows &&
-			     !['arm-linux-gnueabi',
-			       'arm-linux-gnueabihf',
-			       'i386-linux-gnu',
-			       'mips-linux-gnu',
-			       'mipsel-linux-gnu'].include?(platform) &&
-			     'ruby' == type &&
-			     ('1.9.3' == RUBY_VERSION || '2' <= version[0])) ? 1 : 0,
-  'HAS_NANO_TIME' => ('ruby' == type && ('1' == version[0] && '9' == version[1]) || '2' <= version[0]) ? 1 : 0,
-  'HAS_IVAR_HELPERS' => is_windows ? 0 : 1,
   'IS_WINDOWS' => is_windows ? 1 : 0,
-  'HAS_DATA_OBJECT_WRAP' => ('ruby' == type && '2' == version[0] && '3' <= version[1]) ? 1 : 0,
   'RSTRUCT_LEN_RETURNS_INTEGER_OBJECT' => ('ruby' == type && '2' == version[0] && '4' == version[1] && '1' >= version[2]) ? 1 : 0,
 }
-# This is a monster hack to get around issues with 1.9.3-p0 on CentOS 5.4. SO
-# some reason math.h and string.h contents are not processed. Might be a
-# missing #define. This is the quick and easy way around it.
-if 'x86_64-linux' == RUBY_PLATFORM && '1.9.3' == RUBY_VERSION && '2011-10-30' == RUBY_RELEASE_DATE
-  begin
-    dflags['NEEDS_STPCPY'] = nil if File.read('/etc/redhat-release').include?('CentOS release 5.4')
-  rescue Exception
-  end
-else
-  dflags['NEEDS_STPCPY'] = nil if is_windows
-end
+
+have_func('rb_time_timespec')
+have_func('rb_ivar_count')
+have_func('rb_ivar_foreach')
+have_func('stpcpy')
+have_func('rb_data_object_wrap')
 
 dflags['OJ_DEBUG'] = true unless ENV['OJ_DEBUG'].nil?
 
@@ -57,6 +41,7 @@ end
 
 $CPPFLAGS += ' -Wall'
 #puts "*** $CPPFLAGS: #{$CPPFLAGS}"
+
 create_makefile(File.join(extension_name, extension_name))
 
 %x{make clean}

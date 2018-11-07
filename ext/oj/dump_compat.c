@@ -470,7 +470,7 @@ time_alt(VALUE obj, int depth, Out out) {
     time_t	sec;
     long long	nsec;
 
-#if HAS_RB_TIME_TIMESPEC
+#ifdef HAVE_RB_TIME_TIMESPEC
     {
 	struct timespec	ts = rb_time_timespec(obj);
 	sec = ts.tv_sec;
@@ -478,11 +478,7 @@ time_alt(VALUE obj, int depth, Out out) {
     }
 #else
     sec = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
-#if HAS_NANO_TIME
     nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
-#else
-    nsec = rb_num2ll(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
-#endif
 #endif
 
     attrs[0].num = sec;

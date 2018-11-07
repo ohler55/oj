@@ -304,7 +304,7 @@ dump_time(VALUE obj, int depth, Out out, bool as_ok) {
     time_t	sec;
     long long	nsec;
 
-#if HAS_RB_TIME_TIMESPEC
+#ifdef HAVE_RB_TIME_TIMESPEC
     {
 	struct timespec	ts = rb_time_timespec(obj);
 	sec = ts.tv_sec;
@@ -312,11 +312,7 @@ dump_time(VALUE obj, int depth, Out out, bool as_ok) {
     }
 #else
     sec = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
-#if HAS_NANO_TIME
     nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
-#else
-    nsec = rb_num2ll(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
-#endif
 #endif
     dump_sec_nano(obj, sec, nsec, out);
 }
@@ -1018,16 +1014,11 @@ rails_encode(int argc, VALUE *argv, VALUE self) {
 
 static VALUE
 rails_use_standard_json_time_format(VALUE self, VALUE state) {
-    switch ((unsigned long)state) {
-    case (unsigned long)Qtrue:
-    case (unsigned long)Qfalse:
-	break;
-    case (unsigned long)Qnil:
+    if (Qtrue == state || Qfalse == state) {
+    } else if (Qnil == state) {
 	state = Qfalse;
-	break;
-    default:
+    } else {
 	state = Qtrue;
-	break;
     }
     rb_iv_set(self, "@use_standard_json_time_format", state);
     xml_time = Qtrue == state;

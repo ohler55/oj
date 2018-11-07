@@ -118,7 +118,7 @@ static VALUE	doc_size(VALUE self);
 VALUE	oj_doc_class = Qundef;
 
 // This is only for CentOS 5.4 with Ruby 1.9.3-p0.
-#ifdef NEEDS_STPCPY
+#ifndef HAVE_STPCPY
 char *stpcpy(char *dest, const char *src) {
     size_t	cnt = strlen(src);
     
@@ -847,7 +847,7 @@ parse_json(VALUE clas, char *json, bool given, bool allocated) {
     }
 #endif
     // last arg is free func void* func(void*)
-#if HAS_DATA_OBJECT_WRAP
+#ifdef HAVE_RB_DATA_OBJECT_WRAP
     self = rb_data_object_wrap(clas, doc, mark_doc, free_doc_cb);
 #else
     self = rb_data_object_alloc(clas, doc, mark_doc, free_doc_cb);
