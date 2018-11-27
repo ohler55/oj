@@ -964,6 +964,9 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
 	if (0 != line) {
 	    VALUE	ec = rb_obj_class(rb_errinfo());
 
+	    if (rb_eIOError != ec) {
+		goto CLEANUP;
+	    }
 	    if (rb_eArgError != ec && 0 != ec) {
 		err_class = ec;
 	    }
@@ -987,6 +990,7 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
 	    }
 	}
     }
+CLEANUP:
     // proceed with cleanup
     if (0 != pi->circ_array) {
 	oj_circ_array_free(pi->circ_array);

@@ -838,7 +838,10 @@ oj_pi_sparse(int argc, VALUE *argv, ParseInfo pi, int fd) {
 	if (0 != line) {
 	    VALUE	ec = rb_obj_class(rb_errinfo());
 
-	    // Sometimes the claass of the error is 0 which seems broken.
+	    if (rb_eIOError != ec) {
+		goto CLEANUP;
+	    }
+	    // Sometimes the class of the error is 0 which seems broken.
 	    if (rb_eArgError != ec && 0 != ec) {
 		err_class = ec;
 	    }
@@ -862,6 +865,7 @@ oj_pi_sparse(int argc, VALUE *argv, ParseInfo pi, int fd) {
 	    }
 	}
     }
+CLEANUP:
     // proceed with cleanup
     if (0 != pi->circ_array) {
 	oj_circ_array_free(pi->circ_array);
