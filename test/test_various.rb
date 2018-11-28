@@ -687,7 +687,9 @@ class Juice < Minitest::Test
 
   def test_bad_bignum
     if '2.4.0' < RUBY_VERSION
-      assert_raises(Oj::ParseError) { Oj.load(%|{ "big": -e123456789 }|) }
+      assert_raises Exception do # Can be either Oj::ParseError or ArgumentError depending on Ruby version
+	Oj.load(%|{ "big": -e123456789 }|)
+      end
     end
   end
 
