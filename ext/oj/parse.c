@@ -647,6 +647,7 @@ oj_parse2(ParseInfo pi) {
 	    break;
 	    //case '+':
 	case '-':
+	case '+':
 	case '0':
 	case '1':
 	case '2':

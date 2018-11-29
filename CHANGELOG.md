@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.7.3 - 2018-11-29
+
+  - Allow `+` in front of numbers in parse as well as stream parse.
+
 ## 3.7.2 - 2018-11-29
 
   - More tolerant float parsing to allow `123.`.
