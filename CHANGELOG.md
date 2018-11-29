@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.7.2 - 2018-11-29
+
+  - More tolerant float parsing to allow `123.`.
+
+  - Parse exceptions raised by user code now preserve the message content of the exception.
+
 ## 3.7.1 - 2018-11-09
 
   - Updated to support TruffleRuby.
@@ -7,11 +13,11 @@
 ## 3.7.0 - 2018-10-29
 
   - Thanks to Ziaw for adding a integer range where integers outside that range are written as strings.
-  
+
 ## 3.6.13 - 2018-10-25
 
   - Fixed issue where exceptions were not being cleared on parsing.
-  
+
   - Added addition unicode dump error information.
 
 ## 3.6.12 - 2018-10-16
@@ -35,7 +41,7 @@
 ## 3.6.8 - 2018-09-08
 
   - Stopped setting the default options when optimze rails is called as the documentaiton has indicated.
-  
+
   - In custom mode `Date` and `DateTime` instances default to use the `:time_format` option is the `:create_additions` option is false.
 
 ## 3.6.7 - 2018-08-26

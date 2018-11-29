@@ -456,12 +456,13 @@ read_num(ParseInfo pi) {
 	}
 	if ('.' == c) {
 	    c = reader_get(&pi->rd);
-	    // A trailing . is not a valid decimal but if encountered allow it.
-#if 0
-	    if (c < '0' || '9' < c) {
-		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number");
+	    // A trailing . is not a valid decimal but if encountered allow it
+	    // except when mimicing the JSON gem.
+	    if (CompatMode == pi->options.mode) {
+		if (c < '0' || '9' < c) {
+		    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number");
+		}
 	    }
-#endif
 	    for (; '0' <= c && c <= '9'; c = reader_get(&pi->rd)) {
 		int	d = (c - '0');
 

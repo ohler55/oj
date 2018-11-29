@@ -444,13 +444,14 @@ read_num(ParseInfo pi) {
 	}
 	if ('.' == *pi->cur) {
 	    pi->cur++;
-	    // A trailing . is not a valid decimal but if encountered allow it.
-#if 0
-	    if (*pi->cur < '0' || '9' < *pi->cur) {
-		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number");
-		return;
+	    // A trailing . is not a valid decimal but if encountered allow it
+	    // except when mimicing the JSON gem.
+	    if (CompatMode == pi->options.mode) {
+		if (*pi->cur < '0' || '9' < *pi->cur) {
+		    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number");
+		    return;
+		}
 	    }
-#endif
 	    for (; '0' <= *pi->cur && *pi->cur <= '9'; pi->cur++) {
 		int	d = (*pi->cur - '0');
 
