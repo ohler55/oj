@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.7.4 - 2018-11-29
+
+  - Allow `+` in front of numbers in parse as well as stream parse **EXCEPT** when mimicing the JSON gem.
+
 ## 3.7.3 - 2018-11-29
 
   - Allow `+` in front of numbers in parse as well as stream parse.

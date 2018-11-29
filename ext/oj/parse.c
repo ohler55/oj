@@ -646,8 +646,15 @@ oj_parse2(ParseInfo pi) {
 	    read_str(pi);
 	    break;
 	    //case '+':
-	case '-':
 	case '+':
+	    if (CompatMode == pi->options.mode) {
+		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "unexpected character");
+		return;
+	    }
+	    pi->cur--;
+	    read_num(pi);
+	    break;
+	case '-':
 	case '0':
 	case '1':
 	case '2':
