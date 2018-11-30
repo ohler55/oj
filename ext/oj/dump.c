@@ -85,6 +85,17 @@ static char	xss_friendly_chars[256] = "\
 // JSON XSS combo
 static char	hixss_friendly_chars[256] = "\
 66666666222622666666666666666666\
+11211111111111111111111111111111\
+11111111111111111111111111112111\
+11111111111111111111111111111111\
+11111111111111111111111111111111\
+11111111111111111111111111111111\
+11111111111111111111111111111111\
+11611111111111111111111111111111";
+
+// Rails XSS combo
+static char	rails_xss_friendly_chars[256] = "\
+66666666222622666666666666666666\
 11211161111111111111111111116161\
 11111111111111111111111111112111\
 11111111111111111111111111111111\
@@ -166,6 +177,17 @@ hixss_friendly_size(const uint8_t *str, size_t len) {
 	}
     }
     return size - len * (size_t)'0' + check;
+}
+
+inline static size_t
+rails_xss_friendly_size(const uint8_t *str, size_t len) {
+    size_t	size = 0;
+    size_t	i = len;
+
+    for (; 0 < i; str++, i--) {
+	size += rails_xss_friendly_chars[*str];
+    }
+    return size - len * (size_t)'0';
 }
 
 inline static size_t
@@ -753,6 +775,10 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
     case JXEsc:
 	cmap = hixss_friendly_chars;
 	size = hixss_friendly_size((uint8_t*)str, cnt);
+	break;
+    case RailsXEsc:
+	cmap = rails_xss_friendly_chars;
+	size = rails_xss_friendly_size((uint8_t*)str, cnt);
 	break;
     case RailsEsc:
 	cmap = rails_friendly_chars;

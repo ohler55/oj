@@ -917,7 +917,7 @@ encode(VALUE obj, ROptTable ropts, Options opts, int argc, VALUE *argv) {
     copts.str_rx.tail = NULL;
     copts.mode = RailsMode;
     if (escape_html) {
-	copts.escape_mode = JXEsc;
+	copts.escape_mode = RailsXEsc;
     } else {
 	copts.escape_mode = RailsEsc;
     }
@@ -1481,7 +1481,7 @@ oj_dump_rails_val(VALUE obj, int depth, Out out) {
     out->opts->str_rx.head = NULL;
     out->opts->str_rx.tail = NULL;
     if (escape_html) {
-	out->opts->escape_mode = JXEsc;
+	out->opts->escape_mode = RailsXEsc;
     } else {
 	out->opts->escape_mode = RailsEsc;
     }
