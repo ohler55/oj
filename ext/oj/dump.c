@@ -821,7 +821,7 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
 	for (; str < end; str++) {
 	    switch (cmap[(uint8_t)*str]) {
 	    case '1':
-		if (JXEsc == out->opts->escape_mode && check_start <= str) {
+		if ((JXEsc == out->opts->escape_mode || RailsXEsc == out->opts->escape_mode) && check_start <= str) {
 		    if (0 != (0x80 & (uint8_t)*str)) {
 			if (0xC0 == (0xC0 & (uint8_t)*str)) {
 			    check_start = check_unicode(str, end, orig);
@@ -845,7 +845,7 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
 		}
 		break;
 	    case '3': // Unicode
-		if (0xe2 == (uint8_t)*str && JXEsc == out->opts->escape_mode && 2 <= end - str) {
+		if (0xe2 == (uint8_t)*str && (JXEsc == out->opts->escape_mode || RailsXEsc == out->opts->escape_mode) && 2 <= end - str) {
 		    if (0x80 == (uint8_t)str[1] && (0xa8 == (uint8_t)str[2] || 0xa9 == (uint8_t)str[2])) {
 			str = dump_unicode(str, end, out, orig);
 		    } else {
@@ -864,7 +864,7 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
 		    *out->cur++ = '0';
 		    dump_hex((uint8_t)*str, out);
 		} else {
-		    if (0xe2 == (uint8_t)*str && JXEsc == out->opts->escape_mode && 2 <= end - str) {
+		    if (0xe2 == (uint8_t)*str && (JXEsc == out->opts->escape_mode || RailsXEsc == out->opts->escape_mode) && 2 <= end - str) {
 			if (0x80 == (uint8_t)str[1] && (0xa8 == (uint8_t)str[2] || 0xa9 == (uint8_t)str[2])) {
 			    str = dump_unicode(str, end, out, orig);
 			} else {
@@ -882,7 +882,7 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
 	}
 	*out->cur++ = '"'; 
     }
-    if (JXEsc == out->opts->escape_mode && 0 < str - orig && 0 != (0x80 & *(str - 1))) {
+    if ((JXEsc == out->opts->escape_mode || RailsXEsc == out->opts->escape_mode) && 0 < str - orig && 0 != (0x80 & *(str - 1))) {
 	uint8_t	c = (uint8_t)*(str - 1);
 	int	i;
 	int	scnt = (int)(str - orig);
