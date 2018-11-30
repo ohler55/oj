@@ -167,7 +167,7 @@ oj_parse_mimic_dump_options(VALUE ropts, Options copts) {
     if (Qnil != (v = rb_hash_lookup(ropts, oj_ascii_only_sym))) {
 	// generate seems to assume anything except nil and false are true.
 	if (Qfalse == v) {
-	    copts->escape_mode = JXEsc; // JSONEsc;
+	    copts->escape_mode = JSONEsc;
 	} else {
 	    copts->escape_mode = ASCIIEsc;
 	}
@@ -206,7 +206,7 @@ mimic_dump(int argc, VALUE *argv, VALUE self) {
     out.end = buf + sizeof(buf) - 10;
     out.allocated = false;
     out.caller = CALLER_DUMP;
-    copts.escape_mode = JXEsc;
+    copts.escape_mode = JSONEsc;
     copts.mode = CompatMode;
 
     /* seems like this is not correct
@@ -665,7 +665,7 @@ static struct _Options	mimic_object_to_json_options = {
     No,		// circular
     No,		// auto_define
     No,		// sym_key
-    JXEsc,	// escape_mode
+    JSONEsc,	// escape_mode
     CompatMode,	// mode
     No,		// class_cache
     RubyTime,	// time_format
