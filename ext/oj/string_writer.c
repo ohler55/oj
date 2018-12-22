@@ -66,6 +66,7 @@ oj_str_writer_init(StrWriter sw, int buf_size) {
     sw->out.allocated = true;
     sw->out.cur = sw->out.buf;
     *sw->out.cur = '\0';
+    sw->out.circ_cache = NULL;
     sw->out.circ_cnt = 0;
     sw->out.hash_cnt = 0;
     sw->out.opts = &sw->opts;
@@ -75,6 +76,7 @@ oj_str_writer_init(StrWriter sw, int buf_size) {
     sw->out.argv = NULL;
     sw->out.caller = 0;
     sw->out.ropts = NULL;
+    sw->out.omit_nil = oj_default_options.dump_opts.omit_nil;
 }
 
 void

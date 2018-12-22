@@ -34,7 +34,7 @@
 #include "ruby.h"
 #include "odd.h"
 #include <stdint.h>
-#if USE_PTHREAD_MUTEX
+#if HAVE_LIBPTHREAD
 #include <pthread.h>
 #endif
 
@@ -76,9 +76,9 @@ typedef struct _ValStack {
     Val			head;	// current stack
     Val			end;	// stack end
     Val			tail;	// pointer to one past last element name on stack
-#if USE_PTHREAD_MUTEX
+#if HAVE_LIBPTHREAD
     pthread_mutex_t	mutex;
-#elif USE_RB_MUTEX
+#else
     VALUE		mutex;
 #endif
 
@@ -114,17 +114,17 @@ stack_push(ValStack stack, VALUE val, ValNext next) {
 	} else {
 	    REALLOC_N(head, struct _Val, len + STACK_INC);
 	}
-#if USE_PTHREAD_MUTEX
+#if HAVE_LIBPTHREAD
 	pthread_mutex_lock(&stack->mutex);
-#elif USE_RB_MUTEX
+#else
 	rb_mutex_lock(stack->mutex);
 #endif
 	stack->head = head;
 	stack->tail = stack->head + toff;
 	stack->end = stack->head + len + STACK_INC;
-#if USE_PTHREAD_MUTEX
+#if HAVE_LIBPTHREAD
 	pthread_mutex_unlock(&stack->mutex);
-#elif USE_RB_MUTEX
+#else
 	rb_mutex_unlock(stack->mutex);
 #endif
     }

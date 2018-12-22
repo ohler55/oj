@@ -20,6 +20,11 @@ or simply call
 Oj.optimize_rails()
 ```
 
+Either of those steps will setup Oj to mimic Rails but it will not change the
+default mode type as the mode type is only used when calling the Oj encoding
+directly. If Rails mode is also desired then use the `Oj.default_options` to
+change the default mode.
+
 Some of the Oj options are supported as arguments to the encoder if called
 from Oj::Rails.encode() but when using the Oj::Rails::Encoder class the
 encode() method does not support optional arguments as required by the
@@ -73,7 +78,7 @@ Oj::Rails.optimize is called with no arguments are:
  * any other class where all attributes should be dumped
 
 The ActiveSupport decoder is the JSON.parse() method. Calling the
-Oj::Rails.set_decoder() method replaces that method with the Oj equivelant.
+Oj::Rails.set_decoder() method replaces that method with the Oj equivalent.
 
 ### Notes:
 
@@ -87,3 +92,25 @@ Oj::Rails.set_decoder() method replaces that method with the Oj equivelant.
    that has already been used. This could occur is a mix of String and Symbols
    are used as keys or if a other non-String objects such as Numerics are mixed
    with numbers as Strings.
+
+3. To verify Oj is being used turn on the Oj `:trace` option. Similar to the
+   Ruby Tracer Oj will then print out trace information. Another approach is
+   to turn on C extension tracing.  Set `tracer = TracePoint.new(:c_call) do
+   |tp| p [tp.lineno, tp.event, tp.defined_class, tp.method_id] end` or, in
+   older Rubies, set `Tracer.display_c_call = true`.
+
+   For example:
+
+     ```
+     require 'active_support/core_ext'
+     require 'active_support/json'
+     require 'oj'
+     Oj.optimize_rails
+     tracer.enable { Time.now.to_json }
+     # prints output including
+     ....
+     [20, :c_call, #<Class:Oj::Rails::Encoder>, :new]
+     [20, :c_call, Oj::Rails::Encoder, :encode]
+     ....
+     => "\"2018-02-23T12:13:42.493-06:00\""
+     ```

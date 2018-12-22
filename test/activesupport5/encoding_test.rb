@@ -1,3 +1,4 @@
+# coding: utf-8
 require 'activesupport5/test_helper'
 require 'securerandom'
 require 'active_support/core_ext/string/inflections'

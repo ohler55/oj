@@ -1,31 +1,6 @@
-/* parse.c
+/* sparse.c
  * Copyright (c) 2013, Peter Ohler
  * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *  - Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer.
- *
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- *  - Neither the name of Peter Ohler nor the names of its contributors may be
- *    used to endorse or promote products derived from this software without
- *    specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include <stdlib.h>
@@ -321,8 +296,10 @@ read_escaped_str(ParseInfo pi) {
 	case NEXT_HASH_NEW:
 	case NEXT_HASH_KEY:
 	    if (Qundef == (parent->key_val = pi->hash_key(pi, buf.head, buf_len(&buf)))) {
-		parent->key = strdup(buf.head);
 		parent->klen = buf_len(&buf);
+		parent->key = malloc(parent->klen + 1);
+		memcpy((char*)parent->key, buf.head, parent->klen);
+		*(char*)(parent->key + parent->klen) = '\0';
 	    } else {
 		parent->key = "";
 		parent->klen = 0;
@@ -479,8 +456,12 @@ read_num(ParseInfo pi) {
 	}
 	if ('.' == c) {
 	    c = reader_get(&pi->rd);
-	    if (c < '0' || '9' < c) {
-		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number");
+	    // A trailing . is not a valid decimal but if encountered allow it
+	    // except when mimicing the JSON gem.
+	    if (CompatMode == pi->options.mode) {
+		if (c < '0' || '9' < c) {
+		    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number");
+		}
 	    }
 	    for (; '0' <= c && c <= '9'; c = reader_get(&pi->rd)) {
 		int	d = (c - '0');
@@ -683,6 +664,13 @@ oj_sparse2(ParseInfo pi) {
 	    read_str(pi);
 	    break;
 	case '+':
+	    if (CompatMode == pi->options.mode) {
+		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "unexpected character");
+		return;
+	    }
+	    pi->cur--;
+	    read_num(pi);
+	    break;
 	case '-':
 	case '0':
 	case '1':
@@ -779,13 +767,7 @@ oj_sparse2(ParseInfo pi) {
 		if (Qnil == pi->proc) {
 		    rb_yield_values2(3, args);
 		} else {
-#if HAS_PROC_WITH_BLOCK
 		    rb_proc_call_with_block(pi->proc, 3, args, Qnil);
-#else
-		    oj_set_error_at(pi, rb_eNotImpError, __FILE__, __LINE__,
-				    "Calling a Proc with a block not supported in this version. Use func() {|x| } syntax instead.");
-		    return;
-#endif
 		}
 	    } else if (!pi->has_callbacks) {
 		first = 0;
@@ -826,6 +808,8 @@ oj_pi_sparse(int argc, VALUE *argv, ParseInfo pi, int fd) {
 	} else {
 	    rb_raise(rb_eTypeError, "Nil is not a valid JSON source.");
 	}
+    } else if (CompatMode == pi->options.mode && T_STRING == rb_type(input) && No == pi->options.nilnil && 0 == RSTRING_LEN(input)) {
+	rb_raise(oj_json_parser_error_class, "An empty string is not a valid JSON string.");
     }
     if (rb_block_given_p()) {
 	pi->proc = Qnil;
@@ -845,10 +829,13 @@ oj_pi_sparse(int argc, VALUE *argv, ParseInfo pi, int fd) {
     }
     // GC can run at any time. When it runs any Object created by C will be
     // freed. We protect against this by wrapping the value stack in a ruby
-    // data object and poviding a mark function for ruby objects on the
+    // data object and providing a mark function for ruby objects on the
     // value stack (while it is in scope).
     wrapped_stack = oj_stack_init(&pi->stack);
     rb_protect(protect_parse, (VALUE)pi, &line);
+    if (Qundef == pi->stack.head->val && !empty_ok(&pi->options)) {
+	oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "Empty input");
+    }
     result = stack_head_val(&pi->stack);
     DATA_PTR(wrapped_stack) = 0;
     if (No == pi->options.allow_gc) {
@@ -857,26 +844,39 @@ oj_pi_sparse(int argc, VALUE *argv, ParseInfo pi, int fd) {
     if (!err_has(&pi->err)) {
 	// If the stack is not empty then the JSON terminated early.
 	Val	v;
+	VALUE	err_class = oj_parse_error_class;
 
+	if (0 != line) {
+	    VALUE	ec = rb_obj_class(rb_errinfo());
+
+	    if (rb_eIOError != ec) {
+		goto CLEANUP;
+	    }
+	    // Sometimes the class of the error is 0 which seems broken.
+	    if (rb_eArgError != ec && 0 != ec) {
+		err_class = ec;
+	    }
+	}
 	if (0 != (v = stack_peek(&pi->stack))) {
 	    switch (v->next) {
 	    case NEXT_ARRAY_NEW:
 	    case NEXT_ARRAY_ELEMENT:
 	    case NEXT_ARRAY_COMMA:
-		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "Array not terminated");
+		oj_set_error_at(pi, err_class, __FILE__, __LINE__, "Array not terminated");
 		break;
 	    case NEXT_HASH_NEW:
 	    case NEXT_HASH_KEY:
 	    case NEXT_HASH_COLON:
 	    case NEXT_HASH_VALUE:
 	    case NEXT_HASH_COMMA:
-		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "Hash/Object not terminated");
+		oj_set_error_at(pi, err_class, __FILE__, __LINE__, "Hash/Object not terminated");
 		break;
 	    default:
-		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not terminated");
+		oj_set_error_at(pi, err_class, __FILE__, __LINE__, "not terminated");
 	    }
 	}
     }
+CLEANUP:
     // proceed with cleanup
     if (0 != pi->circ_array) {
 	oj_circ_array_free(pi->circ_array);
@@ -885,11 +885,9 @@ oj_pi_sparse(int argc, VALUE *argv, ParseInfo pi, int fd) {
     if (0 != fd) {
 	close(fd);
     }
-    if (0 != line) {
-	rb_jump_tag(line);
-    }
     if (err_has(&pi->err)) {
-	if (Qnil != pi->err_class) {
+	rb_set_errinfo(Qnil);
+	if (Qnil != pi->err_class && 0 != pi->err_class) {
 	    pi->err.clas = pi->err_class;
 	}
 	if (CompatMode == pi->options.mode) {
@@ -904,8 +902,9 @@ oj_pi_sparse(int argc, VALUE *argv, ParseInfo pi, int fd) {
 	} else {
 	    oj_err_raise(&pi->err);
 	}
-
 	oj_err_raise(&pi->err);
+    } else if (0 != line) {
+	rb_jump_tag(line);
     }
     return result;
 }

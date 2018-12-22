@@ -1,7 +1,7 @@
 # Oj Modes
 
 Oj uses modes to switch the load and dump behavior. Initially Oj supported on
-the :object mode which uses a format that allows Juby object encoding and
+the :object mode which uses a format that allows Ruby object encoding and
 decoding in a manner that lets almost any Ruby object be encoded and decoded
 without monkey patching the object classes. From that start other demands were
 made the were best met by giving Oj multiple modes of operation. The current
@@ -84,64 +84,71 @@ options available in each mode. An `x` in the matrix indicates the option is
 supported in that mode. A number indicates the footnotes describe additional
 information.
 
-    | Option                 | type    | :null   | :strict | :compat | :rails  | :object | :custom |  :wab   |
-    | ---------------------- | ------- | ------- | ------- | ------- | ------- | ------- | ------- | ------- |
-    | :allow_blank           | Boolean |         |         |       1 |       1 |         |       x |         |
-    | :allow_gc              | Boolean |       x |       x |       x |       x |       x |       x |         |
-    | :allow_invalid_unicode | Boolean |         |         |         |         |       x |       x |         |
-    | :allow_nan             | Boolean |         |         |       x |         |       x |       x |         |
-    | :array_class           | Class   |         |         |       x |       x |         |       x |         |
-    | :array_nl              | String  |         |         |         |         |         |       x |         |
-    | :ascii_only            | Boolean |       x |       x |       2 |       2 |       x |       x |         |
-    | :auto_define           | Boolean |         |         |         |         |       x |       x |         |
-    | :bigdecimal_as_decimal | Boolean |         |         |         |         |       x |       x |         |
-    | :bigdecimal_load       | Boolean |         |         |         |         |         |       x |         |
-    | :circular              | Boolean |       x |       x |       x |       x |       x |       x |         |
-    | :class_cache           | Boolean |         |         |         |         |       x |       x |         |
-    | :create_additions      | Boolean |         |         |       x |       x |         |       x |         |
-    | :create_id             | String  |         |         |       x |       x |         |       x |         |
-    | :empty_string          | Boolean |         |         |         |         |         |       x |         |
-    | :escape_mode           | Symbol  |         |         |         |         |         |       x |         |
-    | :float_precision       | Fixnum  |       x |       x |         |         |         |       x |         |
-    | :hash_class            | Class   |         |         |       x |       x |         |       x |         |
-    | :indent                | Integer |       x |       x |       3 |       3 |       x |       x |       x |
-    | :indent_str            | String  |         |         |       x |       x |         |       x |         |
-    | :match_string          | Hash    |         |         |       x |       x |         |       x |         |
-    | :max_nesting           | Fixnum  |       4 |       4 |       x |         |       4 |       4 |         |
-    | :mode                  | Symbol  |       - |       - |       - |       - |       - |       - |         |
-    | :nan                   | Symbol  |         |         |         |         |         |       x |         |
-    | :nilnil                | Boolean |         |         |         |         |         |       x |         |
-    | :object_class          | Class   |         |         |       x |         |         |       x |         |
-    | :object_nl             | String  |         |         |       x |       x |         |       x |         |
-    | :omit_nil              | Boolean |       x |       x |       x |       x |       x |       x |         |
-    | :quirks_mode           | Boolean |         |         |       5 |         |         |       x |         |
-    | :second_precision      | Fixnum  |         |         |         |         |       x |       x |         |
-    | :space                 | String  |         |         |       x |       x |         |       x |         |
-    | :space_before          | String  |         |         |       x |       x |         |       x |         |
-    | :symbol_keys           | Boolean |       x |       x |       x |       x |       x |       x |         |
-    | :time_format           | Symbol  |         |         |         |         |       x |       x |         |
-    | :use_as_json           | Boolean |         |         |         |         |         |       x |         |
-    | :use_to_hash           | Boolean |         |         |         |         |         |       x |         |
-    | :use_to_json           | Boolean |         |         |         |         |         |       x |         |
-     --------------------------------------------------------------------------------------------------------
+| Option                 | type    | :null   | :strict | :compat | :rails  | :object | :custom |  :wab   |
+| ---------------------- | ------- | ------- | ------- | ------- | ------- | ------- | ------- | ------- |
+| :allow_blank           | Boolean |         |         |       1 |       1 |         |       x |         |
+| :allow_gc              | Boolean |       x |       x |       x |       x |       x |       x |         |
+| :allow_invalid_unicode | Boolean |         |         |         |         |       x |       x |         |
+| :allow_nan             | Boolean |         |         |       x |         |       x |       x |         |
+| :array_class           | Class   |         |         |       x |       x |         |       x |         |
+| :array_nl              | String  |         |         |         |         |         |       x |         |
+| :ascii_only            | Boolean |       x |       x |       2 |       2 |       x |       x |         |
+| :auto_define           | Boolean |         |         |         |         |       x |       x |         |
+| :bigdecimal_as_decimal | Boolean |         |         |         |       3 |       x |       x |         |
+| :bigdecimal_load       | Boolean |         |         |         |         |         |       x |         |
+| :circular              | Boolean |       x |       x |       x |       x |       x |       x |         |
+| :class_cache           | Boolean |         |         |         |         |       x |       x |         |
+| :create_additions      | Boolean |         |         |       x |       x |         |       x |         |
+| :create_id             | String  |         |         |       x |       x |         |       x |         |
+| :empty_string          | Boolean |         |         |         |         |         |       x |         |
+| :escape_mode           | Symbol  |         |         |         |         |         |       x |         |
+| :float_precision       | Fixnum  |       x |       x |         |         |         |       x |         |
+| :hash_class            | Class   |         |         |       x |       x |         |       x |         |
+| :ignore                | Array   |         |         |         |         |       x |       x |         |
+| :indent                | Integer |       x |       x |       3 |       4 |       x |       x |       x |
+| :indent_str            | String  |         |         |       x |       x |         |       x |         |
+| :integer_range         | Range   |       x |       x |       x |       x |       x |       x |       x |
+| :match_string          | Hash    |         |         |       x |       x |         |       x |         |
+| :max_nesting           | Fixnum  |       4 |       4 |       x |         |       5 |       4 |         |
+| :mode                  | Symbol  |       - |       - |       - |       - |       - |       - |         |
+| :nan                   | Symbol  |         |         |         |         |         |       x |         |
+| :nilnil                | Boolean |         |         |         |         |         |       x |         |
+| :object_class          | Class   |         |         |       x |         |         |       x |         |
+| :object_nl             | String  |         |         |       x |       x |         |       x |         |
+| :omit_nil              | Boolean |       x |       x |       x |       x |       x |       x |         |
+| :quirks_mode           | Boolean |         |         |       6 |         |         |       x |         |
+| :second_precision      | Fixnum  |         |         |         |         |       x |       x |         |
+| :space                 | String  |         |         |       x |       x |         |       x |         |
+| :space_before          | String  |         |         |       x |       x |         |       x |         |
+| :symbol_keys           | Boolean |       x |       x |       x |       x |       x |       x |         |
+| :trace                 | Boolean |       x |       x |       x |       x |       x |       x |       x |
+| :time_format           | Symbol  |         |         |         |         |       x |       x |         |
+| :use_as_json           | Boolean |         |         |         |         |         |       x |         |
+| :use_to_hash           | Boolean |         |         |         |         |         |       x |         |
+| :use_to_json           | Boolean |         |         |         |         |         |       x |         |
+ --------------------------------------------------------------------------------------------------------
 
  1. :allow_blank an alias for :nilnil.
 
  2. The :ascii_only options is an undocumented json gem option.
 
- 3. The integer indent value in the default options will be honored by since
+ 3. By default the bigdecimal_as decimal is not set and the default encoding
+    for Rails is as a string. Setting the value to true will encode a
+    BigDecimal as a number which breaks compatibility.
+
+ 4. The integer indent value in the default options will be honored by since
     the json gem expects a String type the indent in calls to 'to_json()',
     'Oj.generate()', or 'Oj.generate_fast()' expect a String and not an
     integer.
 
- 4. The max_nesting option is for the json gem and rails only. It exists for
+ 5. The max_nesting option is for the json gem and rails only. It exists for
     compatibility. For other Oj dump modes the maximum nesting is set to over
     1000. If reference loops exist in the object being dumped then using the
     `:circular` option is a far better choice. It adds a slight overhead but
     detects an object that appears more than once in a dump and does not dump
     that object a second time.
 
- 5. The quirks mode option is no longer supported in the most recent json
+ 6. The quirks mode option is no longer supported in the most recent json
     gem. It is supported by Oj for backward compatibility with older json gem
     versions.
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-# encoding: UTF-8
+# encoding: utf-8
 
 $: << File.dirname(__FILE__)
 
@@ -345,19 +345,19 @@ class ObjectJuice < Minitest::Test
 
   # BigDecimal
   def test_bigdecimal_object
-    dump_and_load(BigDecimal.new('3.14159265358979323846'), false)
+    dump_and_load(BigDecimal('3.14159265358979323846'), false)
   end
 
   def test_bigdecimal_load
-    orig = BigDecimal.new('80.51')
+    orig = BigDecimal('80.51')
     json = Oj.dump(orig, :mode => :object, :bigdecimal_as_decimal => true)
     bg = Oj.load(json, :mode => :object, :bigdecimal_load => true)
     assert_equal(BigDecimal, bg.class)
     assert_equal(orig, bg)
     # Infinity is the same for Float and BigDecimal
-    json = Oj.dump(BigDecimal.new('Infinity'), :mode => :object)
+    json = Oj.dump(BigDecimal('Infinity'), :mode => :object)
     assert_equal('Infinity', json)
-    json = Oj.dump(BigDecimal.new('-Infinity'), :mode => :object)
+    json = Oj.dump(BigDecimal('-Infinity'), :mode => :object)
     assert_equal('-Infinity', json)
   end
 
@@ -761,6 +761,15 @@ class ObjectJuice < Minitest::Test
     assert_equal(obj, obj2)
   end
 
+  def test_ignore
+    obj = Jeez.new(true, 58)
+    json = Oj.dump({ 'a' => 7, 'b' => obj }, :mode => :object, :indent => 2, :ignore => [ Jeez ])
+    assert_equal(%|{
+  "a":7
+}
+|, json)
+  end
+
   def test_exception
     err = nil
     begin
@@ -803,6 +812,14 @@ class ObjectJuice < Minitest::Test
     json = Oj.dump(h, :mode => :object, :indent => 2, :circular => true)
     h2 = Oj.object_load(json, :circular => true)
     assert_equal(h2['b'].__id__, h2.__id__)
+  end
+
+
+  def test_json_object_missing_fields
+    json = %{{ "^u": [ "ObjectJuice::Stuck",1]}}
+
+    obj = Oj.load(json, mode: :object)
+    assert_nil(obj['b'])
   end
 
   def test_circular_array
@@ -895,11 +912,11 @@ class ObjectJuice < Minitest::Test
     json = Oj.dump(jam, :omit_nil => true, :mode => :object)
     assert_equal(%|{"^o":"ObjectJuice::Jam","x":{"a":1}}|, json)
   end
-  
+
   def test_odd_date
     dump_and_load(Date.new(2012, 6, 19), false)
   end
-  
+
   def test_odd_datetime
     dump_and_load(DateTime.new(2012, 6, 19, 13, 5, Rational(4, 3)), false)
     dump_and_load(DateTime.new(2012, 6, 19, 13, 5, Rational(7123456789, 1000000000)), false)

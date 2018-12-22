@@ -13,7 +13,7 @@
 #define MAX_DEPTH 1000
 
 // Extra padding at end of buffer.
-#define BUFFER_EXTRA 10
+#define BUFFER_EXTRA 64
 
 extern void	oj_dump_nil(VALUE obj, int depth, Out out, bool as_ok);
 extern void	oj_dump_true(VALUE obj, int depth, Out out, bool as_ok);
@@ -47,6 +47,11 @@ extern void	oj_dump_wab_val(VALUE obj, int depth, Out out);
 
 extern VALUE	oj_add_to_json(int argc, VALUE *argv, VALUE self);
 extern VALUE	oj_remove_to_json(int argc, VALUE *argv, VALUE self);
+
+extern int	oj_dump_float_printf(char *buf, size_t blen, VALUE obj, double d, const char *format);
+
+extern bool	oj_dump_ignore(Options opts, VALUE obj);
+extern time_t	oj_sec_from_time_hard_way(VALUE obj);
 
 inline static void
 assure_size(Out out, size_t len) {

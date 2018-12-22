@@ -8,7 +8,7 @@ The parser in sparse.c is represented by the ParseInfo struct in parser.h. Key e
 
 The options are simply flags and parameters that modify the parse output or behavior. They are constructed from the default options and the arguments to the Ruby calls.
 
-The Reader is defined in reader.h and is struct that represented an object that is able to read bytes from some source and provide those bytes to the parser. The single method on the Reader is the 'read_func' which is a pointer to a function. The function pointed to by this member is selected based on the input type. The psuedo subclasses of the Reader are readers for files, general IO, IO that supports partial reads, and strings. A mentioned earlier the string version does not perform as well as direct string access so the original parser is used instead.
+The Reader is defined in reader.h and is struct that represented an object that is able to read bytes from some source and provide those bytes to the parser. The single method on the Reader is the 'read_func' which is a pointer to a function. The function pointed to by this member is selected based on the input type. The pseudo subclasses of the Reader are readers for files, general IO, IO that supports partial reads, and strings. A mentioned earlier the string version does not perform as well as direct string access so the original parser is used instead.
 
 On the output side the callback functions such as 'start_hash' represent the method of the parser. By assigning different functions to those members the parser is effectively subclassed to be either the object, compat, strict, or SCP parsers. In a future release those callbacks and the specifics of each parser may be pulled out to become the handlers.
 

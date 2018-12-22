@@ -44,13 +44,13 @@ static VALUE	state_class;
 /* Document-method: parser=
  * call-seq: parser=(parser)
  * 
- * Does nothing other than provide compatibiltiy.
+ * Does nothing other than provide compatibility.
  * - *parser* [_Object_] ignored
  */
 /* Document-method: generator=
  * call-seq: generator=(generator)
  * 
- * Does nothing other than provide compatibiltiy.
+ * Does nothing other than provide compatibility.
  * - *generator* [_Object_] ignored
  */
 
@@ -275,14 +275,10 @@ mimic_walk(VALUE key, VALUE obj, VALUE proc) {
 	    rb_yield(obj);
 	}
     } else {
-#if HAS_PROC_WITH_BLOCK
 	VALUE	args[1];
 
 	*args = obj;
 	rb_proc_call_with_block(proc, 1, args, Qnil);
-#else
-	rb_raise(rb_eNotImpError, "Calling a Proc with a block not supported in this version. Use func() {|x| } syntax instead.");
-#endif
     }
     return ST_CONTINUE;
 }
@@ -317,7 +313,7 @@ mimic_load(int argc, VALUE *argv, VALUE self) {
     VALUE	obj;
     VALUE	p = Qnil;
 
-    obj = oj_compat_parse(argc, argv, self);
+    obj = oj_compat_load(argc, argv, self);
     if (2 <= argc) {
 	if (rb_cProc == rb_obj_class(argv[1])) {
 	    p = argv[1];
@@ -370,6 +366,7 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
     // it is.
     copts->dump_opts.nan_dump = RaiseNan;
     copts->mode = CompatMode;
+    copts->to_json = Yes;
     if (2 == argc && Qnil != argv[1]) {
 	oj_parse_mimic_dump_options(argv[1], copts);
     }
@@ -485,14 +482,13 @@ oj_mimic_pretty_generate(int argc, VALUE *argv, VALUE self) {
 static VALUE
 mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
     struct _ParseInfo	pi;
+    VALUE		ropts;
     VALUE		args[1];
 
-    if (argc < 1) {
-	rb_raise(rb_eArgError, "Wrong number of arguments to parse.");
-    }
+    rb_scan_args(argc, argv, "11", NULL, &ropts);
     parse_info_init(&pi);
     oj_set_compat_callbacks(&pi);
-    // TBD
+
     pi.err_class = oj_json_parser_error_class;
     //pi.err_class = Qnil;
 
@@ -508,8 +504,7 @@ mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
     pi.options.mode = CompatMode;
     pi.max_depth = 100;
 
-    if (2 <= argc && Qnil != argv[1]) {
-	VALUE	ropts = argv[1];
+    if (Qnil != ropts) {
 	VALUE	v;
 
 	if (T_HASH != rb_type(ropts)) {
@@ -608,7 +603,7 @@ mimic_parse_bang(int argc, VALUE *argv, VALUE self) {
 /* Document-method: recurse_proc
  * call-seq: recurse_proc(obj, &proc)
  * 
- * Yields to the proc for every element in the obj recursivly.
+ * Yields to the proc for every element in the obj recursively.
  * 
  * - *obj* [_Hash_|Array] object to walk
  * - *proc* [_Proc_] to yield to on each element
@@ -680,12 +675,15 @@ static struct _Options	mimic_object_to_json_options = {
     No,		// to_json
     No,		// as_json
     No,		// nilnil
-    Yes,	// empty_string
+    No,		// empty_string
     Yes,	// allow_gc
     Yes,	// quirks_mode
     No,		// allow_invalid
     No,		// create_ok
     No,		// allow_nan
+    No,		// trace
+    0,		// integer_range_min
+    0,		// integer_range_max
     oj_json_class,// create_id
     10,		// create_id_len
     3,		// sec_prec
@@ -859,9 +857,6 @@ oj_define_mimic_json(int argc, VALUE *argv, VALUE self) {
 	    rb_funcall2(Oj, rb_intern("mimic_loaded"), 0, 0);
 	}
     }
-
-    // TBD create all modules in mimic_loaded
-
     oj_mimic_json_methods(json);
 
     rb_define_method(rb_cObject, "to_json", mimic_object_to_json, -1);

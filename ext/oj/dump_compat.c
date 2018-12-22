@@ -6,6 +6,7 @@
 #include "code.h"
 #include "dump.h"
 #include "rails.h"
+#include "trace.h"
 
 // Workaround in case INFINITY is not defined in math.h or if the OS is CentOS
 #define OJ_INFINITY (1.0/0.0)
@@ -119,15 +120,17 @@ dump_to_json(VALUE obj, Out out) {
     const char		*s;
     int			len;
 
-#if HAS_METHOD_ARITY
+    if (Yes == out->opts->trace) {
+	oj_trace("to_json", obj, __FILE__, __LINE__, 0, TraceRubyIn);
+    }
     if (0 == rb_obj_method_arity(obj, oj_to_json_id)) {
 	rs = rb_funcall(obj, oj_to_json_id, 0);
     } else {
 	rs = rb_funcall2(obj, oj_to_json_id, out->argc, out->argv);
     }
-#else
-    rs = rb_funcall2(obj, oj_to_json_id, out->argc, out->argv);
-#endif
+    if (Yes == out->opts->trace) {
+	oj_trace("to_json", obj, __FILE__, __LINE__, 0, TraceRubyOut);
+    }
 
     s = rb_string_value_ptr((VALUE*)&rs);
     len = (int)RSTRING_LEN(rs);
@@ -464,10 +467,22 @@ time_alt(VALUE obj, int depth, Out out) {
 	{ "n", 1, Qundef, 0, Qundef },
 	{ NULL, 0, Qnil },
     };
-    struct timespec	ts = rb_time_timespec(obj);
+    time_t	sec;
+    long long	nsec;
 
-    attrs[0].num = ts.tv_sec;
-    attrs[1].num = ts.tv_nsec;
+#ifdef HAVE_RB_TIME_TIMESPEC
+    {
+	struct timespec	ts = rb_time_timespec(obj);
+	sec = ts.tv_sec;
+	nsec = ts.tv_nsec;
+    }
+#else
+    sec = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+    nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+#endif
+
+    attrs[0].num = sec;
+    attrs[1].num = nsec;
 
     oj_code_attrs(obj, attrs, depth, out, true);
 }
@@ -611,10 +626,9 @@ dump_float(VALUE obj, int depth, Out out, bool as_ok) {
 	    raise_json_err("NaN not allowed in JSON.", "GeneratorError");
 	}
     } else if (d == (double)(long long int)d) {
-	//cnt = snprintf(buf, sizeof(buf), "%.1Lf", (long double)d);
 	cnt = snprintf(buf, sizeof(buf), "%.1f", d);
     } else if (oj_rails_float_opt) {
-	cnt = snprintf(buf, sizeof(buf), "%0.16g", d);
+	cnt = oj_dump_float_printf(buf, sizeof(buf), obj, d, "%0.16g");
     } else {
 	volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
@@ -848,6 +862,7 @@ dump_bignum(VALUE obj, int depth, Out out, bool as_ok) {
     // this must use to_s to pass the json gem unit tests.
     volatile VALUE	rs;
     int			cnt;
+	bool		dump_as_string = false;
 
     if (use_bignum_alt) {
 	rs = rb_big2str(obj, 10);
@@ -856,9 +871,22 @@ dump_bignum(VALUE obj, int depth, Out out, bool as_ok) {
     }
     rb_check_type(rs, T_STRING);
     cnt = (int)RSTRING_LEN(rs);
-    assure_size(out, cnt);
+
+	if (out->opts->integer_range_min != 0 || out->opts->integer_range_max != 0) {
+	dump_as_string = true; // Bignum cannot be inside of Fixnum range
+	assure_size(out, cnt + 2);
+	*out->cur++ = '"';
+	} else {
+	assure_size(out, cnt);
+	}
+
     memcpy(out->cur, rb_string_value_ptr((VALUE*)&rs), cnt);
     out->cur += cnt;
+
+	if(dump_as_string) {
+	*out->cur++ = '"';
+	}
+
     *out->cur = '\0';
 }
 
@@ -902,7 +930,10 @@ set_state_depth(VALUE state, int depth) {
 void
 oj_dump_compat_val(VALUE obj, int depth, Out out, bool as_ok) {
     int	type = rb_type(obj);
-    
+
+    if (Yes == out->opts->trace) {
+	oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceIn);
+    }
     if (out->opts->dump_opts.max_depth <= depth) {
 	// When JSON.dump is called then an ArgumentError is expected and the
 	// limit is the depth inclusive. If JSON.generate is called then a
@@ -925,8 +956,14 @@ oj_dump_compat_val(VALUE obj, int depth, Out out, bool as_ok) {
 
 	if (NULL != f) {
 	    f(obj, depth, out, as_ok);
+	    if (Yes == out->opts->trace) {
+		oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceOut);
+	    }
 	    return;
 	}
     }
     oj_dump_nil(Qnil, depth, out, false);
+    if (Yes == out->opts->trace) {
+	oj_trace("dump", Qnil, __FILE__, __LINE__, depth, TraceOut);
+    }
 }

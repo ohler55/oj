@@ -16,14 +16,12 @@ extern "C" {
 #define RSTRING_NOT_MODIFIED
 
 #include "ruby.h"
-#if HAS_ENCODING_SUPPORT
 #include "ruby/encoding.h"
-#endif
 
 #include <stdint.h>
 #include <stdbool.h>
 
-#if USE_PTHREAD_MUTEX
+#if HAVE_LIBPTHREAD
 #include <pthread.h>
 #endif
 #include "cache8.h"
@@ -33,12 +31,7 @@ extern "C" {
 #undef T_COMPLEX
 enum st_retval {ST_CONTINUE = 0, ST_STOP = 1, ST_DELETE = 2, ST_CHECK};
 #else
-#if HAS_TOP_LEVEL_ST_H
-// Only on travis, local is where it is for all others. Seems to vary depending on the travis machine picked up.
-#include "st.h"
-#else
 #include "ruby/st.h"
-#endif
 #endif
 
 #include "rxclass.h"
@@ -152,6 +145,9 @@ typedef struct _Options {
     char		allow_invalid;	// YesNo - allow invalid unicode
     char		create_ok;	// YesNo allow create_id
     char		allow_nan;	// YEsyNo for parsing only
+    char		trace;		// YesNo
+    int64_t		integer_range_min; // dump numbers outside range as string
+    int64_t		integer_range_max;
     const char		*create_id;	// 0 or string
     size_t		create_id_len;	// length of create_id
     int			sec_prec;	// second precision when dumping time
@@ -161,6 +157,7 @@ typedef struct _Options {
     VALUE		array_class;	// class to use in place of Array on load
     struct _DumpOpts	dump_opts;
     struct _RxClass	str_rx;
+    VALUE		*ignore;	// Qnil terminated array of classes or NULL
 } *Options;
 
 struct _Out;
@@ -244,6 +241,7 @@ extern VALUE	oj_sc_parse(int argc, VALUE *argv, VALUE self);
 extern VALUE	oj_strict_parse(int argc, VALUE *argv, VALUE self);
 extern VALUE	oj_strict_sparse(int argc, VALUE *argv, VALUE self);
 extern VALUE	oj_compat_parse(int argc, VALUE *argv, VALUE self);
+extern VALUE	oj_compat_load(int argc, VALUE *argv, VALUE self);
 extern VALUE	oj_object_parse(int argc, VALUE *argv, VALUE self);
 extern VALUE	oj_custom_parse(int argc, VALUE *argv, VALUE self);
 extern VALUE	oj_wab_parse(int argc, VALUE *argv, VALUE self);
@@ -287,11 +285,7 @@ extern VALUE	oj_rails_encode(int argc, VALUE *argv, VALUE self);
 
 extern VALUE	Oj;
 extern struct _Options	oj_default_options;
-#if HAS_ENCODING_SUPPORT
 extern rb_encoding	*oj_utf8_encoding;
-#else
-extern VALUE		oj_utf8_encoding;
-#endif
 
 extern VALUE	oj_bag_class;
 extern VALUE	oj_bigdecimal_class;
@@ -320,6 +314,7 @@ extern VALUE	oj_object_nl_sym;
 extern VALUE	oj_quirks_mode_sym;
 extern VALUE	oj_space_before_sym;
 extern VALUE	oj_space_sym;
+extern VALUE	oj_trace_sym;
 
 extern VALUE	oj_slash_string;
 
@@ -329,6 +324,7 @@ extern ID	oj_array_end_id;
 extern ID	oj_array_start_id;
 extern ID	oj_as_json_id;
 extern ID	oj_begin_id;
+extern ID	oj_bigdecimal_id;
 extern ID	oj_end_id;
 extern ID	oj_error_id;
 extern ID	oj_exclude_end_id;
@@ -369,9 +365,9 @@ extern ID	oj_write_id;
 extern bool	oj_use_hash_alt;
 extern bool	oj_use_array_alt;
 
-#if USE_PTHREAD_MUTEX
+#if HAVE_LIBPTHREAD
 extern pthread_mutex_t	oj_cache_mutex;
-#elif USE_RB_MUTEX
+#else
 extern VALUE	oj_cache_mutex;
 #endif
 

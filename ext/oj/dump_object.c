@@ -5,6 +5,7 @@
 
 #include "dump.h"
 #include "odd.h"
+#include "trace.h"
 
 static const char	hex_chars[17] = "0123456789abcdef";
 
@@ -42,7 +43,7 @@ dump_data(VALUE obj, int depth, Out out, bool as_ok) {
 	    const char		*str = rb_string_value_ptr((VALUE*)&rstr);
 	    int			len = (int)RSTRING_LEN(rstr);
 
-	    if (Yes == out->opts->bigdec_as_num) {
+	    if (No != out->opts->bigdec_as_num) {
 		oj_dump_raw(str, len, out);
 	    } else if (0 == strcasecmp("Infinity", str)) {
 		str = oj_nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, true, &len);
@@ -203,7 +204,7 @@ dump_str_class(VALUE obj, VALUE clas, int depth, Out out) {
 	dump_obj_attrs(obj, clas, 0, depth, out);
     } else {
 	const char	*s = rb_string_value_ptr((VALUE*)&obj);
-	size_t		len = RSTRING_LEN(obj);
+	size_t		len = (int)RSTRING_LEN(obj);
 	char		s1 = s[1];
 
 	oj_dump_cstr(s, len, 0, (':' == *s || ('^' == *s && ('r' == s1 || 'i' == s1))), out);
@@ -217,9 +218,9 @@ dump_str(VALUE obj, int depth, Out out, bool as_ok) {
 
 static void
 dump_sym(VALUE obj, int depth, Out out, bool as_ok) {
-    const char	*sym = rb_id2name(SYM2ID(obj));
-    
-    oj_dump_cstr(sym, strlen(sym), 1, 0, out);
+    volatile VALUE	s = rb_sym_to_s(obj);
+
+    oj_dump_cstr(rb_string_value_ptr((VALUE*)&s), (int)RSTRING_LEN(s), 1, 0, out);
 }
 
 static int
@@ -227,6 +228,9 @@ hash_cb(VALUE key, VALUE value, Out out) {
     int		depth = out->depth;
     long	size = depth * out->indent + 1;
 
+    if (oj_dump_ignore(out->opts, value)) {
+	return ST_CONTINUE;
+    }
     if (out->omit_nil && Qnil == value) {
 	return ST_CONTINUE;
     }
@@ -342,13 +346,16 @@ dump_hash_class(VALUE obj, VALUE clas, int depth, Out out) {
     *out->cur = '\0';
 }
 
-#if HAS_IVAR_HELPERS
+#ifdef HAVE_RB_IVAR_FOREACH
 static int
 dump_attr_cb(ID key, VALUE value, Out out) {
     int		depth = out->depth;
     size_t	size = depth * out->indent + 1;
     const char	*attr = rb_id2name(key);
 
+    if (oj_dump_ignore(out->opts, value)) {
+	return ST_CONTINUE;
+    }
     if (out->omit_nil && Qnil == value) {
 	return ST_CONTINUE;
     }
@@ -357,11 +364,9 @@ dump_attr_cb(ID key, VALUE value, Out out) {
     if (NULL == attr) {
 	attr = "";
     }
-#if HAS_EXCEPTION_MAGIC
     if (0 == strcmp("bt", attr) || 0 == strcmp("mesg", attr)) {
 	return ST_CONTINUE;
     }
-#endif
     assure_size(out, size);
     fill_indent(out, depth);
     if ('@' == *attr) {
@@ -537,7 +542,7 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	*out->cur++ = 'f';
 	*out->cur++ = '"';
 	*out->cur++ = ':';
-	oj_dump_cstr(rb_string_value_ptr((VALUE*)&obj), RSTRING_LEN(obj), 0, 0, out);
+	oj_dump_cstr(rb_string_value_ptr((VALUE*)&obj), (int)RSTRING_LEN(obj), 0, 0, out);
 	break;
     case T_ARRAY:
 	assure_size(out, d2 * out->indent + 14);
@@ -570,7 +575,7 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
     }
     {
 	int	cnt;
-#if HAS_IVAR_HELPERS
+#ifdef HAVE_RB_IVAR_COUNT
 	cnt = (int)rb_ivar_count(obj);
 #else
 	volatile VALUE	vars = rb_funcall2(obj, oj_instance_variables_id, 0, 0);
@@ -594,7 +599,7 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	    }
 	}
 	out->depth = depth + 1;
-#if HAS_IVAR_HELPERS
+#ifdef HAVE_RB_IVAR_FOREACH
 	rb_ivar_foreach(obj, dump_attr_cb, (VALUE)out);
 	if (',' == *(out->cur - 1)) {
 	    out->cur--; // backup to overwrite last comma
@@ -607,6 +612,10 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	    vid = rb_to_id(*np);
 	    attr = rb_id2name(vid);
 	    value = rb_ivar_get(obj, vid);
+
+	    if (oj_dump_ignore(out->opts, value)) {
+		continue;
+	    }
 	    if (out->omit_nil && Qnil == value) {
 		continue;
 	    }
@@ -633,7 +642,6 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	    assure_size(out, 2);
 	}
 #endif
-#if HAS_EXCEPTION_MAGIC
 	if (rb_obj_is_kind_of(obj, rb_eException)) {
 	    volatile VALUE	rv;
 
@@ -658,7 +666,6 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	    oj_dump_obj_val(rv, d2, out);
 	    assure_size(out, 2);
 	}
-#endif
 	out->depth = depth;
     }
     fill_indent(out, depth);
@@ -690,7 +697,6 @@ dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
     *out->cur++ = '"';
     *out->cur++ = ':';
     *out->cur++ = '[';
-#if HAS_STRUCT_MEMBERS
     if ('#' == *class_name) {
 	VALUE		ma = rb_struct_s_members(clas);
 	const char	*name;
@@ -698,8 +704,10 @@ dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
 
 	*out->cur++ = '[';
 	for (i = 0; i < cnt; i++) {
-	    name = rb_id2name(SYM2ID(rb_ary_entry(ma, i)));
-	    len = strlen(name);
+	    volatile VALUE	s = rb_sym_to_s(rb_ary_entry(ma, i));
+
+	    name = rb_string_value_ptr((VALUE*)&s);
+	    len = (int)RSTRING_LEN(s);
 	    size = len + 3;
 	    assure_size(out, size);
 	    if (0 < i) {
@@ -712,9 +720,6 @@ dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
 	}
 	*out->cur++ = ']';
     } else {
-#else
-    if (true) {
-#endif
 	fill_indent(out, d3);
 	*out->cur++ = '"';
 	memcpy(out->cur, class_name, len);
@@ -735,6 +740,9 @@ dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
 	
 	for (i = 0; i < cnt; i++) {
 	    v = RSTRUCT_GET(obj, i);
+	    if (oj_dump_ignore(out->opts, v)) {
+		v = Qnil;
+	    }
 	    assure_size(out, size);
 	    fill_indent(out, d3);
 	    oj_dump_obj_val(v, d3, out);
@@ -750,6 +758,9 @@ dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
 	for (i = 0; i < slen; i++) {
 	    assure_size(out, size);
 	    fill_indent(out, d3);
+	    if (oj_dump_ignore(out->opts, v)) {
+		v = Qnil;
+	    }
 	    oj_dump_obj_val(rb_struct_aref(obj, INT2FIX(i)), d3, out, 0, 0, true);
 	    *out->cur++ = ',';
 	}
@@ -800,6 +811,9 @@ void
 oj_dump_obj_val(VALUE obj, int depth, Out out) {
     int	type = rb_type(obj);
     
+    if (Yes == out->opts->trace) {
+	oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceIn);
+    }
     if (MAX_DEPTH < depth) {
 	rb_raise(rb_eNoMemError, "Too deeply nested.\n");
     }
@@ -808,8 +822,14 @@ oj_dump_obj_val(VALUE obj, int depth, Out out) {
 
 	if (NULL != f) {
 	    f(obj, depth, out, false);
+	    if (Yes == out->opts->trace) {
+		oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceOut);
+	    }
 	    return;
 	}
     }
     oj_dump_nil(Qnil, depth, out, false);
+    if (Yes == out->opts->trace) {
+	oj_trace("dump", Qnil, __FILE__, __LINE__, depth, TraceOut);
+    }
 }

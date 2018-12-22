@@ -1,5 +1,137 @@
 # CHANGELOG
 
+## 3.7.4 - 2018-11-29
+
+  - Allow `+` in front of numbers in parse as well as stream parse **EXCEPT** when mimicing the JSON gem.
+
+## 3.7.3 - 2018-11-29
+
+  - Allow `+` in front of numbers in parse as well as stream parse.
+
+## 3.7.2 - 2018-11-29
+
+  - More tolerant float parsing to allow `123.`.
+
+  - Parse exceptions raised by user code now preserve the message content of the exception.
+
+## 3.7.1 - 2018-11-09
+
+  - Updated to support TruffleRuby.
+
+## 3.7.0 - 2018-10-29
+
+  - Thanks to Ziaw for adding a integer range where integers outside that range are written as strings.
+
+## 3.6.13 - 2018-10-25
+
+  - Fixed issue where exceptions were not being cleared on parsing.
+
+  - Added addition unicode dump error information.
+
+## 3.6.12 - 2018-10-16
+
+  - Fixed random `:omit_nil` setting with StringWriter and StreamWriter.
+
+## 3.6.11 - 2018-09-26
+
+  - Added the JSON path to parse error messages.
+
+  - BigDecimal parse errors now return Oj::ParseError instead of ArgumentError.
+
+## 3.6.10 - 2018-09-13
+
+  - Additional occurances of `SYM2ID(sym)` replaced.
+
+## 3.6.9 - 2018-09-12
+
+  - `SYM2ID(sym)` causes a memory leak. A work around is now used.
+
+## 3.6.8 - 2018-09-08
+
+  - Stopped setting the default options when optimze rails is called as the documentaiton has indicated.
+
+  - In custom mode `Date` and `DateTime` instances default to use the `:time_format` option is the `:create_additions` option is false.
+
+## 3.6.7 - 2018-08-26
+
+  - Fixed incorrect check in StreamWriter when adding raw JSON.
+
+## 3.6.6 - 2018-08-16
+
+  - Fixed Debian build issues on several platforms.
+
+  - `oj_slash_string` is now frozen.
+
+## 3.6.5 - 2018-07-26
+
+  - Fixed GC issue with Oj::Doc.
+
+  - Fixed issue with time encoding with Windows.
+
+## 3.6.4 - 2018-07-10
+
+  - JSON.generate() now sets the `to_json` option as expected.
+
+  - Show `:create_additions` in the default options. It did not appear before.
+
+## 3.6.3 - 2018-06-21
+
+  - Fixed compat dump compilation error on Windows.
+
+## 3.6.2 - 2018-05-30
+
+  - Regex encoded correctly for rails when using `to_json`.
+
+  - ActiveSupport::TimeWithZone optimization fixed.
+
+## 3.6.1 - 2018-05-16
+
+  - Fixed realloc bug in rails dump.
+
+## 3.6.0 - 2018-05-01
+
+  - Add optimization for Rails ActiveRecord::Result encoding.
+
+## 3.5.1 - 2018-04-14
+
+  - Fixed issue with \u0000 terminating keys early.
+
+  - Add trace for calls to `to_json` and 'as_json`.
+
+## 3.5.0 - 2018-03-04
+
+  - A trace option is now available in all modes. The format roughly follows the Ruby trace format.
+
+## 3.4.0 - 2018-01-24
+
+  - Option to ignore specific classes in :object and :custom mode added.
+
+## 3.3.10 - 2017-12-30
+
+  - Re-activated the bigdecimal_as_decimal option in custom mode and made the selection active for Rails mode.
+
+  - Fixed bug in optimize_rails that did not optimize all classes as expected.
+
+  - Fixed warnings for Ruby 2.5.0.
+
+## 3.3.9 - 2017-10-27
+
+  - Fixed bug where empty strings were sometimes marked as invalid.
+
+## 3.3.8 - 2017-10-04
+
+  - Fixed Rail mimic precision bug.
+
+## 3.3.7 - 2017-10-02
+
+  - Handle invalid unicode characters better for single byte strings.
+
+  - Parsers for empty strings handle errors more consistently.
+
+## 3.3.6 - 2017-09-22
+
+  - Numerous fixes and cleanup to support Ruby 2.4.2.
+
 ## 3.3.5 - 2017-08-11
 
 - Fixed a memory error when using rails string encoding of certain unicode characters.
@@ -241,7 +373,7 @@
 
 ## 2.14.1 - 2015-12-15
 
-- Fixed bug that reverted to BigDecimal when a decimal had preceeding zeros after the decimal point.
+- Fixed bug that reverted to BigDecimal when a decimal had preceding zeros after the decimal point.
 
 ## 2.14.0 - 2015-12-04
 
@@ -796,7 +928,7 @@
 ## 1.1.0 - 2012-03-27
 
 - Errors are not longer raised when comments are encountered in JSON documents.
-- Oj can now mimic JSON. With some expections calling JSON.mimic_JSON will allow all JSON calls to use OJ instead of JSON. This gives a speedup of more than 2x on parsing and 5x for generating over the JSON::Ext module.
+- Oj can now mimic JSON. With some exceptions calling JSON.mimic_JSON will allow all JSON calls to use OJ instead of JSON. This gives a speedup of more than 2x on parsing and 5x for generating over the JSON::Ext module.
 - Oj::Doc now allows a document to be left open and then closed with the Oj::Doc.close() class.
 - Changed the default encoding to UTF-8 instead of the Ruby default String encoding.
 
@@ -862,4 +994,3 @@
 ## 0.5 - 2012-02-19
 
 - This is the first release with a version of 0.5 indicating it is only half done. Basic load() and dump() is supported for Hash, Array, NilClass, TrueClass, FalseClass, Fixnum, Float, Symbol, and String Objects.
-

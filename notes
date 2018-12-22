@@ -19,17 +19,16 @@ Comparison Matrix
            ---------  ---------  ---------
            Oj:strict       1.00       3.48
            JSON::Ext       0.29       1.00
-           
-- put oj_100x60.jpg or maybe transparent gif in oj_misc
- - update readme
 
-- json gem bugs PR
- - 
+- big decimal
+ - just in custom mode, maybe in strict?
+
+ - encode_big_decimal_as_string
+  - add as fix for rails change
+
 
 - rails
    
- - what happened to obj mode loading time?
-
  - Process::Status
  - ActiveSupport::TimeWithZone
  - ActiveModel::Errors

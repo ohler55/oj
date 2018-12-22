@@ -14,6 +14,7 @@
 #include "oj.h"
 #include "parse.h"
 #include "resolve.h"
+#include "trace.h"
 
 extern void	oj_set_obj_ivar(Val parent, Val kval, VALUE value);
 extern VALUE	oj_parse_xml_time(const char *str, int len); // from object.c
@@ -42,6 +43,8 @@ bigdecimal_dump(VALUE obj, int depth, Out out) {
     } else if (0 == strcasecmp("-Infinity", str)) {
 	str = oj_nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, false, &len);
 	oj_dump_raw(str, len, out);
+    } else if (No == out->opts->bigdec_as_num) {
+	oj_dump_cstr(str, len, 0, 0, out);
     } else {
 	oj_dump_raw(str, len, out);
     }
@@ -77,14 +80,69 @@ complex_load(VALUE clas, VALUE args) {
 }
 
 static void
-date_dump(VALUE obj, int depth, Out out) {
-    struct _Attr	attrs[] = {
-	{ "s", 1, Qnil },
-	{ NULL, 0, Qnil },
-    };
-    attrs->value = rb_funcall(obj, rb_intern("iso8601"), 0);
+time_dump(VALUE obj, int depth, Out out) {
+    if (Yes == out->opts->create_ok) {
+	struct _Attr	attrs[] = {
+	    { "time", 4, Qundef, 0, Qundef },
+	    { NULL, 0, Qnil },
+	};
+	attrs->time = obj;
 
-    oj_code_attrs(obj, attrs, depth, out, Yes == out->opts->create_ok);
+	oj_code_attrs(obj, attrs, depth, out, true);
+    } else {
+	switch (out->opts->time_format) {
+	case RubyTime:	oj_dump_ruby_time(obj, out);	break;
+	case XmlTime:	oj_dump_xml_time(obj, out);	break;
+	case UnixZTime:	oj_dump_time(obj, out, true);	break;
+	case UnixTime:
+	default:	oj_dump_time(obj, out, false);	break;
+	}
+    }
+}
+
+static void
+date_dump(VALUE obj, int depth, Out out) {
+    if (Yes == out->opts->create_ok) {
+	struct _Attr	attrs[] = {
+	    { "s", 1, Qnil },
+	    { NULL, 0, Qnil },
+	};
+	attrs->value = rb_funcall(obj, rb_intern("iso8601"), 0);
+
+	oj_code_attrs(obj, attrs, depth, out, Yes == out->opts->create_ok);
+    } else {
+	volatile VALUE	v;
+	volatile VALUE	ov;
+	
+	switch (out->opts->time_format) {
+	case RubyTime:
+	case XmlTime:
+	    v = rb_funcall(obj, rb_intern("iso8601"), 0);
+	    oj_dump_cstr(rb_string_value_ptr((VALUE*)&v), (int)RSTRING_LEN(v), 0, 0, out);
+	    break;
+	case UnixZTime:
+	    v = rb_funcall(obj, rb_intern("to_time"), 0);
+	    if (oj_date_class == rb_obj_class(obj)) {
+		ov = rb_funcall(v, rb_intern("utc_offset"), 0);
+		v = rb_funcall(v, rb_intern("utc"), 0);
+		v = rb_funcall(v, rb_intern("+"), 1, ov);
+		oj_dump_time(v, out, false);
+	    } else {
+		oj_dump_time(v, out, true);
+	    }
+	    break;
+	case UnixTime:
+	default:
+	    v = rb_funcall(obj, rb_intern("to_time"), 0);
+	    if (oj_date_class == rb_obj_class(obj)) {
+		ov = rb_funcall(v, rb_intern("utc_offset"), 0);
+		v = rb_funcall(v, rb_intern("utc"), 0);
+		v = rb_funcall(v, rb_intern("+"), 1, ov);
+	    }
+	    oj_dump_time(v, out, false);
+	    break;
+	}
+    }
 }
 
 static VALUE
@@ -197,27 +255,6 @@ regexp_load(VALUE clas, VALUE args) {
     return Qnil;
 }
 
-static void
-time_dump(VALUE obj, int depth, Out out) {
-    if (Yes == out->opts->create_ok) {
-	struct _Attr	attrs[] = {
-	    { "time", 4, Qundef, 0, Qundef },
-	    { NULL, 0, Qnil },
-	};
-	attrs->time = obj;
-
-	oj_code_attrs(obj, attrs, depth, out, true);
-    } else {
-	switch (out->opts->time_format) {
-	case RubyTime:	oj_dump_ruby_time(obj, out);	break;
-	case XmlTime:	oj_dump_xml_time(obj, out);	break;
-	case UnixZTime:	oj_dump_time(obj, out, true);	break;
-	case UnixTime:
-	default:	oj_dump_time(obj, out, false);	break;
-	}
-    }
-}
-
 static VALUE
 time_load(VALUE clas, VALUE args) {
     // Value should have already been replaced in one of the hash_set_xxx
@@ -242,6 +279,9 @@ static int
 hash_cb(VALUE key, VALUE value, Out out) {
     int	depth = out->depth;
 
+    if (oj_dump_ignore(out->opts, value)) {
+	return ST_CONTINUE;
+    }
     if (out->omit_nil && Qnil == value) {
 	return ST_CONTINUE;
     }
@@ -458,15 +498,17 @@ dump_common(VALUE obj, int depth, Out out) {
 	const char	*s;
 	int		len;
 
-#if HAS_METHOD_ARITY
+	if (Yes == out->opts->trace) {
+	    oj_trace("to_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyIn);
+	}
 	if (0 == rb_obj_method_arity(obj, oj_to_json_id)) {
 	    rs = rb_funcall(obj, oj_to_json_id, 0);
 	} else {
 	    rs = rb_funcall2(obj, oj_to_json_id, out->argc, out->argv);
 	}
-#else
-	rs = rb_funcall2(obj, oj_to_json_id, out->argc, out->argv);
-#endif
+	if (Yes == out->opts->trace) {
+	    oj_trace("to_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyOut);
+	}
 	s = rb_string_value_ptr((VALUE*)&rs);
 	len = (int)RSTRING_LEN(rs);
 
@@ -477,22 +519,24 @@ dump_common(VALUE obj, int depth, Out out) {
     } else if (Yes == out->opts->as_json && rb_respond_to(obj, oj_as_json_id)) {
 	volatile VALUE	aj;
 
+	if (Yes == out->opts->trace) {
+	    oj_trace("as_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyIn);
+	}
 	// Some classes elect to not take an options argument so check the arity
 	// of as_json.
-#if HAS_METHOD_ARITY
 	if (0 == rb_obj_method_arity(obj, oj_as_json_id)) {
 	    aj = rb_funcall(obj, oj_as_json_id, 0);
 	} else {
 	    aj = rb_funcall2(obj, oj_as_json_id, out->argc, out->argv);
 	}
-#else
-	aj = rb_funcall2(obj, oj_as_json_id, out->argc, out->argv);
-#endif
+	if (Yes == out->opts->trace) {
+	    oj_trace("as_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyOut);
+	}
 	// Catch the obvious brain damaged recursive dumping.
 	if (aj == obj) {
 	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-	    oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), false, false, out);
+	    oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), (int)RSTRING_LEN(rstr), false, false, out);
 	} else {
 	    oj_dump_custom_val(aj, depth, out, true);
 	}
@@ -527,6 +571,9 @@ dump_attr_cb(ID key, VALUE value, Out out) {
     size_t	size;
     const char	*attr;
 
+    if (oj_dump_ignore(out->opts, value)) {
+	return ST_CONTINUE;
+    }
     if (out->omit_nil && Qnil == value) {
 	return ST_CONTINUE;
     }
@@ -537,11 +584,9 @@ dump_attr_cb(ID key, VALUE value, Out out) {
     if (NULL == attr) {
 	attr = "";
     }
-#if HAS_EXCEPTION_MAGIC
     if (0 == strcmp("bt", attr) || 0 == strcmp("mesg", attr)) {
 	return ST_CONTINUE;
     }
-#endif
     assure_size(out, size);
     fill_indent(out, depth);
     if ('@' == *attr) {
@@ -616,7 +661,6 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
     if (',' == *(out->cur - 1)) {
 	out->cur--; // backup to overwrite last comma
     }
-#if HAS_EXCEPTION_MAGIC
     if (rb_obj_is_kind_of(obj, rb_eException)) {
 	volatile VALUE	rv;
 
@@ -640,7 +684,6 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	oj_dump_custom_val(rv, d2, out, true);
 	assure_size(out, 2);
     }
-#endif
     out->depth = depth;
 
     fill_indent(out, depth);
@@ -766,9 +809,7 @@ dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
 	*out->cur++ = '{';
 	fill_indent(out, d2);
 	size = d3 * out->indent + 2;
-#if HAS_STRUCT_MEMBERS
 	ma = rb_struct_s_members(clas);
-#endif
 
 #ifdef RSTRUCT_LEN
 #if RSTRUCT_LEN_RETURNS_INTEGER_OBJECT
@@ -788,8 +829,10 @@ dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
 	    v = rb_struct_aref(obj, INT2FIX(i));
 #endif
 	    if (ma != Qnil) {
-		name = rb_id2name(SYM2ID(rb_ary_entry(ma, i)));
-		len = strlen(name);
+		volatile VALUE	s = rb_sym_to_s(rb_ary_entry(ma, i));
+
+		name = rb_string_value_ptr((VALUE*)&s);
+		len = (int)RSTRING_LEN(s);
 	    } else {
 		len = snprintf(num_id, sizeof(num_id), "%d", i);
 		name = num_id;
@@ -866,6 +909,9 @@ void
 oj_dump_custom_val(VALUE obj, int depth, Out out, bool as_ok) {
     int	type = rb_type(obj);
 
+    if (Yes == out->opts->trace) {
+	oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceIn);
+    }
     if (MAX_DEPTH < depth) {
 	rb_raise(rb_eNoMemError, "Too deeply nested.\n");
     }
@@ -874,10 +920,16 @@ oj_dump_custom_val(VALUE obj, int depth, Out out, bool as_ok) {
 
 	if (NULL != f) {
 	    f(obj, depth, out, true);
+	    if (Yes == out->opts->trace) {
+		oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceOut);
+	    }
 	    return;
 	}
     }
     oj_dump_nil(Qnil, depth, out, false);
+    if (Yes == out->opts->trace) {
+	oj_trace("dump", Qnil, __FILE__, __LINE__, depth, TraceOut);
+    }
 }
 
 ///// load functions /////
@@ -938,6 +990,9 @@ hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *o
 	default:
 	    break;
 	}
+	if (Yes == pi->options.trace) {
+	    oj_trace_parse_call("set_string", pi, __FILE__, __LINE__, rstr);
+	}
     }
 }
 
@@ -954,6 +1009,9 @@ end_hash(struct _ParseInfo *pi) {
 	    parent->val = rb_funcall(parent->clas, oj_json_create_id, 1, parent->val);
 	}
 	parent->clas = Qundef;
+    }
+    if (Yes == pi->options.trace) {
+	oj_trace_parse_hash_end(pi, __FILE__, __LINE__);
     }
 }
 
@@ -973,11 +1031,12 @@ calc_hash_key(ParseInfo pi, Val parent) {
 
 static void
 hash_set_num(struct _ParseInfo *pi, Val kval, NumInfo ni) {
-    Val	parent = stack_peek(&pi->stack);
+    Val			parent = stack_peek(&pi->stack);
+    volatile VALUE	rval = oj_num_as_value(ni);
 
     switch (rb_type(parent->val)) {
     case T_OBJECT:
-	oj_set_obj_ivar(parent, kval, oj_num_as_value(ni));
+	oj_set_obj_ivar(parent, kval, rval);
 	break;
     case T_HASH:
 	if (4 == parent->klen && NULL != parent->key && rb_cTime == parent->clas && 0 == strncmp("time", parent->key, 4)) {
@@ -993,7 +1052,7 @@ hash_set_num(struct _ParseInfo *pi, Val kval, NumInfo ni) {
 	    if (86400 == ni->exp) { // UTC time
 		parent->val = rb_time_nano_new(ni->i, (long)nsec);
 		// Since the ruby C routines alway create local time, the
-		// offset and then a convertion to UTC keeps makes the time
+		// offset and then a conversion to UTC keeps makes the time
 		// match the expected value.
 		parent->val = rb_funcall2(parent->val, oj_utc_id, 0, 0);
 	    } else if (ni->hasExp) {
@@ -1012,12 +1071,16 @@ hash_set_num(struct _ParseInfo *pi, Val kval, NumInfo ni) {
 	    } else {
 		parent->val = rb_time_nano_new(ni->i, (long)nsec);
 	    }
+	    rval = parent->val;
 	} else {
-	    rb_hash_aset(parent->val, calc_hash_key(pi, kval), oj_num_as_value(ni));
+	    rb_hash_aset(parent->val, calc_hash_key(pi, kval), rval);
 	}
 	break;
     default:
 	break;
+    }
+    if (Yes == pi->options.trace) {
+	oj_trace_parse_call("set_string", pi, __FILE__, __LINE__, rval);
     }
 }
 
@@ -1035,13 +1098,20 @@ hash_set_value(ParseInfo pi, Val kval, VALUE value) {
     default:
 	break;
     }
+    if (Yes == pi->options.trace) {
+	oj_trace_parse_call("set_value", pi, __FILE__, __LINE__, value);
+    }
 }
 
 static void
 array_append_num(ParseInfo pi, NumInfo ni) {
-    Val	parent = stack_peek(&pi->stack);
+    Val			parent = stack_peek(&pi->stack);
+    volatile VALUE	rval = oj_num_as_value(ni);
     
-    rb_ary_push(parent->val, oj_num_as_value(ni));
+    rb_ary_push(parent->val, rval);
+    if (Yes == pi->options.trace) {
+	oj_trace_parse_call("append_number", pi, __FILE__, __LINE__, rval);
+    }
 }
 
 static void
@@ -1058,6 +1128,9 @@ array_append_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
 	}
     }
     rb_ary_push(stack_peek(&pi->stack)->val, rstr);
+    if (Yes == pi->options.trace) {
+	oj_trace_parse_call("append_string", pi, __FILE__, __LINE__, rstr);
+    }
 }
 
 void

@@ -39,9 +39,9 @@ mark(void *ptr) {
     if (0 == ptr) {
 	return;
     }
-#if USE_PTHREAD_MUTEX
+#if HAVE_LIBPTHREAD
     pthread_mutex_lock(&stack->mutex);
-#elif USE_RB_MUTEX
+#else
     rb_mutex_lock(stack->mutex);
     rb_gc_mark(stack->mutex);
 #endif
@@ -53,18 +53,18 @@ mark(void *ptr) {
 	    rb_gc_mark(v->key_val);
 	}
     }
-#if USE_PTHREAD_MUTEX
+#if HAVE_LIBPTHREAD
     pthread_mutex_unlock(&stack->mutex);
-#elif USE_RB_MUTEX
+#else
     rb_mutex_unlock(stack->mutex);
 #endif
 }
 
 VALUE
 oj_stack_init(ValStack stack) {
-#if USE_PTHREAD_MUTEX
+#if HAVE_LIBPTHREAD
     pthread_mutex_init(&stack->mutex, 0);
-#elif USE_RB_MUTEX
+#else
     stack->mutex = rb_mutex_new();
 #endif
     stack->head = stack->base;

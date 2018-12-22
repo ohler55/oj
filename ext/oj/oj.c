@@ -19,10 +19,6 @@
 #include "rails.h"
 #include "encode.h"
 
-#if !HAS_ENCODING_SUPPORT || defined(RUBINIUS_RUBY)
-#define rb_eEncodingError	rb_eException
-#endif
-
 typedef struct _YesNoOpt {
     VALUE	sym;
     char	*attr;
@@ -38,6 +34,7 @@ ID	oj_array_end_id;
 ID	oj_array_start_id;
 ID	oj_as_json_id;
 ID	oj_begin_id;
+ID	oj_bigdecimal_id;
 ID	oj_end_id;
 ID	oj_exclude_end_id;
 ID	oj_error_id;
@@ -97,6 +94,7 @@ VALUE	oj_hash_class_sym;
 VALUE	oj_indent_sym;
 VALUE	oj_object_class_sym;
 VALUE	oj_quirks_mode_sym;
+VALUE	oj_trace_sym;
 
 static VALUE	allow_blank_sym;
 static VALUE	allow_gc_sym;
@@ -114,9 +112,11 @@ static VALUE	create_id_sym;
 static VALUE	custom_sym;
 static VALUE	empty_string_sym;
 static VALUE	escape_mode_sym;
+static VALUE	integer_range_sym;
 static VALUE	float_prec_sym;
 static VALUE	float_sym;
 static VALUE	huge_sym;
+static VALUE	ignore_sym;
 static VALUE	json_sym;
 static VALUE	match_string_sym;
 static VALUE	mode_sym;
@@ -144,15 +144,11 @@ static VALUE	word_sym;
 static VALUE	xmlschema_sym;
 static VALUE	xss_safe_sym;
 
-#if HAS_ENCODING_SUPPORT
 rb_encoding	*oj_utf8_encoding = 0;
-#else
-VALUE		oj_utf8_encoding = Qnil;
-#endif
 
-#if USE_PTHREAD_MUTEX
+#if HAVE_LIBPTHREAD
 pthread_mutex_t	oj_cache_mutex;
-#elif USE_RB_MUTEX
+#else
 VALUE oj_cache_mutex = Qnil;
 #endif
 
@@ -167,7 +163,7 @@ struct _Options	oj_default_options = {
     ObjectMode,	// mode
     Yes,	// class_cache
     UnixTime,	// time_format
-    Yes,	// bigdec_as_num
+    NotSet,	// bigdec_as_num
     AutoDec,	// bigdec_load
     No,		// to_hash
     No,		// to_json
@@ -179,6 +175,9 @@ struct _Options	oj_default_options = {
     No,		// allow_invalid
     No,		// create_ok
     Yes,	// allow_nan
+    No,		// trace
+    0,		// integer_range_min
+    0,		// integer_range_max
     oj_json_class,	// create_id
     10,		// create_id_len
     9,		// sec_prec
@@ -206,7 +205,8 @@ struct _Options	oj_default_options = {
 	NULL,	// head
 	NULL,	// tail
 	{ '\0' }, // err
-    }
+    },
+    NULL,	// ignore
 };
 
 /* Document-method: default_options()
@@ -220,10 +220,11 @@ struct _Options	oj_default_options = {
  * - *:escape_mode* [_:newline_|_:json_|_:xss_safe_|_:ascii_|_unicode_xss_|_nil_] determines the characters to escape
  * - *:class_cache* [_Boolean_|_nil_] cache classes for faster parsing (if dynamically modifying classes or reloading classes then don't use this)
  * - *:mode* [_:object_|_:strict_|_:compat_|_:null_|_:custom_|_:rails_|_:wab_] load and dump modes to use for JSON
- * - *:time_format* [_:unix_|_:unix_zone_|_:xmlschema_|_:ruby_] time format when dumping in :compat and :object mode
+ * - *:time_format* [_:unix_|_:unix_zone_|_:xmlschema_|_:ruby_] time format when dumping
  * - *:bigdecimal_as_decimal* [_Boolean_|_nil_] dump BigDecimal as a decimal number or as a String
  * - *:bigdecimal_load* [_:bigdecimal_|_:float_|_:auto_] load decimals as BigDecimal instead of as a Float. :auto pick the most precise for the number of digits.
  * - *:create_id* [_String_|_nil_] create id for json compatible object encoding, default is 'json_class'
+ * - *:create_additions* [_Boolean_|_nil_] if true allow creation of instances using create_id on load.
  * - *:second_precision* [_Fixnum_|_nil_] number of digits after the decimal when dumping the seconds portion of time
  * - *:float_precision* [_Fixnum_|_nil_] number of digits of precision when dumping floats, 0 indicates use Ruby
  * - *:use_to_json* [_Boolean_|_nil_] call to_json() methods on dump, default is false
@@ -239,10 +240,13 @@ struct _Options	oj_default_options = {
  * - *:space_before* [_String_|_nil_] String to use before the colon separator in JSON object fields
  * - *:object_nl* [_String_|_nil_] String to use after a JSON object field value
  * - *:array_nl* [_String_|_nil_] String to use after a JSON array value
- * - *:nan* [_:null_|_:huge_|_:word_|_:raise_|_:auto_] how to dump Infinity and NaN in null, strict, and compat mode. :null places a null, :huge places a huge number, :word places Infinity or NaN, :raise raises and exception, :auto uses default for each mode.
+ * - *:nan* [_:null_|_:huge_|_:word_|_:raise_|_:auto_] how to dump Infinity and NaN. :null places a null, :huge places a huge number, :word places Infinity or NaN, :raise raises and exception, :auto uses default for each mode.
  * - *:hash_class* [_Class_|_nil_] Class to use instead of Hash on load, :object_class can also be used
  * - *:array_class* [_Class_|_nil_] Class to use instead of Array on load
  * - *:omit_nil* [_true_|_false_] if true Hash and Object attributes with nil values are omitted
+ * - *:ignore* [_nil_|Array] either nil or an Array of classes to ignore when dumping
+ * - *:integer_range* [_Range_] Dump integers outside range as strings. 
+ * - *:trace* [_true,_|_false_] Trace all load and dump calls, default is false (trace is off)
  *
  * Return [_Hash_] all current option settings.
  */
@@ -261,6 +265,7 @@ get_def_opts(VALUE self) {
     rb_hash_aset(opts, auto_define_sym, (Yes == oj_default_options.auto_define) ? Qtrue : ((No == oj_default_options.auto_define) ? Qfalse : Qnil));
     rb_hash_aset(opts, symbol_keys_sym, (Yes == oj_default_options.sym_key) ? Qtrue : ((No == oj_default_options.sym_key) ? Qfalse : Qnil));
     rb_hash_aset(opts, bigdecimal_as_decimal_sym, (Yes == oj_default_options.bigdec_as_num) ? Qtrue : ((No == oj_default_options.bigdec_as_num) ? Qfalse : Qnil));
+    rb_hash_aset(opts, oj_create_additions_sym, (Yes == oj_default_options.create_ok) ? Qtrue : ((No == oj_default_options.create_ok) ? Qfalse : Qnil));
     rb_hash_aset(opts, use_to_json_sym, (Yes == oj_default_options.to_json) ? Qtrue : ((No == oj_default_options.to_json) ? Qfalse : Qnil));
     rb_hash_aset(opts, use_to_hash_sym, (Yes == oj_default_options.to_hash) ? Qtrue : ((No == oj_default_options.to_hash) ? Qfalse : Qnil));
     rb_hash_aset(opts, use_as_json_sym, (Yes == oj_default_options.as_json) ? Qtrue : ((No == oj_default_options.as_json) ? Qfalse : Qnil));
@@ -270,6 +275,7 @@ get_def_opts(VALUE self) {
     rb_hash_aset(opts, oj_quirks_mode_sym, (Yes == oj_default_options.quirks_mode) ? Qtrue : ((No == oj_default_options.quirks_mode) ? Qfalse : Qnil));
     rb_hash_aset(opts, allow_invalid_unicode_sym, (Yes == oj_default_options.allow_invalid) ? Qtrue : ((No == oj_default_options.allow_invalid) ? Qfalse : Qnil));
     rb_hash_aset(opts, oj_allow_nan_sym, (Yes == oj_default_options.allow_nan) ? Qtrue : ((No == oj_default_options.allow_nan) ? Qfalse : Qnil));
+    rb_hash_aset(opts, oj_trace_sym, (Yes == oj_default_options.trace) ? Qtrue : ((No == oj_default_options.trace) ? Qfalse : Qnil));
     rb_hash_aset(opts, float_prec_sym, INT2FIX(oj_default_options.float_prec));
     switch (oj_default_options.mode) {
     case StrictMode:	rb_hash_aset(opts, mode_sym, strict_sym);	break;
@@ -280,6 +286,18 @@ get_def_opts(VALUE self) {
     case RailsMode:	rb_hash_aset(opts, mode_sym, rails_sym);	break;
     case WabMode:	rb_hash_aset(opts, mode_sym, wab_sym);		break;
     default:		rb_hash_aset(opts, mode_sym, object_sym);	break;
+    }
+    
+    if (oj_default_options.integer_range_max != 0 || oj_default_options.integer_range_min != 0) {
+    VALUE range = rb_obj_alloc(rb_cRange);
+    VALUE min = LONG2FIX(oj_default_options.integer_range_min);
+    VALUE max = LONG2FIX(oj_default_options.integer_range_max);
+    rb_ivar_set(range, oj_begin_id, min);
+    rb_ivar_set(range, oj_end_id, max);
+    rb_hash_aset(opts, integer_range_sym, range);
+    }
+    else {
+    rb_hash_aset(opts, integer_range_sym, Qnil);
     }
     switch (oj_default_options.escape_mode) {
     case NLEsc:		rb_hash_aset(opts, escape_mode_sym, newline_sym);	break;
@@ -319,7 +337,18 @@ get_def_opts(VALUE self) {
     rb_hash_aset(opts, omit_nil_sym, oj_default_options.dump_opts.omit_nil ? Qtrue : Qfalse);
     rb_hash_aset(opts, oj_hash_class_sym, oj_default_options.hash_class);
     rb_hash_aset(opts, oj_array_class_sym, oj_default_options.array_class);
-    
+
+    if (NULL == oj_default_options.ignore) {
+	rb_hash_aset(opts, ignore_sym, Qnil);
+    } else {
+	VALUE		*vp;
+	volatile VALUE	a = rb_ary_new();
+	
+	for (vp = oj_default_options.ignore; Qnil != *vp; vp++) {
+	    rb_ary_push(a, *vp);
+	}
+	rb_hash_aset(opts, ignore_sym, a);
+    }
     return opts;
 }
 
@@ -339,6 +368,7 @@ get_def_opts(VALUE self) {
  *   - *:mode* [_:object_|_:strict_|_:compat_|_:null_|_:custom_|_:rails_|_:wab_] load and dump mode to use for JSON :strict raises an exception when a non-supported Object is encountered. :compat attempts to extract variable values from an Object using to_json() or to_hash() then it walks the Object's variables if neither is found. The :object mode ignores to_hash() and to_json() methods and encodes variables using code internal to the Oj gem. The :null mode ignores non-supported Objects and replaces them with a null. The :custom mode honors all dump options. The :rails more mimics rails and Active behavior.
  *   - *:time_format* [_:unix_|_:xmlschema_|_:ruby_] time format when dumping in :compat mode :unix decimal number denoting the number of seconds since 1/1/1970, :unix_zone decimal number denoting the number of seconds since 1/1/1970 plus the utc_offset in the exponent, :xmlschema date-time format taken from XML Schema as a String, :ruby Time.to_s formatted String.
  *   - *:create_id* [_String_|_nil_] create id for json compatible object encoding
+ *   - *:create_additions* [_Boolean_|_nil_] if true allow creation of instances using create_id on load.
  *   - *:second_precision* [_Fixnum_|_nil_] number of digits after the decimal when dumping the seconds portion of time.
  *   - *:float_precision* [_Fixnum_|_nil_] number of digits of precision when dumping floats, 0 indicates use Ruby.
  *   - *:use_to_json* [_Boolean_|_nil_] call to_json() methods on dump, default is false.
@@ -357,6 +387,9 @@ get_def_opts(VALUE self) {
  *   - *:hash_class* [_Class_|_nil_] Class to use instead of Hash on load, :object_class can also be used.
  *   - *:array_class* [_Class_|_nil_] Class to use instead of Array on load.
  *   - *:omit_nil* [_true_|_false_] if true Hash and Object attributes with nil values are omitted.
+ *   - *:ignore* [_nil_|Array] either nil or an Array of classes to ignore when dumping
+ *   - *:integer_range* [_Range_] Dump integers outside range as strings. 
+ *   - *:trace* [_Boolean_] turn trace on or off.
  */
 static VALUE
 set_def_opts(VALUE self, VALUE opts) {
@@ -384,6 +417,7 @@ oj_parse_options(VALUE ropts, Options copts) {
 	{ oj_quirks_mode_sym, &copts->quirks_mode },
 	{ allow_invalid_unicode_sym, &copts->allow_invalid },
 	{ oj_allow_nan_sym, &copts->allow_nan },
+	{ oj_trace_sym, &copts->trace },
 	{ oj_create_additions_sym, &copts->create_ok },
 	{ Qnil, 0 }
     };
@@ -545,13 +579,16 @@ oj_parse_options(VALUE ropts, Options copts) {
 	}
     }
     for (o = ynos; 0 != o->attr; o++) {
-	if (Qnil != (v = rb_hash_lookup(ropts, o->sym))) {
-	    if (Qtrue == v) {
+	if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, o->sym)) {
+	    v = rb_hash_lookup(ropts, o->sym);
+	    if (Qnil == v) {
+		*o->attr = NotSet;
+	    } else if (Qtrue == v) {
 		*o->attr = Yes;
 	    } else if (Qfalse == v) {
 		*o->attr = No;
 	    } else {
-		rb_raise(rb_eArgError, "%s must be true or false.", rb_id2name(SYM2ID(o->sym)));
+		rb_raise(rb_eArgError, "%s must be true, false, or nil.", rb_id2name(SYM2ID(o->sym)));
 	    }
 	}
     }
@@ -668,6 +705,40 @@ oj_parse_options(VALUE ropts, Options copts) {
 	}
     }
     oj_parse_opt_match_string(&copts->str_rx, ropts);
+    if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, ignore_sym)) {
+	xfree(copts->ignore);
+	copts->ignore = NULL;
+	if (Qnil != (v = rb_hash_lookup(ropts, ignore_sym))) {
+	    int	cnt;
+
+	    rb_check_type(v, T_ARRAY);
+	    cnt = (int)RARRAY_LEN(v);
+	    if (0 < cnt) {
+		int	i;
+		
+		copts->ignore = ALLOC_N(VALUE, cnt + 1);
+		for (i = 0; i < cnt; i++) {
+		    copts->ignore[i] = rb_ary_entry(v, i);
+		}
+		copts->ignore[i] = Qnil;
+	    }
+	}
+    }
+    if (Qnil != (v = rb_hash_lookup(ropts, integer_range_sym))) {
+    if (TYPE(v) == T_STRUCT && rb_obj_class(v) == rb_cRange) {
+        VALUE min = rb_funcall(v, oj_begin_id, 0);
+        VALUE max = rb_funcall(v, oj_end_id, 0);
+
+        if (TYPE(min) != T_FIXNUM || TYPE(max) != T_FIXNUM) {
+            rb_raise(rb_eArgError, ":integer_range range bounds is not Fixnum.");
+        }
+
+        copts->integer_range_min = FIX2LONG(min);
+        copts->integer_range_max = FIX2LONG(max);
+    } else if (Qfalse != v) {
+        rb_raise(rb_eArgError, ":integer_range must be a range of Fixnum.");
+    }
+    }
 }
 
 static int
@@ -1002,6 +1073,7 @@ dump(int argc, VALUE *argv, VALUE self) {
  *   - *:space_before* [_String_|_nil_] String to use before the colon separator in JSON object fields.
  *   - *:object_nl* [_String_|_nil_] String to use after a JSON object field value.
  *   - *:array_nl* [_String_|_nil_] String to use after a JSON array value.
+ *   - *:trace* [_Boolean_] If true trace is turned on.
  *
  * Returns [_String_] the encoded JSON.
  */
@@ -1408,23 +1480,6 @@ hash_test(VALUE self) {
 }
 */
 
-#if !HAS_ENCODING_SUPPORT
-static VALUE
-iconv_encoder(VALUE x) {
-    VALUE	iconv;
-
-    rb_require("iconv");
-    iconv = rb_const_get(rb_cObject, rb_intern("Iconv"));
-
-    return rb_funcall(iconv, rb_intern("new"), 2, rb_str_new2("ASCII//TRANSLIT"), rb_str_new2("UTF-8"));
-}
-
-static VALUE
-iconv_rescue(VALUE x) {
-    return Qnil;
-}
-#endif
-
 static VALUE
 protect_require(VALUE x) {
     rb_require("time");
@@ -1474,17 +1529,8 @@ Init_oj() {
     rb_require("date");
     // On Rubinius the require fails but can be done from a ruby file.
     rb_protect(protect_require, Qnil, &err);
-#if NEEDS_RATIONAL
-    rb_require("rational");
-#endif
     rb_require("stringio");
-#if HAS_ENCODING_SUPPORT
     oj_utf8_encoding = rb_enc_find("UTF-8");
-#else
-    // need an option to turn this on
-    oj_utf8_encoding = rb_rescue(iconv_encoder, Qnil, iconv_rescue, Qnil);
-    oj_utf8_encoding = Qnil;
-#endif
 
     //rb_define_module_function(Oj, "hash_test", hash_test, 0);
 
@@ -1525,13 +1571,15 @@ Init_oj() {
     oj_array_end_id = rb_intern("array_end");
     oj_array_start_id = rb_intern("array_start");
     oj_as_json_id = rb_intern("as_json");
-    oj_error_id = rb_intern("error");
     oj_begin_id = rb_intern("begin");
+    oj_bigdecimal_id = rb_intern("BigDecimal");
     oj_end_id = rb_intern("end");
+    oj_error_id = rb_intern("error");
     oj_exclude_end_id = rb_intern("exclude_end?");
     oj_file_id = rb_intern("file?");
     oj_fileno_id = rb_intern("fileno");
     oj_ftype_id = rb_intern("ftype");
+    oj_has_key_id = rb_intern("has_key?");
     oj_hash_end_id = rb_intern("hash_end");
     oj_hash_key_id = rb_intern("hash_key");
     oj_hash_set_id = rb_intern("hash_set");
@@ -1548,8 +1596,8 @@ Init_oj() {
     oj_replace_id = rb_intern("replace");
     oj_stat_id = rb_intern("stat");
     oj_string_id = rb_intern("string");
-    oj_to_hash_id = rb_intern("to_hash");
     oj_to_h_id = rb_intern("to_h");
+    oj_to_hash_id = rb_intern("to_hash");
     oj_to_json_id = rb_intern("to_json");
     oj_to_s_id = rb_intern("to_s");
     oj_to_sym_id = rb_intern("to_sym");
@@ -1561,7 +1609,6 @@ Init_oj() {
     oj_utc_offset_id = rb_intern("utc_offset");
     oj_utcq_id = rb_intern("utc?");
     oj_write_id = rb_intern("write");
-    oj_has_key_id = rb_intern("has_key?");
 
     rb_require("oj/bag");
     rb_require("oj/error");
@@ -1596,9 +1643,11 @@ Init_oj() {
     custom_sym = ID2SYM(rb_intern("custom"));			rb_gc_register_address(&custom_sym);
     empty_string_sym = ID2SYM(rb_intern("empty_string"));	rb_gc_register_address(&empty_string_sym);
     escape_mode_sym = ID2SYM(rb_intern("escape_mode"));		rb_gc_register_address(&escape_mode_sym);
+    integer_range_sym = ID2SYM(rb_intern("integer_range"));	rb_gc_register_address(&integer_range_sym);
     float_prec_sym = ID2SYM(rb_intern("float_precision"));	rb_gc_register_address(&float_prec_sym);
     float_sym = ID2SYM(rb_intern("float"));			rb_gc_register_address(&float_sym);
     huge_sym = ID2SYM(rb_intern("huge"));			rb_gc_register_address(&huge_sym);
+    ignore_sym = ID2SYM(rb_intern("ignore"));			rb_gc_register_address(&ignore_sym);
     json_sym = ID2SYM(rb_intern("json"));			rb_gc_register_address(&json_sym);
     match_string_sym = ID2SYM(rb_intern("match_string"));	rb_gc_register_address(&match_string_sym);
     mode_sym = ID2SYM(rb_intern("mode"));			rb_gc_register_address(&mode_sym);
@@ -1620,6 +1669,7 @@ Init_oj() {
     oj_quirks_mode_sym = ID2SYM(rb_intern("quirks_mode"));	rb_gc_register_address(&oj_quirks_mode_sym);
     oj_space_before_sym = ID2SYM(rb_intern("space_before"));	rb_gc_register_address(&oj_space_before_sym);
     oj_space_sym = ID2SYM(rb_intern("space"));			rb_gc_register_address(&oj_space_sym);
+    oj_trace_sym = ID2SYM(rb_intern("trace"));			rb_gc_register_address(&oj_trace_sym);
     omit_nil_sym = ID2SYM(rb_intern("omit_nil"));		rb_gc_register_address(&omit_nil_sym);
     rails_sym = ID2SYM(rb_intern("rails"));			rb_gc_register_address(&rails_sym);
     raise_sym = ID2SYM(rb_intern("raise"));			rb_gc_register_address(&raise_sym);
@@ -1640,6 +1690,7 @@ Init_oj() {
     xss_safe_sym = ID2SYM(rb_intern("xss_safe"));		rb_gc_register_address(&xss_safe_sym);
 
     oj_slash_string = rb_str_new2("/");				rb_gc_register_address(&oj_slash_string);
+    OBJ_FREEZE(oj_slash_string);
 
     oj_default_options.mode = ObjectMode;
 
@@ -1647,9 +1698,9 @@ Init_oj() {
     oj_odd_init();
     oj_mimic_rails_init();
 
-#if USE_PTHREAD_MUTEX
+#if HAVE_LIBPTHREAD
     pthread_mutex_init(&oj_cache_mutex, 0);
-#elif USE_RB_MUTEX
+#else
     oj_cache_mutex = rb_mutex_new();
     rb_gc_register_address(&oj_cache_mutex);
 #endif

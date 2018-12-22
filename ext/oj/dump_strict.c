@@ -12,16 +12,10 @@
 #include <errno.h>
 
 #include "dump.h"
-
-#if !HAS_ENCODING_SUPPORT || defined(RUBINIUS_RUBY)
-#define rb_eEncodingError	rb_eException
-#endif
+#include "trace.h"
 
 // Workaround in case INFINITY is not defined in math.h or if the OS is CentOS
 #define OJ_INFINITY (1.0/0.0)
-
-// Extra padding at end of buffer.
-#define BUFFER_EXTRA 10
 
 typedef unsigned long	ulong;
 
@@ -115,7 +109,7 @@ dump_float(VALUE obj, int depth, Out out, bool as_ok) {
 	    strncpy(buf, rb_string_value_ptr((VALUE*)&rstr), cnt);
 	    buf[cnt] = '\0';
 	} else {
-	    cnt = snprintf(buf, sizeof(buf), out->opts->float_fmt, d);
+	    cnt = oj_dump_float_printf(buf, sizeof(buf), obj, d, out->opts->float_fmt);
 	}
     }
     assure_size(out, cnt);
@@ -318,7 +312,7 @@ dump_data_strict(VALUE obj, int depth, Out out, bool as_ok) {
     if (oj_bigdecimal_class == clas) {
 	volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-	oj_dump_raw(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), out);
+	oj_dump_raw(rb_string_value_ptr((VALUE*)&rstr), (int)RSTRING_LEN(rstr), out);
     } else {
 	raise_strict(obj);
     }
@@ -331,7 +325,7 @@ dump_data_null(VALUE obj, int depth, Out out, bool as_ok) {
     if (oj_bigdecimal_class == clas) {
 	volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-	oj_dump_raw(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), out);
+	oj_dump_raw(rb_string_value_ptr((VALUE*)&rstr), (int)RSTRING_LEN(rstr), out);
     } else {
 	oj_dump_nil(Qnil, depth, out, false);
     }
@@ -366,6 +360,9 @@ void
 oj_dump_strict_val(VALUE obj, int depth, Out out) {
     int	type = rb_type(obj);
     
+    if (Yes == out->opts->trace) {
+	oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceIn);
+    }
     if (MAX_DEPTH < depth) {
 	rb_raise(rb_eNoMemError, "Too deeply nested.\n");
     }
@@ -374,6 +371,9 @@ oj_dump_strict_val(VALUE obj, int depth, Out out) {
 
 	if (NULL != f) {
 	    f(obj, depth, out, false);
+	    if (Yes == out->opts->trace) {
+		oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceOut);
+	    }
 	    return;
 	}
     }
@@ -409,6 +409,9 @@ void
 oj_dump_null_val(VALUE obj, int depth, Out out) {
     int	type = rb_type(obj);
     
+    if (Yes == out->opts->trace) {
+	oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceOut);
+    }
     if (MAX_DEPTH < depth) {
 	rb_raise(rb_eNoMemError, "Too deeply nested.\n");
     }
@@ -417,8 +420,14 @@ oj_dump_null_val(VALUE obj, int depth, Out out) {
 
 	if (NULL != f) {
 	    f(obj, depth, out, false);
+	    if (Yes == out->opts->trace) {
+		oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceOut);
+	    }
 	    return;
 	}
     }
     oj_dump_nil(Qnil, depth, out, false);
+    if (Yes == out->opts->trace) {
+	oj_trace("dump", Qnil, __FILE__, __LINE__, depth, TraceOut);
+    }
 }

@@ -346,6 +346,16 @@ class ScpTest < Minitest::Test
     end
   end
 
+  def test_bad_bignum
+    if '2.4.0' < RUBY_VERSION
+      handler = AllHandler.new()
+      json = %|{"big":-e123456789}|
+      assert_raises Exception do # Can be either Oj::ParseError or ArgumentError depending on Ruby version
+	Oj.sc_parse(handler, json)
+      end
+    end
+  end
+
   def test_pipe_close
     # Windows does not support fork
     return if RbConfig::CONFIG['host_os'] =~ /(mingw|mswin)/

@@ -184,20 +184,20 @@ class FileJuice < Minitest::Test
   def test_bigdecimal_strict
     mode = Oj.default_options[:mode]
     Oj.default_options = {:mode => :strict}
-    dump_and_load(BigDecimal.new('3.14159265358979323846'), false)
+    dump_and_load(BigDecimal('3.14159265358979323846'), false)
     Oj.default_options = {:mode => mode}
   end
 
   def test_bigdecimal_null
     mode = Oj.default_options[:mode]
     Oj.default_options = {:mode => :null}
-    dump_and_load(BigDecimal.new('3.14159265358979323846'), false)
+    dump_and_load(BigDecimal('3.14159265358979323846'), false)
     Oj.default_options = {:mode => mode}
   end
 
   def test_bigdecimal_object
     Oj.default_options = {:mode => :object}
-    dump_and_load(BigDecimal.new('3.14159265358979323846'), false)
+    dump_and_load(BigDecimal('3.14159265358979323846'), false)
   end
 
   # Date

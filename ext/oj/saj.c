@@ -52,7 +52,7 @@ static void	skip_comment(ParseInfo pi);
  * a SAX parser because it uses callback when document elements are
  * encountered.
  *
- * Parsing is very tolerant. Lack of headers and even mispelled element
+ * Parsing is very tolerant. Lack of headers and even misspelled element
  * endings are passed over without raising an error. A best attempt is made in
  * all cases to parse the string.
  */
@@ -381,7 +381,7 @@ read_num(ParseInfo pi, const char *key) {
 	
 	    *pi->s = '\0';
 	    if (pi->has_add_value) {
-		call_add_value(pi->handler, rb_funcall(oj_bigdecimal_class, oj_new_id, 1, rb_str_new2(start)), key);
+		call_add_value(pi->handler, rb_funcall(rb_cObject, oj_bigdecimal_id, 1, rb_str_new2(start)), key);
 	    }
 	    *pi->s = c;
 	} else {
@@ -399,7 +399,7 @@ read_num(ParseInfo pi, const char *key) {
 	
 	    *pi->s = '\0';
 	    if (pi->has_add_value) {
-		call_add_value(pi->handler, rb_funcall(oj_bigdecimal_class, oj_new_id, 1, rb_str_new2(start)), key);
+		call_add_value(pi->handler, rb_funcall(rb_cObject, oj_bigdecimal_id, 1, rb_str_new2(start)), key);
 	    }
 	    *pi->s = c;
 	} else {

@@ -112,6 +112,11 @@ class JSONCommonInterfaceTest < Test::Unit::TestCase
     assert_equal nil, JSON.load(nil, nil, :allow_blank => true)
     assert_raise(TypeError) { JSON.load(nil, nil, :allow_blank => false) }
     assert_raise(JSON::ParserError) { JSON.load('', nil, :allow_blank => false) }
+    # The next tests are added by Oj to catch additional cases.
+    assert_equal nil, JSON.load('', nil, :allow_blank => true)
+    assert_raise(JSON::ParserError) { JSON.load('', nil, :allow_blank => false) }
+    assert_raise(JSON::ParserError) { JSON.load(' ', nil, :allow_blank => true) }
+    assert_raise(JSON::ParserError) { JSON.load(' ', nil, :allow_blank => false) }
   end
 
   def test_dump

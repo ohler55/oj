@@ -1,6 +1,6 @@
 # [![{}j](http://www.ohler.com/dev/images/oj_comet_64.svg)](http://www.ohler.com/oj) gem
 
-[![Build Status](https://img.shields.io/travis/ohler55/oj/master.svg)](http://travis-ci.org/ohler55/oj?branch=master) [![AppVeyor](https://img.shields.io/appveyor/ci/ohler55/oj/master.svg)](https://ci.appveyor.com/project/ohler55/oj) ![Gem](https://img.shields.io/gem/v/oj.svg) ![Gem](https://img.shields.io/gem/dt/oj.svg)
+[![Build Status](https://img.shields.io/travis/ohler55/oj/master.svg)](http://travis-ci.org/ohler55/oj?branch=master) [![AppVeyor](https://img.shields.io/appveyor/ci/ohler55/oj/master.svg)](https://ci.appveyor.com/project/ohler55/oj) ![Gem](https://img.shields.io/gem/v/oj.svg) ![Gem](https://img.shields.io/gem/dt/oj.svg) [![SemVer compatibility](https://api.dependabot.com/badges/compatibility_score?dependency-name=oj&package-manager=bundler&version-scheme=semver)](https://dependabot.com/compatibility-score.html?dependency-name=oj&package-manager=bundler&version-scheme=semver) [![TideLift](https://tidelift.com/badges/github/ohler55/oj)](https://tidelift.com/subscription/pkg/rubygems-oj?utm_source=rubygems-oj&utm_medium=referral&utm_campaign=readme)
 
 A *fast* JSON parser and Object marshaller as a Ruby gem.
 
@@ -40,6 +40,10 @@ or in Bundler:
 gem 'oj'
 ```
 
+## Support
+
+[Get supported Oj with a Tidelift Subscription.](https://tidelift.com/subscription/pkg/rubygems-oj?utm_source=rubygems-oj&utm_medium=referral&utm_campaign=readme)
+
 ## Further Reading
 
 For more details on options, modes, advanced features, and more follow these
@@ -67,7 +71,7 @@ See [{file:CHANGELOG.md}](CHANGELOG.md)
 
 - *RubyGems* *repo*: https://rubygems.org/gems/oj
 
-Follow [@peterohler on Twitter](http://twitter.com/#!/peterohler) for announcements and news about the Oj gem.
+Follow [@peterohler on Twitter](http://twitter.com/peterohler) for announcements and news about the Oj gem.
 
 #### Performance Comparisons
 

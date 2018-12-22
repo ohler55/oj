@@ -80,7 +80,7 @@ dynamically modifying classes or reloading classes then don't use this.
 
 ### :create_additions
 
-A flag indicating the :create_id key when encounterd during parsing should
+A flag indicating the :create_id key when encountered during parsing should
 creating an Object mactching the class name specified in the value associated
 with the key.
 
@@ -91,18 +91,21 @@ specifying the class for an encoded object. The default is `json_create`.
 
 ### :empty_string [Boolean]
 
-If true an empty input will not raise an Exception. The default differs
-according to the mode and in some cases the function used to load or dump. The
-defaults are:
+If true an empty or all whitespace input will not raise an Exception. The
+default_options will be honored for :null, :strict, and :custom modes. Ignored
+for :custom and :wab. The :compat has a more complex set of rules. The JSON
+gem compatibility is best described by examples.
 
- - :null - true
- - :strict - true
- - :compat or :json - true
-    - JSON.parse() - false
-    - JSON.load() - true (or what ever is set in the defaults)
- - :rails - TBD
- - :object - true
- - :custom - true
+```
+JSON.parse('') => raise
+JSON.parse(' ') => raise
+JSON.load('') => nil
+JSON.load('', nil, allow_blank: false) => raise
+JSON.load('', nil, allow_blank: true) => nil
+JSON.load(' ') => raise
+JSON.load(' ', nil, allow_blank: false) => raise
+JSON.load(' ', nil, allow_blank: true) => raise
+```
 
 ### :escape_mode [Symbol]
 
@@ -127,6 +130,11 @@ The number of digits of precision when dumping floats, 0 indicates use Ruby dire
 
 Class to use instead of Hash on load. This is the same as the :object_class.
 
+### :ignore [Array]
+
+Ignore all the classes in the Array when dumping. A value of nil indicates
+ignore nothing.
+
 ### :indent [Fixnum]
 
 Number of spaces to indent each element in a JSON document, zero is no newline
@@ -138,6 +146,11 @@ elements in a stream.
 Indentation for each element when dumping. The default is an empty
 string. Primarily intended for json gem compatibility. Using just indent as an
 integer gives better performance.
+
+### :integer_range [Range]
+
+Dump integers outside range as strings. 
+Note: range bounds must be Fixnum.
 
 ### :match_string
 
@@ -218,6 +231,11 @@ compatibility. Using just indent as an integer gives better performance.
 
 Use symbols instead of strings for hash keys. :symbolize_names is an alias.
 
+### :trace
+
+When true dump and load functions are traced by printing beginning and ending
+of blocks and of specific calls.
+
 ### :time_format [Symbol]
 
 The :time_format when dumping.
@@ -245,6 +263,4 @@ the :compat and :rails mode.
 
 Call `to_json()` methods on dump, default is false. The option is ignored in
 the :compat and :rails mode.
-
-
 

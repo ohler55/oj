@@ -53,7 +53,7 @@ dump_leaf_str(Leaf leaf, Out out) {
 	oj_dump_cstr(leaf->str, strlen(leaf->str), 0, 0, out);
 	break;
     case RUBY_VAL:
-	oj_dump_cstr(rb_string_value_cstr(&leaf->value), RSTRING_LEN(leaf->value), 0, 0, out);
+	oj_dump_cstr(rb_string_value_cstr(&leaf->value), (int)RSTRING_LEN(leaf->value), 0, 0, out);
 	break;
     case COL_VAL:
     default:

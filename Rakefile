@@ -33,7 +33,7 @@ task :test_all => [:clean, :compile] do
   # tests.
   if RUBY_VERSION >= '2.4'
     Dir.glob('test/json_gem/*_test.rb').each do |file|
-      cmd = "REAL_JSON_GEM=1 ruby -Itest #{file}"
+      cmd = "REAL_JSON_GEM=1 bundle exec ruby -Itest #{file}"
       puts "\n" + "#"*90
       puts cmd
       Bundler.with_clean_env do
@@ -71,6 +71,15 @@ begin
     end
     Rake::Task[:test_all].enhance ["activesupport5"]
   end
+
+  Rake::TestTask.new "activerecord" do |t|
+    t.libs << 'test'
+    t.pattern = 'test/activerecord/*_test.rb'
+    t.warning = true
+    t.verbose = true
+  end
+  Rake::Task[:test_all].enhance ["activerecord"]
+
 rescue LoadError
 end
 

@@ -157,11 +157,11 @@ class WabJuice < Minitest::Test
 
   # BigDecimal
   def test_bigdecimal_wab
-    dump_and_load(BigDecimal.new('3.14159265358979323846'), false)
+    dump_and_load(BigDecimal('3.14159265358979323846'), false)
   end
 
   def test_bigdecimal_load
-    orig = BigDecimal.new('80.51')
+    orig = BigDecimal('80.51')
     json = Oj.dump(orig, mode: :wab)
     bg = Oj.load(json, :mode => :wab, :bigdecimal_load => true)
     assert_equal(BigDecimal, bg.class)

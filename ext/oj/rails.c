@@ -7,6 +7,7 @@
 #include "encode.h"
 #include "code.h"
 #include "encode.h"
+#include "trace.h"
 
 #define OJ_INFINITY (1.0/0.0)
 
@@ -95,11 +96,9 @@ dump_attr_cb(ID key, VALUE value, Out out) {
     if (NULL == attr) {
 	attr = "";
     }
-#if HAS_EXCEPTION_MAGIC
     if (0 == strcmp("bt", attr) || 0 == strcmp("mesg", attr)) {
 	return ST_CONTINUE;
     }
-#endif
     assure_size(out, size);
     fill_indent(out, depth);
     if ('@' == *attr) {
@@ -163,8 +162,10 @@ dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
     assure_size(out, 2);
     *out->cur++ = '{';
     for (i = 0; i < cnt; i++) {
-	name = rb_id2name(SYM2ID(rb_ary_entry(ma, i)));
-	len = (int)strlen(name);
+	volatile VALUE	s = rb_sym_to_s(rb_ary_entry(ma, i));
+
+	name = rb_string_value_ptr((VALUE*)&s);
+	len = (int)RSTRING_LEN(s);
 	assure_size(out, size + sep_len + 6);
 	if (0 < i) {
 	    *out->cur++ = ',';
@@ -212,8 +213,10 @@ dump_bigdecimal(VALUE obj, int depth, Out out, bool as_ok) {
 
     if ('I' == *str || 'N' == *str || ('-' == *str && 'I' == str[1])) {
 	oj_dump_nil(Qnil, depth, out, false);
+    } else if (Yes == out->opts->bigdec_as_num) {
+	oj_dump_raw(str, (int)RSTRING_LEN(rstr), out);
     } else {
-	oj_dump_cstr(str, RSTRING_LEN(rstr), 0, 0, out);
+	oj_dump_cstr(str, (int)RSTRING_LEN(rstr), 0, 0, out);
     }
 }
 
@@ -298,17 +301,18 @@ dump_sec_nano(VALUE obj, time_t sec, long nsec, Out out) {
 
 static void
 dump_time(VALUE obj, int depth, Out out, bool as_ok) {
-#if HAS_RB_TIME_TIMESPEC
-    struct timespec	ts = rb_time_timespec(obj);
-    time_t		sec = ts.tv_sec;
-    long		nsec = ts.tv_nsec;
+    time_t	sec;
+    long long	nsec;
+
+#ifdef HAVE_RB_TIME_TIMESPEC
+    {
+	struct timespec	ts = rb_time_timespec(obj);
+	sec = ts.tv_sec;
+	nsec = ts.tv_nsec;
+    }
 #else
-    time_t		sec = NUM2LONG(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
-#if HAS_NANO_TIME
-    long long		nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
-#else
-    long long		nsec = rb_num2ll(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
-#endif
+    sec = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+    nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
 #endif
     dump_sec_nano(obj, sec, nsec, out);
 }
@@ -316,11 +320,13 @@ dump_time(VALUE obj, int depth, Out out, bool as_ok) {
 static void
 dump_timewithzone(VALUE obj, int depth, Out out, bool as_ok) {
     time_t	sec = NUM2LONG(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
-#if HAS_NANO_TIME
-    long long	nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
-#else
-    long long	nsec = rb_num2ll(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
-#endif
+    long long	nsec = 0;
+
+    if (rb_respond_to(obj, oj_tv_nsec_id)) {
+	nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+    } else if (rb_respond_to(obj, oj_tv_usec_id)) {
+	nsec = rb_num2ll(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
+    }
     dump_sec_nano(obj, sec, nsec, out);
 }
 
@@ -328,10 +334,15 @@ static void
 dump_to_s(VALUE obj, int depth, Out out, bool as_ok) {
     volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-    oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), RSTRING_LEN(rstr), 0, 0, out);
+    oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), (int)RSTRING_LEN(rstr), 0, 0, out);
 }
 
 static ID	parameters_id = 0;
+
+typedef struct _StrLen {
+    const char	*str;
+    int		len;
+} *StrLen;
 
 static void
 dump_actioncontroller_parameters(VALUE obj, int depth, Out out, bool as_ok) {
@@ -342,17 +353,218 @@ dump_actioncontroller_parameters(VALUE obj, int depth, Out out, bool as_ok) {
     dump_rails_val(rb_ivar_get(obj, parameters_id), depth, out, true);
 }
 
+static StrLen
+columns_array(VALUE rcols, int *ccnt) {
+    volatile VALUE	v;
+    StrLen		cp;
+    StrLen		cols;
+    int			i;
+    int			cnt = (int)RARRAY_LEN(rcols);
+    
+    *ccnt = cnt;
+    cols = ALLOC_N(struct _StrLen, cnt);
+    for (i = 0, cp = cols; i < cnt; i++, cp++) {
+	v = rb_ary_entry(rcols, i);
+	if (T_STRING != rb_type(v)) {
+	    v = rb_funcall(v, oj_to_s_id, 0);
+	}
+	cp->str = StringValuePtr(v);
+	cp->len = (int)RSTRING_LEN(v);
+    }
+    return cols;
+}
+
+static void
+dump_row(VALUE row, StrLen cols, int ccnt, int depth, Out out) {
+    size_t	size;
+    int		d2 = depth + 1;
+    int		i;
+				   
+    assure_size(out, 2);
+    *out->cur++ = '{';
+    size = depth * out->indent + 3;
+    for (i = 0; i < ccnt; i++, cols++) {
+	assure_size(out, size);
+	if (out->opts->dump_opts.use) {
+	    if (0 < out->opts->dump_opts.array_size) {
+		strcpy(out->cur, out->opts->dump_opts.array_nl);
+		out->cur += out->opts->dump_opts.array_size;
+	    }
+	    if (0 < out->opts->dump_opts.indent_size) {
+		int	i;
+		for (i = d2; 0 < i; i--) {
+		    strcpy(out->cur, out->opts->dump_opts.indent_str);
+		    out->cur += out->opts->dump_opts.indent_size;
+		}
+	    }
+	} else {
+	    fill_indent(out, d2);
+	}
+	oj_dump_cstr(cols->str, cols->len, 0, 0, out);
+	*out->cur++ = ':';
+	dump_rails_val(rb_ary_entry(row, i), depth, out, true);
+	if (i < ccnt - 1) {
+	    *out->cur++ = ',';
+	}
+    }
+    size = depth * out->indent + 1;
+    assure_size(out, size);
+    if (out->opts->dump_opts.use) {
+	if (0 < out->opts->dump_opts.array_size) {
+	    strcpy(out->cur, out->opts->dump_opts.array_nl);
+	    out->cur += out->opts->dump_opts.array_size;
+	}
+	if (0 < out->opts->dump_opts.indent_size) {
+	    int	i;
+
+	    for (i = depth; 0 < i; i--) {
+		strcpy(out->cur, out->opts->dump_opts.indent_str);
+		out->cur += out->opts->dump_opts.indent_size;
+	    }
+	}
+    } else {
+	fill_indent(out, depth);
+    }
+    *out->cur++ = '}';
+}
+
+static ID	rows_id = 0;
+static ID	columns_id = 0;
+
+static void
+dump_activerecord_result(VALUE obj, int depth, Out out, bool as_ok) {
+    volatile VALUE	rows;
+    StrLen		cols;
+    int			ccnt = 0;
+    int			i, rcnt;
+    size_t		size;
+    int			d2 = depth + 1;
+    
+    if (0 == rows_id) {
+	rows_id = rb_intern("@rows");
+	columns_id = rb_intern("@columns");
+    }
+    out->argc = 0;
+    cols = columns_array(rb_ivar_get(obj, columns_id), &ccnt);
+    rows = rb_ivar_get(obj, rows_id);
+    rcnt = (int)RARRAY_LEN(rows);
+    assure_size(out, 2);
+    *out->cur++ = '[';
+    if (out->opts->dump_opts.use) {
+	size = d2 * out->opts->dump_opts.indent_size + out->opts->dump_opts.array_size + 1;
+    } else {
+	size = d2 * out->indent + 2;
+    }
+    assure_size(out, 2);
+    for (i = 0; i < rcnt; i++) {
+	assure_size(out, size);
+	if (out->opts->dump_opts.use) {
+	    if (0 < out->opts->dump_opts.array_size) {
+		strcpy(out->cur, out->opts->dump_opts.array_nl);
+		out->cur += out->opts->dump_opts.array_size;
+	    }
+	    if (0 < out->opts->dump_opts.indent_size) {
+		int	i;
+		for (i = d2; 0 < i; i--) {
+		    strcpy(out->cur, out->opts->dump_opts.indent_str);
+		    out->cur += out->opts->dump_opts.indent_size;
+		}
+	    }
+	} else {
+	    fill_indent(out, d2);
+	}
+	dump_row(rb_ary_entry(rows, i), cols, ccnt, d2, out);
+	if (i < rcnt - 1) {
+	    *out->cur++ = ',';
+	}
+    }
+    xfree(cols);
+    size = depth * out->indent + 1;
+    assure_size(out, size);
+    if (out->opts->dump_opts.use) {
+	if (0 < out->opts->dump_opts.array_size) {
+	    strcpy(out->cur, out->opts->dump_opts.array_nl);
+	    out->cur += out->opts->dump_opts.array_size;
+	}
+	if (0 < out->opts->dump_opts.indent_size) {
+	    int	i;
+
+	    for (i = depth; 0 < i; i--) {
+		strcpy(out->cur, out->opts->dump_opts.indent_str);
+		out->cur += out->opts->dump_opts.indent_size;
+	    }
+	}
+    } else {
+	fill_indent(out, depth);
+    }
+    *out->cur++ = ']';
+}
+
 typedef struct _NamedFunc {
     const char	*name;
     DumpFunc	func;
 } *NamedFunc;
 
+static void
+dump_as_string(VALUE obj, int depth, Out out, bool as_ok) {
+    if (oj_code_dump(oj_compat_codes, obj, depth, out)) {
+	out->argc = 0;
+	return;
+    }
+    oj_dump_obj_to_s(obj, out);
+}
+
+static void
+dump_as_json(VALUE obj, int depth, Out out, bool as_ok) {
+    volatile VALUE	ja;
+
+    if (Yes == out->opts->trace) {
+	oj_trace("as_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyIn);
+    }
+    // Some classes elect to not take an options argument so check the arity
+    // of as_json.
+    if (0 == rb_obj_method_arity(obj, oj_as_json_id)) {
+	ja = rb_funcall(obj, oj_as_json_id, 0);
+    } else {
+	ja = rb_funcall2(obj, oj_as_json_id, out->argc, out->argv);
+    }
+    if (Yes == out->opts->trace) {
+	oj_trace("as_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyOut);
+    }
+
+    out->argc = 0;
+    if (ja == obj || !as_ok) {
+	// Once as_json is called it should never be called again on the same
+	// object with as_ok.
+	dump_rails_val(ja, depth, out, false);
+    } else {
+	int	type = rb_type(ja);
+
+	if (T_HASH == type || T_ARRAY == type) {
+	    dump_rails_val(ja, depth, out, true);
+	} else {
+	    dump_rails_val(ja, depth, out, true);
+	}
+    }
+}
+
+static void
+dump_regexp(VALUE obj, int depth, Out out, bool as_ok) {
+    if (as_ok && rb_respond_to(obj, oj_as_json_id)) {
+	dump_as_json(obj, depth, out, false);
+	return;
+    }
+    dump_as_string(obj, depth, out, as_ok);
+}
+
 static struct _NamedFunc	dump_map[] = {
     { "ActionController::Parameters", dump_actioncontroller_parameters },
+    { "ActiveRecord::Result", dump_activerecord_result },
     { "ActiveSupport::TimeWithZone", dump_timewithzone },
     { "BigDecimal", dump_bigdecimal },
     { "Range", dump_to_s },
-    { "Regexp", dump_to_s },
+    { "Regexp", dump_regexp },
+    //{ "Regexp", dump_to_s },
     { "Time", dump_time },
     { NULL, NULL },
 };
@@ -475,17 +687,65 @@ encoder_new(int argc, VALUE *argv, VALUE self) {
     return Data_Wrap_Struct(encoder_class, encoder_mark, encoder_free, e);
 }
 
+static VALUE
+resolve_classpath(const char *name) {
+    char	class_name[1024];
+    VALUE	clas;
+    char	*end = class_name + sizeof(class_name) - 1;
+    char	*s;
+    const char	*n = name;
+    ID		cid;
+
+    clas = rb_cObject;
+    for (s = class_name; '\0' != *n; n++) {
+	if (':' == *n) {
+	    *s = '\0';
+	    n++;
+	    if (':' != *n) {
+		return Qnil;
+	    }
+	    cid = rb_intern(class_name);
+	    if (!rb_const_defined_at(clas, cid)) {
+		return Qnil;
+	    }
+	    clas = rb_const_get_at(clas, cid);
+	    s = class_name;
+	} else if (end <= s) {
+	    return Qnil;
+	} else {
+	    *s++ = *n;
+	}
+    }
+    *s = '\0';
+    cid = rb_intern(class_name);
+    if (!rb_const_defined_at(clas, cid)) {
+	return Qnil;
+    }
+    clas = rb_const_get_at(clas, cid);
+
+    return clas;
+}
+
 static void
 optimize(int argc, VALUE *argv, ROptTable rot, bool on) {
     ROpt	ro;
-    
+
     if (0 == argc) {
-	int	i;
+	int		i;
+	NamedFunc	nf;
+	VALUE		clas;
 	
 	oj_rails_hash_opt = on;
 	oj_rails_array_opt = on;
 	oj_rails_float_opt = on;
 
+	for (nf = dump_map; NULL != nf->name; nf++) {
+	    if (Qnil != (clas = resolve_classpath(nf->name))) {
+		if (NULL == oj_rails_get_opt(rot, clas)) {
+		    create_opt(rot, clas);
+		}
+	    }
+	}
 	for (i = 0; i < rot->len; i++) {
 	    rot->table[i].on = on;
 	}
@@ -560,7 +820,7 @@ rails_mimic_json(VALUE self) {
 	json = rb_define_module("JSON");
     }
     oj_mimic_json_methods(json);
-    // TBD
+    //oj_default_options.mode = RailsMode;
 
     return Qnil;
 }
@@ -754,16 +1014,11 @@ rails_encode(int argc, VALUE *argv, VALUE self) {
 
 static VALUE
 rails_use_standard_json_time_format(VALUE self, VALUE state) {
-    switch (state) {
-    case Qtrue:
-    case Qfalse:
-	break;
-    case Qnil:
+    if (Qtrue == state || Qfalse == state) {
+    } else if (Qnil == state) {
 	state = Qfalse;
-	break;
-    default:
+    } else {
 	state = Qtrue;
-	break;
     }
     rb_iv_set(self, "@use_standard_json_time_format", state);
     xml_time = Qtrue == state;
@@ -915,38 +1170,6 @@ oj_mimic_rails_init() {
 }
 
 static void
-dump_as_json(VALUE obj, int depth, Out out, bool as_ok) {
-    volatile VALUE	ja;
-
-    // Some classes elect to not take an options argument so check the arity
-    // of as_json.
-#if HAS_METHOD_ARITY
-    if (0 == rb_obj_method_arity(obj, oj_as_json_id)) {
-	ja = rb_funcall(obj, oj_as_json_id, 0);
-    } else {
-	ja = rb_funcall2(obj, oj_as_json_id, out->argc, out->argv);
-    }
-#else
-    ja = rb_funcall2(obj, oj_as_json_id, out->argc, out->argv);
-#endif
-
-    out->argc = 0;
-    if (ja == obj || !as_ok) {
-	// Once as_json is call it should never be called again on the same
-	// object with as_ok.
-	dump_rails_val(ja, depth, out, false);
-    } else {
-	int	type = rb_type(ja);
-
-	if (T_HASH == type || T_ARRAY == type) {
-	    dump_rails_val(ja, depth, out, true);
-	} else {
-	    dump_rails_val(ja, depth, out, true);
-	}
-    }
-}
-
-static void
 dump_to_hash(VALUE obj, int depth, Out out) {
     dump_rails_val(rb_funcall(obj, oj_to_hash_id, 0), depth, out, true);
 }
@@ -972,7 +1195,7 @@ dump_float(VALUE obj, int depth, Out out, bool as_ok) {
 	} else if (d == (double)(long long int)d) {
 	    cnt = snprintf(buf, sizeof(buf), "%.1f", d);
 	} else if (oj_rails_float_opt) {
-	    cnt = snprintf(buf, sizeof(buf), "%0.16g", d);
+	    cnt = oj_dump_float_printf(buf, sizeof(buf), obj, d, "%0.16g");
 	} else {
 	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
@@ -1179,7 +1402,7 @@ dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
     }
     if (as_ok) {
 	ROpt	ro;
-	
+
 	if (NULL != (ro = oj_rails_get_opt(out->ropts, rb_obj_class(obj))) && ro->on) {
 	    ro->dump(obj, depth, out, as_ok);
 	} else if (rb_respond_to(obj, oj_as_json_id)) {
@@ -1197,15 +1420,6 @@ dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
     }
 }
 
-static void
-dump_as_string(VALUE obj, int depth, Out out, bool as_ok) {
-    if (oj_code_dump(oj_compat_codes, obj, depth, out)) {
-	out->argc = 0;
-	return;
-    }
-    oj_dump_obj_to_s(obj, out);
-}
-
 static DumpFunc	rails_funcs[] = {
     NULL,	 	// RUBY_T_NONE     = 0x00,
     dump_obj,		// RUBY_T_OBJECT   = 0x01,
@@ -1213,7 +1427,8 @@ static DumpFunc	rails_funcs[] = {
     oj_dump_class,	// RUBY_T_MODULE   = 0x03,
     dump_float, 	// RUBY_T_FLOAT    = 0x04,
     oj_dump_str, 	// RUBY_T_STRING   = 0x05,
-    dump_as_string,	// RUBY_T_REGEXP   = 0x06,
+    dump_regexp,	// RUBY_T_REGEXP   = 0x06,
+    //dump_as_string,	// RUBY_T_REGEXP   = 0x06,
     dump_array,		// RUBY_T_ARRAY    = 0x07,
     dump_hash,	 	// RUBY_T_HASH     = 0x08,
     dump_obj,		// RUBY_T_STRUCT   = 0x09,
@@ -1222,7 +1437,7 @@ static DumpFunc	rails_funcs[] = {
     dump_obj,		// RUBY_T_DATA     = 0x0c,
     NULL, 		// RUBY_T_MATCH    = 0x0d,
     // Rails raises a stack error on Complex and Rational. It also corrupts
-    // something whic causes a segfault on the next call. Oj will not mimic
+    // something which causes a segfault on the next call. Oj will not mimic
     // that behavior.
     dump_as_string, 	// RUBY_T_COMPLEX  = 0x0e,
     dump_as_string, 	// RUBY_T_RATIONAL = 0x0f,
@@ -1238,6 +1453,9 @@ static void
 dump_rails_val(VALUE obj, int depth, Out out, bool as_ok) {
     int	type = rb_type(obj);
 
+    if (Yes == out->opts->trace) {
+	oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceIn);
+    }
     if (MAX_DEPTH < depth) {
 	rb_raise(rb_eNoMemError, "Too deeply nested.\n");
     }
@@ -1246,10 +1464,16 @@ dump_rails_val(VALUE obj, int depth, Out out, bool as_ok) {
 
 	if (NULL != f) {
 	    f(obj, depth, out, as_ok);
+	    if (Yes == out->opts->trace) {
+		oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceOut);
+	    }
 	    return;
 	}
     }
     oj_dump_nil(Qnil, depth, out, false);
+    if (Yes == out->opts->trace) {
+	oj_trace("dump", Qnil, __FILE__, __LINE__, depth, TraceOut);
+    }
 }
 
 void

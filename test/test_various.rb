@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-# encoding: UTF-8
+# encoding: utf-8
 
 $: << File.dirname(__FILE__)
 
@@ -29,7 +29,7 @@ class Juice < Minitest::Test
     end
     alias == eql?
 
-  end# Jam
+  end # Jam
 
   class Jeez < Jam
     def initialize(x, y)
@@ -43,7 +43,7 @@ class Juice < Minitest::Test
     def self.json_create(h)
       self.new(h['x'], h['y'])
     end
-  end# Jeez
+  end # Jeez
 
   # contributed by sauliusg to fix as_json
   class Orange < Jam
@@ -86,7 +86,7 @@ class Juice < Minitest::Test
     def self.json_create(h)
       self.new(h['x'], h['y'])
     end
-  end# Jazz
+  end # Jazz
 
   def setup
     @default_options = Oj.default_options
@@ -145,6 +145,7 @@ class Juice < Minitest::Test
       :time_format=>:unix_zone,
       :bigdecimal_load=>:float,
       :create_id=>'classy',
+      :create_additions=>true,
       :space=>'z',
       :array_nl=>'a',
       :object_nl=>'o',
@@ -153,7 +154,10 @@ class Juice < Minitest::Test
       :hash_class=>Hash,
       :omit_nil=>false,
       :allow_nan=>true,
+      :integer_range=>nil,
       :array_class=>Array,
+      :ignore=>nil,
+      :trace=>true,
     }
     Oj.default_options = alt
     #keys = alt.keys
@@ -390,6 +394,12 @@ class Juice < Minitest::Test
     out = Oj.dump(x)
     assert_equal(json, out)
   end
+  def test_dump_invalid_utf8
+    Oj.default_options = { :escape_mode => :ascii }
+    assert_raises(EncodingError) {
+      Oj.dump(["abc\xbe\x1f\x11"], mode: :strict)
+    }
+  end
 
   # Symbol
   def test_symbol_null
@@ -404,129 +414,11 @@ class Juice < Minitest::Test
     assert_equal('null', json)
   end
 
-=begin
-# TBD make thse tests for cusom mode
-  def test_unix_time_custom
-    t = Time.xmlschema("2012-01-05T23:58:07.123456000+09:00")
-    #t = Time.local(2012, 1, 5, 23, 58, 7, 123456)
+  def test_time_neg
+    t = Time.parse("1900-01-01 00:18:59 UTC")
     json = Oj.dump(t, :mode => :custom, :time_format => :unix)
-    assert_equal(%{1325775487.123456000}, json)
+    assert_equal('-2208987661.000000000', json)
   end
-  def test_unix_time_custom_precision
-    t = Time.xmlschema("2012-01-05T23:58:07.123456789+09:00")
-    #t = Time.local(2012, 1, 5, 23, 58, 7, 123456)
-    json = Oj.dump(t, :mode => :custom, :second_precision => 5, :time_format => :unix)
-    assert_equal(%{1325775487.12346}, json)
-    t = Time.xmlschema("2012-01-05T23:58:07.999600+09:00")
-    json = Oj.dump(t, :mode => :custom, :second_precision => 3, :time_format => :unix)
-    assert_equal(%{1325775488.000}, json)
-  end
-  def test_unix_time_custom_early
-    t = Time.xmlschema("1954-01-05T00:00:00.123456789+00:00")
-    json = Oj.dump(t, :mode => :custom, :second_precision => 5, :time_format => :unix)
-    assert_equal(%{-504575999.87654}, json)
-  end
-  def test_unix_time_custom_1970
-    t = Time.xmlschema("1970-01-01T00:00:00.123456789+00:00")
-    json = Oj.dump(t, :mode => :custom, :second_precision => 5, :time_format => :unix)
-    assert_equal(%{0.12346}, json)
-  end
-  def test_ruby_time_custom
-    t = Time.xmlschema("2012-01-05T23:58:07.123456000+09:00")
-    json = Oj.dump(t, :mode => :custom, :time_format => :ruby)
-    #assert_equal(%{"2012-01-05 23:58:07 +0900"}, json)
-    assert_equal(%{"#{t.to_s}"}, json)
-  end
-  def test_xml_time_custom
-    begin
-      t = Time.new(2012, 1, 5, 23, 58, 7.123456000, 34200)
-      json = Oj.dump(t, :mode => :custom, :time_format => :xmlschema)
-      assert_equal(%{"2012-01-05T23:58:07.123456000+09:30"}, json)
-    rescue Exception
-      # some Rubies (1.8.7) do not allow the timezome to be set
-      t = Time.local(2012, 1, 5, 23, 58, 7, 123456)
-      json = Oj.dump(t, :mode => :custom, :time_format => :xmlschema)
-      tz = t.utc_offset
-      # Ruby does not handle a %+02d properly so...
-      sign = '+'
-      if 0 > tz
-        sign = '-'
-        tz = -tz
-      end
-      assert_equal(%{"2012-01-05T23:58:07.123456000%s%02d:%02d"} % [sign, tz / 3600, tz / 60 % 60], json)
-    end
-  end
-  def test_xml_time_custom_no_secs
-    begin
-      t = Time.new(2012, 1, 5, 23, 58, 7.0, 34200)
-      json = Oj.dump(t, :mode => :custom, :time_format => :xmlschema)
-      assert_equal(%{"2012-01-05T23:58:07+09:30"}, json)
-    rescue Exception
-      # some Rubies (1.8.7) do not allow the timezome to be set
-      t = Time.local(2012, 1, 5, 23, 58, 7, 0)
-      json = Oj.dump(t, :mode => :custom, :time_format => :xmlschema)
-      tz = t.utc_offset
-      # Ruby does not handle a %+02d properly so...
-      sign = '+'
-      if 0 > tz
-        sign = '-'
-        tz = -tz
-      end
-      assert_equal(%{"2012-01-05T23:58:07%s%02d:%02d"} % [sign, tz / 3600, tz / 60 % 60], json)
-    end
-  end
-  def test_xml_time_custom_precision
-    begin
-      t = Time.new(2012, 1, 5, 23, 58, 7.123456789, 32400)
-      json = Oj.dump(t, :mode => :custom, :time_format => :xmlschema, :second_precision => 5)
-      assert_equal(%{"2012-01-05T23:58:07.12346+09:00"}, json)
-    rescue Exception
-      # some Rubies (1.8.7) do not allow the timezome to be set
-      t = Time.local(2012, 1, 5, 23, 58, 7, 123456)
-      json = Oj.dump(t, :mode => :custom, :time_format => :xmlschema, :second_precision => 5)
-      tz = t.utc_offset
-      # Ruby does not handle a %+02d properly so...
-      sign = '+'
-      if 0 > tz
-        sign = '-'
-        tz = -tz
-      end
-      assert_equal(%{"2012-01-05T23:58:07.12346%s%02d:%02d"} % [sign, tz / 3600, tz / 60 % 60], json)
-    end
-  end
-  def test_xml_time_custom_precision_round
-    begin
-      t = Time.new(2012, 1, 5, 23, 58, 7.99996, 32400)
-      json = Oj.dump(t, :mode => :custom, :time_format => :xmlschema, :second_precision => 4)
-      assert_equal(%{"2012-01-05T23:58:08+09:00"}, json)
-    rescue Exception
-      # some Rubies (1.8.7) do not allow the timezome to be set
-      t = Time.local(2012, 1, 5, 23, 58, 7, 999600)
-      json = Oj.dump(t, :mode => :custom, :time_format => :xmlschema, :second_precision => 3)
-      tz = t.utc_offset
-      # Ruby does not handle a %+02d properly so...
-      sign = '+'
-      if 0 > tz
-        sign = '-'
-        tz = -tz
-      end
-      assert_equal(%{"2012-01-05T23:58:08%s%02d:%02d"} % [sign, tz / 3600, tz / 60 % 60], json)
-    end
-  end
-  def test_xml_time_custom_zulu
-    begin
-      t = Time.new(2012, 1, 5, 23, 58, 7.0, 0)
-      json = Oj.dump(t, :mode => :custom, :time_format => :xmlschema)
-      assert_equal(%{"2012-01-05T23:58:07Z"}, json)
-    rescue Exception
-      # some Rubies (1.8.7) do not allow the timezome to be set
-      t = Time.utc(2012, 1, 5, 23, 58, 7, 0)
-      json = Oj.dump(t, :mode => :custom, :time_format => :xmlschema)
-      #tz = t.utc_offset
-      assert_equal(%{"2012-01-05T23:58:07Z"}, json)
-    end
-  end
-=end
 
   # Class
   def test_class_null
@@ -610,13 +502,13 @@ class Juice < Minitest::Test
   def test_bigdecimal_null
     mode = Oj.default_options[:mode]
     Oj.default_options = {:mode => :null}
-    dump_and_load(BigDecimal.new('3.14159265358979323846'), false)
+    dump_and_load(BigDecimal('3.14159265358979323846'), false)
     Oj.default_options = {:mode => mode}
   end
 
   def test_infinity
     n = Oj.load('Infinity', :mode => :object)
-    assert_equal(BigDecimal.new('Infinity').to_f, n);
+    assert_equal(BigDecimal('Infinity').to_f, n);
     x = Oj.load('Infinity', :mode => :compat)
     assert_equal('Infinity', x.to_s)
   end
@@ -774,6 +666,31 @@ class Juice < Minitest::Test
   def test_quirks_string_mode
     assert_raises(Oj::ParseError) { Oj.load('"string"', :quirks_mode => false) }
     assert_equal('string', Oj.load('"string"', :quirks_mode => true))
+  end
+
+  def test_error_path
+    msg = ''
+    assert_raises(Oj::ParseError) {
+      begin
+	Oj.load(%|{
+  "first": [
+    1, 2, { "third": 123x }
+  ]
+}|)
+      rescue Oj::ParseError => e
+	msg = e.message
+	raise e
+      end
+    }
+    assert_equal('first[2].third', msg.split('(')[1].split(')')[0])
+  end
+
+  def test_bad_bignum
+    if '2.4.0' < RUBY_VERSION
+      assert_raises Exception do # Can be either Oj::ParseError or ArgumentError depending on Ruby version
+	Oj.load(%|{ "big": -e123456789 }|)
+      end
+    end
   end
 
   def test_quirks_array_mode
