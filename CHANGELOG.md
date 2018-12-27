@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.7.5 - 2018-12-27
+
+  - Address issue #517 with a special escape table for mimicing the JSON gem.
+
 ## 3.7.4 - 2018-11-29
 
   - Allow `+` in front of numbers in parse as well as stream parse **EXCEPT** when mimicing the JSON gem.
