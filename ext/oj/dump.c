@@ -85,6 +85,17 @@ static char	xss_friendly_chars[256] = "\
 // JSON XSS combo
 static char	hixss_friendly_chars[256] = "\
 66666666222622666666666666666666\
+11211111111111111111111111111111\
+11111111111111111111111111112111\
+11111111111111111111111111111111\
+11111111111111111111111111111111\
+11111111111111111111111111111111\
+11111111111111111111111111111111\
+11611111111111111111111111111111";
+
+// Rails XSS combo
+static char	rails_xss_friendly_chars[256] = "\
+66666666222622666666666666666666\
 11211161111111111111111111116161\
 11111111111111111111111111112111\
 11111111111111111111111111111111\
@@ -166,6 +177,17 @@ hixss_friendly_size(const uint8_t *str, size_t len) {
 	}
     }
     return size - len * (size_t)'0' + check;
+}
+
+inline static size_t
+rails_xss_friendly_size(const uint8_t *str, size_t len) {
+    size_t	size = 0;
+    size_t	i = len;
+
+    for (; 0 < i; str++, i--) {
+	size += rails_xss_friendly_chars[*str];
+    }
+    return size - len * (size_t)'0';
 }
 
 inline static size_t
@@ -754,6 +776,10 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
 	cmap = hixss_friendly_chars;
 	size = hixss_friendly_size((uint8_t*)str, cnt);
 	break;
+    case RailsXEsc:
+	cmap = rails_xss_friendly_chars;
+	size = rails_xss_friendly_size((uint8_t*)str, cnt);
+	break;
     case RailsEsc:
 	cmap = rails_friendly_chars;
 	size = rails_friendly_size((uint8_t*)str, cnt);
@@ -795,7 +821,7 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
 	for (; str < end; str++) {
 	    switch (cmap[(uint8_t)*str]) {
 	    case '1':
-		if (JXEsc == out->opts->escape_mode && check_start <= str) {
+		if ((JXEsc == out->opts->escape_mode || RailsXEsc == out->opts->escape_mode) && check_start <= str) {
 		    if (0 != (0x80 & (uint8_t)*str)) {
 			if (0xC0 == (0xC0 & (uint8_t)*str)) {
 			    check_start = check_unicode(str, end, orig);
@@ -819,7 +845,7 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
 		}
 		break;
 	    case '3': // Unicode
-		if (0xe2 == (uint8_t)*str && JXEsc == out->opts->escape_mode && 2 <= end - str) {
+		if (0xe2 == (uint8_t)*str && (JXEsc == out->opts->escape_mode || RailsXEsc == out->opts->escape_mode) && 2 <= end - str) {
 		    if (0x80 == (uint8_t)str[1] && (0xa8 == (uint8_t)str[2] || 0xa9 == (uint8_t)str[2])) {
 			str = dump_unicode(str, end, out, orig);
 		    } else {
@@ -838,7 +864,7 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
 		    *out->cur++ = '0';
 		    dump_hex((uint8_t)*str, out);
 		} else {
-		    if (0xe2 == (uint8_t)*str && JXEsc == out->opts->escape_mode && 2 <= end - str) {
+		    if (0xe2 == (uint8_t)*str && (JXEsc == out->opts->escape_mode || RailsXEsc == out->opts->escape_mode) && 2 <= end - str) {
 			if (0x80 == (uint8_t)str[1] && (0xa8 == (uint8_t)str[2] || 0xa9 == (uint8_t)str[2])) {
 			    str = dump_unicode(str, end, out, orig);
 			} else {
@@ -856,7 +882,7 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
 	}
 	*out->cur++ = '"'; 
     }
-    if (JXEsc == out->opts->escape_mode && 0 < str - orig && 0 != (0x80 & *(str - 1))) {
+    if ((JXEsc == out->opts->escape_mode || RailsXEsc == out->opts->escape_mode) && 0 < str - orig && 0 != (0x80 & *(str - 1))) {
 	uint8_t	c = (uint8_t)*(str - 1);
 	int	i;
 	int	scnt = (int)(str - orig);
