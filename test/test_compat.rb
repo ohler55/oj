@@ -243,6 +243,11 @@ class CompatJuice < Minitest::Test
     assert_equal({"a\nb" => true, "c\td" => false}, obj)
   end
 
+  def test_hash_escaping
+    json = Oj.to_json({'<>' => '<>'}, mode: :compat)
+    assert_equal(json, '{"<>":"<>"}')
+  end
+
   def test_bignum_object
     dump_and_load(7 ** 55, false)
   end
