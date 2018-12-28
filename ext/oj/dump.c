@@ -398,6 +398,7 @@ oj_dump_time(VALUE obj, Out out, int withZone) {
     long long	nsec;
 
 #ifdef HAVE_RB_TIME_TIMESPEC
+    printf("*** has timespec\n");
     {
 	struct timespec	ts = rb_time_timespec(obj);
 
@@ -405,6 +406,7 @@ oj_dump_time(VALUE obj, Out out, int withZone) {
 	nsec = ts.tv_nsec;
     }
 #else
+    printf("*** does not have timespec\n");
     sec = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
     nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
 #endif
