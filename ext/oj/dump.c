@@ -397,7 +397,7 @@ oj_dump_time(VALUE obj, Out out, int withZone) {
     long long	sec;
     long long	nsec;
 
-#ifdef HAVE_RB_TIME_TIMESPEC
+#ifdef HAVE_RB_TIME_TIMESPECx
     printf("*** has timespec - size: %ld\n", sizeof(struct timespec));
     {
 	//struct timespec	ts = rb_time_timespec(obj);
