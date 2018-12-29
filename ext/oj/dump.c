@@ -400,11 +400,12 @@ oj_dump_time(VALUE obj, Out out, int withZone) {
 #ifdef HAVE_RB_TIME_TIMESPEC
     printf("*** has timespec - size: %ld\n", sizeof(struct timespec));
     {
-	struct timespec	ts = rb_time_timespec(obj);
-	printf("*** after timespec - %ld %ld - %ld %ld\n", sizeof(ts.tv_sec), sizeof(ts.tv_nsec), ts.tv_sec, ts.tv_nsec);
+	//struct timespec	ts = rb_time_timespec(obj);
+	struct timeval	tv = rb_time_timeval(obj);
+	printf("*** after timespec - %ld %ld - %ld %ld\n", sizeof(tv.tv_sec), sizeof(tv.tv_usec), tv.tv_sec, tv.tv_usec);
 
-	sec = (long long)ts.tv_sec;
-	nsec = ts.tv_nsec;
+	sec = (long long)tv.tv_sec;
+	nsec = tv.tv_usec * 1000LL;
     }
 #else
     printf("*** does not have timespec\n");
