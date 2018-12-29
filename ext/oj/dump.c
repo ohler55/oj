@@ -397,7 +397,8 @@ oj_dump_time(VALUE obj, Out out, int withZone) {
     long long	sec;
     long long	nsec;
 
-#ifdef HAVE_RB_TIME_TIMESPECx
+#if 0
+#ifdef HAVE_RB_TIME_TIMESPEC
     printf("*** has timespec - size: %ld\n", sizeof(struct timespec));
     {
 	//struct timespec	ts = rb_time_timespec(obj);
@@ -412,7 +413,11 @@ oj_dump_time(VALUE obj, Out out, int withZone) {
     sec = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
     nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
 #endif
-
+#endif
+    printf("*** this is the alternative code\n");
+    sec = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+    nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+    
     *b-- = '\0';
     if (withZone) {
 	long	tzsecs = NUM2LONG(rb_funcall2(obj, oj_utc_offset_id, 0, 0));
