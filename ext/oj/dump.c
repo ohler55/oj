@@ -397,26 +397,23 @@ oj_dump_time(VALUE obj, Out out, int withZone) {
     long long	sec;
     long long	nsec;
 
-#if 0
 #ifdef HAVE_RB_TIME_TIMESPEC
-    printf("*** has timespec - size: %ld\n", sizeof(struct timespec));
-    {
-	//struct timespec	ts = rb_time_timespec(obj);
-	struct timeval	tv = rb_time_timeval(obj);
-	printf("*** after timespec - %ld %ld - %ld %ld\n", sizeof(tv.tv_sec), sizeof(tv.tv_usec), tv.tv_sec, tv.tv_usec);
+    // rb_time_timespec as well as rb_time_timeeval have a bug that causes an
+    // exception to be raised if a time is before 1970 on 32 bit systems so
+    // check the timespec size and use the ruby calls if a 32 bit system.
+    if (16 <= sizeof(struct timespec)) {
+	struct timespec	ts = rb_time_timespec(obj);
 
-	sec = (long long)tv.tv_sec;
-	nsec = tv.tv_usec * 1000LL;
+	sec = (long long)ts.tv_sec;
+	nsec = ts.tv_nsec;
+    } else {
+	sec = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+	nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
     }
 #else
-    printf("*** does not have timespec\n");
     sec = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
     nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
 #endif
-#endif
-    printf("*** this is the alternative code\n");
-    sec = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
-    nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
     
     *b-- = '\0';
     if (withZone) {
@@ -506,10 +503,14 @@ oj_dump_xml_time(VALUE obj, Out out) {
     char	tzsign = '+';
 
 #ifdef HAVE_RB_TIME_TIMESPEC
-    {
+    if (16 <= sizeof(struct timespec)) {
 	struct timespec	ts = rb_time_timespec(obj);
+
 	sec = ts.tv_sec;
 	nsec = ts.tv_nsec;
+    } else {
+	sec = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+	nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
     }
 #else
     sec = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
