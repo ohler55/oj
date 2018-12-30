@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.7.6 - 2018-12-30
+
+  - Changed time encoding for 32 bit to work around a Ruby bug in `rb_time_timespec()` that fails for times before 1970.
+
 ## 3.7.5 - 2018-12-27
 
   - Address issue #517 with a special escape table for mimicing the JSON gem.
