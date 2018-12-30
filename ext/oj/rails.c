@@ -12,9 +12,9 @@
 #define OJ_INFINITY (1.0/0.0)
 
 // TBD keep static array of strings and functions to help with rails optimization
-typedef struct _Encoder {
-    struct _ROptTable	ropts;
-    struct _Options	opts;
+typedef struct _encoder {
+    struct _rOptTable	ropts;
+    struct _options	opts;
     VALUE		arg;
 } *Encoder;
 
@@ -28,7 +28,7 @@ static void	dump_rails_val(VALUE obj, int depth, Out out, bool as_ok);
 
 extern VALUE	Oj;
 
-static struct _ROptTable	ropts = { 0, 0, NULL };
+static struct _rOptTable	ropts = { 0, 0, NULL };
 
 static VALUE	encoder_class = Qnil;
 static bool	escape_html = true;
@@ -79,8 +79,8 @@ copy_opts(ROptTable src, ROptTable dest) {
     if (NULL == src->table) {
 	dest->table = NULL;
     } else {
-	dest->table = ALLOC_N(struct _ROpt, dest->alen);
-	memcpy(dest->table, src->table, sizeof(struct _ROpt) * dest->alen);
+	dest->table = ALLOC_N(struct _rOpt, dest->alen);
+	memcpy(dest->table, src->table, sizeof(struct _rOpt) * dest->alen);
     }
     return NULL;
 }
@@ -343,7 +343,7 @@ dump_to_s(VALUE obj, int depth, Out out, bool as_ok) {
 
 static ID	parameters_id = 0;
 
-typedef struct _StrLen {
+typedef struct _strLen {
     const char	*str;
     int		len;
 } *StrLen;
@@ -366,7 +366,7 @@ columns_array(VALUE rcols, int *ccnt) {
     int			cnt = (int)RARRAY_LEN(rcols);
     
     *ccnt = cnt;
-    cols = ALLOC_N(struct _StrLen, cnt);
+    cols = ALLOC_N(struct _strLen, cnt);
     for (i = 0, cp = cols; i < cnt; i++, cp++) {
 	v = rb_ary_entry(rcols, i);
 	if (T_STRING != rb_type(v)) {
@@ -504,7 +504,7 @@ dump_activerecord_result(VALUE obj, int depth, Out out, bool as_ok) {
     *out->cur++ = ']';
 }
 
-typedef struct _NamedFunc {
+typedef struct _namedFunc {
     const char	*name;
     DumpFunc	func;
 } *NamedFunc;
@@ -561,7 +561,7 @@ dump_regexp(VALUE obj, int depth, Out out, bool as_ok) {
     dump_as_string(obj, depth, out, as_ok);
 }
 
-static struct _NamedFunc	dump_map[] = {
+static struct _namedFunc	dump_map[] = {
     { "ActionController::Parameters", dump_actioncontroller_parameters },
     { "ActiveRecord::Result", dump_activerecord_result },
     { "ActiveSupport::TimeWithZone", dump_timewithzone },
@@ -595,12 +595,12 @@ create_opt(ROptTable rot, VALUE clas) {
     rot->len++;
     if (NULL == rot->table) {
 	rot->alen = 256;
-	rot->table = ALLOC_N(struct _ROpt, rot->alen);
-	memset(rot->table, 0, sizeof(struct _ROpt) * rot->alen);
+	rot->table = ALLOC_N(struct _rOpt, rot->alen);
+	memset(rot->table, 0, sizeof(struct _rOpt) * rot->alen);
     } else if (rot->alen <= rot->len) {
 	rot->alen *= 2;
-	REALLOC_N(rot->table, struct _ROpt, rot->alen);
-	memset(rot->table + olen, 0, sizeof(struct _ROpt) * olen);
+	REALLOC_N(rot->table, struct _rOpt, rot->alen);
+	memset(rot->table + olen, 0, sizeof(struct _rOpt) * olen);
     }
     if (0 == olen) {
 	ro = rot->table;
@@ -611,7 +611,7 @@ create_opt(ROptTable rot, VALUE clas) {
 	
 	for (i = 0, ro = rot->table; i < olen; i++, ro++) {
 	    if (clas < ro->clas) {
-		memmove(ro + 1, ro, sizeof(struct _ROpt) * (olen - i));
+		memmove(ro + 1, ro, sizeof(struct _rOpt) * (olen - i));
 		break;
 	    }
 	}
@@ -678,7 +678,7 @@ encoder_mark(void *ptr) {
  */
 static VALUE
 encoder_new(int argc, VALUE *argv, VALUE self) {
-    Encoder	e = ALLOC(struct _Encoder);
+    Encoder	e = ALLOC(struct _encoder);
 
     e->opts = oj_default_options;
     e->arg = Qnil;
@@ -892,7 +892,7 @@ rails_optimized(VALUE self, VALUE clas) {
     return (ro->on) ? Qtrue : Qfalse;
 }
 
-typedef struct _OO {
+typedef struct _oo {
     Out		out;
     VALUE	obj;
 } *OO;
@@ -909,10 +909,10 @@ protect_dump(VALUE ov) {
 static VALUE
 encode(VALUE obj, ROptTable ropts, Options opts, int argc, VALUE *argv) {
     char		buf[4096];
-    struct _Out		out;
-    struct _Options	copts = *opts;
+    struct _out		out;
+    struct _options	copts = *opts;
     volatile VALUE	rstr = Qnil;
-    struct _OO		oo;
+    struct _oo		oo;
     int			line = 0;
 
     oo.out = &out;

@@ -3,8 +3,8 @@
  * All rights reserved.
  */
 
-#ifndef __OJ_CODE_H__
-#define __OJ_CODE_H__
+#ifndef OJ_CODE_H
+#define OJ_CODE_H
 
 #include <ruby.h>
 
@@ -13,7 +13,7 @@
 typedef void	(*EncodeFunc)(VALUE obj, int depth, Out out);
 typedef VALUE	(*DecodeFunc)(VALUE clas, VALUE args);
 
-typedef struct _Code {
+typedef struct _code {
     const char	*name;
     VALUE	clas;
     EncodeFunc	encode;
@@ -22,7 +22,7 @@ typedef struct _Code {
 } *Code;
 
 // Used by encode functions.
-typedef struct _Attr {
+typedef struct _attr {
     const char	*name;
     int		len;
     VALUE	value;
@@ -37,6 +37,6 @@ extern bool	oj_code_has(Code codes, VALUE clas, bool encode);
 
 extern void	oj_code_attrs(VALUE obj, Attr attrs, int depth, Out out, bool with_class);
 
-extern struct _Code	oj_compat_codes[];
+extern struct _code	oj_compat_codes[];
 
-#endif /* __OJ_CODE_H__ */
+#endif /* OJ_CODE_H */

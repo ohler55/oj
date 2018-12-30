@@ -14,11 +14,11 @@
 #define DEPTH		16
 
 typedef union {
-    struct _Cache8	*child;
+    struct _cache8	*child;
     slot_t		value;
 } Bucket;
 
-struct _Cache8 {
+struct _cache8 {
     Bucket	buckets[SLOT_CNT];
 };
 
@@ -30,7 +30,7 @@ oj_cache8_new(Cache8 *cache) {
     Bucket	*b;
     int		i;
     
-    *cache = ALLOC(struct _Cache8);
+    *cache = ALLOC(struct _cache8);
     for (i = SLOT_CNT, b = (*cache)->buckets; 0 < i; i--, b++) {
 	b->value = 0;
     }

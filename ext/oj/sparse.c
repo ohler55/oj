@@ -203,7 +203,7 @@ unicode_to_chars(ParseInfo pi, Buf buf, uint32_t code) {
 // entered at backslash
 static void
 read_escaped_str(ParseInfo pi) {
-    struct _Buf	buf;
+    struct _buf	buf;
     char	c;
     uint32_t	code;
     Val		parent = stack_peek(&pi->stack);
@@ -393,7 +393,7 @@ read_str(ParseInfo pi) {
 
 static void
 read_num(ParseInfo pi) {
-    struct _NumInfo	ni;
+    struct _numInfo	ni;
     char		c;
 
     reader_protect(&pi->rd);
@@ -525,7 +525,7 @@ read_num(ParseInfo pi) {
 
 static void
 read_nan(ParseInfo pi) {
-    struct _NumInfo	ni;
+    struct _numInfo	ni;
     char		c;
 
     ni.str = pi->rd.str;
@@ -718,7 +718,7 @@ oj_sparse2(ParseInfo pi) {
 		    return;
 		}
 	    } else if ('a' == c) {
-		struct _NumInfo	ni;
+		struct _numInfo	ni;
 
 		c = reader_get(&pi->rd);
 		if ('N' != c && 'n' != c) {

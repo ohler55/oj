@@ -7,8 +7,8 @@
 
 #include "odd.h"
 
-static struct _Odd	_odds[4]; // bump up if new initial Odd classes are added
-static struct _Odd	*odds = _odds;
+static struct _odd	_odds[4]; // bump up if new initial Odd classes are added
+static struct _odd	*odds = _odds;
 static long		odd_cnt = 0;
 static ID		sec_id;
 static ID		sec_fraction_id;
@@ -152,7 +152,7 @@ oj_get_oddc(const char *classname, size_t len) {
 
 OddArgs
 oj_odd_alloc_args(Odd odd) {
-    OddArgs	oa = ALLOC_N(struct _OddArgs, 1);
+    OddArgs	oa = ALLOC_N(struct _oddArgs, 1);
     VALUE	*a;
     int		i;
 
@@ -191,15 +191,17 @@ oj_reg_odd(VALUE clas, VALUE create_object, VALUE create_method, int mcnt, VALUE
     AttrGetFunc	*fp;
 
     if (_odds == odds) {
-	odds = ALLOC_N(struct _Odd, odd_cnt + 1);
+	odds = ALLOC_N(struct _odd, odd_cnt + 1);
 
-	memcpy(odds, _odds, sizeof(struct _Odd) * odd_cnt);
+	memcpy(odds, _odds, sizeof(struct _odd) * odd_cnt);
     } else {
-	REALLOC_N(odds, struct _Odd, odd_cnt + 1);
+	REALLOC_N(odds, struct _odd, odd_cnt + 1);
     }
     odd = odds + odd_cnt;
     odd->clas = clas;
-    odd->classname = strdup(rb_class2name(clas));
+    if (NULL == (odd->classname = strdup(rb_class2name(clas)))) {
+	rb_raise(rb_eNoMemError, "for attribute name.");
+    }
     odd->clen = strlen(odd->classname);
     odd->create_obj = create_object;
     odd->create_op = SYM2ID(create_method);
@@ -210,7 +212,9 @@ oj_reg_odd(VALUE clas, VALUE create_object, VALUE create_method, int mcnt, VALUE
 	*fp = 0;
 	switch (rb_type(*members)) {
 	case T_STRING:
-	    *np = strdup(rb_string_value_ptr(members));
+	    if (NULL == (*np = strdup(rb_string_value_ptr(members)))) {
+		rb_raise(rb_eNoMemError, "for attribute name.");
+	    }
 	    break;
 	case T_SYMBOL:
 	    *np = rb_id2name(SYM2ID(*members));

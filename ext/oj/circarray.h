@@ -3,12 +3,12 @@
  * All rights reserved.
  */
 
-#ifndef __OJ_CIRCARRAY_H__
-#define __OJ_CIRCARRAY_H__
+#ifndef OJ_CIRCARRAY_H
+#define OJ_CIRCARRAY_H
 
 #include "ruby.h"
 
-typedef struct _CircArray {
+typedef struct _circArray {
     VALUE		obj_array[1024];
     VALUE		*objs;
     unsigned long	size; // allocated size or initial array size
@@ -20,4 +20,4 @@ extern void		oj_circ_array_free(CircArray ca);
 extern void		oj_circ_array_set(CircArray ca, VALUE obj, unsigned long id);
 extern VALUE		oj_circ_array_get(CircArray ca, unsigned long id);
 
-#endif /* __OJ_CIRCARRAY_H__ */
+#endif /* OJ_CIRCARRAY_H */

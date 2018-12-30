@@ -34,19 +34,19 @@
 #define HASH_MASK	0x000003FF
 #define  HASH_SLOT_CNT	1024
 
-typedef struct _KeyVal {
-    struct _KeyVal	*next;
+typedef struct _keyVal {
+    struct _keyVal	*next;
     const char		*key;
     size_t		len;
     VALUE		val;
 } *KeyVal;
 
-struct _Hash {
-    struct _KeyVal	slots[HASH_SLOT_CNT];
+struct _hash {
+    struct _keyVal	slots[HASH_SLOT_CNT];
 };
 
-struct _Hash	class_hash;
-struct _Hash	intern_hash;
+struct _hash	class_hash;
+struct _hash	intern_hash;
 
 // almost the Murmur hash algorithm
 #define M 0x5bd1e995
@@ -114,7 +114,7 @@ hash_get(Hash hash, const char *key, size_t len, VALUE **slotp, VALUE def_value)
     }
     if (0 != slotp) {
 	if (0 != bucket->key) {
-	    KeyVal	b = ALLOC(struct _KeyVal);
+	    KeyVal	b = ALLOC(struct _keyVal);
 	
 	    b->next = 0;
 	    bucket->next = b;

@@ -423,7 +423,7 @@ dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
     if (odd->raw) {
 	v = rb_funcall(obj, *odd->attrs, 0);
 	if (Qundef == v || T_STRING != rb_type(v)) {
-	    rb_raise(rb_eEncodingError, "Invalid type for raw JSON.\n");
+	    rb_raise(rb_eEncodingError, "Invalid type for raw JSON.");
 	} else {	    
 	    const char	*s = rb_string_value_ptr((VALUE*)&v);
 	    int		len = (int)RSTRING_LEN(v);
@@ -462,7 +462,9 @@ dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
 		ID	i;
 	    
 		if (sizeof(nbuf) <= nlen) {
-		    n2 = strdup(name);
+		    if (NULL == (n2 = strdup(name))) {
+			rb_raise(rb_eNoMemError, "for attribute name.");
+		    }
 		} else {
 		    strcpy(n2, name);
 		}

@@ -28,8 +28,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __OJ_ERR_H__
-#define __OJ_ERR_H__
+#ifndef OJ_ERR_H
+#define OJ_ERR_H
 
 #include "ruby.h"
 // Needed to silence 2.4.0 warnings.
@@ -37,9 +37,9 @@
 # define NORETURN(x) x
 #endif
 
-#define set_error(err, eclas, msg, json, current) _oj_err_set_with_location(err, eclas, msg, json, current, __FILE__, __LINE__)
+#define set_error(err, eclas, msg, json, current) _oj_err_set_with_location(err, eclas, msg, json, current, FILE, LINE)
 
-typedef struct _Err {
+typedef struct _err {
     VALUE	clas;
     char	msg[128];
 } *Err;
@@ -67,4 +67,4 @@ err_has(Err e) {
     return (Qnil != e->clas);
 }
 
-#endif /* __OJ_ERR_H__ */
+#endif /* OJ_ERR_H */

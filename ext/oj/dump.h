@@ -3,8 +3,8 @@
  * All rights reserved.
  */
 
-#ifndef __OJ_DUMP_H__
-#define __OJ_DUMP_H__
+#ifndef OJ_DUMP_H
+#define OJ_DUMP_H
 
 #include <ruby.h>
 
@@ -91,4 +91,4 @@ dump_ulong(unsigned long num, Out out) {
     *out->cur = '\0';
 }
 
-#endif /* __OJ_DUMP_H__ */
+#endif /* OJ_DUMP_H */

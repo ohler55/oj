@@ -28,13 +28,13 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __OJ_CACHE8_H__
-#define __OJ_CACHE8_H__
+#ifndef OJ_CACHE8_H
+#define OJ_CACHE8_H
 
 #include "ruby.h"
 #include "stdint.h"
 
-typedef struct _Cache8	*Cache8;
+typedef struct _cache8	*Cache8;
 typedef uint64_t	slot_t;
 typedef uint64_t	sid_t;
 
@@ -45,4 +45,4 @@ extern slot_t	oj_cache8_get(Cache8 cache, sid_t key, slot_t **slot);
 
 extern void	oj_cache8_print(Cache8 cache);
 
-#endif /* __OJ_CACHE8_H__ */
+#endif /* OJ_CACHE8_H */

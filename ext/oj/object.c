@@ -677,7 +677,7 @@ start_hash(ParseInfo pi) {
 }
 
 static void
-end_hash(struct _ParseInfo *pi) {
+end_hash(ParseInfo pi) {
     Val	parent = stack_peek(&pi->stack);
 
     if (Qnil == parent->val) {
@@ -765,7 +765,7 @@ oj_set_object_callbacks(ParseInfo pi) {
 
 VALUE
 oj_object_parse(int argc, VALUE *argv, VALUE self) {
-    struct _ParseInfo	pi;
+    struct _parseInfo	pi;
 
     parse_info_init(&pi);
     pi.options = oj_default_options;
@@ -782,7 +782,7 @@ oj_object_parse(int argc, VALUE *argv, VALUE self) {
 
 VALUE
 oj_object_parse_cstr(int argc, VALUE *argv, char *json, size_t len) {
-    struct _ParseInfo	pi;
+    struct _parseInfo	pi;
 
     parse_info_init(&pi);
     pi.options = oj_default_options;

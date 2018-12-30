@@ -227,7 +227,7 @@ oj_dump_leaf_to_json(Leaf leaf, Options copts, Out out) {
 void
 oj_write_leaf_to_file(Leaf leaf, const char *path, Options copts) {
     char	buf[4096];
-    struct _Out out;
+    struct _out out;
     size_t	size;
     FILE	*f;
 

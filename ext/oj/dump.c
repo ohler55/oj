@@ -654,7 +654,7 @@ oj_dump_obj_to_json_using_params(VALUE obj, Options copts, Out out, int argc, VA
 void
 oj_write_obj_to_file(VALUE obj, const char *path, Options copts) {
     char	buf[4096];
-    struct _Out out;
+    struct _out out;
     size_t	size;
     FILE	*f;
     int		ok;
@@ -686,7 +686,7 @@ oj_write_obj_to_file(VALUE obj, const char *path, Options copts) {
 void
 oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
     char	buf[4096];
-    struct _Out out;
+    struct _out out;
     ssize_t	size;
     VALUE	clas = rb_obj_class(stream);
 #if !IS_WINDOWS

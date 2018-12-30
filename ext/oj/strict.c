@@ -15,21 +15,21 @@
 #include "trace.h"
 
 static void
-hash_end(struct _ParseInfo *pi) {
+hash_end(ParseInfo pi) {
     if (Yes == pi->options.trace) {
 	oj_trace_parse_hash_end(pi, __FILE__, __LINE__);
     }
 }
 
 static void
-array_end(struct _ParseInfo *pi) {
+array_end(ParseInfo pi) {
     if (Yes == pi->options.trace) {
 	oj_trace_parse_array_end(pi, __FILE__, __LINE__);
     }
 }
 
 static VALUE
-noop_hash_key(struct _ParseInfo *pi, const char *key, size_t klen) {
+noop_hash_key(ParseInfo pi, const char *key, size_t klen) {
     return Qundef;
 }
 
@@ -100,7 +100,7 @@ hash_set_cstr(ParseInfo pi, Val parent, const char *str, size_t len, const char 
 }
 
 static void
-hash_set_num(struct _ParseInfo *pi, Val parent, NumInfo ni) {
+hash_set_num(ParseInfo pi, Val parent, NumInfo ni) {
     volatile VALUE	v;
     
     if (ni->infinity || ni->nan) {
@@ -183,7 +183,7 @@ oj_set_strict_callbacks(ParseInfo pi) {
 
 VALUE
 oj_strict_parse(int argc, VALUE *argv, VALUE self) {
-    struct _ParseInfo	pi;
+    struct _parseInfo	pi;
 
     parse_info_init(&pi);
     pi.options = oj_default_options;
@@ -200,7 +200,7 @@ oj_strict_parse(int argc, VALUE *argv, VALUE self) {
 
 VALUE
 oj_strict_parse_cstr(int argc, VALUE *argv, char *json, size_t len) {
-    struct _ParseInfo	pi;
+    struct _parseInfo	pi;
 
     parse_info_init(&pi);
     pi.options = oj_default_options;

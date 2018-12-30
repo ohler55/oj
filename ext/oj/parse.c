@@ -188,7 +188,7 @@ unicode_to_chars(ParseInfo pi, Buf buf, uint32_t code) {
 // entered at /
 static void
 read_escaped_str(ParseInfo pi, const char *start) {
-    struct _Buf	buf;
+    struct _buf	buf;
     const char	*s;
     int		cnt = (int)(pi->cur - start);
     uint32_t	code;
@@ -378,7 +378,7 @@ read_str(ParseInfo pi) {
 
 static void
 read_num(ParseInfo pi) {
-    struct _NumInfo	ni;
+    struct _numInfo	ni;
     Val			parent = stack_peek(&pi->stack);
 
     ni.str = pi->cur;
@@ -1050,7 +1050,7 @@ CLEANUP:
 	case T_CLASS:
 	case T_STRING:
 	case T_SYMBOL: {
-	    struct _Err	err;
+	    struct _err	err;
 
 	    if (Qnil == pi->err_class) {
 		err.clas = oj_parse_error_class;

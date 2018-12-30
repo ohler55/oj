@@ -14,8 +14,8 @@
 
 #include "rxclass.h"
 
-typedef struct _RxC {
-    struct _RxC	*next;
+typedef struct _rxC {
+    struct _rxC	*next;
     VALUE	rrx;
 #if !IS_WINDOWS
     regex_t	rx;
@@ -48,9 +48,9 @@ oj_rxclass_cleanup(RxClass rc) {
 
 void
 oj_rxclass_rappend(RxClass rc, VALUE rx, VALUE clas) {
-    RxC	rxc = ALLOC_N(struct _RxC, 1);
+    RxC	rxc = ALLOC_N(struct _rxC, 1);
 
-    memset(rxc, 0, sizeof(struct _RxC));
+    memset(rxc, 0, sizeof(struct _rxC));
     rxc->rrx = rx;
     rxc->clas = clas;
     if (NULL == rc->tail) {
@@ -73,7 +73,7 @@ oj_rxclass_append(RxClass rc, const char *expr, VALUE clas) {
 	snprintf(rc->err, sizeof(rc->err), "expressions must be less than %lu characters", (unsigned long)sizeof(rxc->src));
 	return EINVAL;
     }
-    rxc = ALLOC_N(struct _RxC, 1);
+    rxc = ALLOC_N(struct _rxC, 1);
     rxc->next = 0;
     rxc->clas = clas;
 

@@ -28,8 +28,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __OJ_VAL_STACK_H__
-#define __OJ_VAL_STACK_H__
+#ifndef OJ_VAL_STACK_H
+#define OJ_VAL_STACK_H
 
 #include "ruby.h"
 #include "odd.h"
@@ -52,7 +52,7 @@ typedef enum {
     NEXT_HASH_COMMA	= 'n',
 } ValNext;
 
-typedef struct _Val {
+typedef struct _val {
     volatile VALUE	val;
     const char		*key;
     char		karray[32];
@@ -71,8 +71,8 @@ typedef struct _Val {
     char		kalloc;
 } *Val;
 
-typedef struct _ValStack {
-    struct _Val		base[STACK_INC];
+typedef struct _valStack {
+    struct _val		base[STACK_INC];
     Val			head;	// current stack
     Val			end;	// stack end
     Val			tail;	// pointer to one past last element name on stack
@@ -109,10 +109,10 @@ stack_push(ValStack stack, VALUE val, ValNext next) {
 	// A realloc can trigger a GC so make sure it happens outside the lock
 	// but lock before changing pointers.
 	if (stack->base == stack->head) {
-	    head = ALLOC_N(struct _Val, len + STACK_INC);
-	    memcpy(head, stack->base, sizeof(struct _Val) * len);
+	    head = ALLOC_N(struct _val, len + STACK_INC);
+	    memcpy(head, stack->base, sizeof(struct _val) * len);
 	} else {
-	    REALLOC_N(head, struct _Val, len + STACK_INC);
+	    REALLOC_N(head, struct _val, len + STACK_INC);
 	}
 #if HAVE_LIBPTHREAD
 	pthread_mutex_lock(&stack->mutex);
@@ -185,4 +185,4 @@ stack_pop(ValStack stack) {
 
 extern const char*	oj_stack_next_string(ValNext n);
 
-#endif /* __OJ_VAL_STACK_H__ */
+#endif /* OJ_VAL_STACK_H */

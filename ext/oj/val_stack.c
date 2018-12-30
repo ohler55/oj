@@ -28,6 +28,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <string.h>
+
 #include "oj.h"
 #include "val_stack.h"
 
@@ -63,12 +65,16 @@ mark(void *ptr) {
 VALUE
 oj_stack_init(ValStack stack) {
 #if HAVE_LIBPTHREAD
-    pthread_mutex_init(&stack->mutex, 0);
+    int	err;
+    
+    if (0 != (err = pthread_mutex_init(&stack->mutex, 0))) {
+	rb_raise(rb_eException, "failed to initialize a mutex. %s", strerror(err));
+    }
 #else
     stack->mutex = rb_mutex_new();
 #endif
     stack->head = stack->base;
-    stack->end = stack->base + sizeof(stack->base) / sizeof(struct _Val);
+    stack->end = stack->base + sizeof(stack->base) / sizeof(struct _val);
     stack->tail = stack->head;
     stack->head->val = Qundef;
     stack->head->key = 0;

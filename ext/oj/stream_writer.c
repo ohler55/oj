@@ -94,7 +94,7 @@ stream_writer_new(int argc, VALUE *argv, VALUE self) {
     } else {
 	rb_raise(rb_eArgError, "expected an IO Object.");
     }
-    sw = ALLOC(struct _StreamWriter);
+    sw = ALLOC(struct _streamWriter);
     if (2 == argc && T_HASH == rb_type(argv[1])) {
 	volatile VALUE	v;
 	int		buf_size = 0;

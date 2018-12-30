@@ -40,7 +40,7 @@ _oj_err_set_with_location(Err err, VALUE eclas, const char *msg, const char *jso
 
 void
 _oj_raise_error(const char *msg, const char *json, const char *current, const char* file, int line) {
-    struct _Err	err;
+    struct _err	err;
     int		n = 1;
     int		col = 1;
 

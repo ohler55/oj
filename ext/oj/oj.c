@@ -19,7 +19,7 @@
 #include "rails.h"
 #include "encode.h"
 
-typedef struct _YesNoOpt {
+typedef struct _yesNoOpt {
     VALUE	sym;
     char	*attr;
 } *YesNoOpt;
@@ -154,7 +154,7 @@ VALUE oj_cache_mutex = Qnil;
 
 const char	oj_json_class[] = "json_class";
 
-struct _Options	oj_default_options = {
+struct _options	oj_default_options = {
     0,		// indent
     No,		// circular
     No,		// auto_define
@@ -401,7 +401,7 @@ set_def_opts(VALUE self, VALUE opts) {
 
 void
 oj_parse_options(VALUE ropts, Options copts) {
-    struct _YesNoOpt	ynos[] = {
+    struct _yesNoOpt	ynos[] = {
 	{ circular_sym, &copts->circular },
 	{ auto_define_sym, &copts->auto_define },
 	{ symbol_keys_sym, &copts->sym_key },
@@ -901,7 +901,7 @@ load_file(int argc, VALUE *argv, VALUE self) {
     char		*path;
     int			fd;
     Mode		mode = oj_default_options.mode;
-    struct _ParseInfo	pi;
+    struct _parseInfo	pi;
 
     if (1 > argc) {
 	rb_raise(rb_eArgError, "Wrong number of arguments to load().");
@@ -976,7 +976,7 @@ load_file(int argc, VALUE *argv, VALUE self) {
  */
 static VALUE
 safe_load(VALUE self, VALUE doc) {
-    struct _ParseInfo	pi;
+    struct _parseInfo	pi;
     VALUE		args[1];
 
     parse_info_init(&pi);
@@ -1028,8 +1028,8 @@ safe_load(VALUE self, VALUE doc) {
 static VALUE
 dump(int argc, VALUE *argv, VALUE self) {
     char		buf[4096];
-    struct _Out		out;
-    struct _Options	copts = oj_default_options;
+    struct _out		out;
+    struct _options	copts = oj_default_options;
     VALUE		rstr;
 
     if (1 > argc) {
@@ -1080,8 +1080,8 @@ dump(int argc, VALUE *argv, VALUE self) {
 static VALUE
 to_json(int argc, VALUE *argv, VALUE self) {
     char		buf[4096];
-    struct _Out		out;
-    struct _Options	copts = oj_default_options;
+    struct _out		out;
+    struct _options	copts = oj_default_options;
     VALUE		rstr;
 
     if (1 > argc) {
@@ -1125,7 +1125,7 @@ to_json(int argc, VALUE *argv, VALUE self) {
  */
 static VALUE
 to_file(int argc, VALUE *argv, VALUE self) {
-    struct _Options	copts = oj_default_options;
+    struct _options	copts = oj_default_options;
     
     if (3 == argc) {
 	oj_parse_options(argv[2], &copts);
@@ -1148,7 +1148,7 @@ to_file(int argc, VALUE *argv, VALUE self) {
  */
 static VALUE
 to_stream(int argc, VALUE *argv, VALUE self) {
-    struct _Options	copts = oj_default_options;
+    struct _options	copts = oj_default_options;
     
     if (3 == argc) {
 	oj_parse_options(argv[2], &copts);
@@ -1699,7 +1699,9 @@ Init_oj() {
     oj_mimic_rails_init();
 
 #if HAVE_LIBPTHREAD
-    pthread_mutex_init(&oj_cache_mutex, 0);
+    if (0 != (err = pthread_mutex_init(&oj_cache_mutex, 0))) {
+	rb_raise(rb_eException, "failed to initialize a mutex. %s", strerror(err));
+    }
 #else
     oj_cache_mutex = rb_mutex_new();
     rb_gc_register_address(&oj_cache_mutex);

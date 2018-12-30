@@ -3,10 +3,10 @@
  * All rights reserved.
  */
 
-#ifndef __OJ_READER_H__
-#define __OJ_READER_H__
+#ifndef OJ_READER_H
+#define OJ_READER_H
 
-typedef struct _Reader {
+typedef struct _reader {
     char	base[0x00001000];
     char	*head;
     char	*end;
@@ -18,7 +18,7 @@ typedef struct _Reader {
     int		line;
     int		col;
     int		free_head;
-    int		(*read_func)(struct _Reader *reader);
+    int		(*read_func)(struct _reader *reader);
     union {
 	int		fd;
 	VALUE		io;
@@ -148,4 +148,4 @@ is_white(char c) {
     return 0;
 }
 
-#endif /* __OJ_READER_H__ */
+#endif /* OJ_READER_H */

@@ -272,7 +272,7 @@ str_writer_free(void *ptr) {
  */
 static VALUE
 str_writer_new(int argc, VALUE *argv, VALUE self) {
-    StrWriter	sw = ALLOC(struct _StrWriter);
+    StrWriter	sw = ALLOC(struct _strWriter);
     
     oj_str_writer_init(sw, 0);
     if (1 == argc) {

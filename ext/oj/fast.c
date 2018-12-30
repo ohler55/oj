@@ -43,16 +43,16 @@
 // maximum to allocate on the stack, arbitrary limit
 #define SMALL_XML	65536
 #define MAX_STACK	100
-//#define BATCH_SIZE	(4096 / sizeof(struct _Leaf) - 1)
+//#define BATCH_SIZE	(4096 / sizeof(struct _leaf) - 1)
 #define BATCH_SIZE	100
 
-typedef struct _Batch {
-    struct _Batch	*next;
+typedef struct _batch {
+    struct _batch	*next;
     int			next_avail;
-    struct _Leaf	leaves[BATCH_SIZE];
+    struct _leaf	leaves[BATCH_SIZE];
 } *Batch;
 
-typedef struct _Doc {
+typedef struct _doc {
     Leaf		data;
     Leaf		*where;	     // points to current location
     Leaf		where_path[MAX_STACK]; // points to head of path
@@ -60,10 +60,10 @@ typedef struct _Doc {
     unsigned long	size;	     // number of leaves/branches in the doc
     VALUE		self;
     Batch		batches;
-    struct _Batch	batch0;
+    struct _batch	batch0;
 } *Doc;
 
-typedef struct _ParseInfo {
+typedef struct _parseInfo {
     char	*str;		/* buffer being read from */
     char	*s;		/* current position in buffer */
     Doc		doc;
@@ -204,10 +204,10 @@ leaf_new(Doc doc, int type) {
     Leaf	leaf;
 
     if (0 == doc->batches || BATCH_SIZE == doc->batches->next_avail) {
-	Batch	b = ALLOC(struct _Batch);
+	Batch	b = ALLOC(struct _batch);
 
 	// Initializes all leaves with a NO_VAL value_type
-	memset(b, 0, sizeof(struct _Batch));
+	memset(b, 0, sizeof(struct _batch));
 	b->next = doc->batches;
 	doc->batches = b;
 	b->next_avail = 0;
@@ -734,7 +734,7 @@ read_quoted_value(ParseInfo pi) {
 // doc support functions
 inline static void
 doc_init(Doc doc) {
-    memset(doc, 0, sizeof(struct _Doc));
+    memset(doc, 0, sizeof(struct _doc));
     doc->where = doc->where_path;
     doc->self = Qundef;
     doc->batches = &doc->batch0;
@@ -813,16 +813,16 @@ mark_doc(void *ptr) {
 
 static VALUE
 parse_json(VALUE clas, char *json, bool given, bool allocated) {
-    struct _ParseInfo	pi;
+    struct _parseInfo	pi;
     volatile VALUE	result = Qnil;
     Doc			doc;
     int			ex = 0;
     volatile VALUE	self;
 
     if (given) {
-	doc = ALLOCA_N(struct _Doc, 1);
+	doc = ALLOCA_N(struct _doc, 1);
     } else {
-	doc = ALLOC(struct _Doc);
+	doc = ALLOC(struct _doc);
     }
     /* skip UTF-8 BOM if present */
     if (0xEF == (uint8_t)*json && 0xBB == (uint8_t)json[1] && 0xBF == (uint8_t)json[2]) {
@@ -1624,7 +1624,7 @@ doc_dump(int argc, VALUE *argv, VALUE self) {
 
 	if (0 == filename) {
 	    char	buf[4096];
-	    struct _Out out;
+	    struct _out out;
 
 	    out.buf = buf;
 	    out.end = buf + sizeof(buf) - 10;

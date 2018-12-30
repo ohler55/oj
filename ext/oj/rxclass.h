@@ -3,17 +3,17 @@
  * All rights reserved.
  */
 
-#ifndef __OJ_RXCLASS_H__
-#define __OJ_RXCLASS_H__
+#ifndef OJ_RXCLASS_H
+#define OJ_RXCLASS_H
 
 #include <stdbool.h>
 #include "ruby.h"
 
-struct _RxC;
+struct _rxC;
 
-typedef struct _RxClass {
-    struct _RxC	*head;
-    struct _RxC	*tail;
+typedef struct _rxClass {
+    struct _rxC	*head;
+    struct _rxC	*tail;
     char	err[128];
 } *RxClass;
 
@@ -24,4 +24,4 @@ extern VALUE	oj_rxclass_match(RxClass rc, const char *str, int len);
 extern void	oj_rxclass_copy(RxClass src, RxClass dest);
 extern void	oj_rxclass_rappend(RxClass rc, VALUE rx, VALUE clas);
 
-#endif /* __OJ_RXCLASS_H__ */
+#endif /* OJ_RXCLASS_H */

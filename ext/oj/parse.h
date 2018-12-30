@@ -3,8 +3,8 @@
  * All rights reserved.
  */
 
-#ifndef __OJ_PARSE_H__
-#define __OJ_PARSE_H__
+#ifndef OJ_PARSE_H
+#define OJ_PARSE_H
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -17,9 +17,9 @@
 #include "reader.h"
 #include "rxclass.h"
 
-struct _RxClass;
+struct _rxClass;
 
-typedef struct _NumInfo {
+typedef struct _numInfo {
     int64_t	i;
     int64_t	num;
     int64_t	div;
@@ -35,39 +35,39 @@ typedef struct _NumInfo {
     int		no_big;
 } *NumInfo;
 
-typedef struct _ParseInfo {
+typedef struct _parseInfo {
     // used for the string parser
     const char		*json;
     const char		*cur;
     const char		*end;
     // used for the stream parser
-    struct _Reader	rd;
+    struct _reader	rd;
 
-    struct _Err		err;
-    struct _Options	options;
+    struct _err		err;
+    struct _options	options;
     VALUE		handler;
-    struct _ValStack	stack;
+    struct _valStack	stack;
     CircArray		circ_array;
-    struct _RxClass	str_rx;
+    struct _rxClass	str_rx;
     int			expect_value;
     int			max_depth; // just for the json gem
     VALUE		proc;
-    VALUE		(*start_hash)(struct _ParseInfo *pi);
-    void		(*end_hash)(struct _ParseInfo *pi);
-    VALUE		(*hash_key)(struct _ParseInfo *pi, const char *key, size_t klen);
-    void		(*hash_set_cstr)(struct _ParseInfo *pi, Val kval, const char *str, size_t len, const char *orig);
-    void		(*hash_set_num)(struct _ParseInfo *pi, Val kval, NumInfo ni);
-    void		(*hash_set_value)(struct _ParseInfo *pi, Val kval, VALUE value);
+    VALUE		(*start_hash)(struct _parseInfo *pi);
+    void		(*end_hash)(struct _parseInfo *pi);
+    VALUE		(*hash_key)(struct _parseInfo *pi, const char *key, size_t klen);
+    void		(*hash_set_cstr)(struct _parseInfo *pi, Val kval, const char *str, size_t len, const char *orig);
+    void		(*hash_set_num)(struct _parseInfo *pi, Val kval, NumInfo ni);
+    void		(*hash_set_value)(struct _parseInfo *pi, Val kval, VALUE value);
 
-    VALUE		(*start_array)(struct _ParseInfo *pi);
-    void		(*end_array)(struct _ParseInfo *pi);
-    void		(*array_append_cstr)(struct _ParseInfo *pi, const char *str, size_t len, const char *orig);
-    void		(*array_append_num)(struct _ParseInfo *pi, NumInfo ni);
-    void		(*array_append_value)(struct _ParseInfo *pi, VALUE value);
+    VALUE		(*start_array)(struct _parseInfo *pi);
+    void		(*end_array)(struct _parseInfo *pi);
+    void		(*array_append_cstr)(struct _parseInfo *pi, const char *str, size_t len, const char *orig);
+    void		(*array_append_num)(struct _parseInfo *pi, NumInfo ni);
+    void		(*array_append_value)(struct _parseInfo *pi, VALUE value);
 
-    void		(*add_cstr)(struct _ParseInfo *pi, const char *str, size_t len, const char *orig);
-    void		(*add_num)(struct _ParseInfo *pi, NumInfo ni);
-    void		(*add_value)(struct _ParseInfo *pi, VALUE val);
+    void		(*add_cstr)(struct _parseInfo *pi, const char *str, size_t len, const char *orig);
+    void		(*add_num)(struct _parseInfo *pi, NumInfo ni);
+    void		(*add_value)(struct _parseInfo *pi, VALUE val);
     VALUE		err_class;
     bool		has_callbacks;
 } *ParseInfo;
@@ -87,7 +87,7 @@ extern VALUE	oj_pi_sparse(int argc, VALUE *argv, ParseInfo pi, int fd);
 
 static inline void
 parse_info_init(ParseInfo pi) {
-    memset(pi, 0, sizeof(struct _ParseInfo));
+    memset(pi, 0, sizeof(struct _parseInfo));
 }
 
 static inline bool
@@ -108,4 +108,4 @@ empty_ok(Options options) {
     return Yes == options->empty_string;
 }
 
-#endif /* __OJ_PARSE_H__ */
+#endif /* OJ_PARSE_H */

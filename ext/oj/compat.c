@@ -78,7 +78,7 @@ start_hash(ParseInfo pi) {
 }
 
 static void
-end_hash(struct _ParseInfo *pi) {
+end_hash(struct _parseInfo *pi) {
     Val	parent = stack_peek(&pi->stack);
 
     if (0 != parent->classname) {
@@ -144,7 +144,7 @@ add_num(ParseInfo pi, NumInfo ni) {
 }
 
 static void
-hash_set_num(struct _ParseInfo *pi, Val parent, NumInfo ni) {
+hash_set_num(struct _parseInfo *pi, Val parent, NumInfo ni) {
     volatile VALUE	rval = oj_num_as_value(ni);
     
     if (!oj_use_hash_alt && rb_cHash != rb_obj_class(parent->val)) {
@@ -242,7 +242,7 @@ oj_set_compat_callbacks(ParseInfo pi) {
 
 VALUE
 oj_compat_parse(int argc, VALUE *argv, VALUE self) {
-    struct _ParseInfo	pi;
+    struct _parseInfo	pi;
 
     parse_info_init(&pi);
     pi.options = oj_default_options;
@@ -263,7 +263,7 @@ oj_compat_parse(int argc, VALUE *argv, VALUE self) {
 
 VALUE
 oj_compat_load(int argc, VALUE *argv, VALUE self) {
-    struct _ParseInfo	pi;
+    struct _parseInfo	pi;
 
     parse_info_init(&pi);
     pi.options = oj_default_options;
@@ -284,7 +284,7 @@ oj_compat_load(int argc, VALUE *argv, VALUE self) {
 
 VALUE
 oj_compat_parse_cstr(int argc, VALUE *argv, char *json, size_t len) {
-    struct _ParseInfo	pi;
+    struct _parseInfo	pi;
 
     parse_info_init(&pi);
     pi.options = oj_default_options;

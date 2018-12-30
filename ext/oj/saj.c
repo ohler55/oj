@@ -19,7 +19,7 @@
 #include "oj.h"
 #include "encode.h"
 
-typedef struct _ParseInfo {
+typedef struct _parseInfo {
     char	*str;		/* buffer being read from */
     char	*s;		/* current position in buffer */
     void	*stack_min;
@@ -605,7 +605,7 @@ read_quoted_value(ParseInfo pi) {
 static void
 saj_parse(VALUE handler, char *json) {
     volatile VALUE	obj = Qnil;
-    struct _ParseInfo	pi;
+    struct _parseInfo	pi;
 
     if (0 == json) {
 	if (pi.has_error) {

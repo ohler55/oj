@@ -39,12 +39,12 @@
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 
-typedef struct _StrLen {
+typedef struct _strLen {
     const char	*str;
     size_t	len;
 } *StrLen;
 
-static struct _StrLen data[] = {
+static struct _strLen data[] = {
     { "Gem::Version", 12 },
     { "TracePoint", 10 },
     { "Complex::compatible", 19 },

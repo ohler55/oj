@@ -28,8 +28,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __OJ_ENCODE_H__
-#define __OJ_ENCODE_H__
+#ifndef OJ_ENCODE_H
+#define OJ_ENCODE_H
 
 #include "ruby.h"
 #include "ruby/encoding.h"
@@ -40,4 +40,4 @@ oj_encode(VALUE rstr) {
     return rstr;
 }
 
-#endif /* __OJ_ENCODE_H__ */
+#endif /* OJ_ENCODE_H */

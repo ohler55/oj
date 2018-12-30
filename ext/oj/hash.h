@@ -28,12 +28,12 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __OJ_HASH_H__
-#define __OJ_HASH_H__
+#ifndef OJ_HASH_H
+#define OJ_HASH_H
 
 #include "ruby.h"
 
-typedef struct _Hash	*Hash;
+typedef struct _hash	*Hash;
 
 extern void	oj_hash_init();
 
@@ -43,4 +43,4 @@ extern ID	oj_attr_hash_get(const char *key, size_t len, ID **slotp);
 extern void	oj_hash_print();
 extern char*	oj_strndup(const char *s, size_t len);
 
-#endif /* __OJ_HASH_H__ */
+#endif /* OJ_HASH_H */

@@ -21,7 +21,7 @@ extern VALUE	oj_parse_xml_time(const char *str, int len); // from object.c
 
 static void
 dump_obj_str(VALUE obj, int depth, Out out) {
-    struct _Attr	attrs[] = {
+    struct _attr	attrs[] = {
 	{ "s", 1, Qnil },
 	{ NULL, 0, Qnil },
     };
@@ -55,7 +55,7 @@ static ID	imag_id = 0;
 
 static void
 complex_dump(VALUE obj, int depth, Out out) {
-    struct _Attr	attrs[] = {
+    struct _attr	attrs[] = {
 	{ "real", 4, Qnil },
 	{ "imag", 4, Qnil },
 	{ NULL, 0, Qnil },
@@ -82,7 +82,7 @@ complex_load(VALUE clas, VALUE args) {
 static void
 time_dump(VALUE obj, int depth, Out out) {
     if (Yes == out->opts->create_ok) {
-	struct _Attr	attrs[] = {
+	struct _attr	attrs[] = {
 	    { "time", 4, Qundef, 0, Qundef },
 	    { NULL, 0, Qnil },
 	};
@@ -103,7 +103,7 @@ time_dump(VALUE obj, int depth, Out out) {
 static void
 date_dump(VALUE obj, int depth, Out out) {
     if (Yes == out->opts->create_ok) {
-	struct _Attr	attrs[] = {
+	struct _attr	attrs[] = {
 	    { "s", 1, Qnil },
 	    { NULL, 0, Qnil },
 	};
@@ -169,7 +169,7 @@ static ID	table_id = 0;
 
 static void
 openstruct_dump(VALUE obj, int depth, Out out) {
-    struct _Attr	attrs[] = {
+    struct _attr	attrs[] = {
 	{ "table", 5, Qnil },
 	{ NULL, 0, Qnil },
     };
@@ -191,7 +191,7 @@ openstruct_load(VALUE clas, VALUE args) {
 
 static void
 range_dump(VALUE obj, int depth, Out out) {
-    struct _Attr	attrs[] = {
+    struct _attr	attrs[] = {
 	{ "begin", 5, Qnil },
 	{ "end", 3, Qnil },
 	{ "exclude", 7, Qnil },
@@ -220,7 +220,7 @@ static ID	denominator_id = 0;
 
 static void
 rational_dump(VALUE obj, int depth, Out out) {
-    struct _Attr	attrs[] = {
+    struct _attr	attrs[] = {
 	{ "numerator", 9, Qnil },
 	{ "denominator", 11, Qnil },
 	{ NULL, 0, Qnil },
@@ -262,7 +262,7 @@ time_load(VALUE clas, VALUE args) {
     return args;
 }
 
-static struct _Code	codes[] = {
+static struct _code	codes[] = {
     { "BigDecimal", Qnil, bigdecimal_dump, NULL, true },
     { "Complex", Qnil, complex_dump, complex_load, true },
     { "Date", Qnil, date_dump, date_load, true },
@@ -459,7 +459,9 @@ dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
 		ID	i;
 	    
 		if (sizeof(nbuf) <= nlen) {
-		    n2 = strdup(name);
+		    if (NULL == (n2 = strdup(name))) {
+			rb_raise(rb_eNoMemError, "for attribute name.");
+		    }
 		} else {
 		    strcpy(n2, name);
 		}
@@ -997,7 +999,7 @@ hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *o
 }
 
 static void
-end_hash(struct _ParseInfo *pi) {
+end_hash(struct _parseInfo *pi) {
     Val	parent = stack_peek(&pi->stack);
 
     if (Qundef != parent->clas && parent->clas != rb_obj_class(parent->val)) {
@@ -1030,7 +1032,7 @@ calc_hash_key(ParseInfo pi, Val parent) {
 }
 
 static void
-hash_set_num(struct _ParseInfo *pi, Val kval, NumInfo ni) {
+hash_set_num(struct _parseInfo *pi, Val kval, NumInfo ni) {
     Val			parent = stack_peek(&pi->stack);
     volatile VALUE	rval = oj_num_as_value(ni);
 
@@ -1146,7 +1148,7 @@ oj_set_custom_callbacks(ParseInfo pi) {
 
 VALUE
 oj_custom_parse(int argc, VALUE *argv, VALUE self) {
-    struct _ParseInfo	pi;
+    struct _parseInfo	pi;
 
     parse_info_init(&pi);
     pi.options = oj_default_options;
@@ -1166,7 +1168,7 @@ oj_custom_parse(int argc, VALUE *argv, VALUE self) {
 
 VALUE
 oj_custom_parse_cstr(int argc, VALUE *argv, char *json, size_t len) {
-    struct _ParseInfo	pi;
+    struct _parseInfo	pi;
 
     parse_info_init(&pi);
     pi.options = oj_default_options;

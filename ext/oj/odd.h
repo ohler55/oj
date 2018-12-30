@@ -3,8 +3,8 @@
  * All rights reserved.
  */
 
-#ifndef __OJ_ODD_H__
-#define __OJ_ODD_H__
+#ifndef OJ_ODD_H
+#define OJ_ODD_H
 
 #include <stdbool.h>
 
@@ -14,7 +14,7 @@
 
 typedef VALUE	(*AttrGetFunc)(VALUE obj);
 
-typedef struct _Odd {
+typedef struct _odd {
     const char	*classname;
     size_t	clen;
     VALUE	clas;			// Ruby class or module
@@ -28,7 +28,7 @@ typedef struct _Odd {
     AttrGetFunc	attrFuncs[MAX_ODD_ARGS];
 } *Odd;
 
-typedef struct _OddArgs {
+typedef struct _oddArgs {
     Odd		odd;
     VALUE	args[MAX_ODD_ARGS];
 } *OddArgs;
@@ -41,4 +41,4 @@ extern void	oj_odd_free(OddArgs args);
 extern int	oj_odd_set_arg(OddArgs args, const char *key, size_t klen, VALUE value);
 extern void	oj_reg_odd(VALUE clas, VALUE create_object, VALUE create_method, int mcnt, VALUE *members, bool raw);
 
-#endif /* __OJ_ODD_H__ */
+#endif /* OJ_ODD_H */

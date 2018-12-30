@@ -9,7 +9,7 @@ CircArray
 oj_circ_array_new() {
     CircArray	ca;
     
-    if (0 == (ca = ALLOC(struct _CircArray))) {
+    if (0 == (ca = ALLOC(struct _circArray))) {
 	rb_raise(rb_eNoMemError, "not enough memory\n");
     }
     ca->objs = ca->obj_array;

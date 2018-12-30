@@ -3,8 +3,8 @@
  * All rights reserved.
  */
 
-#ifndef __OJ_RAILS_H__
-#define __OJ_RAILS_H__
+#ifndef OJ_RAILS_H
+#define OJ_RAILS_H
 
 #include "dump.h"
 
@@ -18,4 +18,4 @@ extern bool	oj_rails_float_opt;
 extern VALUE	oj_optimize_rails(VALUE self);
 
 
-#endif /* __OJ_RAILS_H__ */
+#endif /* OJ_RAILS_H */

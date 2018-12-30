@@ -3,10 +3,10 @@
  * All rights reserved.
  */
 
-#ifndef __OJ_H__
-#define __OJ_H__
+#ifndef OJ_H
+#define OJ_H
 
-#if defined(__cplusplus)
+#if defined(cplusplus)
 extern "C" {
 #if 0
 } /* satisfy cc-mode */
@@ -108,7 +108,7 @@ typedef enum {
     // Add the fast versions if necessary. Maybe unparse as well if needed.
 } DumpCaller;
 
-typedef struct _DumpOpts {
+typedef struct _dumpOpts {
     bool	use;
     char	indent_str[16];
     char	before_sep[16];
@@ -125,7 +125,7 @@ typedef struct _DumpOpts {
     int		max_depth;
 } *DumpOpts;
 
-typedef struct _Options {
+typedef struct _options {
     int			indent;		// indention for dump, default 2
     char		circular;	// YesNo
     char		auto_define;	// YesNo
@@ -156,28 +156,28 @@ typedef struct _Options {
     char		float_fmt[7];	// float format for dumping, if empty use Ruby
     VALUE		hash_class;	// class to use in place of Hash on load
     VALUE		array_class;	// class to use in place of Array on load
-    struct _DumpOpts	dump_opts;
-    struct _RxClass	str_rx;
+    struct _dumpOpts	dump_opts;
+    struct _rxClass	str_rx;
     VALUE		*ignore;	// Qnil terminated array of classes or NULL
 } *Options;
 
-struct _Out;
-typedef void	(*DumpFunc)(VALUE obj, int depth, struct _Out *out, bool as_ok);
+struct _out;
+typedef void	(*DumpFunc)(VALUE obj, int depth, struct _out *out, bool as_ok);
 
 // rails optimize
-typedef struct _ROpt {
+typedef struct _rOpt {
     VALUE	clas;
     bool	on;
     DumpFunc	dump;
 } *ROpt;
 
-typedef struct _ROptTable {
+typedef struct _rOptTable {
     int			len;
     int			alen;
     ROpt		table;
 } *ROptTable;
 
-typedef struct _Out {
+typedef struct _out {
     char		*buf;
     char		*end;
     char		*cur;
@@ -195,9 +195,9 @@ typedef struct _Out {
     ROptTable		ropts;
 } *Out;
 
-typedef struct _StrWriter {
-    struct _Out		out;
-    struct _Options	opts;
+typedef struct _strWriter {
+    struct _out		out;
+    struct _options	opts;
     int			depth;
     char		*types;	// DumpType
     char		*types_end;
@@ -205,8 +205,8 @@ typedef struct _StrWriter {
     
 } *StrWriter;
 
-typedef struct _StreamWriter {
-    struct _StrWriter	sw;
+typedef struct _streamWriter {
+    struct _strWriter	sw;
     StreamWriterType	type;
     VALUE		stream;
     int			fd;
@@ -220,15 +220,15 @@ enum {
     RUBY_VAL = 0x03
 };
     
-typedef struct _Leaf {
-    struct _Leaf	*next;
+typedef struct _leaf {
+    struct _leaf	*next;
     union {
 	const char	*key;	   // hash key
 	size_t		index;	   // array index, 0 is not set
     };
     union {
 	char		*str;	   // pointer to location in json string or allocated
-	struct _Leaf	*elements; // array and hash elements
+	struct _leaf	*elements; // array and hash elements
 	VALUE		value;
     };
     uint8_t		rtype;
@@ -285,7 +285,7 @@ extern void	oj_parse_opt_match_string(RxClass rc, VALUE ropts);
 extern VALUE	oj_rails_encode(int argc, VALUE *argv, VALUE self);
 
 extern VALUE	Oj;
-extern struct _Options	oj_default_options;
+extern struct _options	oj_default_options;
 extern rb_encoding	*oj_utf8_encoding;
 
 extern VALUE	oj_bag_class;
@@ -372,10 +372,10 @@ extern pthread_mutex_t	oj_cache_mutex;
 extern VALUE	oj_cache_mutex;
 #endif
 
-#if defined(__cplusplus)
+#if defined(cplusplus)
 #if 0
 { /* satisfy cc-mode */
 #endif
 }  /* extern "C" { */
 #endif
-#endif /* __OJ_H__ */
+#endif /* OJ_H */

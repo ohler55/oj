@@ -28,12 +28,12 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __OJ_BUF_H__
-#define __OJ_BUF_H__
+#ifndef OJ_BUF_H
+#define OJ_BUF_H
 
 #include "ruby.h"
 
-typedef struct _Buf {
+typedef struct _buf {
     char	*head;
     char	*end;
     char	*tail;
@@ -100,4 +100,4 @@ buf_append(Buf buf, char c) {
     //*buf->tail = '\0'; // for debugging
 }
 
-#endif /* __OJ_BUF_H__ */
+#endif /* OJ_BUF_H */

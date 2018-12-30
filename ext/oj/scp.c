@@ -36,7 +36,7 @@ noop_add_num(ParseInfo pi, NumInfo ni) {
 }
 
 static VALUE
-noop_hash_key(struct _ParseInfo *pi, const char *key, size_t klen) {
+noop_hash_key(ParseInfo pi, const char *key, size_t klen) {
     return Qundef;
 }
 
@@ -117,7 +117,7 @@ calc_hash_key(ParseInfo pi, Val kval) {
 }
 
 static VALUE
-hash_key(struct _ParseInfo *pi, const char *key, size_t klen) {
+hash_key(ParseInfo pi, const char *key, size_t klen) {
     return rb_funcall(pi->handler, oj_hash_key_id, 1, rb_str_new(key, klen));
 }
 
@@ -159,7 +159,7 @@ array_append_value(ParseInfo pi, VALUE value) {
 
 VALUE
 oj_sc_parse(int argc, VALUE *argv, VALUE self) {
-    struct _ParseInfo	pi;
+    struct _parseInfo	pi;
     VALUE		input = argv[1];
 
     parse_info_init(&pi);

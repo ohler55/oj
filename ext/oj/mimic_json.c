@@ -196,8 +196,8 @@ mimic_limit_arg(VALUE a) {
 static VALUE
 mimic_dump(int argc, VALUE *argv, VALUE self) {
     char		buf[4096];
-    struct _Out		out;
-    struct _Options	copts = oj_default_options;
+    struct _out		out;
+    struct _options	copts = oj_default_options;
     VALUE		rstr;
 
     copts.str_rx.head = NULL;
@@ -354,7 +354,7 @@ mimic_dump_load(int argc, VALUE *argv, VALUE self) {
 static VALUE
 mimic_generate_core(int argc, VALUE *argv, Options copts) {
     char	buf[4096];
-    struct _Out	out;
+    struct _out	out;
     VALUE	rstr;
 
     out.buf = buf;
@@ -414,7 +414,7 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
  */
 VALUE
 oj_mimic_generate(int argc, VALUE *argv, VALUE self) {
-    struct _Options	copts = oj_default_options;
+    struct _options	copts = oj_default_options;
 
     copts.str_rx.head = NULL;
     copts.str_rx.tail = NULL;
@@ -432,7 +432,7 @@ oj_mimic_generate(int argc, VALUE *argv, VALUE self) {
  */
 VALUE
 oj_mimic_pretty_generate(int argc, VALUE *argv, VALUE self) {
-    struct _Options	copts = oj_default_options;
+    struct _options	copts = oj_default_options;
     VALUE		rargs[2];
     volatile VALUE	h;
 
@@ -481,7 +481,7 @@ oj_mimic_pretty_generate(int argc, VALUE *argv, VALUE self) {
 
 static VALUE
 mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
-    struct _ParseInfo	pi;
+    struct _parseInfo	pi;
     VALUE		ropts;
     VALUE		args[1];
 
@@ -660,7 +660,7 @@ mimic_create_id(VALUE self) {
     return rb_str_new_cstr(oj_json_class);
 }
 
-static struct _Options	mimic_object_to_json_options = {
+static struct _options	mimic_object_to_json_options = {
     0,		// indent
     No,		// circular
     No,		// auto_define
@@ -717,9 +717,9 @@ static struct _Options	mimic_object_to_json_options = {
 static VALUE
 mimic_object_to_json(int argc, VALUE *argv, VALUE self) {
     char		buf[4096];
-    struct _Out		out;
+    struct _out		out;
     VALUE		rstr;
-    struct _Options	copts = oj_default_options;
+    struct _options	copts = oj_default_options;
 
     copts.str_rx.head = NULL;
     copts.str_rx.tail = NULL;

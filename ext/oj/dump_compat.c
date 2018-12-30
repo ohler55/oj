@@ -217,7 +217,7 @@ static ID	_dump_id = 0;
 
 static void
 bigdecimal_alt(VALUE obj, int depth, Out out) {
-    struct _Attr	attrs[] = {
+    struct _attr	attrs[] = {
 	{ "b", 1, Qnil },
 	{ NULL, 0, Qnil },
     };
@@ -235,7 +235,7 @@ static ID	imag_id = 0;
 
 static void
 complex_alt(VALUE obj, int depth, Out out) {
-    struct _Attr	attrs[] = {
+    struct _attr	attrs[] = {
 	{ "r", 1, Qnil },
 	{ "i", 1, Qnil },
 	{ NULL, 0, Qnil },
@@ -258,7 +258,7 @@ static ID	start_id = 0;
 
 static void
 date_alt(VALUE obj, int depth, Out out) {
-    struct _Attr	attrs[] = {
+    struct _attr	attrs[] = {
 	{ "y", 1, Qnil },
 	{ "m", 1, Qnil },
 	{ "d", 1, Qnil },
@@ -286,7 +286,7 @@ static ID	offset_id = 0;
 
 static void
 datetime_alt(VALUE obj, int depth, Out out) {
-    struct _Attr	attrs[] = {
+    struct _attr	attrs[] = {
 	{ "y", 1, Qnil },
 	{ "m", 1, Qnil },
 	{ "d", 1, Qnil },
@@ -375,7 +375,7 @@ static ID	table_id = 0;
 
 static void
 openstruct_alt(VALUE obj, int depth, Out out) {
-    struct _Attr	attrs[] = {
+    struct _attr	attrs[] = {
 	{ "t", 1, Qnil },
 	{ NULL, 0, Qnil },
     };
@@ -425,7 +425,7 @@ static ID	denominator_id = 0;
 
 static void
 rational_alt(VALUE obj, int depth, Out out) {
-    struct _Attr	attrs[] = {
+    struct _attr	attrs[] = {
 	{ "n", 1, Qnil },
 	{ "d", 1, Qnil },
 	{ NULL, 0, Qnil },
@@ -445,7 +445,7 @@ static ID	source_id = 0;
 
 static void
 regexp_alt(VALUE obj, int depth, Out out) {
-    struct _Attr	attrs[] = {
+    struct _attr	attrs[] = {
 	{ "o", 1, Qnil },
 	{ "s", 1, Qnil },
 	{ NULL, 0, Qnil },
@@ -462,7 +462,7 @@ regexp_alt(VALUE obj, int depth, Out out) {
 
 static void
 time_alt(VALUE obj, int depth, Out out) {
-    struct _Attr	attrs[] = {
+    struct _attr	attrs[] = {
 	{ "s", 1, Qundef, 0, Qundef },
 	{ "n", 1, Qundef, 0, Qundef },
 	{ NULL, 0, Qnil },
@@ -491,7 +491,7 @@ time_alt(VALUE obj, int depth, Out out) {
     oj_code_attrs(obj, attrs, depth, out, true);
 }
 
-struct _Code	oj_compat_codes[] = {
+struct _code	oj_compat_codes[] = {
     { "BigDecimal", Qnil, bigdecimal_alt, NULL, false },
     { "Complex", Qnil, complex_alt, NULL, false },
     { "Date", Qnil, date_alt, false },
