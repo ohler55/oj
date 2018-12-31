@@ -6,6 +6,8 @@
 
   - Addressed issue #514 by changing reserved identifiers.
   
+  - Addressed issue #515 by adding return value checks on `strdup()` and `pthread_mutex_init()`.
+  
 ## 3.7.5 - 2018-12-27
 
   - Address issue #517 with a special escape table for mimicing the JSON gem.
