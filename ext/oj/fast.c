@@ -839,7 +839,7 @@ parse_json(VALUE clas, char *json, bool given, bool allocated) {
     {
 	struct rlimit	lim;
 
-	if (0 == getrlimit(RLIMIT_STACK, &lim)) {
+	if (0 == getrlimit(RLIMIT_STACK, &lim) && RLIM_INFINITY != lim.rlim_cur) {
 	    pi.stack_min = (void*)((char*)&lim - (lim.rlim_cur / 4 * 3)); // let 3/4ths of the stack be used only
 	} else {
 	    pi.stack_min = 0; // indicates not to check stack limit
