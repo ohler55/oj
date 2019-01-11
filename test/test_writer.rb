@@ -7,6 +7,10 @@ require 'helper'
 
 class OjWriter < Minitest::Test
 
+  class ModifiedActionSupportSafeBuffer < ::String
+    alias :write :concat
+  end
+
   def setup
     @default_options = Oj.default_options
   end
@@ -340,7 +344,7 @@ class OjWriter < Minitest::Test
     w.flush()
     assert_equal(%|{"a1":{},"a2":{"b":[7,true,"string"]},"a3":{}}\n|, output.string())
   end
-  
+
   def test_stream_writer_buf_flush_small
     output = StringIO.open("", "w+")
     w = Oj::StreamWriter.new(output, :indent => 0, :buffer_size => 30)
@@ -359,5 +363,18 @@ class OjWriter < Minitest::Test
     w.push_value(nil, 'nothing')
     w.pop()
     assert_equal(%|{"nothing":null}\n|, output.string())
+  end
+
+  def test_stream_writer_unicode_modified_string
+    output = ModifiedActionSupportSafeBuffer.new.force_encoding(::Encoding::UTF_8)
+    string = "香港".force_encoding(::Encoding::UTF_8)
+    assert_equal(::Encoding::UTF_8, output.encoding)
+    assert_equal(::Encoding::UTF_8, string.encoding)
+    w = Oj::StreamWriter.new(output, :indent => 0)
+    w.push_object()
+    w.push_key("key")
+    w.push_value(string)
+    w.pop()
+    assert_equal(::Encoding::UTF_8, output.encoding)
   end
 end # OjWriter
