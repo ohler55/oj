@@ -403,23 +403,6 @@ hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, volatile VALUE
     return 0;
 }
 
-static void
-copy_ivars(VALUE target, VALUE src) {
-    volatile VALUE	vars = rb_funcall(src, oj_instance_variables_id, 0);
-    volatile VALUE	*np = RARRAY_PTR(vars);
-    ID			vid;
-    int			i, cnt = (int)RARRAY_LEN(vars);
-    const char		*attr;
-
-    for (i = cnt; 0 < i; i--, np++) {
-	vid = rb_to_id(*np);
-	attr = rb_id2name(vid);
-	if ('@' == *attr) {
-	    rb_ivar_set(target, vid, rb_ivar_get(src, vid));
-	}
-    }
-}
-
 void
 oj_set_obj_ivar(Val parent, Val kval, VALUE value) {
     const char	*key = kval->key;
@@ -427,18 +410,6 @@ oj_set_obj_ivar(Val parent, Val kval, VALUE value) {
     ID		var_id;
     ID		*slot;
 
-    if ('~' == *key && Qtrue == rb_obj_is_kind_of(parent->val, rb_eException)) {
-	if (5 == klen && 0 == strncmp("~mesg", key, klen)) {
-	    VALUE		args[1];
-	    volatile VALUE	prev = parent->val;
-
-	    args[0] = value;
-	    parent->val = rb_class_new_instance(1, args, rb_class_of(parent->val));
-	    copy_ivars(parent->val, prev);
-	} else if (3 == klen && 0 == strncmp("~bt", key, klen)) {
-	    rb_funcall(parent->val, rb_intern("set_backtrace"), 1, value);
-	}
-    }
 #if HAVE_LIBPTHREAD
     pthread_mutex_lock(&oj_cache_mutex);
 #else

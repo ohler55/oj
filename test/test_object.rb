@@ -793,6 +793,30 @@ class ObjectJuice < Minitest::Test
     end
   end
 
+  class SubX < Exception
+    def initialize
+      super("sub")
+      @xyz = 123
+    end
+  end
+  
+  def test_exception_subclass
+    err = nil
+    begin
+      raise SubX.new
+    rescue Exception => e
+      err = e
+    end
+    json = Oj.dump(err, :mode => :object, :indent => 2)
+    #puts "*** #{json}"
+    e2 = Oj.load(json, :mode => :strict)
+    assert_equal(err.class.to_s, e2['^o'])
+    assert_equal(err.message, e2['~mesg'])
+    assert_equal(err.backtrace, e2['~bt'])
+    e2 = Oj.load(json, :mode => :object)
+    assert_equal(e, e2);
+  end
+
   def test_range_object
     Oj.default_options = { :mode => :object }
     json = Oj.dump(1..7, :mode => :object, :indent => 0)
