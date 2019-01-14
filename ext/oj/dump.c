@@ -397,7 +397,7 @@ oj_dump_time(VALUE obj, Out out, int withZone) {
     long long	sec;
     long long	nsec;
 
-#ifdef HAVE_RB_TIME_TIMESPEC
+#ifdef HAVE_RB_TIME_TIMESPEC_X
     // rb_time_timespec as well as rb_time_timeeval have a bug that causes an
     // exception to be raised if a time is before 1970 on 32 bit systems so
     // check the timespec size and use the ruby calls if a 32 bit system.
