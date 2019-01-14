@@ -7,7 +7,7 @@
 
 #include <ruby.h>
 
-#include "oj.h"
+#include "encode.h"
 
 extern VALUE	Oj;
 
@@ -36,11 +36,17 @@ stream_writer_write(StreamWriter sw) {
 
     switch (sw->type) {
     case STRING_IO:
-	rb_funcall(sw->stream, oj_write_id, 1, rb_str_new(sw->sw.out.buf, size));
+    case STREAM_IO: {
+	volatile VALUE	rs = rb_str_new(sw->sw.out.buf, size);
+
+	// Oddly enough, when pushing ASCII characters with UTF-8 encoding or
+	// even ASCII-8BIT does not change the output encoding. Pushing any
+	// non-ASCII no matter what the encoding changes the output encoding
+	// to ASCII-8BIT if it the string is not forced to UTF-8 here.
+	rs = oj_encode(rs);
+	rb_funcall(sw->stream, oj_write_id, 1, rs);
 	break;
-    case STREAM_IO:
-	rb_funcall(sw->stream, oj_write_id, 1, rb_str_new(sw->sw.out.buf, size));
-	break;
+    }
     case FILE_IO:
 	if (size != write(sw->fd, sw->sw.out.buf, size)) {
 	    rb_raise(rb_eIOError, "Write failed. [_%d_:%s]\n", errno, strerror(errno));

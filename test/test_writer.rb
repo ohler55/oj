@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-# encoding: UTF-8
+# encoding: utf-8
 
 $: << File.dirname(__FILE__)
 
@@ -227,6 +227,22 @@ class OjWriter < Minitest::Test
 
   # Stream Writer
 
+  class SString < ::String
+    alias :write :concat
+  end
+  
+  def test_stream_writer_encoding
+    output = SString.new.force_encoding(::Encoding::UTF_8)
+    w = Oj::StreamWriter.new(output, :indent => 0)
+    # Oddly enough, when pushing ASCII characters with UTF-8 encoding or even
+    # ASCII-8BIT does not change the output encoding. Pushing any non-ASCII no
+    # matter what the encoding changes the output encoding to ASCII-8BIT.
+    x = "香港" # Hong Kong
+    x = x.force_encoding('ASCII-8BIT')
+    w.push_value(x)
+    assert_equal(::Encoding::UTF_8, output.encoding)
+  end
+
   def test_stream_writer_empty_array
     output = StringIO.open("", "w+")
     w = Oj::StreamWriter.new(output, :indent => 0)
@@ -251,7 +267,8 @@ class OjWriter < Minitest::Test
     w.push_object("a3")
     w.pop()
     w.pop()
-    assert_equal(%|{"a1":{},"a2":{"b":[7,true,"string"]},"a3":{}}\n|, output.string())
+    result = output.string()
+    assert_equal(%|{"a1":{},"a2":{"b":[7,true,"string"]},"a3":{}}\n|, result)
   end
 
   def test_stream_writer_mixed_file
