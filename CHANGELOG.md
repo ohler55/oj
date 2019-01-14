@@ -1,13 +1,19 @@
 # CHANGELOG
 
+## 3.7.7 - 2019-01-14
+
+  - Exception with other than a single argument initializer can now be decoded.
+
+  - StreamWriter bug fixed that forces UTF-8 when appending to a stream. Ruby likes to convert to ASCII-8BIT but forcing the append to be UTF-8 avoids that issue.
+
 ## 3.7.6 - 2018-12-30
 
   - Changed time encoding for 32 bit to work around a Ruby bug in `rb_time_timespec()` that fails for times before 1970.
 
   - Addressed issue #514 by changing reserved identifiers.
-  
+
   - Addressed issue #515 by adding return value checks on `strdup()` and `pthread_mutex_init()`.
-  
+
 ## 3.7.5 - 2018-12-27
 
   - Address issue #517 with a special escape table for mimicing the JSON gem.
