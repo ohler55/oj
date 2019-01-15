@@ -304,7 +304,7 @@ dump_time(VALUE obj, int depth, Out out, bool as_ok) {
     long long	sec;
     long long	nsec;
 
-#ifdef HAVE_RB_TIME_TIMESPEC
+#ifdef HAVE_RB_TIME_TIMESPEC_X
     if (16 <= sizeof(struct timespec)) {
 	struct timespec	ts = rb_time_timespec(obj);
 

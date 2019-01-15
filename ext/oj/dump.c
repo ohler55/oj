@@ -502,7 +502,7 @@ oj_dump_xml_time(VALUE obj, Out out) {
     int		tzhour, tzmin;
     char	tzsign = '+';
 
-#ifdef HAVE_RB_TIME_TIMESPEC
+#ifdef HAVE_RB_TIME_TIMESPEC_X
     if (16 <= sizeof(struct timespec)) {
 	struct timespec	ts = rb_time_timespec(obj);
 
