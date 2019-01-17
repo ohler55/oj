@@ -248,7 +248,7 @@ dump_sec_nano(VALUE obj, time_t sec, long nsec, Out out) {
     }
     // 2012-01-05T23:58:07.123456000+09:00 or 2012/01/05 23:58:07 +0900
     sec += tzsecs;
-    tm = gmtime(&sec);
+    tm = gmtime(&sec); // TBD use gmtime_r or write something new
     if (0 > tzsecs) {
         tzsign = '-';
         tzhour = (int)(tzsecs / -3600);
@@ -304,7 +304,7 @@ dump_time(VALUE obj, int depth, Out out, bool as_ok) {
     long long	sec;
     long long	nsec;
 
-#ifdef HAVE_RB_TIME_TIMESPEC_X
+#ifdef HAVE_RB_TIME_TIMESPEC
     if (16 <= sizeof(struct timespec)) {
 	struct timespec	ts = rb_time_timespec(obj);
 
