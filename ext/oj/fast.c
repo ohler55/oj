@@ -819,6 +819,8 @@ parse_json(VALUE clas, char *json, bool given, bool allocated) {
     int			ex = 0;
     volatile VALUE	self;
 
+    // TBD are both needed? is stack allocation ever needed?
+    
     if (given) {
 	doc = ALLOCA_N(struct _doc, 1);
     } else {
@@ -862,6 +864,7 @@ parse_json(VALUE clas, char *json, bool given, bool allocated) {
 	if (allocated && 0 != ex) { // will jump so caller will not free
 	    xfree(json);
 	}
+	rb_gc_enable();
     } else {
 	result = doc->self;
     }
@@ -1165,8 +1168,14 @@ doc_open(VALUE clas, VALUE str) {
     } else {
 	json = ALLOCA_N(char, len);
     }
+    // It should not be necessaary to stop GC but if it is not stopped and a
+    // large string is parsed that string is corrupted or freed during
+    // parsing. I'm not sure what is going on exactly but disabling GC avoids
+    // the issue.
+    rb_gc_disable();
     memcpy(json, StringValuePtr(str), len);
     obj = parse_json(clas, json, given, allocate);
+    rb_gc_enable();
     if (given && allocate) {
 	xfree(json);
     }
@@ -1222,7 +1231,9 @@ doc_open_file(VALUE clas, VALUE filename) {
     }
     fclose(f);
     json[len] = '\0';
+    rb_gc_disable();
     obj = parse_json(clas, json, given, allocate);
+    rb_gc_enable();
     if (given && allocate) {
 	xfree(json);
     }
