@@ -15,6 +15,7 @@
 #include "encode.h"
 #include "dump.h"
 #include "trace.h"
+#include "util.h"
 
 // Workaround in case INFINITY is not defined in math.h or if the OS is CentOS
 #define OJ_INFINITY (1.0/0.0)
@@ -193,11 +194,11 @@ dump_hash(VALUE obj, int depth, Out out, bool as_ok) {
 
 static void
 dump_time(VALUE obj, Out out) {
-    char	buf[64];
-    struct tm	*tm;
-    int		len;
-    time_t	sec;
-    long long	nsec;
+    char		buf[64];
+    struct _timeInfo	ti;
+    int			len;
+    time_t		sec;
+    long long		nsec;
 
 #ifdef HAVE_RB_TIME_TIMESPEC
     if (16 <= sizeof(struct timespec)) {
@@ -216,11 +217,9 @@ dump_time(VALUE obj, Out out) {
 
     assure_size(out, 36);
     // 2012-01-05T23:58:07.123456000Z
-    tm = gmtime(&sec);
+    sec_as_time(sec, &ti);
 
-    len = sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02d.%09ldZ",
-		  tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
-		  tm->tm_hour, tm->tm_min, tm->tm_sec, (long)nsec);
+    len = sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02d.%09ldZ", ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec, (long)nsec);
     oj_dump_cstr(buf, len, 0, 0, out);
 }
 

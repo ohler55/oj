@@ -3,6 +3,7 @@
  * All rights reserved.
  */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <time.h>
 
@@ -14,6 +15,7 @@
 #include "odd.h"
 #include "encode.h"
 #include "trace.h"
+#include "util.h"
 
 inline static long
 read_long(const char *str, size_t len) {
@@ -291,24 +293,19 @@ hat_num(ParseInfo pi, Val parent, Val kval, NumInfo ni) {
 		    // match the expected value.
 		    parent->val = rb_funcall2(parent->val, oj_utc_id, 0, 0);
 		} else if (ni->hasExp) {
-		    time_t	t = (time_t)(ni->i + ni->exp);
-		    struct tm	*st = gmtime(&t);
-		    VALUE	args[8];
+		    int64_t		t = (int64_t)(ni->i + ni->exp);
+		    struct _timeInfo	ti;
+		    VALUE		args[8];
 
-		    // Windows does not support dates before 1970 so ignore
-		    // the zone and do the best we can.
-		    if (NULL == st) {
-			parent->val = rb_time_nano_new(ni->i, (long)nsec);
-		    } else {
-			args[0] = LONG2NUM((long)(1900 + st->tm_year));
-			args[1] = LONG2NUM(1 + st->tm_mon);
-			args[2] = LONG2NUM(st->tm_mday);
-			args[3] = LONG2NUM(st->tm_hour);
-			args[4] = LONG2NUM(st->tm_min);
-			args[5] = rb_float_new((double)st->tm_sec + ((double)nsec + 0.5) / 1000000000.0);
-			args[6] = LONG2NUM(ni->exp);
-			parent->val = rb_funcall2(rb_cTime, oj_new_id, 7, args);
-		    }
+		    sec_as_time(t, &ti);
+		    args[0] = LONG2NUM((long)(ti.year));
+		    args[1] = LONG2NUM(ti.mon);
+		    args[2] = LONG2NUM(ti.day);
+		    args[3] = LONG2NUM(ti.hour);
+		    args[4] = LONG2NUM(ti.min);
+		    args[5] = rb_float_new((double)ti.sec + ((double)nsec + 0.5) / 1000000000.0);
+		    args[6] = LONG2NUM(ni->exp);
+		    parent->val = rb_funcall2(rb_cTime, oj_new_id, 7, args);
 		} else {
 		    parent->val = rb_time_nano_new(ni->i, (long)nsec);
 		}
