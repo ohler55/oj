@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 3.7.8 - 2019-01-??
+## 3.7.8 - 2019-01-21
 
 - Replace `gmtime` with a custom function.
 
