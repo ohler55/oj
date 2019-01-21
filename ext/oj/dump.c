@@ -3,22 +3,19 @@
  * All rights reserved.
  */
 
-#include <stdlib.h>
 #include <errno.h>
-#if !IS_WINDOWS
-#include <sys/time.h>
-#endif
-#include <time.h>
-#include <stdio.h>
-#include <string.h>
 #include <math.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
-#include <errno.h>
 
 #include "oj.h"
 #include "cache8.h"
 #include "dump.h"
 #include "odd.h"
+#include "util.h"
 
 // Workaround in case INFINITY is not defined in math.h or if the OS is CentOS
 #define OJ_INFINITY (1.0/0.0)
@@ -493,14 +490,14 @@ oj_dump_ruby_time(VALUE obj, Out out) {
 
 void
 oj_dump_xml_time(VALUE obj, Out out) {
-    char	buf[64];
-    struct tm	*tm;
-    long	one = 1000000000;
-    time_t	sec;
-    long long	nsec;
-    long	tzsecs = NUM2LONG(rb_funcall2(obj, oj_utc_offset_id, 0, 0));
-    int		tzhour, tzmin;
-    char	tzsign = '+';
+    char		buf[64];
+    struct _timeInfo	ti;
+    long		one = 1000000000;
+    int64_t		sec;
+    long long		nsec;
+    long		tzsecs = NUM2LONG(rb_funcall2(obj, oj_utc_offset_id, 0, 0));
+    int			tzhour, tzmin;
+    char		tzsign = '+';
 
 #ifdef HAVE_RB_TIME_TIMESPEC
     if (16 <= sizeof(struct timespec)) {
@@ -541,8 +538,7 @@ oj_dump_xml_time(VALUE obj, Out out) {
     // 2012-01-05T23:58:07.123456000+09:00
     //tm = localtime(&sec);
     sec += tzsecs;
-    tm = gmtime(&sec);
-#if 1
+    sec_as_time((int64_t)sec, &ti);
     if (0 > tzsecs) {
         tzsign = '-';
         tzhour = (int)(tzsecs / -3600);
@@ -551,26 +547,12 @@ oj_dump_xml_time(VALUE obj, Out out) {
         tzhour = (int)(tzsecs / 3600);
         tzmin = (int)(tzsecs / 60) - (tzhour * 60);
     }
-#else
-    if (0 > tm->tm_gmtoff) {
-        tzsign = '-';
-        tzhour = (int)(tm->tm_gmtoff / -3600);
-        tzmin = (int)(tm->tm_gmtoff / -60) - (tzhour * 60);
-    } else {
-        tzhour = (int)(tm->tm_gmtoff / 3600);
-        tzmin = (int)(tm->tm_gmtoff / 60) - (tzhour * 60);
-    }
-#endif
     if (0 == nsec || 0 == out->opts->sec_prec) {
 	if (0 == tzsecs && rb_funcall2(obj, oj_utcq_id, 0, 0)) {
-	    sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02dZ",
-		    tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
-		    tm->tm_hour, tm->tm_min, tm->tm_sec);
+	    sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02dZ", ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec);
 	    oj_dump_cstr(buf, 20, 0, 0, out);
 	} else {
-	    sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02d%c%02d:%02d",
-		    tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
-		    tm->tm_hour, tm->tm_min, tm->tm_sec,
+	    sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02d%c%02d:%02d", ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec,
 		    tzsign, tzhour, tzmin);
 	    oj_dump_cstr(buf, 25, 0, 0, out);
 	}
@@ -582,9 +564,7 @@ oj_dump_xml_time(VALUE obj, Out out) {
 	    format[32] = '0' + out->opts->sec_prec;
 	    len -= 9 - out->opts->sec_prec;
 	}
-	sprintf(buf, format,
-		tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
-		tm->tm_hour, tm->tm_min, tm->tm_sec, (long)nsec);
+	sprintf(buf, format, ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec, (long)nsec);
 	oj_dump_cstr(buf, len, 0, 0, out);
     } else {
 	char	format[64] = "%04d-%02d-%02dT%02d:%02d:%02d.%09ld%c%02d:%02d";
@@ -594,10 +574,7 @@ oj_dump_xml_time(VALUE obj, Out out) {
 	    format[32] = '0' + out->opts->sec_prec;
 	    len -= 9 - out->opts->sec_prec;
 	}
-	sprintf(buf, format,
-		tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
-		tm->tm_hour, tm->tm_min, tm->tm_sec, (long)nsec,
-		tzsign, tzhour, tzmin);
+	sprintf(buf, format, ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec, (long)nsec, tzsign, tzhour, tzmin);
 	oj_dump_cstr(buf, len, 0, 0, out);
     }
 }

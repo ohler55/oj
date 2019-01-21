@@ -8,6 +8,7 @@
 #include "code.h"
 #include "encode.h"
 #include "trace.h"
+#include "util.h"
 
 #define OJ_INFINITY (1.0/0.0)
 
@@ -221,9 +222,9 @@ dump_bigdecimal(VALUE obj, int depth, Out out, bool as_ok) {
 }
 
 static void
-dump_sec_nano(VALUE obj, time_t sec, long nsec, Out out) {
+dump_sec_nano(VALUE obj, int64_t sec, long nsec, Out out) {
     char		buf[64];
-    struct tm		*tm;
+    struct _timeInfo	ti;
     long		one = 1000000000;
     long		tzsecs = NUM2LONG(rb_funcall2(obj, oj_utc_offset_id, 0, 0));
     int			tzhour, tzmin;
@@ -248,7 +249,7 @@ dump_sec_nano(VALUE obj, time_t sec, long nsec, Out out) {
     }
     // 2012-01-05T23:58:07.123456000+09:00 or 2012/01/05 23:58:07 +0900
     sec += tzsecs;
-    tm = gmtime(&sec);
+    sec_as_time(sec, &ti);
     if (0 > tzsecs) {
         tzsign = '-';
         tzhour = (int)(tzsecs / -3600);
@@ -258,19 +259,12 @@ dump_sec_nano(VALUE obj, time_t sec, long nsec, Out out) {
         tzmin = (int)(tzsecs / 60) - (tzhour * 60);
     }
     if (!xml_time) {
-	len = sprintf(buf, "%04d/%02d/%02d %02d:%02d:%02d %c%02d%02d",
-		      tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
-		      tm->tm_hour, tm->tm_min, tm->tm_sec, tzsign, tzhour, tzmin);
+	len = sprintf(buf, "%04d/%02d/%02d %02d:%02d:%02d %c%02d%02d", ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec, tzsign, tzhour, tzmin);
     } else if (0 == out->opts->sec_prec) {
 	if (0 == tzsecs && rb_funcall2(obj, oj_utcq_id, 0, 0)) {
-	    len = sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02dZ",
-			  tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
-			  tm->tm_hour, tm->tm_min, tm->tm_sec);
+	    len = sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02dZ", ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec);
 	} else {
-	    len = sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02d%c%02d:%02d",
-			  tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
-			  tm->tm_hour, tm->tm_min, tm->tm_sec,
-			  tzsign, tzhour, tzmin);
+	    len = sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02d%c%02d:%02d", ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec, tzsign, tzhour, tzmin);
 	}
     } else if (0 == tzsecs && rb_funcall2(obj, oj_utcq_id, 0, 0)) {
 	char	format[64] = "%04d-%02d-%02dT%02d:%02d:%02d.%09ldZ";
@@ -280,9 +274,7 @@ dump_sec_nano(VALUE obj, time_t sec, long nsec, Out out) {
 	    format[32] = '0' + out->opts->sec_prec;
 	    len -= 9 - out->opts->sec_prec;
 	}
-	len = sprintf(buf, format,
-		      tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
-		      tm->tm_hour, tm->tm_min, tm->tm_sec, nsec);
+	len = sprintf(buf, format, ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec, nsec);
     } else {
 	char	format[64] = "%04d-%02d-%02dT%02d:%02d:%02d.%09ld%c%02d:%02d";
 
@@ -291,10 +283,7 @@ dump_sec_nano(VALUE obj, time_t sec, long nsec, Out out) {
 	    format[32] = '0' + out->opts->sec_prec;
 	    len -= 9 - out->opts->sec_prec;
 	}
-	len = sprintf(buf, format,
-		      tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
-		      tm->tm_hour, tm->tm_min, tm->tm_sec, nsec,
-		      tzsign, tzhour, tzmin);
+	len = sprintf(buf, format, ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec, nsec, tzsign, tzhour, tzmin);
     }
     oj_dump_cstr(buf, len, 0, 0, out);
 }
@@ -323,7 +312,7 @@ dump_time(VALUE obj, int depth, Out out, bool as_ok) {
 
 static void
 dump_timewithzone(VALUE obj, int depth, Out out, bool as_ok) {
-    time_t	sec = NUM2LONG(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+    int64_t	sec = NUM2LONG(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
     long long	nsec = 0;
 
     if (rb_respond_to(obj, oj_tv_nsec_id)) {
