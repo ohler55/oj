@@ -31,6 +31,7 @@
 #include <string.h>
 
 #include "oj.h"
+#include "odd.h"
 #include "val_stack.h"
 
 static void
@@ -53,6 +54,16 @@ mark(void *ptr) {
 	}
 	if (Qnil != v->key_val && Qundef != v->key_val) {
 	    rb_gc_mark(v->key_val);
+	}
+	if (NULL != v->odd_args) {
+	    VALUE	*a;
+	    int		i;
+
+	    for (i = v->odd_args->odd->attr_cnt, a = v->odd_args->args; 0 < i; i--, a++) {
+		if (Qnil != *a) {
+		    rb_gc_mark(*a);
+		}
+	    }
 	}
     }
 #if HAVE_LIBPTHREAD
@@ -77,12 +88,15 @@ oj_stack_init(ValStack stack) {
     stack->end = stack->base + sizeof(stack->base) / sizeof(struct _val);
     stack->tail = stack->head;
     stack->head->val = Qundef;
-    stack->head->key = 0;
+    stack->head->key = NULL;
     stack->head->key_val = Qundef;
-    stack->head->classname = 0;
+    stack->head->classname = NULL;
+    stack->head->odd_args = NULL;
+    stack->head->clas = Qundef;
     stack->head->klen = 0;
     stack->head->clen = 0;
     stack->head->next = NEXT_NONE;
+
     return Data_Wrap_Struct(oj_cstack_class, mark, 0, stack);
 }
 

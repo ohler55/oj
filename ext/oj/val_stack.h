@@ -57,13 +57,9 @@ typedef struct _val {
     const char		*key;
     char		karray[32];
     volatile VALUE	key_val;
-    union {
-	struct {
-	    const char	*classname;
-	    VALUE	clas;
-	};
-	OddArgs		odd_args;
-    };
+    const char		*classname;
+    VALUE		clas;
+    OddArgs		odd_args;
     uint16_t		klen;
     uint16_t		clen;
     char		next; // ValNext
@@ -132,6 +128,7 @@ stack_push(ValStack stack, VALUE val, ValNext next) {
     stack->tail->next = next;
     stack->tail->classname = NULL;
     stack->tail->clas = Qundef;
+    stack->tail->odd_args = NULL;
     stack->tail->key = 0;
     stack->tail->key_val = Qundef;
     stack->tail->clen = 0;
