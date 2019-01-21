@@ -128,6 +128,7 @@ stack_push(ValStack stack, VALUE val, ValNext next) {
     stack->tail->next = next;
     stack->tail->classname = NULL;
     stack->tail->clas = Qundef;
+    stack->tail->odd_args = NULL;
     stack->tail->key = 0;
     stack->tail->key_val = Qundef;
     stack->tail->clen = 0;

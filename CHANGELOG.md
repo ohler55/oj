@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 3.7.8 - 2019-01-??
+
+- Replace `gmtime` with a custom function.
+
+- Oj::Doc crash fix.
+
+- Mark odd args to avoid GC.
+
 ## 3.7.7 - 2019-01-14
 
   - Exception with other than a single argument initializer can now be decoded.

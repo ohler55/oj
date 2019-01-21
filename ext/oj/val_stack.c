@@ -96,6 +96,7 @@ oj_stack_init(ValStack stack) {
     stack->head->klen = 0;
     stack->head->clen = 0;
     stack->head->next = NEXT_NONE;
+
     return Data_Wrap_Struct(oj_cstack_class, mark, 0, stack);
 }
 
