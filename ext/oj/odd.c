@@ -38,11 +38,11 @@ set_class(Odd odd, const char *classname) {
 
 static VALUE
 get_datetime_secs(VALUE obj) {
-    VALUE	rsecs = rb_funcall(obj, sec_id, 0);
-    VALUE	rfrac = rb_funcall(obj, sec_fraction_id, 0);
-    long	sec = NUM2LONG(rsecs);
-    long long	num = rb_num2ll(rb_funcall(rfrac, numerator_id, 0));
-    long long	den = rb_num2ll(rb_funcall(rfrac, denominator_id, 0));
+    volatile VALUE	rsecs = rb_funcall(obj, sec_id, 0);
+    volatile VALUE	rfrac = rb_funcall(obj, sec_fraction_id, 0);
+    long		sec = NUM2LONG(rsecs);
+    long long		num = rb_num2ll(rb_funcall(rfrac, numerator_id, 0));
+    long long		den = rb_num2ll(rb_funcall(rfrac, denominator_id, 0));
 
     num += sec * den;
 

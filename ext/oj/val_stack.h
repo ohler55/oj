@@ -57,13 +57,9 @@ typedef struct _val {
     const char		*key;
     char		karray[32];
     volatile VALUE	key_val;
-    union {
-	struct {
-	    const char	*classname;
-	    VALUE	clas;
-	};
-	OddArgs		odd_args;
-    };
+    const char		*classname;
+    VALUE		clas;
+    OddArgs		odd_args;
     uint16_t		klen;
     uint16_t		clen;
     char		next; // ValNext
