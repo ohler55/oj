@@ -631,7 +631,7 @@ mimic_set_create_id(VALUE self, VALUE id) {
     Check_Type(id, T_STRING);
 
     if (NULL != oj_default_options.create_id) {
-	if (oj_json_class != oj_default_options.create_id && NULL != oj_default_options.create_id) {
+	if (oj_json_class != oj_default_options.create_id) {
 	    xfree((char*)oj_default_options.create_id);
 	}
 	oj_default_options.create_id = NULL;
