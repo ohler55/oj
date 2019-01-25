@@ -633,7 +633,7 @@ create_opt(ROptTable rot, VALUE clas) {
 	    ro->dump = dump_to_s;
 	}
     }
-    return NULL;
+    return ro;
 }
 
 static void

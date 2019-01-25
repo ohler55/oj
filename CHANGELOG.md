@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.7.9 - 2019-01-??
+
+- Return correct value in `create_opt` C function.
+
 ## 3.7.8 - 2019-01-21
 
 - Replace `gmtime` with a custom function.
