@@ -1,8 +1,10 @@
 # CHANGELOG
 
-## 3.7.9 - 2019-01-??
+## 3.7.9 - 2019-02-??
 
 - Return correct value in `create_opt` C function.
+
+- Return `Oj::ParseError` if an invalid big decimal string is encounted instead of an argument error
 
 ## 3.7.8 - 2019-01-21
 

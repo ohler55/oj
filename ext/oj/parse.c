@@ -418,7 +418,7 @@ read_num(ParseInfo pi) {
     } else {
 	int	dec_cnt = 0;
 	bool	zero1 = false;
-	
+
 	for (; '0' <= *pi->cur && *pi->cur <= '9'; pi->cur++) {
 	    if (0 == ni.i && '0' == *pi->cur) {
 		zero1 = true;
@@ -607,7 +607,7 @@ oj_parse2(ParseInfo pi) {
     while (1) {
 	if (0 < pi->max_depth && pi->max_depth <= pi->stack.tail - pi->stack.head - 1) {
 	    VALUE	err_clas = oj_get_json_err_class("NestingError");
-	    
+
 	    oj_set_error_at(pi, err_clas, __FILE__, __LINE__, "Too deeply nested.");
 	    pi->err_class = err_clas;
 	    return;
@@ -729,6 +729,17 @@ oj_parse2(ParseInfo pi) {
     }
 }
 
+static VALUE
+rescue_big_decimal(VALUE str) {
+    rb_raise(oj_parse_error_class, "Invalid value for BigDecimal()");
+    return Qnil;
+}
+
+static VALUE
+parse_big_decimal(VALUE str) {
+    return rb_funcall(rb_cObject, oj_bigdecimal_id, 1, str);
+}
+
 VALUE
 oj_num_as_value(NumInfo ni) {
     volatile VALUE	rnum = Qnil;
@@ -766,7 +777,9 @@ oj_num_as_value(NumInfo ni) {
 	}
     } else { // decimal
 	if (ni->big) {
-	    rnum = rb_funcall(rb_cObject, oj_bigdecimal_id, 1, rb_str_new(ni->str, ni->len));
+	    volatile VALUE	bd = rb_str_new(ni->str, ni->len);
+
+	    rnum = rb_rescue2(parse_big_decimal, bd, rescue_big_decimal, bd, rb_eException, 0);
 	    if (ni->no_big) {
 		rnum = rb_funcall(rnum, rb_intern("to_f"), 0);
 	    }
@@ -779,7 +792,9 @@ oj_num_as_value(NumInfo ni) {
 	    // 15 digits. This attempts to fix those few cases where this
 	    // occurs.
 	    if ((long double)INT64_MAX > d && (int64_t)d != (ni->i * ni->div + ni->num)) {
-		rnum = rb_funcall(rb_cObject, oj_bigdecimal_id, 1, rb_str_new(ni->str, ni->len));
+		volatile VALUE	bd = rb_str_new(ni->str, ni->len);
+
+		rnum = rb_rescue2(parse_big_decimal, bd, rescue_big_decimal, bd, rb_eException, 0);
 		if (ni->no_big) {
 		    rnum = rb_funcall(rnum, rb_intern("to_f"), 0);
 		}
@@ -833,7 +848,7 @@ oj_set_error_at(ParseInfo pi, VALUE err_clas, const char* file, int line, const 
 			break;
 		    }
 		    p += snprintf(p, end - p, "[%ld]", RARRAY_LEN(vp->val));
-		}		    
+		}
 	    }
 	}
 	*p++ = ')';
@@ -976,11 +991,11 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
 	if (0 != line) {
 	    VALUE	ec = rb_obj_class(rb_errinfo());
 
-	    if (rb_eIOError != ec) {
-		goto CLEANUP;
-	    }
 	    if (rb_eArgError != ec && 0 != ec) {
 		err_class = ec;
+	    }
+	    if (rb_eIOError != ec) {
+		goto CLEANUP;
 	    }
 	}
 	if (NULL != (v = stack_peek(&pi->stack))) {
