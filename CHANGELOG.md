@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 3.7.9 - 2019-02-??
+## 3.7.9 - 2019-02-18
 
 - Return correct value in `create_opt` C function.
 
