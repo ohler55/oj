@@ -420,6 +420,14 @@ class Juice < Minitest::Test
     assert_equal('-2208987661.000000000', json)
   end
 
+  def test_time_years
+    (-2020..2020).each { |year|
+      s = "%04d-03-01T15:14:13Z" % [year]
+      json = Oj.dump(Time.parse(s), mode: :custom, time_format: :xmlschema)
+      assert_equal(s, json[1..-2])
+    }
+  end
+
   # Class
   def test_class_null
     json = Oj.dump(Juice, :mode => :null)

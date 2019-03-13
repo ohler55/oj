@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.7.10 - 2019-03-14
+
+- Corrected time dump so that the none-leap years after a 400 year period are correct.
+
 ## 3.7.9 - 2019-02-18
 
 - Return correct value in `create_opt` C function.

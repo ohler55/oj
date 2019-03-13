@@ -74,7 +74,7 @@ sec_as_time(int64_t secs, TimeInfo ti) {
 	    y = secs / SECS_PER_YEAR;
 	    secs = secs - y * SECS_PER_YEAR;
 	    y++;
-	    leap = true;
+	    leap = false;
 	}
     } else if (secs < SECS_PER_LEAP_CENT) { // first century in 400 years is a leap century (one extra day)
 	qy = secs / SECS_PER_QUAD_YEAR;
