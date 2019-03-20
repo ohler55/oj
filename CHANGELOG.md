@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.7.11 - 2019-03-19
+
+- Fix to Rails optimize that missed initializing the mimic JSON `:symbolize_names` value.
+
 ## 3.7.10 - 2019-03-14
 
 - Corrected time dump so that the none-leap years after a 400 year period are correct.

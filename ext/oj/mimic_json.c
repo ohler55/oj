@@ -8,7 +8,7 @@
 #include "dump.h"
 #include "parse.h"
 
-static VALUE	symbolize_names_sym;
+static VALUE	symbolize_names_sym = Qundef;
 
 extern const char	oj_json_class[];
 
@@ -26,30 +26,30 @@ static VALUE	state_class;
 // mimic JSON documentation
 
 /* Document-module: JSON::Ext
- * 
+ *
  * The Ext module is a placeholder in the mimic JSON module used for
  * compatibility only.
  */
 /* Document-class: JSON::Ext::Parser
- * 
+ *
  * The JSON::Ext::Parser is a placeholder in the mimic JSON module used for
  * compatibility only.
  */
 /* Document-class: JSON::Ext::Generator
- * 
+ *
  * The JSON::Ext::Generator is a placeholder in the mimic JSON module used for
  * compatibility only.
  */
 
 /* Document-method: parser=
  * call-seq: parser=(parser)
- * 
+ *
  * Does nothing other than provide compatibility.
  * - *parser* [_Object_] ignored
  */
 /* Document-method: generator=
  * call-seq: generator=(generator)
- * 
+ *
  * Does nothing other than provide compatibility.
  * - *generator* [_Object_] ignored
  */
@@ -184,9 +184,9 @@ mimic_limit_arg(VALUE a) {
 
 /* Document-method: dump
  * call-seq: dump(obj, anIO=nil, limit=nil)
- * 
+ *
  * Encodes an object as a JSON String.
- * 
+ *
  * - *obj* [_Object_] object to convert to encode as JSON
  * - *anIO* [_IO_] an IO that allows writing
  * - *limit* [_Fixnum_] ignored
@@ -218,7 +218,7 @@ mimic_dump(int argc, VALUE *argv, VALUE self) {
     out.omit_nil = copts.dump_opts.omit_nil;
     if (2 <= argc) {
 	int	limit;
-	
+
 	// The json gem take a more liberal approach to optional
 	// arguments. Expected are (obj, anIO=nil, limit=nil) yet the io
 	// argument can be left off completely and the 2nd argument is then
@@ -285,11 +285,11 @@ mimic_walk(VALUE key, VALUE obj, VALUE proc) {
 
 /* Document-method: restore
  * call-seq: restore(source, proc=nil)
- * 
+ *
  * Loads a Ruby Object from a JSON source that can be either a String or an
  * IO. If Proc is given or a block is providedit is called with each nested
  * element of the loaded Object.
- * 
+ *
  * - *source* [_String_|IO] JSON source
  * - *proc* [_Proc_] to yield to on each element or nil
  *
@@ -298,11 +298,11 @@ mimic_walk(VALUE key, VALUE obj, VALUE proc) {
 
 /* Document-method: load
  * call-seq: load(source, proc=nil)
- * 
+ *
  * Loads a Ruby Object from a JSON source that can be either a String or an
  * IO. If Proc is given or a block is providedit is called with each nested
  * element of the loaded Object.
- * 
+ *
  * - *source* [_String_|IO] JSON source
  * - *proc* [_Proc_] to yield to on each element or nil
  *
@@ -330,10 +330,10 @@ mimic_load(int argc, VALUE *argv, VALUE self) {
 
 /* Document-method: []
  * call-seq: [](obj, opts={})
- * 
+ *
  * If the obj argument is a String then it is assumed to be a JSON String and
  * parsed otherwise the obj is encoded as a JSON String.
- * 
+ *
  * - *obj* [_String_|Hash|Array] object to convert
  * - *opts* [_Hash_] same options as either generate or parse
  *
@@ -396,11 +396,11 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
 
 /* Document-method: generate
  * call-seq: generate(obj, opts=nil)
- * 
+ *
  * Encode obj as a JSON String. The obj argument must be a Hash, Array, or
  * respond to to_h or to_json. Options other than those listed such as
  * +:allow_nan+ or +:max_nesting+ are ignored.
- * 
+ *
  * - *obj* [_Object_|Hash|Array] object to convert to a JSON String
  * - *opts* [_Hash_] options
  * - - *:indent* [_String_] String to use for indentation.
@@ -461,7 +461,7 @@ oj_mimic_pretty_generate(int argc, VALUE *argv, VALUE self) {
 	rb_hash_aset(h, oj_array_nl_sym, rb_str_new2("\n"));
     }
     rargs[1] = rb_funcall(state_class, oj_new_id, 1, h);
-    
+
     copts.str_rx.head = NULL;
     copts.str_rx.tail = NULL;
     strcpy(copts.dump_opts.indent_str, "  ");
@@ -509,6 +509,9 @@ mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
 
 	if (T_HASH != rb_type(ropts)) {
 	    rb_raise(rb_eArgError, "options must be a hash.");
+	}
+	if (Qundef == symbolize_names_sym) {
+	    symbolize_names_sym = ID2SYM(rb_intern("symbolize_names"));	rb_gc_register_address(&symbolize_names_sym);
 	}
 	if (Qnil != (v = rb_hash_lookup(ropts, symbolize_names_sym))) {
 	    pi.options.sym_key = (Qtrue == v) ? Yes : No;
@@ -602,9 +605,9 @@ mimic_parse_bang(int argc, VALUE *argv, VALUE self) {
 
 /* Document-method: recurse_proc
  * call-seq: recurse_proc(obj, &proc)
- * 
+ *
  * Yields to the proc for every element in the obj recursively.
- * 
+ *
  * - *obj* [_Hash_|Array] object to walk
  * - *proc* [_Proc_] to yield to on each element
  */
@@ -834,7 +837,7 @@ oj_define_mimic_json(int argc, VALUE *argv, VALUE self) {
     VALUE	dummy;
     VALUE	verbose;
     VALUE	json;
-    
+
     // Either set the paths to indicate JSON has been loaded or replaces the
     // methods if it has been loaded.
     if (rb_const_defined_at(rb_cObject, rb_intern("JSON"))) {
