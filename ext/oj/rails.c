@@ -117,7 +117,7 @@ dump_attr_cb(ID key, VALUE value, Out out) {
     dump_rails_val(value, depth, out, true);
     out->depth = depth;
     *out->cur++ = ',';
-    
+
     return ST_CONTINUE;
 }
 
@@ -230,7 +230,7 @@ dump_sec_nano(VALUE obj, int64_t sec, long nsec, Out out) {
     int			tzhour, tzmin;
     char		tzsign = '+';
     int			len;
-    
+
     if (out->end - out->cur <= 36) {
 	assure_size(out, 36);
     }
@@ -353,7 +353,7 @@ columns_array(VALUE rcols, int *ccnt) {
     StrLen		cols;
     int			i;
     int			cnt = (int)RARRAY_LEN(rcols);
-    
+
     *ccnt = cnt;
     cols = ALLOC_N(struct _strLen, cnt);
     for (i = 0, cp = cols; i < cnt; i++, cp++) {
@@ -372,7 +372,7 @@ dump_row(VALUE row, StrLen cols, int ccnt, int depth, Out out) {
     size_t	size;
     int		d2 = depth + 1;
     int		i;
-				   
+
     assure_size(out, 2);
     *out->cur++ = '{';
     size = depth * out->indent + 3;
@@ -432,7 +432,7 @@ dump_activerecord_result(VALUE obj, int depth, Out out, bool as_ok) {
     int			i, rcnt;
     size_t		size;
     int			d2 = depth + 1;
-    
+
     if (0 == rows_id) {
 	rows_id = rb_intern("@rows");
 	columns_id = rb_intern("@columns");
@@ -597,7 +597,7 @@ create_opt(ROptTable rot, VALUE clas) {
 	ro = &rot->table[olen];
     } else {
 	int	i;
-	
+
 	for (i = 0, ro = rot->table; i < olen; i++, ro++) {
 	    if (clas < ro->clas) {
 		memmove(ro + 1, ro, sizeof(struct _rOpt) * (olen - i));
@@ -672,7 +672,7 @@ encoder_new(int argc, VALUE *argv, VALUE self) {
     e->opts = oj_default_options;
     e->arg = Qnil;
     copy_opts(&ropts, &e->ropts);
-    
+
     if (1 <= argc && Qnil != *argv) {
 	oj_parse_options(*argv, &e->opts);
 	e->arg = *argv;
@@ -727,7 +727,7 @@ optimize(int argc, VALUE *argv, ROptTable rot, bool on) {
 	int		i;
 	NamedFunc	nf;
 	VALUE		clas;
-	
+
 	oj_rails_hash_opt = on;
 	oj_rails_array_opt = on;
 	oj_rails_float_opt = on;
@@ -759,14 +759,14 @@ optimize(int argc, VALUE *argv, ROptTable rot, bool on) {
 
 /* Document-method optimize
  *	call-seq: optimize(*classes)
- * 
+ *
  * Use Oj rails optimized routines to encode the specified classes. This
  * ignores the as_json() method on the class and uses an internal encoding
  * instead. Passing in no classes indicates all should use the optimized
  * version of encoding for all previously optimized classes. Passing in the
  * Object class set a global switch that will then use the optimized behavior
  * for all classes.
- * 
+ *
  * - *classes* [_Class_] a list of classes to optimize
  */
 static VALUE
@@ -780,14 +780,14 @@ encoder_optimize(int argc, VALUE *argv, VALUE self) {
 
 /* Document-method: optimize
  *	call-seq: optimize(*classes)
- * 
+ *
  * Use Oj rails optimized routines to encode the specified classes. This
  * ignores the as_json() method on the class and uses an internal encoding
  * instead. Passing in no classes indicates all should use the optimized
  * version of encoding for all previously optimized classes. Passing in the
  * Object class set a global switch that will then use the optimized behavior
  * for all classes.
- * 
+ *
  * - *classes* [_Class_] a list of classes to optimize
  */
 static VALUE
@@ -806,7 +806,7 @@ rails_optimize(int argc, VALUE *argv, VALUE self) {
 VALUE
 rails_mimic_json(VALUE self) {
     VALUE	json;
-    
+
     if (rb_const_defined_at(rb_cObject, rb_intern("JSON"))) {
 	json = rb_const_get_at(rb_cObject, rb_intern("JSON"));
     } else {
@@ -820,7 +820,7 @@ rails_mimic_json(VALUE self) {
 
 /* Document-method: deoptimize
  *	call-seq: deoptimize(*classes)
- * 
+ *
  * Turn off Oj rails optimization on the specified classes.
  *
  * - *classes* [_Class_] a list of classes to deoptimize
@@ -836,7 +836,7 @@ encoder_deoptimize(int argc, VALUE *argv, VALUE self) {
 
 /* Document-method: deoptimize
  *	call-seq: deoptimize(*classes)
- * 
+ *
  * Turn off Oj rails optimization on the specified classes.
  *
  * - *classes* [_Class_] a list of classes to deoptimize
@@ -850,7 +850,7 @@ rails_deoptimize(int argc, VALUE *argv, VALUE self) {
 
 /* Document-method:optimized?
  *	call-seq: optimized?(clas)
- * 
+ *
  * - *clas* [_Class_] Class to check
  *
  * @return true if the class is being optimized for rails and false otherwise
@@ -868,7 +868,7 @@ encoder_optimized(VALUE self, VALUE clas) {
 
 /* Document-method: optimized?
  *	call-seq: optimized?(clas)
- * 
+ *
  * Returns true if the specified Class is being optimized.
  */
 static VALUE
@@ -966,7 +966,7 @@ encode(VALUE obj, ROptTable ropts, Options opts, int argc, VALUE *argv) {
 
 /* Document-method: encode
  *	call-seq: encode(obj)
- * 
+ *
  * - *obj* [_Object_] object to encode
  *
  * Returns encoded object as a JSON string.
@@ -977,7 +977,7 @@ encoder_encode(VALUE self, VALUE obj) {
 
     if (Qnil != e->arg) {
 	VALUE	argv[1] = { e->arg };
-	
+
 	return encode(obj, &e->ropts, &e->opts, 1, argv);
     }
     return encode(obj, &e->ropts, &e->opts, 0, NULL);
@@ -985,9 +985,9 @@ encoder_encode(VALUE self, VALUE obj) {
 
 /* Document-method: encode
  *	call-seq: encode(obj, opts=nil)
- * 
+ *
  * Encode obj as a JSON String.
- * 
+ *
  * - *obj* [_Object_|Hash|Array] object to convert to a JSON String
  * - *opts* [_Hash_] options
  *
@@ -1037,7 +1037,7 @@ rails_time_precision(VALUE self, VALUE prec) {
 
 /* Document-method: set_encoder
  *	call-seq: set_encoder()
- * 
+ *
  * Sets the ActiveSupport.encoder to Oj::Rails::Encoder and wraps some of the
  * formatting globals used by ActiveSupport to allow the use of those globals
  * in the Oj::Rails optimizations.
@@ -1049,7 +1049,7 @@ rails_set_encoder(VALUE self) {
     VALUE	encoding;
     VALUE	pv;
     VALUE	verbose;
-    
+
     if (rb_const_defined_at(rb_cObject, rb_intern("ActiveSupport"))) {
 	active = rb_const_get_at(rb_cObject, rb_intern("ActiveSupport"));
     } else {
@@ -1090,7 +1090,7 @@ rails_set_decoder(VALUE self) {
     VALUE	json;
     VALUE	json_error;
     VALUE	verbose;
-    
+
     if (rb_const_defined_at(rb_cObject, rb_intern("JSON"))) {
 	json = rb_const_get_at(rb_cObject, rb_intern("JSON"));
     } else {
@@ -1113,7 +1113,7 @@ rails_set_decoder(VALUE self) {
     rb_undef_method(json, "parse");
     rb_define_module_function(json, "parse", oj_mimic_parse, -1);
     rb_gv_set("$VERBOSE", verbose);
-    
+
     return Qnil;
 }
 
@@ -1133,7 +1133,7 @@ oj_optimize_rails(VALUE self) {
 }
 
 /* Document-module: Oj::Rails
- * 
+ *
  * Module that provides rails and active support compatibility.
  */
 /* Document-class: Oj::Rails::Encoder
@@ -1143,7 +1143,7 @@ oj_optimize_rails(VALUE self) {
 void
 oj_mimic_rails_init() {
     VALUE	rails = rb_define_module_under(Oj, "Rails");
-    
+
     rb_define_module_function(rails, "encode", rails_encode, -1);
 
     encoder_class = rb_define_class_under(rails, "Encoder", rb_cObject);
@@ -1283,7 +1283,10 @@ hash_cb(VALUE key, VALUE value, Out out) {
     int		depth = out->depth;
     long	size;
     int		rtype = rb_type(key);
-    
+
+    if (out->omit_nil && Qnil == value) {
+	return ST_CONTINUE;
+    }
     if (rtype != T_STRING && rtype != T_SYMBOL) {
 	key = rb_funcall(key, oj_to_s_id, 0);
 	rtype = rb_type(key);
