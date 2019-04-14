@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.7.12 - 2019-04-14
+
+- The `:omit_nil` option did not work in `:rails` mode. That has been fixed.
+
 ## 3.7.11 - 2019-03-19
 
 - Fix to Rails optimize that missed initializing the mimic JSON `:symbolize_names` value.
