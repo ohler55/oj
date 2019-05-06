@@ -7,7 +7,7 @@ Symbols. The same is true for auto defining classes in all versions of ruby;
 memory will also be exhausted if too many classes are automatically
 defined. Auto defining is a useful feature during development and from trusted
 sources but it allows too many classes to be created in the object load mode and
-auto defined is used with an untrusted source. The `Oj.strict_load()` method
+auto defined is used with an untrusted source. The `Oj.safe_load()` method
 sets and uses the most strict and safest options. It should be used by
 developers who find it difficult to understand the options available in Oj.
 
