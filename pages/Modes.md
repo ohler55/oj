@@ -14,7 +14,7 @@ modes are:
  - `:object`
  - `:custom`
 
-Since modes detemine what the JSON output will look like and alternatively
+Since modes determine what the JSON output will look like and alternatively
 what Oj expects when the `Oj.load()` method is called, mixing the output and
 input mode formats will most likely not behave as intended. If the object mode
 is used for producing JSON then use object mode for reading. The same is true
