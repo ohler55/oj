@@ -287,7 +287,7 @@ mimic_walk(VALUE key, VALUE obj, VALUE proc) {
  * call-seq: restore(source, proc=nil)
  *
  * Loads a Ruby Object from a JSON source that can be either a String or an
- * IO. If Proc is given or a block is providedit is called with each nested
+ * IO. If Proc is given or a block is provided it is called with each nested
  * element of the loaded Object.
  *
  * - *source* [_String_|IO] JSON source
@@ -300,7 +300,7 @@ mimic_walk(VALUE key, VALUE obj, VALUE proc) {
  * call-seq: load(source, proc=nil)
  *
  * Loads a Ruby Object from a JSON source that can be either a String or an
- * IO. If Proc is given or a block is providedit is called with each nested
+ * IO. If Proc is given or a block is provided it is called with each nested
  * element of the loaded Object.
  *
  * - *source* [_String_|IO] JSON source
