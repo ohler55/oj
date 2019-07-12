@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.7.13 - 2019-07-TBD
+
+- Fixed a buffer allocation bug for `JSON.pretty_generate`.
+
 ## 3.7.12 - 2019-04-14
 
 - The `:omit_nil` option did not work in `:rails` mode. That has been fixed.

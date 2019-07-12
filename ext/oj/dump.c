@@ -166,7 +166,7 @@ hixss_friendly_size(const uint8_t *str, size_t len) {
     size_t	size = 0;
     size_t	i = len;
     bool	check = false;
-    
+
     for (; 0 < i; str++, i--) {
 	size += hixss_friendly_chars[*str];
 	if (0 != (0x80 & *str)) {
@@ -201,7 +201,7 @@ rails_friendly_size(const uint8_t *str, size_t len) {
 const char*
 oj_nan_str(VALUE obj, int opt, int mode, bool plus, int *lenp) {
     const char	*str = NULL;
-    
+
     if (AutoNan == opt) {
 	switch (mode) {
 	case CompatMode:	opt = WordNan;	break;
@@ -323,7 +323,7 @@ dump_unicode(const char *str, const char *end, Out out, const char *orig) {
     *out->cur++ = 'u';
     for (i = 3; 0 <= i; i--) {
 	*out->cur++ = hex_chars[(uint8_t)(code >> (i * 4)) & 0x0F];
-    }	
+    }
     return str - 1;
 }
 
@@ -331,7 +331,7 @@ static const char*
 check_unicode(const char *str, const char *end, const char *orig) {
     uint8_t	b = *(uint8_t*)str;
     int		cnt = 0;
-    
+
     if (0xC0 == (0xE0 & b)) {
 	cnt = 1;
     } else if (0xE0 == (0xF0 & b)) {
@@ -411,7 +411,7 @@ oj_dump_time(VALUE obj, Out out, int withZone) {
     sec = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
     nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
 #endif
-    
+
     *b-- = '\0';
     if (withZone) {
 	long	tzsecs = NUM2LONG(rb_funcall2(obj, oj_utc_offset_id, 0, 0));
@@ -801,7 +801,7 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
     } else {
 	const char	*end = str + cnt;
 	const char	*check_start = str;
-	
+
 	if (is_sym) {
 	    *out->cur++ = ':';
 	}
@@ -867,13 +867,13 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
 		break; // ignore, should never happen if the table is correct
 	    }
 	}
-	*out->cur++ = '"'; 
+	*out->cur++ = '"';
     }
     if ((JXEsc == out->opts->escape_mode || RailsXEsc == out->opts->escape_mode) && 0 < str - orig && 0 != (0x80 & *(str - 1))) {
 	uint8_t	c = (uint8_t)*(str - 1);
 	int	i;
 	int	scnt = (int)(str - orig);
-	
+
 	// Last utf-8 characters must be 0x10xxxxxx. The start must be
 	// 0x110xxxxx for 2 characters, 0x1110xxxx for 3, and 0x11110xxx for
 	// 4.
@@ -939,7 +939,7 @@ oj_grow_out(Out out, size_t len) {
     size_t  size = out->end - out->buf;
     long    pos = out->cur - out->buf;
     char    *buf = out->buf;
-	
+
     size *= 2;
     if (size <= len * 2 + pos) {
 	size += len;
@@ -996,24 +996,21 @@ oj_dump_fixnum(VALUE obj, int depth, Out out, bool as_ok) {
     char	*b = buf + sizeof(buf) - 1;
     long long	num = rb_num2ll(obj);
     int		neg = 0;
-	bool	dump_as_string = false;
+    bool	dump_as_string = false;
 
-	if (out->opts->integer_range_max != 0 && out->opts->integer_range_min != 0 &&
-		(out->opts->integer_range_max < num || out->opts->integer_range_min > num)) {
+    if (out->opts->integer_range_max != 0 && out->opts->integer_range_min != 0 &&
+	(out->opts->integer_range_max < num || out->opts->integer_range_min > num)) {
 	dump_as_string = true;
-	}
-
+    }
     if (0 > num) {
 	neg = 1;
 	num = -num;
     }
-
     *b-- = '\0';
 
-	if (dump_as_string) {
+    if (dump_as_string) {
 	*b-- = '"';
-	}
-
+    }
     if (0 < num) {
 	for (; 0 < num; num /= 10, b--) {
 	    *b = (num % 10) + '0';
@@ -1026,11 +1023,9 @@ oj_dump_fixnum(VALUE obj, int depth, Out out, bool as_ok) {
     } else {
 	*b = '0';
     }
-
-	if (dump_as_string) {
+    if (dump_as_string) {
 	*--b = '"';
-	}
-
+    }
     assure_size(out, (sizeof(buf) - (b - buf)));
     for (; '\0' != *b; b++) {
 	*out->cur++ = *b;
@@ -1045,7 +1040,7 @@ oj_dump_bignum(VALUE obj, int depth, Out out, bool as_ok) {
 	bool		dump_as_string = false;
 
 	if (out->opts->integer_range_max != 0 || out->opts->integer_range_min != 0) { // Bignum cannot be inside of Fixnum range
-	dump_as_string = true; 
+	dump_as_string = true;
 	assure_size(out, cnt + 2);
 	*out->cur++ = '"';
 	} else {
@@ -1083,7 +1078,7 @@ oj_dump_float(VALUE obj, int depth, Out out, bool as_ok) {
 	    cnt = sizeof(inf_val) - 1;
 	} else {
 	    NanDump	nd = out->opts->dump_opts.nan_dump;
-	    
+
 	    if (AutoNan == nd) {
 		switch (out->opts->mode) {
 		case CompatMode:	nd = WordNan;	break;
@@ -1118,7 +1113,7 @@ oj_dump_float(VALUE obj, int depth, Out out, bool as_ok) {
 	    cnt = sizeof(ninf_val) - 1;
 	} else {
 	    NanDump	nd = out->opts->dump_opts.nan_dump;
-	    
+
 	    if (AutoNan == nd) {
 		switch (out->opts->mode) {
 		case CompatMode:	nd = WordNan;	break;
@@ -1152,7 +1147,7 @@ oj_dump_float(VALUE obj, int depth, Out out, bool as_ok) {
 	    cnt = sizeof(ninf_val) - 1;
 	} else {
 	    NanDump	nd = out->opts->dump_opts.nan_dump;
-	    
+
 	    if (AutoNan == nd) {
 		switch (out->opts->mode) {
 		case ObjectMode:	nd = HugeNan;	break;

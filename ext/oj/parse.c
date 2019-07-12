@@ -8,6 +8,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <math.h>
+#include <ruby/util.h>
 
 #include "oj.h"
 #include "encode.h"

@@ -64,12 +64,10 @@ dump_values_array(VALUE *values, int depth, Out out) {
     } else {
 	if (out->opts->dump_opts.use) {
 	    size = d2 * out->opts->dump_opts.indent_size + out->opts->dump_opts.array_size + 2;
-	} else {
-	    size = d2 * out->indent + 3;
-	}
-	if (out->opts->dump_opts.use) {
 	    size += out->opts->dump_opts.array_size;
 	    size += out->opts->dump_opts.indent_size;
+	} else {
+	    size = d2 * out->indent + 3;
 	}
 	for (; Qundef != *values; values++) {
 	    assure_size(out, size);
@@ -80,6 +78,7 @@ dump_values_array(VALUE *values, int depth, Out out) {
 		}
 		if (0 < out->opts->dump_opts.indent_size) {
 		    int	i;
+
 		    for (i = d2; 0 < i; i--) {
 			strcpy(out->cur, out->opts->dump_opts.indent_str);
 			out->cur += out->opts->dump_opts.indent_size;
@@ -155,7 +154,7 @@ dump_array(VALUE a, int depth, Out out, bool as_ok) {
     if (as_ok && !oj_use_hash_alt && rb_obj_class(a) != rb_cArray && rb_respond_to(a, oj_to_json_id)) {
 	dump_to_json(a, out);
 	return;
-    }	
+    }
     cnt = (int)RARRAY_LEN(a);
     *out->cur++ = '[';
     assure_size(out, 2);
@@ -190,9 +189,9 @@ dump_array(VALUE a, int depth, Out out, bool as_ok) {
 		*out->cur++ = ',';
 	    }
 	}
-	size = depth * out->indent + 1;
-	assure_size(out, size);
 	if (out->opts->dump_opts.use) {
+	    size = out->opts->dump_opts.array_size + out->opts->dump_opts.indent_size * depth + 1;
+	    assure_size(out, size);
 	    if (0 < out->opts->dump_opts.array_size) {
 		strcpy(out->cur, out->opts->dump_opts.array_nl);
 		out->cur += out->opts->dump_opts.array_size;
@@ -206,6 +205,8 @@ dump_array(VALUE a, int depth, Out out, bool as_ok) {
 		}
 	    }
 	} else {
+	    size = depth * out->indent + 1;
+	    assure_size(out, size);
 	    fill_indent(out, depth);
 	}
 	*out->cur++ = ']';
@@ -715,7 +716,7 @@ dump_hash(VALUE obj, int depth, Out out, bool as_ok) {
     if (as_ok && !oj_use_hash_alt && rb_obj_class(obj) != rb_cHash && rb_respond_to(obj, oj_to_json_id)) {
 	dump_to_json(obj, out);
 	return;
-    }	
+    }
     cnt = (int)RHASH_SIZE(obj);
     assure_size(out, 2);
     if (0 == cnt) {

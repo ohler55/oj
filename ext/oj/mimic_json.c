@@ -357,6 +357,9 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
     struct _out	out;
     VALUE	rstr;
 
+    // TBD
+    memset(buf, 0, sizeof(buf));
+
     out.buf = buf;
     out.end = buf + sizeof(buf) - 10;
     out.allocated = false;
