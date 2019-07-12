@@ -158,6 +158,7 @@ class Juice < Minitest::Test
       :array_class=>Array,
       :ignore=>nil,
       :trace=>true,
+      :safe=>true,
     }
     Oj.default_options = alt
     #keys = alt.keys
