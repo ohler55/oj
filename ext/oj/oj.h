@@ -147,6 +147,7 @@ typedef struct _options {
     char		create_ok;	// YesNo allow create_id
     char		allow_nan;	// YEsyNo for parsing only
     char		trace;		// YesNo
+    char		safe;		// YesNo
     int64_t		integer_range_min; // dump numbers outside range as string
     int64_t		integer_range_max;
     const char		*create_id;	// 0 or string
@@ -202,7 +203,7 @@ typedef struct _strWriter {
     char		*types;	// DumpType
     char		*types_end;
     int			keyWritten;
-    
+
 } *StrWriter;
 
 typedef struct _streamWriter {
@@ -219,7 +220,7 @@ enum {
     COL_VAL  = 0x02,
     RUBY_VAL = 0x03
 };
-    
+
 typedef struct _leaf {
     struct _leaf	*next;
     union {

@@ -1037,7 +1037,7 @@ CLEANUP:
 	if (Qnil != pi->err_class) {
 	    pi->err.clas = pi->err_class;
 	}
-	if (CompatMode == pi->options.mode) {
+	if (CompatMode == pi->options.mode && Yes != pi->options.safe) {
 	    // The json gem requires the error message be UTF-8 encoded. In
 	    // additional the complete JSON source must be returned. There
 	    // does not seem to be a size limit.

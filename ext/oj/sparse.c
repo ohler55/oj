@@ -632,7 +632,7 @@ oj_sparse2(ParseInfo pi) {
     while (1) {
 	if (0 < pi->max_depth && pi->max_depth <= pi->stack.tail - pi->stack.head - 1) {
 	    VALUE	err_clas = oj_get_json_err_class("NestingError");
-	    
+
 	    oj_set_error_at(pi, err_clas, __FILE__, __LINE__, "Too deeply nested.");
 	    pi->err_class = err_clas;
 	    return;
@@ -890,7 +890,7 @@ CLEANUP:
 	if (Qnil != pi->err_class && 0 != pi->err_class) {
 	    pi->err.clas = pi->err_class;
 	}
-	if (CompatMode == pi->options.mode) {
+	if (CompatMode == pi->options.mode && Yes != pi->options.safe) {
 	    // The json gem requires the error message be UTF-8 encoded. In
 	    // additional the complete JSON source should be returned but that
 	    // is not possible without stored all the bytes read and reading

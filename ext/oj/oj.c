@@ -94,6 +94,7 @@ VALUE	oj_hash_class_sym;
 VALUE	oj_indent_sym;
 VALUE	oj_object_class_sym;
 VALUE	oj_quirks_mode_sym;
+VALUE	oj_safe_sym;
 VALUE	oj_trace_sym;
 
 static VALUE	allow_blank_sym;
@@ -176,6 +177,7 @@ struct _options	oj_default_options = {
     No,		// create_ok
     Yes,	// allow_nan
     No,		// trace
+    No,		// safe
     0,		// integer_range_min
     0,		// integer_range_max
     oj_json_class,	// create_id
@@ -245,8 +247,9 @@ struct _options	oj_default_options = {
  * - *:array_class* [_Class_|_nil_] Class to use instead of Array on load
  * - *:omit_nil* [_true_|_false_] if true Hash and Object attributes with nil values are omitted
  * - *:ignore* [_nil_|Array] either nil or an Array of classes to ignore when dumping
- * - *:integer_range* [_Range_] Dump integers outside range as strings. 
+ * - *:integer_range* [_Range_] Dump integers outside range as strings.
  * - *:trace* [_true,_|_false_] Trace all load and dump calls, default is false (trace is off)
+ * - *:safe* [_true,_|_false_] Safe mimic breaks JSON mimic to be safer, default is false (safe is off)
  *
  * Return [_Hash_] all current option settings.
  */
@@ -276,6 +279,7 @@ get_def_opts(VALUE self) {
     rb_hash_aset(opts, allow_invalid_unicode_sym, (Yes == oj_default_options.allow_invalid) ? Qtrue : ((No == oj_default_options.allow_invalid) ? Qfalse : Qnil));
     rb_hash_aset(opts, oj_allow_nan_sym, (Yes == oj_default_options.allow_nan) ? Qtrue : ((No == oj_default_options.allow_nan) ? Qfalse : Qnil));
     rb_hash_aset(opts, oj_trace_sym, (Yes == oj_default_options.trace) ? Qtrue : ((No == oj_default_options.trace) ? Qfalse : Qnil));
+    rb_hash_aset(opts, oj_safe_sym, (Yes == oj_default_options.safe) ? Qtrue : ((No == oj_default_options.safe) ? Qfalse : Qnil));
     rb_hash_aset(opts, float_prec_sym, INT2FIX(oj_default_options.float_prec));
     switch (oj_default_options.mode) {
     case StrictMode:	rb_hash_aset(opts, mode_sym, strict_sym);	break;
@@ -287,7 +291,7 @@ get_def_opts(VALUE self) {
     case WabMode:	rb_hash_aset(opts, mode_sym, wab_sym);		break;
     default:		rb_hash_aset(opts, mode_sym, object_sym);	break;
     }
-    
+
     if (oj_default_options.integer_range_max != 0 || oj_default_options.integer_range_min != 0) {
     VALUE range = rb_obj_alloc(rb_cRange);
     VALUE min = LONG2FIX(oj_default_options.integer_range_min);
@@ -343,7 +347,7 @@ get_def_opts(VALUE self) {
     } else {
 	VALUE		*vp;
 	volatile VALUE	a = rb_ary_new();
-	
+
 	for (vp = oj_default_options.ignore; Qnil != *vp; vp++) {
 	    rb_ary_push(a, *vp);
 	}
@@ -388,8 +392,9 @@ get_def_opts(VALUE self) {
  *   - *:array_class* [_Class_|_nil_] Class to use instead of Array on load.
  *   - *:omit_nil* [_true_|_false_] if true Hash and Object attributes with nil values are omitted.
  *   - *:ignore* [_nil_|Array] either nil or an Array of classes to ignore when dumping
- *   - *:integer_range* [_Range_] Dump integers outside range as strings. 
+ *   - *:integer_range* [_Range_] Dump integers outside range as strings.
  *   - *:trace* [_Boolean_] turn trace on or off.
+ *   - *:safe* [_Boolean_] turn safe mimic on or off.
  */
 static VALUE
 set_def_opts(VALUE self, VALUE opts) {
@@ -418,13 +423,14 @@ oj_parse_options(VALUE ropts, Options copts) {
 	{ allow_invalid_unicode_sym, &copts->allow_invalid },
 	{ oj_allow_nan_sym, &copts->allow_nan },
 	{ oj_trace_sym, &copts->trace },
+	{ oj_safe_sym, &copts->safe },
 	{ oj_create_additions_sym, &copts->create_ok },
 	{ Qnil, 0 }
     };
     YesNoOpt		o;
     volatile VALUE	v;
     size_t		len;
-    
+
     if (T_HASH != rb_type(ropts)) {
 	return;
     }
@@ -715,7 +721,7 @@ oj_parse_options(VALUE ropts, Options copts) {
 	    cnt = (int)RARRAY_LEN(v);
 	    if (0 < cnt) {
 		int	i;
-		
+
 		copts->ignore = ALLOC_N(VALUE, cnt + 1);
 		for (i = 0; i < cnt; i++) {
 		    copts->ignore[i] = rb_ary_entry(v, i);
@@ -806,7 +812,7 @@ oj_parse_opt_match_string(RxClass rc, VALUE ropts) {
  * - *obj* [_Hash_|_Array_|_String_|_Fixnum_|_Float_|_Boolean_|_nil_] parsed object.
  * - *start* [_optional, _Integer_] start position of parsed JSON for obj.
  * - *len* [_optional, _Integer_] length of parsed JSON for obj.
- * 
+ *
  * Returns [_Hash_|_Array_|_String_|_Fixnum_|_Float_|_Boolean_|_nil_]
  */
 static VALUE
@@ -1064,7 +1070,7 @@ dump(int argc, VALUE *argv, VALUE self) {
  * Dumps an Object (obj) to a string. If the object has a to_json method that
  * will be called. The mode is set to :compat.
  * - *obj* [_Object_] Object to serialize as an JSON document String
- * - *options* [_Hash_] 
+ * - *options* [_Hash_]
  *   - *:max_nesting* [_boolean_] It true nesting is limited to 100. The option to detect circular references is available but is not compatible with the json gem., default is false
  *   - *:allow_nan* [_boolean_] If true non JSON compliant words such as Nan and Infinity will be used as appropriate, default is true.
  *   - *:quirks_mode* [_boolean_] Allow single JSON values instead of documents, default is true (allow).
@@ -1074,6 +1080,7 @@ dump(int argc, VALUE *argv, VALUE self) {
  *   - *:object_nl* [_String_|_nil_] String to use after a JSON object field value.
  *   - *:array_nl* [_String_|_nil_] String to use after a JSON array value.
  *   - *:trace* [_Boolean_] If true trace is turned on.
+ *   - *:safe* [_Boolean_] If true safe is turned on.
  *
  * Returns [_String_] the encoded JSON.
  */
@@ -1126,7 +1133,7 @@ to_json(int argc, VALUE *argv, VALUE self) {
 static VALUE
 to_file(int argc, VALUE *argv, VALUE self) {
     struct _options	copts = oj_default_options;
-    
+
     if (3 == argc) {
 	oj_parse_options(argv[2], &copts);
     }
@@ -1149,7 +1156,7 @@ to_file(int argc, VALUE *argv, VALUE self) {
 static VALUE
 to_stream(int argc, VALUE *argv, VALUE self) {
     struct _options	copts = oj_default_options;
-    
+
     if (3 == argc) {
 	oj_parse_options(argv[2], &copts);
     }
@@ -1429,11 +1436,11 @@ extern VALUE	oj_define_mimic_json(int argc, VALUE *argv, VALUE self);
 
 /* Document-method: generate
  * call-seq: generate(obj, opts=nil)
- * 
+ *
  * Encode obj as a JSON String. The obj argument must be a Hash, Array, or
  * respond to to_h or to_json. Options other than those listed such as
  * +:allow_nan+ or +:max_nesting+ are ignored.
- * 
+ *
  * - *obj* [_Object__|_Hash_|_Array_] object to convert to a JSON String
  * - *opts* [_Hash_] options
  * - - *:indent* [_String_] String to use for indentation.
@@ -1481,15 +1488,15 @@ protect_require(VALUE x) {
  * modes are:
  *
  * - *:strict* mode will only allow the 7 basic JSON types to be serialized. Any other Object
- *   will raise an Exception. 
- * 
+ *   will raise an Exception.
+ *
  * - *:null* mode is similar to the :strict mode except any Object that is not
  *   one of the JSON base types is replaced by a JSON null.
- * 
+ *
  * - *:object* mode will dump any Object as a JSON Object with keys that match
  *   the Ruby Object's variable names without the '@' character. This is the
  *   highest performance mode.
- * 
+ *
  * - *:compat* or *:json* mode is the compatible mode for the json gem. It mimics
  *   the json gem including the options, defaults, and restrictions.
  *
@@ -1651,6 +1658,7 @@ Init_oj() {
     oj_object_class_sym = ID2SYM(rb_intern("object_class"));	rb_gc_register_address(&oj_object_class_sym);
     oj_object_nl_sym = ID2SYM(rb_intern("object_nl"));		rb_gc_register_address(&oj_object_nl_sym);
     oj_quirks_mode_sym = ID2SYM(rb_intern("quirks_mode"));	rb_gc_register_address(&oj_quirks_mode_sym);
+    oj_safe_sym = ID2SYM(rb_intern("safe"));			rb_gc_register_address(&oj_safe_sym);
     oj_space_before_sym = ID2SYM(rb_intern("space_before"));	rb_gc_register_address(&oj_space_before_sym);
     oj_space_sym = ID2SYM(rb_intern("space"));			rb_gc_register_address(&oj_space_sym);
     oj_trace_sym = ID2SYM(rb_intern("trace"));			rb_gc_register_address(&oj_trace_sym);

@@ -4,6 +4,8 @@
 
 - Fixed a buffer allocation bug for `JSON.pretty_generate`.
 
+- Added mimic `safe` option to not include the complete JSON in a parse error message.
+
 ## 3.7.12 - 2019-04-14
 
 - The `:omit_nil` option did not work in `:rails` mode. That has been fixed.
