@@ -763,9 +763,12 @@ dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
 	exception_alt(obj, depth, out);
 	return;
     }
+    if (Yes == out->opts->raw_json && rb_respond_to(obj, oj_raw_json_id)) {
+	oj_dump_raw_json(obj, depth, out);
+	return;
+    }
     if (as_ok && rb_respond_to(obj, oj_to_json_id)) {
 	dump_to_json(obj, out);
-
 	return;
     }
     // Nothing else matched so encode as a JSON object with Ruby obj members

@@ -115,7 +115,7 @@ date_dump(VALUE obj, int depth, Out out) {
     } else {
 	volatile VALUE	v;
 	volatile VALUE	ov;
-	
+
 	switch (out->opts->time_format) {
 	case RubyTime:
 	case XmlTime:
@@ -150,7 +150,7 @@ date_dump(VALUE obj, int depth, Out out) {
 static VALUE
 date_load(VALUE clas, VALUE args) {
     volatile VALUE	v;
-    
+
     if (Qnil != (v = rb_hash_aref(args, rb_str_new2("s")))) {
 	return rb_funcall(oj_date_class, rb_intern("parse"), 1, v);
     }
@@ -160,7 +160,7 @@ date_load(VALUE clas, VALUE args) {
 static VALUE
 datetime_load(VALUE clas, VALUE args) {
     volatile VALUE	v;
-    
+
     if (Qnil != (v = rb_hash_aref(args, rb_str_new2("s")))) {
 	return rb_funcall(oj_datetime_class, rb_intern("parse"), 1, v);
     }
@@ -209,7 +209,7 @@ range_dump(VALUE obj, int depth, Out out) {
 static VALUE
 range_load(VALUE clas, VALUE args) {
     VALUE	nargs[3];
-    
+
     nargs[0] = rb_hash_aref(args, rb_id2str(oj_begin_id));
     nargs[1] = rb_hash_aref(args, rb_id2str(oj_end_id));
     nargs[2] = rb_hash_aref(args, rb_id2str(oj_exclude_end_id));
@@ -250,7 +250,7 @@ rational_load(VALUE clas, VALUE args) {
 static VALUE
 regexp_load(VALUE clas, VALUE args) {
     volatile VALUE	v;
-    
+
     if (Qnil != (v = rb_hash_aref(args, rb_str_new2("s")))) {
 	return rb_funcall(rb_cRegexp, oj_new_id, 1, v);
     }
@@ -423,7 +423,7 @@ dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
 	v = rb_funcall(obj, *odd->attrs, 0);
 	if (Qundef == v || T_STRING != rb_type(v)) {
 	    rb_raise(rb_eEncodingError, "Invalid type for raw JSON.\n");
-	} else {	    
+	} else {
 	    const char	*s = rb_string_value_ptr((VALUE*)&v);
 	    int		len = (int)RSTRING_LEN(v);
 	    const char	*name = rb_id2name(*odd->attrs);
@@ -459,7 +459,7 @@ dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
 		char	*n;
 		char	*end;
 		ID	i;
-	    
+
 		if (sizeof(nbuf) <= nlen) {
 		    if (NULL == (n2 = strdup(name))) {
 			rb_raise(rb_eNoMemError, "for attribute name.");
@@ -497,7 +497,10 @@ dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
 // Return class if still needs dumping.
 static VALUE
 dump_common(VALUE obj, int depth, Out out) {
-    if (Yes == out->opts->to_json && rb_respond_to(obj, oj_to_json_id)) {
+
+    if (Yes == out->opts->raw_json && rb_respond_to(obj, oj_raw_json_id)) {
+	oj_dump_raw_json(obj, depth, out);
+    } else if (Yes == out->opts->to_json && rb_respond_to(obj, oj_to_json_id)) {
 	volatile VALUE	rs;
 	const char	*s;
 	int		len;
@@ -608,7 +611,7 @@ dump_attr_cb(ID key, VALUE value, Out out) {
     oj_dump_custom_val(value, depth, out, true);
     out->depth = depth;
     *out->cur++ = ',';
-    
+
     return ST_CONTINUE;
 }
 
@@ -780,7 +783,7 @@ static void
 dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
     long	id = oj_check_circular(obj, out);
     VALUE	clas;
-    
+
     if (0 > id) {
 	oj_dump_nil(Qnil, depth, out, false);
     } else if (Qnil != (clas = dump_common(obj, depth, out))) {
@@ -793,7 +796,7 @@ dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
 	size_t		size = d2 * out->indent + d3 * out->indent + 3;
 	const char	*name;
 	int		cnt;
-	size_t		len;	
+	size_t		len;
 
 	assure_size(out, size);
 	if (clas == rb_cRange) {
@@ -1113,7 +1116,7 @@ static void
 array_append_num(ParseInfo pi, NumInfo ni) {
     Val			parent = stack_peek(&pi->stack);
     volatile VALUE	rval = oj_num_as_value(ni);
-    
+
     rb_ary_push(parent->val, rval);
     if (Yes == pi->options.trace) {
 	oj_trace_parse_call("append_number", pi, __FILE__, __LINE__, rval);

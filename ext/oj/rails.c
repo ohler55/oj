@@ -1401,6 +1401,8 @@ dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
 
 	if (NULL != (ro = oj_rails_get_opt(out->ropts, rb_obj_class(obj))) && ro->on) {
 	    ro->dump(obj, depth, out, as_ok);
+	} else if (Yes == out->opts->raw_json && rb_respond_to(obj, oj_raw_json_id)) {
+	    oj_dump_raw_json(obj, depth, out);
 	} else if (rb_respond_to(obj, oj_as_json_id)) {
 	    dump_as_json(obj, depth, out, true);
 	} else if (rb_respond_to(obj, oj_to_hash_id)) {

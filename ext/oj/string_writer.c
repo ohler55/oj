@@ -152,7 +152,7 @@ oj_str_writer_push_array(StrWriter sw, const char *key) {
 void
 oj_str_writer_push_value(StrWriter sw, VALUE val, const char *key) {
     Out	out = &sw->out;
-    
+
     if (sw->keyWritten) {
 	sw->keyWritten = 0;
     } else {
@@ -273,7 +273,7 @@ str_writer_free(void *ptr) {
 static VALUE
 str_writer_new(int argc, VALUE *argv, VALUE self) {
     StrWriter	sw = ALLOC(struct _strWriter);
-    
+
     oj_str_writer_init(sw, 0);
     if (1 == argc) {
 	oj_parse_options(argv[0], &sw->opts);
@@ -488,7 +488,7 @@ str_writer_to_s(VALUE self) {
 }
 
 /* Document-class: Oj::StringWriter
- * 
+ *
  * Supports building a JSON document one element at a time. Build the document
  * by pushing values into the document. Pushing an array or an object will
  * create that element in the JSON document and subsequent pushes will add the
@@ -509,4 +509,5 @@ oj_string_writer_init() {
     rb_define_method(oj_string_writer_class, "pop_all", str_writer_pop_all, 0);
     rb_define_method(oj_string_writer_class, "reset", str_writer_reset, 0);
     rb_define_method(oj_string_writer_class, "to_s", str_writer_to_s, 0);
+    rb_define_method(oj_string_writer_class, "raw_json", str_writer_to_s, 0);
 }

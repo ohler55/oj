@@ -15,6 +15,7 @@
 #include "cache8.h"
 #include "dump.h"
 #include "odd.h"
+#include "trace.h"
 #include "util.h"
 
 // Workaround in case INFINITY is not defined in math.h or if the OS is CentOS
@@ -738,6 +739,30 @@ debug_raise(const char *orig, size_t cnt, int line) {
     }
     *b = '\0';
     rb_raise(oj_json_generator_error_class, "Partial character in string. %s @ %d", buf, line);
+}
+
+void
+oj_dump_raw_json(VALUE obj, int depth, Out out) {
+    if (oj_string_writer_class == rb_obj_class(obj)) {
+	StrWriter	sw = (StrWriter)DATA_PTR(obj);
+	size_t		len = sw->out.cur - sw->out.buf;
+
+	if (0 < len) {
+	    len--;
+	}
+	oj_dump_raw(sw->out.buf, len, out);
+    } else {
+	volatile VALUE	jv;
+
+	if (Yes == out->opts->trace) {
+	    oj_trace("raw_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyIn);
+	}
+	jv = rb_funcall(obj, oj_raw_json_id, 2, RB_INT2NUM(depth), RB_INT2NUM(out->indent));
+	if (Yes == out->opts->trace) {
+	    oj_trace("raw_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyOut);
+	}
+	oj_dump_raw(rb_string_value_ptr((VALUE*)&jv), (size_t)RSTRING_LEN(jv), out);
+    }
 }
 
 void

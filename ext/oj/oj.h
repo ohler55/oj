@@ -351,6 +351,7 @@ extern ID	oj_readpartial_id;
 extern ID	oj_replace_id;
 extern ID	oj_stat_id;
 extern ID	oj_string_id;
+extern ID	oj_raw_json_id;
 extern ID	oj_to_h_id;
 extern ID	oj_to_hash_id;
 extern ID	oj_to_json_id;
