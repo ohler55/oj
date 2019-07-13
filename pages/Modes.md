@@ -117,6 +117,7 @@ information.
 | :object_nl             | String  |         |         |       x |       x |         |       x |         |
 | :omit_nil              | Boolean |       x |       x |       x |       x |       x |       x |         |
 | :quirks_mode           | Boolean |         |         |       6 |         |         |       x |         |
+| :safe                  | String  |         |         |       x |         |         |         |         |
 | :second_precision      | Fixnum  |         |         |         |         |       x |       x |         |
 | :space                 | String  |         |         |       x |       x |         |       x |         |
 | :space_before          | String  |         |         |       x |       x |         |       x |         |
@@ -151,4 +152,3 @@ information.
  6. The quirks mode option is no longer supported in the most recent json
     gem. It is supported by Oj for backward compatibility with older json gem
     versions.
-

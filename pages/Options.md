@@ -149,7 +149,7 @@ integer gives better performance.
 
 ### :integer_range [Range]
 
-Dump integers outside range as strings. 
+Dump integers outside range as strings.
 Note: range bounds must be Fixnum.
 
 ### :match_string
@@ -211,6 +211,12 @@ Allow single JSON values instead of documents, default is true (allow). This
 can also be used in :compat mode to be backward compatible with older versions
 of the json gem.
 
+### :safe
+
+The JSON gem includes the complete JSON in parse errors with no limit
+on size. To break from the JSON gem behavior for this case set `:safe`
+to true.
+
 ### :second_precision [Fixnum]
 
 The number of digits after the decimal when dumping the seconds of time.
@@ -263,4 +269,3 @@ the :compat and :rails mode.
 
 Call `to_json()` methods on dump, default is false. The option is ignored in
 the :compat and :rails mode.
-
