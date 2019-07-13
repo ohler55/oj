@@ -139,6 +139,7 @@ typedef struct _options {
     char		to_hash;	// YesNo
     char		to_json;	// YesNo
     char		as_json;	// YesNo
+    char		raw_json;	// YesNo
     char		nilnil;		// YesNo
     char		empty_string;	// YesNo
     char		allow_gc;	// allow GC during parse

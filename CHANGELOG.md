@@ -1,10 +1,13 @@
 # CHANGELOG
 
-## 3.7.13 - 2019-07-TBD
+## 3.8.0 - 2019-07-TBD
 
 - Fixed a buffer allocation bug for `JSON.pretty_generate`.
 
 - Added mimic `safe` option to not include the complete JSON in a parse error message.
+
+- Added `use_raw_json` option for `:compat` and `:rails` mode to allow better
+  performance on dump. StringWriter in particular has been optimized for this option.
 
 ## 3.7.12 - 2019-04-14
 

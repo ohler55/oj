@@ -125,6 +125,7 @@ information.
 | :trace                 | Boolean |       x |       x |       x |       x |       x |       x |       x |
 | :time_format           | Symbol  |         |         |         |         |       x |       x |         |
 | :use_as_json           | Boolean |         |         |         |         |         |       x |         |
+| :use_raw_json          | Boolean |         |         |       x |       x |       x |       x |         |
 | :use_to_hash           | Boolean |         |         |         |         |         |       x |         |
 | :use_to_json           | Boolean |         |         |         |         |         |       x |         |
  --------------------------------------------------------------------------------------------------------
