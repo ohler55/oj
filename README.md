@@ -65,7 +65,7 @@ See [{file:CHANGELOG.md}](CHANGELOG.md)
 
 ## Links
 
- - *Documentation*: http://www.ohler.com/oj/doc, http://rubydoc.info/gems/oj
+- *Documentation*: http://www.ohler.com/oj/doc, http://rubydoc.info/gems/oj
 
 - *GitHub* *repo*: https://github.com/ohler55/oj
 
@@ -93,4 +93,12 @@ Follow [@peterohler on Twitter](http://twitter.com/peterohler) for announcements
 
  - *OjC, a C JSON parser*: https://www.ohler.com/ojc also at https://github.com/ohler55/ojc
 
- - *Piper Push Cache, push JSON to browsers*: http://www.piperpushcache.com
+ - *Agoo, a high performance Ruby web server supporting GraphQL on GitHub*: https://github.com/ohler55/agoo
+
+ - *Agoo-C, a high performance C web server supporting GraphQL on GitHub*: https://github.com/ohler55/agoo-c
+
+#### Contributing
+
++ Provide a Pull Request off the `develop` branch.
++ Report a bug
++ Suggest an idea
