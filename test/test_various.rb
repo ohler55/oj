@@ -134,6 +134,7 @@ class Juice < Minitest::Test
       :use_to_json=>false,
       :use_to_hash=>false,
       :use_as_json=>false,
+      :use_raw_json=>false,
       :nilnil=>true,
       :empty_string=>true,
       :allow_gc=>false,

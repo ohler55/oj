@@ -680,6 +680,7 @@ static struct _options	mimic_object_to_json_options = {
     No,		// to_hash
     No,		// to_json
     No,		// as_json
+    No,		// raw_json
     No,		// nilnil
     No,		// empty_string
     Yes,	// allow_gc

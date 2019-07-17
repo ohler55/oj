@@ -750,6 +750,8 @@ optimize(int argc, VALUE *argv, ROptTable rot, bool on) {
 	    oj_rails_array_opt = on;
 	} else if (rb_cFloat == *argv) {
 	    oj_rails_float_opt = on;
+	} else if (oj_string_writer_class == *argv) {
+	    string_writer_optimized = on;
 	} else if (NULL != (ro = oj_rails_get_opt(rot, *argv)) ||
 		   NULL != (ro = create_opt(rot, *argv))) {
 	    ro->on = on;
@@ -793,6 +795,7 @@ encoder_optimize(int argc, VALUE *argv, VALUE self) {
 static VALUE
 rails_optimize(int argc, VALUE *argv, VALUE self) {
     optimize(argc, argv, &ropts, true);
+    string_writer_optimized = true;
 
     return Qnil;
 }
@@ -844,6 +847,7 @@ encoder_deoptimize(int argc, VALUE *argv, VALUE self) {
 static VALUE
 rails_deoptimize(int argc, VALUE *argv, VALUE self) {
     optimize(argc, argv, &ropts, false);
+    string_writer_optimized = false;
 
     return Qnil;
 }
@@ -1401,6 +1405,8 @@ dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
 
 	if (NULL != (ro = oj_rails_get_opt(out->ropts, rb_obj_class(obj))) && ro->on) {
 	    ro->dump(obj, depth, out, as_ok);
+	} else if (Yes == out->opts->raw_json && rb_respond_to(obj, oj_raw_json_id)) {
+	    oj_dump_raw_json(obj, depth, out);
 	} else if (rb_respond_to(obj, oj_as_json_id)) {
 	    dump_as_json(obj, depth, out, true);
 	} else if (rb_respond_to(obj, oj_to_hash_id)) {
@@ -1408,6 +1414,8 @@ dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
 	} else {
 	    oj_dump_obj_to_s(obj, out);
 	}
+    } else if (Yes == out->opts->raw_json && rb_respond_to(obj, oj_raw_json_id)) {
+	oj_dump_raw_json(obj, depth, out);
     } else if (rb_respond_to(obj, oj_to_hash_id)) {
 	// Always attempt to_hash.
 	dump_to_hash(obj, depth, out);

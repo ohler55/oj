@@ -260,6 +260,18 @@ The :time_format when dumping.
 Call `as_json()` methods on dump, default is false. The option is ignored in
 the :compat and :rails mode.
 
+
+### :use_raw_json [Boolean]
+
+Call `raw_json()` methods on dump, default is false. The option is
+accepted in the :compat and :rails mode even though it is not
+supported by other JSON gems. It provides a means to optimize dump or
+generate performance. The `raw_json(depth, indent)` method should be
+called only by Oj. It is not intended for any other use. This is mean
+to replace the abused `to_json` methods. Calling `Oj.dump` inside the
+`raw_json` with the object itself when `:use_raw_json` is true will
+result in an infinite loop.
+
 ### :use_to_hash [Boolean]
 
 Call `to_hash()` methods on dump, default is false. The option is ignored in

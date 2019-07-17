@@ -45,6 +45,8 @@ extern void	oj_dump_rails_val(VALUE obj, int depth, Out out);
 extern void	oj_dump_custom_val(VALUE obj, int depth, Out out, bool as_ok);
 extern void	oj_dump_wab_val(VALUE obj, int depth, Out out);
 
+extern void	oj_dump_raw_json(VALUE obj, int depth, Out out);
+
 extern VALUE	oj_add_to_json(int argc, VALUE *argv, VALUE self);
 extern VALUE	oj_remove_to_json(int argc, VALUE *argv, VALUE self);
 

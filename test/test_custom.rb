@@ -32,11 +32,48 @@ class CustomJuice < Minitest::Test
     def to_json(*args)
       %|{"xx":#{@x},"yy":#{y}}|
     end
+    def raw_json(depth, indent)
+      %|{"xxx":#{@x},"yyy":#{y}}|
+    end
     def as_json(*args)
       {'a' => @x, :b => @y }
     end
     def to_hash()
       {'b' => @x, 'n' => @y }
+    end
+  end
+
+  class AsJson
+    attr_accessor :x, :y
+
+    def initialize(x, y)
+      @x = x
+      @y = y
+    end
+    def ==(o)
+      self.class == o.class && @x == o.x && @y = o.y
+    end
+    def as_json(*args)
+      {'a' => @x, :b => @y }
+    end
+  end
+
+  class AsRails
+    attr_accessor :x, :y
+
+    def initialize(x, y)
+      @x = x
+      @y = y
+    end
+    def ==(o)
+      self.class == o.class && @x == o.x && @y = o.y
+    end
+    def as_json(*args)
+      a = @x
+      a = a.as_json if a.respond_to?('as_json')
+      b = @y
+      b = b.as_json if b.respond_to?('as_json')
+      {'a' => a, :b => b }
     end
   end
 
@@ -92,7 +129,7 @@ class CustomJuice < Minitest::Test
     end
     assert(false, "*** expected an exception")
   end
-  
+
   def test_infinity_dump
     assert_equal('null', Oj.dump(1/0.0, :nan => :null))
     assert_equal('3.0e14159265358979323846', Oj.dump(1/0.0, :nan => :huge))
@@ -187,7 +224,7 @@ class CustomJuice < Minitest::Test
                                                         '19' => {
                                                           '20' => {}}}}}}}}}}}}}}}}}}}}}, false)
   end
-  
+
   def test_hash_escaped_key
     json = %{{"a\nb":true,"c\td":false}}
     obj = Oj.load(json)
@@ -230,6 +267,66 @@ class CustomJuice < Minitest::Test
     obj = Jeez.new(true, 58)
     json = Oj.dump(obj, :use_to_json => false, :use_as_json => false, :use_to_hash => true)
     assert_equal(%|{"b":true,"n":58}|, json)
+  end
+
+  def test_object_raw_json
+    obj = Jeez.new(true, 58)
+    json = Oj.dump(obj, :use_to_json => true, :use_as_json => false, :use_raw_json => true, :use_to_hash => false)
+    assert_equal(%|{"xxx":true,"yyy":58}|, json)
+  end
+
+  def test_raw_json_stringwriter
+    obj = Oj::StringWriter.new(:indent => 0)
+    obj.push_array()
+    obj.pop()
+    json = Oj.dump(obj, :use_raw_json => true)
+    assert_equal(%|[]|, json)
+  end
+
+  def test_as_raw_json_stringwriter
+    obj = Oj::StringWriter.new(:indent => 0)
+    obj.push_array()
+    obj.push_value(3)
+    obj.pop()
+    j = AsJson.new(1, obj)
+
+    json = Oj.dump(j, use_raw_json: true, use_as_json: true, indent: 2)
+    assert_equal(%|{
+  "a":1,
+  "b":[3]
+}
+|, json)
+
+    json = Oj.dump(j, use_raw_json: false, use_as_json: true, indent: 2)
+    assert_equal(%|{
+  "a":1,
+  "b":{}
+}
+|, json)
+  end
+
+  def test_rails_as_raw_json_stringwriter
+    obj = Oj::StringWriter.new(:indent => 0)
+    obj.push_array()
+    obj.push_value(3)
+    obj.pop()
+    j = AsRails.new(1, obj)
+    json = Oj.dump(j, mode: :rails, use_raw_json: true, indent: 2)
+    assert_equal(%|{
+  "a":1,
+  "b":{}
+}
+|, json)
+
+    Oj::Rails.optimize
+    json = Oj.dump(j, mode: :rails, use_raw_json: true, indent: 2)
+    Oj::Rails.deoptimize
+    assert_equal(%|{
+  "a":1,
+  "b":[3]
+}
+|, json)
+
   end
 
   def test_symbol

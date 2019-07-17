@@ -53,6 +53,7 @@ ID	oj_length_id;
 ID	oj_new_id;
 ID	oj_parse_id;
 ID	oj_pos_id;
+ID	oj_raw_json_id;
 ID	oj_read_id;
 ID	oj_readpartial_id;
 ID	oj_replace_id;
@@ -138,6 +139,7 @@ static VALUE	unicode_xss_sym;
 static VALUE	unix_sym;
 static VALUE	unix_zone_sym;
 static VALUE	use_as_json_sym;
+static VALUE	use_raw_json_sym;
 static VALUE	use_to_hash_sym;
 static VALUE	use_to_json_sym;
 static VALUE	wab_sym;
@@ -169,6 +171,7 @@ struct _options	oj_default_options = {
     No,		// to_hash
     No,		// to_json
     No,		// as_json
+    No,		// raw_json
     No,		// nilnil
     Yes,	// empty_string
     Yes,	// allow_gc
@@ -231,6 +234,7 @@ struct _options	oj_default_options = {
  * - *:float_precision* [_Fixnum_|_nil_] number of digits of precision when dumping floats, 0 indicates use Ruby
  * - *:use_to_json* [_Boolean_|_nil_] call to_json() methods on dump, default is false
  * - *:use_as_json* [_Boolean_|_nil_] call as_json() methods on dump, default is false
+ * - *:use_raw_json* [_Boolean_|_nil_] call raw_json() methods on dump, default is false
  * - *:nilnil* [_Boolean_|_nil_] if true a nil input to load will return nil and not raise an Exception
  * - *:empty_string* [_Boolean_|_nil_] if true an empty input will not raise an Exception
  * - *:allow_gc* [_Boolean_|_nil_] allow or prohibit GC during parsing, default is true (allow)
@@ -272,6 +276,7 @@ get_def_opts(VALUE self) {
     rb_hash_aset(opts, use_to_json_sym, (Yes == oj_default_options.to_json) ? Qtrue : ((No == oj_default_options.to_json) ? Qfalse : Qnil));
     rb_hash_aset(opts, use_to_hash_sym, (Yes == oj_default_options.to_hash) ? Qtrue : ((No == oj_default_options.to_hash) ? Qfalse : Qnil));
     rb_hash_aset(opts, use_as_json_sym, (Yes == oj_default_options.as_json) ? Qtrue : ((No == oj_default_options.as_json) ? Qfalse : Qnil));
+    rb_hash_aset(opts, use_raw_json_sym, (Yes == oj_default_options.raw_json) ? Qtrue : ((No == oj_default_options.raw_json) ? Qfalse : Qnil));
     rb_hash_aset(opts, nilnil_sym, (Yes == oj_default_options.nilnil) ? Qtrue : ((No == oj_default_options.nilnil) ? Qfalse : Qnil));
     rb_hash_aset(opts, empty_string_sym, (Yes == oj_default_options.empty_string) ? Qtrue : ((No == oj_default_options.empty_string) ? Qfalse : Qnil));
     rb_hash_aset(opts, allow_gc_sym, (Yes == oj_default_options.allow_gc) ? Qtrue : ((No == oj_default_options.allow_gc) ? Qfalse : Qnil));
@@ -378,6 +383,7 @@ get_def_opts(VALUE self) {
  *   - *:use_to_json* [_Boolean_|_nil_] call to_json() methods on dump, default is false.
  *   - *:use_as_json* [_Boolean_|_nil_] call as_json() methods on dump, default is false.
  *   - *:use_to_hash* [_Boolean_|_nil_] call to_hash() methods on dump, default is false.
+ *   - *:use_raw_json* [_Boolean_|_nil_] call raw_json() methods on dump, default is false.
  *   - *:nilnil* [_Boolean_|_nil_] if true a nil input to load will return nil and not raise an Exception.
  *   - *:allow_gc* [_Boolean_|_nil_] allow or prohibit GC during parsing, default is true (allow).
  *   - *:quirks_mode* [_Boolean_|_nil_] allow single JSON values instead of documents, default is true (allow).
@@ -415,6 +421,7 @@ oj_parse_options(VALUE ropts, Options copts) {
 	{ use_to_hash_sym, &copts->to_hash },
 	{ use_to_json_sym, &copts->to_json },
 	{ use_as_json_sym, &copts->as_json },
+	{ use_raw_json_sym, &copts->raw_json },
 	{ nilnil_sym, &copts->nilnil },
 	{ allow_blank_sym, &copts->nilnil }, // same as nilnil
 	{ empty_string_sym, &copts->empty_string },
@@ -808,7 +815,6 @@ oj_parse_opt_match_string(RxClass rc, VALUE ropts) {
  *
  * - *json* [_String_|_IO_] JSON String or an Object that responds to read()
  * - *options* [_Hash_] load options (same as default_options)
- *   - -
  * - *obj* [_Hash_|_Array_|_String_|_Fixnum_|_Float_|_Boolean_|_nil_] parsed object.
  * - *start* [_optional, _Integer_] start position of parsed JSON for obj.
  * - *len* [_optional, _Integer_] length of parsed JSON for obj.
@@ -895,7 +901,6 @@ load(int argc, VALUE *argv, VALUE self) {
  *
  * - *path* [_String_] to a file containing a JSON document
  * - *options* [_Hash_] load options (same as default_options)
- *   - -
  * - *obj* [_Hash_|_Array_|_String_|_Fixnum_|_Float_|_Boolean_|_nil_] parsed object.
  * - *start* [_optional, _Integer_] start position of parsed JSON for obj.
  * - *len* [_optional, _Integer_] length of parsed JSON for obj.
@@ -1080,7 +1085,6 @@ dump(int argc, VALUE *argv, VALUE self) {
  *   - *:object_nl* [_String_|_nil_] String to use after a JSON object field value.
  *   - *:array_nl* [_String_|_nil_] String to use after a JSON array value.
  *   - *:trace* [_Boolean_] If true trace is turned on.
- *   - *:safe* [_Boolean_] If true safe is turned on.
  *
  * Returns [_String_] the encoded JSON.
  */
@@ -1272,7 +1276,6 @@ register_odd_raw(int argc, VALUE *argv, VALUE self) {
  *
  * - *json* [_String_|_IO_] JSON String or an Object that responds to read().
  * - *options* [_Hash_] load options (same as default_options).
- *   - -
  * - *obj* [_Hash_|_Array_|_String_|_Fixnum_|_Float_|_Boolean_|_nil_] parsed object.
  * - *start* [_optional, _Integer_] start position of parsed JSON for obj.
  * - *len* [_optional, _Integer_] length of parsed JSON for obj.
@@ -1307,7 +1310,6 @@ extern VALUE	oj_strict_parse(int argc, VALUE *argv, VALUE self);
  *
  * - *json* [_String_|_IO_] JSON String or an Object that responds to read().
  * - *options* [_Hash_] load options (same as default_options).
- *   - -
  * - *obj* [_Hash_|_Array_|_String_|_Fixnum_|_Float_|_Boolean_|_nil_] parsed object.
  * - *start* [_optional, _Integer_] start position of parsed JSON for obj.
  * - *len* [_optional, _Integer_] length of parsed JSON for obj.
@@ -1338,7 +1340,6 @@ extern VALUE	oj_compat_parse(int argc, VALUE *argv, VALUE self);
  *
  * - *json* [_String_|_IO_] JSON String or an Object that responds to read().
  * - *options* [_Hash_] load options (same as default_options).
- *   - -
  * - *obj* [_Hash_|_Array_|_String_|_Fixnum_|_Float_|_Boolean_|_nil_] parsed object.
  * - *start* [_optional, _Integer_] start position of parsed JSON for obj.
  * - *len* [_optional, _Integer_] length of parsed JSON for obj.
@@ -1374,7 +1375,6 @@ extern VALUE	oj_object_parse(int argc, VALUE *argv, VALUE self);
  *
  * - *json* [_String_|_IO_] JSON String or an Object that responds to read().
  * - *options* [_Hash_] load options (same as default_options).
- *   - -
  * - *obj* [_Hash_|_Array_|_String_|_Fixnum_|_Float_|_Boolean_|_nil_] parsed object.
  * - *start* [_optional, _Integer_] start position of parsed JSON for obj.
  * - *len* [_optional, _Integer_] length of parsed JSON for obj.
@@ -1443,9 +1443,9 @@ extern VALUE	oj_define_mimic_json(int argc, VALUE *argv, VALUE self);
  *
  * - *obj* [_Object__|_Hash_|_Array_] object to convert to a JSON String
  * - *opts* [_Hash_] options
- * - - *:indent* [_String_] String to use for indentation.
+ *   - *:indent* [_String_] String to use for indentation.
  *   - *:space* [_String_] String placed after a , or : delimiter
- *   - *:space * _before [_String_] String placed before a : delimiter
+ *   - *:space_before* [_String_] String placed before a : delimiter
  *   - *:object_nl* [_String_] String placed after a JSON object
  *   - *:array_nl* [_String_] String placed after a JSON array
  *   - *:ascii_only* [_Boolean_] if not nil or false then use only ascii characters in the output. Note JSON.generate does support this even if it is not documented.
@@ -1582,6 +1582,7 @@ Init_oj() {
     oj_new_id = rb_intern("new");
     oj_parse_id = rb_intern("parse");
     oj_pos_id = rb_intern("pos");
+    oj_raw_json_id = rb_intern("raw_json");
     oj_read_id = rb_intern("read");
     oj_readpartial_id = rb_intern("readpartial");
     oj_replace_id = rb_intern("replace");
@@ -1674,6 +1675,7 @@ Init_oj() {
     unix_sym = ID2SYM(rb_intern("unix"));			rb_gc_register_address(&unix_sym);
     unix_zone_sym = ID2SYM(rb_intern("unix_zone"));		rb_gc_register_address(&unix_zone_sym);
     use_as_json_sym = ID2SYM(rb_intern("use_as_json"));		rb_gc_register_address(&use_as_json_sym);
+    use_raw_json_sym = ID2SYM(rb_intern("use_raw_json"));	rb_gc_register_address(&use_raw_json_sym);
     use_to_hash_sym = ID2SYM(rb_intern("use_to_hash"));		rb_gc_register_address(&use_to_hash_sym);
     use_to_json_sym = ID2SYM(rb_intern("use_to_json"));		rb_gc_register_address(&use_to_json_sym);
     wab_sym = ID2SYM(rb_intern("wab"));				rb_gc_register_address(&wab_sym);

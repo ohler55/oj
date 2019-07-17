@@ -8,6 +8,8 @@
 
 extern VALUE	Oj;
 
+bool	string_writer_optimized = false;
+
 static void
 key_check(StrWriter sw, const char *key) {
     DumpType	type = sw->types[sw->depth];
@@ -152,7 +154,7 @@ oj_str_writer_push_array(StrWriter sw, const char *key) {
 void
 oj_str_writer_push_value(StrWriter sw, VALUE val, const char *key) {
     Out	out = &sw->out;
-    
+
     if (sw->keyWritten) {
 	sw->keyWritten = 0;
     } else {
@@ -273,7 +275,7 @@ str_writer_free(void *ptr) {
 static VALUE
 str_writer_new(int argc, VALUE *argv, VALUE self) {
     StrWriter	sw = ALLOC(struct _strWriter);
-    
+
     oj_str_writer_init(sw, 0);
     if (1 == argc) {
 	oj_parse_options(argv[0], &sw->opts);
@@ -487,8 +489,26 @@ str_writer_to_s(VALUE self) {
     return oj_encode(rstr);
 }
 
+/* Document-method: as_json
+ * call-seq: as_json()
+ *
+ * Returns the contents of the writer as a JSON element. If called from inside
+ * an array or hash by Oj the raw buffer will be used othersize a more
+ * inefficient parse of the contents and a return of the result is
+ * completed. The parse uses the trict mode.
+ *
+ * *return* [_Hash_|_Array_|_String_|_Integer_|_Float_|_True_|_False_|_nil|)
+ */
+static VALUE
+str_writer_as_json(VALUE self) {
+    if (string_writer_optimized) {
+	return self;
+    }
+    return rb_hash_new();
+}
+
 /* Document-class: Oj::StringWriter
- * 
+ *
  * Supports building a JSON document one element at a time. Build the document
  * by pushing values into the document. Pushing an array or an object will
  * create that element in the JSON document and subsequent pushes will add the
@@ -509,4 +529,6 @@ oj_string_writer_init() {
     rb_define_method(oj_string_writer_class, "pop_all", str_writer_pop_all, 0);
     rb_define_method(oj_string_writer_class, "reset", str_writer_reset, 0);
     rb_define_method(oj_string_writer_class, "to_s", str_writer_to_s, 0);
+    rb_define_method(oj_string_writer_class, "raw_json", str_writer_to_s, 0);
+    rb_define_method(oj_string_writer_class, "as_json", str_writer_as_json, 0);
 }
