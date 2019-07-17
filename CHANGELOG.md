@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 3.8.0 - 2019-07-TBD
+## 3.8.0 - 2019-07-17
 
 - Fixed a buffer allocation bug for `JSON.pretty_generate`.
 
