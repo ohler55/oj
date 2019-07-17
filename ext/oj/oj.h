@@ -368,6 +368,7 @@ extern ID	oj_write_id;
 
 extern bool	oj_use_hash_alt;
 extern bool	oj_use_array_alt;
+extern bool	string_writer_optimized;
 
 #if HAVE_LIBPTHREAD
 extern pthread_mutex_t	oj_cache_mutex;
