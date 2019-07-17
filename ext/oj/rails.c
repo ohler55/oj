@@ -847,6 +847,7 @@ encoder_deoptimize(int argc, VALUE *argv, VALUE self) {
 static VALUE
 rails_deoptimize(int argc, VALUE *argv, VALUE self) {
     optimize(argc, argv, &ropts, false);
+    string_writer_optimized = false;
 
     return Qnil;
 }

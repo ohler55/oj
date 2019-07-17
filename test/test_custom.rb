@@ -320,6 +320,7 @@ class CustomJuice < Minitest::Test
 
     Oj::Rails.optimize
     json = Oj.dump(j, mode: :rails, use_raw_json: true, indent: 2)
+    Oj::Rails.deoptimize
     assert_equal(%|{
   "a":1,
   "b":[3]
