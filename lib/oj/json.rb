@@ -95,7 +95,7 @@ module JSON
   State = ::JSON::Ext::Generator::State unless defined?(::JSON::State)
 
   begin
-    Object.send(:remove_const, :Parser)
+    send(:remove_const, :Parser)
   rescue
   end
   Parser = ::JSON::Ext::Parser unless defined?(::JSON::Parser)
