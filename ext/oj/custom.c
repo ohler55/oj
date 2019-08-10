@@ -32,6 +32,13 @@ dump_obj_str(VALUE obj, int depth, Out out) {
     oj_code_attrs(obj, attrs, depth, out, Yes == out->opts->create_ok);
 }
 
+static void
+dump_obj_as_str(VALUE obj, int depth, Out out) {
+    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+    const char		*str = rb_string_value_ptr((VALUE*)&rstr);
+
+    oj_dump_cstr(str, RSTRING_LEN(rstr), 0, 0, out);
+}
 
 static void
 bigdecimal_dump(VALUE obj, int depth, Out out) {
@@ -57,19 +64,23 @@ static ID	imag_id = 0;
 
 static void
 complex_dump(VALUE obj, int depth, Out out) {
-    struct _attr	attrs[] = {
-	{ "real", 4, Qnil },
-	{ "imag", 4, Qnil },
-	{ NULL, 0, Qnil },
-    };
-    if (0 == real_id) {
-	real_id = rb_intern("real");
-	imag_id = rb_intern("imag");
-    }
-    attrs[0].value = rb_funcall(obj, real_id, 0);
-    attrs[1].value = rb_funcall(obj, imag_id, 0);
+    if (Yes == out->opts->create_ok && NULL != out->opts->create_id) {
+	struct _attr	attrs[] = {
+	    { "real", 4, Qnil },
+	    { "imag", 4, Qnil },
+	    { NULL, 0, Qnil },
+	};
+	if (0 == real_id) {
+	    real_id = rb_intern("real");
+	    imag_id = rb_intern("imag");
+	}
+	attrs[0].value = rb_funcall(obj, real_id, 0);
+	attrs[1].value = rb_funcall(obj, imag_id, 0);
 
-    oj_code_attrs(obj, attrs, depth, out, Yes == out->opts->create_ok);
+	oj_code_attrs(obj, attrs, depth, out, Yes == out->opts->create_ok);
+    } else {
+	dump_obj_as_str(obj, depth, out);
+    }
 }
 
 static VALUE
@@ -193,17 +204,21 @@ openstruct_load(VALUE clas, VALUE args) {
 
 static void
 range_dump(VALUE obj, int depth, Out out) {
-    struct _attr	attrs[] = {
-	{ "begin", 5, Qnil },
-	{ "end", 3, Qnil },
-	{ "exclude", 7, Qnil },
-	{ NULL, 0, Qnil },
-    };
-    attrs[0].value = rb_funcall(obj, oj_begin_id, 0);
-    attrs[1].value = rb_funcall(obj, oj_end_id, 0);
-    attrs[2].value = rb_funcall(obj, oj_exclude_end_id, 0);
+    if (Yes == out->opts->create_ok && NULL != out->opts->create_id) {
+	struct _attr	attrs[] = {
+	    { "begin", 5, Qnil },
+	    { "end", 3, Qnil },
+	    { "exclude", 7, Qnil },
+	    { NULL, 0, Qnil },
+	};
+	attrs[0].value = rb_funcall(obj, oj_begin_id, 0);
+	attrs[1].value = rb_funcall(obj, oj_end_id, 0);
+	attrs[2].value = rb_funcall(obj, oj_exclude_end_id, 0);
 
-    oj_code_attrs(obj, attrs, depth, out, Yes == out->opts->create_ok);
+	oj_code_attrs(obj, attrs, depth, out, Yes == out->opts->create_ok);
+    } else {
+	dump_obj_as_str(obj, depth, out);
+    }
 }
 
 static VALUE
@@ -222,19 +237,23 @@ static ID	denominator_id = 0;
 
 static void
 rational_dump(VALUE obj, int depth, Out out) {
-    struct _attr	attrs[] = {
-	{ "numerator", 9, Qnil },
-	{ "denominator", 11, Qnil },
-	{ NULL, 0, Qnil },
-    };
-    if (0 == numerator_id) {
-	numerator_id = rb_intern("numerator");
-	denominator_id = rb_intern("denominator");
-    }
-    attrs[0].value = rb_funcall(obj, numerator_id, 0);
-    attrs[1].value = rb_funcall(obj, denominator_id, 0);
+    if (Yes == out->opts->create_ok && NULL != out->opts->create_id) {
+	struct _attr	attrs[] = {
+	    { "numerator", 9, Qnil },
+	    { "denominator", 11, Qnil },
+	    { NULL, 0, Qnil },
+	};
+	if (0 == numerator_id) {
+	    numerator_id = rb_intern("numerator");
+	    denominator_id = rb_intern("denominator");
+	}
+	attrs[0].value = rb_funcall(obj, numerator_id, 0);
+	attrs[1].value = rb_funcall(obj, denominator_id, 0);
 
-    oj_code_attrs(obj, attrs, depth, out, Yes == out->opts->create_ok);
+	oj_code_attrs(obj, attrs, depth, out, Yes == out->opts->create_ok);
+    } else {
+	dump_obj_as_str(obj, depth, out);
+    }
 }
 
 static VALUE
@@ -874,7 +893,14 @@ dump_data(VALUE obj, int depth, Out out, bool as_ok) {
 
 static void
 dump_regexp(VALUE obj, int depth, Out out, bool as_ok) {
-    dump_obj_str(obj, depth, out);
+    if (Yes == out->opts->create_ok && NULL != out->opts->create_id) {
+	dump_obj_str(obj, depth, out);
+    } else {
+	volatile VALUE	rstr = rb_funcall(obj, rb_intern("inspect"), 0);
+	const char	*str = rb_string_value_ptr((VALUE*)&rstr);
+
+	oj_dump_cstr(str, RSTRING_LEN(rstr), 0, 0, out);
+    }
 }
 
 static void

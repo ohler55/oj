@@ -329,7 +329,7 @@ get_def_opts(VALUE self) {
     case AutoDec:
     default:		rb_hash_aset(opts, bigdecimal_load_sym, auto_sym);	break;
     }
-    rb_hash_aset(opts, create_id_sym, (0 == oj_default_options.create_id) ? Qnil : rb_str_new2(oj_default_options.create_id));
+    rb_hash_aset(opts, create_id_sym, (NULL == oj_default_options.create_id) ? Qnil : rb_str_new2(oj_default_options.create_id));
     rb_hash_aset(opts, oj_space_sym, (0 == oj_default_options.dump_opts.after_size) ? Qnil : rb_str_new2(oj_default_options.dump_opts.after_sep));
     rb_hash_aset(opts, oj_space_before_sym, (0 == oj_default_options.dump_opts.before_size) ? Qnil : rb_str_new2(oj_default_options.dump_opts.before_sep));
     rb_hash_aset(opts, oj_object_nl_sym, (0 == oj_default_options.dump_opts.hash_size) ? Qnil : rb_str_new2(oj_default_options.dump_opts.hash_nl));
