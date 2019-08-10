@@ -64,7 +64,7 @@ static ID	imag_id = 0;
 
 static void
 complex_dump(VALUE obj, int depth, Out out) {
-    if (Yes == out->opts->create_ok && NULL != out->opts->create_id) {
+    if (NULL != out->opts->create_id) {
 	struct _attr	attrs[] = {
 	    { "real", 4, Qnil },
 	    { "imag", 4, Qnil },
@@ -204,7 +204,7 @@ openstruct_load(VALUE clas, VALUE args) {
 
 static void
 range_dump(VALUE obj, int depth, Out out) {
-    if (Yes == out->opts->create_ok && NULL != out->opts->create_id) {
+    if (NULL != out->opts->create_id) {
 	struct _attr	attrs[] = {
 	    { "begin", 5, Qnil },
 	    { "end", 3, Qnil },
@@ -237,7 +237,7 @@ static ID	denominator_id = 0;
 
 static void
 rational_dump(VALUE obj, int depth, Out out) {
-    if (Yes == out->opts->create_ok && NULL != out->opts->create_id) {
+    if (NULL != out->opts->create_id) {
 	struct _attr	attrs[] = {
 	    { "numerator", 9, Qnil },
 	    { "denominator", 11, Qnil },
@@ -893,7 +893,7 @@ dump_data(VALUE obj, int depth, Out out, bool as_ok) {
 
 static void
 dump_regexp(VALUE obj, int depth, Out out, bool as_ok) {
-    if (Yes == out->opts->create_ok && NULL != out->opts->create_id) {
+    if (NULL != out->opts->create_id) {
 	dump_obj_str(obj, depth, out);
     } else {
 	volatile VALUE	rstr = rb_funcall(obj, rb_intern("inspect"), 0);
