@@ -1,21 +1,21 @@
 /* val_stack.c
  * Copyright (c) 2011, Peter Ohler
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  *  - Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  *  - Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  *  - Neither the name of Peter Ohler nor the names of its contributors may be
  *    used to endorse or promote products derived from this software without
  *    specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -42,7 +42,7 @@ mark(void *ptr) {
     if (0 == ptr) {
 	return;
     }
-#if HAVE_LIBPTHREAD
+#ifdef HAVE_PTHREAD_MUTEX_INIT
     pthread_mutex_lock(&stack->mutex);
 #else
     rb_mutex_lock(stack->mutex);
@@ -66,7 +66,7 @@ mark(void *ptr) {
 	    }
 	}
     }
-#if HAVE_LIBPTHREAD
+#ifdef HAVE_PTHREAD_MUTEX_INIT
     pthread_mutex_unlock(&stack->mutex);
 #else
     rb_mutex_unlock(stack->mutex);
@@ -75,9 +75,9 @@ mark(void *ptr) {
 
 VALUE
 oj_stack_init(ValStack stack) {
-#if HAVE_LIBPTHREAD
+#ifdef HAVE_PTHREAD_MUTEX_INIT
     int	err;
-    
+
     if (0 != (err = pthread_mutex_init(&stack->mutex, 0))) {
 	rb_raise(rb_eException, "failed to initialize a mutex. %s", strerror(err));
     }

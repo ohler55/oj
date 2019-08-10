@@ -149,7 +149,7 @@ static VALUE	xss_safe_sym;
 
 rb_encoding	*oj_utf8_encoding = 0;
 
-#if HAVE_LIBPTHREAD
+#ifdef HAVE_PTHREAD_MUTEX_INIT
 pthread_mutex_t	oj_cache_mutex;
 #else
 VALUE oj_cache_mutex = Qnil;
@@ -1692,7 +1692,7 @@ Init_oj() {
     oj_odd_init();
     oj_mimic_rails_init();
 
-#if HAVE_LIBPTHREAD
+#ifdef HAVE_PTHREAD_MUTEX_INIT
     if (0 != (err = pthread_mutex_init(&oj_cache_mutex, 0))) {
 	rb_raise(rb_eException, "failed to initialize a mutex. %s", strerror(err));
     }
