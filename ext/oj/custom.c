@@ -896,10 +896,7 @@ dump_regexp(VALUE obj, int depth, Out out, bool as_ok) {
     if (NULL != out->opts->create_id) {
 	dump_obj_str(obj, depth, out);
     } else {
-	volatile VALUE	rstr = rb_funcall(obj, rb_intern("inspect"), 0);
-	const char	*str = rb_string_value_ptr((VALUE*)&rstr);
-
-	oj_dump_cstr(str, RSTRING_LEN(rstr), 0, 0, out);
+	dump_obj_as_str(obj, depth, out);
     }
 }
 
