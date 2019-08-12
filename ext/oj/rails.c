@@ -1071,6 +1071,8 @@ rails_set_encoder(VALUE self) {
     rb_undef_method(encoding, "use_standard_json_time_format=");
     rb_define_module_function(encoding, "use_standard_json_time_format=", rails_use_standard_json_time_format, 1);
 
+    pv = rb_iv_get(encoding, "@escape_html_entities_in_json");
+    escape_html = Qtrue == pv;
     rb_undef_method(encoding, "escape_html_entities_in_json=");
     rb_define_module_function(encoding, "escape_html_entities_in_json=", rails_escape_html_entities_in_json, 1);
 
