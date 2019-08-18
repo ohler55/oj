@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 3.9.0 - 2019-08-??
+## 3.9.0 - 2019-08-18
 
 - Changed custom behavior when `:create_additions` is true and `:create_id` is
   set to nil. Now Range, Regexp, Rational, and Complex are output as strings
