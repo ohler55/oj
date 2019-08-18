@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#if HAVE_LIBPTHREAD
+#ifdef HAVE_PTHREAD_MUTEX_INIT
 #include <pthread.h>
 #endif
 
@@ -75,7 +75,7 @@ oj_name2class(ParseInfo pi, const char *name, size_t len, int auto_define, VALUE
     if (No == pi->options.class_cache) {
 	return resolve_classpath(pi, name, len, auto_define, error_class);
     }
-#if HAVE_LIBPTHREAD
+#ifdef HAVE_PTHREAD_MUTEX_INIT
     pthread_mutex_lock(&oj_cache_mutex);
 #else
     rb_mutex_lock(oj_cache_mutex);
@@ -85,7 +85,7 @@ oj_name2class(ParseInfo pi, const char *name, size_t len, int auto_define, VALUE
 	    *slot = clas;
 	}
     }
-#if HAVE_LIBPTHREAD
+#ifdef HAVE_PTHREAD_MUTEX_INIT
     pthread_mutex_unlock(&oj_cache_mutex);
 #else
     rb_mutex_unlock(oj_cache_mutex);

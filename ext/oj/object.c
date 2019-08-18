@@ -407,7 +407,7 @@ oj_set_obj_ivar(Val parent, Val kval, VALUE value) {
     ID		var_id;
     ID		*slot;
 
-#if HAVE_LIBPTHREAD
+#ifdef HAVE_PTHREAD_MUTEX_INIT
     pthread_mutex_lock(&oj_cache_mutex);
 #else
     rb_mutex_lock(oj_cache_mutex);
@@ -441,7 +441,7 @@ oj_set_obj_ivar(Val parent, Val kval, VALUE value) {
 	}
 	*slot = var_id;
     }
-#if HAVE_LIBPTHREAD
+#ifdef HAVE_PTHREAD_MUTEX_INIT
     pthread_mutex_unlock(&oj_cache_mutex);
 #else
     rb_mutex_unlock(oj_cache_mutex);
@@ -665,7 +665,7 @@ end_hash(ParseInfo pi) {
 static void
 array_append_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
     volatile VALUE	rval = Qnil;
-    
+
     if (3 <= len && 0 != pi->circ_array) {
 	if ('i' == str[1]) {
 	    long	i = read_long(str + 2, len - 2);
@@ -694,7 +694,7 @@ array_append_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
 static void
 array_append_num(ParseInfo pi, NumInfo ni) {
     volatile VALUE	rval = oj_num_as_value(ni);
-    
+
     rb_ary_push(stack_peek(&pi->stack)->val, rval);
     if (Yes == pi->options.trace) {
 	oj_trace_parse_call("append_number", pi, __FILE__, __LINE__, rval);

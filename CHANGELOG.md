@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 3.9.0 - 2019-08-??
+
+- Changed custom behavior when `:create_additions` is true and `:create_id` is
+  set to nil. Now Range, Regexp, Rational, and Complex are output as strings
+  instead of a JSON object with members. Setting any other value for
+  `:create_id`, even an empty string will result in an object being dumped.
+
+- Detection of pthread mutex support was changed.
+
 ## 3.8.1 - 2019-07-22
 
 - Fix replacement of JSON::Parse thanks to paracycle.

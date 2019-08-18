@@ -28,6 +28,7 @@ have_func('rb_ivar_count')
 have_func('rb_ivar_foreach')
 have_func('stpcpy')
 have_func('rb_data_object_wrap')
+have_func('pthread_mutex_init')
 
 dflags['OJ_DEBUG'] = true unless ENV['OJ_DEBUG'].nil?
 

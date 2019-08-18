@@ -149,7 +149,7 @@ static VALUE	xss_safe_sym;
 
 rb_encoding	*oj_utf8_encoding = 0;
 
-#if HAVE_LIBPTHREAD
+#ifdef HAVE_PTHREAD_MUTEX_INIT
 pthread_mutex_t	oj_cache_mutex;
 #else
 VALUE oj_cache_mutex = Qnil;
@@ -329,7 +329,7 @@ get_def_opts(VALUE self) {
     case AutoDec:
     default:		rb_hash_aset(opts, bigdecimal_load_sym, auto_sym);	break;
     }
-    rb_hash_aset(opts, create_id_sym, (0 == oj_default_options.create_id) ? Qnil : rb_str_new2(oj_default_options.create_id));
+    rb_hash_aset(opts, create_id_sym, (NULL == oj_default_options.create_id) ? Qnil : rb_str_new2(oj_default_options.create_id));
     rb_hash_aset(opts, oj_space_sym, (0 == oj_default_options.dump_opts.after_size) ? Qnil : rb_str_new2(oj_default_options.dump_opts.after_sep));
     rb_hash_aset(opts, oj_space_before_sym, (0 == oj_default_options.dump_opts.before_size) ? Qnil : rb_str_new2(oj_default_options.dump_opts.before_sep));
     rb_hash_aset(opts, oj_object_nl_sym, (0 == oj_default_options.dump_opts.hash_size) ? Qnil : rb_str_new2(oj_default_options.dump_opts.hash_nl));
@@ -1692,7 +1692,7 @@ Init_oj() {
     oj_odd_init();
     oj_mimic_rails_init();
 
-#if HAVE_LIBPTHREAD
+#ifdef HAVE_PTHREAD_MUTEX_INIT
     if (0 != (err = pthread_mutex_init(&oj_cache_mutex, 0))) {
 	rb_raise(rb_eException, "failed to initialize a mutex. %s", strerror(err));
     }

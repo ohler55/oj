@@ -89,6 +89,10 @@ with the key.
 The :create_id option specifies that key is used for dumping and loading when
 specifying the class for an encoded object. The default is `json_create`.
 
+In the `:custom` mode setting the `:create_id` to nil will cause Complex,
+Rational, Range, and Regexp to be output as strings instead of as JSON
+objects.
+
 ### :empty_string [Boolean]
 
 If true an empty or all whitespace input will not raise an Exception. The
