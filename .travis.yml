@@ -17,7 +17,6 @@ rvm:
 
 gemfile:
   - gemfiles/no_rails.gemfile
-  - gemfiles/rails_4.2.gemfile
   - gemfiles/rails_5.gemfile
 
 matrix:
@@ -31,9 +30,3 @@ matrix:
     - gemfile: gemfiles/no_rails.gemfile
       rvm: 2.4.6
       os: osx
-    - gemfile: gemfiles/rails_4.2.gemfile
-      rvm: 2.4.6
-      os: osx
-    - gemfile: gemfiles/rails_4.2.gemfile
-      rvm: 2.4.6
-      os: linux
