@@ -276,7 +276,10 @@ hat_num(ParseInfo pi, Val parent, Val kval, NumInfo ni) {
     if (2 == kval->klen) {
 	switch (kval->key[1]) {
 	case 't': // time as a float
-	    {
+	    if (0 == ni->div || 9 < ni->di) {
+		rb_raise(rb_eArgError, "Invalid time decimal representation.");
+		//parent->val = rb_time_nano_new(0, 0);
+	    } else {
 		int64_t	nsec = ni->num * 1000000000LL / ni->div;
 
 		if (ni->neg) {

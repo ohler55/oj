@@ -1069,7 +1069,7 @@ hash_set_num(struct _parseInfo *pi, Val kval, NumInfo ni) {
 	oj_set_obj_ivar(parent, kval, rval);
 	break;
     case T_HASH:
-	if (4 == parent->klen && NULL != parent->key && rb_cTime == parent->clas && 0 == strncmp("time", parent->key, 4)) {
+	if (4 == parent->klen && NULL != parent->key && rb_cTime == parent->clas && 0 != ni->div && 0 == strncmp("time", parent->key, 4)) {
 	    int64_t	nsec = ni->num * 1000000000LL / ni->div;
 
 	    if (ni->neg) {

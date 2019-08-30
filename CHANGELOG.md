@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.9.1 - 2019-TBD
+
+- Raise an exception on an invalid time represented as a decimal in `:object` mode.
+
 ## 3.9.0 - 2019-08-18
 
 - Changed custom behavior when `:create_additions` is true and `:create_id` is
