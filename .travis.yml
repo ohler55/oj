@@ -12,7 +12,7 @@ rvm:
   - 2.3.8
   - 2.4.6
   - 2.5.5
-  - 2.6.3
+  - 2.6.4
   - ruby-head
 
 gemfile:
@@ -29,4 +29,10 @@ matrix:
       rvm: 2.3.8
     - gemfile: gemfiles/no_rails.gemfile
       rvm: 2.4.6
+      os: osx
+    - gemfile: gemfiles/rails_5.gemfile
+      rvm: 2.4.6
+      os: osx
+    - gemfile: gemfiles/rails_5.gemfile
+      rvm: 2.5.5
       os: osx

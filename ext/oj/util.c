@@ -110,7 +110,7 @@ sec_as_time(int64_t secs, TimeInfo ti) {
 	    }
 	}
     }
-    ti->year = (qc - shift) * 400 + c * 100 + qy * 4 + y;
+    ti->year = (int)((qc - (int64_t)shift) * 400 + c * 100 + qy * 4 + y);
     if (leap) {
 	ms = eom_leap_secs;
     } else {
@@ -125,12 +125,12 @@ sec_as_time(int64_t secs, TimeInfo ti) {
 	    break;
 	}
     }
-    ti->day = secs / 86400LL;
+    ti->day = (int)(secs / 86400LL);
     secs = secs - (int64_t)ti->day * 86400LL;
     ti->day++;
-    ti->hour = secs / 3600LL;
+    ti->hour = (int)(secs / 3600LL);
     secs = secs - (int64_t)ti->hour * 3600LL;
-    ti->min = secs / 60LL;
+    ti->min = (int)(secs / 60LL);
     secs = secs - (int64_t)ti->min * 60LL;
-    ti->sec = secs;
+    ti->sec = (int)secs;
 }
