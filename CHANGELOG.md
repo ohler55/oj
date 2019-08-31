@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 3.9.1 - 2019-TBD
+## 3.9.1 - 2019-08-31
 
 - Raise an exception on an invalid time represented as a decimal in `:object` mode.
 
