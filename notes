@@ -26,9 +26,8 @@ Comparison Matrix
  - encode_big_decimal_as_string
   - add as fix for rails change
 
-
 - rails
-   
+
  - Process::Status
  - ActiveSupport::TimeWithZone
  - ActiveModel::Errors
@@ -44,7 +43,7 @@ Comparison Matrix
   - look at RUBY_PLATFORM maybe?
  - look at env var for OJ_DEBUG when doing ruby extconf.rb
  - add printf for keys spots in parse and dump
- 
+
 - invalid character option
  - don't check options
   - replace with best attempt such as \ud83d => \xED\xA0\xBD
