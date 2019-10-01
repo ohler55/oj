@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.9.2 - 2019-10-01
+
+- Fixed wrong exception type when mimicing the JSON gem.
+
 ## 3.9.1 - 2019-08-31
 
 - Raise an exception on an invalid time represented as a decimal in `:object` mode.
