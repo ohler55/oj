@@ -898,6 +898,10 @@ CLEANUP:
 	    // idea.
 	    VALUE	args[] = { oj_encode(rb_str_new2(pi->err.msg)) };
 
+	    if (pi->err.clas == oj_parse_error_class) {
+		// The error was an Oj::ParseError so change to a JSON::ParseError.
+		pi->err.clas = oj_json_parser_error_class;
+	    }
 	    rb_exc_raise(rb_class_new_instance(1, args, pi->err.clas));
 	} else {
 	    oj_err_raise(&pi->err);
