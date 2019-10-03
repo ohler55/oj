@@ -377,7 +377,7 @@
 - Rubinius compilation fixes.
 - Added a separate option for as_json instead of piggy backing on the use_to_json. This changes the API slightly.
 - Ready for Ruby 2.4.
-- Thanks to faucct for fixing mimic to not redefine JSON::ParseError.
+- Thanks to faucct for fixing mimic to not redefine JSON::ParserError.
 
 ## 2.17.5 - 2016-10-19
 
