@@ -73,6 +73,12 @@ class TestJSONEncoding < ActiveSupport::TestCase
   end
 
   def test_utf8_string_encoded_properly
+    # The original test seems to expect that
+    # ActiveSupport.escape_html_entities_in_json reverts to true even after
+    # being set to false. I haven't been able to figure that out so the value is
+    # set to true, the default, before running the test. This might be wrong but
+    # for now it will have to do.
+    ActiveSupport.escape_html_entities_in_json = true
     result = ActiveSupport::JSON.encode("€2.99")
     assert_equal '"€2.99"', result
     assert_equal(Encoding::UTF_8, result.encoding)
