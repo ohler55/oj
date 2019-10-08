@@ -1439,7 +1439,7 @@ static DumpFunc	rails_funcs[] = {
     dump_hash,	 	// RUBY_T_HASH     = 0x08,
     dump_obj,		// RUBY_T_STRUCT   = 0x09,
     oj_dump_bignum,	// RUBY_T_BIGNUM   = 0x0a,
-    NULL, 		// RUBY_T_FILE     = 0x0b,
+    dump_as_string,	// RUBY_T_FILE     = 0x0b,
     dump_obj,		// RUBY_T_DATA     = 0x0c,
     NULL, 		// RUBY_T_MATCH    = 0x0d,
     // Rails raises a stack error on Complex and Rational. It also corrupts
