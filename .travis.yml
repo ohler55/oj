@@ -18,6 +18,7 @@ rvm:
 gemfile:
   - gemfiles/no_rails.gemfile
   - gemfiles/rails_5.gemfile
+  - gemfiles/rails_6.gemfile
 
 matrix:
   fast_finish: true
@@ -36,3 +37,8 @@ matrix:
     - gemfile: gemfiles/rails_5.gemfile
       rvm: 2.5.5
       os: osx
+    # Rails 6 only support Ruby 2.5 and above.
+    - gemfile: gemfiles/rails_6.gemfile
+      rvm: 2.3.8
+    - gemfile: gemfiles/rails_6.gemfile
+      rvm: 2.4.6
