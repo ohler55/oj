@@ -1,16 +1,21 @@
 # frozen_string_literal: true
 
-require 'oj'
-
-Oj::Rails.set_decoder()
-
 require_relative "abstract_unit"
 require "active_support/json"
 require "active_support/time"
 require_relative "time_zone_test_helpers"
 
+require 'oj'
+
+Oj::Rails.set_decoder()
+
 class TestJSONDecoding < ActiveSupport::TestCase
   include TimeZoneTestHelpers
+
+  # Added for testing if Oj is used.
+  test "oj is used as an encoder" do
+    assert_equal ActiveSupport.json_encoder, Oj::Rails::Encoder
+  end
 
   class Foo
     def self.json_create(object)
