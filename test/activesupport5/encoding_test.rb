@@ -20,6 +20,11 @@ Oj::Rails.optimize()
 class TestJSONEncoding < ActiveSupport::TestCase
   include TimeZoneTestHelpers
 
+  # Added for testing if Oj is used.
+  test "oj is used as an encoder" do
+    assert_equal ActiveSupport.json_encoder, Oj::Rails::Encoder
+  end
+
   def sorted_json(json)
     if json.start_with?("{") && json.end_with?("}")
       "{" + json[1..-2].split(",").sort.join(",") + "}"
