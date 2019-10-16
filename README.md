@@ -42,7 +42,7 @@ gem 'oj'
 
 ## Support
 
-[Get supported Oj with a Tidelift Subscription.](https://tidelift.com/subscription/pkg/rubygems-oj?utm_source=rubygems-oj&utm_medium=referral&utm_campaign=readme)
+[Get supported Oj with a Tidelift Subscription.](https://tidelift.com/subscription/pkg/rubygems-oj?utm_source=rubygems-oj&utm_medium=referral&utm_campaign=readme) Security updates are [supported](https://tidelift.com/security).
 
 ## Further Reading
 
