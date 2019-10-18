@@ -954,11 +954,13 @@ load_file(int argc, VALUE *argv, VALUE self) {
     }
     switch (mode) {
     case StrictMode:
+    case NullMode:
 	oj_set_strict_callbacks(&pi);
 	return oj_pi_sparse(argc, argv, &pi, fd);
-    case NullMode:
-    case CompatMode:
     case CustomMode:
+	oj_set_custom_callbacks(&pi);
+	return oj_pi_sparse(argc, argv, &pi, fd);
+    case CompatMode:
     case RailsMode:
 	oj_set_compat_callbacks(&pi);
 	return oj_pi_sparse(argc, argv, &pi, fd);

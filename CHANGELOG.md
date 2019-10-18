@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.9.3 - 2019-10-??
+
+- Fixed custom mode load_file to use custom mode.
+
+- Fixed rails mode output of IO objects
+
 ## 3.9.2 - 2019-10-01
 
 - Fixed wrong exception type when mimicing the JSON gem.
