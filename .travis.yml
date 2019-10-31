@@ -11,8 +11,11 @@ language: ruby
 rvm:
   - 2.3.8
   - 2.4.6
+  - 2.4.9
   - 2.5.5
+  - 2.5.7
   - 2.6.3
+  - 2.6.5
   - ruby-head
 
 gemfile:
@@ -42,3 +45,11 @@ matrix:
       rvm: 2.3.8
     - gemfile: gemfiles/rails_6.gemfile
       rvm: 2.4.6
+    - gemfile: gemfiles/rails_6.gemfile
+      rvm: 2.4.9
+    - os: osx
+      rvm: 2.6.5
+    - os: osx
+      rvm: 2.5.7
+    - os: osx
+      rvm: 2.4.9
