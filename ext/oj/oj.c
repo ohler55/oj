@@ -1054,6 +1054,9 @@ dump(int argc, VALUE *argv, VALUE self) {
     if (2 == argc) {
 	oj_parse_options(argv[1], &copts);
     }
+    if (CompatMode == copts.mode && copts.escape_mode != ASCIIEsc) {
+	copts.escape_mode = JSONEsc;
+    }
     out.buf = buf;
     out.end = buf + sizeof(buf) - 10;
     out.allocated = false;

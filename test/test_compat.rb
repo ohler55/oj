@@ -147,16 +147,9 @@ class CompatJuice < Minitest::Test
 
   def test_encode
     opts = Oj.default_options
-    Oj.default_options = { :ascii_only => false }
-    unless 'jruby' == $ruby
-      dump_and_load("ぴーたー", false)
-    end
     Oj.default_options = { :ascii_only => true }
     json = Oj.dump("ぴーたー")
     assert_equal(%{"\\u3074\\u30fc\\u305f\\u30fc"}, json)
-    unless 'jruby' == $ruby
-      dump_and_load("ぴーたー", false)
-    end
     Oj.default_options = opts
   end
 
