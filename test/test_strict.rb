@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-# encoding: UTF-8
+# encoding: utf-8
 
 $: << File.dirname(__FILE__)
 $oj_dir = File.dirname(File.expand_path(File.dirname(__FILE__)))
@@ -377,6 +377,29 @@ class StrictJuice < Minitest::Test
     Oj.load(json, :mode => :strict) { |x| results << x }
 
     assert_equal([{ 'x' => 1 }, { 'y' => 2 }], results)
+  end
+
+  def test_invalid_decimal_dot_start
+    assert_raises(Oj::ParseError) {
+      Oj.load('.123', mode: :strict)
+    }
+    assert_raises(Oj::ParseError) {
+      Oj.load('-.123', mode: :strict)
+    }
+  end
+
+  def test_invalid_decimal_dot_end
+    json = '123.'
+    assert_raises(Oj::ParseError) {
+      Oj.load(json, mode: :strict)
+    }
+  end
+
+  def test_invalid_decimal_plus
+    json = '+12'
+    assert_raises(Oj::ParseError) {
+      Oj.load(json, mode: :strict)
+    }
   end
 
   def test_circular_hash
