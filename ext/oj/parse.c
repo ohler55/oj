@@ -400,6 +400,10 @@ read_num(ParseInfo pi) {
 	pi->cur++;
 	ni.neg = 1;
     } else if ('+' == *pi->cur) {
+	if (StrictMode == pi->options.mode) {
+	    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number or other value");
+	    return;
+	}
 	pi->cur++;
     }
     if ('I' == *pi->cur) {
@@ -446,8 +450,13 @@ read_num(ParseInfo pi) {
 	if ('.' == *pi->cur) {
 	    pi->cur++;
 	    // A trailing . is not a valid decimal but if encountered allow it
-	    // except when mimicing the JSON gem.
-	    if (CompatMode == pi->options.mode) {
+	    // except when mimicing the JSON gem or in strict mode.
+	    if (StrictMode == pi->options.mode || CompatMode == pi->options.mode) {
+		int	pos = (int)(pi->cur - ni.str);
+		if (1 == pos || (2 == pos && ni.neg)) {
+		    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number");
+		    return;
+		}
 		if (*pi->cur < '0' || '9' < *pi->cur) {
 		    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number");
 		    return;
