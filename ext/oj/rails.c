@@ -214,6 +214,8 @@ dump_bigdecimal(VALUE obj, int depth, Out out, bool as_ok) {
 
     if ('I' == *str || 'N' == *str || ('-' == *str && 'I' == str[1])) {
 	oj_dump_nil(Qnil, depth, out, false);
+    } else if (out->opts->int_range_max != 0 || out->opts->int_range_min != 0) {
+	oj_dump_cstr(str, (int)RSTRING_LEN(rstr), 0, 0, out);
     } else if (Yes == out->opts->bigdec_as_num) {
 	oj_dump_raw(str, (int)RSTRING_LEN(rstr), out);
     } else {
@@ -1438,7 +1440,8 @@ static DumpFunc	rails_funcs[] = {
     dump_array,		// RUBY_T_ARRAY    = 0x07,
     dump_hash,	 	// RUBY_T_HASH     = 0x08,
     dump_obj,		// RUBY_T_STRUCT   = 0x09,
-    oj_dump_bignum,	// RUBY_T_BIGNUM   = 0x0a,
+    dump_bigdecimal,	// RUBY_T_BIGNUM   = 0x0a,
+    //oj_dump_bignum,	// RUBY_T_BIGNUM   = 0x0a,
     dump_as_string,	// RUBY_T_FILE     = 0x0b,
     dump_obj,		// RUBY_T_DATA     = 0x0c,
     NULL, 		// RUBY_T_MATCH    = 0x0d,

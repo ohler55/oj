@@ -15,7 +15,7 @@ class IntegerRangeTest < Minitest::Test
   def setup
     @default_options = Oj.default_options
     # in null mode other options other than the number formats are not used.
-    Oj.default_options = { :mode => :null }
+    Oj.default_options = { :mode => :null, bigdecimal_as_decimal: true }
   end
 
   def teardown
@@ -70,4 +70,3 @@ class IntegerRangeTest < Minitest::Test
     assert_equal(exp, Oj.dump(test, integer_range: false))
   end
 end
-

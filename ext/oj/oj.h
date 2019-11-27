@@ -149,8 +149,8 @@ typedef struct _options {
     char		allow_nan;	// YEsyNo for parsing only
     char		trace;		// YesNo
     char		safe;		// YesNo
-    int64_t		integer_range_min; // dump numbers outside range as string
-    int64_t		integer_range_max;
+    int64_t		int_range_min;	// dump numbers below as string
+    int64_t		int_range_max;	// dump numbers above as string
     const char		*create_id;	// 0 or string
     size_t		create_id_len;	// length of create_id
     int			sec_prec;	// second precision when dumping time

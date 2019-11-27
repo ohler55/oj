@@ -181,8 +181,8 @@ struct _options	oj_default_options = {
     Yes,	// allow_nan
     No,		// trace
     No,		// safe
-    0,		// integer_range_min
-    0,		// integer_range_max
+    0,		// int_range_min
+    0,		// int_range_max
     oj_json_class,	// create_id
     10,		// create_id_len
     9,		// sec_prec
@@ -297,16 +297,16 @@ get_def_opts(VALUE self) {
     default:		rb_hash_aset(opts, mode_sym, object_sym);	break;
     }
 
-    if (oj_default_options.integer_range_max != 0 || oj_default_options.integer_range_min != 0) {
-    VALUE range = rb_obj_alloc(rb_cRange);
-    VALUE min = LONG2FIX(oj_default_options.integer_range_min);
-    VALUE max = LONG2FIX(oj_default_options.integer_range_max);
-    rb_ivar_set(range, oj_begin_id, min);
-    rb_ivar_set(range, oj_end_id, max);
-    rb_hash_aset(opts, integer_range_sym, range);
-    }
-    else {
-    rb_hash_aset(opts, integer_range_sym, Qnil);
+    if (oj_default_options.int_range_max != 0 || oj_default_options.int_range_min != 0) {
+	VALUE	range = rb_obj_alloc(rb_cRange);
+	VALUE	min = LONG2FIX(oj_default_options.int_range_min);
+	VALUE	max = LONG2FIX(oj_default_options.int_range_max);
+
+	rb_ivar_set(range, oj_begin_id, min);
+	rb_ivar_set(range, oj_end_id, max);
+	rb_hash_aset(opts, integer_range_sym, range);
+    } else {
+	rb_hash_aset(opts, integer_range_sym, Qnil);
     }
     switch (oj_default_options.escape_mode) {
     case NLEsc:		rb_hash_aset(opts, escape_mode_sym, newline_sym);	break;
@@ -738,19 +738,19 @@ oj_parse_options(VALUE ropts, Options copts) {
 	}
     }
     if (Qnil != (v = rb_hash_lookup(ropts, integer_range_sym))) {
-    if (TYPE(v) == T_STRUCT && rb_obj_class(v) == rb_cRange) {
-        VALUE min = rb_funcall(v, oj_begin_id, 0);
-        VALUE max = rb_funcall(v, oj_end_id, 0);
+	if (TYPE(v) == T_STRUCT && rb_obj_class(v) == rb_cRange) {
+	    VALUE min = rb_funcall(v, oj_begin_id, 0);
+	    VALUE max = rb_funcall(v, oj_end_id, 0);
 
-        if (TYPE(min) != T_FIXNUM || TYPE(max) != T_FIXNUM) {
-            rb_raise(rb_eArgError, ":integer_range range bounds is not Fixnum.");
-        }
+	    if (TYPE(min) != T_FIXNUM || TYPE(max) != T_FIXNUM) {
+		rb_raise(rb_eArgError, ":integer_range range bounds is not Fixnum.");
+	    }
 
-        copts->integer_range_min = FIX2LONG(min);
-        copts->integer_range_max = FIX2LONG(max);
-    } else if (Qfalse != v) {
-        rb_raise(rb_eArgError, ":integer_range must be a range of Fixnum.");
-    }
+	    copts->int_range_min = FIX2LONG(min);
+	    copts->int_range_max = FIX2LONG(max);
+	} else if (Qfalse != v) {
+	    rb_raise(rb_eArgError, ":integer_range must be a range of Fixnum.");
+	}
     }
 }
 

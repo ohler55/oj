@@ -1,10 +1,16 @@
 # CHANGELOG
 
-## 3.9.3 - 2019-10-??
+## 3.9.3 - 2019-11-??
 
 - Fixed custom mode load_file to use custom mode.
 
 - Fixed rails mode output of IO objects
+
+- Fixed issue #568. Dumping bigdecimal in `:rails' mode made more consistent.
+
+- Fixed issue #569. `:compat` mode not restricts the escape mode as indicated in the documentation.
+
+- Fixed issue #570. In `:strict` mode number parsing follows the JSON specification more closely as indended.
 
 ## 3.9.2 - 2019-10-01
 
