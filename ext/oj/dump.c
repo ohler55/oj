@@ -548,7 +548,7 @@ oj_dump_xml_time(VALUE obj, Out out) {
         tzhour = (int)(tzsecs / 3600);
         tzmin = (int)(tzsecs / 60) - (tzhour * 60);
     }
-    if (0 == nsec || 0 == out->opts->sec_prec) {
+    if ((0 == nsec && !out->opts->sec_prec_set) || 0 == out->opts->sec_prec) {
 	if (0 == tzsecs && rb_funcall2(obj, oj_utcq_id, 0, 0)) {
 	    sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02dZ", ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec);
 	    oj_dump_cstr(buf, 20, 0, 0, out);

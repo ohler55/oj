@@ -181,6 +181,8 @@ struct _options	oj_default_options = {
     Yes,	// allow_nan
     No,		// trace
     No,		// safe
+    false,	// sec_prec_set
+    No,		// ignore_under
     0,		// int_range_min
     0,		// int_range_max
     oj_json_class,	// create_id
@@ -506,8 +508,12 @@ oj_parse_options(VALUE ropts, Options copts) {
 	n = NUM2INT(v);
 	if (0 > n) {
 	    n = 0;
+	    copts->sec_prec_set = false;
 	} else if (9 < n) {
 	    n = 9;
+	    copts->sec_prec_set = true;
+	} else {
+	    copts->sec_prec_set = true;
 	}
 	copts->sec_prec = n;
     }

@@ -6,6 +6,8 @@
 
 - Fixed rails mode output of IO objects
 
+- Fixed issue #567. Second precision is forced if set to the correct number of decimals even if zero nanoseconds.
+
 - Fixed issue #568. Dumping bigdecimal in `:rails' mode made more consistent.
 
 - Fixed issue #569. `:compat` mode not restricts the escape mode as indicated in the documentation.

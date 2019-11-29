@@ -1037,6 +1037,7 @@ static VALUE
 rails_time_precision(VALUE self, VALUE prec) {
     rb_iv_set(self, "@time_precision", prec);
     oj_default_options.sec_prec = NUM2INT(prec);
+    oj_default_options.sec_prec_set = true;
 
     return prec;
 }
@@ -1080,6 +1081,7 @@ rails_set_encoder(VALUE self) {
 
     pv = rb_iv_get(encoding, "@time_precision");
     oj_default_options.sec_prec = NUM2INT(pv);
+    oj_default_options.sec_prec_set = true;
     rb_undef_method(encoding, "time_precision=");
     rb_define_module_function(encoding, "time_precision=", rails_time_precision, 1);
     rb_gv_set("$VERBOSE", verbose);
