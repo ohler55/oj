@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 3.10.0 - 2019-11-??
+## 3.10.0 - 2019-11-28
 
 - Fixed custom mode load_file to use custom mode.
 
