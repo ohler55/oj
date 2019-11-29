@@ -20,11 +20,12 @@ class CustomJuice < Minitest::Test
   end
 
   class Jeez
-    attr_accessor :x, :y
+    attr_accessor :x, :y, :_z
 
     def initialize(x, y)
       @x = x
       @y = y
+      @_z = x.to_s
     end
     def ==(o)
       self.class == o.class && @x == o.x && @y = o.y
@@ -247,7 +248,10 @@ class CustomJuice < Minitest::Test
 
   def test_object
     obj = Jeez.new(true, 58)
-    Oj.dump(obj, :create_id => "^o", :use_to_json => false, :use_as_json => false, :use_to_hash => false)
+    json = Oj.dump(obj, create_id: "^o", use_to_json: false, use_as_json: false, use_to_hash: false)
+    assert_equal(%|{"x":true,"y":58,"_z":"true"}|, json)
+    json = Oj.dump(obj, create_id: "^o", use_to_json: false, use_as_json: false, use_to_hash: false, ignore_under: true)
+    assert_equal(%|{"x":true,"y":58}|, json)
     dump_and_load(obj, false, :create_id => "^o", :create_additions => true)
   end
 

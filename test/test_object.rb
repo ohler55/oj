@@ -7,11 +7,12 @@ require 'helper'
 
 class ObjectJuice < Minitest::Test
   class Jeez
-    attr_accessor :x, :y
+    attr_accessor :x, :y, :_z
 
     def initialize(x, y)
       @x = x
       @y = y
+      @_z = x.to_s
     end
 
     def eql?(o)
@@ -687,7 +688,7 @@ class ObjectJuice < Minitest::Test
 
   def test_json_object_object
     obj = Jeez.new(true, 58)
-    json = Oj.dump(obj, :mode => :object, :indent => 2)
+    json = Oj.dump(obj, mode: :object, indent: 2, ignore_under: true)
     assert(%{{
   "^o":"ObjectJuice::Jeez",
   "x":true,
@@ -799,7 +800,7 @@ class ObjectJuice < Minitest::Test
       @xyz = 123
     end
   end
-  
+
   def test_exception_subclass
     err = nil
     begin

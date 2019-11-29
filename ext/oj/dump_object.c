@@ -56,7 +56,7 @@ dump_data(VALUE obj, int depth, Out out, bool as_ok) {
 	    }
 	} else {
 	    long	id = oj_check_circular(obj, out);
-	    
+
 	    if (0 <= id) {
 		dump_obj_attrs(obj, clas, id, depth, out);
 	    }
@@ -72,7 +72,7 @@ dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
 	volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 	const char	*str = rb_string_value_ptr((VALUE*)&rstr);
 	int		len = (int)RSTRING_LEN(rstr);
-	    
+
 	if (0 == strcasecmp("Infinity", str)) {
 	    str = oj_nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, true, &len);
 	    oj_dump_raw(str, len, out);
@@ -280,7 +280,7 @@ hash_cb(VALUE key, VALUE value, Out out) {
     }
     out->depth = depth;
     *out->cur++ = ',';
-    
+
     return ST_CONTINUE;
 }
 
@@ -363,6 +363,8 @@ dump_attr_cb(ID key, VALUE value, Out out) {
     // the key name is NULL. Not an empty string but NULL.
     if (NULL == attr) {
 	attr = "";
+    } else if (Yes == out->opts->ignore_under && '@' == *attr && '_' == attr[1]) {
+	return ST_CONTINUE;
     }
     if (0 == strcmp("bt", attr) || 0 == strcmp("mesg", attr)) {
 	return ST_CONTINUE;
@@ -384,7 +386,7 @@ dump_attr_cb(ID key, VALUE value, Out out) {
     oj_dump_obj_val(value, depth, out);
     out->depth = depth;
     *out->cur++ = ',';
-    
+
     return ST_CONTINUE;
 }
 #endif
@@ -424,7 +426,7 @@ dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
 	v = rb_funcall(obj, *odd->attrs, 0);
 	if (Qundef == v || T_STRING != rb_type(v)) {
 	    rb_raise(rb_eEncodingError, "Invalid type for raw JSON.");
-	} else {	    
+	} else {
 	    const char	*s = rb_string_value_ptr((VALUE*)&v);
 	    int		len = (int)RSTRING_LEN(v);
 	    const char	*name = rb_id2name(*odd->attrs);
@@ -460,7 +462,7 @@ dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
 		char	*n;
 		char	*end;
 		ID	i;
-	    
+
 		if (sizeof(nbuf) <= nlen) {
 		    if (NULL == (n2 = strdup(name))) {
 			rb_raise(rb_eNoMemError, "for attribute name.");
@@ -610,9 +612,12 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	size = d2 * out->indent + 1;
 	for (i = cnt; 0 < i; i--, np++) {
 	    VALUE	value;
-	    
+
 	    vid = rb_to_id(*np);
 	    attr = rb_id2name(vid);
+	    if (Yes == out->opts->ignore_under && '@' == *attr && '_' == attr[1]) {
+		return ST_CONTINUE;
+	    }
 	    value = rb_ivar_get(obj, vid);
 
 	    if (oj_dump_ignore(out->opts, value)) {
@@ -739,7 +744,7 @@ dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
 #else // RSTRUCT_LEN_RETURNS_INTEGER_OBJECT
 	cnt = (int)RSTRUCT_LEN(obj);
 #endif // RSTRUCT_LEN_RETURNS_INTEGER_OBJECT
-	
+
 	for (i = 0; i < cnt; i++) {
 	    v = RSTRUCT_GET(obj, i);
 	    if (oj_dump_ignore(out->opts, v)) {
@@ -812,7 +817,7 @@ static DumpFunc	obj_funcs[] = {
 void
 oj_dump_obj_val(VALUE obj, int depth, Out out) {
     int	type = rb_type(obj);
-    
+
     if (Yes == out->opts->trace) {
 	oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceIn);
     }

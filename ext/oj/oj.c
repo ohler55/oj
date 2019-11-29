@@ -119,6 +119,7 @@ static VALUE	float_prec_sym;
 static VALUE	float_sym;
 static VALUE	huge_sym;
 static VALUE	ignore_sym;
+static VALUE	ignore_under_sym;
 static VALUE	json_sym;
 static VALUE	match_string_sym;
 static VALUE	mode_sym;
@@ -253,6 +254,7 @@ struct _options	oj_default_options = {
  * - *:array_class* [_Class_|_nil_] Class to use instead of Array on load
  * - *:omit_nil* [_true_|_false_] if true Hash and Object attributes with nil values are omitted
  * - *:ignore* [_nil_|Array] either nil or an Array of classes to ignore when dumping
+ * - *:ignore_under* [Boolean] if true then attributes that start with _ are ignored when dumping in object or custom mode.
  * - *:integer_range* [_Range_] Dump integers outside range as strings.
  * - *:trace* [_true,_|_false_] Trace all load and dump calls, default is false (trace is off)
  * - *:safe* [_true,_|_false_] Safe mimic breaks JSON mimic to be safer, default is false (safe is off)
@@ -288,6 +290,7 @@ get_def_opts(VALUE self) {
     rb_hash_aset(opts, oj_trace_sym, (Yes == oj_default_options.trace) ? Qtrue : ((No == oj_default_options.trace) ? Qfalse : Qnil));
     rb_hash_aset(opts, oj_safe_sym, (Yes == oj_default_options.safe) ? Qtrue : ((No == oj_default_options.safe) ? Qfalse : Qnil));
     rb_hash_aset(opts, float_prec_sym, INT2FIX(oj_default_options.float_prec));
+    rb_hash_aset(opts, ignore_under_sym, (Yes == oj_default_options.ignore_under) ? Qtrue : ((No == oj_default_options.ignore_under) ? Qfalse : Qnil));
     switch (oj_default_options.mode) {
     case StrictMode:	rb_hash_aset(opts, mode_sym, strict_sym);	break;
     case CompatMode:	rb_hash_aset(opts, mode_sym, compat_sym);	break;
@@ -400,6 +403,7 @@ get_def_opts(VALUE self) {
  *   - *:array_class* [_Class_|_nil_] Class to use instead of Array on load.
  *   - *:omit_nil* [_true_|_false_] if true Hash and Object attributes with nil values are omitted.
  *   - *:ignore* [_nil_|Array] either nil or an Array of classes to ignore when dumping
+ *   - *:ignore_under* [_Boolean_] if true then attributes that start with _ are ignored when dumping in object or custom mode.
  *   - *:integer_range* [_Range_] Dump integers outside range as strings.
  *   - *:trace* [_Boolean_] turn trace on or off.
  *   - *:safe* [_Boolean_] turn safe mimic on or off.
@@ -433,6 +437,7 @@ oj_parse_options(VALUE ropts, Options copts) {
 	{ oj_allow_nan_sym, &copts->allow_nan },
 	{ oj_trace_sym, &copts->trace },
 	{ oj_safe_sym, &copts->safe },
+	{ ignore_under_sym, &copts->ignore_under },
 	{ oj_create_additions_sym, &copts->create_ok },
 	{ Qnil, 0 }
     };
@@ -1651,6 +1656,7 @@ Init_oj() {
     float_sym = ID2SYM(rb_intern("float"));			rb_gc_register_address(&float_sym);
     huge_sym = ID2SYM(rb_intern("huge"));			rb_gc_register_address(&huge_sym);
     ignore_sym = ID2SYM(rb_intern("ignore"));			rb_gc_register_address(&ignore_sym);
+    ignore_under_sym = ID2SYM(rb_intern("ignore_under"));	rb_gc_register_address(&ignore_under_sym);
     json_sym = ID2SYM(rb_intern("json"));			rb_gc_register_address(&json_sym);
     match_string_sym = ID2SYM(rb_intern("match_string"));	rb_gc_register_address(&match_string_sym);
     mode_sym = ID2SYM(rb_intern("mode"));			rb_gc_register_address(&mode_sym);
