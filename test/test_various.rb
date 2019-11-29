@@ -425,8 +425,11 @@ class Juice < Minitest::Test
   def test_time_years
     (-2020..2020).each { |year|
       s = "%04d-03-01T15:14:13Z" % [year]
-      json = Oj.dump(Time.parse(s), mode: :custom, time_format: :xmlschema)
+      json = Oj.dump(Time.parse(s), mode: :custom, time_format: :xmlschema, second_precision: -1)
       assert_equal(s, json[1..-2])
+
+      json = Oj.dump(Time.parse(s), mode: :custom, time_format: :xmlschema, second_precision: 3)
+      assert_equal(s[0..-2] + '.000Z', json[1..-2])
     }
   end
 

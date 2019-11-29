@@ -58,3 +58,32 @@ Tried a separate thread for the parser and the results were poor. The parsing is
 overhead of swapping data was too high. It was not possible to split ruby calls
 into both threads due to not getting a lock on the ruby environment for object
 creation.
+
+----------------
+todo
+- #570 - complain in strict mode about leading + or trailing .
+- #569 - < and > are not escaped in compat mode
+ - ruby -r oj -e 'puts "#{Oj::VERSION} -> #{Oj.dump("<", {mode: :compat, escape_mode: :unicode_xss})}"'
+    3.7.5 -> "<"
+    3.7.4 -> "\u003c"
+- #568 - We're still at Rails 4.2 so maybe all of this is outdated, but still.
+It's documented that :bigdecimal_as_decimal isn't available for mode: :rails. However, if I run it like this:
+
+Oj.optimize_rails
+Oj.default_options = { mode: :rails, bigdecimal_as_decimal: true }
+
+It does the job - Oj dumps BigDecimal as number.
+If I later add bigdecimal_as_decimal: true explicitely in the dump it works for single number dump, but not for Hash.
+
+Oj.dump(BigDecimal('1.2')) # => "1.2"
+Oj.dump({a: BigDecimal('1.2')}) # => "{\"a\":1.2}"
+Oj.dump(BigDecimal('1.2'), bigdecimal_as_decimal: true) # => "1.2"
+Oj.dump({a: BigDecimal('1.2')}, bigdecimal_as_decimal: true) # => "{\"a\":\"1.2\"}" - unexpected
+
+Also when I remove running Oj.optimize_rails, Oj ignores bigdecimal_as_decimal and dumps BigDecimal as string.
+
+Currently, it works OK for me, just wanted to check what's the expected behavior and if it should be aware when upgrading Rails or Oj.
+
+- #567 - irb(main):001:0> Oj.dump(Time.utc(2000, 1, 1, 1, 0, 0, 0), mode: :compat)
+    => "\"2000-01-01 01:00:00 UTC\""
+  - missing fractional part in custom with second_precision id 0 fraction
