@@ -1402,14 +1402,17 @@ dump_hash(VALUE obj, int depth, Out out, bool as_ok) {
 
 static void
 dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
+    VALUE	clas;
+
     if (oj_code_dump(oj_compat_codes, obj, depth, out)) {
 	out->argc = 0;
 	return;
     }
+    clas = rb_obj_class(obj);
     if (as_ok) {
 	ROpt	ro;
 
-	if (NULL != (ro = oj_rails_get_opt(out->ropts, rb_obj_class(obj))) && ro->on) {
+	if (NULL != (ro = oj_rails_get_opt(out->ropts, clas)) && ro->on) {
 	    ro->dump(obj, depth, out, as_ok);
 	} else if (Yes == out->opts->raw_json && rb_respond_to(obj, oj_raw_json_id)) {
 	    oj_dump_raw_json(obj, depth, out);
@@ -1417,6 +1420,8 @@ dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
 	    dump_as_json(obj, depth, out, true);
 	} else if (rb_respond_to(obj, oj_to_hash_id)) {
 	    dump_to_hash(obj, depth, out);
+	} else if (oj_bigdecimal_class == clas) {
+	    dump_bigdecimal(obj, depth, out, false);
 	} else {
 	    oj_dump_obj_to_s(obj, out);
 	}
@@ -1425,6 +1430,8 @@ dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
     } else if (rb_respond_to(obj, oj_to_hash_id)) {
 	// Always attempt to_hash.
 	dump_to_hash(obj, depth, out);
+    } else if (oj_bigdecimal_class == clas) {
+	dump_bigdecimal(obj, depth, out, false);
     } else {
 	oj_dump_obj_to_s(obj, out);
     }
@@ -1442,8 +1449,7 @@ static DumpFunc	rails_funcs[] = {
     dump_array,		// RUBY_T_ARRAY    = 0x07,
     dump_hash,	 	// RUBY_T_HASH     = 0x08,
     dump_obj,		// RUBY_T_STRUCT   = 0x09,
-    dump_bigdecimal,	// RUBY_T_BIGNUM   = 0x0a,
-    //oj_dump_bignum,	// RUBY_T_BIGNUM   = 0x0a,
+    oj_dump_bignum,	// RUBY_T_BIGNUM   = 0x0a,
     dump_as_string,	// RUBY_T_FILE     = 0x0b,
     dump_obj,		// RUBY_T_DATA     = 0x0c,
     NULL, 		// RUBY_T_MATCH    = 0x0d,
