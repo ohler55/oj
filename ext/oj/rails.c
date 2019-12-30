@@ -260,6 +260,8 @@ dump_sec_nano(VALUE obj, int64_t sec, long nsec, Out out) {
         tzhour = (int)(tzsecs / 3600);
         tzmin = (int)(tzsecs / 60) - (tzhour * 60);
     }
+    printf("*** rails time nano %d\n", xml_time);
+
     if (!xml_time) {
 	len = sprintf(buf, "%04d/%02d/%02d %02d:%02d:%02d %c%02d%02d", ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec, tzsign, tzhour, tzmin);
     } else if (0 == out->opts->sec_prec) {
@@ -1134,6 +1136,13 @@ rails_set_decoder(VALUE self) {
  */
 VALUE
 oj_optimize_rails(VALUE self) {
+    VALUE	state = rb_iv_get(self, "@escape_html_entities_in_json");
+
+    escape_html = Qtrue == state;
+
+    state = rb_iv_get(self, "@use_standard_json_time_format");
+    xml_time = Qtrue == state;
+
     rails_set_encoder(self);
     rails_set_decoder(self);
     rails_optimize(0, NULL, self);

@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.10.1 - 2019-12-31
+
+- Fixed bug where setting `ActiveSupport::JSON::Encoding.use_standard_json_time_format` before calling `Oj.optimize_rails` did not have an effect on the time format.
+
 ## 3.10.0 - 2019-11-28
 
 - Fixed custom mode load_file to use custom mode.
