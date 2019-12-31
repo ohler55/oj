@@ -260,8 +260,6 @@ dump_sec_nano(VALUE obj, int64_t sec, long nsec, Out out) {
         tzhour = (int)(tzsecs / 3600);
         tzmin = (int)(tzsecs / 60) - (tzhour * 60);
     }
-    printf("*** rails time nano %d\n", xml_time);
-
     if (!xml_time) {
 	len = sprintf(buf, "%04d/%02d/%02d %02d:%02d:%02d %c%02d%02d", ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec, tzsign, tzhour, tzmin);
     } else if (0 == out->opts->sec_prec) {
