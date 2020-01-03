@@ -49,3 +49,5 @@ matrix:
       rvm: 2.5.7
     - os: osx
       rvm: 2.4.9
+    - os: osx
+      rvm: 2.3.8
