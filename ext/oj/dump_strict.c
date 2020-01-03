@@ -45,7 +45,7 @@ dump_float(VALUE obj, int depth, Out out, bool as_ok) {
 	cnt = 3;
     } else {
 	NanDump	nd = out->opts->dump_opts.nan_dump;
-	    
+
 	if (AutoNan == nd) {
 	    nd = RaiseNan;
 	}
@@ -195,11 +195,12 @@ dump_array(VALUE a, int depth, Out out, bool as_ok) {
 }
 
 static int
-hash_cb(VALUE key, VALUE value, Out out) {
+hash_cb(VALUE key, VALUE value, VALUE ov) {
+    Out		out = (Out)ov;
     int		depth = out->depth;
     long	size;
     int		rtype = rb_type(key);
-    
+
     if (rtype != T_STRING && rtype != T_SYMBOL) {
 	rb_raise(rb_eTypeError, "In :strict and :null mode all Hash keys must be Strings or Symbols, not %s.\n", rb_class2name(rb_obj_class(key)));
     }
@@ -359,7 +360,7 @@ static DumpFunc	strict_funcs[] = {
 void
 oj_dump_strict_val(VALUE obj, int depth, Out out) {
     int	type = rb_type(obj);
-    
+
     if (Yes == out->opts->trace) {
 	oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceIn);
     }
@@ -408,7 +409,7 @@ static DumpFunc	null_funcs[] = {
 void
 oj_dump_null_val(VALUE obj, int depth, Out out) {
     int	type = rb_type(obj);
-    
+
     if (Yes == out->opts->trace) {
 	oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceOut);
     }

@@ -740,7 +740,7 @@ oj_parse2(ParseInfo pi) {
 }
 
 static VALUE
-rescue_big_decimal(VALUE str) {
+rescue_big_decimal(VALUE str, VALUE ignore) {
     rb_raise(oj_parse_error_class, "Invalid value for BigDecimal()");
     return Qnil;
 }

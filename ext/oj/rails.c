@@ -87,7 +87,8 @@ copy_opts(ROptTable src, ROptTable dest) {
 }
 
 static int
-dump_attr_cb(ID key, VALUE value, Out out) {
+dump_attr_cb(ID key, VALUE value, VALUE ov) {
+    Out		out = (Out)ov;
     int		depth = out->depth;
     size_t	size = depth * out->indent + 1;
     const char	*attr = rb_id2name(key);
@@ -1296,7 +1297,8 @@ dump_array(VALUE a, int depth, Out out, bool as_ok) {
 }
 
 static int
-hash_cb(VALUE key, VALUE value, Out out) {
+hash_cb(VALUE key, VALUE value, VALUE ov) {
+    Out		out = (Out)ov;
     int		depth = out->depth;
     long	size;
     int		rtype = rb_type(key);

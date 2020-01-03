@@ -1,8 +1,10 @@
 # CHANGELOG
 
-## 3.10.1 - 2019-12-31
+## 3.10.1 - 2020-01-??
 
 - Fixed bug where setting `ActiveSupport::JSON::Encoding.use_standard_json_time_format` before calling `Oj.optimize_rails` did not have an effect on the time format.
+
+- Updated for Ruby 2.7.0
 
 ## 3.10.0 - 2019-11-28
 

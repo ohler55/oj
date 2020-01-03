@@ -470,10 +470,10 @@ class CustomJuice < Minitest::Test
 
   def test_time
     obj = Time.now()
-    dump_and_load(obj, false, :time_format => :unix, :create_id => "^o", :create_additions => true)
-    dump_and_load_inspect(obj, false, :time_format => :unix_zone, :create_id => "^o", :create_additions => true)
-    dump_and_load_inspect(obj, false, :time_format => :xmlschema, :create_id => "^o", :create_additions => true)
-    dump_and_load_inspect(obj, false, :time_format => :ruby, :create_id => "^o", :create_additions => true)
+    dump_load_dump(obj, false, :time_format => :unix, :create_id => "^o", :create_additions => true)
+    dump_load_dump(obj, false, :time_format => :unix_zone, :create_id => "^o", :create_additions => true)
+    dump_load_dump(obj, false, :time_format => :xmlschema, :create_id => "^o", :create_additions => true)
+    dump_load_dump(obj, false, :time_format => :ruby, :create_id => "^o", :create_additions => true)
   end
 
   def dump_and_load(obj, trace=false, options={})
@@ -500,6 +500,21 @@ class CustomJuice < Minitest::Test
       assert_nil(loaded)
     else
       assert_equal(obj.inspect, loaded.inspect)
+    end
+    loaded
+  end
+
+  def dump_load_dump(obj, trace=false, options={})
+    options = options.merge(:indent => 2, :mode => :custom)
+    json = Oj.dump(obj, options)
+    puts json if trace
+
+    loaded = Oj.load(json, options);
+    if obj.nil?
+      assert_nil(loaded)
+    else
+      json2 = Oj.dump(loaded, options)
+      assert_equal(json, json2)
     end
     loaded
   end

@@ -297,7 +297,8 @@ static struct _code	codes[] = {
 };
 
 static int
-hash_cb(VALUE key, VALUE value, Out out) {
+hash_cb(VALUE key, VALUE value, VALUE ov) {
+    Out	out = (Out)ov;
     int	depth = out->depth;
 
     if (oj_dump_ignore(out->opts, value)) {
@@ -592,7 +593,8 @@ dump_common(VALUE obj, int depth, Out out) {
 }
 
 static int
-dump_attr_cb(ID key, VALUE value, Out out) {
+dump_attr_cb(ID key, VALUE value, VALUE ov) {
+    Out		out = (Out)ov;
     int		depth = out->depth;
     size_t	size;
     const char	*attr;
