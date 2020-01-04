@@ -262,7 +262,12 @@ dump_sec_nano(VALUE obj, int64_t sec, long nsec, Out out) {
         tzmin = (int)(tzsecs / 60) - (tzhour * 60);
     }
     if (!xml_time) {
-	len = sprintf(buf, "%04d/%02d/%02d %02d:%02d:%02d %c%02d%02d", ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec, tzsign, tzhour, tzmin);
+	if (0 == tzhour && 0 == tzmin) {
+	    len = sprintf(buf, "%04d-%02d-%02d %02d:%02d:%02d UTC", ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec);
+	} else {
+	    //len = sprintf(buf, "%04d/%02d/%02d %02d:%02d:%02d %c%02d%02d", ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec, tzsign, tzhour, tzmin);
+	    len = sprintf(buf, "%04d-%02d-%02d %02d:%02d:%02d %c%02d%02d", ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec, tzsign, tzhour, tzmin);
+	}
     } else if (0 == out->opts->sec_prec) {
 	if (0 == tzsecs && rb_funcall2(obj, oj_utcq_id, 0, 0)) {
 	    len = sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02dZ", ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec);
@@ -1012,9 +1017,11 @@ rails_encode(int argc, VALUE *argv, VALUE self) {
     }
 }
 
+// TBD provide a get function as well
 static VALUE
 rails_use_standard_json_time_format(VALUE self, VALUE state) {
     if (Qtrue == state || Qfalse == state) {
+	// no change needed
     } else if (Qnil == state) {
 	state = Qfalse;
     } else {
@@ -1024,6 +1031,11 @@ rails_use_standard_json_time_format(VALUE self, VALUE state) {
     xml_time = Qtrue == state;
 
     return state;
+}
+
+static VALUE
+rails_use_standard_json_time_format_get(VALUE self) {
+    return xml_time ? Qtrue : Qfalse;
 }
 
 static VALUE
@@ -1057,7 +1069,12 @@ rails_set_encoder(VALUE self) {
     VALUE	encoding;
     VALUE	pv;
     VALUE	verbose;
+    VALUE	enc = resolve_classpath("ActiveSupport::JSON::Encoding");
 
+    if (Qnil != enc) {
+	escape_html = Qtrue == rb_iv_get(self, "@escape_html_entities_in_json");
+	xml_time = Qtrue == rb_iv_get(enc, "@use_standard_json_time_format");
+    }
     if (rb_const_defined_at(rb_cObject, rb_intern("ActiveSupport"))) {
 	active = rb_const_get_at(rb_cObject, rb_intern("ActiveSupport"));
     } else {
@@ -1074,6 +1091,8 @@ rails_set_encoder(VALUE self) {
     rb_gv_set("$VERBOSE", Qfalse);
     rb_undef_method(encoding, "use_standard_json_time_format=");
     rb_define_module_function(encoding, "use_standard_json_time_format=", rails_use_standard_json_time_format, 1);
+    rb_undef_method(encoding, "use_standard_json_time_format");
+    rb_define_module_function(encoding, "use_standard_json_time_format", rails_use_standard_json_time_format_get, 0);
 
     pv = rb_iv_get(encoding, "@escape_html_entities_in_json");
     escape_html = Qtrue == pv;
@@ -1135,13 +1154,6 @@ rails_set_decoder(VALUE self) {
  */
 VALUE
 oj_optimize_rails(VALUE self) {
-    VALUE	state = rb_iv_get(self, "@escape_html_entities_in_json");
-
-    escape_html = Qtrue == state;
-
-    state = rb_iv_get(self, "@use_standard_json_time_format");
-    xml_time = Qtrue == state;
-
     rails_set_encoder(self);
     rails_set_decoder(self);
     rails_optimize(0, NULL, self);
