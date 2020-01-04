@@ -262,12 +262,7 @@ dump_sec_nano(VALUE obj, int64_t sec, long nsec, Out out) {
         tzmin = (int)(tzsecs / 60) - (tzhour * 60);
     }
     if (!xml_time) {
-	if (0 == tzhour && 0 == tzmin) {
-	    len = sprintf(buf, "%04d-%02d-%02d %02d:%02d:%02d UTC", ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec);
-	} else {
-	    //len = sprintf(buf, "%04d/%02d/%02d %02d:%02d:%02d %c%02d%02d", ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec, tzsign, tzhour, tzmin);
-	    len = sprintf(buf, "%04d-%02d-%02d %02d:%02d:%02d %c%02d%02d", ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec, tzsign, tzhour, tzmin);
-	}
+	len = sprintf(buf, "%04d/%02d/%02d %02d:%02d:%02d %c%02d%02d", ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec, tzsign, tzhour, tzmin);
     } else if (0 == out->opts->sec_prec) {
 	if (0 == tzsecs && rb_funcall2(obj, oj_utcq_id, 0, 0)) {
 	    len = sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02dZ", ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec);
@@ -1047,6 +1042,11 @@ rails_escape_html_entities_in_json(VALUE self, VALUE state) {
 }
 
 static VALUE
+rails_escape_html_entities_in_json_get(VALUE self) {
+    return escape_html ? Qtrue : Qfalse;
+}
+
+static VALUE
 rails_time_precision(VALUE self, VALUE prec) {
     rb_iv_set(self, "@time_precision", prec);
     oj_default_options.sec_prec = NUM2INT(prec);
@@ -1098,6 +1098,8 @@ rails_set_encoder(VALUE self) {
     escape_html = Qtrue == pv;
     rb_undef_method(encoding, "escape_html_entities_in_json=");
     rb_define_module_function(encoding, "escape_html_entities_in_json=", rails_escape_html_entities_in_json, 1);
+    rb_undef_method(encoding, "escape_html_entities_in_json");
+    rb_define_module_function(encoding, "escape_html_entities_in_json", rails_escape_html_entities_in_json_get, 0);
 
     pv = rb_iv_get(encoding, "@time_precision");
     oj_default_options.sec_prec = NUM2INT(pv);
