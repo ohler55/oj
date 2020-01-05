@@ -12,7 +12,8 @@ rvm:
   - 2.3.8
   - 2.4.9
   - 2.5.7
-  - 2.6.4
+  - 2.6.3
+  - 2.6.5
   - 2.7.0
 
 gemfile:
@@ -23,7 +24,7 @@ gemfile:
 matrix:
   fast_finish: true
   allow_failures:
-    - rvm: ruby-head
+    - rvm: 2.6.5 # travis doesn't have this version on some macOSs
 
   exclude:
     - gemfile: gemfiles/no_rails.gemfile
