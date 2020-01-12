@@ -148,11 +148,12 @@ dump_array(VALUE a, int depth, Out out, bool as_ok) {
 }
 
 static int
-hash_cb(VALUE key, VALUE value, Out out) {
+hash_cb(VALUE key, VALUE value, VALUE ov) {
+    Out		out = (Out)ov;
     int		depth = out->depth;
     long	size;
     int		rtype = rb_type(key);
-    
+
     if (rtype != T_SYMBOL) {
 	rb_raise(rb_eTypeError, "In :wab mode all Hash keys must be Symbols, not %s.\n", rb_class2name(rb_obj_class(key)));
     }
@@ -270,7 +271,7 @@ static DumpFunc	wab_funcs[] = {
 void
 oj_dump_wab_val(VALUE obj, int depth, Out out) {
     int	type = rb_type(obj);
-    
+
     if (Yes == out->opts->trace) {
 	oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceIn);
     }
@@ -324,7 +325,7 @@ add_value(ParseInfo pi, VALUE val) {
 static bool
 uuid_check(const char *str, int len) {
     int		i;
-    
+
     for (i = 0; i < 8; i++, str++) {
 	if ('x' != hex_chars[*(uint8_t*)str]) {
 	    return false;
@@ -380,7 +381,7 @@ time_parse(const char *s, int len) {
     long	nsecs = 0;
     int		i;
     time_t	secs;
-    
+
     memset(&tm, 0, sizeof(tm));
     if ('-' == *s) {
 	s++;
@@ -444,7 +445,7 @@ protect_uri(VALUE rstr) {
 static VALUE
 cstr_to_rstr(const char *str, size_t len) {
     volatile VALUE	v = Qnil;
-    
+
     if (30 == len && '-' == str[4] && '-' == str[7] && 'T' == str[10] && ':' == str[13] && ':' == str[16]  && '.' == str[19] && 'Z' == str[29]) {
 	if (Qnil != (v = time_parse(str, (int)len))) {
 	    return v;
@@ -521,7 +522,7 @@ hash_set_cstr(ParseInfo pi, Val parent, const char *str, size_t len, const char 
 static void
 hash_set_num(ParseInfo pi, Val parent, NumInfo ni) {
     volatile VALUE	rval = Qnil;
-    
+
     if (ni->infinity || ni->nan) {
 	oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number or other value");
     }
@@ -551,7 +552,7 @@ start_array(ParseInfo pi) {
 static void
 array_append_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
     volatile VALUE	rval = cstr_to_rstr(str, len);
-    
+
     rb_ary_push(stack_peek(&pi->stack)->val, rval);
     if (Yes == pi->options.trace) {
 	oj_trace_parse_call("set_value", pi, __FILE__, __LINE__, rval);
@@ -628,4 +629,3 @@ oj_wab_parse_cstr(int argc, VALUE *argv, char *json, size_t len) {
 
     return oj_pi_parse(argc, argv, &pi, json, len, true);
 }
-

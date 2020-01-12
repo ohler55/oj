@@ -648,7 +648,8 @@ dump_float(VALUE obj, int depth, Out out, bool as_ok) {
 }
 
 static int
-hash_cb(VALUE key, VALUE value, Out out) {
+hash_cb(VALUE key, VALUE value, VALUE ov) {
+    Out	out = (Out)ov;
     int	depth = out->depth;
 
     if (out->omit_nil && Qnil == value) {

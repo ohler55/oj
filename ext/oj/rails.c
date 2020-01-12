@@ -87,7 +87,8 @@ copy_opts(ROptTable src, ROptTable dest) {
 }
 
 static int
-dump_attr_cb(ID key, VALUE value, Out out) {
+dump_attr_cb(ID key, VALUE value, VALUE ov) {
+    Out		out = (Out)ov;
     int		depth = out->depth;
     size_t	size = depth * out->indent + 1;
     const char	*attr = rb_id2name(key);
@@ -1011,9 +1012,11 @@ rails_encode(int argc, VALUE *argv, VALUE self) {
     }
 }
 
+// TBD provide a get function as well
 static VALUE
 rails_use_standard_json_time_format(VALUE self, VALUE state) {
     if (Qtrue == state || Qfalse == state) {
+	// no change needed
     } else if (Qnil == state) {
 	state = Qfalse;
     } else {
@@ -1026,11 +1029,21 @@ rails_use_standard_json_time_format(VALUE self, VALUE state) {
 }
 
 static VALUE
+rails_use_standard_json_time_format_get(VALUE self) {
+    return xml_time ? Qtrue : Qfalse;
+}
+
+static VALUE
 rails_escape_html_entities_in_json(VALUE self, VALUE state) {
     rb_iv_set(self, "@escape_html_entities_in_json", state);
     escape_html = Qtrue == state;
 
     return state;
+}
+
+static VALUE
+rails_escape_html_entities_in_json_get(VALUE self) {
+    return escape_html ? Qtrue : Qfalse;
 }
 
 static VALUE
@@ -1056,7 +1069,12 @@ rails_set_encoder(VALUE self) {
     VALUE	encoding;
     VALUE	pv;
     VALUE	verbose;
+    VALUE	enc = resolve_classpath("ActiveSupport::JSON::Encoding");
 
+    if (Qnil != enc) {
+	escape_html = Qtrue == rb_iv_get(self, "@escape_html_entities_in_json");
+	xml_time = Qtrue == rb_iv_get(enc, "@use_standard_json_time_format");
+    }
     if (rb_const_defined_at(rb_cObject, rb_intern("ActiveSupport"))) {
 	active = rb_const_get_at(rb_cObject, rb_intern("ActiveSupport"));
     } else {
@@ -1073,11 +1091,15 @@ rails_set_encoder(VALUE self) {
     rb_gv_set("$VERBOSE", Qfalse);
     rb_undef_method(encoding, "use_standard_json_time_format=");
     rb_define_module_function(encoding, "use_standard_json_time_format=", rails_use_standard_json_time_format, 1);
+    rb_undef_method(encoding, "use_standard_json_time_format");
+    rb_define_module_function(encoding, "use_standard_json_time_format", rails_use_standard_json_time_format_get, 0);
 
     pv = rb_iv_get(encoding, "@escape_html_entities_in_json");
     escape_html = Qtrue == pv;
     rb_undef_method(encoding, "escape_html_entities_in_json=");
     rb_define_module_function(encoding, "escape_html_entities_in_json=", rails_escape_html_entities_in_json, 1);
+    rb_undef_method(encoding, "escape_html_entities_in_json");
+    rb_define_module_function(encoding, "escape_html_entities_in_json", rails_escape_html_entities_in_json_get, 0);
 
     pv = rb_iv_get(encoding, "@time_precision");
     oj_default_options.sec_prec = NUM2INT(pv);
@@ -1289,7 +1311,8 @@ dump_array(VALUE a, int depth, Out out, bool as_ok) {
 }
 
 static int
-hash_cb(VALUE key, VALUE value, Out out) {
+hash_cb(VALUE key, VALUE value, VALUE ov) {
+    Out		out = (Out)ov;
     int		depth = out->depth;
     long	size;
     int		rtype = rb_type(key);

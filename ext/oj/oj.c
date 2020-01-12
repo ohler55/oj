@@ -766,7 +766,9 @@ oj_parse_options(VALUE ropts, Options copts) {
 }
 
 static int
-match_string_cb(VALUE key, VALUE value, RxClass rc) {
+match_string_cb(VALUE key, VALUE value, VALUE rx) {
+    RxClass	rc = (RxClass)rx;
+
     if (T_CLASS != rb_type(value)) {
 	rb_raise(rb_eArgError, "for :match_string, the hash values must be a Class.");
     }

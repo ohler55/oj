@@ -9,10 +9,11 @@ env:
 
 language: ruby
 rvm:
+  - 2.3.8
   - 2.4.9
   - 2.5.7
   - 2.6.5
-  - ruby-head
+  - 2.7.0
 
 gemfile:
   - gemfiles/no_rails.gemfile
@@ -22,18 +23,28 @@ gemfile:
 matrix:
   fast_finish: true
   allow_failures:
-    - rvm: ruby-head
+    - rvm: 2.6.5 # travis doesn't have this version on some macOSs
 
   exclude:
+    - gemfile: gemfiles/no_rails.gemfile
+      rvm: 2.3.8
+    - gemfile: gemfiles/no_rails.gemfile
+      rvm: 2.4.9
+      os: osx
+    - gemfile: gemfiles/rails_5.gemfile
+      rvm: 2.4.9
+      os: osx
     - gemfile: gemfiles/rails_5.gemfile
       rvm: 2.5.7
       os: osx
     # Rails 6 only support Ruby 2.5 and above.
     - gemfile: gemfiles/rails_6.gemfile
+      rvm: 2.3.8
+    - gemfile: gemfiles/rails_6.gemfile
       rvm: 2.4.9
     - os: osx
-      rvm: 2.6.5
+      rvm: 2.3.8
+    - os: osx
+      rvm: 2.4.9
     - os: osx
       rvm: 2.5.7
-    - os: osx
-      rvm: 2.4.9

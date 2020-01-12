@@ -199,6 +199,7 @@ mimic_dump(int argc, VALUE *argv, VALUE self) {
     struct _out		out;
     struct _options	copts = oj_default_options;
     VALUE		rstr;
+    VALUE		active_hack[1];
 
     copts.str_rx.head = NULL;
     copts.str_rx.tail = NULL;
@@ -216,6 +217,7 @@ mimic_dump(int argc, VALUE *argv, VALUE self) {
     */
     copts.dump_opts.max_depth = MAX_DEPTH; // when using dump there is no limit
     out.omit_nil = copts.dump_opts.omit_nil;
+
     if (2 <= argc) {
 	int	limit;
 
@@ -230,7 +232,15 @@ mimic_dump(int argc, VALUE *argv, VALUE self) {
 	    copts.dump_opts.max_depth = limit;
 	}
     }
-    oj_dump_obj_to_json(*argv, &copts, &out);
+    // ActiveSupport in active_support/core_ext/object/json.rb check the
+    // optional argument type to to_json and it the argument is a
+    // ::JSON::State it calls the JSON gem code otherwise it calls the active
+    // support encoder code. To make sure the desired branch is called a
+    // default ::JSON::State argument is passed in. Basically a hack to get
+    // around the active support hack so two wrongs make a right this time.
+    active_hack[0] = rb_funcall(state_class, oj_new_id, 0);
+    oj_dump_obj_to_json_using_params(*argv, &copts, &out, 1, active_hack);
+
     if (0 == out.buf) {
 	rb_raise(rb_eNoMemError, "Not enough memory.");
     }
