@@ -773,6 +773,7 @@ oj_sparse2(ParseInfo pi) {
 		first = 0;
 	    }
 	    start = pi->rd.pos;
+	    // TBD break if option set to allow that
 	}
     }
 }

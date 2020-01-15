@@ -65,7 +65,7 @@ hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *o
 static VALUE
 start_hash(ParseInfo pi) {
     volatile VALUE	h;
-    
+
     if (Qnil != pi->options.hash_class) {
 	h = rb_class_new_instance(0, NULL, pi->options.hash_class);
     } else {
@@ -87,7 +87,7 @@ end_hash(struct _parseInfo *pi) {
 	clas = oj_name2class(pi, parent->classname, parent->clen, 0, rb_eArgError);
 	if (Qundef != clas) { // else an error
 	    ID	creatable = rb_intern("json_creatable?");
-	    
+
 	    if (!rb_respond_to(clas, creatable) || Qtrue == rb_funcall(clas, creatable, 0)) {
 		parent->val = rb_funcall(clas, oj_json_create_id, 1, parent->val);
 	    }
@@ -146,7 +146,7 @@ add_num(ParseInfo pi, NumInfo ni) {
 static void
 hash_set_num(struct _parseInfo *pi, Val parent, NumInfo ni) {
     volatile VALUE	rval = oj_num_as_value(ni);
-    
+
     if (!oj_use_hash_alt && rb_cHash != rb_obj_class(parent->val)) {
 	// The rb_hash_set would still work but the unit tests for the
 	// json gem require the less efficient []= method be called to set
@@ -192,7 +192,7 @@ static void
 array_append_num(ParseInfo pi, NumInfo ni) {
     Val			parent = stack_peek(&pi->stack);
     volatile VALUE	rval = oj_num_as_value(ni);
-    
+
     if (!oj_use_array_alt && rb_cArray != rb_obj_class(parent->val)) {
 	// The rb_ary_push would still work but the unit tests for the json
 	// gem require the less efficient << method be called to push the
@@ -274,7 +274,7 @@ oj_compat_load(int argc, VALUE *argv, VALUE self) {
     pi.options.nilnil = Yes;
     pi.options.empty_string = Yes;
     oj_set_compat_callbacks(&pi);
-    
+
     if (T_STRING == rb_type(*argv)) {
 	return oj_pi_parse(argc, argv, &pi, 0, 0, false);
     } else {
