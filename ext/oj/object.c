@@ -669,7 +669,8 @@ static void
 array_append_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
     volatile VALUE	rval = Qnil;
 
-    if (3 <= len && 0 != pi->circ_array) {
+    // orig lets us know whether the string was ^r1 or \u005er1
+    if (3 <= len && 0 != pi->circ_array && '^' == orig[0] && 0 == rb_array_len(stack_peek(&pi->stack)->val)) {
 	if ('i' == str[1]) {
 	    long	i = read_long(str + 2, len - 2);
 

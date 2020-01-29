@@ -869,6 +869,14 @@ class ObjectJuice < Minitest::Test
     assert_equal(a2[1].__id__, a2.__id__)
   end
 
+  def test_circular_array3
+    a = ['^r1']
+    json = Oj.dump(a, mode: :object, circular: true)
+    assert_equal(%{["^i1","\\u005er1"]}, json)
+    a2 = Oj.load(json, mode: :object, circular: true)
+    assert_equal(a, a2)
+  end
+
   def test_circular_hash2
     h = { 'a' => 7 }
     h['b'] = h
