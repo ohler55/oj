@@ -80,6 +80,44 @@ The classes that can be put in optimized mode and are optimized when
 The ActiveSupport decoder is the `JSON.parse()` method. Calling the
 `Oj::Rails.set_decoder()` method replaces that method with the Oj equivalent.
 
+### Usage in Rails 3
+
+To support Rails 3 you can create a new module mixin to prepend to controllers:
+
+```ruby
+require 'oj'
+
+module OjJsonEncoder
+  def render(options = nil, extra_options = {}, &block)
+    if options && options[:json]
+      obj = options.delete(:json)
+      options[:text] = Oj.dump(obj, :mode => :rails)
+      options[:content_type] = 'application/json'
+    end
+    super
+  end
+end
+```
+
+Usage:
+
+```ruby
+class MyController < ApplicationController
+  prepend OjJsonEncoder
+  def index
+    render :json => { :hello => 'world' }
+  end
+end
+```
+
+### Older Ruby Version Support (Pre 2.3.0)
+
+If you are using an older version of Ruby, you can pin `oj` to an earlier version in your Gemfile:
+
+```ruby
+gem 'oj', '3.7.12'
+```
+
 ### Notes:
 
 1. Optimized Floats set the significant digits to 16. This is different than
