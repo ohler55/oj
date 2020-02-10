@@ -89,10 +89,11 @@ require 'oj'
 
 module OjJsonEncoder
   def render(options = nil, extra_options = {}, &block)
-    if options && options[:json]
+    if options && options.is_a?(Hash) && options[:json]
       obj = options.delete(:json)
-      options[:text] = Oj.dump(obj, :mode => :rails)
-      options[:content_type] = 'application/json'
+      obj = Oj.dump(obj, :mode => :rails) unless obj.is_a?(String)
+      options[:text] = obj
+      response.content_type ||= Mime::JSON
     end
     super
   end
