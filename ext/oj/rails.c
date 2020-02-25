@@ -1012,7 +1012,6 @@ rails_encode(int argc, VALUE *argv, VALUE self) {
     }
 }
 
-// TBD provide a get function as well
 static VALUE
 rails_use_standard_json_time_format(VALUE self, VALUE state) {
     if (Qtrue == state || Qfalse == state) {
