@@ -15,7 +15,7 @@ class JSONCommonInterfaceTest < Test::Unit::TestCase
   def setup
     @hash = {
       'a' => 2,
-      'b' => 3.141,
+      'b' => 5.23683071,
       'c' => 'c',
       'd' => [ 1, "b", 3.14 ],
       'e' => { 'foo' => 'bar' },
@@ -23,7 +23,7 @@ class JSONCommonInterfaceTest < Test::Unit::TestCase
       'h' => 1000.0,
       'i' => 0.001
     }
-    @json = '{"a":2,"b":3.141,"c":"c","d":[1,"b",3.14],"e":{"foo":"bar"},'\
+    @json = '{"a":2,"b":5.23683071,"c":"c","d":[1,"b",3.14],"e":{"foo":"bar"},'\
       '"g":"\\"\\u0000\\u001f","h":1000.0,"i":0.001}'
   end
 

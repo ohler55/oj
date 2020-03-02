@@ -795,13 +795,13 @@ oj_num_as_value(NumInfo ni) {
 	    }
 	} else {
 	    // All these machinations are to get rounding to work better.
-	    long double	d = (long double)ni->i * (long double)ni->div + (long double)ni->num;
-	    int		x = (int)((int64_t)ni->exp - ni->di);
+	    double d = (double)ni->i * (double)ni->div + (double)ni->num;
+	    int	x = (int)((int64_t)ni->exp - ni->di);
 
 	    // Rounding sometimes cuts off the last digit even if there are only
 	    // 15 digits. This attempts to fix those few cases where this
 	    // occurs.
-	    if ((long double)INT64_MAX > d && (int64_t)d != (ni->i * ni->div + ni->num)) {
+	    if ((double)INT64_MAX > d && (int64_t)d != (ni->i * ni->div + ni->num)) {
 		volatile VALUE	bd = rb_str_new(ni->str, ni->len);
 
 		rnum = rb_rescue2(parse_big_decimal, bd, rescue_big_decimal, bd, rb_eException, 0);
@@ -809,16 +809,16 @@ oj_num_as_value(NumInfo ni) {
 		    rnum = rb_funcall(rnum, rb_intern("to_f"), 0);
 		}
 	    } else {
-		d = roundl(d);
+		d = round(d);
 		if (0 < x) {
-		    d *= powl(10.0L, x);
+		    d *= pow(10.0, x);
 		} else if (0 > x) {
-		    d /= powl(10.0L, -x);
+		    d /= pow(10.0, -x);
 		}
 		if (ni->neg) {
 		    d = -d;
 		}
-		rnum = rb_float_new((double)d);
+		rnum = rb_float_new(d);
 	    }
 	}
     }
