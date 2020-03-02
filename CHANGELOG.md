@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.10.3 - 2020-03-01
+
+- Fixed difference between some unicode character encoding in Rails mode.
+
 ## 3.10.2 - 2020-01-30
 
 - Fixed circular array reference load.
