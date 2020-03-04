@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.10.4 - 2020-03-03
+
+- Another adjustment to get Ruby floats to match Oj thanks to klaxit.
+
 ## 3.10.3 - 2020-03-01
 
 - Fixed difference between some unicode character encoding in Rails mode.
