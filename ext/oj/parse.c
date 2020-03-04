@@ -819,6 +819,8 @@ oj_num_as_value(NumInfo ni) {
 		    d = (double)ld * pow(10.0, x);
 		} else if (0 > x) {
 		    d = (double)ld / pow(10.0, -x);
+		} else {
+		    d = (double)ld;
 		}
 		if (ni->neg) {
 		    d = -d;

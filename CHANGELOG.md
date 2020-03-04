@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.10.5 - 2020-03-03
+
+- Fix test
+
 ## 3.10.4 - 2020-03-03
 
 - Another adjustment to get Ruby floats to match Oj thanks to klaxit.
