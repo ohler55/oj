@@ -803,7 +803,7 @@ oj_parse_opt_match_string(RxClass rc, VALUE ropts) {
 }
 
 /* Document-method: load
- * call-seq: load(json, options) { _|_obj, start, len_|_ }
+ * call-seq: load(json, options={}) { _|_obj, start, len_|_ }
  *
  * Parses a JSON document String into a Object, Hash, Array, String, Fixnum,
  * Float, true, false, or nil according to the default mode or the mode
@@ -887,7 +887,7 @@ load(int argc, VALUE *argv, VALUE self) {
 }
 
 /* Document-method: load_file
- * call-seq: load_file(path, options) { _|_obj, start, len_|_ }
+ * call-seq: load_file(path, options={}) { _|_obj, start, len_|_ }
  *
  * Parses a JSON document String into a Object, Hash, Array, String, Fixnum,
  * Float, true, false, or nil according to the default mode or the mode
@@ -1045,7 +1045,7 @@ safe_load(VALUE self, VALUE doc) {
  */
 
 /* Document-method: dump
- * call-seq: dump(obj, options)
+ * call-seq: dump(obj, options={})
  *
  * Dumps an Object (obj) to a string.
  * - *obj* [_Object_] Object to serialize as an JSON document String
@@ -1143,7 +1143,7 @@ to_json(int argc, VALUE *argv, VALUE self) {
 }
 
 /* Document-method: to_file
- * call-seq: to_file(file_path, obj, options)
+ * call-seq: to_file(file_path, obj, options={})
  *
  * Dumps an Object to the specified file.
  * - *file* [_String_] _path file path to write the JSON document to
@@ -1166,7 +1166,7 @@ to_file(int argc, VALUE *argv, VALUE self) {
 }
 
 /* Document-method: to_stream
- * call-seq: to_stream(io, obj, options)
+ * call-seq: to_stream(io, obj, options={})
  *
  * Dumps an Object to the specified IO stream.
  * - *io* [_IO_] IO stream to write the JSON document to
