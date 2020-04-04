@@ -618,7 +618,7 @@ dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out) {
 	    vid = rb_to_id(*np);
 	    attr = rb_id2name(vid);
 	    if (Yes == out->opts->ignore_under && '@' == *attr && '_' == attr[1]) {
-		return ST_CONTINUE;
+		continue;
 	    }
 	    value = rb_ivar_get(obj, vid);
 

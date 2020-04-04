@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.10.6 - 2020-04-04
+
+- Correct object dump code to continue instead of return on an _ attribnute.
+
 ## 3.10.5 - 2020-03-03
 
 - Fix test
