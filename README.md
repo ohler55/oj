@@ -61,7 +61,7 @@ links.
 
 ## Releases
 
-See [{file:CHANGELOG.md}](CHANGELOG.md)
+See [CHANGELOG.md](CHANGELOG.md)
 
 ## Links
 
