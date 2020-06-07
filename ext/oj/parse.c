@@ -848,6 +848,12 @@ oj_set_error_at(ParseInfo pi, VALUE err_clas, const char* file, int line, const 
     if (p + 3 < end) {
 	*p++ = ' ';
 	*p++ = '(';
+	*p++ = 'a';
+	*p++ = 'f';
+	*p++ = 't';
+	*p++ = 'e';
+	*p++ = 'r';
+	*p++ = ' ';
 	start = p;
 	for (vp = pi->stack.head; vp < pi->stack.tail; vp++) {
 	    if (end <= p + 1 + vp->klen) {

@@ -671,7 +671,7 @@ class Juice < Minitest::Test
 	raise e
       end
     }
-    assert_equal('first[2].third', msg.split('(')[1].split(')')[0])
+    assert_equal('after first[2].third', msg.split('(')[1].split(')')[0])
   end
 
   def test_bad_bignum
