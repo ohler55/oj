@@ -409,6 +409,7 @@ read_num(ParseInfo pi) {
     ni.neg = 0;
     ni.hasExp = 0;
     ni.no_big = (FloatDec == pi->options.bigdec_load);
+
     c = reader_get(&pi->rd);
     if ('-' == c) {
 	c = reader_get(&pi->rd);
@@ -469,11 +470,19 @@ read_num(ParseInfo pi) {
 		if (0 < ni.num || 0 < ni.i) {
 		    dec_cnt++;
 		}
-		ni.num = ni.num * 10 + d;
-		ni.div *= 10;
-		ni.di++;
-		if (INT64_MAX <= ni.div || DEC_MAX < dec_cnt) {
-		    ni.big = 1;
+		if (INT64_MAX <= ni.div) {
+		    if (!ni.no_big) {
+			ni.big = true;
+		    }
+		} else {
+		    ni.num = ni.num * 10 + d;
+		    ni.div *= 10;
+		    ni.di++;
+		    if (INT64_MAX <= ni.div || DEC_MAX < dec_cnt) {
+			if (!ni.no_big) {
+			    ni.big = true;
+			}
+		    }
 		}
 	    }
 	}
