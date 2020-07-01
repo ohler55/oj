@@ -118,6 +118,11 @@ class CustomJuice < Minitest::Test
     dump_and_load(-2.48e100 * 1.0e10, false)
   end
 
+  def test_float_parse
+    f = Oj.load("12.123456789012345678", mode: :custom, bigdecimal_load: :float);
+    assert_equal(Float, f.class)
+  end
+
   def test_nan_dump
     assert_equal('null', Oj.dump(0/0.0, :nan => :null))
     assert_equal('3.3e14159265358979323846', Oj.dump(0/0.0, :nan => :huge))
