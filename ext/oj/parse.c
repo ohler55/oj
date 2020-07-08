@@ -825,9 +825,9 @@ oj_num_as_value(NumInfo ni) {
 		// more accurate but it fails to match what Ruby generates so
 		// drop down to a double.
 		if (0 < x) {
-		    d = (double)ld * pow(10.0, x);
+		    d = (double)(ld * powl(10.0, x));
 		} else if (0 > x) {
-		    d = (double)ld / pow(10.0, -x);
+		    d = (double)(ld / powl(10.0, -x));
 		} else {
 		    d = (double)ld;
 		}
