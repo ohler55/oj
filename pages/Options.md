@@ -80,16 +80,16 @@ dynamically modifying classes or reloading classes then don't use this.
 
 ### :create_additions
 
-A flag indicating the :create_id key when encountered during parsing should
-creating an Object mactching the class name specified in the value associated
-with the key.
+A flag indicating that the :create_id key, when encountered during parsing,
+should create an Object matching the class name specified in the value
+associated with the key.
 
 ### :create_id [String]
 
 The :create_id option specifies that key is used for dumping and loading when
 specifying the class for an encoded object. The default is `json_create`.
 
-In the `:custom` mode setting the `:create_id` to nil will cause Complex,
+In the `:custom` mode, setting the `:create_id` to nil will cause Complex,
 Rational, Range, and Regexp to be output as strings instead of as JSON
 objects.
 
@@ -179,7 +179,7 @@ customization.
 ### :nan [Symbol]
 
 How to dump Infinity, -Infinity, and NaN in :null, :strict, and :compat
-mode. Default is :auto but is ignored in the :compat and :rails mode.
+mode. Default is :auto but is ignored in the :compat and :rails modes.
 
  - `:null` places a null
 
@@ -252,7 +252,7 @@ The :time_format when dumping.
 
  - `:unix` time is output as a decimal number in seconds since epoch including fractions of a second.
 
- - `:unix_zone` similar to the `:unix` format but with the timezone encoded in
+ - `:unix_zone` is similar to the `:unix` format but with the timezone encoded in
    the exponent of the decimal number of seconds since epoch.
 
  - `:xmlschema` time is output as a string that follows the XML schema definition.
@@ -262,16 +262,16 @@ The :time_format when dumping.
 ### :use_as_json [Boolean]
 
 Call `as_json()` methods on dump, default is false. The option is ignored in
-the :compat and :rails mode.
+the :compat and :rails modes.
 
 
 ### :use_raw_json [Boolean]
 
 Call `raw_json()` methods on dump, default is false. The option is
-accepted in the :compat and :rails mode even though it is not
+accepted in the :compat and :rails modes even though it is not
 supported by other JSON gems. It provides a means to optimize dump or
 generate performance. The `raw_json(depth, indent)` method should be
-called only by Oj. It is not intended for any other use. This is mean
+called only by Oj. It is not intended for any other use. This is meant
 to replace the abused `to_json` methods. Calling `Oj.dump` inside the
 `raw_json` with the object itself when `:use_raw_json` is true will
 result in an infinite loop.
@@ -279,9 +279,9 @@ result in an infinite loop.
 ### :use_to_hash [Boolean]
 
 Call `to_hash()` methods on dump, default is false. The option is ignored in
-the :compat and :rails mode.
+the :compat and :rails modes.
 
 ### :use_to_json [Boolean]
 
 Call `to_json()` methods on dump, default is false. The option is ignored in
-the :compat and :rails mode.
+the :compat and :rails modes.
