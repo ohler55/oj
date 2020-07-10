@@ -819,6 +819,7 @@ oj_num_as_value(NumInfo ni) {
 		}
 	    } else {
 		double	d;
+		double	d2;
 
 		ld = roundl(ld);
 		// You would expect that staying with a long double would be
@@ -826,15 +827,27 @@ oj_num_as_value(NumInfo ni) {
 		// drop down to a double.
 		if (0 < x) {
 		    d = (double)(ld * powl(10.0, x));
+		    d2 = (double)ld * pow(10.0, x);
 		} else if (0 > x) {
 		    d = (double)(ld / powl(10.0, -x));
+		    d2 = (double)ld / pow(10.0, -x);
 		} else {
 		    d = (double)ld;
+		    d2 = d;
 		}
-		if (ni->neg) {
-		    d = -d;
+		if (d != d2) {
+		    volatile VALUE	bd = rb_str_new(ni->str, ni->len);
+
+		    rnum = rb_rescue2(parse_big_decimal, bd, rescue_big_decimal, bd, rb_eException, 0);
+		    if (ni->no_big) {
+			rnum = rb_funcall(rnum, rb_intern("to_f"), 0);
+		    }
+		} else {
+		    if (ni->neg) {
+			d = -d;
+		    }
+		    rnum = rb_float_new(d);
 		}
-		rnum = rb_float_new(d);
 	    }
 	}
     }
