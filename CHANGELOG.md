@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.10.7 - 2020-07-13
+
+- Faster float parsing and an adjust to more closely match Ruby.
+
 ## 3.10.6 - 2020-04-04
 
 - Correct object dump code to continue instead of return on an _ attribnute.
