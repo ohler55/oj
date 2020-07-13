@@ -453,6 +453,7 @@ read_num(ParseInfo pi) {
 	    // except when mimicing the JSON gem or in strict mode.
 	    if (StrictMode == pi->options.mode || CompatMode == pi->options.mode) {
 		int	pos = (int)(pi->cur - ni.str);
+
 		if (1 == pos || (2 == pos && ni.neg)) {
 		    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number");
 		    return;
@@ -468,11 +469,19 @@ read_num(ParseInfo pi) {
 		if (0 < ni.num || 0 < ni.i) {
 		    dec_cnt++;
 		}
-		ni.num = ni.num * 10 + d;
-		ni.div *= 10;
-		ni.di++;
-		if (INT64_MAX <= ni.div || DEC_MAX < dec_cnt) {
-		    ni.big = 1;
+		if (INT64_MAX <= ni.div) {
+		    if (!ni.no_big) {
+			ni.big = true;
+		    }
+		} else {
+		    ni.num = ni.num * 10 + d;
+		    ni.div *= 10;
+		    ni.di++;
+		    if (INT64_MAX <= ni.div || DEC_MAX < dec_cnt) {
+			if (!ni.no_big) {
+			    ni.big = true;
+			}
+		    }
 		}
 	    }
 	}
@@ -490,7 +499,7 @@ read_num(ParseInfo pi) {
 	    for (; '0' <= *pi->cur && *pi->cur <= '9'; pi->cur++) {
 		ni.exp = ni.exp * 10 + (*pi->cur - '0');
 		if (EXP_MAX <= ni.exp) {
-		    ni.big = 1;
+		    ni.big = true;
 		}
 	    }
 	    if (eneg) {
@@ -810,22 +819,35 @@ oj_num_as_value(NumInfo ni) {
 		}
 	    } else {
 		double	d;
+		double	d2;
 
 		ld = roundl(ld);
 		// You would expect that staying with a long double would be
 		// more accurate but it fails to match what Ruby generates so
 		// drop down to a double.
 		if (0 < x) {
-		    d = (double)ld * pow(10.0, x);
+		    d = (double)(ld * powl(10.0, x));
+		    d2 = (double)ld * pow(10.0, x);
 		} else if (0 > x) {
-		    d = (double)ld / pow(10.0, -x);
+		    d = (double)(ld / powl(10.0, -x));
+		    d2 = (double)ld / pow(10.0, -x);
 		} else {
 		    d = (double)ld;
+		    d2 = d;
 		}
-		if (ni->neg) {
-		    d = -d;
+		if (d != d2) {
+		    volatile VALUE	bd = rb_str_new(ni->str, ni->len);
+
+		    rnum = rb_rescue2(parse_big_decimal, bd, rescue_big_decimal, bd, rb_eException, 0);
+		    if (ni->no_big) {
+			rnum = rb_funcall(rnum, rb_intern("to_f"), 0);
+		    }
+		} else {
+		    if (ni->neg) {
+			d = -d;
+		    }
+		    rnum = rb_float_new(d);
 		}
-		rnum = rb_float_new(d);
 	    }
 	}
     }
@@ -848,6 +870,12 @@ oj_set_error_at(ParseInfo pi, VALUE err_clas, const char* file, int line, const 
     if (p + 3 < end) {
 	*p++ = ' ';
 	*p++ = '(';
+	*p++ = 'a';
+	*p++ = 'f';
+	*p++ = 't';
+	*p++ = 'e';
+	*p++ = 'r';
+	*p++ = ' ';
 	start = p;
 	for (vp = pi->stack.head; vp < pi->stack.tail; vp++) {
 	    if (end <= p + 1 + vp->klen) {

@@ -185,7 +185,6 @@ class Juice < Minitest::Test
     n = Oj.load('-0.000012345678901234567')
     assert_equal(BigDecimal, n.class)
     assert_equal('-0.12345678901234567E-4', n.to_s.upcase)
-
   end
 
 =begin
@@ -671,7 +670,7 @@ class Juice < Minitest::Test
 	raise e
       end
     }
-    assert_equal('first[2].third', msg.split('(')[1].split(')')[0])
+    assert_equal('after first[2].third', msg.split('(')[1].split(')')[0])
   end
 
   def test_bad_bignum

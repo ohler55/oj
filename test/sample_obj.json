@@ -12,7 +12,7 @@
 {
     "attr1": 12345,
     "attr2": "a string",
-    "attr3/Time": 1234567.7777
+  "attr3/Time": 1234567.7777,
     "attr4/Foo::Bar": {
         "a": "xyz"
     }
