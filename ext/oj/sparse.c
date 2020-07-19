@@ -408,7 +408,8 @@ read_num(ParseInfo pi) {
     ni.nan = 0;
     ni.neg = 0;
     ni.has_exp = 0;
-    ni.no_big = (FloatDec == pi->options.bigdec_load);
+    ni.no_big = (FloatDec == pi->options.bigdec_load || FastDec == pi->options.bigdec_load);
+    ni.bigdec_load = pi->options.bigdec_load;
 
     c = reader_get(&pi->rd);
     if ('-' == c) {
@@ -548,7 +549,8 @@ read_nan(ParseInfo pi) {
     ni.infinity = 0;
     ni.nan = 1;
     ni.neg = 0;
-    ni.no_big = (FloatDec == pi->options.bigdec_load);
+    ni.no_big = (FloatDec == pi->options.bigdec_load || FastDec == pi->options.bigdec_load);
+    ni.bigdec_load = pi->options.bigdec_load;
 
     if ('a' != reader_get(&pi->rd) ||
 	('N' != (c = reader_get(&pi->rd)) && 'n' != c)) {
@@ -746,6 +748,7 @@ oj_sparse2(ParseInfo pi) {
 		ni.nan = 1;
 		ni.neg = 0;
 		ni.no_big = (FloatDec == pi->options.bigdec_load);
+		ni.bigdec_load = pi->options.bigdec_load;
 		add_num_value(pi, &ni);
 	    } else {
 		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "invalid token");

@@ -394,7 +394,8 @@ read_num(ParseInfo pi) {
     ni.nan = 0;
     ni.neg = 0;
     ni.has_exp = 0;
-    ni.no_big = (FloatDec == pi->options.bigdec_load);
+    ni.no_big = (FloatDec == pi->options.bigdec_load || FastDec == pi->options.bigdec_load);
+    ni.bigdec_load = pi->options.bigdec_load;
 
     if ('-' == *pi->cur) {
 	pi->cur++;
@@ -759,6 +760,59 @@ parse_big_decimal(VALUE str) {
     return rb_funcall(rb_cObject, oj_bigdecimal_id, 1, str);
 }
 
+static long double	exp_plus[] = {
+    1.0,
+    1.0e1,
+    1.0e2,
+    1.0e3,
+    1.0e4,
+    1.0e5,
+    1.0e6,
+    1.0e7,
+    1.0e8,
+    1.0e9,
+    1.0e10,
+    1.0e11,
+    1.0e12,
+    1.0e13,
+    1.0e14,
+    1.0e15,
+    1.0e16,
+    1.0e17,
+    1.0e18,
+    1.0e19,
+    1.0e20,
+    1.0e21,
+    1.0e22,
+    1.0e23,
+    1.0e24,
+    1.0e25,
+    1.0e26,
+    1.0e27,
+    1.0e28,
+    1.0e29,
+    1.0e30,
+    1.0e31,
+    1.0e32,
+    1.0e33,
+    1.0e34,
+    1.0e35,
+    1.0e36,
+    1.0e37,
+    1.0e38,
+    1.0e39,
+    1.0e40,
+    1.0e41,
+    1.0e42,
+    1.0e43,
+    1.0e44,
+    1.0e45,
+    1.0e46,
+    1.0e47,
+    1.0e48,
+    1.0e49,
+};
+
 VALUE
 oj_num_as_value(NumInfo ni) {
     volatile VALUE	rnum = Qnil;
@@ -802,6 +856,27 @@ oj_num_as_value(NumInfo ni) {
 	    if (ni->no_big) {
 		rnum = rb_funcall(rnum, rb_intern("to_f"), 0);
 	    }
+	} else if (FastDec == ni->bigdec_load) {
+	    long double	ld = (long double)ni->i * (long double)ni->div + (long double)ni->num;
+	    int		x = (int)((int64_t)ni->exp - ni->di);
+
+	    if (0 < x) {
+		if (x < (int)(sizeof(exp_plus) / sizeof(*exp_plus))) {
+		    ld *= exp_plus[x];
+		} else {
+		    ld *= powl(10.0, x);
+		}
+	    } else if (x < 0) {
+		if (-x < (int)(sizeof(exp_plus) / sizeof(*exp_plus))) {
+		    ld /= exp_plus[-x];
+		} else {
+		    ld /= powl(10.0, -x);
+		}
+	    }
+	    if (ni->neg) {
+		ld = -ld;
+	    }
+	    rnum = rb_float_new((double)ld);
 	} else {
 	    char	*end;
 	    double	d = strtod(ni->str, &end);
@@ -810,10 +885,6 @@ oj_num_as_value(NumInfo ni) {
 		rb_raise(oj_parse_error_class, "Invalid float");
 	    }
 	    rnum = rb_float_new(d);
-
-	    // TBD Alternative if needed.
-	    //volatile VALUE	bd = rb_str_new(ni->str, ni->len);
-	    //rnum = rb_Float(bd);
 	}
     }
     return rnum;

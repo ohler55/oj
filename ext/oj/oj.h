@@ -77,7 +77,8 @@ typedef enum {
 typedef enum {
     BigDec	= 'b',
     FloatDec	= 'f',
-    AutoDec	= 'a'
+    AutoDec	= 'a',
+    FastDec	= 'F'
 } BigLoad;
 
 typedef enum {

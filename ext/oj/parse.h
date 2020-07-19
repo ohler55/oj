@@ -33,6 +33,7 @@ typedef struct _numInfo {
     int		neg;
     int		has_exp;
     int		no_big;
+    int		bigdec_load;
 } *NumInfo;
 
 typedef struct _parseInfo {

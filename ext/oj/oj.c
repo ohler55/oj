@@ -115,6 +115,7 @@ static VALUE	custom_sym;
 static VALUE	empty_string_sym;
 static VALUE	escape_mode_sym;
 static VALUE	integer_range_sym;
+static VALUE	fast_sym;
 static VALUE	float_prec_sym;
 static VALUE	float_sym;
 static VALUE	huge_sym;
@@ -230,7 +231,7 @@ struct _options	oj_default_options = {
  * - *:mode* [_:object_|_:strict_|_:compat_|_:null_|_:custom_|_:rails_|_:wab_] load and dump modes to use for JSON
  * - *:time_format* [_:unix_|_:unix_zone_|_:xmlschema_|_:ruby_] time format when dumping
  * - *:bigdecimal_as_decimal* [_Boolean_|_nil_] dump BigDecimal as a decimal number or as a String
- * - *:bigdecimal_load* [_:bigdecimal_|_:float_|_:auto_] load decimals as BigDecimal instead of as a Float. :auto pick the most precise for the number of digits.
+ * - *:bigdecimal_load* [_:bigdecimal_|_:float_|_:auto_|_:fast_] load decimals as BigDecimal instead of as a Float. :auto pick the most precise for the number of digits. :float should be the same as ruby. :fast may require rounding but is must faster.
  * - *:create_id* [_String_|_nil_] create id for json compatible object encoding, default is 'json_class'
  * - *:create_additions* [_Boolean_|_nil_] if true allow creation of instances using create_id on load.
  * - *:second_precision* [_Fixnum_|_nil_] number of digits after the decimal when dumping the seconds portion of time
@@ -331,6 +332,7 @@ get_def_opts(VALUE self) {
     switch (oj_default_options.bigdec_load) {
     case BigDec:	rb_hash_aset(opts, bigdecimal_load_sym, bigdecimal_sym);break;
     case FloatDec:	rb_hash_aset(opts, bigdecimal_load_sym, float_sym);	break;
+    case FastDec:	rb_hash_aset(opts, bigdecimal_load_sym, fast_sym);	break;
     case AutoDec:
     default:		rb_hash_aset(opts, bigdecimal_load_sym, auto_sym);	break;
     }
@@ -574,6 +576,8 @@ oj_parse_options(VALUE ropts, Options copts) {
 	    copts->bigdec_load = BigDec;
 	} else if (float_sym == v) {
 	    copts->bigdec_load = FloatDec;
+	} else if (fast_sym == v) {
+	    copts->bigdec_load = FastDec;
 	} else if (auto_sym == v || Qfalse == v) {
 	    copts->bigdec_load = AutoDec;
 	} else {
@@ -1654,6 +1658,7 @@ Init_oj() {
     empty_string_sym = ID2SYM(rb_intern("empty_string"));	rb_gc_register_address(&empty_string_sym);
     escape_mode_sym = ID2SYM(rb_intern("escape_mode"));		rb_gc_register_address(&escape_mode_sym);
     integer_range_sym = ID2SYM(rb_intern("integer_range"));	rb_gc_register_address(&integer_range_sym);
+    fast_sym = ID2SYM(rb_intern("fast"));			rb_gc_register_address(&fast_sym);
     float_prec_sym = ID2SYM(rb_intern("float_precision"));	rb_gc_register_address(&float_prec_sym);
     float_sym = ID2SYM(rb_intern("float"));			rb_gc_register_address(&float_sym);
     huge_sym = ID2SYM(rb_intern("huge"));			rb_gc_register_address(&huge_sym);
