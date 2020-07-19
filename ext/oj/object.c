@@ -295,7 +295,7 @@ hat_num(ParseInfo pi, Val parent, Val kval, NumInfo ni) {
 		    // offset and then a conversion to UTC keeps makes the time
 		    // match the expected value.
 		    parent->val = rb_funcall2(parent->val, oj_utc_id, 0, 0);
-		} else if (ni->hasExp) {
+		} else if (ni->has_exp) {
 		    int64_t		t = (int64_t)(ni->i + ni->exp);
 		    struct _timeInfo	ti;
 		    VALUE		args[8];

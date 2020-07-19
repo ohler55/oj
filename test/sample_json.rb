@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby -wW2
+#!/usr/bin/env ruby
 
 if $0 == __FILE__
   $: << '.'

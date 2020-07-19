@@ -31,7 +31,7 @@ typedef struct _numInfo {
     int		infinity;
     int		nan;
     int		neg;
-    int		hasExp;
+    int		has_exp;
     int		no_big;
 } *NumInfo;
 

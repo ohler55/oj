@@ -407,7 +407,7 @@ read_num(ParseInfo pi) {
     ni.infinity = 0;
     ni.nan = 0;
     ni.neg = 0;
-    ni.hasExp = 0;
+    ni.has_exp = 0;
     ni.no_big = (FloatDec == pi->options.bigdec_load);
 
     c = reader_get(&pi->rd);
@@ -489,7 +489,7 @@ read_num(ParseInfo pi) {
 	if ('e' == c || 'E' == c) {
 	    int	eneg = 0;
 
-	    ni.hasExp = 1;
+	    ni.has_exp = 1;
 	    c = reader_get(&pi->rd);
 	    if ('-' == c) {
 		c = reader_get(&pi->rd);

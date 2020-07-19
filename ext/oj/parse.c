@@ -393,7 +393,7 @@ read_num(ParseInfo pi) {
     ni.infinity = 0;
     ni.nan = 0;
     ni.neg = 0;
-    ni.hasExp = 0;
+    ni.has_exp = 0;
     ni.no_big = (FloatDec == pi->options.bigdec_load);
 
     if ('-' == *pi->cur) {
@@ -488,7 +488,7 @@ read_num(ParseInfo pi) {
 	if ('e' == *pi->cur || 'E' == *pi->cur) {
 	    int	eneg = 0;
 
-	    ni.hasExp = 1;
+	    ni.has_exp = 1;
 	    pi->cur++;
 	    if ('-' == *pi->cur) {
 		pi->cur++;
@@ -771,7 +771,7 @@ oj_num_as_value(NumInfo ni) {
 	}
     } else if (ni->nan) {
 	rnum = rb_float_new(0.0/0.0);
-    } else if (1 == ni->div && 0 == ni->exp) { // fixnum
+    } else if (1 == ni->div && 0 == ni->exp && !ni->has_exp) { // fixnum
 	if (ni->big) {
 	    if (256 > ni->len) {
 		char	buf[256];
@@ -803,52 +803,17 @@ oj_num_as_value(NumInfo ni) {
 		rnum = rb_funcall(rnum, rb_intern("to_f"), 0);
 	    }
 	} else {
-	    // All these machinations are to get rounding to work better.
-	    long double	ld = (long double)ni->i * (long double)ni->div + (long double)ni->num;
-	    int		x = (int)((int64_t)ni->exp - ni->di);
+	    char	*end;
+	    double	d = strtod(ni->str, &end);
 
-	    // Rounding sometimes cuts off the last digit even if there are only
-	    // 15 digits. This attempts to fix those few cases where this
-	    // occurs.
-	    if ((long double)INT64_MAX > ld && (int64_t)ld != (ni->i * ni->div + ni->num)) {
-		volatile VALUE	bd = rb_str_new(ni->str, ni->len);
-
-		rnum = rb_rescue2(parse_big_decimal, bd, rescue_big_decimal, bd, rb_eException, 0);
-		if (ni->no_big) {
-		    rnum = rb_funcall(rnum, rb_intern("to_f"), 0);
-		}
-	    } else {
-		double	d;
-		double	d2;
-
-		ld = roundl(ld);
-		// You would expect that staying with a long double would be
-		// more accurate but it fails to match what Ruby generates so
-		// drop down to a double.
-		if (0 < x) {
-		    d = (double)(ld * powl(10.0, x));
-		    d2 = (double)ld * pow(10.0, x);
-		} else if (0 > x) {
-		    d = (double)(ld / powl(10.0, -x));
-		    d2 = (double)ld / pow(10.0, -x);
-		} else {
-		    d = (double)ld;
-		    d2 = d;
-		}
-		if (d != d2) {
-		    volatile VALUE	bd = rb_str_new(ni->str, ni->len);
-
-		    rnum = rb_rescue2(parse_big_decimal, bd, rescue_big_decimal, bd, rb_eException, 0);
-		    if (ni->no_big) {
-			rnum = rb_funcall(rnum, rb_intern("to_f"), 0);
-		    }
-		} else {
-		    if (ni->neg) {
-			d = -d;
-		    }
-		    rnum = rb_float_new(d);
-		}
+	    if ((long)ni->len != (long)(end - ni->str)) {
+		rb_raise(oj_parse_error_class, "Invalid float");
 	    }
+	    rnum = rb_float_new(d);
+
+	    // TBD Alternative if needed.
+	    //volatile VALUE	bd = rb_str_new(ni->str, ni->len);
+	    //rnum = rb_Float(bd);
 	}
     }
     return rnum;
