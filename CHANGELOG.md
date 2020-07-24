@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.10.8 - 2020-07-24
+
+- New fast option for float parsing.
+
+- Fixes a float parse error.
+
 ## 3.10.7 - 2020-07-13
 
 - Faster float parsing and an adjust to more closely match Ruby.
