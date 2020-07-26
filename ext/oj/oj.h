@@ -78,7 +78,8 @@ typedef enum {
     BigDec	= 'b',
     FloatDec	= 'f',
     AutoDec	= 'a',
-    FastDec	= 'F'
+    FastDec	= 'F',
+    RubyDec	= 'r',
 } BigLoad;
 
 typedef enum {

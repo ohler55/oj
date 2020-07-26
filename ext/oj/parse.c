@@ -394,7 +394,7 @@ read_num(ParseInfo pi) {
     ni.nan = 0;
     ni.neg = 0;
     ni.has_exp = 0;
-    ni.no_big = (FloatDec == pi->options.bigdec_load || FastDec == pi->options.bigdec_load);
+    ni.no_big = (FloatDec == pi->options.bigdec_load || FastDec == pi->options.bigdec_load || RubyDec == pi->options.bigdec_load);
     ni.bigdec_load = pi->options.bigdec_load;
 
     if ('-' == *pi->cur) {
@@ -877,6 +877,10 @@ oj_num_as_value(NumInfo ni) {
 		ld = -ld;
 	    }
 	    rnum = rb_float_new((double)ld);
+	} else if (RubyDec == ni->bigdec_load) {
+	    volatile VALUE	sv = rb_str_new(ni->str, ni->len);
+
+	    rnum = rb_funcall(sv, rb_intern("to_f"), 0);
 	} else {
 	    char	*end;
 	    double	d = strtod(ni->str, &end);

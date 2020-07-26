@@ -513,7 +513,8 @@ mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
     pi.options.create_ok = No;
     pi.options.allow_nan = (bang ? Yes : No);
     pi.options.nilnil = No;
-    pi.options.bigdec_load = FloatDec;
+    //pi.options.bigdec_load = FloatDec;
+    pi.options.bigdec_load = RubyDec;
     pi.options.mode = CompatMode;
     pi.max_depth = 100;
 
@@ -686,7 +687,7 @@ static struct _options	mimic_object_to_json_options = {
     No,		// class_cache
     RubyTime,	// time_format
     No,		// bigdec_as_num
-    FloatDec,	// bigdec_load
+    RubyDec,	// bigdec_load
     No,		// to_hash
     No,		// to_json
     No,		// as_json

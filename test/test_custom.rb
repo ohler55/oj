@@ -126,7 +126,7 @@ class CustomJuice < Minitest::Test
   def test_float_parse_fast
     f = Oj.load("12.123456789012345678", mode: :custom, bigdecimal_load: :fast);
     assert_equal(Float, f.class)
-    assert_equal(12.123456789012346, f)
+    assert_equal('12.12345678901235', "%0.14f" % [f]) # only care about 16 digits
   end
 
   def test_nan_dump
