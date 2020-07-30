@@ -15,7 +15,7 @@ class JSONCommonInterfaceTest < Test::Unit::TestCase
   def setup
     @hash = {
       'a' => 2,
-      #'b' => 5.23683071,
+      'b' => 5.23683071,
       'c' => 'c',
       'd' => [ 1, "b", 3.14 ],
       'e' => { 'foo' => 'bar' },
@@ -27,10 +27,10 @@ class JSONCommonInterfaceTest < Test::Unit::TestCase
     # Ruby float parser in compat mode yet on i386 machines there are issues
     # with this test when the float is included.
 
-    #@json = '{"a":2,"b":5.23683071,"c":"c","d":[1,"b",3.14],"e":{"foo":"bar"},'\
-     # '"g":"\\"\\u0000\\u001f","h":1000.0,"i":0.001}'
-    @json = '{"a":2,"c":"c","d":[1,"b",3.14],"e":{"foo":"bar"},'\
+    @json = '{"a":2,"b":5.23683071,"c":"c","d":[1,"b",3.14],"e":{"foo":"bar"},'\
       '"g":"\\"\\u0000\\u001f","h":1000.0,"i":0.001}'
+    #@json = '{"a":2,"c":"c","d":[1,"b",3.14],"e":{"foo":"bar"},'\
+     #p '"g":"\\"\\u0000\\u001f","h":1000.0,"i":0.001}'
   end
 
   def test_index

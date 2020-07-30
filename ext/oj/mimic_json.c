@@ -708,7 +708,7 @@ static struct _options	mimic_object_to_json_options = {
     oj_json_class,// create_id
     10,		// create_id_len
     3,		// sec_prec
-    16,		// float_prec
+    0,		// float_prec
     "%0.16g",	// float_fmt
     Qnil,	// hash_class
     Qnil,	// array_class
