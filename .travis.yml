@@ -9,7 +9,6 @@ env:
 
 language: ruby
 rvm:
-  - 2.3.8
   - 2.4.10
   - 2.5.8
   - 2.6.6
@@ -25,8 +24,6 @@ matrix:
 
   exclude:
     - gemfile: gemfiles/no_rails.gemfile
-      rvm: 2.3.8
-    - gemfile: gemfiles/no_rails.gemfile
       rvm: 2.4.10
       os: osx
     - gemfile: gemfiles/rails_5.gemfile
@@ -37,11 +34,7 @@ matrix:
       os: osx
     # Rails 6 only support Ruby 2.5 and above.
     - gemfile: gemfiles/rails_6.gemfile
-      rvm: 2.3.8
-    - gemfile: gemfiles/rails_6.gemfile
       rvm: 2.4.10
-    - os: osx
-      rvm: 2.3.8
     - os: osx
       rvm: 2.4.10
     - os: osx
