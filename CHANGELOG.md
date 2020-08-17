@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.10.9 - 2020-08-17
+
+- Add bigdecimal dependency to gemfile.
+
 ## 3.10.8 - 2020-07-24
 
 - New fast option for float parsing.
