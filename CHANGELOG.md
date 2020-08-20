@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.10.12 - 2020-08-20
+
+- Another try at bracketing bigdecimal versions to 1.0 and 3.
+
 ## 3.10.11 - 2020-08-20
 
 - Bracketed bigdecimal dependency to 1.0 and 3.
