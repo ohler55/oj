@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.10.10 - 2020-08-20
+
+- Backed off bigdecimal dependency to 1.0.
+
 ## 3.10.9 - 2020-08-17
 
 - Add bigdecimal dependency to gemfile.
