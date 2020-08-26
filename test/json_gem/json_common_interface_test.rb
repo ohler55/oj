@@ -23,7 +23,7 @@ class JSONCommonInterfaceTest < Test::Unit::TestCase
       'h' => 1000.0,
       'i' => 0.001
     }
-    # Tired of chasing floating point rounding and precision. Oj not uses the
+    # Tired of chasing floating point rounding and precision. Oj now uses the
     # Ruby float parser in compat mode yet on i386 machines there are issues
     # with this test when the float is included.
 
