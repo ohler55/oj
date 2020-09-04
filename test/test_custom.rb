@@ -127,7 +127,6 @@ class CustomJuice < Minitest::Test
     f = Oj.load("12.123456789012345678", mode: :custom, bigdecimal_load: :fast);
     assert_equal(Float, f.class)
     assert(12.12345678901234 <= f && f < 12.12345678901236)
-    #assert_equal('12.12345678901235', "%0.14f" % [f]) # only care about 16 digits
   end
 
   def test_nan_dump
