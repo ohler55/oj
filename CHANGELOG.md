@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.10.14 - 2020-09-05
+
+- Updated float test to check a range.
+
 ## 3.10.13 - 2020-08-28
 
 - Removed explicit dependency on bigdecimal.
