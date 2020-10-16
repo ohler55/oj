@@ -1,7 +1,4 @@
-/* code.c
- * Copyright (c) 2017, Peter Ohler
- * All rights reserved.
- */
+// Copyright (c) 2017 Peter Ohler. All rights reserved.
 
 #include "code.h"
 #include "dump.h"
@@ -140,7 +137,7 @@ oj_code_attrs(VALUE obj, Attr attrs, int depth, Out out, bool with_class) {
     size_t	len = strlen(classname);
     size_t	size = d2 * out->indent + 10 + len + out->opts->create_id_len + sep_len;
     bool	no_comma = true;
-    
+
     assure_size(out, size);
     *out->cur++ = '{';
 
@@ -201,7 +198,7 @@ oj_code_attrs(VALUE obj, Attr attrs, int depth, Out out, bool with_class) {
 		char	*b = buf + sizeof(buf) - 1;
 		int	neg = 0;
 		long	num = attrs->num;
-	    
+
 		if (0 > num) {
 		    neg = 1;
 		    num = -num;

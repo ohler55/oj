@@ -1,7 +1,4 @@
-/* rxclass.h
- * Copyright (c) 2017, Peter Ohler
- * All rights reserved.
- */
+// Copyright (c) 2017 Peter Ohler. All rights reserved.
 
 #ifndef OJ_RXCLASS_H
 #define OJ_RXCLASS_H

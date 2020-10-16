@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Peter Ohler, All rights reserved.
+// Copyright (c) 2019 Peter Ohler. All rights reserved.
 
 #include "util.h"
 

@@ -1,7 +1,4 @@
-/* strict.c
- * Copyright (c) 2012, Peter Ohler
- * All rights reserved.
- */
+// Copyright (c) 2012 Peter Ohler. All rights reserved.
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -102,7 +99,7 @@ hash_set_cstr(ParseInfo pi, Val parent, const char *str, size_t len, const char 
 static void
 hash_set_num(ParseInfo pi, Val parent, NumInfo ni) {
     volatile VALUE	v;
-    
+
     if (ni->infinity || ni->nan) {
 	oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number or other value");
     }
@@ -143,7 +140,7 @@ array_append_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
 static void
 array_append_num(ParseInfo pi, NumInfo ni) {
     volatile VALUE	v;
-    
+
     if (ni->infinity || ni->nan) {
 	oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number or other value");
     }

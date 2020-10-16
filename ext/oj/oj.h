@@ -1,7 +1,4 @@
-/* oj.h
- * Copyright (c) 2011, Peter Ohler
- * All rights reserved.
- */
+// Copyright (c) 2011 Peter Ohler. All rights reserved.
 
 #ifndef OJ_H
 #define OJ_H

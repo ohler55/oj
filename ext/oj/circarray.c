@@ -1,21 +1,18 @@
-/* circarray.c
- * Copyright (c) 2012, Peter Ohler
- * All rights reserved.
- */
+// Copyright (c) 2012 Peter Ohler. All rights reserved.
 
 #include "circarray.h"
 
 CircArray
 oj_circ_array_new() {
     CircArray	ca;
-    
+
     if (0 == (ca = ALLOC(struct _circArray))) {
 	rb_raise(rb_eNoMemError, "not enough memory\n");
     }
     ca->objs = ca->obj_array;
     ca->size = sizeof(ca->obj_array) / sizeof(VALUE);
     ca->cnt = 0;
-    
+
     return ca;
 }
 
@@ -40,7 +37,7 @@ oj_circ_array_set(CircArray ca, VALUE obj, unsigned long id) {
 		    rb_raise(rb_eNoMemError, "not enough memory\n");
 		}
 		memcpy(ca->objs, ca->obj_array, sizeof(VALUE) * ca->cnt);
-	    } else { 
+	    } else {
 		REALLOC_N(ca->objs, VALUE, cnt);
 	    }
 	    ca->size = cnt;
@@ -65,4 +62,3 @@ oj_circ_array_get(CircArray ca, unsigned long id) {
     }
     return obj;
 }
-

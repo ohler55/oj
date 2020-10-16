@@ -1,7 +1,4 @@
-/* rails.c
- * Copyright (c) 2017, Peter Ohler
- * All rights reserved.
- */
+// Copyright (c) 2017 Peter Ohler. All rights reserved.
 
 #include "rails.h"
 #include "encode.h"

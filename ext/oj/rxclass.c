@@ -1,7 +1,4 @@
-/* rxclass.c
- * Copyright (c) 2017, Peter Ohler
- * All rights reserved.
- */
+// Copyright (c) 2017 Peter Ohler. All rights reserved.
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -101,12 +98,12 @@ VALUE
 oj_rxclass_match(RxClass rc, const char *str, int len) {
     RxC		rxc;
     char	buf[4096];
-    
+
     for (rxc = rc->head; NULL != rxc; rxc = rxc->next) {
 	if (Qnil != rxc->rrx) {
 	    // Must use a valiabel for this to work.
 	    volatile VALUE	rstr = rb_str_new(str, len);
-	    
+
 	    //if (Qtrue == rb_funcall(rxc->rrx, rb_intern("match?"), 1, rstr)) {
 	    if (Qnil != rb_funcall(rxc->rrx, rb_intern("match"), 1, rstr)) {
 		return rxc->clas;

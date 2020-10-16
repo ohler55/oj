@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Peter Ohler, All rights reserved.
+// Copyright (c) 2019 Peter Ohler. All rights reserved.
 
 #ifndef OJ_UTIL_H
 #define OJ_UTIL_H

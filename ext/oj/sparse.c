@@ -1,7 +1,4 @@
-/* sparse.c
- * Copyright (c) 2013, Peter Ohler
- * All rights reserved.
- */
+// Copyright (c) 2013 Peter Ohler. All rights reserved.
 
 #include <stdlib.h>
 #include <stdio.h>
