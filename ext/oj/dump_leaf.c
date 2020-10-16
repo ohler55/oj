@@ -1,7 +1,4 @@
-/* dump_leaf.c
- * Copyright (c) 2012, 2017, Peter Ohler
- * All rights reserved.
- */
+// Copyright (c) 2012, 2017 Peter Ohler. All rights reserved.
 
 #include <errno.h>
 
@@ -15,7 +12,7 @@ grow(Out out, size_t len) {
     size_t  size = out->end - out->buf;
     long    pos = out->cur - out->buf;
     char    *buf;
-	
+
     size *= 2;
     if (size <= len * 2 + pos) {
 	size += len;

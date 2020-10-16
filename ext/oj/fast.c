@@ -1,32 +1,4 @@
-/* fast.c
- * Copyright (c) 2012, Peter Ohler
- * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- * 
- *  - Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer.
- * 
- *  - Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- * 
- *  - Neither the name of Peter Ohler nor the names of its contributors may be
- *    used to endorse or promote products derived from this software without
- *    specific prior written permission.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2012 Peter Ohler. All rights reserved.
 
 #if !IS_WINDOWS
 #include <sys/resource.h>  // for getrlimit() on linux
@@ -121,7 +93,7 @@ VALUE	oj_doc_class = Qundef;
 #ifndef HAVE_STPCPY
 char *stpcpy(char *dest, const char *src) {
     size_t	cnt = strlen(src);
-    
+
     strcpy(dest, src);
 
     return dest + cnt;
@@ -322,7 +294,7 @@ leaf_fixnum_value(Leaf leaf) {
     int64_t	n = 0;
     int		neg = 0;
     int		big = 0;
-    
+
     if ('-' == *s) {
 	s++;
 	neg = 1;
@@ -337,7 +309,7 @@ leaf_fixnum_value(Leaf leaf) {
     }
     if (big) {
 	char	c = *s;
-	
+
 	*s = '\0';
 	leaf->value = rb_cstr_to_inum(leaf->str, 10, 0);
 	*s = c;
@@ -672,7 +644,7 @@ read_quoted_value(ParseInfo pi) {
     char	*value = 0;
     char	*h = pi->s; // head
     char	*t = h;	    // tail
-    
+
     h++;	// skip quote character
     t++;
     value = h;
@@ -805,7 +777,7 @@ static void
 mark_doc(void *ptr) {
     if (NULL != ptr) {
 	Doc	doc = (Doc)ptr;
-	
+
 	rb_gc_mark(doc->self);
 	mark_leaf(doc->data);
     }
@@ -820,7 +792,7 @@ parse_json(VALUE clas, char *json, bool given, bool allocated) {
     volatile VALUE	self;
 
     // TBD are both needed? is stack allocation ever needed?
-    
+
     if (given) {
 	doc = ALLOCA_N(struct _doc, 1);
     } else {
@@ -1226,7 +1198,7 @@ doc_open_file(VALUE clas, VALUE filename) {
     fseek(f, 0, SEEK_SET);
     if (len != fread(json, 1, len, f)) {
 	fclose(f);
-	rb_raise(rb_const_get_at(Oj, rb_intern("LoadError")), 
+	rb_raise(rb_const_get_at(Oj, rb_intern("LoadError")),
 		 "Failed to read %lu bytes from %s.", (unsigned long)len, path);
     }
     fclose(f);
@@ -1575,7 +1547,7 @@ doc_each_child(int argc, VALUE *argv, VALUE self) {
  *       result
  *   }
  *   #=> [3, 2, 1]
- *   
+ *
  *   Oj::Doc.open('[3,[2,1]]') { |doc|
  *       result = []
  *       doc.each_value('/2') { |v| result << v }
@@ -1708,21 +1680,21 @@ doc_not_implemented(VALUE self) {
  * extracted. Once the document is closed the document can not longer be
  * accessed. This allows the parsing and data extraction to be extremely fast
  * compared to other JSON parses.
- * 
+ *
  * An Oj::Doc class is not created directly but the _open()_ class method is
  * used to open a document and the yield parameter to the block of the #open()
  * call is the Doc instance. The Doc instance can be moved across, up, and
  * down the JSON document. At each element the data associated with the
  * element can be extracted. It is also possible to just provide a path to the
  * data to be extracted and retrieve the data in that manner.
- * 
+ *
  * For many of the methods a path is used to describe the location of an
  * element. Paths follow a subset of the XPath syntax. The slash ('/')
  * character is the separator. Each step in the path identifies the next
  * branch to take through the document. A JSON object will expect a key string
  * while an array will expect a positive index. A .. step indicates a move up
  * the JSON document.
- * 
+ *
  * @example
  *   json = %{[
  *     {
@@ -1736,12 +1708,12 @@ doc_not_implemented(VALUE self) {
  *   ]}
  *   # move and get value
  *   Oj::Doc.open(json) do |doc|
- *     doc.move('/1/two')  
+ *     doc.move('/1/two')
  *     # doc location is now at the 'two' element of the hash that is the first element of the array.
  *     doc.fetch()
  *   end
  *   #=> 2
- *   
+ *
  *   # Now try again using a path to Oj::Doc.fetch() directly and not using a block.
  *   doc = Oj::Doc.open(json)
  *   doc.fetch('/2/three')  #=> 3

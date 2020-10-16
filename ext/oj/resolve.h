@@ -1,7 +1,4 @@
-/* resolve.h
- * Copyright (c) 2011, Peter Ohler
- * All rights reserved.
- */
+// Copyright (c) 2011 Peter Ohler. All rights reserved.
 
 #ifndef OJ_RESOLVE_H
 #define OJ_RESOLVE_H

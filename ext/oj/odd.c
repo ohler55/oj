@@ -1,7 +1,4 @@
-/* odd.c
- * Copyright (c) 2011, Peter Ohler
- * All rights reserved.
- */
+// Copyright (c) 2011 Peter Ohler. All rights reserved.
 
 #include <string.h>
 

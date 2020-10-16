@@ -1,7 +1,4 @@
-/* odd.h
- * Copyright (c) 2011, Peter Ohler
- * All rights reserved.
- */
+// Copyright (c) 2011 Peter Ohler. All rights reserved.
 
 #ifndef OJ_ODD_H
 #define OJ_ODD_H

@@ -1,7 +1,4 @@
-/* stream_writer.c
- * Copyright (c) 2012, 2017, Peter Ohler
- * All rights reserved.
- */
+// Copyright (c) 2012, 2017 Peter Ohler. All rights reserved.
 
 #include <errno.h>
 
@@ -86,7 +83,7 @@ stream_writer_new(int argc, VALUE *argv, VALUE self) {
 #if !IS_WINDOWS
     VALUE		s;
 #endif
-    
+
     if (oj_stringio_class == clas) {
 	type = STRING_IO;
 #if !IS_WINDOWS
@@ -107,7 +104,7 @@ stream_writer_new(int argc, VALUE *argv, VALUE self) {
 
 	if (Qundef == buffer_size_sym) {
 	    buffer_size_sym = ID2SYM(rb_intern("buffer_size"));	rb_gc_register_address(&buffer_size_sym);
-	    
+
 	}
 	if (Qnil != (v = rb_hash_lookup(argv[1], buffer_size_sym))) {
 #ifdef RUBY_INTEGER_UNIFICATION
@@ -340,7 +337,7 @@ stream_writer_flush(VALUE self) {
 }
 
 /* Document-class: Oj::StreamWriter
- * 
+ *
  * Supports building a JSON document one element at a time. Build the IO stream
  * document by pushing values into the document. Pushing an array or an object
  * will create that element in the JSON document and subsequent pushes will add
@@ -359,5 +356,3 @@ oj_stream_writer_init() {
     rb_define_method(oj_stream_writer_class, "pop_all", stream_writer_pop_all, 0);
     rb_define_method(oj_stream_writer_class, "flush", stream_writer_flush, 0);
 }
-
-

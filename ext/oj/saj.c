@@ -1,7 +1,4 @@
-/* saj.c
- * Copyright (c) 2012, Peter Ohler
- * All rights reserved.
- */
+// Copyright (c) 2012 Peter Ohler. All rights reserved.
 
 #if !IS_WINDOWS
 #include <sys/resource.h>  /* for getrlimit() on linux */
@@ -213,7 +210,7 @@ read_next(ParseInfo pi, const char *key) {
 static void
 read_hash(ParseInfo pi, const char *key) {
     const char	*ks;
-    
+
     if (pi->has_hash_start) {
 	call_no_value(pi->handler, oj_hash_start_id, key);
     }
@@ -378,7 +375,7 @@ read_num(ParseInfo pi, const char *key) {
     if (0 == e && 0 == a && 1 == div) {
 	if (big) {
 	    char	c = *pi->s;
-	
+
 	    *pi->s = '\0';
 	    if (pi->has_add_value) {
 		call_add_value(pi->handler, rb_funcall(rb_cObject, oj_bigdecimal_id, 1, rb_str_new2(start)), key);
@@ -396,7 +393,7 @@ read_num(ParseInfo pi, const char *key) {
     } else { /* decimal */
 	if (big) {
 	    char	c = *pi->s;
-	
+
 	    *pi->s = '\0';
 	    if (pi->has_add_value) {
 		call_add_value(pi->handler, rb_funcall(rb_cObject, oj_bigdecimal_id, 1, rb_str_new2(start)), key);
@@ -541,7 +538,7 @@ read_quoted_value(ParseInfo pi) {
     char	*h = pi->s; /* head */
     char	*t = h;	    /* tail */
     uint32_t	code;
-    
+
     h++;	/* skip quote character */
     t++;
     value = h;
@@ -679,7 +676,7 @@ oj_saj_parse(int argc, VALUE *argv, VALUE self) {
     } else {
 	VALUE		clas = rb_obj_class(input);
 	volatile VALUE	s;
-	
+
 	if (oj_stringio_class == clas) {
 	    s = rb_funcall2(input, oj_string_id, 0, 0);
 	    len = RSTRING_LEN(s) + 1;

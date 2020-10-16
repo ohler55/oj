@@ -1,7 +1,4 @@
-/* oj.c
- * Copyright (c) 2012, Peter Ohler
- * All rights reserved.
- */
+// Copyright (c) 2012 Peter Ohler. All rights reserved.
 
 #include <stdlib.h>
 #include <errno.h>

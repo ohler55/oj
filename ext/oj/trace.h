@@ -1,7 +1,4 @@
-/* trace.h
- * Copyright (c) 2018, Peter Ohler
- * All rights reserved.
- */
+// Copyright (c) 2018 Peter Ohler. All rights reserved.
 
 #ifndef OJ_TRACE_H
 #define OJ_TRACE_H

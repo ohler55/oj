@@ -1,7 +1,4 @@
-/* reader.c
- * Copyright (c) 2011, Peter Ohler
- * All rights reserved.
- */
+// Copyright (c) 2011 Peter Ohler. All rights reserved.
 
 #include <stdlib.h>
 #include <errno.h>
@@ -9,7 +6,7 @@
 #include <strings.h>
 #include <sys/types.h>
 #if NEEDS_UIO
-#include <sys/uio.h>	
+#include <sys/uio.h>
 #endif
 #include <unistd.h>
 #include <time.h>
@@ -78,13 +75,13 @@ oj_reader_init(Reader reader, VALUE io, int fd, bool to_s) {
 	reader->io = io;
     } else if (to_s) {
 	volatile VALUE	rstr = rb_funcall(io, oj_to_s_id, 0);
-	
+
 	reader->read_func = 0;
 	reader->in_str = StringValuePtr(rstr);
 	reader->head = (char*)reader->in_str;
 	reader->tail = reader->head;
 	reader->read_end = reader->head + RSTRING_LEN(rstr);
-    } else {	
+    } else {
 	rb_raise(rb_eArgError, "parser io argument must be a String or respond to readpartial() or read().\n");
     }
 }
@@ -107,7 +104,7 @@ oj_reader_read(Reader reader) {
 	if (0 >= shift) { /* no space left so allocate more */
 	    const char	*old = reader->head;
 	    size_t	size = reader->end - reader->head + BUF_PAD;
-	
+
 	    if (reader->head == reader->base) {
 		reader->head = ALLOC_N(char, size * 2);
 		memcpy((char*)reader->head, old, size);

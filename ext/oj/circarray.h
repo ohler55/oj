@@ -1,7 +1,4 @@
-/* circarray.h
- * Copyright (c) 2012, Peter Ohler
- * All rights reserved.
- */
+// Copyright (c) 2012 Peter Ohler. All rights reserved.
 
 #ifndef OJ_CIRCARRAY_H
 #define OJ_CIRCARRAY_H

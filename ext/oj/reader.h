@@ -1,7 +1,4 @@
-/* reader.h
- * Copyright (c) 2011, Peter Ohler
- * All rights reserved.
- */
+// Copyright (c) 2011 Peter Ohler. All rights reserved.
 
 #ifndef OJ_READER_H
 #define OJ_READER_H
@@ -43,7 +40,7 @@ reader_get(Reader reader) {
     }
     reader->col++;
     reader->pos++;
-    
+
     return *reader->tail++;
 }
 

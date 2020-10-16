@@ -1,7 +1,4 @@
-/* rails.h
- * Copyright (c) 2017, Peter Ohler
- * All rights reserved.
- */
+// Copyright (c) 2017 Peter Ohler. All rights reserved.
 
 #ifndef OJ_RAILS_H
 #define OJ_RAILS_H
