@@ -212,18 +212,6 @@ read_escaped_str(ParseInfo pi, const char *start) {
 	    case '"':	buf_append(&buf, '"');	break;
 	    case '/':	buf_append(&buf, '/');	break;
 	    case '\\':	buf_append(&buf, '\\');	break;
-	    case '\'':
-		// The json gem claims this is not an error despite the
-		// ECMA-404 indicating it is not valid.
-		if (CompatMode == pi->options.mode) {
-		    buf_append(&buf, '\'');
-		} else {
-		    pi->cur = s;
-		    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "invalid escaped character");
-		    buf_cleanup(&buf);
-		    return;
-		}
-		break;
 	    case 'u':
 		s++;
 		if (0 == (code = read_hex(pi, s)) && err_has(&pi->err)) {
@@ -263,6 +251,12 @@ read_escaped_str(ParseInfo pi, const char *start) {
 		}
 		break;
 	    default:
+		// The json gem claims this is not an error despite the
+		// ECMA-404 indicating it is not valid.
+		if (CompatMode == pi->options.mode) {
+		    buf_append(&buf, *s);
+		    break;
+		}
 		pi->cur = s;
 		oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "invalid escaped character");
 		buf_cleanup(&buf);
