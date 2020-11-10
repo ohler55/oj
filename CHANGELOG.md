@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.10.16 - 2020-11-10
+
+- Allow escaping any character in :compat mode to match the json gem behavior.
+
 ## 3.10.15 - 2020-10-16
 
 Remove license from code.

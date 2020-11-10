@@ -236,6 +236,12 @@ class CompatJuice < Minitest::Test
     assert_equal({"a\nb" => true, "c\td" => false}, obj)
   end
 
+  def test_invalid_escapes_handled
+    json = '{"subtext":"\"404er\” \w \k \3 \a"}'
+    obj = Oj.compat_load(json)
+    assert_equal({"subtext" => "\"404er” w k 3 a"}, obj)
+  end
+
   def test_hash_escaping
     json = Oj.to_json({'<>' => '<>'}, mode: :compat)
     assert_equal(json, '{"<>":"<>"}')
