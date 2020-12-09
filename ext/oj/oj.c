@@ -88,6 +88,7 @@ VALUE	oj_slash_string;
 VALUE	oj_allow_nan_sym;
 VALUE	oj_array_class_sym;
 VALUE	oj_create_additions_sym;
+VALUE	oj_decimal_class_sym;
 VALUE	oj_hash_class_sym;
 VALUE	oj_indent_sym;
 VALUE	oj_object_class_sym;
@@ -581,6 +582,19 @@ oj_parse_options(VALUE ropts, Options copts) {
 	    rb_raise(rb_eArgError, ":bigdecimal_load must be :bigdecimal, :float, or :auto.");
 	}
     }
+    if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_decimal_class_sym)) {
+	v = rb_hash_lookup(ropts, oj_decimal_class_sym);
+	if (rb_cFloat == v) {
+	    copts->bigdec_load = FloatDec;
+	} else if (oj_bigdecimal_class == v) {
+ 	    copts->bigdec_load = BigDec;
+	} else if (Qnil == v) {
+	    copts->bigdec_load = AutoDec;
+	} else {
+	    rb_raise(rb_eArgError, ":decimal_class must be BigDecimal, Float, or nil.");
+	}
+   }
+
     if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, create_id_sym)) {
 	v = rb_hash_lookup(ropts, create_id_sym);
 	if (Qnil == v) {
@@ -1674,6 +1688,7 @@ Init_oj() {
     oj_array_nl_sym = ID2SYM(rb_intern("array_nl"));		rb_gc_register_address(&oj_array_nl_sym);
     oj_ascii_only_sym = ID2SYM(rb_intern("ascii_only"));	rb_gc_register_address(&oj_ascii_only_sym);
     oj_create_additions_sym = ID2SYM(rb_intern("create_additions"));rb_gc_register_address(&oj_create_additions_sym);
+    oj_decimal_class_sym = ID2SYM(rb_intern("decimal_class"));	rb_gc_register_address(&oj_decimal_class_sym);
     oj_hash_class_sym = ID2SYM(rb_intern("hash_class"));	rb_gc_register_address(&oj_hash_class_sym);
     oj_indent_sym = ID2SYM(rb_intern("indent"));		rb_gc_register_address(&oj_indent_sym);
     oj_max_nesting_sym = ID2SYM(rb_intern("max_nesting"));	rb_gc_register_address(&oj_max_nesting_sym);

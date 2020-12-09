@@ -561,6 +561,16 @@ mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
 		pi.options.array_class = v;
 	    }
 	}
+	if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_decimal_class_sym)) {
+	    v = rb_hash_lookup(ropts, oj_decimal_class_sym);
+	    if (rb_cFloat == v) {
+		pi.options.bigdec_load = FloatDec;
+	    } else if (oj_bigdecimal_class == v) {
+		pi.options.bigdec_load = BigDec;
+	    } else if (Qnil == v) {
+		pi.options.bigdec_load = AutoDec;
+	    }
+	}
 	v = rb_hash_lookup(ropts, oj_max_nesting_sym);
 	if (Qtrue == v) {
 	    pi.max_depth = 100;
