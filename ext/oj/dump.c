@@ -174,15 +174,20 @@ hixss_friendly_size(const uint8_t *str, size_t len) {
     return size - len * (size_t)'0' + check;
 }
 
-inline static size_t
+inline static long
 rails_xss_friendly_size(const uint8_t *str, size_t len) {
-    size_t	size = 0;
+    long	size = 0;
     size_t	i = len;
+    uint8_t	hi = 0;
 
     for (; 0 < i; str++, i--) {
 	size += rails_xss_friendly_chars[*str];
+	hi |= *str & 0x80;
     }
-    return size - len * (size_t)'0';
+    if (0 == hi) {
+	return size - len * (size_t)'0';
+    }
+    return -(size - len * (size_t)'0');
 }
 
 inline static size_t
@@ -767,6 +772,7 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
     size_t	size;
     char	*cmap;
     const char	*orig = str;
+    bool	has_hi = false;
 
     switch (out->opts->escape_mode) {
     case NLEsc:
@@ -785,10 +791,19 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
 	cmap = hixss_friendly_chars;
 	size = hixss_friendly_size((uint8_t*)str, cnt);
 	break;
-    case RailsXEsc:
+    case RailsXEsc: {
+	long	sz;
+
 	cmap = rails_xss_friendly_chars;
-	size = rails_xss_friendly_size((uint8_t*)str, cnt);
+	sz = rails_xss_friendly_size((uint8_t*)str, cnt);
+	if (sz < 0) {
+	    has_hi = true;
+	    size = (size_t)-sz;
+	} else {
+	    size = (size_t)sz;
+	}
 	break;
+    }
     case RailsEsc:
 	cmap = rails_friendly_chars;
 	size = rails_friendly_size((uint8_t*)str, cnt);
@@ -812,7 +827,7 @@ oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
 	str++;
 	is_sym = 0; // just to make sure
     }
-    if (cnt == size) {
+    if (cnt == size && !has_hi) {
 	if (is_sym) {
 	    *out->cur++ = ':';
 	}
