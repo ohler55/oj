@@ -510,8 +510,6 @@ mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
     pi.options.create_ok = No;
     pi.options.allow_nan = (bang ? Yes : No);
     pi.options.nilnil = No;
-    //pi.options.bigdec_load = FloatDec;
-    pi.options.bigdec_load = RubyDec;
     pi.options.mode = CompatMode;
     pi.max_depth = 100;
 
@@ -559,6 +557,16 @@ mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
 	    } else {
 		rb_check_type(v, T_CLASS);
 		pi.options.array_class = v;
+	    }
+	}
+	if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_decimal_class_sym)) {
+	    v = rb_hash_lookup(ropts, oj_decimal_class_sym);
+	    if (rb_cFloat == v) {
+		pi.options.bigdec_load = FloatDec;
+	    } else if (oj_bigdecimal_class == v) {
+		pi.options.bigdec_load = BigDec;
+	    } else if (Qnil == v) {
+		pi.options.bigdec_load = AutoDec;
 	    }
 	}
 	v = rb_hash_lookup(ropts, oj_max_nesting_sym);

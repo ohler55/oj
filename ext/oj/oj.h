@@ -310,6 +310,7 @@ extern VALUE	oj_array_class_sym;
 extern VALUE	oj_array_nl_sym;
 extern VALUE	oj_ascii_only_sym;
 extern VALUE	oj_create_additions_sym;
+extern VALUE	oj_decimal_class_sym;
 extern VALUE	oj_hash_class_sym;
 extern VALUE	oj_indent_sym;
 extern VALUE	oj_max_nesting_sym;

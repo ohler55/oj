@@ -23,4 +23,13 @@ class RailsJuice < Minitest::Test
     assert_equal('0.123e3', json.downcase)
   end
 
+  def test_invalid_encoding
+    assert_raises(EncodingError) {
+      Oj.dump("\"\xf3j", mode: :rails)
+    }
+    assert_raises(EncodingError) {
+      Oj.dump("\xf3j", mode: :rails)
+    }
+  end
+
 end
