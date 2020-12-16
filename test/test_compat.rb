@@ -277,10 +277,17 @@ class CompatJuice < Minitest::Test
   # BigDecimal
   def test_bigdecimal
     # BigDecimals are dumped as strings and can not be restored to the
-    # original value.
+    # original value without using an undocumented feature of the JSON gem.
     json = Oj.dump(BigDecimal('3.14159265358979323846'))
     # 2.4.0 changes the exponent to lowercase
     assert_equal('"0.314159265358979323846e1"', json.downcase)
+  end
+
+  def test_bigdecimal_load
+    big = BigDecimal('3.14159265358979323846')
+    # :decimal_class is the undocumented feature.
+    json = Oj.load('3.14159265358979323846', mode: :compat, decimal_class: BigDecimal)
+    assert_equal(big, json)
   end
 
   def test_infinity

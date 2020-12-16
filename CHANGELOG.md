@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 3.10.17 - 2020-12-15
+
+- The undocumented JSON gem option of `:decimal_class` is now
+  supported and the default option of `:bigdecimal_load` is also
+  honored in JSON.parse() and in compat mode.
+
+- Invalid encoding detection bug fixed for rails.
+
 ## 3.10.16 - 2020-11-10
 
 - Allow escaping any character in :compat mode to match the json gem behavior.
