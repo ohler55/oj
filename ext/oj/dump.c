@@ -254,7 +254,6 @@ dump_hex(uint8_t c, Out out) {
 
 static void
 raise_invalid_unicode(const char *str, int len, int pos) {
-    char	buf[len + 1];
     char	c;
     char	code[32];
     char	*cp = code;
@@ -273,8 +272,7 @@ raise_invalid_unicode(const char *str, int len, int pos) {
     cp--;
     *cp++ = ']';
     *cp = '\0';
-    strncpy(buf, str, len);
-    rb_raise(oj_json_generator_error_class, "Invalid Unicode %s at %d in '%s'", code, pos, buf);
+    rb_raise(oj_json_generator_error_class, "Invalid Unicode %s at %d", code, pos);
 }
 
 static const char*

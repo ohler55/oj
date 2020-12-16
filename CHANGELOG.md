@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 3.10.17 - 2020-12-10
+## 3.10.17 - 2020-12-15
 
 - The undocumented JSON gem option of `:decimal_class` is now
   supported and the default option of `:bigdecimal_load` is also
