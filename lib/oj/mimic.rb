@@ -8,6 +8,50 @@ end
 
 module Oj
 
+  ##
+  # Custom mode can be used to emulate the compat mode with some minor
+  # differences. These are the options that setup the custom mode to be like
+  # the compat mode.
+  CUSTOM_MIMIC_JSON_OPTIONS = {
+    allow_gc: true,
+    allow_invalid_unicode: false,
+    allow_nan: false,
+    array_class: nil,
+    array_nl: nil,
+    auto_define: false,
+    bigdecimal_as_decimal: false,
+    bigdecimal_load: :auto,
+    circular: false,
+    class_cache: false,
+    create_additions: false,
+    create_id: "json_class",
+    empty_string: false,
+    escape_mode: :unicode_xss,
+    float_precision: 0,
+    hash_class: nil,
+    ignore: nil,
+    ignore_under: false,
+    indent: 0,
+    integer_range: nil,
+    mode: :custom,
+    nan: :raise,
+    nilnil: false,
+    object_nl: nil,
+    omit_nil: false,
+    quirks_mode: true,
+    safe: false,
+    second_precision: 3,
+    space: nil,
+    space_before: nil,
+    symbol_keys: false,
+    time_format: :ruby,
+    trace: false,
+    use_as_json: false,
+    use_raw_json: false,
+    use_to_hash: false,
+    use_to_json: true,
+  }
+
   # A bit hack-ish but does the trick. The JSON.dump_default_options is a Hash
   # but in mimic we use a C struct to store defaults. This class creates a view
   # onto that struct.
@@ -38,7 +82,7 @@ module Oj
 
       jfile = File.join(d, 'json.rb')
       $LOADED_FEATURES << jfile unless $LOADED_FEATURES.include?(jfile) if File.exist?(jfile)
-      
+
       Dir.glob(File.join(d, 'json', '**', '*.rb')).each do |file|
         # allow json/add/xxx to be loaded. User can override with Oj.add_to_json(xxx).
         $LOADED_FEATURES << file unless $LOADED_FEATURES.include?(file) unless file.include?('add')
