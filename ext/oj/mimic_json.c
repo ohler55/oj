@@ -693,6 +693,7 @@ static struct _options	mimic_object_to_json_options = {
     RubyTime,	// time_format
     No,		// bigdec_as_num
     RubyDec,	// bigdec_load
+    false,	// compat_bigdec
     No,		// to_hash
     No,		// to_json
     No,		// as_json
