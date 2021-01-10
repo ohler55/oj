@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 3.11.0 - 2021-01-10
+## 3.11.0 - unreleased
 
 - Added `:compat_bigdecimal` to support the JSON gem `:decimal_class` undocumented option.
 

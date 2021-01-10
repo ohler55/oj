@@ -593,16 +593,15 @@ oj_parse_options(VALUE ropts, Options copts) {
     if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_decimal_class_sym)) {
 	v = rb_hash_lookup(ropts, oj_decimal_class_sym);
 	if (rb_cFloat == v) {
-	    copts->bigdec_load = FloatDec;
+	    copts->compat_bigdec = FloatDec;
 	} else if (oj_bigdecimal_class == v) {
- 	    copts->bigdec_load = BigDec;
+ 	    copts->compat_bigdec = BigDec;
 	} else if (Qnil == v) {
-	    copts->bigdec_load = AutoDec;
+	    copts->compat_bigdec = AutoDec;
 	} else {
 	    rb_raise(rb_eArgError, ":decimal_class must be BigDecimal, Float, or nil.");
 	}
    }
-
     if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, create_id_sym)) {
 	v = rb_hash_lookup(ropts, create_id_sym);
 	if (Qnil == v) {

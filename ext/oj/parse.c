@@ -385,8 +385,13 @@ read_num(ParseInfo pi) {
     ni.nan = 0;
     ni.neg = 0;
     ni.has_exp = 0;
-    ni.no_big = (FloatDec == pi->options.bigdec_load || FastDec == pi->options.bigdec_load || RubyDec == pi->options.bigdec_load);
-    ni.bigdec_load = pi->options.bigdec_load;
+    if (CompatMode == pi->options.mode) {
+	ni.no_big = !pi->options.compat_bigdec;
+	ni.bigdec_load = pi->options.compat_bigdec;
+    } else {
+	ni.no_big = (FloatDec == pi->options.bigdec_load || FastDec == pi->options.bigdec_load || RubyDec == pi->options.bigdec_load);
+	ni.bigdec_load = pi->options.bigdec_load;
+    }
 
     if ('-' == *pi->cur) {
 	pi->cur++;
@@ -511,7 +516,11 @@ read_num(ParseInfo pi) {
 	    ni.nan = 1;
 	}
     }
-    if (BigDec == pi->options.bigdec_load) {
+    if (CompatMode == pi->options.mode) {
+	if (pi->options.compat_bigdec) {
+	    ni.big = 1;
+	}
+    } else if (BigDec == pi->options.bigdec_load) {
 	ni.big = 1;
     }
     if (0 == parent) {
