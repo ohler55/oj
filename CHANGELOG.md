@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.11.0 - 2020-01-12
+
+- Added `:compat_bigdecimal` to support the JSON gem `:decimal_class` undocumented option.
+
+- Reverted the use of `:bigdecimal_load` for `:compat` mode.
+
 ## 3.10.18 - 2020-12-25
 
 - Fix modes table by marking compat mode `:bigdecimal_load` instead of `:bigdecimal_as_decimal`.

@@ -364,7 +364,6 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
     struct _out	out;
     VALUE	rstr;
 
-    // TBD
     memset(buf, 0, sizeof(buf));
 
     out.buf = buf;
@@ -510,6 +509,7 @@ mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
     pi.options.create_ok = No;
     pi.options.allow_nan = (bang ? Yes : No);
     pi.options.nilnil = No;
+    pi.options.bigdec_load = RubyDec;
     pi.options.mode = CompatMode;
     pi.max_depth = 100;
 
@@ -560,14 +560,7 @@ mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
 	    }
 	}
 	if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_decimal_class_sym)) {
-	    v = rb_hash_lookup(ropts, oj_decimal_class_sym);
-	    if (rb_cFloat == v) {
-		pi.options.bigdec_load = FloatDec;
-	    } else if (oj_bigdecimal_class == v) {
-		pi.options.bigdec_load = BigDec;
-	    } else if (Qnil == v) {
-		pi.options.bigdec_load = AutoDec;
-	    }
+	    pi.options.compat_bigdec = (oj_bigdecimal_class == rb_hash_lookup(ropts, oj_decimal_class_sym));
 	}
 	v = rb_hash_lookup(ropts, oj_max_nesting_sym);
 	if (Qtrue == v) {
@@ -693,6 +686,7 @@ static struct _options	mimic_object_to_json_options = {
     RubyTime,	// time_format
     No,		// bigdec_as_num
     RubyDec,	// bigdec_load
+    false,	// compat_bigdec
     No,		// to_hash
     No,		// to_json
     No,		// as_json
