@@ -70,6 +70,14 @@ This can also be set with `:decimal_class` when used as a load or
 parse option to match the JSON gem. In that case either `Float`,
 `BigDecimal`, or `nil` can be provided.
 
+### :compat_bigdecimal [Boolean]
+
+Determines how to load decimals when in `:compat` mode.
+
+ - `true` convert all decimal numbers to BigDecimal.
+
+ - `false` convert all decimal numbers to Float.
+
 ### :circular [Boolean]
 
 Detect circular references while dumping. In :compat mode raise a

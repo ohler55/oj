@@ -283,7 +283,7 @@ class CompatJuice < Minitest::Test
     assert_equal('"0.314159265358979323846e1"', json.downcase)
   end
 
-  def test_bigdecimal_load
+  def test_decimal_class
     big = BigDecimal('3.14159265358979323846')
     # :decimal_class is the undocumented feature.
     json = Oj.load('3.14159265358979323846', mode: :compat, decimal_class: BigDecimal)

@@ -107,6 +107,7 @@ static VALUE	bigdecimal_load_sym;
 static VALUE	bigdecimal_sym;
 static VALUE	circular_sym;
 static VALUE	class_cache_sym;
+static VALUE	compat_bigdecimal_sym;
 static VALUE	compat_sym;
 static VALUE	create_id_sym;
 static VALUE	custom_sym;
@@ -168,6 +169,7 @@ struct _options	oj_default_options = {
     UnixTime,	// time_format
     NotSet,	// bigdec_as_num
     AutoDec,	// bigdec_load
+    false,	// compat_bigdec
     No,		// to_hash
     No,		// to_json
     No,		// as_json
@@ -230,6 +232,7 @@ struct _options	oj_default_options = {
  * - *:time_format* [_:unix_|_:unix_zone_|_:xmlschema_|_:ruby_] time format when dumping
  * - *:bigdecimal_as_decimal* [_Boolean_|_nil_] dump BigDecimal as a decimal number or as a String
  * - *:bigdecimal_load* [_:bigdecimal_|_:float_|_:auto_|_:fast_] load decimals as BigDecimal instead of as a Float. :auto pick the most precise for the number of digits. :float should be the same as ruby. :fast may require rounding but is must faster.
+ * - *:compat_bigdecimal* [_true_|_false_] load decimals as BigDecimal instead of as a Float when in compat or rails mode.
  * - *:create_id* [_String_|_nil_] create id for json compatible object encoding, default is 'json_class'
  * - *:create_additions* [_Boolean_|_nil_] if true allow creation of instances using create_id on load.
  * - *:second_precision* [_Fixnum_|_nil_] number of digits after the decimal when dumping the seconds portion of time
@@ -334,6 +337,7 @@ get_def_opts(VALUE self) {
     case AutoDec:
     default:		rb_hash_aset(opts, bigdecimal_load_sym, auto_sym);	break;
     }
+    rb_hash_aset(opts, compat_bigdecimal_sym, oj_default_options.compat_bigdec ? Qtrue : Qfalse);
     rb_hash_aset(opts, create_id_sym, (NULL == oj_default_options.create_id) ? Qnil : rb_str_new2(oj_default_options.create_id));
     rb_hash_aset(opts, oj_space_sym, (0 == oj_default_options.dump_opts.after_size) ? Qnil : rb_str_new2(oj_default_options.dump_opts.after_sep));
     rb_hash_aset(opts, oj_space_before_sym, (0 == oj_default_options.dump_opts.before_size) ? Qnil : rb_str_new2(oj_default_options.dump_opts.before_sep));
@@ -379,6 +383,7 @@ get_def_opts(VALUE self) {
  *   - *:escape* [_:newline_|_:json_|_:xss_safe_|_:ascii_|_unicode_xss_|_nil_] mode encodes all high-bit characters as escaped sequences if :ascii, :json is standand UTF-8 JSON encoding, :newline is the same as :json but newlines are not escaped, :unicode_xss allows unicode but escapes &, <, and >, and any \u20xx characters along with some others, and :xss_safe escapes &, <, and >, and some others.
  *   - *:bigdecimal_as_decimal* [_Boolean_|_nil_] dump BigDecimal as a decimal number or as a String.
  *   - *:bigdecimal_load* [_:bigdecimal_|_:float_|_:auto_|_nil_] load decimals as BigDecimal instead of as a Float. :auto pick the most precise for the number of digits.
+ *   - *:compat_bigdecimal* [_true_|_false_] load decimals as BigDecimal instead of as a Float in compat mode.
  *   - *:mode* [_:object_|_:strict_|_:compat_|_:null_|_:custom_|_:rails_|_:wab_] load and dump mode to use for JSON :strict raises an exception when a non-supported Object is encountered. :compat attempts to extract variable values from an Object using to_json() or to_hash() then it walks the Object's variables if neither is found. The :object mode ignores to_hash() and to_json() methods and encodes variables using code internal to the Oj gem. The :null mode ignores non-supported Objects and replaces them with a null. The :custom mode honors all dump options. The :rails more mimics rails and Active behavior.
  *   - *:time_format* [_:unix_|_:xmlschema_|_:ruby_] time format when dumping in :compat mode :unix decimal number denoting the number of seconds since 1/1/1970, :unix_zone decimal number denoting the number of seconds since 1/1/1970 plus the utc_offset in the exponent, :xmlschema date-time format taken from XML Schema as a String, :ruby Time.to_s formatted String.
  *   - *:create_id* [_String_|_nil_] create id for json compatible object encoding
@@ -582,19 +587,21 @@ oj_parse_options(VALUE ropts, Options copts) {
 	    rb_raise(rb_eArgError, ":bigdecimal_load must be :bigdecimal, :float, or :auto.");
 	}
     }
+    if (Qnil != (v = rb_hash_lookup(ropts, compat_bigdecimal_sym))) {
+	copts->compat_bigdec = (Qtrue == v);
+    }
     if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_decimal_class_sym)) {
 	v = rb_hash_lookup(ropts, oj_decimal_class_sym);
 	if (rb_cFloat == v) {
-	    copts->bigdec_load = FloatDec;
+	    copts->compat_bigdec = FloatDec;
 	} else if (oj_bigdecimal_class == v) {
- 	    copts->bigdec_load = BigDec;
+ 	    copts->compat_bigdec = BigDec;
 	} else if (Qnil == v) {
-	    copts->bigdec_load = AutoDec;
+	    copts->compat_bigdec = AutoDec;
 	} else {
 	    rb_raise(rb_eArgError, ":decimal_class must be BigDecimal, Float, or nil.");
 	}
    }
-
     if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, create_id_sym)) {
 	v = rb_hash_lookup(ropts, create_id_sym);
 	if (Qnil == v) {
@@ -1663,6 +1670,7 @@ Init_oj() {
     bigdecimal_sym = ID2SYM(rb_intern("bigdecimal"));		rb_gc_register_address(&bigdecimal_sym);
     circular_sym = ID2SYM(rb_intern("circular"));		rb_gc_register_address(&circular_sym);
     class_cache_sym = ID2SYM(rb_intern("class_cache"));		rb_gc_register_address(&class_cache_sym);
+    compat_bigdecimal_sym = ID2SYM(rb_intern("compat_bigdecimal"));rb_gc_register_address(&compat_bigdecimal_sym);
     compat_sym = ID2SYM(rb_intern("compat"));			rb_gc_register_address(&compat_sym);
     create_id_sym = ID2SYM(rb_intern("create_id"));		rb_gc_register_address(&create_id_sym);
     custom_sym = ID2SYM(rb_intern("custom"));			rb_gc_register_address(&custom_sym);

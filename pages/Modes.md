@@ -95,7 +95,8 @@ information.
 | :ascii_only            | Boolean |       x |       x |       2 |       2 |       x |       x |         |
 | :auto_define           | Boolean |         |         |         |         |       x |       x |         |
 | :bigdecimal_as_decimal | Boolean |         |         |         |       3 |       x |       x |         |
-| :bigdecimal_load       | Boolean |         |         |       x |         |         |       x |         |
+| :bigdecimal_load       | Boolean |         |         |         |         |         |       x |         |
+| :compat_bigdecimal     | Boolean |         |         |       x |         |         |       x |         |
 | :circular              | Boolean |       x |       x |       x |       x |       x |       x |         |
 | :class_cache           | Boolean |         |         |         |         |       x |       x |         |
 | :create_additions      | Boolean |         |         |       x |       x |         |       x |         |

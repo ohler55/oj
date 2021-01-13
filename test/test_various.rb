@@ -120,6 +120,7 @@ class Juice < Minitest::Test
       escape_mode: :ascii,
       time_format: :unix_zone,
       bigdecimal_load: :float,
+      compat_bigdecimal: true,
       create_id: 'classy',
       create_additions: true,
       space: 'z',
