@@ -168,7 +168,7 @@ EOT
 
   def test_fast_state
     state = JSON::FAST_STATE_PROTOTYPE.dup
-    puts state.inspect
+    state.to_h.each_pair {|k,v| puts "#{k}: #{v}" }
     assert_equal({
       :allow_nan             => false,
       :array_nl              => "",

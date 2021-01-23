@@ -10,8 +10,10 @@ require 'test/unit'
 REAL_JSON_GEM = !!ENV['REAL_JSON_GEM']
 
 if ENV['REAL_JSON_GEM']
+  puts "*** Using real json gem"
   require 'json'
 else
+  puts "*** Using Oj"
   require 'oj'
   Oj.mimic_JSON
 
