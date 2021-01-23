@@ -40,4 +40,4 @@ matrix:
     - os: osx
       rvm: 2.4.10
     - os: osx
-      rvm: 2.5.8
+      rvm: 3.0.0
