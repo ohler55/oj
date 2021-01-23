@@ -1649,13 +1649,21 @@ Init_oj() {
     rb_require("oj/schandler");
 
     oj_bag_class = rb_const_get_at(Oj, rb_intern("Bag"));
+    rb_gc_register_mark_object(oj_bag_class);
     oj_bigdecimal_class = rb_const_get(rb_cObject, rb_intern("BigDecimal"));
+    rb_gc_register_mark_object(oj_bigdecimal_class);
     oj_date_class = rb_const_get(rb_cObject, rb_intern("Date"));
+    rb_gc_register_mark_object(oj_date_class);
     oj_datetime_class = rb_const_get(rb_cObject, rb_intern("DateTime"));
+    rb_gc_register_mark_object(oj_datetime_class);
     oj_enumerable_class = rb_const_get(rb_cObject, rb_intern("Enumerable"));
+    rb_gc_register_mark_object(oj_enumerable_class);
     oj_parse_error_class = rb_const_get_at(Oj, rb_intern("ParseError"));
+    rb_gc_register_mark_object(oj_parse_error_class);
     oj_stringio_class = rb_const_get(rb_cObject, rb_intern("StringIO"));
+    rb_gc_register_mark_object(oj_stringio_class);
     oj_struct_class = rb_const_get(rb_cObject, rb_intern("Struct"));
+    rb_gc_register_mark_object(oj_struct_class);
     oj_json_parser_error_class = rb_eEncodingError;    // replaced if mimic is called
     oj_json_generator_error_class = rb_eEncodingError; // replaced if mimic is called
 

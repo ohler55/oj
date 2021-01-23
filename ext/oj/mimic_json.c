@@ -841,6 +841,7 @@ oj_mimic_json_methods(VALUE json) {
     }
     // Pull in the JSON::State mimic file.
     state_class = rb_const_get_at(generator, rb_intern("State"));
+    rb_gc_register_mark_object(state_class);
 
     symbolize_names_sym = ID2SYM(rb_intern("symbolize_names"));	rb_gc_register_address(&symbolize_names_sym);
 }
