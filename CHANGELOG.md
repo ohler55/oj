@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.11.1 - 2020-01-23
+
+- XrXr fixed Ruby 3.0.0 object movement issue.
+
 ## 3.11.0 - 2020-01-12
 
 - Added `:compat_bigdecimal` to support the JSON gem `:decimal_class` undocumented option.
