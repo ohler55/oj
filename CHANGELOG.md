@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 3.11.1 - 2020-01-23
+## 3.11.1 - 2020-01-24
 
 - XrXr fixed Ruby 3.0.0 object movement issue.
 
