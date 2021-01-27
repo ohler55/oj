@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.11.2 - 2020-01-27
+
+- Fixed JSON gem `:decimal_class` option.
+
 ## 3.11.1 - 2020-01-24
 
 - XrXr fixed Ruby 3.0.0 object movement issue.
