@@ -25,5 +25,15 @@ class Hashi < Minitest::Test
     assert_equal(3, obj[:abc])
     assert_equal(3, obj.abc())
   end
+
+  def test_marshal
+    h = Oj::EasyHash.new()
+    h['abc'] = 3
+    out = Marshal.dump(h)
+
+    obj = Marshal.load(out)
+    assert_equal(Oj::EasyHash, obj.class)
+    assert_equal(3, obj[:abc])
+  end
   
 end # HashTest

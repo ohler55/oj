@@ -12,13 +12,14 @@ module Oj
 
     # Replaces the Object.respond_to?() method.
     # @param [Symbol] m method symbol
+    # @param [Boolean] include_all whether to include private and protected methods in the search
     # @return [Boolean] true for any method that matches an instance
     #                   variable reader, otherwise false.
-    def respond_to?(m)
+    def respond_to?(m, include_all = false)
       return true if super
-      return true if has_key?(key)
-      return true if has_key?(key.to_s)
-      has_key?(key.to_sym)
+      return true if has_key?(m)
+      return true if has_key?(m.to_s)
+      has_key?(m.to_sym)
     end
 
     def [](key)
