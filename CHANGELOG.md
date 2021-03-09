@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.11.3 - 2021-03-09
+
+- Fixed `respond_to?` method on `Oj::EasyHash`.
+
 ## 3.11.2 - 2021-01-27
 
 - Fixed JSON gem `:decimal_class` option.
