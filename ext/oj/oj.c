@@ -223,7 +223,7 @@ struct _options	oj_default_options = {
  *
  * Returns the default load and dump options as a Hash. The options are
  * - *:indent* [_Fixnum_|_String_|_nil_] number of spaces to indent each element in an JSON document, zero or nil is no newline between JSON elements, negative indicates no newline between top level JSON elements in a stream, a String indicates the string should be used for indentation
- * - *:circular* [_Boolean_|_nil_] support circular references while dumping
+ * - *:circular* [_Boolean_|_nil_] support circular references while dumping as well as shared references
  * - *:auto_define* [_Boolean_|_nil_] automatically define classes if they do not exist
  * - *:symbol_keys* [_Boolean_|_nil_] use symbols instead of strings for hash keys
  * - *:escape_mode* [_:newline_|_:json_|_:xss_safe_|_:ascii_|_unicode_xss_|_nil_] determines the characters to escape
