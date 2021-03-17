@@ -1,4 +1,5 @@
 // Copyright (c) 2019 Peter Ohler. All rights reserved.
+// Licensed under the MIT License. See LICENSE file in the project root for license details.
 
 #include "util.h"
 

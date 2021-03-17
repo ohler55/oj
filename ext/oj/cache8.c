@@ -1,3 +1,5 @@
+// Copyright (c) 2011 Peter Ohler. All rights reserved.
+// Licensed under the MIT License. See LICENSE file in the project root for license details.
 
 #include <stdlib.h>
 #include <errno.h>
@@ -29,7 +31,7 @@ void
 oj_cache8_new(Cache8 *cache) {
     Bucket	*b;
     int		i;
-    
+
     *cache = ALLOC(struct _cache8);
     for (i = SLOT_CNT, b = (*cache)->buckets; 0 < i; i--, b++) {
 	b->value = 0;
@@ -62,7 +64,7 @@ oj_cache8_get(Cache8 cache, sid_t key, slot_t **slot) {
     int		i;
     sid_t	k8 = (sid_t)key;
     sid_t	k;
-    
+
     for (i = 64 - BITS; 0 < i; i -= BITS) {
 	k = (k8 >> i) & MASK;
 	b = cache->buckets + k;

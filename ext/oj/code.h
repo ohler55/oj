@@ -1,4 +1,5 @@
 // Copyright (c) 2017 Peter Ohler. All rights reserved.
+// Licensed under the MIT License. See LICENSE file in the project root for license details.
 
 #ifndef OJ_CODE_H
 #define OJ_CODE_H

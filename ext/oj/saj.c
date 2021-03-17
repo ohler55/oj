@@ -1,4 +1,5 @@
 // Copyright (c) 2012 Peter Ohler. All rights reserved.
+// Licensed under the MIT License. See LICENSE file in the project root for license details.
 
 #if !IS_WINDOWS
 #include <sys/resource.h>  /* for getrlimit() on linux */
