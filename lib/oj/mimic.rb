@@ -133,18 +133,6 @@ module Oj
       end
     end
 
-    Date.class_eval do
-      # Both the JSON gem and Rails monkey patch as_json. Let them battle it out.
-      unless defined?(self.as_json)
-        def as_json(*)
-          { JSON.create_id => 'Date', 'y' => year, 'm' => month, 'd' => day, 'sg' => start }
-        end
-      end
-      def self.json_create(h)
-        civil(h['y'], h['m'], h['d'], h['sg'])
-      end
-    end
-
     DateTime.class_eval do
       # Both the JSON gem and Rails monkey patch as_json. Let them battle it out.
       unless defined?(self.as_json)
