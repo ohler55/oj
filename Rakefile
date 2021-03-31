@@ -23,7 +23,7 @@ task :test_all => [:clean, :compile] do
   cmds = "ruby test/tests.rb && ruby test/tests_mimic.rb && ruby test/tests_mimic_addition.rb"
   puts "\n" + "#"*90
   puts cmds
-  Bundler.with_clean_env do
+  Bundler.with_original_env do
     status = system(cmds)
   end
   exitcode = 1 unless status
@@ -36,7 +36,7 @@ task :test_all => [:clean, :compile] do
       cmd = "REAL_JSON_GEM=1 bundle exec ruby -Itest #{file}"
       puts "\n" + "#"*90
       puts cmd
-      Bundler.with_clean_env do
+      Bundler.with_original_env do
         status = system(cmd)
       end
       exitcode = 1 unless status
