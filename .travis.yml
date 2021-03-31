@@ -7,6 +7,11 @@ env:
   global:
     - MAKE="make -j 2"
 
+addons:
+  homebrew:
+    packages:
+      - shared-mime-info
+
 language: ruby
 rvm:
   - 2.4.10
@@ -15,11 +20,6 @@ rvm:
   - 2.7.2
   - 3.0.0
   #- ruby-head
-
-addons:
-  homebrew:
-    packages:
-      - shared-mime-info
 
 gemfile:
   - gemfiles/no_rails.gemfile
