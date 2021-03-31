@@ -16,11 +16,6 @@ rvm:
   - 3.0.0
   #- ruby-head
 
-addons:
-  homebrew:
-    packages:
-      - shared-mime-info
-
 gemfile:
   - gemfiles/no_rails.gemfile
   - gemfiles/rails_5.gemfile
