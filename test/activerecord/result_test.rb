@@ -21,7 +21,12 @@ class ActiveRecordResultTest < Minitest::Test
 					["row 3 col 1", "row 3 col 2"],
 				      ])
     #puts "*** result: #{Oj.dump(result, indent: 2)}"
-   
-    assert_equal Oj.dump(result, mode: :rails), Oj.dump(result.to_hash)
+    json_result = if ActiveRecord.version >= Gem::Version.new("6")
+                    result.to_a
+                  else
+                    result.to_hash
+                  end
+
+    assert_equal Oj.dump(result, mode: :rails), Oj.dump(json_result)
   end
 end

@@ -20,6 +20,7 @@ gemfile:
   - gemfiles/no_rails.gemfile
   - gemfiles/rails_5.gemfile
   - gemfiles/rails_6.gemfile
+  - gemfiles/rails_6.1.gemfile
 
 matrix:
   fast_finish: true
@@ -39,6 +40,8 @@ matrix:
       os: osx
     # Rails 6 only support Ruby 2.5 and above.
     - gemfile: gemfiles/rails_6.gemfile
+      rvm: 2.4.10
+    - gemfile: gemfiles/rails_6.1.gemfile
       rvm: 2.4.10
     - os: osx
       rvm: 2.4.10
