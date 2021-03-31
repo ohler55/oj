@@ -7,11 +7,6 @@ env:
   global:
     - MAKE="make -j 2"
 
-addons:
-  homebrew:
-    packages:
-      - shared-mime-info
-
 language: ruby
 rvm:
   - 2.4.10
