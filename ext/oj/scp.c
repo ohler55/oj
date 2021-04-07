@@ -1,16 +1,16 @@
 // Copyright (c) 2012 Peter Ohler. All rights reserved.
 // Licensed under the MIT License. See LICENSE file in the project root for license details.
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "encode.h"
 #include "oj.h"
 #include "parse.h"
-#include "encode.h"
 
 static VALUE
 noop_start(ParseInfo pi) {
@@ -69,7 +69,7 @@ add_value(ParseInfo pi, VALUE val) {
 
 static void
 add_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
-    volatile VALUE	rstr = rb_str_new(str, len);
+    volatile VALUE rstr = rb_str_new(str, len);
 
     rstr = oj_encode(rstr);
     rb_funcall(pi->handler, oj_add_value_id, 1, rstr);
@@ -102,14 +102,14 @@ end_array(ParseInfo pi) {
 
 static VALUE
 calc_hash_key(ParseInfo pi, Val kval) {
-    volatile VALUE	rkey = kval->key_val;
+    volatile VALUE rkey = kval->key_val;
 
     if (Qundef == rkey) {
-	rkey = rb_str_new(kval->key, kval->klen);
-	rkey = oj_encode(rkey);
-	if (Yes == pi->options.sym_key) {
-	    rkey = rb_str_intern(rkey);
-	}
+        rkey = rb_str_new(kval->key, kval->klen);
+        rkey = oj_encode(rkey);
+        if (Yes == pi->options.sym_key) {
+            rkey = rb_str_intern(rkey);
+        }
     }
     return rkey;
 }
@@ -121,7 +121,7 @@ hash_key(ParseInfo pi, const char *key, size_t klen) {
 
 static void
 hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *orig) {
-    volatile VALUE	rstr = rb_str_new(str, len);
+    volatile VALUE rstr = rb_str_new(str, len);
 
     rstr = oj_encode(rstr);
     rb_funcall(pi->handler, oj_hash_set_id, 3, stack_peek(&pi->stack)->val, calc_hash_key(pi, kval), rstr);
@@ -139,7 +139,7 @@ hash_set_value(ParseInfo pi, Val kval, VALUE value) {
 
 static void
 array_append_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
-    volatile VALUE	rstr = rb_str_new(str, len);
+    volatile VALUE rstr = rb_str_new(str, len);
 
     rstr = oj_encode(rstr);
     rb_funcall(pi->handler, oj_array_append_id, 2, stack_peek(&pi->stack)->val, rstr);
@@ -157,20 +157,20 @@ array_append_value(ParseInfo pi, VALUE value) {
 
 VALUE
 oj_sc_parse(int argc, VALUE *argv, VALUE self) {
-    struct _parseInfo	pi;
-    VALUE		input = argv[1];
+    struct _parseInfo pi;
+    VALUE input = argv[1];
 
     parse_info_init(&pi);
     pi.err_class = Qnil;
     pi.max_depth = 0;
     pi.options = oj_default_options;
     if (3 == argc) {
-	oj_parse_options(argv[2], &pi.options);
+        oj_parse_options(argv[2], &pi.options);
     }
     if (rb_block_given_p()) {
-	pi.proc = Qnil;
+        pi.proc = Qnil;
     } else {
-	pi.proc = Qundef;
+        pi.proc = Qundef;
     }
     pi.handler = *argv;
 
@@ -180,43 +180,43 @@ oj_sc_parse(int argc, VALUE *argv, VALUE self) {
     pi.start_array = rb_respond_to(pi.handler, oj_array_start_id) ? start_array : noop_start;
     pi.end_array = rb_respond_to(pi.handler, oj_array_end_id) ? end_array : noop_end;
     if (rb_respond_to(pi.handler, oj_hash_set_id)) {
-	pi.hash_set_value = hash_set_value;
-	pi.hash_set_cstr = hash_set_cstr;
-	pi.hash_set_num = hash_set_num;
-	pi.expect_value = 1;
+        pi.hash_set_value = hash_set_value;
+        pi.hash_set_cstr = hash_set_cstr;
+        pi.hash_set_num = hash_set_num;
+        pi.expect_value = 1;
     } else {
-	pi.hash_set_value = noop_hash_set_value;
-	pi.hash_set_cstr = noop_hash_set_cstr;
-	pi.hash_set_num = noop_hash_set_num;
-	pi.expect_value = 0;
+        pi.hash_set_value = noop_hash_set_value;
+        pi.hash_set_cstr = noop_hash_set_cstr;
+        pi.hash_set_num = noop_hash_set_num;
+        pi.expect_value = 0;
     }
     if (rb_respond_to(pi.handler, oj_array_append_id)) {
-	pi.array_append_value = array_append_value;
-	pi.array_append_cstr = array_append_cstr;
-	pi.array_append_num = array_append_num;
-	pi.expect_value = 1;
+        pi.array_append_value = array_append_value;
+        pi.array_append_cstr = array_append_cstr;
+        pi.array_append_num = array_append_num;
+        pi.expect_value = 1;
     } else {
-	pi.array_append_value = noop_array_append_value;
-	pi.array_append_cstr = noop_array_append_cstr;
-	pi.array_append_num = noop_array_append_num;
-	pi.expect_value = 0;
+        pi.array_append_value = noop_array_append_value;
+        pi.array_append_cstr = noop_array_append_cstr;
+        pi.array_append_num = noop_array_append_num;
+        pi.expect_value = 0;
     }
     if (rb_respond_to(pi.handler, oj_add_value_id)) {
-	pi.add_cstr = add_cstr;
-	pi.add_num = add_num;
-	pi.add_value = add_value;
-	pi.expect_value = 1;
+        pi.add_cstr = add_cstr;
+        pi.add_num = add_num;
+        pi.add_value = add_value;
+        pi.expect_value = 1;
     } else {
-	pi.add_cstr = noop_add_cstr;
-	pi.add_num = noop_add_num;
-	pi.add_value = noop_add_value;
-	pi.expect_value = 0;
+        pi.add_cstr = noop_add_cstr;
+        pi.add_num = noop_add_num;
+        pi.add_value = noop_add_value;
+        pi.expect_value = 0;
     }
     pi.has_callbacks = true;
 
     if (T_STRING == rb_type(input)) {
-	return oj_pi_parse(argc - 1, argv + 1, &pi, 0, 0, 1);
+        return oj_pi_parse(argc - 1, argv + 1, &pi, 0, 0, 1);
     } else {
-	return oj_pi_sparse(argc - 1, argv + 1, &pi, 0);
+        return oj_pi_sparse(argc - 1, argv + 1, &pi, 0);
     }
 }

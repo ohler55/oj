@@ -2,71 +2,70 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license details.
 
 #include "rails.h"
-#include "encode.h"
 #include "code.h"
 #include "encode.h"
 #include "trace.h"
 #include "util.h"
 
-#define OJ_INFINITY (1.0/0.0)
+#define OJ_INFINITY (1.0 / 0.0)
 
 // TBD keep static array of strings and functions to help with rails optimization
 typedef struct _encoder {
-    struct _rOptTable	ropts;
-    struct _options	opts;
-    VALUE		arg;
-} *Encoder;
+    struct _rOptTable ropts;
+    struct _options opts;
+    VALUE arg;
+} * Encoder;
 
-bool	oj_rails_hash_opt = false;
-bool	oj_rails_array_opt = false;
-bool	oj_rails_float_opt = false;
+bool oj_rails_hash_opt = false;
+bool oj_rails_array_opt = false;
+bool oj_rails_float_opt = false;
 
-extern void	oj_mimic_json_methods(VALUE json);
+extern void oj_mimic_json_methods(VALUE json);
 
-static void	dump_rails_val(VALUE obj, int depth, Out out, bool as_ok);
+static void dump_rails_val(VALUE obj, int depth, Out out, bool as_ok);
 
-extern VALUE	Oj;
+extern VALUE Oj;
 
-static struct _rOptTable	ropts = { 0, 0, NULL };
+static struct _rOptTable ropts = { 0, 0, NULL };
 
-static VALUE	encoder_class = Qnil;
-static bool	escape_html = true;
-static bool	xml_time = true;
+static VALUE encoder_class = Qnil;
+static bool escape_html = true;
+static bool xml_time = true;
 
-static ROpt	create_opt(ROptTable rot, VALUE clas);
+static ROpt create_opt(ROptTable rot, VALUE clas);
 
 ROpt
 oj_rails_get_opt(ROptTable rot, VALUE clas) {
     if (NULL == rot) {
-	rot = &ropts;
+        rot = &ropts;
     }
     if (0 < rot->len) {
-	int	lo = 0;
-	int	hi = rot->len - 1;
-	int	mid;
-	VALUE	v;
+        int lo = 0;
+        int hi = rot->len - 1;
+        int mid;
+        VALUE v;
 
-	if (clas < rot->table->clas || rot->table[hi].clas < clas) {
-	    return NULL;
-	}
-	if (rot->table[lo].clas == clas) {
-	    return rot->table;
-	}
-	if (rot->table[hi].clas == clas) {
-	    return &rot->table[hi];
-	}
-	while (2 <= hi - lo) {
-	    mid = (hi + lo) / 2;
-	    v = rot->table[mid].clas;
-	    if (v == clas) {
-		return &rot->table[mid];
-	    }
-	    if (v < clas) {
-		lo = mid;
-	    } else {
-		hi = mid;
-	    }
-	}
+        if (clas < rot->table->clas || rot->table[hi].clas < clas) {
+            return NULL;
+        }
+        if (rot->table[lo].clas == clas) {
+            return rot->table;
+        }
+        if (rot->table[hi].clas == clas) {
+            return &rot->table[hi];
+        }
+        while (2 <= hi - lo) {
+            mid = (hi + lo) / 2;
+            v = rot->table[mid].clas;
+            if (v == clas) {
+                return &rot->table[mid];
+            }
+            if (v < clas) {
+                lo = mid;
+            } else {
+                hi = mid;
+            }
+        }
     }
     return NULL;
 }
@@ -76,41 +75,41 @@ copy_opts(ROptTable src, ROptTable dest) {
     dest->len = src->len;
     dest->alen = src->alen;
     if (NULL == src->table) {
-	dest->table = NULL;
+        dest->table = NULL;
     } else {
-	dest->table = ALLOC_N(struct _rOpt, dest->alen);
-	memcpy(dest->table, src->table, sizeof(struct _rOpt) * dest->alen);
+        dest->table = ALLOC_N(struct _rOpt, dest->alen);
+        memcpy(dest->table, src->table, sizeof(struct _rOpt) * dest->alen);
     }
     return NULL;
 }
 
 static int
 dump_attr_cb(ID key, VALUE value, VALUE ov) {
-    Out		out = (Out)ov;
-    int		depth = out->depth;
-    size_t	size = depth * out->indent + 1;
-    const char	*attr = rb_id2name(key);
+    Out out = (Out)ov;
+    int depth = out->depth;
+    size_t size = depth * out->indent + 1;
+    const char *attr = rb_id2name(key);
 
     // Some exceptions such as NoMethodError have an invisible attribute where
     // the key name is NULL. Not an empty string but NULL.
     if (NULL == attr) {
-	attr = "";
+        attr = "";
     }
     if (0 == strcmp("bt", attr) || 0 == strcmp("mesg", attr)) {
-	return ST_CONTINUE;
+        return ST_CONTINUE;
     }
     assure_size(out, size);
     fill_indent(out, depth);
     if ('@' == *attr) {
-	attr++;
-	oj_dump_cstr(attr, strlen(attr), 0, 0, out);
+        attr++;
+        oj_dump_cstr(attr, strlen(attr), 0, 0, out);
     } else {
-	char	buf[32];
+        char buf[32];
 
-	*buf = '~';
-	strncpy(buf + 1, attr, sizeof(buf) - 2);
-	buf[sizeof(buf) - 1] = '\0';
-	oj_dump_cstr(buf, strlen(buf), 0, 0, out);
+        *buf = '~';
+        strncpy(buf + 1, attr, sizeof(buf) - 2);
+        buf[sizeof(buf) - 1] = '\0';
+        oj_dump_cstr(buf, strlen(buf), 0, 0, out);
     }
     *out->cur++ = ':';
     dump_rails_val(value, depth, out, true);
@@ -127,7 +126,7 @@ dump_obj_attrs(VALUE obj, int depth, Out out, bool as_ok) {
     out->depth = depth + 1;
     rb_ivar_foreach(obj, dump_attr_cb, (VALUE)out);
     if (',' == *(out->cur - 1)) {
-	out->cur--; // backup to overwrite last comma
+        out->cur--; // backup to overwrite last comma
     }
     out->depth = depth;
     fill_indent(out, depth);
@@ -137,20 +136,20 @@ dump_obj_attrs(VALUE obj, int depth, Out out, bool as_ok) {
 
 static void
 dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
-    int			d3 = depth + 2;
-    size_t		size = d3 * out->indent + 2;
-    size_t		sep_len = out->opts->dump_opts.before_size + out->opts->dump_opts.after_size + 2;
-    volatile VALUE	ma;
-    volatile VALUE	v;
-    int			cnt;
-    int			i;
-    int			len;
-    const char		*name;
+    int d3 = depth + 2;
+    size_t size = d3 * out->indent + 2;
+    size_t sep_len = out->opts->dump_opts.before_size + out->opts->dump_opts.after_size + 2;
+    volatile VALUE ma;
+    volatile VALUE v;
+    int cnt;
+    int i;
+    int len;
+    const char *name;
 
 #ifdef RSTRUCT_LEN
 #if RSTRUCT_LEN_RETURNS_INTEGER_OBJECT
     cnt = (int)NUM2LONG(RSTRUCT_LEN(obj));
-#else // RSTRUCT_LEN_RETURNS_INTEGER_OBJECT
+#else  // RSTRUCT_LEN_RETURNS_INTEGER_OBJECT
     cnt = (int)RSTRUCT_LEN(obj);
 #endif // RSTRUCT_LEN_RETURNS_INTEGER_OBJECT
 #else
@@ -162,91 +161,91 @@ dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
     assure_size(out, 2);
     *out->cur++ = '{';
     for (i = 0; i < cnt; i++) {
-	volatile VALUE	s = rb_sym_to_s(rb_ary_entry(ma, i));
+        volatile VALUE s = rb_sym_to_s(rb_ary_entry(ma, i));
 
-	name = rb_string_value_ptr((VALUE*)&s);
-	len = (int)RSTRING_LEN(s);
-	assure_size(out, size + sep_len + 6);
-	if (0 < i) {
-	    *out->cur++ = ',';
-	}
-	fill_indent(out, d3);
-	*out->cur++ = '"';
-	memcpy(out->cur, name, len);
-	out->cur += len;
-	*out->cur++ = '"';
-	if (0 < out->opts->dump_opts.before_size) {
-	    strcpy(out->cur, out->opts->dump_opts.before_sep);
-	    out->cur += out->opts->dump_opts.before_size;
-	}
-	*out->cur++ = ':';
-	if (0 < out->opts->dump_opts.after_size) {
-	    strcpy(out->cur, out->opts->dump_opts.after_sep);
-	    out->cur += out->opts->dump_opts.after_size;
-	}
+        name = rb_string_value_ptr((VALUE *)&s);
+        len = (int)RSTRING_LEN(s);
+        assure_size(out, size + sep_len + 6);
+        if (0 < i) {
+            *out->cur++ = ',';
+        }
+        fill_indent(out, d3);
+        *out->cur++ = '"';
+        memcpy(out->cur, name, len);
+        out->cur += len;
+        *out->cur++ = '"';
+        if (0 < out->opts->dump_opts.before_size) {
+            strcpy(out->cur, out->opts->dump_opts.before_sep);
+            out->cur += out->opts->dump_opts.before_size;
+        }
+        *out->cur++ = ':';
+        if (0 < out->opts->dump_opts.after_size) {
+            strcpy(out->cur, out->opts->dump_opts.after_sep);
+            out->cur += out->opts->dump_opts.after_size;
+        }
 #ifdef RSTRUCT_LEN
-	v = RSTRUCT_GET(obj, i);
+        v = RSTRUCT_GET(obj, i);
 #else
-	v = rb_struct_aref(obj, INT2FIX(i));
+        v = rb_struct_aref(obj, INT2FIX(i));
 #endif
-	dump_rails_val(v, d3, out, true);
+        dump_rails_val(v, d3, out, true);
     }
     fill_indent(out, depth);
     *out->cur++ = '}';
     *out->cur = '\0';
 }
 
-static ID	to_a_id = 0;
+static ID to_a_id = 0;
 
 static void
 dump_enumerable(VALUE obj, int depth, Out out, bool as_ok) {
     if (0 == to_a_id) {
-	to_a_id = rb_intern("to_a");
+        to_a_id = rb_intern("to_a");
     }
     dump_rails_val(rb_funcall(obj, to_a_id, 0), depth, out, false);
 }
 
 static void
 dump_bigdecimal(VALUE obj, int depth, Out out, bool as_ok) {
-    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
-    const char		*str = rb_string_value_ptr((VALUE*)&rstr);
+    volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
+    const char *str = rb_string_value_ptr((VALUE *)&rstr);
 
     if ('I' == *str || 'N' == *str || ('-' == *str && 'I' == str[1])) {
-	oj_dump_nil(Qnil, depth, out, false);
+        oj_dump_nil(Qnil, depth, out, false);
     } else if (out->opts->int_range_max != 0 || out->opts->int_range_min != 0) {
-	oj_dump_cstr(str, (int)RSTRING_LEN(rstr), 0, 0, out);
+        oj_dump_cstr(str, (int)RSTRING_LEN(rstr), 0, 0, out);
     } else if (Yes == out->opts->bigdec_as_num) {
-	oj_dump_raw(str, (int)RSTRING_LEN(rstr), out);
+        oj_dump_raw(str, (int)RSTRING_LEN(rstr), out);
     } else {
-	oj_dump_cstr(str, (int)RSTRING_LEN(rstr), 0, 0, out);
+        oj_dump_cstr(str, (int)RSTRING_LEN(rstr), 0, 0, out);
     }
 }
 
 static void
 dump_sec_nano(VALUE obj, int64_t sec, long nsec, Out out) {
-    char		buf[64];
-    struct _timeInfo	ti;
-    long		one = 1000000000;
-    long		tzsecs = NUM2LONG(rb_funcall2(obj, oj_utc_offset_id, 0, 0));
-    int			tzhour, tzmin;
-    char		tzsign = '+';
-    int			len;
+    char buf[64];
+    struct _timeInfo ti;
+    long one = 1000000000;
+    long tzsecs = NUM2LONG(rb_funcall2(obj, oj_utc_offset_id, 0, 0));
+    int tzhour, tzmin;
+    char tzsign = '+';
+    int len;
 
     if (out->end - out->cur <= 36) {
-	assure_size(out, 36);
+        assure_size(out, 36);
     }
     if (9 > out->opts->sec_prec) {
-	int	i;
+        int i;
 
-	// Rails does not round when reducing precision but instead floors,
-	for (i = 9 - out->opts->sec_prec; 0 < i; i--) {
-	    nsec = nsec / 10;
-	    one /= 10;
-	}
-	if (one <= nsec) {
-	    nsec -= one;
-	    sec++;
-	}
+        // Rails does not round when reducing precision but instead floors,
+        for (i = 9 - out->opts->sec_prec; 0 < i; i--) {
+            nsec = nsec / 10;
+            one /= 10;
+        }
+        if (one <= nsec) {
+            nsec -= one;
+            sec++;
+        }
     }
     // 2012-01-05T23:58:07.123456000+09:00 or 2012/01/05 23:58:07 +0900
     sec += tzsecs;
@@ -260,49 +259,49 @@ dump_sec_nano(VALUE obj, int64_t sec, long nsec, Out out) {
         tzmin = (int)(tzsecs / 60) - (tzhour * 60);
     }
     if (!xml_time) {
-	len = sprintf(buf, "%04d/%02d/%02d %02d:%02d:%02d %c%02d%02d", ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec, tzsign, tzhour, tzmin);
+        len = sprintf(buf, "%04d/%02d/%02d %02d:%02d:%02d %c%02d%02d", ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec, tzsign, tzhour, tzmin);
     } else if (0 == out->opts->sec_prec) {
-	if (0 == tzsecs && rb_funcall2(obj, oj_utcq_id, 0, 0)) {
-	    len = sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02dZ", ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec);
-	} else {
-	    len = sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02d%c%02d:%02d", ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec, tzsign, tzhour, tzmin);
-	}
+        if (0 == tzsecs && rb_funcall2(obj, oj_utcq_id, 0, 0)) {
+            len = sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02dZ", ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec);
+        } else {
+            len = sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02d%c%02d:%02d", ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec, tzsign, tzhour, tzmin);
+        }
     } else if (0 == tzsecs && rb_funcall2(obj, oj_utcq_id, 0, 0)) {
-	char	format[64] = "%04d-%02d-%02dT%02d:%02d:%02d.%09ldZ";
+        char format[64] = "%04d-%02d-%02dT%02d:%02d:%02d.%09ldZ";
 
-	len = 30;
-	if (9 > out->opts->sec_prec) {
-	    format[32] = '0' + out->opts->sec_prec;
-	    len -= 9 - out->opts->sec_prec;
-	}
-	len = sprintf(buf, format, ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec, nsec);
+        len = 30;
+        if (9 > out->opts->sec_prec) {
+            format[32] = '0' + out->opts->sec_prec;
+            len -= 9 - out->opts->sec_prec;
+        }
+        len = sprintf(buf, format, ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec, nsec);
     } else {
-	char	format[64] = "%04d-%02d-%02dT%02d:%02d:%02d.%09ld%c%02d:%02d";
+        char format[64] = "%04d-%02d-%02dT%02d:%02d:%02d.%09ld%c%02d:%02d";
 
-	len = 35;
-	if (9 > out->opts->sec_prec) {
-	    format[32] = '0' + out->opts->sec_prec;
-	    len -= 9 - out->opts->sec_prec;
-	}
-	len = sprintf(buf, format, ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec, nsec, tzsign, tzhour, tzmin);
+        len = 35;
+        if (9 > out->opts->sec_prec) {
+            format[32] = '0' + out->opts->sec_prec;
+            len -= 9 - out->opts->sec_prec;
+        }
+        len = sprintf(buf, format, ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec, nsec, tzsign, tzhour, tzmin);
     }
     oj_dump_cstr(buf, len, 0, 0, out);
 }
 
 static void
 dump_time(VALUE obj, int depth, Out out, bool as_ok) {
-    long long	sec;
-    long long	nsec;
+    long long sec;
+    long long nsec;
 
 #ifdef HAVE_RB_TIME_TIMESPEC
     if (16 <= sizeof(struct timespec)) {
-	struct timespec	ts = rb_time_timespec(obj);
+        struct timespec ts = rb_time_timespec(obj);
 
-	sec = (long long)ts.tv_sec;
-	nsec = ts.tv_nsec;
+        sec = (long long)ts.tv_sec;
+        nsec = ts.tv_nsec;
     } else {
-	sec = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
-	nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+        sec = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+        nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
     }
 #else
     sec = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
@@ -313,35 +312,35 @@ dump_time(VALUE obj, int depth, Out out, bool as_ok) {
 
 static void
 dump_timewithzone(VALUE obj, int depth, Out out, bool as_ok) {
-    int64_t	sec = NUM2LONG(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
-    long long	nsec = 0;
+    int64_t sec = NUM2LONG(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+    long long nsec = 0;
 
     if (rb_respond_to(obj, oj_tv_nsec_id)) {
-	nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+        nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
     } else if (rb_respond_to(obj, oj_tv_usec_id)) {
-	nsec = rb_num2ll(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
+        nsec = rb_num2ll(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
     }
     dump_sec_nano(obj, sec, nsec, out);
 }
 
 static void
 dump_to_s(VALUE obj, int depth, Out out, bool as_ok) {
-    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+    volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-    oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), (int)RSTRING_LEN(rstr), 0, 0, out);
+    oj_dump_cstr(rb_string_value_ptr((VALUE *)&rstr), (int)RSTRING_LEN(rstr), 0, 0, out);
 }
 
-static ID	parameters_id = 0;
+static ID parameters_id = 0;
 
 typedef struct _strLen {
-    const char	*str;
-    int		len;
-} *StrLen;
+    const char *str;
+    int len;
+} * StrLen;
 
 static void
 dump_actioncontroller_parameters(VALUE obj, int depth, Out out, bool as_ok) {
     if (0 == parameters_id) {
-	parameters_id = rb_intern("@parameters");
+        parameters_id = rb_intern("@parameters");
     }
     out->argc = 0;
     dump_rails_val(rb_ivar_get(obj, parameters_id), depth, out, true);
@@ -349,94 +348,94 @@ dump_actioncontroller_parameters(VALUE obj, int depth, Out out, bool as_ok) {
 
 static StrLen
 columns_array(VALUE rcols, int *ccnt) {
-    volatile VALUE	v;
-    StrLen		cp;
-    StrLen		cols;
-    int			i;
-    int			cnt = (int)RARRAY_LEN(rcols);
+    volatile VALUE v;
+    StrLen cp;
+    StrLen cols;
+    int i;
+    int cnt = (int)RARRAY_LEN(rcols);
 
     *ccnt = cnt;
     cols = ALLOC_N(struct _strLen, cnt);
     for (i = 0, cp = cols; i < cnt; i++, cp++) {
-	v = rb_ary_entry(rcols, i);
-	if (T_STRING != rb_type(v)) {
-	    v = rb_funcall(v, oj_to_s_id, 0);
-	}
-	cp->str = StringValuePtr(v);
-	cp->len = (int)RSTRING_LEN(v);
+        v = rb_ary_entry(rcols, i);
+        if (T_STRING != rb_type(v)) {
+            v = rb_funcall(v, oj_to_s_id, 0);
+        }
+        cp->str = StringValuePtr(v);
+        cp->len = (int)RSTRING_LEN(v);
     }
     return cols;
 }
 
 static void
 dump_row(VALUE row, StrLen cols, int ccnt, int depth, Out out) {
-    size_t	size;
-    int		d2 = depth + 1;
-    int		i;
+    size_t size;
+    int d2 = depth + 1;
+    int i;
 
     assure_size(out, 2);
     *out->cur++ = '{';
     size = depth * out->indent + 3;
     for (i = 0; i < ccnt; i++, cols++) {
-	assure_size(out, size);
-	if (out->opts->dump_opts.use) {
-	    if (0 < out->opts->dump_opts.array_size) {
-		strcpy(out->cur, out->opts->dump_opts.array_nl);
-		out->cur += out->opts->dump_opts.array_size;
-	    }
-	    if (0 < out->opts->dump_opts.indent_size) {
-		int	i;
-		for (i = d2; 0 < i; i--) {
-		    strcpy(out->cur, out->opts->dump_opts.indent_str);
-		    out->cur += out->opts->dump_opts.indent_size;
-		}
-	    }
-	} else {
-	    fill_indent(out, d2);
-	}
-	oj_dump_cstr(cols->str, cols->len, 0, 0, out);
-	*out->cur++ = ':';
-	dump_rails_val(rb_ary_entry(row, i), depth, out, true);
-	if (i < ccnt - 1) {
-	    *out->cur++ = ',';
-	}
+        assure_size(out, size);
+        if (out->opts->dump_opts.use) {
+            if (0 < out->opts->dump_opts.array_size) {
+                strcpy(out->cur, out->opts->dump_opts.array_nl);
+                out->cur += out->opts->dump_opts.array_size;
+            }
+            if (0 < out->opts->dump_opts.indent_size) {
+                int i;
+                for (i = d2; 0 < i; i--) {
+                    strcpy(out->cur, out->opts->dump_opts.indent_str);
+                    out->cur += out->opts->dump_opts.indent_size;
+                }
+            }
+        } else {
+            fill_indent(out, d2);
+        }
+        oj_dump_cstr(cols->str, cols->len, 0, 0, out);
+        *out->cur++ = ':';
+        dump_rails_val(rb_ary_entry(row, i), depth, out, true);
+        if (i < ccnt - 1) {
+            *out->cur++ = ',';
+        }
     }
     size = depth * out->indent + 1;
     assure_size(out, size);
     if (out->opts->dump_opts.use) {
-	if (0 < out->opts->dump_opts.array_size) {
-	    strcpy(out->cur, out->opts->dump_opts.array_nl);
-	    out->cur += out->opts->dump_opts.array_size;
-	}
-	if (0 < out->opts->dump_opts.indent_size) {
-	    int	i;
+        if (0 < out->opts->dump_opts.array_size) {
+            strcpy(out->cur, out->opts->dump_opts.array_nl);
+            out->cur += out->opts->dump_opts.array_size;
+        }
+        if (0 < out->opts->dump_opts.indent_size) {
+            int i;
 
-	    for (i = depth; 0 < i; i--) {
-		strcpy(out->cur, out->opts->dump_opts.indent_str);
-		out->cur += out->opts->dump_opts.indent_size;
-	    }
-	}
+            for (i = depth; 0 < i; i--) {
+                strcpy(out->cur, out->opts->dump_opts.indent_str);
+                out->cur += out->opts->dump_opts.indent_size;
+            }
+        }
     } else {
-	fill_indent(out, depth);
+        fill_indent(out, depth);
     }
     *out->cur++ = '}';
 }
 
-static ID	rows_id = 0;
-static ID	columns_id = 0;
+static ID rows_id = 0;
+static ID columns_id = 0;
 
 static void
 dump_activerecord_result(VALUE obj, int depth, Out out, bool as_ok) {
-    volatile VALUE	rows;
-    StrLen		cols;
-    int			ccnt = 0;
-    int			i, rcnt;
-    size_t		size;
-    int			d2 = depth + 1;
+    volatile VALUE rows;
+    StrLen cols;
+    int ccnt = 0;
+    int i, rcnt;
+    size_t size;
+    int d2 = depth + 1;
 
     if (0 == rows_id) {
-	rows_id = rb_intern("@rows");
-	columns_id = rb_intern("@columns");
+        rows_id = rb_intern("@rows");
+        columns_id = rb_intern("@columns");
     }
     out->argc = 0;
     cols = columns_array(rb_ivar_get(obj, columns_id), &ccnt);
@@ -445,113 +444,113 @@ dump_activerecord_result(VALUE obj, int depth, Out out, bool as_ok) {
     assure_size(out, 2);
     *out->cur++ = '[';
     if (out->opts->dump_opts.use) {
-	size = d2 * out->opts->dump_opts.indent_size + out->opts->dump_opts.array_size + 1;
+        size = d2 * out->opts->dump_opts.indent_size + out->opts->dump_opts.array_size + 1;
     } else {
-	size = d2 * out->indent + 2;
+        size = d2 * out->indent + 2;
     }
     assure_size(out, 2);
     for (i = 0; i < rcnt; i++) {
-	assure_size(out, size);
-	if (out->opts->dump_opts.use) {
-	    if (0 < out->opts->dump_opts.array_size) {
-		strcpy(out->cur, out->opts->dump_opts.array_nl);
-		out->cur += out->opts->dump_opts.array_size;
-	    }
-	    if (0 < out->opts->dump_opts.indent_size) {
-		int	i;
-		for (i = d2; 0 < i; i--) {
-		    strcpy(out->cur, out->opts->dump_opts.indent_str);
-		    out->cur += out->opts->dump_opts.indent_size;
-		}
-	    }
-	} else {
-	    fill_indent(out, d2);
-	}
-	dump_row(rb_ary_entry(rows, i), cols, ccnt, d2, out);
-	if (i < rcnt - 1) {
-	    *out->cur++ = ',';
-	}
+        assure_size(out, size);
+        if (out->opts->dump_opts.use) {
+            if (0 < out->opts->dump_opts.array_size) {
+                strcpy(out->cur, out->opts->dump_opts.array_nl);
+                out->cur += out->opts->dump_opts.array_size;
+            }
+            if (0 < out->opts->dump_opts.indent_size) {
+                int i;
+                for (i = d2; 0 < i; i--) {
+                    strcpy(out->cur, out->opts->dump_opts.indent_str);
+                    out->cur += out->opts->dump_opts.indent_size;
+                }
+            }
+        } else {
+            fill_indent(out, d2);
+        }
+        dump_row(rb_ary_entry(rows, i), cols, ccnt, d2, out);
+        if (i < rcnt - 1) {
+            *out->cur++ = ',';
+        }
     }
     xfree(cols);
     size = depth * out->indent + 1;
     assure_size(out, size);
     if (out->opts->dump_opts.use) {
-	if (0 < out->opts->dump_opts.array_size) {
-	    strcpy(out->cur, out->opts->dump_opts.array_nl);
-	    out->cur += out->opts->dump_opts.array_size;
-	}
-	if (0 < out->opts->dump_opts.indent_size) {
-	    int	i;
+        if (0 < out->opts->dump_opts.array_size) {
+            strcpy(out->cur, out->opts->dump_opts.array_nl);
+            out->cur += out->opts->dump_opts.array_size;
+        }
+        if (0 < out->opts->dump_opts.indent_size) {
+            int i;
 
-	    for (i = depth; 0 < i; i--) {
-		strcpy(out->cur, out->opts->dump_opts.indent_str);
-		out->cur += out->opts->dump_opts.indent_size;
-	    }
-	}
+            for (i = depth; 0 < i; i--) {
+                strcpy(out->cur, out->opts->dump_opts.indent_str);
+                out->cur += out->opts->dump_opts.indent_size;
+            }
+        }
     } else {
-	fill_indent(out, depth);
+        fill_indent(out, depth);
     }
     *out->cur++ = ']';
 }
 
 typedef struct _namedFunc {
-    const char	*name;
-    DumpFunc	func;
-} *NamedFunc;
+    const char *name;
+    DumpFunc func;
+} * NamedFunc;
 
 static void
 dump_as_string(VALUE obj, int depth, Out out, bool as_ok) {
     if (oj_code_dump(oj_compat_codes, obj, depth, out)) {
-	out->argc = 0;
-	return;
+        out->argc = 0;
+        return;
     }
     oj_dump_obj_to_s(obj, out);
 }
 
 static void
 dump_as_json(VALUE obj, int depth, Out out, bool as_ok) {
-    volatile VALUE	ja;
+    volatile VALUE ja;
 
     if (Yes == out->opts->trace) {
-	oj_trace("as_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyIn);
+        oj_trace("as_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyIn);
     }
     // Some classes elect to not take an options argument so check the arity
     // of as_json.
     if (0 == rb_obj_method_arity(obj, oj_as_json_id)) {
-	ja = rb_funcall(obj, oj_as_json_id, 0);
+        ja = rb_funcall(obj, oj_as_json_id, 0);
     } else {
-	ja = rb_funcall2(obj, oj_as_json_id, out->argc, out->argv);
+        ja = rb_funcall2(obj, oj_as_json_id, out->argc, out->argv);
     }
     if (Yes == out->opts->trace) {
-	oj_trace("as_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyOut);
+        oj_trace("as_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyOut);
     }
 
     out->argc = 0;
     if (ja == obj || !as_ok) {
-	// Once as_json is called it should never be called again on the same
-	// object with as_ok.
-	dump_rails_val(ja, depth, out, false);
+        // Once as_json is called it should never be called again on the same
+        // object with as_ok.
+        dump_rails_val(ja, depth, out, false);
     } else {
-	int	type = rb_type(ja);
+        int type = rb_type(ja);
 
-	if (T_HASH == type || T_ARRAY == type) {
-	    dump_rails_val(ja, depth, out, true);
-	} else {
-	    dump_rails_val(ja, depth, out, true);
-	}
+        if (T_HASH == type || T_ARRAY == type) {
+            dump_rails_val(ja, depth, out, true);
+        } else {
+            dump_rails_val(ja, depth, out, true);
+        }
     }
 }
 
 static void
 dump_regexp(VALUE obj, int depth, Out out, bool as_ok) {
     if (as_ok && rb_respond_to(obj, oj_as_json_id)) {
-	dump_as_json(obj, depth, out, false);
-	return;
+        dump_as_json(obj, depth, out, false);
+        return;
     }
     dump_as_string(obj, depth, out, as_ok);
 }
 
-static struct _namedFunc	dump_map[] = {
+static struct _namedFunc dump_map[] = {
     { "ActionController::Parameters", dump_actioncontroller_parameters },
     { "ActiveRecord::Result", dump_activerecord_result },
     { "ActiveSupport::TimeWithZone", dump_timewithzone },
@@ -563,13 +562,13 @@ static struct _namedFunc	dump_map[] = {
     { NULL, NULL },
 };
 
-static VALUE	activerecord_base = Qundef;
-static ID	attributes_id = 0;
+static VALUE activerecord_base = Qundef;
+static ID attributes_id = 0;
 
 static void
 dump_activerecord(VALUE obj, int depth, Out out, bool as_ok) {
     if (0 == attributes_id) {
-	attributes_id = rb_intern("@attributes");
+        attributes_id = rb_intern("@attributes");
     }
     out->argc = 0;
     dump_rails_val(rb_ivar_get(obj, attributes_id), depth, out, true);
@@ -577,62 +576,62 @@ dump_activerecord(VALUE obj, int depth, Out out, bool as_ok) {
 
 static ROpt
 create_opt(ROptTable rot, VALUE clas) {
-    ROpt	ro;
-    NamedFunc	nf;
-    const char	*classname = rb_class2name(clas);
-    int		olen = rot->len;
+    ROpt ro;
+    NamedFunc nf;
+    const char *classname = rb_class2name(clas);
+    int olen = rot->len;
 
     rot->len++;
     if (NULL == rot->table) {
-	rot->alen = 256;
-	rot->table = ALLOC_N(struct _rOpt, rot->alen);
-	memset(rot->table, 0, sizeof(struct _rOpt) * rot->alen);
+        rot->alen = 256;
+        rot->table = ALLOC_N(struct _rOpt, rot->alen);
+        memset(rot->table, 0, sizeof(struct _rOpt) * rot->alen);
     } else if (rot->alen <= rot->len) {
-	rot->alen *= 2;
-	REALLOC_N(rot->table, struct _rOpt, rot->alen);
-	memset(rot->table + olen, 0, sizeof(struct _rOpt) * olen);
+        rot->alen *= 2;
+        REALLOC_N(rot->table, struct _rOpt, rot->alen);
+        memset(rot->table + olen, 0, sizeof(struct _rOpt) * olen);
     }
     if (0 == olen) {
-	ro = rot->table;
+        ro = rot->table;
     } else if (rot->table[olen - 1].clas < clas) {
-	ro = &rot->table[olen];
+        ro = &rot->table[olen];
     } else {
-	int	i;
+        int i;
 
-	for (i = 0, ro = rot->table; i < olen; i++, ro++) {
-	    if (clas < ro->clas) {
-		memmove(ro + 1, ro, sizeof(struct _rOpt) * (olen - i));
-		break;
-	    }
-	}
+        for (i = 0, ro = rot->table; i < olen; i++, ro++) {
+            if (clas < ro->clas) {
+                memmove(ro + 1, ro, sizeof(struct _rOpt) * (olen - i));
+                break;
+            }
+        }
     }
     ro->clas = clas;
     ro->on = true;
     ro->dump = dump_obj_attrs;
     for (nf = dump_map; NULL != nf->name; nf++) {
-	if (0 == strcmp(nf->name, classname)) {
-	    ro->dump = nf->func;
-	    break;
-	}
+        if (0 == strcmp(nf->name, classname)) {
+            ro->dump = nf->func;
+            break;
+        }
     }
     if (ro->dump == dump_obj_attrs) {
-	if (Qundef == activerecord_base) {
-	    // If not defined let an exception be raised.
-	    VALUE	ar = rb_const_get_at(rb_cObject, rb_intern("ActiveRecord"));
+        if (Qundef == activerecord_base) {
+            // If not defined let an exception be raised.
+            VALUE ar = rb_const_get_at(rb_cObject, rb_intern("ActiveRecord"));
 
-	    if (Qundef != ar) {
-		activerecord_base = rb_const_get_at(ar, rb_intern("Base"));
-	    }
-	}
-	if (Qundef != activerecord_base && Qtrue == rb_class_inherited_p(clas, activerecord_base)) {
-	    ro->dump = dump_activerecord;
-	} else if (Qtrue == rb_class_inherited_p(clas, rb_cStruct)) { // check before enumerable
-	    ro->dump = dump_struct;
-	} else if (Qtrue == rb_class_inherited_p(clas, rb_mEnumerable)) {
-	    ro->dump = dump_enumerable;
-	} else if (Qtrue == rb_class_inherited_p(clas, rb_eException)) {
-	    ro->dump = dump_to_s;
-	}
+            if (Qundef != ar) {
+                activerecord_base = rb_const_get_at(ar, rb_intern("Base"));
+            }
+        }
+        if (Qundef != activerecord_base && Qtrue == rb_class_inherited_p(clas, activerecord_base)) {
+            ro->dump = dump_activerecord;
+        } else if (Qtrue == rb_class_inherited_p(clas, rb_cStruct)) { // check before enumerable
+            ro->dump = dump_struct;
+        } else if (Qtrue == rb_class_inherited_p(clas, rb_mEnumerable)) {
+            ro->dump = dump_enumerable;
+        } else if (Qtrue == rb_class_inherited_p(clas, rb_eException)) {
+            ro->dump = dump_to_s;
+        }
     }
     return ro;
 }
@@ -640,23 +639,23 @@ create_opt(ROptTable rot, VALUE clas) {
 static void
 encoder_free(void *ptr) {
     if (NULL != ptr) {
-	Encoder	e = (Encoder)ptr;
+        Encoder e = (Encoder)ptr;
 
-	if (NULL != e->ropts.table) {
-	    xfree(e->ropts.table);
-	}
-	xfree(ptr);
+        if (NULL != e->ropts.table) {
+            xfree(e->ropts.table);
+        }
+        xfree(ptr);
     }
 }
 
 static void
 encoder_mark(void *ptr) {
     if (NULL != ptr) {
-	Encoder	e = (Encoder)ptr;
+        Encoder e = (Encoder)ptr;
 
-	if (Qnil != e->arg) {
-	    rb_gc_mark(e->arg);
-	}
+        if (Qnil != e->arg) {
+            rb_gc_mark(e->arg);
+        }
     }
 }
 
@@ -668,52 +667,52 @@ encoder_mark(void *ptr) {
  */
 static VALUE
 encoder_new(int argc, VALUE *argv, VALUE self) {
-    Encoder	e = ALLOC(struct _encoder);
+    Encoder e = ALLOC(struct _encoder);
 
     e->opts = oj_default_options;
     e->arg = Qnil;
     copy_opts(&ropts, &e->ropts);
 
     if (1 <= argc && Qnil != *argv) {
-	oj_parse_options(*argv, &e->opts);
-	e->arg = *argv;
+        oj_parse_options(*argv, &e->opts);
+        e->arg = *argv;
     }
     return Data_Wrap_Struct(encoder_class, encoder_mark, encoder_free, e);
 }
 
 static VALUE
 resolve_classpath(const char *name) {
-    char	class_name[1024];
-    VALUE	clas;
-    char	*end = class_name + sizeof(class_name) - 1;
-    char	*s;
-    const char	*n = name;
-    ID		cid;
+    char class_name[1024];
+    VALUE clas;
+    char *end = class_name + sizeof(class_name) - 1;
+    char *s;
+    const char *n = name;
+    ID cid;
 
     clas = rb_cObject;
     for (s = class_name; '\0' != *n; n++) {
-	if (':' == *n) {
-	    *s = '\0';
-	    n++;
-	    if (':' != *n) {
-		return Qnil;
-	    }
-	    cid = rb_intern(class_name);
-	    if (!rb_const_defined_at(clas, cid)) {
-		return Qnil;
-	    }
-	    clas = rb_const_get_at(clas, cid);
-	    s = class_name;
-	} else if (end <= s) {
-	    return Qnil;
-	} else {
-	    *s++ = *n;
-	}
+        if (':' == *n) {
+            *s = '\0';
+            n++;
+            if (':' != *n) {
+                return Qnil;
+            }
+            cid = rb_intern(class_name);
+            if (!rb_const_defined_at(clas, cid)) {
+                return Qnil;
+            }
+            clas = rb_const_get_at(clas, cid);
+            s = class_name;
+        } else if (end <= s) {
+            return Qnil;
+        } else {
+            *s++ = *n;
+        }
     }
     *s = '\0';
     cid = rb_intern(class_name);
     if (!rb_const_defined_at(clas, cid)) {
-	return Qnil;
+        return Qnil;
     }
     clas = rb_const_get_at(clas, cid);
 
@@ -722,41 +721,41 @@ resolve_classpath(const char *name) {
 
 static void
 optimize(int argc, VALUE *argv, ROptTable rot, bool on) {
-    ROpt	ro;
+    ROpt ro;
 
     if (0 == argc) {
-	int		i;
-	NamedFunc	nf;
-	VALUE		clas;
+        int i;
+        NamedFunc nf;
+        VALUE clas;
 
-	oj_rails_hash_opt = on;
-	oj_rails_array_opt = on;
-	oj_rails_float_opt = on;
+        oj_rails_hash_opt = on;
+        oj_rails_array_opt = on;
+        oj_rails_float_opt = on;
 
-	for (nf = dump_map; NULL != nf->name; nf++) {
-	    if (Qnil != (clas = resolve_classpath(nf->name))) {
-		if (NULL == oj_rails_get_opt(rot, clas)) {
-		    create_opt(rot, clas);
-		}
-	    }
-	}
-	for (i = 0; i < rot->len; i++) {
-	    rot->table[i].on = on;
-	}
+        for (nf = dump_map; NULL != nf->name; nf++) {
+            if (Qnil != (clas = resolve_classpath(nf->name))) {
+                if (NULL == oj_rails_get_opt(rot, clas)) {
+                    create_opt(rot, clas);
+                }
+            }
+        }
+        for (i = 0; i < rot->len; i++) {
+            rot->table[i].on = on;
+        }
     }
     for (; 0 < argc; argc--, argv++) {
-	if (rb_cHash == *argv) {
-	    oj_rails_hash_opt = on;
-	} else if (rb_cArray == *argv) {
-	    oj_rails_array_opt = on;
-	} else if (rb_cFloat == *argv) {
-	    oj_rails_float_opt = on;
-	} else if (oj_string_writer_class == *argv) {
-	    string_writer_optimized = on;
-	} else if (NULL != (ro = oj_rails_get_opt(rot, *argv)) ||
-		   NULL != (ro = create_opt(rot, *argv))) {
-	    ro->on = on;
-	}
+        if (rb_cHash == *argv) {
+            oj_rails_hash_opt = on;
+        } else if (rb_cArray == *argv) {
+            oj_rails_array_opt = on;
+        } else if (rb_cFloat == *argv) {
+            oj_rails_float_opt = on;
+        } else if (oj_string_writer_class == *argv) {
+            string_writer_optimized = on;
+        } else if (NULL != (ro = oj_rails_get_opt(rot, *argv)) ||
+                   NULL != (ro = create_opt(rot, *argv))) {
+            ro->on = on;
+        }
     }
 }
 
@@ -774,7 +773,7 @@ optimize(int argc, VALUE *argv, ROptTable rot, bool on) {
  */
 static VALUE
 encoder_optimize(int argc, VALUE *argv, VALUE self) {
-    Encoder	e = (Encoder)DATA_PTR(self);
+    Encoder e = (Encoder)DATA_PTR(self);
 
     optimize(argc, argv, &e->ropts, true);
 
@@ -809,12 +808,12 @@ rails_optimize(int argc, VALUE *argv, VALUE self) {
  */
 VALUE
 rails_mimic_json(VALUE self) {
-    VALUE	json;
+    VALUE json;
 
     if (rb_const_defined_at(rb_cObject, rb_intern("JSON"))) {
-	json = rb_const_get_at(rb_cObject, rb_intern("JSON"));
+        json = rb_const_get_at(rb_cObject, rb_intern("JSON"));
     } else {
-	json = rb_define_module("JSON");
+        json = rb_define_module("JSON");
     }
     oj_mimic_json_methods(json);
     //oj_default_options.mode = RailsMode;
@@ -831,7 +830,7 @@ rails_mimic_json(VALUE self) {
  */
 static VALUE
 encoder_deoptimize(int argc, VALUE *argv, VALUE self) {
-    Encoder	e = (Encoder)DATA_PTR(self);
+    Encoder e = (Encoder)DATA_PTR(self);
 
     optimize(argc, argv, &e->ropts, false);
 
@@ -862,11 +861,11 @@ rails_deoptimize(int argc, VALUE *argv, VALUE self) {
  */
 static VALUE
 encoder_optimized(VALUE self, VALUE clas) {
-    Encoder	e = (Encoder)DATA_PTR(self);
-    ROpt	ro = oj_rails_get_opt(&e->ropts, clas);
+    Encoder e = (Encoder)DATA_PTR(self);
+    ROpt ro = oj_rails_get_opt(&e->ropts, clas);
 
     if (NULL == ro) {
-	return Qfalse;
+        return Qfalse;
     }
     return (ro->on) ? Qtrue : Qfalse;
 }
@@ -878,22 +877,22 @@ encoder_optimized(VALUE self, VALUE clas) {
  */
 static VALUE
 rails_optimized(VALUE self, VALUE clas) {
-    ROpt	ro = oj_rails_get_opt(&ropts, clas);
+    ROpt ro = oj_rails_get_opt(&ropts, clas);
 
     if (NULL == ro) {
-	return Qfalse;
+        return Qfalse;
     }
     return (ro->on) ? Qtrue : Qfalse;
 }
 
 typedef struct _oo {
-    Out		out;
-    VALUE	obj;
-} *OO;
+    Out out;
+    VALUE obj;
+} * OO;
 
 static VALUE
 protect_dump(VALUE ov) {
-    OO	oo = (OO)ov;
+    OO oo = (OO)ov;
 
     dump_rails_val(oo->obj, 0, oo->out, true);
 
@@ -902,12 +901,12 @@ protect_dump(VALUE ov) {
 
 static VALUE
 encode(VALUE obj, ROptTable ropts, Options opts, int argc, VALUE *argv) {
-    char		buf[4096];
-    struct _out		out;
-    struct _options	copts = *opts;
-    volatile VALUE	rstr = Qnil;
-    struct _oo		oo;
-    int			line = 0;
+    char buf[4096];
+    struct _out out;
+    struct _options copts = *opts;
+    volatile VALUE rstr = Qnil;
+    struct _oo oo;
+    int line = 0;
 
     oo.out = &out;
     oo.obj = obj;
@@ -915,9 +914,9 @@ encode(VALUE obj, ROptTable ropts, Options opts, int argc, VALUE *argv) {
     copts.str_rx.tail = NULL;
     copts.mode = RailsMode;
     if (escape_html) {
-	copts.escape_mode = RailsXEsc;
+        copts.escape_mode = RailsXEsc;
     } else {
-	copts.escape_mode = RailsEsc;
+        copts.escape_mode = RailsEsc;
     }
     out.buf = buf;
     out.end = buf + sizeof(buf) - 10;
@@ -933,38 +932,38 @@ encode(VALUE obj, ROptTable ropts, Options opts, int argc, VALUE *argv) {
     out.argv = argv;
     out.ropts = ropts;
     if (Yes == copts.circular) {
-	oj_cache8_new(&out.circ_cache);
+        oj_cache8_new(&out.circ_cache);
     }
     //dump_rails_val(*argv, 0, &out, true);
     rb_protect(protect_dump, (VALUE)&oo, &line);
 
     if (0 == line) {
-	if (0 < out.indent) {
-	    switch (*(out.cur - 1)) {
-	    case ']':
-	    case '}':
-		assure_size(&out, 2);
-		*out.cur++ = '\n';
-	    default:
-		break;
-	    }
-	}
-	*out.cur = '\0';
+        if (0 < out.indent) {
+            switch (*(out.cur - 1)) {
+                case ']':
+                case '}':
+                    assure_size(&out, 2);
+                    *out.cur++ = '\n';
+                default:
+                    break;
+            }
+        }
+        *out.cur = '\0';
 
-	if (0 == out.buf) {
-	    rb_raise(rb_eNoMemError, "Not enough memory.");
-	}
-	rstr = rb_str_new2(out.buf);
-	rstr = oj_encode(rstr);
+        if (0 == out.buf) {
+            rb_raise(rb_eNoMemError, "Not enough memory.");
+        }
+        rstr = rb_str_new2(out.buf);
+        rstr = oj_encode(rstr);
     }
     if (Yes == copts.circular) {
-	oj_cache8_delete(out.circ_cache);
+        oj_cache8_delete(out.circ_cache);
     }
     if (out.allocated) {
-	xfree(out.buf);
+        xfree(out.buf);
     }
     if (0 != line) {
-	rb_jump_tag(line);
+        rb_jump_tag(line);
     }
     return rstr;
 }
@@ -978,12 +977,12 @@ encode(VALUE obj, ROptTable ropts, Options opts, int argc, VALUE *argv) {
  */
 static VALUE
 encoder_encode(VALUE self, VALUE obj) {
-    Encoder	e = (Encoder)DATA_PTR(self);
+    Encoder e = (Encoder)DATA_PTR(self);
 
     if (Qnil != e->arg) {
-	VALUE	argv[1] = { e->arg };
+        VALUE argv[1] = { e->arg };
 
-	return encode(obj, &e->ropts, &e->opts, 1, argv);
+        return encode(obj, &e->ropts, &e->opts, 1, argv);
     }
     return encode(obj, &e->ropts, &e->opts, 0, NULL);
 }
@@ -1001,23 +1000,23 @@ encoder_encode(VALUE self, VALUE obj) {
 static VALUE
 rails_encode(int argc, VALUE *argv, VALUE self) {
     if (1 > argc) {
-	rb_raise(rb_eArgError, "wrong number of arguments (0 for 1).");
+        rb_raise(rb_eArgError, "wrong number of arguments (0 for 1).");
     }
     if (1 == argc) {
-	return encode(*argv, NULL, &oj_default_options, 0, NULL);
+        return encode(*argv, NULL, &oj_default_options, 0, NULL);
     } else {
-	return encode(*argv, NULL, &oj_default_options, argc - 1, argv + 1);
+        return encode(*argv, NULL, &oj_default_options, argc - 1, argv + 1);
     }
 }
 
 static VALUE
 rails_use_standard_json_time_format(VALUE self, VALUE state) {
     if (Qtrue == state || Qfalse == state) {
-	// no change needed
+        // no change needed
     } else if (Qnil == state) {
-	state = Qfalse;
+        state = Qfalse;
     } else {
-	state = Qtrue;
+        state = Qtrue;
     }
     rb_iv_set(self, "@use_standard_json_time_format", state);
     xml_time = Qtrue == state;
@@ -1061,21 +1060,21 @@ rails_time_precision(VALUE self, VALUE prec) {
  */
 static VALUE
 rails_set_encoder(VALUE self) {
-    VALUE	active;
-    VALUE	json;
-    VALUE	encoding;
-    VALUE	pv;
-    VALUE	verbose;
-    VALUE	enc = resolve_classpath("ActiveSupport::JSON::Encoding");
+    VALUE active;
+    VALUE json;
+    VALUE encoding;
+    VALUE pv;
+    VALUE verbose;
+    VALUE enc = resolve_classpath("ActiveSupport::JSON::Encoding");
 
     if (Qnil != enc) {
-	escape_html = Qtrue == rb_iv_get(self, "@escape_html_entities_in_json");
-	xml_time = Qtrue == rb_iv_get(enc, "@use_standard_json_time_format");
+        escape_html = Qtrue == rb_iv_get(self, "@escape_html_entities_in_json");
+        xml_time = Qtrue == rb_iv_get(enc, "@use_standard_json_time_format");
     }
     if (rb_const_defined_at(rb_cObject, rb_intern("ActiveSupport"))) {
-	active = rb_const_get_at(rb_cObject, rb_intern("ActiveSupport"));
+        active = rb_const_get_at(rb_cObject, rb_intern("ActiveSupport"));
     } else {
-	rb_raise(rb_eStandardError, "ActiveSupport not loaded.");
+        rb_raise(rb_eStandardError, "ActiveSupport not loaded.");
     }
     rb_funcall(active, rb_intern("json_encoder="), 1, encoder_class);
 
@@ -1116,14 +1115,14 @@ rails_set_encoder(VALUE self) {
  */
 static VALUE
 rails_set_decoder(VALUE self) {
-    VALUE	json;
-    VALUE	json_error;
-    VALUE	verbose;
+    VALUE json;
+    VALUE json_error;
+    VALUE verbose;
 
     if (rb_const_defined_at(rb_cObject, rb_intern("JSON"))) {
-	json = rb_const_get_at(rb_cObject, rb_intern("JSON"));
+        json = rb_const_get_at(rb_cObject, rb_intern("JSON"));
     } else {
-	json = rb_define_module("JSON");
+        json = rb_define_module("JSON");
     }
     if (rb_const_defined_at(json, rb_intern("JSONError"))) {
         json_error = rb_const_get(json, rb_intern("JSONError"));
@@ -1133,7 +1132,7 @@ rails_set_decoder(VALUE self) {
     if (rb_const_defined_at(json, rb_intern("ParserError"))) {
         oj_json_parser_error_class = rb_const_get(json, rb_intern("ParserError"));
     } else {
-    	oj_json_parser_error_class = rb_define_class_under(json, "ParserError", json_error);
+        oj_json_parser_error_class = rb_define_class_under(json, "ParserError", json_error);
     }
     // rb_undef_method doesn't work for modules or maybe sometimes
     // doesn't. Anyway setting verbose should hide the warning.
@@ -1171,7 +1170,7 @@ oj_optimize_rails(VALUE self) {
  */
 void
 oj_mimic_rails_init() {
-    VALUE	rails = rb_define_module_under(Oj, "Rails");
+    VALUE rails = rb_define_module_under(Oj, "Rails");
 
     rb_define_module_function(rails, "encode", rails_encode, -1);
 
@@ -1198,169 +1197,169 @@ dump_to_hash(VALUE obj, int depth, Out out) {
 
 static void
 dump_float(VALUE obj, int depth, Out out, bool as_ok) {
-    char	buf[64];
-    char	*b;
-    double	d = rb_num2dbl(obj);
-    int		cnt = 0;
+    char buf[64];
+    char *b;
+    double d = rb_num2dbl(obj);
+    int cnt = 0;
 
     if (0.0 == d) {
-	b = buf;
-	*b++ = '0';
-	*b++ = '.';
-	*b++ = '0';
-	*b++ = '\0';
-	cnt = 3;
+        b = buf;
+        *b++ = '0';
+        *b++ = '.';
+        *b++ = '0';
+        *b++ = '\0';
+        cnt = 3;
     } else {
-	if (isnan(d) || OJ_INFINITY == d || -OJ_INFINITY == d) {
-	    strcpy(buf, "null");
-	    cnt = 4;
-	} else if (d == (double)(long long int)d) {
-	    cnt = snprintf(buf, sizeof(buf), "%.1f", d);
-	} else if (oj_rails_float_opt) {
-	    cnt = oj_dump_float_printf(buf, sizeof(buf), obj, d, "%0.16g");
-	} else {
-	    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+        if (isnan(d) || OJ_INFINITY == d || -OJ_INFINITY == d) {
+            strcpy(buf, "null");
+            cnt = 4;
+        } else if (d == (double)(long long int)d) {
+            cnt = snprintf(buf, sizeof(buf), "%.1f", d);
+        } else if (oj_rails_float_opt) {
+            cnt = oj_dump_float_printf(buf, sizeof(buf), obj, d, "%0.16g");
+        } else {
+            volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-	    strcpy(buf, rb_string_value_ptr((VALUE*)&rstr));
-	    cnt = (int)RSTRING_LEN(rstr);
-	}
+            strcpy(buf, rb_string_value_ptr((VALUE *)&rstr));
+            cnt = (int)RSTRING_LEN(rstr);
+        }
     }
     assure_size(out, cnt);
     for (b = buf; '\0' != *b; b++) {
-	*out->cur++ = *b;
+        *out->cur++ = *b;
     }
     *out->cur = '\0';
 }
 
 static void
 dump_array(VALUE a, int depth, Out out, bool as_ok) {
-    size_t	size;
-    int		i, cnt;
-    int		d2 = depth + 1;
+    size_t size;
+    int i, cnt;
+    int d2 = depth + 1;
 
     if (Yes == out->opts->circular) {
-	if (0 > oj_check_circular(a, out)) {
-	    oj_dump_nil(Qnil, 0, out, false);
-	    return;
-	}
+        if (0 > oj_check_circular(a, out)) {
+            oj_dump_nil(Qnil, 0, out, false);
+            return;
+        }
     }
     //if (!oj_rails_array_opt && as_ok && 0 < out->argc && rb_respond_to(a, oj_as_json_id)) {
     if (as_ok && 0 < out->argc && rb_respond_to(a, oj_as_json_id)) {
-	dump_as_json(a, depth, out, false);
-	return;
+        dump_as_json(a, depth, out, false);
+        return;
     }
     cnt = (int)RARRAY_LEN(a);
     *out->cur++ = '[';
     size = 2;
     assure_size(out, size);
     if (0 == cnt) {
-	*out->cur++ = ']';
+        *out->cur++ = ']';
     } else {
-	if (out->opts->dump_opts.use) {
-	    size = d2 * out->opts->dump_opts.indent_size + out->opts->dump_opts.array_size + 1;
-	} else {
-	    size = d2 * out->indent + 2;
-	}
-	cnt--;
-	for (i = 0; i <= cnt; i++) {
-	    assure_size(out, size);
-	    if (out->opts->dump_opts.use) {
-		if (0 < out->opts->dump_opts.array_size) {
-		    strcpy(out->cur, out->opts->dump_opts.array_nl);
-		    out->cur += out->opts->dump_opts.array_size;
-		}
-		if (0 < out->opts->dump_opts.indent_size) {
-		    int	i;
-		    for (i = d2; 0 < i; i--) {
-			strcpy(out->cur, out->opts->dump_opts.indent_str);
-			out->cur += out->opts->dump_opts.indent_size;
-		    }
-		}
-	    } else {
-		fill_indent(out, d2);
-	    }
-	    dump_rails_val(rb_ary_entry(a, i), d2, out, true);
-	    if (i < cnt) {
-		*out->cur++ = ',';
-	    }
-	}
-	size = depth * out->indent + 1;
-	assure_size(out, size);
-	if (out->opts->dump_opts.use) {
-	    if (0 < out->opts->dump_opts.array_size) {
-		strcpy(out->cur, out->opts->dump_opts.array_nl);
-		out->cur += out->opts->dump_opts.array_size;
-	    }
-	    if (0 < out->opts->dump_opts.indent_size) {
-		int	i;
+        if (out->opts->dump_opts.use) {
+            size = d2 * out->opts->dump_opts.indent_size + out->opts->dump_opts.array_size + 1;
+        } else {
+            size = d2 * out->indent + 2;
+        }
+        cnt--;
+        for (i = 0; i <= cnt; i++) {
+            assure_size(out, size);
+            if (out->opts->dump_opts.use) {
+                if (0 < out->opts->dump_opts.array_size) {
+                    strcpy(out->cur, out->opts->dump_opts.array_nl);
+                    out->cur += out->opts->dump_opts.array_size;
+                }
+                if (0 < out->opts->dump_opts.indent_size) {
+                    int i;
+                    for (i = d2; 0 < i; i--) {
+                        strcpy(out->cur, out->opts->dump_opts.indent_str);
+                        out->cur += out->opts->dump_opts.indent_size;
+                    }
+                }
+            } else {
+                fill_indent(out, d2);
+            }
+            dump_rails_val(rb_ary_entry(a, i), d2, out, true);
+            if (i < cnt) {
+                *out->cur++ = ',';
+            }
+        }
+        size = depth * out->indent + 1;
+        assure_size(out, size);
+        if (out->opts->dump_opts.use) {
+            if (0 < out->opts->dump_opts.array_size) {
+                strcpy(out->cur, out->opts->dump_opts.array_nl);
+                out->cur += out->opts->dump_opts.array_size;
+            }
+            if (0 < out->opts->dump_opts.indent_size) {
+                int i;
 
-		for (i = depth; 0 < i; i--) {
-		    strcpy(out->cur, out->opts->dump_opts.indent_str);
-		    out->cur += out->opts->dump_opts.indent_size;
-		}
-	    }
-	} else {
-	    fill_indent(out, depth);
-	}
-	*out->cur++ = ']';
+                for (i = depth; 0 < i; i--) {
+                    strcpy(out->cur, out->opts->dump_opts.indent_str);
+                    out->cur += out->opts->dump_opts.indent_size;
+                }
+            }
+        } else {
+            fill_indent(out, depth);
+        }
+        *out->cur++ = ']';
     }
     *out->cur = '\0';
 }
 
 static int
 hash_cb(VALUE key, VALUE value, VALUE ov) {
-    Out		out = (Out)ov;
-    int		depth = out->depth;
-    long	size;
-    int		rtype = rb_type(key);
+    Out out = (Out)ov;
+    int depth = out->depth;
+    long size;
+    int rtype = rb_type(key);
 
     if (out->omit_nil && Qnil == value) {
-	return ST_CONTINUE;
+        return ST_CONTINUE;
     }
     if (rtype != T_STRING && rtype != T_SYMBOL) {
-	key = rb_funcall(key, oj_to_s_id, 0);
-	rtype = rb_type(key);
+        key = rb_funcall(key, oj_to_s_id, 0);
+        rtype = rb_type(key);
     }
     if (!out->opts->dump_opts.use) {
-	size = depth * out->indent + 1;
-	assure_size(out, size);
-	fill_indent(out, depth);
-	if (rtype == T_STRING) {
-	    oj_dump_str(key, 0, out, false);
-	} else {
-	    oj_dump_sym(key, 0, out, false);
-	}
-	*out->cur++ = ':';
+        size = depth * out->indent + 1;
+        assure_size(out, size);
+        fill_indent(out, depth);
+        if (rtype == T_STRING) {
+            oj_dump_str(key, 0, out, false);
+        } else {
+            oj_dump_sym(key, 0, out, false);
+        }
+        *out->cur++ = ':';
     } else {
-	size = depth * out->opts->dump_opts.indent_size + out->opts->dump_opts.hash_size + 1;
-	assure_size(out, size);
-	if (0 < out->opts->dump_opts.hash_size) {
-	    strcpy(out->cur, out->opts->dump_opts.hash_nl);
-	    out->cur += out->opts->dump_opts.hash_size;
-	}
-	if (0 < out->opts->dump_opts.indent_size) {
-	    int	i;
-	    for (i = depth; 0 < i; i--) {
-		strcpy(out->cur, out->opts->dump_opts.indent_str);
-		out->cur += out->opts->dump_opts.indent_size;
-	    }
-	}
-	if (rtype == T_STRING) {
-	    oj_dump_str(key, 0, out, false);
-	} else {
-	    oj_dump_sym(key, 0, out, false);
-	}
-	size = out->opts->dump_opts.before_size + out->opts->dump_opts.after_size + 2;
-	assure_size(out, size);
-	if (0 < out->opts->dump_opts.before_size) {
-	    strcpy(out->cur, out->opts->dump_opts.before_sep);
-	    out->cur += out->opts->dump_opts.before_size;
-	}
-	*out->cur++ = ':';
-	if (0 < out->opts->dump_opts.after_size) {
-	    strcpy(out->cur, out->opts->dump_opts.after_sep);
-	    out->cur += out->opts->dump_opts.after_size;
-	}
+        size = depth * out->opts->dump_opts.indent_size + out->opts->dump_opts.hash_size + 1;
+        assure_size(out, size);
+        if (0 < out->opts->dump_opts.hash_size) {
+            strcpy(out->cur, out->opts->dump_opts.hash_nl);
+            out->cur += out->opts->dump_opts.hash_size;
+        }
+        if (0 < out->opts->dump_opts.indent_size) {
+            int i;
+            for (i = depth; 0 < i; i--) {
+                strcpy(out->cur, out->opts->dump_opts.indent_str);
+                out->cur += out->opts->dump_opts.indent_size;
+            }
+        }
+        if (rtype == T_STRING) {
+            oj_dump_str(key, 0, out, false);
+        } else {
+            oj_dump_sym(key, 0, out, false);
+        }
+        size = out->opts->dump_opts.before_size + out->opts->dump_opts.after_size + 2;
+        assure_size(out, size);
+        if (0 < out->opts->dump_opts.before_size) {
+            strcpy(out->cur, out->opts->dump_opts.before_sep);
+            out->cur += out->opts->dump_opts.before_size;
+        }
+        *out->cur++ = ':';
+        if (0 < out->opts->dump_opts.after_size) {
+            strcpy(out->cur, out->opts->dump_opts.after_sep);
+            out->cur += out->opts->dump_opts.after_size;
+        }
     }
     dump_rails_val(value, depth, out, true);
     out->depth = depth;
@@ -1371,145 +1370,145 @@ hash_cb(VALUE key, VALUE value, VALUE ov) {
 
 static void
 dump_hash(VALUE obj, int depth, Out out, bool as_ok) {
-    int		cnt;
-    size_t	size;
+    int cnt;
+    size_t size;
 
     if (Yes == out->opts->circular) {
-	if (0 > oj_check_circular(obj, out)) {
-	    oj_dump_nil(Qnil, 0, out, false);
-	    return;
-	}
+        if (0 > oj_check_circular(obj, out)) {
+            oj_dump_nil(Qnil, 0, out, false);
+            return;
+        }
     }
     if ((!oj_rails_hash_opt || 0 < out->argc) && as_ok && rb_respond_to(obj, oj_as_json_id)) {
-	dump_as_json(obj, depth, out, false);
-	return;
+        dump_as_json(obj, depth, out, false);
+        return;
     }
     cnt = (int)RHASH_SIZE(obj);
     size = depth * out->indent + 2;
     assure_size(out, 2);
     *out->cur++ = '{';
     if (0 == cnt) {
-	*out->cur++ = '}';
+        *out->cur++ = '}';
     } else {
-	out->depth = depth + 1;
-	rb_hash_foreach(obj, hash_cb, (VALUE)out);
-	if (',' == *(out->cur - 1)) {
-	    out->cur--; // backup to overwrite last comma
-	}
-	if (!out->opts->dump_opts.use) {
-	    assure_size(out, size);
-	    fill_indent(out, depth);
-	} else {
-	    size = depth * out->opts->dump_opts.indent_size + out->opts->dump_opts.hash_size + 1;
-	    assure_size(out, size);
-	    if (0 < out->opts->dump_opts.hash_size) {
-		strcpy(out->cur, out->opts->dump_opts.hash_nl);
-		out->cur += out->opts->dump_opts.hash_size;
-	    }
-	    if (0 < out->opts->dump_opts.indent_size) {
-		int	i;
+        out->depth = depth + 1;
+        rb_hash_foreach(obj, hash_cb, (VALUE)out);
+        if (',' == *(out->cur - 1)) {
+            out->cur--; // backup to overwrite last comma
+        }
+        if (!out->opts->dump_opts.use) {
+            assure_size(out, size);
+            fill_indent(out, depth);
+        } else {
+            size = depth * out->opts->dump_opts.indent_size + out->opts->dump_opts.hash_size + 1;
+            assure_size(out, size);
+            if (0 < out->opts->dump_opts.hash_size) {
+                strcpy(out->cur, out->opts->dump_opts.hash_nl);
+                out->cur += out->opts->dump_opts.hash_size;
+            }
+            if (0 < out->opts->dump_opts.indent_size) {
+                int i;
 
-		for (i = depth; 0 < i; i--) {
-		    strcpy(out->cur, out->opts->dump_opts.indent_str);
-		    out->cur += out->opts->dump_opts.indent_size;
-		}
-	    }
-	}
-	*out->cur++ = '}';
+                for (i = depth; 0 < i; i--) {
+                    strcpy(out->cur, out->opts->dump_opts.indent_str);
+                    out->cur += out->opts->dump_opts.indent_size;
+                }
+            }
+        }
+        *out->cur++ = '}';
     }
     *out->cur = '\0';
 }
 
 static void
 dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
-    VALUE	clas;
+    VALUE clas;
 
     if (oj_code_dump(oj_compat_codes, obj, depth, out)) {
-	out->argc = 0;
-	return;
+        out->argc = 0;
+        return;
     }
     clas = rb_obj_class(obj);
     if (as_ok) {
-	ROpt	ro;
+        ROpt ro;
 
-	if (NULL != (ro = oj_rails_get_opt(out->ropts, clas)) && ro->on) {
-	    ro->dump(obj, depth, out, as_ok);
-	} else if (Yes == out->opts->raw_json && rb_respond_to(obj, oj_raw_json_id)) {
-	    oj_dump_raw_json(obj, depth, out);
-	} else if (rb_respond_to(obj, oj_as_json_id)) {
-	    dump_as_json(obj, depth, out, true);
-	} else if (rb_respond_to(obj, oj_to_hash_id)) {
-	    dump_to_hash(obj, depth, out);
-	} else if (oj_bigdecimal_class == clas) {
-	    dump_bigdecimal(obj, depth, out, false);
-	} else {
-	    oj_dump_obj_to_s(obj, out);
-	}
+        if (NULL != (ro = oj_rails_get_opt(out->ropts, clas)) && ro->on) {
+            ro->dump(obj, depth, out, as_ok);
+        } else if (Yes == out->opts->raw_json && rb_respond_to(obj, oj_raw_json_id)) {
+            oj_dump_raw_json(obj, depth, out);
+        } else if (rb_respond_to(obj, oj_as_json_id)) {
+            dump_as_json(obj, depth, out, true);
+        } else if (rb_respond_to(obj, oj_to_hash_id)) {
+            dump_to_hash(obj, depth, out);
+        } else if (oj_bigdecimal_class == clas) {
+            dump_bigdecimal(obj, depth, out, false);
+        } else {
+            oj_dump_obj_to_s(obj, out);
+        }
     } else if (Yes == out->opts->raw_json && rb_respond_to(obj, oj_raw_json_id)) {
-	oj_dump_raw_json(obj, depth, out);
+        oj_dump_raw_json(obj, depth, out);
     } else if (rb_respond_to(obj, oj_to_hash_id)) {
-	// Always attempt to_hash.
-	dump_to_hash(obj, depth, out);
+        // Always attempt to_hash.
+        dump_to_hash(obj, depth, out);
     } else if (oj_bigdecimal_class == clas) {
-	dump_bigdecimal(obj, depth, out, false);
+        dump_bigdecimal(obj, depth, out, false);
     } else {
-	oj_dump_obj_to_s(obj, out);
+        oj_dump_obj_to_s(obj, out);
     }
 }
 
-static DumpFunc	rails_funcs[] = {
-    NULL,	 	// RUBY_T_NONE     = 0x00,
-    dump_obj,		// RUBY_T_OBJECT   = 0x01,
-    oj_dump_class, 	// RUBY_T_CLASS    = 0x02,
-    oj_dump_class,	// RUBY_T_MODULE   = 0x03,
-    dump_float, 	// RUBY_T_FLOAT    = 0x04,
-    oj_dump_str, 	// RUBY_T_STRING   = 0x05,
-    dump_regexp,	// RUBY_T_REGEXP   = 0x06,
+static DumpFunc rails_funcs[] = {
+    NULL,          // RUBY_T_NONE     = 0x00,
+    dump_obj,      // RUBY_T_OBJECT   = 0x01,
+    oj_dump_class, // RUBY_T_CLASS    = 0x02,
+    oj_dump_class, // RUBY_T_MODULE   = 0x03,
+    dump_float,    // RUBY_T_FLOAT    = 0x04,
+    oj_dump_str,   // RUBY_T_STRING   = 0x05,
+    dump_regexp,   // RUBY_T_REGEXP   = 0x06,
     //dump_as_string,	// RUBY_T_REGEXP   = 0x06,
-    dump_array,		// RUBY_T_ARRAY    = 0x07,
-    dump_hash,	 	// RUBY_T_HASH     = 0x08,
-    dump_obj,		// RUBY_T_STRUCT   = 0x09,
-    oj_dump_bignum,	// RUBY_T_BIGNUM   = 0x0a,
-    dump_as_string,	// RUBY_T_FILE     = 0x0b,
-    dump_obj,		// RUBY_T_DATA     = 0x0c,
-    NULL, 		// RUBY_T_MATCH    = 0x0d,
+    dump_array,     // RUBY_T_ARRAY    = 0x07,
+    dump_hash,      // RUBY_T_HASH     = 0x08,
+    dump_obj,       // RUBY_T_STRUCT   = 0x09,
+    oj_dump_bignum, // RUBY_T_BIGNUM   = 0x0a,
+    dump_as_string, // RUBY_T_FILE     = 0x0b,
+    dump_obj,       // RUBY_T_DATA     = 0x0c,
+    NULL,           // RUBY_T_MATCH    = 0x0d,
     // Rails raises a stack error on Complex and Rational. It also corrupts
     // something which causes a segfault on the next call. Oj will not mimic
     // that behavior.
-    dump_as_string, 	// RUBY_T_COMPLEX  = 0x0e,
-    dump_as_string, 	// RUBY_T_RATIONAL = 0x0f,
-    NULL, 		// 0x10
-    oj_dump_nil, 	// RUBY_T_NIL      = 0x11,
-    oj_dump_true, 	// RUBY_T_TRUE     = 0x12,
-    oj_dump_false,	// RUBY_T_FALSE    = 0x13,
-    oj_dump_sym,	// RUBY_T_SYMBOL   = 0x14,
-    oj_dump_fixnum,	// RUBY_T_FIXNUM   = 0x15,
+    dump_as_string, // RUBY_T_COMPLEX  = 0x0e,
+    dump_as_string, // RUBY_T_RATIONAL = 0x0f,
+    NULL,           // 0x10
+    oj_dump_nil,    // RUBY_T_NIL      = 0x11,
+    oj_dump_true,   // RUBY_T_TRUE     = 0x12,
+    oj_dump_false,  // RUBY_T_FALSE    = 0x13,
+    oj_dump_sym,    // RUBY_T_SYMBOL   = 0x14,
+    oj_dump_fixnum, // RUBY_T_FIXNUM   = 0x15,
 };
 
 static void
 dump_rails_val(VALUE obj, int depth, Out out, bool as_ok) {
-    int	type = rb_type(obj);
+    int type = rb_type(obj);
 
     if (Yes == out->opts->trace) {
-	oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceIn);
+        oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceIn);
     }
     if (MAX_DEPTH < depth) {
-	rb_raise(rb_eNoMemError, "Too deeply nested.\n");
+        rb_raise(rb_eNoMemError, "Too deeply nested.\n");
     }
     if (0 < type && type <= RUBY_T_FIXNUM) {
-	DumpFunc	f = rails_funcs[type];
+        DumpFunc f = rails_funcs[type];
 
-	if (NULL != f) {
-	    f(obj, depth, out, as_ok);
-	    if (Yes == out->opts->trace) {
-		oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceOut);
-	    }
-	    return;
-	}
+        if (NULL != f) {
+            f(obj, depth, out, as_ok);
+            if (Yes == out->opts->trace) {
+                oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceOut);
+            }
+            return;
+        }
     }
     oj_dump_nil(Qnil, depth, out, false);
     if (Yes == out->opts->trace) {
-	oj_trace("dump", Qnil, __FILE__, __LINE__, depth, TraceOut);
+        oj_trace("dump", Qnil, __FILE__, __LINE__, depth, TraceOut);
     }
 }
 
@@ -1518,9 +1517,9 @@ oj_dump_rails_val(VALUE obj, int depth, Out out) {
     out->opts->str_rx.head = NULL;
     out->opts->str_rx.tail = NULL;
     if (escape_html) {
-	out->opts->escape_mode = RailsXEsc;
+        out->opts->escape_mode = RailsXEsc;
     } else {
-	out->opts->escape_mode = RailsEsc;
+        out->opts->escape_mode = RailsEsc;
     }
     dump_rails_val(obj, depth, out, true);
 }
