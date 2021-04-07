@@ -19,6 +19,13 @@
 //#define BATCH_SIZE	(4096 / sizeof(struct _leaf) - 1)
 #define BATCH_SIZE 100
 
+// Support for compaction
+#ifdef HAVE_RB_GC_MARK_MOVABLE
+#define mark rb_gc_mark_movable
+#else
+#define mark rb_gc_mark
+#endif
+
 typedef struct _batch
 {
 	struct _batch *next;
@@ -921,7 +928,7 @@ mark_leaf(Leaf leaf)
 		}
 		break;
 	case RUBY_VAL:
-		rb_gc_mark(leaf->value);
+		mark(leaf->value);
 		break;
 
 	default:
@@ -936,10 +943,63 @@ mark_doc(void *ptr)
 	{
 		Doc doc = (Doc)ptr;
 
-		rb_gc_mark(doc->self);
+		mark(doc->self);
 		mark_leaf(doc->data);
 	}
 }
+#ifdef HAVE_RB_GC_MARK_MOVABLE
+static void
+compact_leaf(Leaf leaf)
+{
+	switch (leaf->value_type)
+	{
+	case COL_VAL:
+		if (NULL != leaf->elements)
+		{
+			Leaf first = leaf->elements->next;
+			Leaf e = first;
+
+			do
+			{
+				compact_leaf(e);
+				e = e->next;
+			} while (e != first);
+		}
+		break;
+	case RUBY_VAL:
+		leaf->value = rb_gc_location(leaf->value);
+		break;
+
+	default:
+		break;
+	}
+}
+
+static void
+compact_doc(void *ptr)
+{
+	Doc doc = (Doc)ptr;
+
+	if (doc)
+	{
+		doc->self = rb_gc_location(doc->self);
+		compact_leaf(doc->data);
+	}
+}
+#endif
+
+static const rb_data_type_t oj_doc_type = {
+    "Oj/doc",
+    {
+        mark_doc,
+        free_doc_cb,
+        NULL,
+#ifdef HAVE_RB_GC_MARK_MOVABLE
+        compact_doc,
+#endif
+    },
+    0, 0,
+};
 
 static VALUE
 parse_json(VALUE clas, char *json, bool given, bool allocated)
@@ -988,12 +1048,7 @@ parse_json(VALUE clas, char *json, bool given, bool allocated)
 		}
 	}
 #endif
-	// last arg is free func void* func(void*)
-#ifdef HAVE_RB_DATA_OBJECT_WRAP
-	self = rb_data_object_wrap(clas, doc, mark_doc, free_doc_cb);
-#else
-	self = rb_data_object_alloc(clas, doc, mark_doc, free_doc_cb);
-#endif
+	self = TypedData_Wrap_Struct(clas, &oj_doc_type, doc);
 	doc->self = self;
 	doc->json = json;
 	DATA_PTR(doc->self) = doc;

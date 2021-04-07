@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## Ongoing
+
+- Added support for `GC.compact` on `Oj::Doc`
+
 ## 3.11.3 - 2021-03-09
 
 - Fixed `respond_to?` method on `Oj::EasyHash`.
