@@ -328,7 +328,7 @@ class ScpTest < Minitest::Test
     IO.pipe do |read_io, write_io|
       if fork
         write_io.close
-        Oj.sc_parse(handler, read_io) {|v| p v}
+        Oj.sc_parse(handler, read_io)
         read_io.close
         assert_equal([[:hash_start],
                       [:hash_key, 'one'],

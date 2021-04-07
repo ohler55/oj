@@ -5,7 +5,7 @@
 - Code re-formatted with clang-format. Thanks goes to BuonOmo for
   suggesting and encouraging the use of a formatter and getting the
   effort started.
-
+- Added support for `GC.compact` on `Oj::Doc`
 
 ## 3.11.3 - 2021-03-09
 
