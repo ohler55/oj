@@ -4,41 +4,41 @@
 #include "hash.h"
 #include <stdint.h>
 
-#define HASH_MASK 0x000003FF
-#define HASH_SLOT_CNT 1024
+#define HASH_MASK	0x000003FF
+#define  HASH_SLOT_CNT	1024
 
 typedef struct _keyVal {
-    struct _keyVal *next;
-    const char *key;
-    size_t len;
-    VALUE val;
-} * KeyVal;
+    struct _keyVal	*next;
+    const char		*key;
+    size_t		len;
+    VALUE		val;
+} *KeyVal;
 
 struct _hash {
-    struct _keyVal slots[HASH_SLOT_CNT];
+    struct _keyVal	slots[HASH_SLOT_CNT];
 };
 
-struct _hash class_hash;
-struct _hash intern_hash;
+struct _hash	class_hash;
+struct _hash	intern_hash;
 
 // almost the Murmur hash algorithm
 #define M 0x5bd1e995
 #define C1 0xCC9E2D51
 #define C2 0x1B873593
-#define N 0xE6546B64
+#define N  0xE6546B64
 
 static uint32_t
 hash_calc(const uint8_t *key, size_t len) {
-    const uint8_t *end = key + len;
-    const uint8_t *endless = key + (len / 4 * 4);
-    uint32_t h = (uint32_t)len;
-    uint32_t k;
+    const uint8_t	*end = key + len;
+    const uint8_t	*endless = key + (len / 4 * 4);
+    uint32_t		h = (uint32_t)len;
+    uint32_t		k;
 
     while (key < endless) {
-        k = (uint32_t)*key++;
-        k |= (uint32_t)*key++ << 8;
-        k |= (uint32_t)*key++ << 16;
-        k |= (uint32_t)*key++ << 24;
+	k = (uint32_t)*key++;
+	k |= (uint32_t)*key++ << 8;
+	k |= (uint32_t)*key++ << 16;
+	k |= (uint32_t)*key++ << 24;
 
         k *= M;
         k ^= k >> 24;
@@ -46,13 +46,13 @@ hash_calc(const uint8_t *key, size_t len) {
         h ^= k * M;
     }
     if (1 < end - key) {
-        uint16_t k16 = (uint16_t)*key++;
+	uint16_t	k16 = (uint16_t)*key++;
 
-        k16 |= (uint16_t)*key++ << 8;
-        h ^= k16 << 8;
+	k16 |= (uint16_t)*key++ << 8;
+	h ^= k16 << 8;
     }
     if (key < end) {
-        h ^= *key;
+	h ^= *key;
     }
     h *= M;
     h ^= h >> 13;
@@ -71,47 +71,47 @@ oj_hash_init() {
 // if slotp is 0 then just lookup
 static VALUE
 hash_get(Hash hash, const char *key, size_t len, VALUE **slotp, VALUE def_value) {
-    uint32_t h = hash_calc((const uint8_t *)key, len) & HASH_MASK;
-    KeyVal bucket = hash->slots + h;
+    uint32_t	h = hash_calc((const uint8_t*)key, len) & HASH_MASK;
+    KeyVal	bucket = hash->slots + h;
 
     if (0 != bucket->key) {
-        KeyVal b;
+	KeyVal	b;
 
-        for (b = bucket; 0 != b; b = b->next) {
-            if (len == b->len && 0 == strncmp(b->key, key, len)) {
-                *slotp = &b->val;
-                return b->val;
-            }
-            bucket = b;
-        }
+	for (b = bucket; 0 != b; b = b->next) {
+	    if (len == b->len && 0 == strncmp(b->key, key, len)) {
+		*slotp = &b->val;
+		return b->val;
+	    }
+	    bucket = b;
+	}
     }
     if (0 != slotp) {
-        if (0 != bucket->key) {
-            KeyVal b = ALLOC(struct _keyVal);
+	if (0 != bucket->key) {
+	    KeyVal	b = ALLOC(struct _keyVal);
 
-            b->next = 0;
-            bucket->next = b;
-            bucket = b;
-        }
-        bucket->key = oj_strndup(key, len);
-        bucket->len = len;
-        bucket->val = def_value;
-        *slotp = &bucket->val;
+	    b->next = 0;
+	    bucket->next = b;
+	    bucket = b;
+	}
+	bucket->key = oj_strndup(key, len);
+	bucket->len = len;
+	bucket->val = def_value;
+	*slotp = &bucket->val;
     }
     return def_value;
 }
 
 void
 oj_hash_print() {
-    int i;
-    KeyVal b;
+    int		i;
+    KeyVal	b;
 
     for (i = 0; i < HASH_SLOT_CNT; i++) {
-        printf("%4d:", i);
-        for (b = class_hash.slots + i; 0 != b && 0 != b->key; b = b->next) {
-            printf(" %s", b->key);
-        }
-        printf("\n");
+	printf("%4d:", i);
+	for (b = class_hash.slots + i; 0 != b && 0 != b->key; b = b->next) {
+	    printf(" %s", b->key);
+	}
+	printf("\n");
     }
 }
 
@@ -122,12 +122,12 @@ oj_class_hash_get(const char *key, size_t len, VALUE **slotp) {
 
 ID
 oj_attr_hash_get(const char *key, size_t len, ID **slotp) {
-    return (ID)hash_get(&intern_hash, key, len, (VALUE **)slotp, 0);
+    return (ID)hash_get(&intern_hash, key, len, (VALUE**)slotp, 0);
 }
 
-char *
+char*
 oj_strndup(const char *s, size_t len) {
-    char *d = ALLOC_N(char, len + 1);
+    char	*d = ALLOC_N(char, len + 1);
 
     memcpy(d, s, len);
     d[len] = '\0';
