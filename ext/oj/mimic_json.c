@@ -1,25 +1,25 @@
 // Copyright (c) 2012, 2017 Peter Ohler. All rights reserved.
 // Licensed under the MIT License. See LICENSE file in the project root for license details.
 
-#include "dump.h"
-#include "encode.h"
 #include "oj.h"
+#include "encode.h"
+#include "dump.h"
 #include "parse.h"
 
-static VALUE symbolize_names_sym = Qundef;
+static VALUE	symbolize_names_sym = Qundef;
 
-extern const char oj_json_class[];
+extern const char	oj_json_class[];
 
-VALUE oj_array_nl_sym;
-VALUE oj_ascii_only_sym;
-VALUE oj_json_generator_error_class;
-VALUE oj_json_parser_error_class;
-VALUE oj_max_nesting_sym;
-VALUE oj_object_nl_sym;
-VALUE oj_space_before_sym;
-VALUE oj_space_sym;
+VALUE	oj_array_nl_sym;
+VALUE	oj_ascii_only_sym;
+VALUE	oj_json_generator_error_class;
+VALUE	oj_json_parser_error_class;
+VALUE	oj_max_nesting_sym;
+VALUE	oj_object_nl_sym;
+VALUE	oj_space_before_sym;
+VALUE	oj_space_sym;
 
-static VALUE state_class;
+static VALUE	state_class;
 
 // mimic JSON documentation
 
@@ -54,14 +54,14 @@ static VALUE state_class;
 
 VALUE
 oj_get_json_err_class(const char *err_classname) {
-    volatile VALUE json_module;
-    volatile VALUE clas;
-    volatile VALUE json_error_class;
+    volatile VALUE	json_module;
+    volatile VALUE	clas;
+    volatile VALUE	json_error_class;
 
     if (rb_const_defined_at(rb_cObject, rb_intern("JSON"))) {
-        json_module = rb_const_get_at(rb_cObject, rb_intern("JSON"));
+	json_module = rb_const_get_at(rb_cObject, rb_intern("JSON"));
     } else {
-        json_module = rb_define_module("JSON");
+	json_module = rb_define_module("JSON");
     }
     if (rb_const_defined_at(json_module, rb_intern("JSONError"))) {
         json_error_class = rb_const_get(json_module, rb_intern("JSONError"));
@@ -69,113 +69,113 @@ oj_get_json_err_class(const char *err_classname) {
         json_error_class = rb_define_class_under(json_module, "JSONError", rb_eStandardError);
     }
     if (0 == strcmp(err_classname, "JSONError")) {
-        clas = json_error_class;
+	clas = json_error_class;
     } else {
-        if (rb_const_defined_at(json_module, rb_intern(err_classname))) {
-            clas = rb_const_get(json_module, rb_intern(err_classname));
-        } else {
-            clas = rb_define_class_under(json_module, err_classname, json_error_class);
-        }
+	if (rb_const_defined_at(json_module, rb_intern(err_classname))) {
+	    clas = rb_const_get(json_module, rb_intern(err_classname));
+	} else {
+	    clas = rb_define_class_under(json_module, err_classname, json_error_class);
+	}
     }
     return clas;
 }
 
 void
 oj_parse_mimic_dump_options(VALUE ropts, Options copts) {
-    VALUE v;
-    size_t len;
+    VALUE	v;
+    size_t	len;
 
     if (T_HASH != rb_type(ropts)) {
-        if (rb_respond_to(ropts, oj_to_hash_id)) {
-            ropts = rb_funcall(ropts, oj_to_hash_id, 0);
-        } else if (rb_respond_to(ropts, oj_to_h_id)) {
-            ropts = rb_funcall(ropts, oj_to_h_id, 0);
-        } else if (Qnil == ropts) {
-            return;
-        } else {
-            rb_raise(rb_eArgError, "options must be a hash.");
-        }
+	if (rb_respond_to(ropts, oj_to_hash_id)) {
+	    ropts = rb_funcall(ropts, oj_to_hash_id, 0);
+	} else if (rb_respond_to(ropts, oj_to_h_id)) {
+	    ropts = rb_funcall(ropts, oj_to_h_id, 0);
+	} else if (Qnil == ropts) {
+	    return;
+	} else {
+	    rb_raise(rb_eArgError, "options must be a hash.");
+	}
     }
     v = rb_hash_lookup(ropts, oj_max_nesting_sym);
     if (Qtrue == v) {
-        copts->dump_opts.max_depth = 100;
+	copts->dump_opts.max_depth = 100;
     } else if (Qfalse == v || Qnil == v) {
-        copts->dump_opts.max_depth = MAX_DEPTH;
+	copts->dump_opts.max_depth = MAX_DEPTH;
     } else if (T_FIXNUM == rb_type(v)) {
-        copts->dump_opts.max_depth = NUM2INT(v);
-        if (0 >= copts->dump_opts.max_depth) {
-            copts->dump_opts.max_depth = MAX_DEPTH;
-        }
+	copts->dump_opts.max_depth = NUM2INT(v);
+	if (0 >= copts->dump_opts.max_depth) {
+	    copts->dump_opts.max_depth = MAX_DEPTH;
+	}
     }
     if (Qnil != (v = rb_hash_lookup(ropts, oj_allow_nan_sym))) {
-        if (Qtrue == v) {
-            copts->dump_opts.nan_dump = WordNan;
-        } else {
-            copts->dump_opts.nan_dump = RaiseNan;
-        }
+	if (Qtrue == v) {
+	    copts->dump_opts.nan_dump = WordNan;
+	} else {
+	    copts->dump_opts.nan_dump = RaiseNan;
+	}
     }
     if (Qnil != (v = rb_hash_lookup(ropts, oj_indent_sym))) {
-        rb_check_type(v, T_STRING);
-        if (sizeof(copts->dump_opts.indent_str) <= (len = RSTRING_LEN(v))) {
-            rb_raise(rb_eArgError, "indent string is limited to %lu characters.", (unsigned long)sizeof(copts->dump_opts.indent_str));
-        }
-        strcpy(copts->dump_opts.indent_str, StringValuePtr(v));
-        copts->dump_opts.indent_size = (uint8_t)len;
-        copts->dump_opts.use = true;
+	rb_check_type(v, T_STRING);
+	if (sizeof(copts->dump_opts.indent_str) <= (len = RSTRING_LEN(v))) {
+	    rb_raise(rb_eArgError, "indent string is limited to %lu characters.", (unsigned long)sizeof(copts->dump_opts.indent_str));
+	}
+	strcpy(copts->dump_opts.indent_str, StringValuePtr(v));
+	copts->dump_opts.indent_size = (uint8_t)len;
+	copts->dump_opts.use = true;
     }
     if (Qnil != (v = rb_hash_lookup(ropts, oj_space_sym))) {
-        rb_check_type(v, T_STRING);
-        if (sizeof(copts->dump_opts.after_sep) <= (len = RSTRING_LEN(v))) {
-            rb_raise(rb_eArgError, "space string is limited to %lu characters.", (unsigned long)sizeof(copts->dump_opts.after_sep));
-        }
-        strcpy(copts->dump_opts.after_sep, StringValuePtr(v));
-        copts->dump_opts.after_size = (uint8_t)len;
-        copts->dump_opts.use = true;
+	rb_check_type(v, T_STRING);
+	if (sizeof(copts->dump_opts.after_sep) <= (len = RSTRING_LEN(v))) {
+	    rb_raise(rb_eArgError, "space string is limited to %lu characters.", (unsigned long)sizeof(copts->dump_opts.after_sep));
+	}
+	strcpy(copts->dump_opts.after_sep, StringValuePtr(v));
+	copts->dump_opts.after_size = (uint8_t)len;
+	copts->dump_opts.use = true;
     }
     if (Qnil != (v = rb_hash_lookup(ropts, oj_space_before_sym))) {
-        rb_check_type(v, T_STRING);
-        if (sizeof(copts->dump_opts.before_sep) <= (len = RSTRING_LEN(v))) {
-            rb_raise(rb_eArgError, "space_before string is limited to %lu characters.", (unsigned long)sizeof(copts->dump_opts.before_sep));
-        }
-        strcpy(copts->dump_opts.before_sep, StringValuePtr(v));
-        copts->dump_opts.before_size = (uint8_t)len;
-        copts->dump_opts.use = true;
+	rb_check_type(v, T_STRING);
+	if (sizeof(copts->dump_opts.before_sep) <= (len = RSTRING_LEN(v))) {
+	    rb_raise(rb_eArgError, "space_before string is limited to %lu characters.", (unsigned long)sizeof(copts->dump_opts.before_sep));
+	}
+	strcpy(copts->dump_opts.before_sep, StringValuePtr(v));
+	copts->dump_opts.before_size = (uint8_t)len;
+	copts->dump_opts.use = true;
     }
     if (Qnil != (v = rb_hash_lookup(ropts, oj_object_nl_sym))) {
-        rb_check_type(v, T_STRING);
-        if (sizeof(copts->dump_opts.hash_nl) <= (len = RSTRING_LEN(v))) {
-            rb_raise(rb_eArgError, "object_nl string is limited to %lu characters.", (unsigned long)sizeof(copts->dump_opts.hash_nl));
-        }
-        strcpy(copts->dump_opts.hash_nl, StringValuePtr(v));
-        copts->dump_opts.hash_size = (uint8_t)len;
-        copts->dump_opts.use = true;
+	rb_check_type(v, T_STRING);
+	if (sizeof(copts->dump_opts.hash_nl) <= (len = RSTRING_LEN(v))) {
+	    rb_raise(rb_eArgError, "object_nl string is limited to %lu characters.", (unsigned long)sizeof(copts->dump_opts.hash_nl));
+	}
+	strcpy(copts->dump_opts.hash_nl, StringValuePtr(v));
+	copts->dump_opts.hash_size = (uint8_t)len;
+	copts->dump_opts.use = true;
     }
     if (Qnil != (v = rb_hash_lookup(ropts, oj_array_nl_sym))) {
-        rb_check_type(v, T_STRING);
-        if (sizeof(copts->dump_opts.array_nl) <= (len = RSTRING_LEN(v))) {
-            rb_raise(rb_eArgError, "array_nl string is limited to %lu characters.", (unsigned long)sizeof(copts->dump_opts.array_nl));
-        }
-        strcpy(copts->dump_opts.array_nl, StringValuePtr(v));
-        copts->dump_opts.array_size = (uint8_t)len;
-        copts->dump_opts.use = true;
+	rb_check_type(v, T_STRING);
+	if (sizeof(copts->dump_opts.array_nl) <= (len = RSTRING_LEN(v))) {
+	    rb_raise(rb_eArgError, "array_nl string is limited to %lu characters.", (unsigned long)sizeof(copts->dump_opts.array_nl));
+	}
+	strcpy(copts->dump_opts.array_nl, StringValuePtr(v));
+	copts->dump_opts.array_size = (uint8_t)len;
+	copts->dump_opts.use = true;
     }
     if (Qnil != (v = rb_hash_lookup(ropts, oj_quirks_mode_sym))) {
-        copts->quirks_mode = (Qtrue == v) ? Yes : No;
+	copts->quirks_mode = (Qtrue == v) ? Yes : No;
     }
     if (Qnil != (v = rb_hash_lookup(ropts, oj_ascii_only_sym))) {
-        // generate seems to assume anything except nil and false are true.
-        if (Qfalse == v) {
-            copts->escape_mode = JXEsc;
-        } else {
-            copts->escape_mode = ASCIIEsc;
-        }
+	// generate seems to assume anything except nil and false are true.
+	if (Qfalse == v) {
+	    copts->escape_mode = JXEsc;
+	} else {
+	    copts->escape_mode = ASCIIEsc;
+	}
     }
 }
 
 static int
 mimic_limit_arg(VALUE a) {
     if (Qnil == a || T_FIXNUM != rb_type(a)) {
-        return -1;
+	return -1;
     }
     return NUM2INT(a);
 }
@@ -193,11 +193,11 @@ mimic_limit_arg(VALUE a) {
  */
 static VALUE
 mimic_dump(int argc, VALUE *argv, VALUE self) {
-    char buf[4096];
-    struct _out out;
-    struct _options copts = oj_default_options;
-    VALUE rstr;
-    VALUE active_hack[1];
+    char		buf[4096];
+    struct _out		out;
+    struct _options	copts = oj_default_options;
+    VALUE		rstr;
+    VALUE		active_hack[1];
 
     copts.str_rx.head = NULL;
     copts.str_rx.tail = NULL;
@@ -217,18 +217,18 @@ mimic_dump(int argc, VALUE *argv, VALUE self) {
     out.omit_nil = copts.dump_opts.omit_nil;
 
     if (2 <= argc) {
-        int limit;
+	int	limit;
 
-        // The json gem take a more liberal approach to optional
-        // arguments. Expected are (obj, anIO=nil, limit=nil) yet the io
-        // argument can be left off completely and the 2nd argument is then
-        // the limit.
-        if (0 <= (limit = mimic_limit_arg(argv[1]))) {
-            copts.dump_opts.max_depth = limit;
-        }
-        if (3 <= argc && 0 <= (limit = mimic_limit_arg(argv[2]))) {
-            copts.dump_opts.max_depth = limit;
-        }
+	// The json gem take a more liberal approach to optional
+	// arguments. Expected are (obj, anIO=nil, limit=nil) yet the io
+	// argument can be left off completely and the 2nd argument is then
+	// the limit.
+	if (0 <= (limit = mimic_limit_arg(argv[1]))) {
+	    copts.dump_opts.max_depth = limit;
+	}
+	if (3 <= argc && 0 <= (limit = mimic_limit_arg(argv[2]))) {
+	    copts.dump_opts.max_depth = limit;
+	}
     }
     // ActiveSupport in active_support/core_ext/object/json.rb check the
     // optional argument type to to_json and it the argument is a
@@ -240,20 +240,20 @@ mimic_dump(int argc, VALUE *argv, VALUE self) {
     oj_dump_obj_to_json_using_params(*argv, &copts, &out, 1, active_hack);
 
     if (0 == out.buf) {
-        rb_raise(rb_eNoMemError, "Not enough memory.");
+	rb_raise(rb_eNoMemError, "Not enough memory.");
     }
     rstr = rb_str_new2(out.buf);
     rstr = oj_encode(rstr);
     if (2 <= argc && Qnil != argv[1] && rb_respond_to(argv[1], oj_write_id)) {
-        VALUE io = argv[1];
-        VALUE args[1];
+	VALUE	io = argv[1];
+	VALUE	args[1];
 
-        *args = rstr;
-        rb_funcall2(io, oj_write_id, 1, args);
-        rstr = io;
+	*args = rstr;
+	rb_funcall2(io, oj_write_id, 1, args);
+	rstr = io;
     }
     if (out.allocated) {
-        xfree(out.buf);
+	xfree(out.buf);
     }
     return rstr;
 }
@@ -262,30 +262,31 @@ mimic_dump(int argc, VALUE *argv, VALUE self) {
 static int
 mimic_walk(VALUE key, VALUE obj, VALUE proc) {
     switch (rb_type(obj)) {
-        case T_HASH:
-            rb_hash_foreach(obj, mimic_walk, proc);
-            break;
-        case T_ARRAY: {
-            size_t cnt = RARRAY_LEN(obj);
-            size_t i;
+    case T_HASH:
+	rb_hash_foreach(obj, mimic_walk, proc);
+	break;
+    case T_ARRAY:
+	{
+	    size_t	cnt = RARRAY_LEN(obj);
+	    size_t	i;
 
-            for (i = 0; i < cnt; i++) {
-                mimic_walk(Qnil, rb_ary_entry(obj, i), proc);
-            }
-            break;
-        }
-        default:
-            break;
+	    for (i = 0; i < cnt; i++) {
+		mimic_walk(Qnil, rb_ary_entry(obj, i), proc);
+	    }
+	    break;
+	}
+    default:
+	break;
     }
     if (Qnil == proc) {
-        if (rb_block_given_p()) {
-            rb_yield(obj);
-        }
+	if (rb_block_given_p()) {
+	    rb_yield(obj);
+	}
     } else {
-        VALUE args[1];
+	VALUE	args[1];
 
-        *args = obj;
-        rb_proc_call_with_block(proc, 1, args, Qnil);
+	*args = obj;
+	rb_proc_call_with_block(proc, 1, args, Qnil);
     }
     return ST_CONTINUE;
 }
@@ -317,18 +318,18 @@ mimic_walk(VALUE key, VALUE obj, VALUE proc) {
  */
 static VALUE
 mimic_load(int argc, VALUE *argv, VALUE self) {
-    VALUE obj;
-    VALUE p = Qnil;
+    VALUE	obj;
+    VALUE	p = Qnil;
 
     obj = oj_compat_load(argc, argv, self);
     if (2 <= argc) {
-        if (rb_cProc == rb_obj_class(argv[1])) {
-            p = argv[1];
-        } else if (3 <= argc) {
-            if (rb_cProc == rb_obj_class(argv[2])) {
-                p = argv[2];
-            }
-        }
+	if (rb_cProc == rb_obj_class(argv[1])) {
+	    p = argv[1];
+	} else if (3 <= argc) {
+	    if (rb_cProc == rb_obj_class(argv[2])) {
+		p = argv[2];
+	    }
+	}
     }
     mimic_walk(Qnil, obj, p);
 
@@ -349,20 +350,20 @@ mimic_load(int argc, VALUE *argv, VALUE self) {
 static VALUE
 mimic_dump_load(int argc, VALUE *argv, VALUE self) {
     if (1 > argc) {
-        rb_raise(rb_eArgError, "wrong number of arguments (0 for 1)");
+	rb_raise(rb_eArgError, "wrong number of arguments (0 for 1)");
     } else if (T_STRING == rb_type(*argv)) {
-        return mimic_load(argc, argv, self);
+	return mimic_load(argc, argv, self);
     } else {
-        return mimic_dump(argc, argv, self);
+	return mimic_dump(argc, argv, self);
     }
     return Qnil;
 }
 
 static VALUE
 mimic_generate_core(int argc, VALUE *argv, Options copts) {
-    char buf[4096];
-    struct _out out;
-    VALUE rstr;
+    char	buf[4096];
+    struct _out	out;
+    VALUE	rstr;
 
     memset(buf, 0, sizeof(buf));
 
@@ -377,7 +378,7 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
     copts->mode = CompatMode;
     copts->to_json = Yes;
     if (2 == argc && Qnil != argv[1]) {
-        oj_parse_mimic_dump_options(argv[1], copts);
+	oj_parse_mimic_dump_options(argv[1], copts);
     }
     /* seems like this is not correct
     if (No == copts->nilnil && Qnil == *argv) {
@@ -387,12 +388,12 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
     oj_dump_obj_to_json_using_params(*argv, copts, &out, argc - 1, argv + 1);
 
     if (0 == out.buf) {
-        rb_raise(rb_eNoMemError, "Not enough memory.");
+	rb_raise(rb_eNoMemError, "Not enough memory.");
     }
     rstr = rb_str_new2(out.buf);
     rstr = oj_encode(rstr);
     if (out.allocated) {
-        xfree(out.buf);
+	xfree(out.buf);
     }
     return rstr;
 }
@@ -423,7 +424,7 @@ mimic_generate_core(int argc, VALUE *argv, Options copts) {
  */
 VALUE
 oj_mimic_generate(int argc, VALUE *argv, VALUE self) {
-    struct _options copts = oj_default_options;
+    struct _options	copts = oj_default_options;
 
     copts.str_rx.head = NULL;
     copts.str_rx.tail = NULL;
@@ -441,33 +442,33 @@ oj_mimic_generate(int argc, VALUE *argv, VALUE self) {
  */
 VALUE
 oj_mimic_pretty_generate(int argc, VALUE *argv, VALUE self) {
-    struct _options copts = oj_default_options;
-    VALUE rargs[2];
-    volatile VALUE h;
+    struct _options	copts = oj_default_options;
+    VALUE		rargs[2];
+    volatile VALUE	h;
 
     // Some (all?) json gem to_json methods need a State instance and not just
     // a Hash. I haven't dug deep enough to find out why but using a State
     // instance and not a Hash gives the desired behavior.
     *rargs = *argv;
     if (1 == argc) {
-        h = rb_hash_new();
+	h = rb_hash_new();
     } else {
-        h = argv[1];
+	h = argv[1];
     }
     if (Qfalse == rb_funcall(h, oj_has_key_id, 1, oj_indent_sym)) {
-        rb_hash_aset(h, oj_indent_sym, rb_str_new2("  "));
+	rb_hash_aset(h, oj_indent_sym, rb_str_new2("  "));
     }
     if (Qfalse == rb_funcall(h, oj_has_key_id, 1, oj_space_before_sym)) {
-        rb_hash_aset(h, oj_space_before_sym, rb_str_new2(""));
+	rb_hash_aset(h, oj_space_before_sym, rb_str_new2(""));
     }
     if (Qfalse == rb_funcall(h, oj_has_key_id, 1, oj_space_sym)) {
-        rb_hash_aset(h, oj_space_sym, rb_str_new2(" "));
+	rb_hash_aset(h, oj_space_sym, rb_str_new2(" "));
     }
     if (Qfalse == rb_funcall(h, oj_has_key_id, 1, oj_object_nl_sym)) {
-        rb_hash_aset(h, oj_object_nl_sym, rb_str_new2("\n"));
+	rb_hash_aset(h, oj_object_nl_sym, rb_str_new2("\n"));
     }
     if (Qfalse == rb_funcall(h, oj_has_key_id, 1, oj_array_nl_sym)) {
-        rb_hash_aset(h, oj_array_nl_sym, rb_str_new2("\n"));
+	rb_hash_aset(h, oj_array_nl_sym, rb_str_new2("\n"));
     }
     rargs[1] = rb_funcall(state_class, oj_new_id, 1, h);
 
@@ -490,9 +491,9 @@ oj_mimic_pretty_generate(int argc, VALUE *argv, VALUE self) {
 
 static VALUE
 mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
-    struct _parseInfo pi;
-    VALUE ropts;
-    VALUE args[1];
+    struct _parseInfo	pi;
+    VALUE		ropts;
+    VALUE		args[1];
 
     rb_scan_args(argc, argv, "11", NULL, &ropts);
     parse_info_init(&pi);
@@ -514,74 +515,73 @@ mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
     pi.max_depth = 100;
 
     if (Qnil != ropts) {
-        VALUE v;
+	VALUE	v;
 
-        if (T_HASH != rb_type(ropts)) {
-            rb_raise(rb_eArgError, "options must be a hash.");
-        }
-        if (Qundef == symbolize_names_sym) {
-            symbolize_names_sym = ID2SYM(rb_intern("symbolize_names"));
-            rb_gc_register_address(&symbolize_names_sym);
-        }
-        if (Qnil != (v = rb_hash_lookup(ropts, symbolize_names_sym))) {
-            pi.options.sym_key = (Qtrue == v) ? Yes : No;
-        }
-        if (Qnil != (v = rb_hash_lookup(ropts, oj_quirks_mode_sym))) {
-            pi.options.quirks_mode = (Qtrue == v) ? Yes : No;
-        }
-        if (Qnil != (v = rb_hash_lookup(ropts, oj_create_additions_sym))) {
-            pi.options.create_ok = (Qtrue == v) ? Yes : No;
-        }
-        if (Qnil != (v = rb_hash_lookup(ropts, oj_allow_nan_sym))) {
-            pi.options.allow_nan = (Qtrue == v) ? Yes : No;
-        }
+	if (T_HASH != rb_type(ropts)) {
+	    rb_raise(rb_eArgError, "options must be a hash.");
+	}
+	if (Qundef == symbolize_names_sym) {
+	    symbolize_names_sym = ID2SYM(rb_intern("symbolize_names"));	rb_gc_register_address(&symbolize_names_sym);
+	}
+	if (Qnil != (v = rb_hash_lookup(ropts, symbolize_names_sym))) {
+	    pi.options.sym_key = (Qtrue == v) ? Yes : No;
+	}
+	if (Qnil != (v = rb_hash_lookup(ropts, oj_quirks_mode_sym))) {
+	    pi.options.quirks_mode = (Qtrue == v) ? Yes : No;
+	}
+	if (Qnil != (v = rb_hash_lookup(ropts, oj_create_additions_sym))) {
+	    pi.options.create_ok = (Qtrue == v) ? Yes : No;
+	}
+	if (Qnil != (v = rb_hash_lookup(ropts, oj_allow_nan_sym))) {
+	    pi.options.allow_nan = (Qtrue == v) ? Yes : No;
+	}
 
-        if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_hash_class_sym)) {
-            if (Qnil == (v = rb_hash_lookup(ropts, oj_hash_class_sym))) {
-                pi.options.hash_class = Qnil;
-            } else {
-                rb_check_type(v, T_CLASS);
-                pi.options.hash_class = v;
-            }
-        }
-        if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_object_class_sym)) {
-            if (Qnil == (v = rb_hash_lookup(ropts, oj_object_class_sym))) {
-                pi.options.hash_class = Qnil;
-            } else {
-                rb_check_type(v, T_CLASS);
-                pi.options.hash_class = v;
-            }
-        }
-        if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_array_class_sym)) {
-            if (Qnil == (v = rb_hash_lookup(ropts, oj_array_class_sym))) {
-                pi.options.array_class = Qnil;
-            } else {
-                rb_check_type(v, T_CLASS);
-                pi.options.array_class = v;
-            }
-        }
-        if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_decimal_class_sym)) {
-            pi.options.compat_bigdec = (oj_bigdecimal_class == rb_hash_lookup(ropts, oj_decimal_class_sym));
-        }
-        v = rb_hash_lookup(ropts, oj_max_nesting_sym);
-        if (Qtrue == v) {
-            pi.max_depth = 100;
-        } else if (Qfalse == v || Qnil == v) {
-            pi.max_depth = 0;
-        } else if (T_FIXNUM == rb_type(v)) {
-            pi.max_depth = NUM2INT(v);
-        }
-        oj_parse_opt_match_string(&pi.options.str_rx, ropts);
-        if (Yes == pi.options.create_ok && Yes == pi.options.sym_key) {
-            rb_raise(rb_eArgError, ":symbolize_names and :create_additions can not both be true.");
-        }
+	if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_hash_class_sym)) {
+	    if (Qnil == (v = rb_hash_lookup(ropts, oj_hash_class_sym))) {
+		pi.options.hash_class = Qnil;
+	    } else {
+		rb_check_type(v, T_CLASS);
+		pi.options.hash_class = v;
+	    }
+	}
+	if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_object_class_sym)) {
+	    if (Qnil == (v = rb_hash_lookup(ropts, oj_object_class_sym))) {
+		pi.options.hash_class = Qnil;
+	    } else {
+		rb_check_type(v, T_CLASS);
+		pi.options.hash_class = v;
+	    }
+	}
+	if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_array_class_sym)) {
+	    if (Qnil == (v = rb_hash_lookup(ropts, oj_array_class_sym))) {
+		pi.options.array_class = Qnil;
+	    } else {
+		rb_check_type(v, T_CLASS);
+		pi.options.array_class = v;
+	    }
+	}
+	if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_decimal_class_sym)) {
+	    pi.options.compat_bigdec = (oj_bigdecimal_class == rb_hash_lookup(ropts, oj_decimal_class_sym));
+	}
+	v = rb_hash_lookup(ropts, oj_max_nesting_sym);
+	if (Qtrue == v) {
+	    pi.max_depth = 100;
+	} else if (Qfalse == v || Qnil == v) {
+	    pi.max_depth = 0;
+	} else if (T_FIXNUM == rb_type(v)) {
+	    pi.max_depth = NUM2INT(v);
+	}
+	oj_parse_opt_match_string(&pi.options.str_rx, ropts);
+	if (Yes == pi.options.create_ok && Yes == pi.options.sym_key) {
+	    rb_raise(rb_eArgError, ":symbolize_names and :create_additions can not both be true.");
+	}
     }
     *args = *argv;
 
     if (T_STRING == rb_type(*args)) {
-        return oj_pi_parse(1, args, &pi, 0, 0, false);
+	return oj_pi_parse(1, args, &pi, 0, 0, false);
     } else {
-        return oj_pi_sparse(1, args, &pi, 0);
+	return oj_pi_sparse(1, args, &pi, 0);
     }
 }
 
@@ -647,18 +647,18 @@ mimic_set_create_id(VALUE self, VALUE id) {
     Check_Type(id, T_STRING);
 
     if (NULL != oj_default_options.create_id) {
-        if (oj_json_class != oj_default_options.create_id) {
-            xfree((char *)oj_default_options.create_id);
-        }
-        oj_default_options.create_id = NULL;
-        oj_default_options.create_id_len = 0;
+	if (oj_json_class != oj_default_options.create_id) {
+	    xfree((char*)oj_default_options.create_id);
+	}
+	oj_default_options.create_id = NULL;
+	oj_default_options.create_id_len = 0;
     }
     if (Qnil != id) {
-        size_t len = RSTRING_LEN(id) + 1;
+	size_t	len = RSTRING_LEN(id) + 1;
 
-        oj_default_options.create_id = ALLOC_N(char, len);
-        strcpy((char *)oj_default_options.create_id, StringValuePtr(id));
-        oj_default_options.create_id_len = len - 1;
+	oj_default_options.create_id = ALLOC_N(char, len);
+	strcpy((char*)oj_default_options.create_id, StringValuePtr(id));
+	oj_default_options.create_id_len = len - 1;
     }
     return id;
 }
@@ -671,78 +671,76 @@ mimic_set_create_id(VALUE self, VALUE id) {
 static VALUE
 mimic_create_id(VALUE self) {
     if (NULL != oj_default_options.create_id) {
-        return oj_encode(rb_str_new_cstr(oj_default_options.create_id));
+	return oj_encode(rb_str_new_cstr(oj_default_options.create_id));
     }
     return rb_str_new_cstr(oj_json_class);
 }
 
-static struct _options mimic_object_to_json_options = {
-    0,             // indent
-    No,            // circular
-    No,            // auto_define
-    No,            // sym_key
-    JXEsc,         // escape_mode
-    CompatMode,    // mode
-    No,            // class_cache
-    RubyTime,      // time_format
-    No,            // bigdec_as_num
-    RubyDec,       // bigdec_load
-    false,         // compat_bigdec
-    No,            // to_hash
-    No,            // to_json
-    No,            // as_json
-    No,            // raw_json
-    No,            // nilnil
-    No,            // empty_string
-    Yes,           // allow_gc
-    Yes,           // quirks_mode
-    No,            // allow_invalid
-    No,            // create_ok
-    No,            // allow_nan
-    No,            // trace
-    No,            // safe
-    false,         // sec_prec_set
-    No,            // ignore_under
-    0,             // int_range_min
-    0,             // int_range_max
-    oj_json_class, // create_id
-    10,            // create_id_len
-    3,             // sec_prec
-    0,             // float_prec
-    "%0.16g",      // float_fmt
-    Qnil,          // hash_class
-    Qnil,          // array_class
-    {
-      // dump_opts
-      false,    //use
-      "",       // indent
-      "",       // before_sep
-      "",       // after_sep
-      "",       // hash_nl
-      "",       // array_nl
-      0,        // indent_size
-      0,        // before_size
-      0,        // after_size
-      0,        // hash_size
-      0,        // array_size
-      RaiseNan, // nan_dump
-      false,    // omit_nil
-      100,      // max_depth
+static struct _options	mimic_object_to_json_options = {
+    0,		// indent
+    No,		// circular
+    No,		// auto_define
+    No,		// sym_key
+    JXEsc,	// escape_mode
+    CompatMode,	// mode
+    No,		// class_cache
+    RubyTime,	// time_format
+    No,		// bigdec_as_num
+    RubyDec,	// bigdec_load
+    false,	// compat_bigdec
+    No,		// to_hash
+    No,		// to_json
+    No,		// as_json
+    No,		// raw_json
+    No,		// nilnil
+    No,		// empty_string
+    Yes,	// allow_gc
+    Yes,	// quirks_mode
+    No,		// allow_invalid
+    No,		// create_ok
+    No,		// allow_nan
+    No,		// trace
+    No,		// safe
+    false,	// sec_prec_set
+    No,		// ignore_under
+    0,		// int_range_min
+    0,		// int_range_max
+    oj_json_class,// create_id
+    10,		// create_id_len
+    3,		// sec_prec
+    0,		// float_prec
+    "%0.16g",	// float_fmt
+    Qnil,	// hash_class
+    Qnil,	// array_class
+    {		// dump_opts
+	false,	//use
+	"",	// indent
+	"",	// before_sep
+	"",	// after_sep
+	"",	// hash_nl
+	"",	// array_nl
+	0,	// indent_size
+	0,	// before_size
+	0,	// after_size
+	0,	// hash_size
+	0,	// array_size
+	RaiseNan,// nan_dump
+	false,	// omit_nil
+	100, // max_depth
     },
-    {
-      // str_rx
-      NULL,     // head
-      NULL,     // tail
-      { '\0' }, // err
+    {		// str_rx
+	NULL,	// head
+	NULL,	// tail
+	{ '\0' }, // err
     }
 };
 
 static VALUE
 mimic_object_to_json(int argc, VALUE *argv, VALUE self) {
-    char buf[4096];
-    struct _out out;
-    VALUE rstr;
-    struct _options copts = oj_default_options;
+    char		buf[4096];
+    struct _out		out;
+    VALUE		rstr;
+    struct _options	copts = oj_default_options;
 
     copts.str_rx.head = NULL;
     copts.str_rx.tail = NULL;
@@ -753,19 +751,19 @@ mimic_object_to_json(int argc, VALUE *argv, VALUE self) {
     copts.mode = CompatMode;
     copts.to_json = No;
     if (1 <= argc && Qnil != argv[0]) {
-        oj_parse_mimic_dump_options(argv[0], &copts);
+	oj_parse_mimic_dump_options(argv[0], &copts);
     }
     // To be strict the mimic_object_to_json_options should be used but people
     // seem to prefer the option of changing that.
     //oj_dump_obj_to_json(self, &mimic_object_to_json_options, &out);
     oj_dump_obj_to_json_using_params(self, &copts, &out, argc, argv);
     if (0 == out.buf) {
-        rb_raise(rb_eNoMemError, "Not enough memory.");
+	rb_raise(rb_eNoMemError, "Not enough memory.");
     }
     rstr = rb_str_new2(out.buf);
     rstr = oj_encode(rstr);
     if (out.allocated) {
-        xfree(out.buf);
+	xfree(out.buf);
     }
     return rstr;
 }
@@ -782,9 +780,9 @@ mimic_state(VALUE self) {
 
 void
 oj_mimic_json_methods(VALUE json) {
-    VALUE json_error;
-    VALUE generator;
-    VALUE ext;
+    VALUE	json_error;
+    VALUE	generator;
+    VALUE	ext;
 
     rb_define_module_function(json, "create_id=", mimic_set_create_id, 1);
     rb_define_module_function(json, "create_id", mimic_create_id, 0);
@@ -816,38 +814,37 @@ oj_mimic_json_methods(VALUE json) {
     if (rb_const_defined_at(json, rb_intern("ParserError"))) {
         oj_json_parser_error_class = rb_const_get(json, rb_intern("ParserError"));
     } else {
-        oj_json_parser_error_class = rb_define_class_under(json, "ParserError", json_error);
+    	oj_json_parser_error_class = rb_define_class_under(json, "ParserError", json_error);
     }
     if (rb_const_defined_at(json, rb_intern("GeneratorError"))) {
         oj_json_generator_error_class = rb_const_get(json, rb_intern("GeneratorError"));
     } else {
-        oj_json_generator_error_class = rb_define_class_under(json, "GeneratorError", json_error);
+    	oj_json_generator_error_class = rb_define_class_under(json, "GeneratorError", json_error);
     }
     if (rb_const_defined_at(json, rb_intern("NestingError"))) {
         rb_const_get(json, rb_intern("NestingError"));
     } else {
-        rb_define_class_under(json, "NestingError", json_error);
+    	rb_define_class_under(json, "NestingError", json_error);
     }
 
     if (rb_const_defined_at(json, rb_intern("Ext"))) {
-        ext = rb_const_get_at(json, rb_intern("Ext"));
-    } else {
-        ext = rb_define_module_under(json, "Ext");
+	ext = rb_const_get_at(json, rb_intern("Ext"));
+     } else {
+	ext = rb_define_module_under(json, "Ext");
     }
     if (rb_const_defined_at(ext, rb_intern("Generator"))) {
-        generator = rb_const_get_at(ext, rb_intern("Generator"));
-    } else {
-        generator = rb_define_module_under(ext, "Generator");
+	generator = rb_const_get_at(ext, rb_intern("Generator"));
+     } else {
+	generator = rb_define_module_under(ext, "Generator");
     }
     if (!rb_const_defined_at(generator, rb_intern("State"))) {
-        rb_require("oj/state");
+	rb_require("oj/state");
     }
     // Pull in the JSON::State mimic file.
     state_class = rb_const_get_at(generator, rb_intern("State"));
     rb_gc_register_mark_object(state_class);
 
-    symbolize_names_sym = ID2SYM(rb_intern("symbolize_names"));
-    rb_gc_register_address(&symbolize_names_sym);
+    symbolize_names_sym = ID2SYM(rb_intern("symbolize_names"));	rb_gc_register_address(&symbolize_names_sym);
 }
 
 /* Document-module: JSON
@@ -856,31 +853,31 @@ oj_mimic_json_methods(VALUE json) {
  */
 VALUE
 oj_define_mimic_json(int argc, VALUE *argv, VALUE self) {
-    VALUE dummy;
-    VALUE verbose;
-    VALUE json;
+    VALUE	dummy;
+    VALUE	verbose;
+    VALUE	json;
 
     // Either set the paths to indicate JSON has been loaded or replaces the
     // methods if it has been loaded.
     if (rb_const_defined_at(rb_cObject, rb_intern("JSON"))) {
-        json = rb_const_get_at(rb_cObject, rb_intern("JSON"));
+	json = rb_const_get_at(rb_cObject, rb_intern("JSON"));
     } else {
-        json = rb_define_module("JSON");
+	json = rb_define_module("JSON");
     }
     verbose = rb_gv_get("$VERBOSE");
     rb_gv_set("$VERBOSE", Qfalse);
     rb_define_module_function(rb_cObject, "JSON", mimic_dump_load, -1);
     dummy = rb_gv_get("$LOADED_FEATURES");
     if (rb_type(dummy) == T_ARRAY) {
-        rb_ary_push(dummy, rb_str_new2("json"));
-        if (0 < argc) {
-            VALUE mimic_args[1];
+	rb_ary_push(dummy, rb_str_new2("json"));
+	if (0 < argc) {
+	    VALUE	mimic_args[1];
 
-            *mimic_args = *argv;
-            rb_funcall2(Oj, rb_intern("mimic_loaded"), 1, mimic_args);
-        } else {
-            rb_funcall2(Oj, rb_intern("mimic_loaded"), 0, 0);
-        }
+	    *mimic_args = *argv;
+	    rb_funcall2(Oj, rb_intern("mimic_loaded"), 1, mimic_args);
+	} else {
+	    rb_funcall2(Oj, rb_intern("mimic_loaded"), 0, 0);
+	}
     }
     oj_mimic_json_methods(json);
 

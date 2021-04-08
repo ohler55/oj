@@ -1,7 +1,0 @@
-BasedOnStyle: Mozilla
-IndentWidth: 4
-BreakBeforeBraces: Attach
-ColumnLimit: 0
-AlwaysBreakAfterReturnType: AllDefinitions
-DerivePointerAlignment: false
-PointerAlignment: Right
