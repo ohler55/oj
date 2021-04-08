@@ -3,19 +3,19 @@
 
 // if windows, comment out the whole file. It's only a performance test.
 #ifndef _WIN32
-#include <sys/time.h>
-#include <time.h>
 #include "hash.h"
 #include <stdint.h>
+#include <sys/time.h>
+#include <time.h>
 
 /* Define printf formats for standard types, like PRIu64 for uint64_t. */
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 
 typedef struct _strLen {
-    const char	*str;
-    size_t	len;
-} *StrLen;
+    const char *str;
+    size_t len;
+} * StrLen;
 
 static struct _strLen data[] = {
     { "Gem::Version", 12 },
@@ -417,7 +417,7 @@ static struct _strLen data[] = {
 
 static uint64_t
 micro_time() {
-    struct timeval	tv;
+    struct timeval tv;
 
     gettimeofday(&tv, NULL);
 
@@ -426,57 +426,58 @@ micro_time() {
 
 static void
 perf() {
-    StrLen	d;
-    VALUE	v;
-    VALUE	*slot = 0;
-    uint64_t	dt, start;
-    int		i, iter = 1000000;
-    int		dataCnt = sizeof(data) / sizeof(*data);
+    StrLen d;
+    VALUE v;
+    VALUE *slot = 0;
+    uint64_t dt, start;
+    int i, iter = 1000000;
+    int dataCnt = sizeof(data) / sizeof(*data);
 
     oj_hash_init();
     start = micro_time();
     for (i = iter; 0 < i; i--) {
-	for (d = data; 0 != d->str; d++) {
-	    v = oj_class_hash_get(d->str, d->len, &slot);
-	    if (Qundef == v) {
-		if (0 != slot) {
-		    v = ID2SYM(rb_intern(d->str));
-		    *slot = v;
-		}
-	    }
-	}
+        for (d = data; 0 != d->str; d++) {
+            v = oj_class_hash_get(d->str, d->len, &slot);
+            if (Qundef == v) {
+                if (0 != slot) {
+                    v = ID2SYM(rb_intern(d->str));
+                    *slot = v;
+                }
+            }
+        }
     }
     dt = micro_time() - start;
 #if IS_WINDOWS
     printf("%d iterations took %ld msecs, %ld gets/msec\n", iter, (long)(dt / 1000), (long)(iter * dataCnt / (dt / 1000)));
 #else
-    printf("%d iterations took %"PRIu64" msecs, %ld gets/msec\n", iter, dt / 1000, (long)(iter * dataCnt / (dt / 1000)));
+    printf("%d iterations took %" PRIu64 " msecs, %ld gets/msec\n", iter, dt / 1000, (long)(iter * dataCnt / (dt / 1000)));
 #endif
 }
 
 void
 oj_hash_test() {
-    StrLen	d;
-    VALUE	v;
-    VALUE	*slot = 0;;
+    StrLen d;
+    VALUE v;
+    VALUE *slot = 0;
+    ;
 
     oj_hash_init();
     for (d = data; 0 != d->str; d++) {
-	char	*s = oj_strndup(d->str, d->len);
-	v = oj_class_hash_get(d->str, d->len, &slot);
-	if (Qnil == v) {
-	    if (0 == slot) {
-		printf("*** failed to get a slot for %s\n", s);
-	    } else {
-		v = ID2SYM(rb_intern(d->str));
-		*slot = v;
-	    }
-	} else {
-	    VALUE	rs = rb_funcall2(v, rb_intern("to_s"), 0, 0);
+        char *s = oj_strndup(d->str, d->len);
+        v = oj_class_hash_get(d->str, d->len, &slot);
+        if (Qnil == v) {
+            if (0 == slot) {
+                printf("*** failed to get a slot for %s\n", s);
+            } else {
+                v = ID2SYM(rb_intern(d->str));
+                *slot = v;
+            }
+        } else {
+            VALUE rs = rb_funcall2(v, rb_intern("to_s"), 0, 0);
 
-	    printf("*** get on '%s' returned '%s' (%s)\n", s, StringValuePtr(rs), rb_class2name(rb_obj_class(v)));
-	}
-	/*oj_hash_print(c);*/
+            printf("*** get on '%s' returned '%s' (%s)\n", s, StringValuePtr(rs), rb_class2name(rb_obj_class(v)));
+        }
+        /*oj_hash_print(c);*/
     }
     printf("*** ---------- hash table ------------\n");
     oj_hash_print();

@@ -9,32 +9,32 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "oj.h"
 #include "cache8.h"
 #include "dump.h"
 #include "odd.h"
+#include "oj.h"
 #include "trace.h"
 #include "util.h"
 
 // Workaround in case INFINITY is not defined in math.h or if the OS is CentOS
-#define OJ_INFINITY (1.0/0.0)
+#define OJ_INFINITY (1.0 / 0.0)
 
 #define MAX_DEPTH 1000
 
-static const char	inf_val[] = INF_VAL;
-static const char	ninf_val[] = NINF_VAL;
-static const char	nan_val[] = NAN_VAL;
+static const char inf_val[] = INF_VAL;
+static const char ninf_val[] = NINF_VAL;
+static const char nan_val[] = NAN_VAL;
 
-typedef unsigned long	ulong;
+typedef unsigned long ulong;
 
-static size_t	hibit_friendly_size(const uint8_t *str, size_t len);
-static size_t	xss_friendly_size(const uint8_t *str, size_t len);
-static size_t	ascii_friendly_size(const uint8_t *str, size_t len);
+static size_t hibit_friendly_size(const uint8_t *str, size_t len);
+static size_t xss_friendly_size(const uint8_t *str, size_t len);
+static size_t ascii_friendly_size(const uint8_t *str, size_t len);
 
-static const char	hex_chars[17] = "0123456789abcdef";
+static const char hex_chars[17] = "0123456789abcdef";
 
 // JSON standard except newlines are no escaped
-static char	newline_friendly_chars[256] = "\
+static char newline_friendly_chars[256] = "\
 66666666221622666666666666666666\
 11211111111111111111111111111111\
 11111111111111111111111111112111\
@@ -45,7 +45,7 @@ static char	newline_friendly_chars[256] = "\
 11111111111111111111111111111111";
 
 // JSON standard
-static char	hibit_friendly_chars[256] = "\
+static char hibit_friendly_chars[256] = "\
 66666666222622666666666666666666\
 11211111111111111111111111111111\
 11111111111111111111111111112111\
@@ -57,7 +57,7 @@ static char	hibit_friendly_chars[256] = "\
 
 // High bit set characters are always encoded as unicode. Worse case is 3
 // bytes per character in the output. That makes this conservative.
-static char	ascii_friendly_chars[256] = "\
+static char ascii_friendly_chars[256] = "\
 66666666222622666666666666666666\
 11211111111111111111111111111111\
 11111111111111111111111111112111\
@@ -68,7 +68,7 @@ static char	ascii_friendly_chars[256] = "\
 33333333333333333333333333333333";
 
 // XSS safe mode
-static char	xss_friendly_chars[256] = "\
+static char xss_friendly_chars[256] = "\
 66666666222622666666666666666666\
 11211161111111121111111111116161\
 11111111111111111111111111112111\
@@ -79,7 +79,7 @@ static char	xss_friendly_chars[256] = "\
 33333333333333333333333333333333";
 
 // JSON XSS combo
-static char	hixss_friendly_chars[256] = "\
+static char hixss_friendly_chars[256] = "\
 66666666222622666666666666666666\
 11211111111111111111111111111111\
 11111111111111111111111111112111\
@@ -90,7 +90,7 @@ static char	hixss_friendly_chars[256] = "\
 11611111111111111111111111111111";
 
 // Rails XSS combo
-static char	rails_xss_friendly_chars[256] = "\
+static char rails_xss_friendly_chars[256] = "\
 66666666222622666666666666666666\
 11211161111111111111111111116161\
 11111111111111111111111111112111\
@@ -101,7 +101,7 @@ static char	rails_xss_friendly_chars[256] = "\
 11611111111111111111111111111111";
 
 // Rails HTML non-escape
-static char	rails_friendly_chars[256] = "\
+static char rails_friendly_chars[256] = "\
 66666666222622666666666666666666\
 11211111111111111111111111111111\
 11111111111111111111111111112111\
@@ -118,135 +118,140 @@ raise_strict(VALUE obj) {
 
 inline static size_t
 newline_friendly_size(const uint8_t *str, size_t len) {
-    size_t	size = 0;
-    size_t	i = len;
+    size_t size = 0;
+    size_t i = len;
 
     for (; 0 < i; str++, i--) {
-	size += newline_friendly_chars[*str];
+        size += newline_friendly_chars[*str];
     }
     return size - len * (size_t)'0';
 }
 
 inline static size_t
 hibit_friendly_size(const uint8_t *str, size_t len) {
-    size_t	size = 0;
-    size_t	i = len;
+    size_t size = 0;
+    size_t i = len;
 
     for (; 0 < i; str++, i--) {
-	size += hibit_friendly_chars[*str];
+        size += hibit_friendly_chars[*str];
     }
     return size - len * (size_t)'0';
 }
 
 inline static size_t
 ascii_friendly_size(const uint8_t *str, size_t len) {
-    size_t	size = 0;
-    size_t	i = len;
+    size_t size = 0;
+    size_t i = len;
 
     for (; 0 < i; str++, i--) {
-	size += ascii_friendly_chars[*str];
+        size += ascii_friendly_chars[*str];
     }
     return size - len * (size_t)'0';
 }
 
 inline static size_t
 xss_friendly_size(const uint8_t *str, size_t len) {
-    size_t	size = 0;
-    size_t	i = len;
+    size_t size = 0;
+    size_t i = len;
 
     for (; 0 < i; str++, i--) {
-	size += xss_friendly_chars[*str];
+        size += xss_friendly_chars[*str];
     }
     return size - len * (size_t)'0';
 }
 
 inline static size_t
 hixss_friendly_size(const uint8_t *str, size_t len) {
-    size_t	size = 0;
-    size_t	i = len;
-    bool	check = false;
+    size_t size = 0;
+    size_t i = len;
+    bool check = false;
 
     for (; 0 < i; str++, i--) {
-	size += hixss_friendly_chars[*str];
-	if (0 != (0x80 & *str)) {
-	    check = true;
-	}
+        size += hixss_friendly_chars[*str];
+        if (0 != (0x80 & *str)) {
+            check = true;
+        }
     }
     return size - len * (size_t)'0' + check;
 }
 
 inline static long
 rails_xss_friendly_size(const uint8_t *str, size_t len) {
-    long	size = 0;
-    size_t	i = len;
-    uint8_t	hi = 0;
+    long size = 0;
+    size_t i = len;
+    uint8_t hi = 0;
 
     for (; 0 < i; str++, i--) {
-	size += rails_xss_friendly_chars[*str];
-	hi |= *str & 0x80;
+        size += rails_xss_friendly_chars[*str];
+        hi |= *str & 0x80;
     }
     if (0 == hi) {
-	return size - len * (size_t)'0';
+        return size - len * (size_t)'0';
     }
     return -(size - len * (size_t)'0');
 }
 
 inline static size_t
 rails_friendly_size(const uint8_t *str, size_t len) {
-    size_t	size = 0;
-    size_t	i = len;
+    size_t size = 0;
+    size_t i = len;
 
     for (; 0 < i; str++, i--) {
-	size += rails_friendly_chars[*str];
+        size += rails_friendly_chars[*str];
     }
     return size - len * (size_t)'0';
 }
 
-const char*
+const char *
 oj_nan_str(VALUE obj, int opt, int mode, bool plus, int *lenp) {
-    const char	*str = NULL;
+    const char *str = NULL;
 
     if (AutoNan == opt) {
-	switch (mode) {
-	case CompatMode:	opt = WordNan;	break;
-	case StrictMode:	opt = RaiseNan;	break;
-	default:				break;
-	}
+        switch (mode) {
+            case CompatMode:
+                opt = WordNan;
+                break;
+            case StrictMode:
+                opt = RaiseNan;
+                break;
+            default:
+                break;
+        }
     }
     switch (opt) {
-    case RaiseNan:
-	raise_strict(obj);
-	break;
-    case WordNan:
-	if (plus) {
-	    str = "Infinity";
-	    *lenp = 8;
-	} else {
-	    str = "-Infinity";
-	    *lenp = 9;
-	}
-	break;
-    case NullNan:
-	str = "null";
-	*lenp = 4;
-	break;
-    case HugeNan:
-    default:
-	if (plus) {
-	    str = inf_val;
-	    *lenp = sizeof(inf_val) - 1;
-	} else {
-	    str = ninf_val;
-	    *lenp = sizeof(ninf_val) - 1;
-	}
-	break;
+        case RaiseNan:
+            raise_strict(obj);
+            break;
+        case WordNan:
+            if (plus) {
+                str = "Infinity";
+                *lenp = 8;
+            } else {
+                str = "-Infinity";
+                *lenp = 9;
+            }
+            break;
+        case NullNan:
+            str = "null";
+            *lenp = 4;
+            break;
+        case HugeNan:
+        default:
+            if (plus) {
+                str = inf_val;
+                *lenp = sizeof(inf_val) - 1;
+            } else {
+                str = ninf_val;
+                *lenp = sizeof(ninf_val) - 1;
+            }
+            break;
     }
     return str;
 }
 
 inline static void
 dump_hex(uint8_t c, Out out) {
-    uint8_t	d = (c >> 4) & 0x0F;
+    uint8_t d = (c >> 4) & 0x0F;
 
     *out->cur++ = hex_chars[d];
     d = c & 0x0F;
@@ -255,20 +260,20 @@ dump_hex(uint8_t c, Out out) {
 
 static void
 raise_invalid_unicode(const char *str, int len, int pos) {
-    char	c;
-    char	code[32];
-    char	*cp = code;
-    int		i;
-    uint8_t	d;
+    char c;
+    char code[32];
+    char *cp = code;
+    int i;
+    uint8_t d;
 
     *cp++ = '[';
     for (i = pos; i < len && i - pos < 5; i++) {
-	c = str[i];
-	d = (c >> 4) & 0x0F;
-	*cp++ = hex_chars[d];
-	d = c & 0x0F;
-	*cp++ = hex_chars[d];
-	*cp++ = ' ';
+        c = str[i];
+        d = (c >> 4) & 0x0F;
+        *cp++ = hex_chars[d];
+        d = c & 0x0F;
+        *cp++ = hex_chars[d];
+        *cp++ = ' ';
     }
     cp--;
     *cp++ = ']';
@@ -276,83 +281,83 @@ raise_invalid_unicode(const char *str, int len, int pos) {
     rb_raise(oj_json_generator_error_class, "Invalid Unicode %s at %d", code, pos);
 }
 
-static const char*
+static const char *
 dump_unicode(const char *str, const char *end, Out out, const char *orig) {
-    uint32_t	code = 0;
-    uint8_t	b = *(uint8_t*)str;
-    int		i, cnt;
+    uint32_t code = 0;
+    uint8_t b = *(uint8_t *)str;
+    int i, cnt;
 
     if (0xC0 == (0xE0 & b)) {
-	cnt = 1;
-	code = b & 0x0000001F;
+        cnt = 1;
+        code = b & 0x0000001F;
     } else if (0xE0 == (0xF0 & b)) {
-	cnt = 2;
-	code = b & 0x0000000F;
+        cnt = 2;
+        code = b & 0x0000000F;
     } else if (0xF0 == (0xF8 & b)) {
-	cnt = 3;
-	code = b & 0x00000007;
+        cnt = 3;
+        code = b & 0x00000007;
     } else if (0xF8 == (0xFC & b)) {
-	cnt = 4;
-	code = b & 0x00000003;
+        cnt = 4;
+        code = b & 0x00000003;
     } else if (0xFC == (0xFE & b)) {
-	cnt = 5;
-	code = b & 0x00000001;
+        cnt = 5;
+        code = b & 0x00000001;
     } else {
-	cnt = 0;
-	raise_invalid_unicode(orig, (int)(end - orig), (int)(str - orig));
+        cnt = 0;
+        raise_invalid_unicode(orig, (int)(end - orig), (int)(str - orig));
     }
     str++;
     for (; 0 < cnt; cnt--, str++) {
-	b = *(uint8_t*)str;
-	if (end <= str || 0x80 != (0xC0 & b)) {
-	    raise_invalid_unicode(orig, (int)(end - orig), (int)(str - orig));
-	}
-	code = (code << 6) | (b & 0x0000003F);
+        b = *(uint8_t *)str;
+        if (end <= str || 0x80 != (0xC0 & b)) {
+            raise_invalid_unicode(orig, (int)(end - orig), (int)(str - orig));
+        }
+        code = (code << 6) | (b & 0x0000003F);
     }
     if (0x0000FFFF < code) {
-	uint32_t	c1;
+        uint32_t c1;
 
-	code -= 0x00010000;
-	c1 = ((code >> 10) & 0x000003FF) + 0x0000D800;
-	code = (code & 0x000003FF) + 0x0000DC00;
-	*out->cur++ = '\\';
-	*out->cur++ = 'u';
-	for (i = 3; 0 <= i; i--) {
-	    *out->cur++ = hex_chars[(uint8_t)(c1 >> (i * 4)) & 0x0F];
-	}
+        code -= 0x00010000;
+        c1 = ((code >> 10) & 0x000003FF) + 0x0000D800;
+        code = (code & 0x000003FF) + 0x0000DC00;
+        *out->cur++ = '\\';
+        *out->cur++ = 'u';
+        for (i = 3; 0 <= i; i--) {
+            *out->cur++ = hex_chars[(uint8_t)(c1 >> (i * 4)) & 0x0F];
+        }
     }
     *out->cur++ = '\\';
     *out->cur++ = 'u';
     for (i = 3; 0 <= i; i--) {
-	*out->cur++ = hex_chars[(uint8_t)(code >> (i * 4)) & 0x0F];
+        *out->cur++ = hex_chars[(uint8_t)(code >> (i * 4)) & 0x0F];
     }
     return str - 1;
 }
 
-static const char*
+static const char *
 check_unicode(const char *str, const char *end, const char *orig) {
-    uint8_t	b = *(uint8_t*)str;
-    int		cnt = 0;
+    uint8_t b = *(uint8_t *)str;
+    int cnt = 0;
 
     if (0xC0 == (0xE0 & b)) {
-	cnt = 1;
+        cnt = 1;
     } else if (0xE0 == (0xF0 & b)) {
-	cnt = 2;
+        cnt = 2;
     } else if (0xF0 == (0xF8 & b)) {
-	cnt = 3;
+        cnt = 3;
     } else if (0xF8 == (0xFC & b)) {
-	cnt = 4;
+        cnt = 4;
     } else if (0xFC == (0xFE & b)) {
-	cnt = 5;
+        cnt = 5;
     } else {
-	raise_invalid_unicode(orig, (int)(end - orig), (int)(str - orig));
+        raise_invalid_unicode(orig, (int)(end - orig), (int)(str - orig));
     }
     str++;
     for (; 0 < cnt; cnt--, str++) {
-	b = *(uint8_t*)str;
-	if (end <= str || 0x80 != (0xC0 & b)) {
-	    raise_invalid_unicode(orig, (int)(end - orig), (int)(str - orig));
-	}
+        b = *(uint8_t *)str;
+        if (end <= str || 0x80 != (0xC0 & b)) {
+            raise_invalid_unicode(orig, (int)(end - orig), (int)(str - orig));
+        }
     }
     return str;
 }
@@ -362,52 +367,52 @@ check_unicode(const char *str, const char *end, const char *orig) {
 // cache.
 long
 oj_check_circular(VALUE obj, Out out) {
-    slot_t	id = 0;
-    slot_t	*slot;
+    slot_t id = 0;
+    slot_t *slot;
 
     if (Yes == out->opts->circular) {
-	if (0 == (id = oj_cache8_get(out->circ_cache, obj, &slot))) {
-	    out->circ_cnt++;
-	    id = out->circ_cnt;
-	    *slot = id;
-	} else {
-	    if (ObjectMode == out->opts->mode) {
-		assure_size(out, 18);
-		*out->cur++ = '"';
-		*out->cur++ = '^';
-		*out->cur++ = 'r';
-		dump_ulong(id, out);
-		*out->cur++ = '"';
-	    }
-	    return -1;
-	}
+        if (0 == (id = oj_cache8_get(out->circ_cache, obj, &slot))) {
+            out->circ_cnt++;
+            id = out->circ_cnt;
+            *slot = id;
+        } else {
+            if (ObjectMode == out->opts->mode) {
+                assure_size(out, 18);
+                *out->cur++ = '"';
+                *out->cur++ = '^';
+                *out->cur++ = 'r';
+                dump_ulong(id, out);
+                *out->cur++ = '"';
+            }
+            return -1;
+        }
     }
     return (long)id;
 }
 
 void
 oj_dump_time(VALUE obj, Out out, int withZone) {
-    char	buf[64];
-    char	*b = buf + sizeof(buf) - 1;
-    long	size;
-    char	*dot;
-    int		neg = 0;
-    long	one = 1000000000;
-    long long	sec;
-    long long	nsec;
+    char buf[64];
+    char *b = buf + sizeof(buf) - 1;
+    long size;
+    char *dot;
+    int neg = 0;
+    long one = 1000000000;
+    long long sec;
+    long long nsec;
 
 #ifdef HAVE_RB_TIME_TIMESPEC
     // rb_time_timespec as well as rb_time_timeeval have a bug that causes an
     // exception to be raised if a time is before 1970 on 32 bit systems so
     // check the timespec size and use the ruby calls if a 32 bit system.
     if (16 <= sizeof(struct timespec)) {
-	struct timespec	ts = rb_time_timespec(obj);
+        struct timespec ts = rb_time_timespec(obj);
 
-	sec = (long long)ts.tv_sec;
-	nsec = ts.tv_nsec;
+        sec = (long long)ts.tv_sec;
+        nsec = ts.tv_nsec;
     } else {
-	sec = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
-	nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+        sec = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+        nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
     }
 #else
     sec = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
@@ -416,64 +421,64 @@ oj_dump_time(VALUE obj, Out out, int withZone) {
 
     *b-- = '\0';
     if (withZone) {
-	long	tzsecs = NUM2LONG(rb_funcall2(obj, oj_utc_offset_id, 0, 0));
-	int	zneg = (0 > tzsecs);
+        long tzsecs = NUM2LONG(rb_funcall2(obj, oj_utc_offset_id, 0, 0));
+        int zneg = (0 > tzsecs);
 
-	if (0 == tzsecs && rb_funcall2(obj, oj_utcq_id, 0, 0)) {
-	    tzsecs = 86400;
-	}
-	if (zneg) {
-	    tzsecs = -tzsecs;
-	}
-	if (0 == tzsecs) {
-	    *b-- = '0';
-	} else {
-	    for (; 0 < tzsecs; b--, tzsecs /= 10) {
-		*b = '0' + (tzsecs % 10);
-	    }
-	    if (zneg) {
-		*b-- = '-';
-	    }
-	}
-	*b-- = 'e';
+        if (0 == tzsecs && rb_funcall2(obj, oj_utcq_id, 0, 0)) {
+            tzsecs = 86400;
+        }
+        if (zneg) {
+            tzsecs = -tzsecs;
+        }
+        if (0 == tzsecs) {
+            *b-- = '0';
+        } else {
+            for (; 0 < tzsecs; b--, tzsecs /= 10) {
+                *b = '0' + (tzsecs % 10);
+            }
+            if (zneg) {
+                *b-- = '-';
+            }
+        }
+        *b-- = 'e';
     }
     if (0 > sec) {
-	neg = 1;
-	sec = -sec;
-	if (0 < nsec) {
-	    nsec = 1000000000 - nsec;
-	    sec--;
-	}
+        neg = 1;
+        sec = -sec;
+        if (0 < nsec) {
+            nsec = 1000000000 - nsec;
+            sec--;
+        }
     }
     dot = b - 9;
     if (0 < out->opts->sec_prec) {
-	if (9 > out->opts->sec_prec) {
-	    int	i;
+        if (9 > out->opts->sec_prec) {
+            int i;
 
-	    for (i = 9 - out->opts->sec_prec; 0 < i; i--) {
-		dot++;
-		nsec = (nsec + 5) / 10;
-		one /= 10;
-	    }
-	}
-	if (one <= nsec) {
-	    nsec -= one;
-	    sec++;
-	}
-	for (; dot < b; b--, nsec /= 10) {
-	    *b = '0' + (nsec % 10);
-	}
-	*b-- = '.';
+            for (i = 9 - out->opts->sec_prec; 0 < i; i--) {
+                dot++;
+                nsec = (nsec + 5) / 10;
+                one /= 10;
+            }
+        }
+        if (one <= nsec) {
+            nsec -= one;
+            sec++;
+        }
+        for (; dot < b; b--, nsec /= 10) {
+            *b = '0' + (nsec % 10);
+        }
+        *b-- = '.';
     }
     if (0 == sec) {
-	*b-- = '0';
+        *b-- = '0';
     } else {
-	for (; 0 < sec; b--, sec /= 10) {
-	    *b = '0' + (sec % 10);
-	}
+        for (; 0 < sec; b--, sec /= 10) {
+            *b = '0' + (sec % 10);
+        }
     }
     if (neg) {
-	*b-- = '-';
+        *b-- = '-';
     }
     b++;
     size = sizeof(buf) - (b - buf) - 1;
@@ -485,31 +490,31 @@ oj_dump_time(VALUE obj, Out out, int withZone) {
 
 void
 oj_dump_ruby_time(VALUE obj, Out out) {
-    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+    volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-    oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), (int)RSTRING_LEN(rstr), 0, 0, out);
+    oj_dump_cstr(rb_string_value_ptr((VALUE *)&rstr), (int)RSTRING_LEN(rstr), 0, 0, out);
 }
 
 void
 oj_dump_xml_time(VALUE obj, Out out) {
-    char		buf[64];
-    struct _timeInfo	ti;
-    long		one = 1000000000;
-    int64_t		sec;
-    long long		nsec;
-    long		tzsecs = NUM2LONG(rb_funcall2(obj, oj_utc_offset_id, 0, 0));
-    int			tzhour, tzmin;
-    char		tzsign = '+';
+    char buf[64];
+    struct _timeInfo ti;
+    long one = 1000000000;
+    int64_t sec;
+    long long nsec;
+    long tzsecs = NUM2LONG(rb_funcall2(obj, oj_utc_offset_id, 0, 0));
+    int tzhour, tzmin;
+    char tzsign = '+';
 
 #ifdef HAVE_RB_TIME_TIMESPEC
     if (16 <= sizeof(struct timespec)) {
-	struct timespec	ts = rb_time_timespec(obj);
+        struct timespec ts = rb_time_timespec(obj);
 
-	sec = ts.tv_sec;
-	nsec = ts.tv_nsec;
+        sec = ts.tv_sec;
+        nsec = ts.tv_nsec;
     } else {
-	sec = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
-	nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+        sec = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+        nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
     }
 #else
     sec = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
@@ -518,24 +523,24 @@ oj_dump_xml_time(VALUE obj, Out out) {
 
     assure_size(out, 36);
     if (9 > out->opts->sec_prec) {
-	int	i;
+        int i;
 
-	// This is pretty lame but to be compatible with rails and active
-	// support rounding is not done but instead a floor is done when
-	// second precision is 3 just to be like rails. sigh.
-	if (3 == out->opts->sec_prec) {
-	    nsec /= 1000000;
-	    one = 1000;
-	} else {
-	    for (i = 9 - out->opts->sec_prec; 0 < i; i--) {
-		nsec = (nsec + 5) / 10;
-		one /= 10;
-	    }
-	    if (one <= nsec) {
-		nsec -= one;
-		sec++;
-	    }
-	}
+        // This is pretty lame but to be compatible with rails and active
+        // support rounding is not done but instead a floor is done when
+        // second precision is 3 just to be like rails. sigh.
+        if (3 == out->opts->sec_prec) {
+            nsec /= 1000000;
+            one = 1000;
+        } else {
+            for (i = 9 - out->opts->sec_prec; 0 < i; i--) {
+                nsec = (nsec + 5) / 10;
+                one /= 10;
+            }
+            if (one <= nsec) {
+                nsec -= one;
+                sec++;
+            }
+        }
     }
     // 2012-01-05T23:58:07.123456000+09:00
     //tm = localtime(&sec);
@@ -550,34 +555,33 @@ oj_dump_xml_time(VALUE obj, Out out) {
         tzmin = (int)(tzsecs / 60) - (tzhour * 60);
     }
     if ((0 == nsec && !out->opts->sec_prec_set) || 0 == out->opts->sec_prec) {
-	if (0 == tzsecs && rb_funcall2(obj, oj_utcq_id, 0, 0)) {
-	    sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02dZ", ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec);
-	    oj_dump_cstr(buf, 20, 0, 0, out);
-	} else {
-	    sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02d%c%02d:%02d", ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec,
-		    tzsign, tzhour, tzmin);
-	    oj_dump_cstr(buf, 25, 0, 0, out);
-	}
+        if (0 == tzsecs && rb_funcall2(obj, oj_utcq_id, 0, 0)) {
+            sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02dZ", ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec);
+            oj_dump_cstr(buf, 20, 0, 0, out);
+        } else {
+            sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02d%c%02d:%02d", ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec, tzsign, tzhour, tzmin);
+            oj_dump_cstr(buf, 25, 0, 0, out);
+        }
     } else if (0 == tzsecs && rb_funcall2(obj, oj_utcq_id, 0, 0)) {
-	char	format[64] = "%04d-%02d-%02dT%02d:%02d:%02d.%09ldZ";
-	int	len = 30;
+        char format[64] = "%04d-%02d-%02dT%02d:%02d:%02d.%09ldZ";
+        int len = 30;
 
-	if (9 > out->opts->sec_prec) {
-	    format[32] = '0' + out->opts->sec_prec;
-	    len -= 9 - out->opts->sec_prec;
-	}
-	sprintf(buf, format, ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec, (long)nsec);
-	oj_dump_cstr(buf, len, 0, 0, out);
+        if (9 > out->opts->sec_prec) {
+            format[32] = '0' + out->opts->sec_prec;
+            len -= 9 - out->opts->sec_prec;
+        }
+        sprintf(buf, format, ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec, (long)nsec);
+        oj_dump_cstr(buf, len, 0, 0, out);
     } else {
-	char	format[64] = "%04d-%02d-%02dT%02d:%02d:%02d.%09ld%c%02d:%02d";
-	int	len = 35;
+        char format[64] = "%04d-%02d-%02dT%02d:%02d:%02d.%09ld%c%02d:%02d";
+        int len = 35;
 
-	if (9 > out->opts->sec_prec) {
-	    format[32] = '0' + out->opts->sec_prec;
-	    len -= 9 - out->opts->sec_prec;
-	}
-	sprintf(buf, format, ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec, (long)nsec, tzsign, tzhour, tzmin);
-	oj_dump_cstr(buf, len, 0, 0, out);
+        if (9 > out->opts->sec_prec) {
+            format[32] = '0' + out->opts->sec_prec;
+            len -= 9 - out->opts->sec_prec;
+        }
+        sprintf(buf, format, ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec, (long)nsec, tzsign, tzhour, tzmin);
+        oj_dump_cstr(buf, len, 0, 0, out);
     }
 }
 
@@ -589,9 +593,9 @@ oj_dump_obj_to_json(VALUE obj, Options copts, Out out) {
 void
 oj_dump_obj_to_json_using_params(VALUE obj, Options copts, Out out, int argc, VALUE *argv) {
     if (0 == out->buf) {
-	out->buf = ALLOC_N(char, 4096);
-	out->end = out->buf + 4095 - BUFFER_EXTRA; // 1 less than end plus extra for possible errors
-	out->allocated = true;
+        out->buf = ALLOC_N(char, 4096);
+        out->end = out->buf + 4095 - BUFFER_EXTRA; // 1 less than end plus extra for possible errors
+        out->allocated = true;
     }
     out->cur = out->buf;
     out->circ_cnt = 0;
@@ -602,41 +606,57 @@ oj_dump_obj_to_json_using_params(VALUE obj, Options copts, Out out, int argc, VA
     out->argv = argv;
     out->ropts = NULL;
     if (Yes == copts->circular) {
-	oj_cache8_new(&out->circ_cache);
+        oj_cache8_new(&out->circ_cache);
     }
     switch (copts->mode) {
-    case StrictMode:	oj_dump_strict_val(obj, 0, out);			break;
-    case NullMode:	oj_dump_null_val(obj, 0, out);				break;
-    case ObjectMode:	oj_dump_obj_val(obj, 0, out);				break;
-    case CompatMode:	oj_dump_compat_val(obj, 0, out, Yes == copts->to_json);	break;
-    case RailsMode:	oj_dump_rails_val(obj, 0, out);				break;
-    case CustomMode:	oj_dump_custom_val(obj, 0, out, true);			break;
-    case WabMode:	oj_dump_wab_val(obj, 0, out);				break;
-    default:		oj_dump_custom_val(obj, 0, out, true);			break;
+        case StrictMode:
+            oj_dump_strict_val(obj, 0, out);
+            break;
+        case NullMode:
+            oj_dump_null_val(obj, 0, out);
+            break;
+        case ObjectMode:
+            oj_dump_obj_val(obj, 0, out);
+            break;
+        case CompatMode:
+            oj_dump_compat_val(obj, 0, out, Yes == copts->to_json);
+            break;
+        case RailsMode:
+            oj_dump_rails_val(obj, 0, out);
+            break;
+        case CustomMode:
+            oj_dump_custom_val(obj, 0, out, true);
+            break;
+        case WabMode:
+            oj_dump_wab_val(obj, 0, out);
+            break;
+        default:
+            oj_dump_custom_val(obj, 0, out, true);
+            break;
     }
     if (0 < out->indent) {
-	switch (*(out->cur - 1)) {
-	case ']':
-	case '}':
-	    assure_size(out, 1);
-	    *out->cur++ = '\n';
-	default:
-	    break;
-	}
+        switch (*(out->cur - 1)) {
+            case ']':
+            case '}':
+                assure_size(out, 1);
+                *out->cur++ = '\n';
+            default:
+                break;
+        }
     }
     *out->cur = '\0';
     if (Yes == copts->circular) {
-	oj_cache8_delete(out->circ_cache);
+        oj_cache8_delete(out->circ_cache);
     }
 }
 
 void
 oj_write_obj_to_file(VALUE obj, const char *path, Options copts) {
-    char	buf[4096];
+    char buf[4096];
     struct _out out;
-    size_t	size;
-    FILE	*f;
-    int		ok;
+    size_t size;
+    FILE *f;
+    int ok;
 
     out.buf = buf;
     out.end = buf + sizeof(buf) - BUFFER_EXTRA;
@@ -645,32 +665,32 @@ oj_write_obj_to_file(VALUE obj, const char *path, Options copts) {
     oj_dump_obj_to_json(obj, copts, &out);
     size = out.cur - out.buf;
     if (0 == (f = fopen(path, "w"))) {
-	if (out.allocated) {
-	    xfree(out.buf);
-	}
-	rb_raise(rb_eIOError, "%s", strerror(errno));
+        if (out.allocated) {
+            xfree(out.buf);
+        }
+        rb_raise(rb_eIOError, "%s", strerror(errno));
     }
     ok = (size == fwrite(out.buf, 1, size, f));
     if (out.allocated) {
-	xfree(out.buf);
+        xfree(out.buf);
     }
     fclose(f);
     if (!ok) {
-	int	err = ferror(f);
+        int err = ferror(f);
 
-	rb_raise(rb_eIOError, "Write failed. [%d:%s]", err, strerror(err));
+        rb_raise(rb_eIOError, "Write failed. [%d:%s]", err, strerror(err));
     }
 }
 
 void
 oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
-    char	buf[4096];
+    char buf[4096];
     struct _out out;
-    ssize_t	size;
-    VALUE	clas = rb_obj_class(stream);
+    ssize_t size;
+    VALUE clas = rb_obj_class(stream);
 #if !IS_WINDOWS
-    int		fd;
-    VALUE	s;
+    int fd;
+    VALUE s;
 #endif
 
     out.buf = buf;
@@ -680,39 +700,39 @@ oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
     oj_dump_obj_to_json(obj, copts, &out);
     size = out.cur - out.buf;
     if (oj_stringio_class == clas) {
-	rb_funcall(stream, oj_write_id, 1, rb_str_new(out.buf, size));
+        rb_funcall(stream, oj_write_id, 1, rb_str_new(out.buf, size));
 #if !IS_WINDOWS
     } else if (rb_respond_to(stream, oj_fileno_id) &&
-	       Qnil != (s = rb_funcall(stream, oj_fileno_id, 0)) &&
-	       0 != (fd = FIX2INT(s))) {
-	if (size != write(fd, out.buf, size)) {
-	    if (out.allocated) {
-		xfree(out.buf);
-	    }
-	    rb_raise(rb_eIOError, "Write failed. [%d:%s]", errno, strerror(errno));
-	}
+               Qnil != (s = rb_funcall(stream, oj_fileno_id, 0)) &&
+               0 != (fd = FIX2INT(s))) {
+        if (size != write(fd, out.buf, size)) {
+            if (out.allocated) {
+                xfree(out.buf);
+            }
+            rb_raise(rb_eIOError, "Write failed. [%d:%s]", errno, strerror(errno));
+        }
 #endif
     } else if (rb_respond_to(stream, oj_write_id)) {
-	rb_funcall(stream, oj_write_id, 1, rb_str_new(out.buf, size));
+        rb_funcall(stream, oj_write_id, 1, rb_str_new(out.buf, size));
     } else {
-	if (out.allocated) {
-	    xfree(out.buf);
-	}
-	rb_raise(rb_eArgError, "to_stream() expected an IO Object.");
+        if (out.allocated) {
+            xfree(out.buf);
+        }
+        rb_raise(rb_eArgError, "to_stream() expected an IO Object.");
     }
     if (out.allocated) {
-	xfree(out.buf);
+        xfree(out.buf);
     }
 }
 
 void
 oj_dump_str(VALUE obj, int depth, Out out, bool as_ok) {
-    rb_encoding	*enc = rb_to_encoding(rb_obj_encoding(obj));
+    rb_encoding *enc = rb_to_encoding(rb_obj_encoding(obj));
 
     if (rb_utf8_encoding() != enc) {
-	obj = rb_str_conv_enc(obj, enc, rb_utf8_encoding());
+        obj = rb_str_conv_enc(obj, enc, rb_utf8_encoding());
     }
-    oj_dump_cstr(rb_string_value_ptr((VALUE*)&obj), (int)RSTRING_LEN(obj), 0, 0, out);
+    oj_dump_cstr(rb_string_value_ptr((VALUE *)&obj), (int)RSTRING_LEN(obj), 0, 0, out);
 }
 
 void
@@ -720,23 +740,23 @@ oj_dump_sym(VALUE obj, int depth, Out out, bool as_ok) {
     // This causes a memory leak in 2.5.1. Maybe in other versions as well.
     //const char	*sym = rb_id2name(SYM2ID(obj));
 
-    volatile VALUE	s = rb_sym_to_s(obj);
+    volatile VALUE s = rb_sym_to_s(obj);
 
-    oj_dump_cstr(rb_string_value_ptr((VALUE*)&s), (int)RSTRING_LEN(s), 0, 0, out);
+    oj_dump_cstr(rb_string_value_ptr((VALUE *)&s), (int)RSTRING_LEN(s), 0, 0, out);
 }
 
 static void
 debug_raise(const char *orig, size_t cnt, int line) {
-    char	buf[1024];
-    char	*b = buf;
-    const char	*s = orig;
-    const char	*s_end = s + cnt;
+    char buf[1024];
+    char *b = buf;
+    const char *s = orig;
+    const char *s_end = s + cnt;
 
     if (32 < s_end - s) {
-	s_end = s + 32;
+        s_end = s + 32;
     }
     for (; s < s_end; s++) {
-	b += sprintf(b, " %02x", *s);
+        b += sprintf(b, " %02x", *s);
     }
     *b = '\0';
     rb_raise(oj_json_generator_error_class, "Partial character in string. %s @ %d", buf, line);
@@ -745,221 +765,235 @@ debug_raise(const char *orig, size_t cnt, int line) {
 void
 oj_dump_raw_json(VALUE obj, int depth, Out out) {
     if (oj_string_writer_class == rb_obj_class(obj)) {
-	StrWriter	sw = (StrWriter)DATA_PTR(obj);
-	size_t		len = sw->out.cur - sw->out.buf;
+        StrWriter sw = (StrWriter)DATA_PTR(obj);
+        size_t len = sw->out.cur - sw->out.buf;
 
-	if (0 < len) {
-	    len--;
-	}
-	oj_dump_raw(sw->out.buf, len, out);
+        if (0 < len) {
+            len--;
+        }
+        oj_dump_raw(sw->out.buf, len, out);
     } else {
-	volatile VALUE	jv;
+        volatile VALUE jv;
 
-	if (Yes == out->opts->trace) {
-	    oj_trace("raw_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyIn);
-	}
-	jv = rb_funcall(obj, oj_raw_json_id, 2, RB_INT2NUM(depth), RB_INT2NUM(out->indent));
-	if (Yes == out->opts->trace) {
-	    oj_trace("raw_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyOut);
-	}
-	oj_dump_raw(rb_string_value_ptr((VALUE*)&jv), (size_t)RSTRING_LEN(jv), out);
+        if (Yes == out->opts->trace) {
+            oj_trace("raw_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyIn);
+        }
+        jv = rb_funcall(obj, oj_raw_json_id, 2, RB_INT2NUM(depth), RB_INT2NUM(out->indent));
+        if (Yes == out->opts->trace) {
+            oj_trace("raw_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyOut);
+        }
+        oj_dump_raw(rb_string_value_ptr((VALUE *)&jv), (size_t)RSTRING_LEN(jv), out);
     }
 }
 
 void
 oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
-    size_t	size;
-    char	*cmap;
-    const char	*orig = str;
-    bool	has_hi = false;
+    size_t size;
+    char *cmap;
+    const char *orig = str;
+    bool has_hi = false;
 
     switch (out->opts->escape_mode) {
-    case NLEsc:
-	cmap = newline_friendly_chars;
-	size = newline_friendly_size((uint8_t*)str, cnt);
-	break;
-    case ASCIIEsc:
-	cmap = ascii_friendly_chars;
-	size = ascii_friendly_size((uint8_t*)str, cnt);
-	break;
-    case XSSEsc:
-	cmap = xss_friendly_chars;
-	size = xss_friendly_size((uint8_t*)str, cnt);
-	break;
-    case JXEsc:
-	cmap = hixss_friendly_chars;
-	size = hixss_friendly_size((uint8_t*)str, cnt);
-	break;
-    case RailsXEsc: {
-	long	sz;
+        case NLEsc:
+            cmap = newline_friendly_chars;
+            size = newline_friendly_size((uint8_t *)str, cnt);
+            break;
+        case ASCIIEsc:
+            cmap = ascii_friendly_chars;
+            size = ascii_friendly_size((uint8_t *)str, cnt);
+            break;
+        case XSSEsc:
+            cmap = xss_friendly_chars;
+            size = xss_friendly_size((uint8_t *)str, cnt);
+            break;
+        case JXEsc:
+            cmap = hixss_friendly_chars;
+            size = hixss_friendly_size((uint8_t *)str, cnt);
+            break;
+        case RailsXEsc: {
+            long sz;
 
-	cmap = rails_xss_friendly_chars;
-	sz = rails_xss_friendly_size((uint8_t*)str, cnt);
-	if (sz < 0) {
-	    has_hi = true;
-	    size = (size_t)-sz;
-	} else {
-	    size = (size_t)sz;
-	}
-	break;
-    }
-    case RailsEsc:
-	cmap = rails_friendly_chars;
-	size = rails_friendly_size((uint8_t*)str, cnt);
-	break;
-    case JSONEsc:
-    default:
-	cmap = hibit_friendly_chars;
-	size = hibit_friendly_size((uint8_t*)str, cnt);
+            cmap = rails_xss_friendly_chars;
+            sz = rails_xss_friendly_size((uint8_t *)str, cnt);
+            if (sz < 0) {
+                has_hi = true;
+                size = (size_t)-sz;
+            } else {
+                size = (size_t)sz;
+            }
+            break;
+        }
+        case RailsEsc:
+            cmap = rails_friendly_chars;
+            size = rails_friendly_size((uint8_t *)str, cnt);
+            break;
+        case JSONEsc:
+        default:
+            cmap = hibit_friendly_chars;
+            size = hibit_friendly_size((uint8_t *)str, cnt);
     }
     assure_size(out, size + BUFFER_EXTRA);
     *out->cur++ = '"';
 
     if (escape1) {
-	*out->cur++ = '\\';
-	*out->cur++ = 'u';
-	*out->cur++ = '0';
-	*out->cur++ = '0';
-	dump_hex((uint8_t)*str, out);
-	cnt--;
-	size--;
-	str++;
-	is_sym = 0; // just to make sure
+        *out->cur++ = '\\';
+        *out->cur++ = 'u';
+        *out->cur++ = '0';
+        *out->cur++ = '0';
+        dump_hex((uint8_t)*str, out);
+        cnt--;
+        size--;
+        str++;
+        is_sym = 0; // just to make sure
     }
     if (cnt == size && !has_hi) {
-	if (is_sym) {
-	    *out->cur++ = ':';
-	}
-	for (; '\0' != *str; str++) {
-	    *out->cur++ = *str;
-	}
-	*out->cur++ = '"';
+        if (is_sym) {
+            *out->cur++ = ':';
+        }
+        for (; '\0' != *str; str++) {
+            *out->cur++ = *str;
+        }
+        *out->cur++ = '"';
     } else {
-	const char	*end = str + cnt;
-	const char	*check_start = str;
+        const char *end = str + cnt;
+        const char *check_start = str;
 
-	if (is_sym) {
-	    *out->cur++ = ':';
-	}
-	for (; str < end; str++) {
-	    switch (cmap[(uint8_t)*str]) {
-	    case '1':
-		if ((JXEsc == out->opts->escape_mode || RailsXEsc == out->opts->escape_mode) && check_start <= str) {
-		    if (0 != (0x80 & (uint8_t)*str)) {
-			if (0xC0 == (0xC0 & (uint8_t)*str)) {
-			    check_start = check_unicode(str, end, orig);
-			} else {
-			    raise_invalid_unicode(orig, (int)(end - orig), (int)(str - orig));
-			}
-		    }
-		}
-		*out->cur++ = *str;
-		break;
-	    case '2':
-		*out->cur++ = '\\';
-		switch (*str) {
-		case '\\':	*out->cur++ = '\\';	break;
-		case '\b':	*out->cur++ = 'b';	break;
-		case '\t':	*out->cur++ = 't';	break;
-		case '\n':	*out->cur++ = 'n';	break;
-		case '\f':	*out->cur++ = 'f';	break;
-		case '\r':	*out->cur++ = 'r';	break;
-		default:	*out->cur++ = *str;	break;
-		}
-		break;
-	    case '3': // Unicode
-		if (0xe2 == (uint8_t)*str && (JXEsc == out->opts->escape_mode || RailsXEsc == out->opts->escape_mode) && 2 <= end - str) {
-		    if (0x80 == (uint8_t)str[1] && (0xa8 == (uint8_t)str[2] || 0xa9 == (uint8_t)str[2])) {
-			str = dump_unicode(str, end, out, orig);
-		    } else {
-			check_start = check_unicode(str, end, orig);
-			*out->cur++ = *str;
-		    }
-		    break;
-		}
-		str = dump_unicode(str, end, out, orig);
-		break;
-	    case '6': // control characters
-		if (*(uint8_t*)str < 0x80) {
-		    *out->cur++ = '\\';
-		    *out->cur++ = 'u';
-		    *out->cur++ = '0';
-		    *out->cur++ = '0';
-		    dump_hex((uint8_t)*str, out);
-		} else {
-		    if (0xe2 == (uint8_t)*str && (JXEsc == out->opts->escape_mode || RailsXEsc == out->opts->escape_mode) && 2 <= end - str) {
-			if (0x80 == (uint8_t)str[1] && (0xa8 == (uint8_t)str[2] || 0xa9 == (uint8_t)str[2])) {
-			    str = dump_unicode(str, end, out, orig);
-			} else {
-			    check_start = check_unicode(str, end, orig);
-			    *out->cur++ = *str;
-			}
-			break;
-		    }
-		    str = dump_unicode(str, end, out, orig);
-		}
-		break;
-	    default:
-		break; // ignore, should never happen if the table is correct
-	    }
-	}
-	*out->cur++ = '"';
+        if (is_sym) {
+            *out->cur++ = ':';
+        }
+        for (; str < end; str++) {
+            switch (cmap[(uint8_t)*str]) {
+                case '1':
+                    if ((JXEsc == out->opts->escape_mode || RailsXEsc == out->opts->escape_mode) && check_start <= str) {
+                        if (0 != (0x80 & (uint8_t)*str)) {
+                            if (0xC0 == (0xC0 & (uint8_t)*str)) {
+                                check_start = check_unicode(str, end, orig);
+                            } else {
+                                raise_invalid_unicode(orig, (int)(end - orig), (int)(str - orig));
+                            }
+                        }
+                    }
+                    *out->cur++ = *str;
+                    break;
+                case '2':
+                    *out->cur++ = '\\';
+                    switch (*str) {
+                        case '\\':
+                            *out->cur++ = '\\';
+                            break;
+                        case '\b':
+                            *out->cur++ = 'b';
+                            break;
+                        case '\t':
+                            *out->cur++ = 't';
+                            break;
+                        case '\n':
+                            *out->cur++ = 'n';
+                            break;
+                        case '\f':
+                            *out->cur++ = 'f';
+                            break;
+                        case '\r':
+                            *out->cur++ = 'r';
+                            break;
+                        default:
+                            *out->cur++ = *str;
+                            break;
+                    }
+                    break;
+                case '3': // Unicode
+                    if (0xe2 == (uint8_t)*str && (JXEsc == out->opts->escape_mode || RailsXEsc == out->opts->escape_mode) && 2 <= end - str) {
+                        if (0x80 == (uint8_t)str[1] && (0xa8 == (uint8_t)str[2] || 0xa9 == (uint8_t)str[2])) {
+                            str = dump_unicode(str, end, out, orig);
+                        } else {
+                            check_start = check_unicode(str, end, orig);
+                            *out->cur++ = *str;
+                        }
+                        break;
+                    }
+                    str = dump_unicode(str, end, out, orig);
+                    break;
+                case '6': // control characters
+                    if (*(uint8_t *)str < 0x80) {
+                        *out->cur++ = '\\';
+                        *out->cur++ = 'u';
+                        *out->cur++ = '0';
+                        *out->cur++ = '0';
+                        dump_hex((uint8_t)*str, out);
+                    } else {
+                        if (0xe2 == (uint8_t)*str && (JXEsc == out->opts->escape_mode || RailsXEsc == out->opts->escape_mode) && 2 <= end - str) {
+                            if (0x80 == (uint8_t)str[1] && (0xa8 == (uint8_t)str[2] || 0xa9 == (uint8_t)str[2])) {
+                                str = dump_unicode(str, end, out, orig);
+                            } else {
+                                check_start = check_unicode(str, end, orig);
+                                *out->cur++ = *str;
+                            }
+                            break;
+                        }
+                        str = dump_unicode(str, end, out, orig);
+                    }
+                    break;
+                default:
+                    break; // ignore, should never happen if the table is correct
+            }
+        }
+        *out->cur++ = '"';
     }
     if ((JXEsc == out->opts->escape_mode || RailsXEsc == out->opts->escape_mode) && 0 < str - orig && 0 != (0x80 & *(str - 1))) {
-	uint8_t	c = (uint8_t)*(str - 1);
-	int	i;
-	int	scnt = (int)(str - orig);
+        uint8_t c = (uint8_t) * (str - 1);
+        int i;
+        int scnt = (int)(str - orig);
 
-	// Last utf-8 characters must be 0x10xxxxxx. The start must be
-	// 0x110xxxxx for 2 characters, 0x1110xxxx for 3, and 0x11110xxx for
-	// 4.
-	if (0 != (0x40 & c)) {
-	    debug_raise(orig, cnt, __LINE__);
-	}
-	for (i = 1; i < (int)scnt && i < 4; i++) {
-	    c = str[-1 - i];
-	    if (0x80 != (0xC0 & c)) {
-		switch (i) {
-		case 1:
-		    if (0xC0 != (0xE0 & c)) {
-			debug_raise(orig, cnt, __LINE__);
-		    }
-		    break;
-		case 2:
-		    if (0xE0 != (0xF0 & c)) {
-			debug_raise(orig, cnt, __LINE__);
-		    }
-		    break;
-		case 3:
-		    if (0xF0 != (0xF8 & c)) {
-			debug_raise(orig, cnt, __LINE__);
-		    }
-		    break;
-		default: // can't get here
-		    break;
-		}
-		break;
-	    }
-	}
-	if (i == (int)scnt || 4 <= i) {
-	    debug_raise(orig, cnt, __LINE__);
-	}
+        // Last utf-8 characters must be 0x10xxxxxx. The start must be
+        // 0x110xxxxx for 2 characters, 0x1110xxxx for 3, and 0x11110xxx for
+        // 4.
+        if (0 != (0x40 & c)) {
+            debug_raise(orig, cnt, __LINE__);
+        }
+        for (i = 1; i < (int)scnt && i < 4; i++) {
+            c = str[-1 - i];
+            if (0x80 != (0xC0 & c)) {
+                switch (i) {
+                    case 1:
+                        if (0xC0 != (0xE0 & c)) {
+                            debug_raise(orig, cnt, __LINE__);
+                        }
+                        break;
+                    case 2:
+                        if (0xE0 != (0xF0 & c)) {
+                            debug_raise(orig, cnt, __LINE__);
+                        }
+                        break;
+                    case 3:
+                        if (0xF0 != (0xF8 & c)) {
+                            debug_raise(orig, cnt, __LINE__);
+                        }
+                        break;
+                    default: // can't get here
+                        break;
+                }
+                break;
+            }
+        }
+        if (i == (int)scnt || 4 <= i) {
+            debug_raise(orig, cnt, __LINE__);
+        }
     }
     *out->cur = '\0';
 }
 
 void
 oj_dump_class(VALUE obj, int depth, Out out, bool as_ok) {
-    const char	*s = rb_class2name(obj);
+    const char *s = rb_class2name(obj);
 
     oj_dump_cstr(s, strlen(s), 0, 0, out);
 }
 
 void
 oj_dump_obj_to_s(VALUE obj, Out out) {
-    volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+    volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-    oj_dump_cstr(rb_string_value_ptr((VALUE*)&rstr), (int)RSTRING_LEN(rstr), 0, 0, out);
+    oj_dump_cstr(rb_string_value_ptr((VALUE *)&rstr), (int)RSTRING_LEN(rstr), 0, 0, out);
 }
 
 void
@@ -972,23 +1006,23 @@ oj_dump_raw(const char *str, size_t cnt, Out out) {
 
 void
 oj_grow_out(Out out, size_t len) {
-    size_t  size = out->end - out->buf;
-    long    pos = out->cur - out->buf;
-    char    *buf = out->buf;
+    size_t size = out->end - out->buf;
+    long pos = out->cur - out->buf;
+    char *buf = out->buf;
 
     size *= 2;
     if (size <= len * 2 + pos) {
-	size += len;
+        size += len;
     }
     if (out->allocated) {
-	REALLOC_N(buf, char, (size + BUFFER_EXTRA));
+        REALLOC_N(buf, char, (size + BUFFER_EXTRA));
     } else {
-	buf = ALLOC_N(char, (size + BUFFER_EXTRA));
-	out->allocated = true;
-	memcpy(buf, out->buf, out->end - out->buf + BUFFER_EXTRA);
+        buf = ALLOC_N(char, (size + BUFFER_EXTRA));
+        out->allocated = true;
+        memcpy(buf, out->buf, out->end - out->buf + BUFFER_EXTRA);
     }
     if (0 == buf) {
-	rb_raise(rb_eNoMemError, "Failed to create string. [%d:%s]", ENOSPC, strerror(ENOSPC));
+        rb_raise(rb_eNoMemError, "Failed to create string. [%d:%s]", ENOSPC, strerror(ENOSPC));
     }
     out->buf = buf;
     out->end = buf + size;
@@ -1028,64 +1062,64 @@ oj_dump_false(VALUE obj, int depth, Out out, bool as_ok) {
 
 void
 oj_dump_fixnum(VALUE obj, int depth, Out out, bool as_ok) {
-    char	buf[32];
-    char	*b = buf + sizeof(buf) - 1;
-    long long	num = rb_num2ll(obj);
-    int		neg = 0;
-    bool	dump_as_string = false;
+    char buf[32];
+    char *b = buf + sizeof(buf) - 1;
+    long long num = rb_num2ll(obj);
+    int neg = 0;
+    bool dump_as_string = false;
 
     if (out->opts->int_range_max != 0 && out->opts->int_range_min != 0 &&
-	(out->opts->int_range_max < num || out->opts->int_range_min > num)) {
-	dump_as_string = true;
+        (out->opts->int_range_max < num || out->opts->int_range_min > num)) {
+        dump_as_string = true;
     }
     if (0 > num) {
-	neg = 1;
-	num = -num;
+        neg = 1;
+        num = -num;
     }
     *b-- = '\0';
 
     if (dump_as_string) {
-	*b-- = '"';
+        *b-- = '"';
     }
     if (0 < num) {
-	for (; 0 < num; num /= 10, b--) {
-	    *b = (num % 10) + '0';
-	}
-	if (neg) {
-	    *b = '-';
-	} else {
-	    b++;
-	}
+        for (; 0 < num; num /= 10, b--) {
+            *b = (num % 10) + '0';
+        }
+        if (neg) {
+            *b = '-';
+        } else {
+            b++;
+        }
     } else {
-	*b = '0';
+        *b = '0';
     }
     if (dump_as_string) {
-	*--b = '"';
+        *--b = '"';
     }
     assure_size(out, (sizeof(buf) - (b - buf)));
     for (; '\0' != *b; b++) {
-	*out->cur++ = *b;
+        *out->cur++ = *b;
     }
     *out->cur = '\0';
 }
 
 void
 oj_dump_bignum(VALUE obj, int depth, Out out, bool as_ok) {
-    volatile VALUE	rs = rb_big2str(obj, 10);
-    int			cnt = (int)RSTRING_LEN(rs);
-    bool		dump_as_string = false;
+    volatile VALUE rs = rb_big2str(obj, 10);
+    int cnt = (int)RSTRING_LEN(rs);
+    bool dump_as_string = false;
 
     if (out->opts->int_range_max != 0 || out->opts->int_range_min != 0) { // Bignum cannot be inside of Fixnum range
-	dump_as_string = true;
-	assure_size(out, cnt + 2);
-	*out->cur++ = '"';
+        dump_as_string = true;
+        assure_size(out, cnt + 2);
+        *out->cur++ = '"';
     } else {
-	assure_size(out, cnt);
+        assure_size(out, cnt);
     }
-    memcpy(out->cur, rb_string_value_ptr((VALUE*)&rs), cnt);
+    memcpy(out->cur, rb_string_value_ptr((VALUE *)&rs), cnt);
     out->cur += cnt;
     if (dump_as_string) {
-	*out->cur++ = '"';
+        *out->cur++ = '"';
     }
     *out->cur = '\0';
 }
@@ -1093,153 +1127,176 @@ oj_dump_bignum(VALUE obj, int depth, Out out, bool as_ok) {
 // Removed dependencies on math due to problems with CentOS 5.4.
 void
 oj_dump_float(VALUE obj, int depth, Out out, bool as_ok) {
-    char	buf[64];
-    char	*b;
-    double	d = rb_num2dbl(obj);
-    int		cnt = 0;
+    char buf[64];
+    char *b;
+    double d = rb_num2dbl(obj);
+    int cnt = 0;
 
     if (0.0 == d) {
-	b = buf;
-	*b++ = '0';
-	*b++ = '.';
-	*b++ = '0';
-	*b++ = '\0';
-	cnt = 3;
+        b = buf;
+        *b++ = '0';
+        *b++ = '.';
+        *b++ = '0';
+        *b++ = '\0';
+        cnt = 3;
     } else if (OJ_INFINITY == d) {
-	if (ObjectMode == out->opts->mode) {
-	    strcpy(buf, inf_val);
-	    cnt = sizeof(inf_val) - 1;
-	} else {
-	    NanDump	nd = out->opts->dump_opts.nan_dump;
+        if (ObjectMode == out->opts->mode) {
+            strcpy(buf, inf_val);
+            cnt = sizeof(inf_val) - 1;
+        } else {
+            NanDump nd = out->opts->dump_opts.nan_dump;
 
-	    if (AutoNan == nd) {
-		switch (out->opts->mode) {
-		case CompatMode:	nd = WordNan;	break;
-		case StrictMode:	nd = RaiseNan;	break;
-		case NullMode:		nd = NullNan;	break;
-		case CustomMode:	nd = NullNan;	break;
-		default:				break;
-		}
-	    }
-	    switch (nd) {
-	    case RaiseNan:
-		raise_strict(obj);
-		break;
-	    case WordNan:
-		strcpy(buf, "Infinity");
-		cnt = 8;
-		break;
-	    case NullNan:
-		strcpy(buf, "null");
-		cnt = 4;
-		break;
-	    case HugeNan:
-	    default:
-		strcpy(buf, inf_val);
-		cnt = sizeof(inf_val) - 1;
-		break;
-	    }
-	}
+            if (AutoNan == nd) {
+                switch (out->opts->mode) {
+                    case CompatMode:
+                        nd = WordNan;
+                        break;
+                    case StrictMode:
+                        nd = RaiseNan;
+                        break;
+                    case NullMode:
+                        nd = NullNan;
+                        break;
+                    case CustomMode:
+                        nd = NullNan;
+                        break;
+                    default:
+                        break;
+                }
+            }
+            switch (nd) {
+                case RaiseNan:
+                    raise_strict(obj);
+                    break;
+                case WordNan:
+                    strcpy(buf, "Infinity");
+                    cnt = 8;
+                    break;
+                case NullNan:
+                    strcpy(buf, "null");
+                    cnt = 4;
+                    break;
+                case HugeNan:
+                default:
+                    strcpy(buf, inf_val);
+                    cnt = sizeof(inf_val) - 1;
+                    break;
+            }
+        }
     } else if (-OJ_INFINITY == d) {
-	if (ObjectMode == out->opts->mode) {
-	    strcpy(buf, ninf_val);
-	    cnt = sizeof(ninf_val) - 1;
-	} else {
-	    NanDump	nd = out->opts->dump_opts.nan_dump;
+        if (ObjectMode == out->opts->mode) {
+            strcpy(buf, ninf_val);
+            cnt = sizeof(ninf_val) - 1;
+        } else {
+            NanDump nd = out->opts->dump_opts.nan_dump;
 
-	    if (AutoNan == nd) {
-		switch (out->opts->mode) {
-		case CompatMode:	nd = WordNan;	break;
-		case StrictMode:	nd = RaiseNan;	break;
-		case NullMode:		nd = NullNan;	break;
-		default:				break;
-		}
-	    }
-	    switch (nd) {
-	    case RaiseNan:
-		raise_strict(obj);
-		break;
-	    case WordNan:
-		strcpy(buf, "-Infinity");
-		cnt = 9;
-		break;
-	    case NullNan:
-		strcpy(buf, "null");
-		cnt = 4;
-		break;
-	    case HugeNan:
-	    default:
-		strcpy(buf, ninf_val);
-		cnt = sizeof(ninf_val) - 1;
-		break;
-	    }
-	}
+            if (AutoNan == nd) {
+                switch (out->opts->mode) {
+                    case CompatMode:
+                        nd = WordNan;
+                        break;
+                    case StrictMode:
+                        nd = RaiseNan;
+                        break;
+                    case NullMode:
+                        nd = NullNan;
+                        break;
+                    default:
+                        break;
+                }
+            }
+            switch (nd) {
+                case RaiseNan:
+                    raise_strict(obj);
+                    break;
+                case WordNan:
+                    strcpy(buf, "-Infinity");
+                    cnt = 9;
+                    break;
+                case NullNan:
+                    strcpy(buf, "null");
+                    cnt = 4;
+                    break;
+                case HugeNan:
+                default:
+                    strcpy(buf, ninf_val);
+                    cnt = sizeof(ninf_val) - 1;
+                    break;
+            }
+        }
     } else if (isnan(d)) {
-	if (ObjectMode == out->opts->mode) {
-	    strcpy(buf, nan_val);
-	    cnt = sizeof(ninf_val) - 1;
-	} else {
-	    NanDump	nd = out->opts->dump_opts.nan_dump;
+        if (ObjectMode == out->opts->mode) {
+            strcpy(buf, nan_val);
+            cnt = sizeof(ninf_val) - 1;
+        } else {
+            NanDump nd = out->opts->dump_opts.nan_dump;
 
-	    if (AutoNan == nd) {
-		switch (out->opts->mode) {
-		case ObjectMode:	nd = HugeNan;	break;
-		case StrictMode:	nd = RaiseNan;	break;
-		case NullMode:		nd = NullNan;	break;
-		default:				break;
-		}
-	    }
-	    switch (nd) {
-	    case RaiseNan:
-		raise_strict(obj);
-		break;
-	    case WordNan:
-		strcpy(buf, "NaN");
-		cnt = 3;
-		break;
-	    case NullNan:
-		strcpy(buf, "null");
-		cnt = 4;
-		break;
-	    case HugeNan:
-	    default:
-		strcpy(buf, nan_val);
-		cnt = sizeof(nan_val) - 1;
-		break;
-	    }
-	}
+            if (AutoNan == nd) {
+                switch (out->opts->mode) {
+                    case ObjectMode:
+                        nd = HugeNan;
+                        break;
+                    case StrictMode:
+                        nd = RaiseNan;
+                        break;
+                    case NullMode:
+                        nd = NullNan;
+                        break;
+                    default:
+                        break;
+                }
+            }
+            switch (nd) {
+                case RaiseNan:
+                    raise_strict(obj);
+                    break;
+                case WordNan:
+                    strcpy(buf, "NaN");
+                    cnt = 3;
+                    break;
+                case NullNan:
+                    strcpy(buf, "null");
+                    cnt = 4;
+                    break;
+                case HugeNan:
+                default:
+                    strcpy(buf, nan_val);
+                    cnt = sizeof(nan_val) - 1;
+                    break;
+            }
+        }
     } else if (d == (double)(long long int)d) {
-	cnt = snprintf(buf, sizeof(buf), "%.1f", d);
+        cnt = snprintf(buf, sizeof(buf), "%.1f", d);
     } else if (0 == out->opts->float_prec) {
-	volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+        volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-	cnt = (int)RSTRING_LEN(rstr);
-	if ((int)sizeof(buf) <= cnt) {
-	    cnt = sizeof(buf) - 1;
-	}
-	strncpy(buf, rb_string_value_ptr((VALUE*)&rstr), cnt);
-	buf[cnt] = '\0';
+        cnt = (int)RSTRING_LEN(rstr);
+        if ((int)sizeof(buf) <= cnt) {
+            cnt = sizeof(buf) - 1;
+        }
+        strncpy(buf, rb_string_value_ptr((VALUE *)&rstr), cnt);
+        buf[cnt] = '\0';
     } else {
-	cnt = oj_dump_float_printf(buf, sizeof(buf), obj, d, out->opts->float_fmt);
+        cnt = oj_dump_float_printf(buf, sizeof(buf), obj, d, out->opts->float_fmt);
     }
     assure_size(out, cnt);
     for (b = buf; '\0' != *b; b++) {
-	*out->cur++ = *b;
+        *out->cur++ = *b;
     }
     *out->cur = '\0';
 }
 
 int
 oj_dump_float_printf(char *buf, size_t blen, VALUE obj, double d, const char *format) {
-    int	cnt = snprintf(buf, blen, format, d);
+    int cnt = snprintf(buf, blen, format, d);
 
     // Round off issues at 16 significant digits so check for obvious ones of
     // 0001 and 9999.
     if (17 <= cnt && (0 == strcmp("0001", buf + cnt - 4) || 0 == strcmp("9999", buf + cnt - 4))) {
-	volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+        volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-	strcpy(buf, rb_string_value_ptr((VALUE*)&rstr));
-	cnt = (int)RSTRING_LEN(rstr);
+        strcpy(buf, rb_string_value_ptr((VALUE *)&rstr));
+        cnt = (int)RSTRING_LEN(rstr);
     }
     return cnt;
 }
@@ -1247,14 +1304,14 @@ oj_dump_float_printf(char *buf, size_t blen, VALUE obj, double d, const char *fo
 bool
 oj_dump_ignore(Options opts, VALUE obj) {
     if (NULL != opts->ignore && (ObjectMode == opts->mode || CustomMode == opts->mode)) {
-	VALUE	*vp = opts->ignore;
-	VALUE	clas = rb_obj_class(obj);
+        VALUE *vp = opts->ignore;
+        VALUE clas = rb_obj_class(obj);
 
-	for (; Qnil != *vp; vp++) {
-	    if (clas == *vp) {
-		return true;
-	    }
-	}
+        for (; Qnil != *vp; vp++) {
+            if (clas == *vp) {
+                return true;
+            }
+        }
     }
     return false;
 }
