@@ -102,3 +102,4 @@ Follow [@peterohler on Twitter](http://twitter.com/peterohler) for announcements
 + Provide a Pull Request off the `develop` branch.
 + Report a bug
 + Suggest an idea
++ Code is now formatted with the clang-format tool with the configuration file in the root of the repo.

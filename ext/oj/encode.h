@@ -4,13 +4,11 @@
 #ifndef OJ_ENCODE_H
 #define OJ_ENCODE_H
 
+#include "oj.h"
 #include "ruby.h"
 #include "ruby/encoding.h"
 
-#include "oj.h"
-
-static inline VALUE
-oj_encode(VALUE rstr) {
+static inline VALUE oj_encode(VALUE rstr) {
     rb_enc_associate(rstr, oj_utf8_encoding);
     return rstr;
 }

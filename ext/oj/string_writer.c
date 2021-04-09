@@ -4,249 +4,229 @@
 #include "dump.h"
 #include "encode.h"
 
-extern VALUE	Oj;
+extern VALUE Oj;
 
-bool	string_writer_optimized = false;
+bool string_writer_optimized = false;
 
-static void
-key_check(StrWriter sw, const char *key) {
-    DumpType	type = sw->types[sw->depth];
+static void key_check(StrWriter sw, const char *key) {
+    DumpType type = sw->types[sw->depth];
 
     if (0 == key && (ObjectNew == type || ObjectType == type)) {
-	rb_raise(rb_eStandardError, "Can not push onto an Object without a key.");
+        rb_raise(rb_eStandardError, "Can not push onto an Object without a key.");
     }
 }
 
-static void
-push_type(StrWriter sw, DumpType type) {
+static void push_type(StrWriter sw, DumpType type) {
     if (sw->types_end <= sw->types + sw->depth + 1) {
-	size_t	size = (sw->types_end - sw->types) * 2;
+        size_t size = (sw->types_end - sw->types) * 2;
 
-	REALLOC_N(sw->types, char, size);
-	sw->types_end = sw->types + size;
+        REALLOC_N(sw->types, char, size);
+        sw->types_end = sw->types + size;
     }
     sw->depth++;
     sw->types[sw->depth] = type;
 }
 
-static void
-maybe_comma(StrWriter sw) {
+static void maybe_comma(StrWriter sw) {
     switch (sw->types[sw->depth]) {
-    case ObjectNew:
-	sw->types[sw->depth] = ObjectType;
-	break;
-    case ArrayNew:
-	sw->types[sw->depth] = ArrayType;
-	break;
+    case ObjectNew: sw->types[sw->depth] = ObjectType; break;
+    case ArrayNew: sw->types[sw->depth] = ArrayType; break;
     case ObjectType:
     case ArrayType:
-	// Always have a few characters available in the out.buf.
-	*sw->out.cur++ = ',';
-	break;
+        // Always have a few characters available in the out.buf.
+        *sw->out.cur++ = ',';
+        break;
     }
 }
 
 // Used by stream writer also.
-void
-oj_str_writer_init(StrWriter sw, int buf_size) {
-    sw->opts = oj_default_options;
-    sw->depth = 0;
-    sw->types = ALLOC_N(char, 256);
-    sw->types_end = sw->types + 256;
-    *sw->types = '\0';
+void oj_str_writer_init(StrWriter sw, int buf_size) {
+    sw->opts       = oj_default_options;
+    sw->depth      = 0;
+    sw->types      = ALLOC_N(char, 256);
+    sw->types_end  = sw->types + 256;
+    *sw->types     = '\0';
     sw->keyWritten = 0;
 
     if (0 == buf_size) {
-	buf_size = 4096;
+        buf_size = 4096;
     } else if (buf_size < 1024) {
-	buf_size = 1024;
+        buf_size = 1024;
     }
-    sw->out.buf = ALLOC_N(char, buf_size);
-    sw->out.end = sw->out.buf + buf_size - 10;
-    sw->out.allocated = true;
-    sw->out.cur = sw->out.buf;
-    *sw->out.cur = '\0';
+    sw->out.buf        = ALLOC_N(char, buf_size);
+    sw->out.end        = sw->out.buf + buf_size - 10;
+    sw->out.allocated  = true;
+    sw->out.cur        = sw->out.buf;
+    *sw->out.cur       = '\0';
     sw->out.circ_cache = NULL;
-    sw->out.circ_cnt = 0;
-    sw->out.hash_cnt = 0;
-    sw->out.opts = &sw->opts;
-    sw->out.indent = sw->opts.indent;
-    sw->out.depth = 0;
-    sw->out.argc = 0;
-    sw->out.argv = NULL;
-    sw->out.caller = 0;
-    sw->out.ropts = NULL;
-    sw->out.omit_nil = oj_default_options.dump_opts.omit_nil;
+    sw->out.circ_cnt   = 0;
+    sw->out.hash_cnt   = 0;
+    sw->out.opts       = &sw->opts;
+    sw->out.indent     = sw->opts.indent;
+    sw->out.depth      = 0;
+    sw->out.argc       = 0;
+    sw->out.argv       = NULL;
+    sw->out.caller     = 0;
+    sw->out.ropts      = NULL;
+    sw->out.omit_nil   = oj_default_options.dump_opts.omit_nil;
 }
 
-void
-oj_str_writer_push_key(StrWriter sw, const char *key) {
-    DumpType	type = sw->types[sw->depth];
-    long	size;
+void oj_str_writer_push_key(StrWriter sw, const char *key) {
+    DumpType type = sw->types[sw->depth];
+    long     size;
 
     if (sw->keyWritten) {
-	rb_raise(rb_eStandardError, "Can not push more than one key before pushing a non-key.");
+        rb_raise(rb_eStandardError, "Can not push more than one key before pushing a non-key.");
     }
     if (ObjectNew != type && ObjectType != type) {
-	rb_raise(rb_eStandardError, "Can only push a key onto an Object.");
+        rb_raise(rb_eStandardError, "Can only push a key onto an Object.");
     }
     size = sw->depth * sw->out.indent + 3;
     assure_size(&sw->out, size);
     maybe_comma(sw);
     if (0 < sw->depth) {
-	fill_indent(&sw->out, sw->depth);
+        fill_indent(&sw->out, sw->depth);
     }
     oj_dump_cstr(key, strlen(key), 0, 0, &sw->out);
     *sw->out.cur++ = ':';
     sw->keyWritten = 1;
 }
 
-void
-oj_str_writer_push_object(StrWriter sw, const char *key) {
+void oj_str_writer_push_object(StrWriter sw, const char *key) {
     if (sw->keyWritten) {
-	sw->keyWritten = 0;
-	assure_size(&sw->out, 1);
+        sw->keyWritten = 0;
+        assure_size(&sw->out, 1);
     } else {
-	long	size;
+        long size;
 
-	key_check(sw, key);
-	size = sw->depth * sw->out.indent + 3;
-	assure_size(&sw->out, size);
-	maybe_comma(sw);
-	if (0 < sw->depth) {
-	    fill_indent(&sw->out, sw->depth);
-	}
-	if (0 != key) {
-	    oj_dump_cstr(key, strlen(key), 0, 0, &sw->out);
-	    *sw->out.cur++ = ':';
-	}
+        key_check(sw, key);
+        size = sw->depth * sw->out.indent + 3;
+        assure_size(&sw->out, size);
+        maybe_comma(sw);
+        if (0 < sw->depth) {
+            fill_indent(&sw->out, sw->depth);
+        }
+        if (0 != key) {
+            oj_dump_cstr(key, strlen(key), 0, 0, &sw->out);
+            *sw->out.cur++ = ':';
+        }
     }
     *sw->out.cur++ = '{';
     push_type(sw, ObjectNew);
 }
 
-void
-oj_str_writer_push_array(StrWriter sw, const char *key) {
+void oj_str_writer_push_array(StrWriter sw, const char *key) {
     if (sw->keyWritten) {
-	sw->keyWritten = 0;
-	assure_size(&sw->out, 1);
+        sw->keyWritten = 0;
+        assure_size(&sw->out, 1);
     } else {
-	long	size;
+        long size;
 
-	key_check(sw, key);
-	size = sw->depth * sw->out.indent + 3;
-	assure_size(&sw->out, size);
-	maybe_comma(sw);
-	if (0 < sw->depth) {
-	    fill_indent(&sw->out, sw->depth);
-	}
-	if (0 != key) {
-	    oj_dump_cstr(key, strlen(key), 0, 0, &sw->out);
-	    *sw->out.cur++ = ':';
-	}
+        key_check(sw, key);
+        size = sw->depth * sw->out.indent + 3;
+        assure_size(&sw->out, size);
+        maybe_comma(sw);
+        if (0 < sw->depth) {
+            fill_indent(&sw->out, sw->depth);
+        }
+        if (0 != key) {
+            oj_dump_cstr(key, strlen(key), 0, 0, &sw->out);
+            *sw->out.cur++ = ':';
+        }
     }
     *sw->out.cur++ = '[';
     push_type(sw, ArrayNew);
 }
 
-void
-oj_str_writer_push_value(StrWriter sw, VALUE val, const char *key) {
-    Out	out = &sw->out;
+void oj_str_writer_push_value(StrWriter sw, VALUE val, const char *key) {
+    Out out = &sw->out;
 
     if (sw->keyWritten) {
-	sw->keyWritten = 0;
+        sw->keyWritten = 0;
     } else {
-	long	size;
+        long size;
 
-	key_check(sw, key);
-	size = sw->depth * out->indent + 3;
-	assure_size(out, size);
-	maybe_comma(sw);
-	if (0 < sw->depth) {
-	    fill_indent(&sw->out, sw->depth);
-	}
-	if (0 != key) {
-	    oj_dump_cstr(key, strlen(key), 0, 0, out);
-	    *out->cur++ = ':';
-	}
+        key_check(sw, key);
+        size = sw->depth * out->indent + 3;
+        assure_size(out, size);
+        maybe_comma(sw);
+        if (0 < sw->depth) {
+            fill_indent(&sw->out, sw->depth);
+        }
+        if (0 != key) {
+            oj_dump_cstr(key, strlen(key), 0, 0, out);
+            *out->cur++ = ':';
+        }
     }
     switch (out->opts->mode) {
-    case StrictMode:	oj_dump_strict_val(val, sw->depth, out);				break;
-    case NullMode:	oj_dump_null_val(val, sw->depth, out);					break;
-    case ObjectMode:	oj_dump_obj_val(val, sw->depth, out);					break;
-    case CompatMode:	oj_dump_compat_val(val, sw->depth, out, Yes == out->opts->to_json);	break;
-    case RailsMode:	oj_dump_rails_val(val, sw->depth, out);					break;
-    case CustomMode:	oj_dump_custom_val(val, sw->depth, out, true);				break;
-    default:		oj_dump_custom_val(val, sw->depth, out, true);				break;
+    case StrictMode: oj_dump_strict_val(val, sw->depth, out); break;
+    case NullMode: oj_dump_null_val(val, sw->depth, out); break;
+    case ObjectMode: oj_dump_obj_val(val, sw->depth, out); break;
+    case CompatMode: oj_dump_compat_val(val, sw->depth, out, Yes == out->opts->to_json); break;
+    case RailsMode: oj_dump_rails_val(val, sw->depth, out); break;
+    case CustomMode: oj_dump_custom_val(val, sw->depth, out, true); break;
+    default: oj_dump_custom_val(val, sw->depth, out, true); break;
     }
 }
 
-void
-oj_str_writer_push_json(StrWriter sw, const char *json, const char *key) {
+void oj_str_writer_push_json(StrWriter sw, const char *json, const char *key) {
     if (sw->keyWritten) {
-	sw->keyWritten = 0;
+        sw->keyWritten = 0;
     } else {
-	long	size;
+        long size;
 
-	key_check(sw, key);
-	size = sw->depth * sw->out.indent + 3;
-	assure_size(&sw->out, size);
-	maybe_comma(sw);
-	if (0 < sw->depth) {
-	    fill_indent(&sw->out, sw->depth);
-	}
-	if (0 != key) {
-	    oj_dump_cstr(key, strlen(key), 0, 0, &sw->out);
-	    *sw->out.cur++ = ':';
-	}
+        key_check(sw, key);
+        size = sw->depth * sw->out.indent + 3;
+        assure_size(&sw->out, size);
+        maybe_comma(sw);
+        if (0 < sw->depth) {
+            fill_indent(&sw->out, sw->depth);
+        }
+        if (0 != key) {
+            oj_dump_cstr(key, strlen(key), 0, 0, &sw->out);
+            *sw->out.cur++ = ':';
+        }
     }
     oj_dump_raw(json, strlen(json), &sw->out);
 }
 
-void
-oj_str_writer_pop(StrWriter sw) {
-    long	size;
-    DumpType	type = sw->types[sw->depth];
+void oj_str_writer_pop(StrWriter sw) {
+    long     size;
+    DumpType type = sw->types[sw->depth];
 
     if (sw->keyWritten) {
-	sw->keyWritten = 0;
-	rb_raise(rb_eStandardError, "Can not pop after writing a key but no value.");
+        sw->keyWritten = 0;
+        rb_raise(rb_eStandardError, "Can not pop after writing a key but no value.");
     }
     sw->depth--;
     if (0 > sw->depth) {
-	rb_raise(rb_eStandardError, "Can not pop with no open array or object.");
+        rb_raise(rb_eStandardError, "Can not pop with no open array or object.");
     }
     size = sw->depth * sw->out.indent + 2;
     assure_size(&sw->out, size);
     fill_indent(&sw->out, sw->depth);
     switch (type) {
     case ObjectNew:
-    case ObjectType:
-	*sw->out.cur++ = '}';
-	break;
+    case ObjectType: *sw->out.cur++ = '}'; break;
     case ArrayNew:
-    case ArrayType:
-	*sw->out.cur++ = ']';
-	break;
+    case ArrayType: *sw->out.cur++ = ']'; break;
     }
     if (0 == sw->depth && 0 <= sw->out.indent) {
-	*sw->out.cur++ = '\n';
+        *sw->out.cur++ = '\n';
     }
 }
 
-void
-oj_str_writer_pop_all(StrWriter sw) {
+void oj_str_writer_pop_all(StrWriter sw) {
     while (0 < sw->depth) {
-	oj_str_writer_pop(sw);
+        oj_str_writer_pop(sw);
     }
 }
 
-static void
-str_writer_free(void *ptr) {
-    StrWriter	sw;
+static void str_writer_free(void *ptr) {
+    StrWriter sw;
 
     if (0 == ptr) {
-	return;
+        return;
     }
     sw = (StrWriter)ptr;
     xfree(sw->out.buf);
@@ -270,16 +250,15 @@ str_writer_free(void *ptr) {
  * - *io* [_IO_] stream to write to
  * - *options* [_Hash_] formating options
  */
-static VALUE
-str_writer_new(int argc, VALUE *argv, VALUE self) {
-    StrWriter	sw = ALLOC(struct _strWriter);
+static VALUE str_writer_new(int argc, VALUE *argv, VALUE self) {
+    StrWriter sw = ALLOC(struct _strWriter);
 
     oj_str_writer_init(sw, 0);
     if (1 == argc) {
-	oj_parse_options(argv[0], &sw->opts);
+        oj_parse_options(argv[0], &sw->opts);
     }
-    sw->out.argc = argc - 1;
-    sw->out.argv = argv + 1;
+    sw->out.argc   = argc - 1;
+    sw->out.argv   = argv + 1;
     sw->out.indent = sw->opts.indent;
 
     return Data_Wrap_Struct(oj_string_writer_class, 0, str_writer_free, sw);
@@ -293,9 +272,8 @@ str_writer_new(int argc, VALUE *argv, VALUE self) {
  * the next push then that new key will be ignored.
  * - *key* [_String_] the key pending for the next push
  */
-static VALUE
-str_writer_push_key(VALUE self, VALUE key) {
-    StrWriter	sw = (StrWriter)DATA_PTR(self);
+static VALUE str_writer_push_key(VALUE self, VALUE key) {
+    StrWriter sw = (StrWriter)DATA_PTR(self);
 
     rb_check_type(key, T_STRING);
     oj_str_writer_push_key(sw, StringValuePtr(key));
@@ -310,29 +288,24 @@ str_writer_push_key(VALUE self, VALUE key) {
  * until a pop() is called.
  * - *key* [_String_] the key if adding to an object in the JSON document
  */
-static VALUE
-str_writer_push_object(int argc, VALUE *argv, VALUE self) {
-    StrWriter	sw = (StrWriter)DATA_PTR(self);
+static VALUE str_writer_push_object(int argc, VALUE *argv, VALUE self) {
+    StrWriter sw = (StrWriter)DATA_PTR(self);
 
     switch (argc) {
-    case 0:
-	oj_str_writer_push_object(sw, 0);
-	break;
+    case 0: oj_str_writer_push_object(sw, 0); break;
     case 1:
-	if (Qnil == argv[0]) {
-	    oj_str_writer_push_object(sw, 0);
-	} else {
-	    rb_check_type(argv[0], T_STRING);
-	    oj_str_writer_push_object(sw, StringValuePtr(argv[0]));
-	}
-	break;
-    default:
-	rb_raise(rb_eArgError, "Wrong number of argument to 'push_object'.");
-	break;
+        if (Qnil == argv[0]) {
+            oj_str_writer_push_object(sw, 0);
+        } else {
+            rb_check_type(argv[0], T_STRING);
+            oj_str_writer_push_object(sw, StringValuePtr(argv[0]));
+        }
+        break;
+    default: rb_raise(rb_eArgError, "Wrong number of argument to 'push_object'."); break;
     }
     if (rb_block_given_p()) {
-	rb_yield(Qnil);
-	oj_str_writer_pop(sw);
+        rb_yield(Qnil);
+        oj_str_writer_pop(sw);
     }
     return Qnil;
 }
@@ -344,29 +317,24 @@ str_writer_push_object(int argc, VALUE *argv, VALUE self) {
  * until a pop() is called.
  * - *key* [_String_] the key if adding to an object in the JSON document
  */
-static VALUE
-str_writer_push_array(int argc, VALUE *argv, VALUE self) {
-    StrWriter	sw = (StrWriter)DATA_PTR(self);
+static VALUE str_writer_push_array(int argc, VALUE *argv, VALUE self) {
+    StrWriter sw = (StrWriter)DATA_PTR(self);
 
     switch (argc) {
-    case 0:
-	oj_str_writer_push_array(sw, 0);
-	break;
+    case 0: oj_str_writer_push_array(sw, 0); break;
     case 1:
-	if (Qnil == argv[0]) {
-	    oj_str_writer_push_array(sw, 0);
-	} else {
-	    rb_check_type(argv[0], T_STRING);
-	    oj_str_writer_push_array(sw, StringValuePtr(argv[0]));
-	}
-	break;
-    default:
-	rb_raise(rb_eArgError, "Wrong number of argument to 'push_object'.");
-	break;
+        if (Qnil == argv[0]) {
+            oj_str_writer_push_array(sw, 0);
+        } else {
+            rb_check_type(argv[0], T_STRING);
+            oj_str_writer_push_array(sw, StringValuePtr(argv[0]));
+        }
+        break;
+    default: rb_raise(rb_eArgError, "Wrong number of argument to 'push_object'."); break;
     }
     if (rb_block_given_p()) {
-	rb_yield(Qnil);
-	oj_str_writer_pop(sw);
+        rb_yield(Qnil);
+        oj_str_writer_pop(sw);
     }
     return Qnil;
 }
@@ -378,23 +346,18 @@ str_writer_push_array(int argc, VALUE *argv, VALUE self) {
  * - *value* [_Object_] value to add to the JSON document
  * - *key* [_String_] the key if adding to an object in the JSON document
  */
-static VALUE
-str_writer_push_value(int argc, VALUE *argv, VALUE self) {
+static VALUE str_writer_push_value(int argc, VALUE *argv, VALUE self) {
     switch (argc) {
-    case 1:
-	oj_str_writer_push_value((StrWriter)DATA_PTR(self), *argv, 0);
-	break;
+    case 1: oj_str_writer_push_value((StrWriter)DATA_PTR(self), *argv, 0); break;
     case 2:
-	if (Qnil == argv[1]) {
-	    oj_str_writer_push_value((StrWriter)DATA_PTR(self), *argv, 0);
-	} else {
-	    rb_check_type(argv[1], T_STRING);
-	    oj_str_writer_push_value((StrWriter)DATA_PTR(self), *argv, StringValuePtr(argv[1]));
-	}
-	break;
-    default:
-	rb_raise(rb_eArgError, "Wrong number of argument to 'push_value'.");
-	break;
+        if (Qnil == argv[1]) {
+            oj_str_writer_push_value((StrWriter)DATA_PTR(self), *argv, 0);
+        } else {
+            rb_check_type(argv[1], T_STRING);
+            oj_str_writer_push_value((StrWriter)DATA_PTR(self), *argv, StringValuePtr(argv[1]));
+        }
+        break;
+    default: rb_raise(rb_eArgError, "Wrong number of argument to 'push_value'."); break;
     }
     return Qnil;
 }
@@ -408,24 +371,21 @@ str_writer_push_value(int argc, VALUE *argv, VALUE self) {
  * - *value* [_Object_] value to add to the JSON document
  * - *key* [_String_] the key if adding to an object in the JSON document
  */
-static VALUE
-str_writer_push_json(int argc, VALUE *argv, VALUE self) {
+static VALUE str_writer_push_json(int argc, VALUE *argv, VALUE self) {
     rb_check_type(argv[0], T_STRING);
     switch (argc) {
-    case 1:
-	oj_str_writer_push_json((StrWriter)DATA_PTR(self), StringValuePtr(*argv), 0);
-	break;
+    case 1: oj_str_writer_push_json((StrWriter)DATA_PTR(self), StringValuePtr(*argv), 0); break;
     case 2:
-	if (Qnil == argv[1]) {
-	    oj_str_writer_push_json((StrWriter)DATA_PTR(self), StringValuePtr(*argv), 0);
-	} else {
-	    rb_check_type(argv[1], T_STRING);
-	    oj_str_writer_push_json((StrWriter)DATA_PTR(self), StringValuePtr(*argv), StringValuePtr(argv[1]));
-	}
-	break;
-    default:
-	rb_raise(rb_eArgError, "Wrong number of argument to 'push_json'.");
-	break;
+        if (Qnil == argv[1]) {
+            oj_str_writer_push_json((StrWriter)DATA_PTR(self), StringValuePtr(*argv), 0);
+        } else {
+            rb_check_type(argv[1], T_STRING);
+            oj_str_writer_push_json((StrWriter)DATA_PTR(self),
+                                    StringValuePtr(*argv),
+                                    StringValuePtr(argv[1]));
+        }
+        break;
+    default: rb_raise(rb_eArgError, "Wrong number of argument to 'push_json'."); break;
     }
     return Qnil;
 }
@@ -435,8 +395,7 @@ str_writer_push_json(int argc, VALUE *argv, VALUE self) {
  * Pops up a level in the JSON document closing the array or object that is
  * currently open.
  */
-static VALUE
-str_writer_pop(VALUE self) {
+static VALUE str_writer_pop(VALUE self) {
     oj_str_writer_pop((StrWriter)DATA_PTR(self));
     return Qnil;
 }
@@ -447,8 +406,7 @@ str_writer_pop(VALUE self) {
  * Pops all level in the JSON document closing all the array or object that is
  * currently open.
  */
-static VALUE
-str_writer_pop_all(VALUE self) {
+static VALUE str_writer_pop_all(VALUE self) {
     oj_str_writer_pop_all((StrWriter)DATA_PTR(self));
 
     return Qnil;
@@ -459,15 +417,14 @@ str_writer_pop_all(VALUE self) {
  *
  * Reset the writer back to the empty state.
  */
-static VALUE
-str_writer_reset(VALUE self) {
-    StrWriter	sw = (StrWriter)DATA_PTR(self);
+static VALUE str_writer_reset(VALUE self) {
+    StrWriter sw = (StrWriter)DATA_PTR(self);
 
-    sw->depth = 0;
-    *sw->types = '\0';
+    sw->depth      = 0;
+    *sw->types     = '\0';
     sw->keyWritten = 0;
-    sw->out.cur = sw->out.buf;
-    *sw->out.cur = '\0';
+    sw->out.cur    = sw->out.buf;
+    *sw->out.cur   = '\0';
 
     return Qnil;
 }
@@ -479,10 +436,9 @@ str_writer_reset(VALUE self) {
  *
  * *return* [_String_]
  */
-static VALUE
-str_writer_to_s(VALUE self) {
-    StrWriter	sw = (StrWriter)DATA_PTR(self);
-    VALUE	rstr = rb_str_new(sw->out.buf, sw->out.cur - sw->out.buf);
+static VALUE str_writer_to_s(VALUE self) {
+    StrWriter sw   = (StrWriter)DATA_PTR(self);
+    VALUE     rstr = rb_str_new(sw->out.buf, sw->out.cur - sw->out.buf);
 
     return oj_encode(rstr);
 }
@@ -497,10 +453,9 @@ str_writer_to_s(VALUE self) {
  *
  * *return* [_Hash_|_Array_|_String_|_Integer_|_Float_|_True_|_False_|_nil|)
  */
-static VALUE
-str_writer_as_json(VALUE self) {
+static VALUE str_writer_as_json(VALUE self) {
     if (string_writer_optimized) {
-	return self;
+        return self;
     }
     return rb_hash_new();
 }
@@ -514,8 +469,7 @@ str_writer_as_json(VALUE self) {
  * calling to_s() will return the JSON document. Note tha calling to_s() before
  * construction is complete will return the document in it's current state.
  */
-void
-oj_string_writer_init() {
+void oj_string_writer_init() {
     oj_string_writer_class = rb_define_class_under(Oj, "StringWriter", rb_cObject);
     rb_define_module_function(oj_string_writer_class, "new", str_writer_new, -1);
     rb_define_method(oj_string_writer_class, "push_key", str_writer_push_key, 1);
