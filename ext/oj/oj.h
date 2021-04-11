@@ -185,6 +185,7 @@ typedef struct _out {
     uint32_t   hash_cnt;
     bool       allocated;
     bool       omit_nil;
+    bool       generate;  // indicating dump by JSON.generate
     int        argc;
     VALUE *    argv;
     DumpCaller caller;  // used for the mimic json only
@@ -247,7 +248,7 @@ extern void oj_parse_options(VALUE ropts, Options copts);
 
 extern void oj_dump_obj_to_json(VALUE obj, Options copts, Out out);
 extern void
-            oj_dump_obj_to_json_using_params(VALUE obj, Options copts, Out out, int argc, VALUE *argv);
+oj_dump_obj_to_json_using_params(VALUE obj, Options copts, Out out, int argc, VALUE *argv);
 extern void oj_write_obj_to_file(VALUE obj, const char *path, Options copts);
 extern void oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts);
 extern void oj_dump_leaf_to_json(Leaf leaf, Options copts, Out out);

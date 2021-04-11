@@ -5,7 +5,12 @@
 - Code re-formatted with clang-format. Thanks goes to BuonOmo for
   suggesting and encouraging the use of a formatter and getting the
   effort started.
+
 - Added support for `GC.compact` on `Oj::Doc`
+
+- Fixed compatibility issue with Rails and the JSON gem that requires
+  a special case when using JSON.generate versus call `to_json` on an
+  object.
 
 ## 3.11.3 - 2021-03-09
 

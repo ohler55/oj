@@ -599,8 +599,8 @@ void oj_dump_obj_to_json(VALUE obj, Options copts, Out out) {
 void oj_dump_obj_to_json_using_params(VALUE obj, Options copts, Out out, int argc, VALUE *argv) {
     if (0 == out->buf) {
         out->buf = ALLOC_N(char, 4096);
-        out->end = out->buf + 4095 -
-                   BUFFER_EXTRA;  // 1 less than end plus extra for possible errors
+        // 1 less than end plus extra for possible errors
+        out->end       = out->buf + 4095 - BUFFER_EXTRA;
         out->allocated = true;
     }
     out->cur      = out->buf;

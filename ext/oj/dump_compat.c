@@ -120,6 +120,22 @@ dump_to_json(VALUE obj, Out out) {
     if (Yes == out->opts->trace) {
 	oj_trace("to_json", obj, __FILE__, __LINE__, 0, TraceRubyIn);
     }
+    if (out->generate) {
+	// There is some intricate monkey patching going on between rails and
+	// the json gem to in order to mimic the interaction we have to keep
+	// track of how the encoding was called. If from JSON.generate then
+	// skip and ActiveSupport to_json and outout as a string.
+	VALUE	method = rb_obj_method(obj, ID2SYM(rb_intern("to_json")));
+	VALUE	owner = rb_funcall(method, rb_intern("owner"), 0);
+
+	if (0 == strncmp(rb_class2name(owner), "ActiveSupport::", 15)) {
+	    oj_dump_obj_to_s(obj, out);
+	    if (Yes == out->opts->trace) {
+		oj_trace("to_json", obj, __FILE__, __LINE__, 0, TraceRubyOut);
+	    }
+	    return;
+	}
+    }
     if (0 == rb_obj_method_arity(obj, oj_to_json_id)) {
 	rs = rb_funcall(obj, oj_to_json_id, 0);
     } else {
