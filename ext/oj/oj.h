@@ -185,7 +185,6 @@ typedef struct _out {
     uint32_t   hash_cnt;
     bool       allocated;
     bool       omit_nil;
-    bool       generate;  // indicating dump by JSON.generate
     int        argc;
     VALUE *    argv;
     DumpCaller caller;  // used for the mimic json only

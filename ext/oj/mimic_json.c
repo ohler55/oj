@@ -211,7 +211,6 @@ static VALUE mimic_dump(int argc, VALUE *argv, VALUE self) {
     out.buf           = buf;
     out.end           = buf + sizeof(buf) - 10;
     out.allocated     = false;
-    out.generate      = false;
     out.caller        = CALLER_DUMP;
     copts.escape_mode = JXEsc;
     copts.mode        = CompatMode;
@@ -372,7 +371,6 @@ static VALUE mimic_generate_core(int argc, VALUE *argv, Options copts) {
     out.allocated = false;
     out.omit_nil  = copts->dump_opts.omit_nil;
     out.caller    = CALLER_GENERATE;
-    out.generate  = true;
     // For obj.to_json or generate nan is not allowed but if called from dump
     // it is.
     copts->dump_opts.nan_dump = RaiseNan;
@@ -386,8 +384,14 @@ static VALUE mimic_generate_core(int argc, VALUE *argv, Options copts) {
         rb_raise(rb_eTypeError, "nil not allowed.");
     }
     */
-    oj_dump_obj_to_json_using_params(*argv, copts, &out, argc - 1, argv + 1);
+    if (1 < argc) {
+        oj_dump_obj_to_json_using_params(*argv, copts, &out, argc - 1, argv + 1);
+    } else {
+        VALUE active_hack[1];
 
+        active_hack[0] = rb_funcall(state_class, oj_new_id, 0);
+        oj_dump_obj_to_json_using_params(*argv, copts, &out, 1, active_hack);
+    }
     if (0 == out.buf) {
         rb_raise(rb_eNoMemError, "Not enough memory.");
     }
@@ -748,7 +752,6 @@ static VALUE mimic_object_to_json(int argc, VALUE *argv, VALUE self) {
     out.end           = buf + sizeof(buf) - 10;
     out.allocated     = false;
     out.omit_nil      = copts.dump_opts.omit_nil;
-    out.generate      = false;
     copts.mode        = CompatMode;
     copts.to_json     = No;
     if (1 <= argc && Qnil != argv[0]) {
