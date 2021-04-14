@@ -384,8 +384,14 @@ static VALUE mimic_generate_core(int argc, VALUE *argv, Options copts) {
         rb_raise(rb_eTypeError, "nil not allowed.");
     }
     */
-    oj_dump_obj_to_json_using_params(*argv, copts, &out, argc - 1, argv + 1);
+    if (1 < argc) {
+        oj_dump_obj_to_json_using_params(*argv, copts, &out, argc - 1, argv + 1);
+    } else {
+        VALUE active_hack[1];
 
+        active_hack[0] = rb_funcall(state_class, oj_new_id, 0);
+        oj_dump_obj_to_json_using_params(*argv, copts, &out, 1, active_hack);
+    }
     if (0 == out.buf) {
         rb_raise(rb_eNoMemError, "Not enough memory.");
     }
@@ -755,7 +761,7 @@ static VALUE mimic_object_to_json(int argc, VALUE *argv, VALUE self) {
     // seem to prefer the option of changing that.
     // oj_dump_obj_to_json(self, &mimic_object_to_json_options, &out);
     oj_dump_obj_to_json_using_params(self, &copts, &out, argc, argv);
-    if (0 == out.buf) {
+    if (NULL == out.buf) {
         rb_raise(rb_eNoMemError, "Not enough memory.");
     }
     rstr = rb_str_new2(out.buf);
