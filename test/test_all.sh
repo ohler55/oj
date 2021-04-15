@@ -9,6 +9,9 @@ ruby tests_mimic.rb
 echo "----- Mimic with additions tests (tests_mimic_addition.rb) -----"
 ruby tests_mimic_addition.rb
 
+echo "----- Oj.generate without calling mimic_JSON (test_generate.rb) -----"
+ruby test_generate.rb
+
 ## only run if <= 1.9.3
 #echo "----- Mimic tests (isolated/test_mimic_after.rb) -----"
 #ruby isolated/test_mimic_after.rb

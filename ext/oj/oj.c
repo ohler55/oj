@@ -1610,7 +1610,8 @@ extern VALUE oj_define_mimic_json(int argc, VALUE *argv, VALUE self);
  *
  * Encode obj as a JSON String. The obj argument must be a Hash, Array, or
  * respond to to_h or to_json. Options other than those listed such as
- * +:allow_nan+ or +:max_nesting+ are ignored.
+ * +:allow_nan+ or +:max_nesting+ are ignored. Calling this method will call
+ * Oj.mimic_JSON if it is not already called.
  *
  * - *obj* [_Object__|_Hash_|_Array_] object to convert to a JSON String
  * - *opts* [_Hash_] options
