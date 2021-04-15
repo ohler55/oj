@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.11.5 - 2021-04-15
+
+- Oj.generate fix introduced in previous bug fix. Oj.mimic_JSON is forced if Oj.generate is called.
+
 ## 3.11.4 - 2021-04-14
 
 - Code re-formatted with clang-format. Thanks goes to BuonOmo for
