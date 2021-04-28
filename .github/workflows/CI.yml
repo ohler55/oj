@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - develop
+      - master
+  pull_request:
+
+jobs:
+  Build:
+    strategy:
+      fail-fast: true
+      matrix:
+        # Due to https://github.com/actions/runner/issues/849, we have to use quotes for '3.0'
+        ruby:
+          - head
+          - '3.0'
+          - '2.7'
+          - '2.6'
+          - '2.5'
+        os:
+          - ubuntu
+          - windows
+          - macos
+        gemfile:
+          - no_rails
+          - rails_5
+          - rails_6
+          - rails_6.1
+        exclude:
+          - os: macos
+            ruby: head
+          - os: macos
+            ruby: '3.0'
+          - os: macos
+            ruby: '2.5'
+            gemfile: rails_5
+
+    env:
+      BUNDLE_GEMFILE: gemfiles/${{ matrix.gemfile }}.gemfile
+      MAKE: make -j 2
+    runs-on: ${{ matrix.os }}-latest
+    continue-on-error: ${{ matrix.ruby == '3.0' || matrix.ruby == 'head' || matrix.os == 'windows' }}
+    name: Ruby ${{ matrix.ruby }} (${{ matrix.os }}${{ matrix.gemfile != 'no_rails' && ', ' || '' }}${{ matrix.gemfile != 'no_rails' && matrix.gemfile || '' }})
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+      - run: bundle exec rake
