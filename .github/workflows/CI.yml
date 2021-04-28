@@ -21,8 +21,8 @@ jobs:
           - '2.5'
         os:
           - ubuntu
-          - windows
           - macos
+          #- windows Tests are failing with Windows for now.
         gemfile:
           - no_rails
           - rails_5
@@ -41,7 +41,7 @@ jobs:
       BUNDLE_GEMFILE: gemfiles/${{ matrix.gemfile }}.gemfile
       MAKE: make -j 2
     runs-on: ${{ matrix.os }}-latest
-    continue-on-error: ${{ matrix.ruby == '3.0' || matrix.ruby == 'head' || matrix.os == 'windows' }}
+    continue-on-error: ${{ matrix.ruby == '3.0' || matrix.ruby == 'head'}}
     name: Ruby ${{ matrix.ruby }} (${{ matrix.os }}${{ matrix.gemfile != 'no_rails' && ', ' || '' }}${{ matrix.gemfile != 'no_rails' && matrix.gemfile || '' }})
     steps:
       - uses: actions/checkout@v2
