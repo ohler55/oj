@@ -4,7 +4,7 @@
 
 - Fixed bug where `Oj::Doc#fetch` on an empty Hash or Array did not return `nil`.
 
-- Added an `Oj::Doc#exists` method.
+- Added an `Oj::Doc#exists?` method.
 
 - Deprecated `Oj::Doc#where?` in favor `Oj::Doc#where` or the alias, `Oj::Doc#path`.
 
