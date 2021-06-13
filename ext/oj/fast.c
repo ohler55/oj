@@ -80,22 +80,6 @@ static Leaf  get_doc_leaf(Doc doc, const char *path);
 static Leaf  get_leaf(Leaf *stack, Leaf *lp, const char *path);
 static void  each_value(Doc doc, Leaf leaf);
 
-static void  doc_init(Doc doc);
-static void  doc_free(Doc doc);
-static VALUE doc_open(VALUE clas, VALUE str);
-static VALUE doc_open_file(VALUE clas, VALUE filename);
-static VALUE doc_where(VALUE self);
-static VALUE doc_local_key(VALUE self);
-static VALUE doc_home(VALUE self);
-static VALUE doc_type(int argc, VALUE *argv, VALUE self);
-static VALUE doc_fetch(int argc, VALUE *argv, VALUE self);
-static VALUE doc_each_leaf(int argc, VALUE *argv, VALUE self);
-static VALUE doc_move(VALUE self, VALUE str);
-static VALUE doc_each_child(int argc, VALUE *argv, VALUE self);
-static VALUE doc_each_value(int argc, VALUE *argv, VALUE self);
-static VALUE doc_dump(int argc, VALUE *argv, VALUE self);
-static VALUE doc_size(VALUE self);
-
 VALUE oj_doc_class = Qundef;
 
 // This is only for CentOS 5.4 with Ruby 1.9.3-p0.
@@ -1220,17 +1204,7 @@ static char *append_key(char *p, const char *key) {
  * @see Oj::Doc.open
  */
 
-/* @overload where?() => String
- * @deprecated
- * Returns a String that describes the absolute path to the current location
- * in the JSON document.
- */
 /* @overload where() => String
- *
- * Returns a String that describes the absolute path to the current location
- * in the JSON document.
- */
-/* @overload path() => String
  *
  * Returns a String that describes the absolute path to the current location
  * in the JSON document.
@@ -1271,6 +1245,25 @@ static VALUE doc_where(VALUE self) {
         return rb_str_new(path, p - path);
     }
 }
+
+/* @overload where?() => String
+ * @deprecated
+ * Returns a String that describes the absolute path to the current location
+ * in the JSON document.
+ */
+static VALUE doc_where_q(VALUE self) {
+    return doc_where(self);
+}
+
+/* @overload path() => String
+ *
+ * Returns a String that describes the absolute path to the current location
+ * in the JSON document.
+ */
+static VALUE doc_path(VALUE self) {
+    return doc_where(self);
+}
+
 
 /* @overload local_key() => String, Fixnum, nil
  *
@@ -1730,9 +1723,9 @@ void oj_init_doc() {
     rb_define_singleton_method(oj_doc_class, "open", doc_open, 1);
     rb_define_singleton_method(oj_doc_class, "open_file", doc_open_file, 1);
     rb_define_singleton_method(oj_doc_class, "parse", doc_open, 1);
-    rb_define_method(oj_doc_class, "where?", doc_where, 0);
+    rb_define_method(oj_doc_class, "where?", doc_where_q, 0);
     rb_define_method(oj_doc_class, "where", doc_where, 0);
-    rb_define_method(oj_doc_class, "path", doc_where, 0);
+    rb_define_method(oj_doc_class, "path", doc_path, 0);
     rb_define_method(oj_doc_class, "local_key", doc_local_key, 0);
     rb_define_method(oj_doc_class, "home", doc_home, 0);
     rb_define_method(oj_doc_class, "type", doc_type, -1);

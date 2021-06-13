@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 3.12.0 - 2021-06-13
+
+- Fixed bug where `Oj::Doc#fetch` on an empty Hash or Array did not return `nil`.
+
+- Added an `Oj::Doc#exists` method.
+
+- Deprecated `Oj::Doc#where?` in favor `Oj::Doc#where` or the alias, `Oj::Doc#path`.
+
 ## 3.11.5 - 2021-04-15
 
 - Oj.generate fix introduced in previous bug fix. Oj.mimic_JSON is forced if Oj.generate is called.

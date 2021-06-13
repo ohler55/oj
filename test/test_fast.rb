@@ -313,6 +313,20 @@ class DocTest < Minitest::Test
     end
   end
 
+  def test_exisits
+    Oj::Doc.open(@json1) do |doc|
+      [['/array/1', true],
+       ['/array/1', true],
+       ['/array/1/hash', true],
+       ['/array/1/dash', false],
+       ['/array/3', false],
+       ['/nothing', false],
+      ].each do |path,val|
+        assert_equal(val, doc.exists?(path))
+      end
+    end
+  end
+
   def test_home
     Oj::Doc.open(@json1) do |doc|
       doc.move('/array/1/num')
