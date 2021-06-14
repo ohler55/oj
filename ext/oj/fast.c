@@ -80,22 +80,6 @@ static Leaf  get_doc_leaf(Doc doc, const char *path);
 static Leaf  get_leaf(Leaf *stack, Leaf *lp, const char *path);
 static void  each_value(Doc doc, Leaf leaf);
 
-static void  doc_init(Doc doc);
-static void  doc_free(Doc doc);
-static VALUE doc_open(VALUE clas, VALUE str);
-static VALUE doc_open_file(VALUE clas, VALUE filename);
-static VALUE doc_where(VALUE self);
-static VALUE doc_local_key(VALUE self);
-static VALUE doc_home(VALUE self);
-static VALUE doc_type(int argc, VALUE *argv, VALUE self);
-static VALUE doc_fetch(int argc, VALUE *argv, VALUE self);
-static VALUE doc_each_leaf(int argc, VALUE *argv, VALUE self);
-static VALUE doc_move(VALUE self, VALUE str);
-static VALUE doc_each_child(int argc, VALUE *argv, VALUE self);
-static VALUE doc_each_value(int argc, VALUE *argv, VALUE self);
-static VALUE doc_dump(int argc, VALUE *argv, VALUE self);
-static VALUE doc_size(VALUE self);
-
 VALUE oj_doc_class = Qundef;
 
 // This is only for CentOS 5.4 with Ruby 1.9.3-p0.
@@ -899,12 +883,14 @@ static Leaf get_leaf(Leaf *stack, Leaf *lp, const char *path) {
             } else {
                 return 0;
             }
-        } else if (COL_VAL == leaf->value_type && 0 != leaf->elements) {
+        } else if (NULL == leaf->elements) {
+            leaf = NULL;
+        } else if (COL_VAL == leaf->value_type) {
             Leaf first = leaf->elements->next;
             Leaf e     = first;
             int  type  = leaf->rtype;
 
-            leaf = 0;
+            leaf = NULL;
             if (T_ARRAY == type) {
                 int cnt = 0;
 
@@ -929,6 +915,7 @@ static Leaf get_leaf(Leaf *stack, Leaf *lp, const char *path) {
                 const char *slash = next_slash(path);
                 int         klen;
 
+                leaf = NULL;
                 if (0 == slash) {
                     klen = (int)strlen(key);
                     path += klen;
@@ -1217,7 +1204,7 @@ static char *append_key(char *p, const char *key) {
  * @see Oj::Doc.open
  */
 
-/* @overload where?() => String
+/* @overload where() => String
  *
  * Returns a String that describes the absolute path to the current location
  * in the JSON document.
@@ -1258,6 +1245,25 @@ static VALUE doc_where(VALUE self) {
         return rb_str_new(path, p - path);
     }
 }
+
+/* @overload where?() => String
+ * @deprecated
+ * Returns a String that describes the absolute path to the current location
+ * in the JSON document.
+ */
+static VALUE doc_where_q(VALUE self) {
+    return doc_where(self);
+}
+
+/* @overload path() => String
+ *
+ * Returns a String that describes the absolute path to the current location
+ * in the JSON document.
+ */
+static VALUE doc_path(VALUE self) {
+    return doc_where(self);
+}
+
 
 /* @overload local_key() => String, Fixnum, nil
  *
@@ -1340,14 +1346,14 @@ static VALUE doc_type(int argc, VALUE *argv, VALUE self) {
     return type;
 }
 
-/* @overload fetch(path=nil) => nil, true, false, Fixnum, Float, String, Array,
+/* @overload fetch(path=nil,default=nil) => nil, true, false, Fixnum, Float, String, Array,
  * Hash
  *
  * Returns the value at the location identified by the path or the current
  * location if the path is nil or not provided. This method will create and
  * return an Array or Hash if that is the type of Object at the location
  * specified. This is more expensive than navigating to the leaves of the JSON
- * document.
+ * document. If a default is provided that is used if no value if found.
  *   @param [String] path path to the location to get the type of if provided
  * @example
  *   Oj::Doc.open('[1,2]') { |doc| doc.fetch() }      #=> [1, 2]
@@ -1371,6 +1377,28 @@ static VALUE doc_fetch(int argc, VALUE *argv, VALUE self) {
         val = leaf_value(doc, leaf);
     }
     return val;
+}
+
+/* @overload exists?(path) => true, false
+ *
+ * Returns true if the value at the location identified by the path exists.
+ *   @param [String] path path to the location
+ * @example
+ *   Oj::Doc.open('[1,2]') { |doc| doc.exists('/1') }  #=> true
+ *   Oj::Doc.open('[1,2]') { |doc| doc.exists('/3') }  #=> false
+ */
+static VALUE doc_exists(VALUE self, VALUE str) {
+    Doc  doc;
+    Leaf leaf;
+
+    doc = self_doc(self);
+    Check_Type(str, T_STRING);
+    if (0 != (leaf = get_doc_leaf(doc, StringValuePtr(str)))) {
+        if (NULL != leaf) {
+            return Qtrue;
+        }
+    }
+    return Qfalse;
 }
 
 /* @overload each_leaf(path=nil) => nil
@@ -1695,11 +1723,14 @@ void oj_init_doc() {
     rb_define_singleton_method(oj_doc_class, "open", doc_open, 1);
     rb_define_singleton_method(oj_doc_class, "open_file", doc_open_file, 1);
     rb_define_singleton_method(oj_doc_class, "parse", doc_open, 1);
-    rb_define_method(oj_doc_class, "where?", doc_where, 0);
+    rb_define_method(oj_doc_class, "where?", doc_where_q, 0);
+    rb_define_method(oj_doc_class, "where", doc_where, 0);
+    rb_define_method(oj_doc_class, "path", doc_path, 0);
     rb_define_method(oj_doc_class, "local_key", doc_local_key, 0);
     rb_define_method(oj_doc_class, "home", doc_home, 0);
     rb_define_method(oj_doc_class, "type", doc_type, -1);
     rb_define_method(oj_doc_class, "fetch", doc_fetch, -1);
+    rb_define_method(oj_doc_class, "exists?", doc_exists, 1);
     rb_define_method(oj_doc_class, "each_leaf", doc_each_leaf, -1);
     rb_define_method(oj_doc_class, "move", doc_move, 1);
     rb_define_method(oj_doc_class, "each_child", doc_each_child, -1);

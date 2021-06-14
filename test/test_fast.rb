@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-# encoding: UTF-8
+# encoding: utf-8
 
 $: << File.dirname(__FILE__)
 
@@ -279,10 +279,26 @@ class DocTest < Minitest::Test
        ['/array/1', {'num' => 3, 'string' => 'message', 'hash' => {'h2' => {'a' => [1, 2, 3]}}}],
        ['/array', [{'num' => 3, 'string' => 'message', 'hash' => {'h2' => {'a' => [1, 2, 3]}}}]],
        ['/', {'array' => [{'num' => 3, 'string' => 'message', 'hash' => {'h2' => {'a' => [1, 2, 3]}}}], 'boolean' => true}],
+       ['/nothing', nil],
+       ['/array/10', nil],
       ].each do |path,val|
-        assert_equal(val, doc.fetch(path))
+	if val.nil?
+	  assert_nil(doc.fetch(path))
+	else
+          assert_equal(val, doc.fetch(path))
+	end
       end
     end
+    # verify empty hash and arrays return nil when a member is requested
+    Oj::Doc.open('{}') do |doc|
+      assert_nil(doc.fetch('/x'))
+      assert_nil(doc.fetch('/0'))
+    end
+    Oj::Doc.open('[]') do |doc|
+      assert_nil(doc.fetch('/x'))
+      assert_nil(doc.fetch('/0'))
+    end
+
   end
 
   def test_move_fetch_path
@@ -293,6 +309,20 @@ class DocTest < Minitest::Test
       ].each do |path,fetch_path,val|
         doc.move(path)
         assert_equal(val, doc.fetch(fetch_path))
+      end
+    end
+  end
+
+  def test_exisits
+    Oj::Doc.open(@json1) do |doc|
+      [['/array/1', true],
+       ['/array/1', true],
+       ['/array/1/hash', true],
+       ['/array/1/dash', false],
+       ['/array/3', false],
+       ['/nothing', false],
+      ].each do |path,val|
+        assert_equal(val, doc.exists?(path))
       end
     end
   end
