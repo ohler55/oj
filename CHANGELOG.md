@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 3.12.0 - 2021-06-13
+## 3.11.6 - 2021-06-14
 
 - Fixed bug where `Oj::Doc#fetch` on an empty Hash or Array did not return `nil`.
 
