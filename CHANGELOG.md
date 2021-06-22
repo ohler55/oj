@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.11.7 - unreleased
+
+- Fixed exception type when parsing after `Oj::Rails.mimic_JSON` is called.
+
 ## 3.11.6 - 2021-06-14
 
 - Fixed bug where `Oj::Doc#fetch` on an empty Hash or Array did not return `nil`.
