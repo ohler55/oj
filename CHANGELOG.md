@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 3.11.7 - unreleased
+## 3.11.7 - 2021-06-22
 
 - Fixed exception type when parsing after `Oj::Rails.mimic_JSON` is called.
 
