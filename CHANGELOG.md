@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.11.8 - 2021-07-03
+
+- Fixed or reverted change that set the default mode when optimize_Rails was called.
+
 ## 3.11.7 - 2021-06-22
 
 - Fixed exception type when parsing after `Oj::Rails.mimic_JSON` is called.

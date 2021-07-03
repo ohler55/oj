@@ -828,7 +828,7 @@ rails_mimic_json(VALUE self) {
         json = rb_define_module("JSON");
     }
     oj_mimic_json_methods(json);
-    // TBD make sure this doesn't break anything else
+    // Setting the default mode breaks the prmoise in the docs not to.
     //oj_default_options.mode = RailsMode;
 
     return Qnil;
