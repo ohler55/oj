@@ -10,6 +10,7 @@
 #include "dump.h"
 #include "encode.h"
 #include "err.h"
+#include "hash.h"
 #include "oj.h"
 #include "parse.h"
 #include "trace.h"
@@ -292,6 +293,27 @@ void oj_dump_wab_val(VALUE obj, int depth, Out out) {
 
 ///// load functions /////
 
+static VALUE oj_hash_key(Val parent) {
+    volatile VALUE rkey = parent->key_val;
+
+    if (Qundef != rkey) {
+        rkey = oj_encode(rkey);
+        rkey = rb_str_intern(rkey);
+
+        return rkey;
+    }
+    VALUE *slot;
+
+    if (Qnil == (rkey = oj_sym_hash_get(parent->key, parent->klen, &slot))) {
+        rkey  = rb_str_new(parent->key, parent->klen);
+        rkey  = oj_encode(rkey);
+        rkey  = rb_str_intern(rkey);
+        *slot = rkey;
+        rb_gc_register_address(slot);
+    }
+    return rkey;
+}
+
 static void hash_end(ParseInfo pi) {
     if (Yes == pi->options.trace) {
         oj_trace_parse_hash_end(pi, __FILE__, __LINE__);
@@ -432,7 +454,7 @@ static VALUE protect_uri(VALUE rstr) {
     return rb_funcall(resolve_uri_class(), oj_parse_id, 1, rstr);
 }
 
-static VALUE cstr_to_rstr(const char *str, size_t len) {
+static VALUE cstr_to_rstr(ParseInfo pi, const char *str, size_t len) {
     volatile VALUE v = Qnil;
 
     if (30 == len && '-' == str[4] && '-' == str[7] && 'T' == str[10] && ':' == str[13] &&
@@ -445,20 +467,20 @@ static VALUE cstr_to_rstr(const char *str, size_t len) {
         uuid_check(str, (int)len) && Qnil != resolve_wab_uuid_class()) {
         return rb_funcall(wab_uuid_clas, oj_new_id, 1, rb_str_new(str, len));
     }
-    v = rb_str_new(str, len);
     if (7 < len && 0 == strncasecmp("http://", str, 7)) {
         int            err = 0;
+	v = rb_str_new(str, len);
         volatile VALUE uri = rb_protect(protect_uri, v, &err);
 
         if (0 == err) {
             return uri;
         }
     }
-    return oj_encode(v);
+    return oj_cstr_to_value(str, len, (size_t)pi->options.cache_str);
 }
 
 static void add_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
-    pi->stack.head->val = cstr_to_rstr(str, len);
+    pi->stack.head->val = cstr_to_rstr(pi, str, len);
     if (Yes == pi->options.trace) {
         oj_trace_parse_call("add_string", pi, __FILE__, __LINE__, pi->stack.head->val);
     }
@@ -484,22 +506,10 @@ static VALUE start_hash(ParseInfo pi) {
     return rb_hash_new();
 }
 
-static VALUE calc_hash_key(ParseInfo pi, Val parent) {
-    volatile VALUE rkey = parent->key_val;
-
-    if (Qundef == rkey) {
-        rkey = rb_str_new(parent->key, parent->klen);
-    }
-    rkey = oj_encode(rkey);
-    rkey = rb_str_intern(rkey);
-
-    return rkey;
-}
-
 static void hash_set_cstr(ParseInfo pi, Val parent, const char *str, size_t len, const char *orig) {
-    volatile VALUE rval = cstr_to_rstr(str, len);
+    volatile VALUE rval = cstr_to_rstr(pi, str, len);
 
-    rb_hash_aset(stack_peek(&pi->stack)->val, calc_hash_key(pi, parent), rval);
+    rb_hash_aset(stack_peek(&pi->stack)->val, oj_hash_key(parent), rval);
     if (Yes == pi->options.trace) {
         oj_trace_parse_call("set_string", pi, __FILE__, __LINE__, rval);
     }
@@ -512,14 +522,14 @@ static void hash_set_num(ParseInfo pi, Val parent, NumInfo ni) {
         oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number or other value");
     }
     rval = oj_num_as_value(ni);
-    rb_hash_aset(stack_peek(&pi->stack)->val, calc_hash_key(pi, parent), rval);
+    rb_hash_aset(stack_peek(&pi->stack)->val, oj_hash_key(parent), rval);
     if (Yes == pi->options.trace) {
         oj_trace_parse_call("set_number", pi, __FILE__, __LINE__, rval);
     }
 }
 
 static void hash_set_value(ParseInfo pi, Val parent, VALUE value) {
-    rb_hash_aset(stack_peek(&pi->stack)->val, calc_hash_key(pi, parent), value);
+    rb_hash_aset(stack_peek(&pi->stack)->val, oj_hash_key(parent), value);
     if (Yes == pi->options.trace) {
         oj_trace_parse_call("set_value", pi, __FILE__, __LINE__, value);
     }
@@ -533,7 +543,7 @@ static VALUE start_array(ParseInfo pi) {
 }
 
 static void array_append_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
-    volatile VALUE rval = cstr_to_rstr(str, len);
+    volatile VALUE rval = cstr_to_rstr(pi, str, len);
 
     rb_ary_push(stack_peek(&pi->stack)->val, rval);
     if (Yes == pi->options.trace) {
