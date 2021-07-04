@@ -8,6 +8,7 @@
 
 #include "encode.h"
 #include "err.h"
+#include "hash.h"
 #include "oj.h"
 #include "parse.h"
 #include "trace.h"
@@ -36,9 +37,21 @@ static void add_value(ParseInfo pi, VALUE val) {
 }
 
 static void add_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
-    volatile VALUE rstr = rb_str_new(str, len);
+    volatile VALUE rstr = Qnil;
 
-    rstr                = oj_encode(rstr);
+    if (len <= (size_t)pi->options.cache_str) {
+        VALUE *slot;
+
+        if (Qnil == (rstr = oj_str_hash_get(str, len, &slot))) {
+            rstr  = rb_str_new(str, len);
+            rstr  = oj_encode(rstr);
+            *slot = rstr;
+            rb_gc_register_address(slot);
+	}
+    } else {
+        rstr = rb_str_new(str, len);
+        rstr = oj_encode(rstr);
+    }
     pi->stack.head->val = rstr;
     if (Yes == pi->options.trace) {
         oj_trace_parse_call("add_string", pi, __FILE__, __LINE__, rstr);
@@ -68,20 +81,58 @@ static VALUE start_hash(ParseInfo pi) {
 static VALUE calc_hash_key(ParseInfo pi, Val parent) {
     volatile VALUE rkey = parent->key_val;
 
-    if (Qundef == rkey) {
-        rkey = rb_str_new(parent->key, parent->klen);
+    if (Qundef != rkey) {
+        rkey = oj_encode(rkey);
+        if (Yes == pi->options.sym_key) {
+            rkey = rb_str_intern(rkey);
+        }
+        return rkey;
     }
-    rkey = oj_encode(rkey);
+    if (Yes != pi->options.cache_keys) {
+        rkey = rb_str_new(parent->key, parent->klen);
+        rkey = oj_encode(rkey);
+        if (Yes == pi->options.sym_key) {
+            rkey = rb_str_intern(rkey);
+        }
+        return rkey;
+    }
+    VALUE *slot;
+
     if (Yes == pi->options.sym_key) {
-        rkey = rb_str_intern(rkey);
+        if (Qnil == (rkey = oj_sym_hash_get(parent->key, parent->klen, &slot))) {
+            rkey  = rb_str_new(parent->key, parent->klen);
+            rkey  = oj_encode(rkey);
+            rkey  = rb_str_intern(rkey);
+            *slot = rkey;
+            rb_gc_register_address(slot);
+        }
+    } else {
+        if (Qnil == (rkey = oj_str_hash_get(parent->key, parent->klen, &slot))) {
+            rkey  = rb_str_new(parent->key, parent->klen);
+            rkey  = oj_encode(rkey);
+            *slot = rkey;
+            rb_gc_register_address(slot);
+        }
     }
     return rkey;
 }
 
 static void hash_set_cstr(ParseInfo pi, Val parent, const char *str, size_t len, const char *orig) {
-    volatile VALUE rstr = rb_str_new(str, len);
+    volatile VALUE rstr = Qnil;
 
-    rstr = oj_encode(rstr);
+    if (len <= (size_t)pi->options.cache_str) {
+        VALUE *slot;
+
+        if (Qnil == (rstr = oj_str_hash_get(str, len, &slot))) {
+            rstr  = rb_str_new(str, len);
+            rstr  = oj_encode(rstr);
+            *slot = rstr;
+            rb_gc_register_address(slot);
+	}
+    } else {
+        rstr = rb_str_new(str, len);
+        rstr = oj_encode(rstr);
+    }
     rb_hash_aset(stack_peek(&pi->stack)->val, calc_hash_key(pi, parent), rstr);
     if (Yes == pi->options.trace) {
         oj_trace_parse_call("set_string", pi, __FILE__, __LINE__, rstr);
@@ -116,9 +167,21 @@ static VALUE start_array(ParseInfo pi) {
 }
 
 static void array_append_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
-    volatile VALUE rstr = rb_str_new(str, len);
+    volatile VALUE rstr = Qnil;
 
-    rstr = oj_encode(rstr);
+    if (len <= (size_t)pi->options.cache_str) {
+        VALUE *slot;
+
+        if (Qnil == (rstr = oj_str_hash_get(str, len, &slot))) {
+            rstr  = rb_str_new(str, len);
+            rstr  = oj_encode(rstr);
+            *slot = rstr;
+            rb_gc_register_address(slot);
+	}
+    } else {
+        rstr = rb_str_new(str, len);
+        rstr = oj_encode(rstr);
+    }
     rb_ary_push(stack_peek(&pi->stack)->val, rstr);
     if (Yes == pi->options.trace) {
         oj_trace_parse_call("append_string", pi, __FILE__, __LINE__, rstr);

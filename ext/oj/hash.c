@@ -20,6 +20,8 @@ struct _hash {
 };
 
 struct _hash class_hash;
+struct _hash str_hash;
+struct _hash sym_hash;
 struct _hash intern_hash;
 
 // almost the Murmur hash algorithm
@@ -64,6 +66,8 @@ static uint32_t hash_calc(const uint8_t *key, size_t len) {
 
 void oj_hash_init() {
     memset(class_hash.slots, 0, sizeof(class_hash.slots));
+    memset(str_hash.slots, 0, sizeof(str_hash.slots));
+    memset(sym_hash.slots, 0, sizeof(sym_hash.slots));
     memset(intern_hash.slots, 0, sizeof(intern_hash.slots));
 }
 
@@ -117,7 +121,18 @@ oj_class_hash_get(const char *key, size_t len, VALUE **slotp) {
     return hash_get(&class_hash, key, len, slotp, Qnil);
 }
 
-ID oj_attr_hash_get(const char *key, size_t len, ID **slotp) {
+VALUE
+oj_str_hash_get(const char *key, size_t len, VALUE **slotp) {
+    return hash_get(&str_hash, key, len, slotp, Qnil);
+}
+
+VALUE
+oj_sym_hash_get(const char *key, size_t len, VALUE **slotp) {
+    return hash_get(&sym_hash, key, len, slotp, Qnil);
+}
+
+ID
+oj_attr_hash_get(const char *key, size_t len, ID **slotp) {
     return (ID)hash_get(&intern_hash, key, len, (VALUE **)slotp, 0);
 }
 
