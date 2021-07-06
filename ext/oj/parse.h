@@ -90,6 +90,9 @@ extern void oj_set_wab_callbacks(ParseInfo pi);
 extern void  oj_sparse2(ParseInfo pi);
 extern VALUE oj_pi_sparse(int argc, VALUE *argv, ParseInfo pi, int fd);
 
+extern VALUE oj_cstr_to_value(const char *str, size_t len, size_t cache_str);
+extern VALUE oj_calc_hash_key(ParseInfo pi, Val parent);
+
 static inline void parse_info_init(ParseInfo pi) {
     memset(pi, 0, sizeof(struct _parseInfo));
 }

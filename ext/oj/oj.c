@@ -106,6 +106,8 @@ static VALUE auto_sym;
 static VALUE bigdecimal_as_decimal_sym;
 static VALUE bigdecimal_load_sym;
 static VALUE bigdecimal_sym;
+static VALUE cache_keys_sym;
+static VALUE cache_str_sym;
 static VALUE circular_sym;
 static VALUE class_cache_sym;
 static VALUE compat_bigdecimal_sym;
@@ -186,6 +188,8 @@ struct _options oj_default_options = {
     No,             // safe
     false,          // sec_prec_set
     No,             // ignore_under
+    Yes,            // cache_keys
+    3,              // cache_str
     0,              // int_range_min
     0,              // int_range_max
     oj_json_class,  // create_id
@@ -279,9 +283,11 @@ struct _options oj_default_options = {
  *used
  * - *:array_class* [_Class_|_nil_] Class to use instead of Array on load
  * - *:omit_nil* [_true_|_false_] if true Hash and Object attributes with nil values are omitted
- * - *:ignore* [_nil_|Array] either nil or an Array of classes to ignore when dumping
- * - *:ignore_under* [Boolean] if true then attributes that start with _ are ignored when dumping in
+ * - *:ignore* [_nil_|_Array_] either nil or an Array of classes to ignore when dumping
+ * - *:ignore_under* [_Boolean_] if true then attributes that start with _ are ignored when dumping in
  *object or custom mode.
+ * - *:cache_keys* [_Boolean_] if true then hash keys are cached
+ * - *:cache_str* [_Fixnum_] maximum string value length to cache
  * - *:integer_range* [_Range_] Dump integers outside range as strings.
  * - *:trace* [_true,_|_false_] Trace all load and dump calls, default is false (trace is off)
  * - *:safe* [_true,_|_false_] Safe mimic breaks JSON mimic to be safer, default is false (safe is
@@ -389,11 +395,17 @@ static VALUE get_def_opts(VALUE self) {
                      ? Qtrue
                      : ((No == oj_default_options.safe) ? Qfalse : Qnil));
     rb_hash_aset(opts, float_prec_sym, INT2FIX(oj_default_options.float_prec));
+    rb_hash_aset(opts, cache_str_sym, INT2FIX(oj_default_options.cache_str));
     rb_hash_aset(opts,
                  ignore_under_sym,
                  (Yes == oj_default_options.ignore_under)
                      ? Qtrue
                      : ((No == oj_default_options.ignore_under) ? Qfalse : Qnil));
+    rb_hash_aset(opts,
+                 cache_keys_sym,
+                 (Yes == oj_default_options.cache_keys)
+                     ? Qtrue
+                     : ((No == oj_default_options.cache_keys) ? Qfalse : Qnil));
     switch (oj_default_options.mode) {
     case StrictMode: rb_hash_aset(opts, mode_sym, strict_sym); break;
     case CompatMode: rb_hash_aset(opts, mode_sym, compat_sym); break;
@@ -557,6 +569,8 @@ static VALUE get_def_opts(VALUE self) {
  *   - *:ignore* [_nil_|Array] either nil or an Array of classes to ignore when dumping
  *   - *:ignore_under* [_Boolean_] if true then attributes that start with _ are ignored when
  *dumping in object or custom mode.
+ *   - *:cache_keys* [_Boolean_] if true then hash keys are cached
+ *   - *:cache_str* [_Fixnum_] maximum string vsalue length to cache
  *   - *:integer_range* [_Range_] Dump integers outside range as strings.
  *   - *:trace* [_Boolean_] turn trace on or off.
  *   - *:safe* [_Boolean_] turn safe mimic on or off.
@@ -589,6 +603,7 @@ void oj_parse_options(VALUE ropts, Options copts) {
                                {oj_safe_sym, &copts->safe},
                                {ignore_under_sym, &copts->ignore_under},
                                {oj_create_additions_sym, &copts->create_ok},
+                               {cache_keys_sym, &copts->cache_keys},
                                {Qnil, 0}};
     YesNoOpt         o;
     volatile VALUE   v;
@@ -645,6 +660,28 @@ void oj_parse_options(VALUE ropts, Options copts) {
             }
             sprintf(copts->float_fmt, "%%0.%dg", n);
             copts->float_prec = n;
+        }
+    }
+    if (Qnil != (v = rb_hash_lookup(ropts, cache_str_sym))) {
+        int n;
+
+#ifdef RUBY_INTEGER_UNIFICATION
+        if (rb_cInteger != rb_obj_class(v)) {
+            rb_raise(rb_eArgError, ":cache_str must be a Integer.");
+        }
+#else
+        if (T_FIXNUM != rb_type(v)) {
+            rb_raise(rb_eArgError, ":cache_str must be a Fixnum.");
+        }
+#endif
+        n = FIX2INT(v);
+        if (0 >= n) {
+            copts->cache_str = 0;
+        } else {
+            if (32 < n) {
+                n = 32;
+            }
+            copts->cache_str = (char)n;
         }
     }
     if (Qnil != (v = rb_hash_lookup(ropts, sec_prec_sym))) {
@@ -1816,6 +1853,10 @@ void Init_oj() {
     rb_gc_register_address(&bigdecimal_load_sym);
     bigdecimal_sym = ID2SYM(rb_intern("bigdecimal"));
     rb_gc_register_address(&bigdecimal_sym);
+    cache_keys_sym = ID2SYM(rb_intern("cache_keys"));
+    rb_gc_register_address(&cache_keys_sym);
+    cache_str_sym = ID2SYM(rb_intern("cache_str"));
+    rb_gc_register_address(&cache_str_sym);
     circular_sym = ID2SYM(rb_intern("circular"));
     rb_gc_register_address(&circular_sym);
     class_cache_sym = ID2SYM(rb_intern("class_cache"));

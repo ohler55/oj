@@ -17,7 +17,7 @@ class Perf
       end
     end
   end
-  
+
   def run(iter)
     base = Item.new(nil, nil) { }
     base.run(iter, 0.0)

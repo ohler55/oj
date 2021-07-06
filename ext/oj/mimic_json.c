@@ -389,9 +389,9 @@ static VALUE mimic_generate_core(int argc, VALUE *argv, Options copts) {
     } else {
         VALUE active_hack[1];
 
-	if (Qundef == state_class) {
-	    oj_define_mimic_json(0, NULL, Qnil);
-	}
+        if (Qundef == state_class) {
+            oj_define_mimic_json(0, NULL, Qnil);
+        }
         active_hack[0] = rb_funcall(state_class, oj_new_id, 0);
         oj_dump_obj_to_json_using_params(*argv, copts, &out, 1, active_hack);
     }
@@ -480,7 +480,7 @@ oj_mimic_pretty_generate(int argc, VALUE *argv, VALUE self) {
         rb_hash_aset(h, oj_array_nl_sym, rb_str_new2("\n"));
     }
     if (Qundef == state_class) {
-	oj_define_mimic_json(0, NULL, Qnil);
+        oj_define_mimic_json(0, NULL, Qnil);
     }
     rargs[1] = rb_funcall(state_class, oj_new_id, 1, h);
 
@@ -713,6 +713,8 @@ static struct _options mimic_object_to_json_options = {0,              // indent
                                                        No,             // safe
                                                        false,          // sec_prec_set
                                                        No,             // ignore_under
+                                                       Yes,            // cache_keys
+                                                       3,              // cache_str
                                                        0,              // int_range_min
                                                        0,              // int_range_max
                                                        oj_json_class,  // create_id

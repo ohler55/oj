@@ -30,11 +30,38 @@ inline static long read_long(const char *str, size_t len) {
 
 static VALUE calc_hash_key(ParseInfo pi, Val kval, char k1) {
     volatile VALUE rkey;
+#if 0
+    VALUE *slot;
 
+    if (':' == k1) {
+        if (Qnil == (rkey = oj_sym_hash_get(kval->key + 1, kval->klen - 1, &slot))) {
+            rkey  = rb_str_new(kval->key + 1, kval->klen - 1);
+            rkey  = oj_encode(rkey);
+            rkey  = rb_str_intern(rkey);
+            *slot = rkey;
+            rb_gc_register_address(slot);
+        }
+    } else if (Yes == pi->options.sym_key) {
+        if (Qnil == (rkey = oj_sym_hash_get(kval->key, kval->klen, &slot))) {
+            rkey  = rb_str_new(kval->key, kval->klen);
+            rkey  = oj_encode(rkey);
+            rkey  = rb_str_intern(rkey);
+            *slot = rkey;
+            rb_gc_register_address(slot);
+        }
+    } else {
+        if (Qnil == (rkey = oj_str_hash_get(kval->key, kval->klen, &slot))) {
+            rkey  = rb_str_new(kval->key, kval->klen);
+            rkey  = oj_encode(rkey);
+            *slot = rkey;
+            rb_gc_register_address(slot);
+        }
+    }
+#else
     if (':' == k1) {
         rkey = rb_str_new(kval->key + 1, kval->klen - 1);
         rkey = oj_encode(rkey);
-        rkey = rb_funcall(rkey, oj_to_sym_id, 0);
+	rkey  = rb_str_intern(rkey);
     } else {
         rkey = rb_str_new(kval->key, kval->klen);
         rkey = oj_encode(rkey);
@@ -42,6 +69,7 @@ static VALUE calc_hash_key(ParseInfo pi, Val kval, char k1) {
             rkey = rb_str_intern(rkey);
         }
     }
+#endif
     return rkey;
 }
 

@@ -3,22 +3,13 @@
 ^c^d hide subtree
 ^c^s show subtree
 
-Strict Dump Performance
-JSON::Ext.dump 20000 times in 0.173 seconds or 115493.546 dump/sec.
-Oj:strict.dump 20000 times in 0.050 seconds or 401475.753 dump/sec.
-
-Summary:
-   System  time (secs)  rate (ops/sec)
-   ---------  -----------  --------------
-   Oj:strict       0.050      401475.753
-   JSON::Ext       0.173      115493.546
-
-Comparison Matrix
-(performance factor, 2.0 means row is twice as fast as column)
-           Oj:strict  JSON::Ext
-           ---------  ---------  ---------
-           Oj:strict       1.00       3.48
-           JSON::Ext       0.29       1.00
+- parser re-write
+ - use ojc as a starting point
+  - should hash be a stack with indicator for either hash or object?
+   - detect object if create key is encountered else hash
+ - optimize callbacks
+ - consider a 4.0 if API changes would be better
+  - separate defaults for each mode
 
 - big decimal
  - just in custom mode, maybe in strict?

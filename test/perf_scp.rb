@@ -14,16 +14,16 @@ require 'oj'
 
 $verbose = false
 $indent = 0
-$iter = 50000
+$iter = 50_000
 $with_bignum = false
-$size = 0
+$size = 1
 
 opts = OptionParser.new
 opts.on("-v", "verbose")                                  { $verbose = true }
 opts.on("-c", "--count [Int]", Integer, "iterations")     { |i| $iter = i }
 opts.on("-i", "--indent [Int]", Integer, "indentation")   { |i| $indent = i }
-opts.on("-s", "--size [Int]", Integer, "size (~Kbytes)")    { |i| $size = i }
-opts.on("-b", "with bignum")                                { $with_bignum = true }
+opts.on("-s", "--size [Int]", Integer, "size (~Kbytes)")  { |i| $size = i }
+opts.on("-b", "with bignum")                              { $with_bignum = true }
 opts.on("-h", "--help", "Show this display")              { puts opts; Process.exit!(0) }
 files = opts.parse(ARGV)
 
@@ -47,7 +47,7 @@ if 0 < $size
   end
 end
 
-Oj.default_options = { :indent => $indent, :mode => :compat }
+Oj.default_options = { :indent => $indent, :mode => :strict, cache_keys: true, cache_str: 5 }
 
 $json = Oj.dump($obj)
 $failed = {} # key is same as String used in tests later
@@ -105,7 +105,7 @@ class AllHandler < Oj::ScHandler
 
   def hash_set(h, key, value)
   end
-  
+
   def array_append(a, value)
   end
 
@@ -137,10 +137,11 @@ end
 puts '-' * 80
 puts "Parse Performance"
 perf = Perf.new()
-perf.add('Oj::Saj', 'all') { Oj.saj_parse(saj_handler, $json) }
-perf.add('Oj::Saj', 'none') { Oj.saj_parse(no_saj, $json) }
-perf.add('Oj::Scp', 'all') { Oj.sc_parse(sc_handler, $json) }
-perf.add('Oj::Scp', 'none') { Oj.sc_parse(no_handler, $json) }
+perf.add('Oj::Saj.all', 'all') { Oj.saj_parse(saj_handler, $json) }
+perf.add('Oj::Saj.none', 'none') { Oj.saj_parse(no_saj, $json) }
+perf.add('Oj::Scp.all', 'all') { Oj.sc_parse(sc_handler, $json) }
+perf.add('Oj::Scp.none', 'none') { Oj.sc_parse(no_handler, $json) }
+perf.add('Oj::load', 'none') { Oj.wab_load($json) }
 perf.add('Yajl', 'parse') { Yajl::Parser.parse($json) } unless $failed.has_key?('Yajl')
 perf.add('JSON::Ext', 'parse') { JSON::Ext::Parser.new($json).parse } unless $failed.has_key?('JSON::Ext')
 perf.run($iter)
