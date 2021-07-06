@@ -955,6 +955,7 @@ static void hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, c
             }
         }
     } else {
+	//volatile VALUE rstr = oj_cstr_to_value(str, len, (size_t)pi->options.cache_str);
         volatile VALUE rstr = rb_str_new(str, len);
 
         if (Qundef == rkey) {
@@ -1010,19 +1011,6 @@ static void end_hash(struct _parseInfo *pi) {
     }
 }
 
-static VALUE calc_hash_key(ParseInfo pi, Val parent) {
-    volatile VALUE rkey = parent->key_val;
-
-    if (Qundef == rkey) {
-        rkey = rb_str_new(parent->key, parent->klen);
-    }
-    rkey = oj_encode(rkey);
-    if (Yes == pi->options.sym_key) {
-        rkey = rb_str_intern(rkey);
-    }
-    return rkey;
-}
-
 static void hash_set_num(struct _parseInfo *pi, Val kval, NumInfo ni) {
     Val            parent = stack_peek(&pi->stack);
     volatile VALUE rval   = oj_num_as_value(ni);
@@ -1067,7 +1055,7 @@ static void hash_set_num(struct _parseInfo *pi, Val kval, NumInfo ni) {
             }
             rval = parent->val;
         } else {
-            rb_hash_aset(parent->val, calc_hash_key(pi, kval), rval);
+            rb_hash_aset(parent->val, oj_calc_hash_key(pi, kval), rval);
         }
         break;
     default: break;
@@ -1082,7 +1070,7 @@ static void hash_set_value(ParseInfo pi, Val kval, VALUE value) {
 
     switch (rb_type(parent->val)) {
     case T_OBJECT: oj_set_obj_ivar(parent, kval, value); break;
-    case T_HASH: rb_hash_aset(parent->val, calc_hash_key(pi, kval), value); break;
+    case T_HASH: rb_hash_aset(parent->val, oj_calc_hash_key(pi, kval), value); break;
     default: break;
     }
     if (Yes == pi->options.trace) {

@@ -15,6 +15,8 @@ $iter = 20000
 $with_bignum = false
 $with_nums = true
 $size = 0
+$symbolize = false
+$cache_keys = true
 
 opts = OptionParser.new
 opts.on("-v", "verbose")                                    { $verbose = true }
@@ -23,6 +25,8 @@ opts.on("-i", "--indent [Int]", Integer, "indentation")     { |i| $indent = i }
 opts.on("-s", "--size [Int]", Integer, "size (~Kbytes)")    { |i| $size = i }
 opts.on("-b", "with bignum")                                { $with_bignum = true }
 opts.on("-n", "without numbers")                            { $with_nums = false }
+opts.on("-z", "--symbolize", "symbolize keys")              { $symbolize = true }
+opts.on("-k", "--no-cache", "turn off key caching")         { $cache_keys = false }
 opts.on("-h", "--help", "Show this display")                { puts opts; Process.exit!(0) }
 files = opts.parse(ARGV)
 
@@ -51,7 +55,7 @@ else
   }
 end
 
-Oj.default_options = { :indent => $indent, :mode => :strict }
+Oj.default_options = { :indent => $indent, :mode => :strict, cache_keys: $cache_keys, cache_str: 5 }
 
 if 0 < $size
   o = $obj
@@ -62,9 +66,6 @@ if 0 < $size
 end
 
 $json = Oj.dump($obj)
-$obj_json = Oj.dump($obj, :mode => :object)
-#puts "*** size: #{$obj_json.size}"
-#puts "*** #{$obj_json}"
 $failed = {} # key is same as String used in tests later
 
 def capture_error(tag, orig, load_key, dump_key, &blk)
@@ -77,8 +78,13 @@ def capture_error(tag, orig, load_key, dump_key, &blk)
 end
 
 # Verify that all packages dump and load correctly and return the same Object as the original.
-capture_error('Oj:strict', $obj, 'load', 'dump') { |o| Oj.strict_load(Oj.dump(o, :mode => :strict)) }
-capture_error('Yajl', $obj, 'encode', 'parse') { |o| require 'yajl'; Yajl::Parser.parse(Yajl::Encoder.encode(o)) }
+capture_error('Oj:strict', $obj, 'load', 'dump') { |o|
+  Oj.strict_load(Oj.dump(o))
+}
+capture_error('Yajl', $obj, 'encode', 'parse') { |o|
+  require 'yajl'
+  Yajl::Parser.parse(Yajl::Encoder.encode(o))
+}
 capture_error('JSON::Ext', $obj, 'generate', 'parse') { |o|
   require 'json'
   require 'json/ext'
@@ -86,16 +92,11 @@ capture_error('JSON::Ext', $obj, 'generate', 'parse') { |o|
   JSON.parser = JSON::Ext::Parser
   JSON.parse(JSON.generate(o))
 }
-capture_error('JSON::Pure', $obj, 'generate', 'parse') { |o|
-  require 'json/pure'
-  JSON.generator = JSON::Pure::Generator
-  JSON.parser = JSON::Pure::Parser
-  JSON.parse(JSON.generate(o))
-}
+
+Oj.default_options = { symbol_keys: $symbolize }
 
 if $verbose
   puts "json:\n#{$json}\n"
-  puts "object json:\n#{$obj_json}\n"
   puts "Oj loaded object:\n#{Oj.strict_load($json)}\n"
   puts "Yajl loaded object:\n#{Yajl::Parser.parse($json)}\n"
   puts "JSON loaded object:\n#{JSON::Ext::Parser.new($json).parse}\n"
@@ -105,15 +106,12 @@ puts '-' * 80
 puts "Strict Parse Performance"
 perf = Perf.new()
 unless $failed.has_key?('JSON::Ext')
-  perf.add('JSON::Ext', 'parse') { JSON.parse($json) }
+  perf.add('JSON::Ext', 'parse') { JSON.parse($json, symbolize_names: $symbolize) }
   perf.before('JSON::Ext') { JSON.parser = JSON::Ext::Parser }
-end
-unless $failed.has_key?('JSON::Pure')
-  perf.add('JSON::Pure', 'parse') { JSON.parse($json) }
-  perf.before('JSON::Pure') { JSON.parser = JSON::Pure::Parser }
 end
 unless $failed.has_key?('Oj:strict')
   perf.add('Oj:strict', 'strict_load') { Oj.strict_load($json) }
+  perf.add('Oj:wab', 'wab_load') { Oj.wab_load($json) }
 end
 perf.add('Yajl', 'parse') { Yajl::Parser.parse($json) } unless $failed.has_key?('Yajl')
 perf.run($iter)
@@ -125,12 +123,8 @@ unless $failed.has_key?('JSON::Ext')
   perf.add('JSON::Ext', 'dump') { JSON.generate($obj) }
   perf.before('JSON::Ext') { JSON.generator = JSON::Ext::Generator }
 end
-unless $failed.has_key?('JSON::Pure')
-  perf.add('JSON::Pure', 'generate') { JSON.generate($obj) }
-  perf.before('JSON::Pure') { JSON.generator = JSON::Pure::Generator }
-end
 unless $failed.has_key?('Oj:strict')
-  perf.add('Oj:strict', 'dump') { Oj.dump($obj, :mode => :strict) }
+  perf.add('Oj:strict', 'dump') { Oj.dump($obj) }
 end
 perf.add('Yajl', 'encode') { Yajl::Encoder.encode($obj) } unless $failed.has_key?('Yajl')
 perf.run($iter)

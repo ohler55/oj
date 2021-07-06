@@ -123,6 +123,8 @@ class Juice < Minitest::Test
       compat_bigdecimal: true,
       create_id: 'classy',
       create_additions: true,
+      cache_keys: false,
+      cache_str: 5,
       space: 'z',
       array_nl: 'a',
       object_nl: 'o',

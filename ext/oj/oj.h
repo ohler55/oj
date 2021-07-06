@@ -143,6 +143,8 @@ typedef struct _options {
     char safe;           // YesNo
     char sec_prec_set;   // boolean (0 or 1)
     char ignore_under;   // YesNo - ignore attrs starting with _ if true in object and custom modes
+    char cache_keys;     // YexNo
+    char cache_str;      // string short than or equal to this are cache
     int64_t          int_range_min;  // dump numbers below as string
     int64_t          int_range_max;  // dump numbers above as string
     const char *     create_id;      // 0 or string
