@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.12.0 - 2021-07-05
+
+- Added string and symbol caching options that give Oj about a 20% parse performance boost.
+
 ## 3.11.8 - 2021-07-03
 
 - Fixed or reverted change that set the default mode when optimize_Rails was called.

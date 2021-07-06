@@ -110,7 +110,8 @@ unless $failed.has_key?('JSON::Ext')
   perf.before('JSON::Ext') { JSON.parser = JSON::Ext::Parser }
 end
 unless $failed.has_key?('Oj:strict')
-  perf.add('Oj:strict', 'strict_load') { Oj.strict_load($json, symbol_keys: true) }
+  perf.add('Oj:strict', 'strict_load') { Oj.strict_load($json) }
+  perf.add('Oj:wab', 'wab_load') { Oj.wab_load($json) }
 end
 perf.add('Yajl', 'parse') { Yajl::Parser.parse($json) } unless $failed.has_key?('Yajl')
 perf.run($iter)

@@ -36,10 +36,6 @@ VALUE oj_calc_hash_key(ParseInfo pi, Val parent) {
     volatile VALUE rkey = parent->key_val;
 
     if (Qundef != rkey) {
-        rkey = oj_encode(rkey);
-        if (Yes == pi->options.sym_key) {
-            rkey = rb_str_intern(rkey);
-        }
         return rkey;
     }
     if (Yes != pi->options.cache_keys) {

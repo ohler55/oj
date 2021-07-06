@@ -9,6 +9,7 @@
 #include <unistd.h>
 
 #include "encode.h"
+#include "hash.h"
 #include "oj.h"
 #include "parse.h"
 
@@ -82,19 +83,6 @@ static void end_array(ParseInfo pi) {
     rb_funcall(pi->handler, oj_array_end_id, 0);
 }
 
-static VALUE calc_hash_key(ParseInfo pi, Val kval) {
-    volatile VALUE rkey = kval->key_val;
-
-    if (Qundef == rkey) {
-        rkey = rb_str_new(kval->key, kval->klen);
-        rkey = oj_encode(rkey);
-        if (Yes == pi->options.sym_key) {
-            rkey = rb_str_intern(rkey);
-        }
-    }
-    return rkey;
-}
-
 static VALUE hash_key(ParseInfo pi, const char *key, size_t klen) {
     return rb_funcall(pi->handler, oj_hash_key_id, 1, rb_str_new(key, klen));
 }
@@ -107,7 +95,7 @@ static void hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, c
                oj_hash_set_id,
                3,
                stack_peek(&pi->stack)->val,
-               calc_hash_key(pi, kval),
+               oj_calc_hash_key(pi, kval),
                rstr);
 }
 
@@ -116,7 +104,7 @@ static void hash_set_num(ParseInfo pi, Val kval, NumInfo ni) {
                oj_hash_set_id,
                3,
                stack_peek(&pi->stack)->val,
-               calc_hash_key(pi, kval),
+               oj_calc_hash_key(pi, kval),
                oj_num_as_value(ni));
 }
 
@@ -125,7 +113,7 @@ static void hash_set_value(ParseInfo pi, Val kval, VALUE value) {
                oj_hash_set_id,
                3,
                stack_peek(&pi->stack)->val,
-               calc_hash_key(pi, kval),
+               oj_calc_hash_key(pi, kval),
                value);
 }
 
