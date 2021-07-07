@@ -23,6 +23,8 @@ module Oj
     bigdecimal_load: :auto,
     circular: false,
     class_cache: false,
+    cache_keys: true,
+    cache_str: false,
     create_additions: false,
     create_id: "json_class",
     empty_string: false,
