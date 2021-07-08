@@ -5,8 +5,8 @@
 
 #include <stdint.h>
 
-#define HASH_MASK 0x000003FF
-#define HASH_SLOT_CNT 1024
+#define HASH_SLOT_CNT ((uint32_t)8192)
+#define HASH_MASK (HASH_SLOT_CNT - 1)
 
 typedef struct _keyVal {
     struct _keyVal *next;
@@ -104,8 +104,8 @@ static VALUE hash_get(Hash hash, const char *key, size_t len, VALUE **slotp, VAL
 }
 
 void oj_hash_print() {
-    int    i;
-    KeyVal b;
+    uint32_t i;
+    KeyVal   b;
 
     for (i = 0; i < HASH_SLOT_CNT; i++) {
         printf("%4d:", i);
@@ -114,6 +114,29 @@ void oj_hash_print() {
         }
         printf("\n");
     }
+}
+
+void oj_hash_sizes() {
+    uint32_t i;
+    KeyVal   b;
+    int      max = 0;
+    int      min = 1000000;
+
+    for (i = 0; i < HASH_SLOT_CNT; i++) {
+        int cnt = 0;
+
+        for (b = str_hash.slots + i; 0 != b && 0 != b->key; b = b->next) {
+            cnt++;
+        }
+        // printf(" %4d\n", cnt);
+        if (max < cnt) {
+            max = cnt;
+        }
+        if (cnt < min) {
+            min = cnt;
+        }
+    }
+    printf("min: %d  max: %d\n", min, max);
 }
 
 VALUE
@@ -131,8 +154,7 @@ oj_sym_hash_get(const char *key, size_t len, VALUE **slotp) {
     return hash_get(&sym_hash, key, len, slotp, Qnil);
 }
 
-ID
-oj_attr_hash_get(const char *key, size_t len, ID **slotp) {
+ID oj_attr_hash_get(const char *key, size_t len, ID **slotp) {
     return (ID)hash_get(&intern_hash, key, len, (VALUE **)slotp, 0);
 }
 

@@ -26,22 +26,30 @@ static void hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, c
         volatile VALUE rstr = oj_cstr_to_value(str, len, (size_t)pi->options.cache_str);
 
         if (Qundef == rkey) {
-            VALUE *slot;
-
-            if (Yes == pi->options.sym_key) {
-                if (Qnil == (rkey = oj_sym_hash_get(key, klen, &slot))) {
-                    rkey  = rb_str_new(key, klen);
-                    rkey  = oj_encode(rkey);
-                    rkey  = rb_str_intern(rkey);
-                    *slot = rkey;
-                    rb_gc_register_address(slot);
+            if (Yes != pi->options.cache_keys) {
+                rkey = rb_str_new(key, klen);
+                rkey = oj_encode(rkey);
+                if (Yes == pi->options.sym_key) {
+                    rkey = rb_str_intern(rkey);
                 }
             } else {
-                if (Qnil == (rkey = oj_str_hash_get(key, klen, &slot))) {
-                    rkey  = rb_str_new(key, klen);
-                    rkey  = oj_encode(rkey);
-                    *slot = rkey;
-                    rb_gc_register_address(slot);
+                VALUE *slot;
+
+                if (Yes == pi->options.sym_key) {
+                    if (Qnil == (rkey = oj_sym_hash_get(key, klen, &slot))) {
+                        rkey  = rb_str_new(key, klen);
+                        rkey  = oj_encode(rkey);
+                        rkey  = rb_str_intern(rkey);
+                        *slot = rkey;
+                        rb_gc_register_address(slot);
+                    }
+                } else {
+                    if (Qnil == (rkey = oj_str_hash_get(key, klen, &slot))) {
+                        rkey  = rb_str_new(key, klen);
+                        rkey  = oj_encode(rkey);
+                        *slot = rkey;
+                        rb_gc_register_address(slot);
+                    }
                 }
             }
         }

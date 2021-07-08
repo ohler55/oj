@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 3.12.1 - 2021-07-09
+
+- Fixed `:cache_keys` not being honored in compat mode.
+- Increased the cache size.
+
 ## 3.12.0 - 2021-07-05
 
 - Added string and symbol caching options that give Oj about a 20% parse performance boost.

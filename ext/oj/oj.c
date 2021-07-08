@@ -1673,10 +1673,17 @@ extern VALUE oj_optimize_rails(VALUE self);
 
 /*
 extern void	oj_hash_test();
-
 static VALUE
 hash_test(VALUE self) {
     oj_hash_test();
+    return Qnil;
+}
+*/
+/*
+extern void oj_hash_sizes();
+static VALUE
+hash_test(VALUE self) {
+    oj_hash_sizes();
     return Qnil;
 }
 */
