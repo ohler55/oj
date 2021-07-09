@@ -293,12 +293,19 @@ void oj_dump_wab_val(VALUE obj, int depth, Out out) {
 
 ///// load functions /////
 
-static VALUE oj_hash_key(Val parent) {
+static VALUE calc_hash_key(ParseInfo pi, Val parent) {
     volatile VALUE rkey = parent->key_val;
 
     if (Qundef != rkey) {
         rkey = oj_encode(rkey);
         rkey = rb_str_intern(rkey);
+
+        return rkey;
+    }
+    if (Yes != pi->options.cache_keys) {
+        rkey = rb_str_new(parent->key, parent->klen);
+        rkey = oj_encode(rkey);
+	rkey = rb_str_intern(rkey);
 
         return rkey;
     }
@@ -509,7 +516,7 @@ static VALUE start_hash(ParseInfo pi) {
 static void hash_set_cstr(ParseInfo pi, Val parent, const char *str, size_t len, const char *orig) {
     volatile VALUE rval = cstr_to_rstr(pi, str, len);
 
-    rb_hash_aset(stack_peek(&pi->stack)->val, oj_hash_key(parent), rval);
+    rb_hash_aset(stack_peek(&pi->stack)->val, calc_hash_key(pi, parent), rval);
     if (Yes == pi->options.trace) {
         oj_trace_parse_call("set_string", pi, __FILE__, __LINE__, rval);
     }
@@ -522,14 +529,14 @@ static void hash_set_num(ParseInfo pi, Val parent, NumInfo ni) {
         oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number or other value");
     }
     rval = oj_num_as_value(ni);
-    rb_hash_aset(stack_peek(&pi->stack)->val, oj_hash_key(parent), rval);
+    rb_hash_aset(stack_peek(&pi->stack)->val, calc_hash_key(pi, parent), rval);
     if (Yes == pi->options.trace) {
         oj_trace_parse_call("set_number", pi, __FILE__, __LINE__, rval);
     }
 }
 
 static void hash_set_value(ParseInfo pi, Val parent, VALUE value) {
-    rb_hash_aset(stack_peek(&pi->stack)->val, oj_hash_key(parent), value);
+    rb_hash_aset(stack_peek(&pi->stack)->val, calc_hash_key(pi, parent), value);
     if (Yes == pi->options.trace) {
         oj_trace_parse_call("set_value", pi, __FILE__, __LINE__, value);
     }
