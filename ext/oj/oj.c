@@ -159,6 +159,8 @@ pthread_mutex_t oj_cache_mutex;
 VALUE oj_cache_mutex = Qnil;
 #endif
 
+extern void oj_parser_init();
+
 const char oj_json_class[] = "json_class";
 
 struct _options oj_default_options = {
@@ -2000,4 +2002,6 @@ void Init_oj() {
     rb_gc_register_address(&oj_cache_mutex);
 #endif
     oj_init_doc();
+
+    oj_parser_init();
 }
