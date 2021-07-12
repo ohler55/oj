@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 #include "oj.h"
-#include "buf.h"
+#include "parser.h"
 
 #define DEBUG	0
 
@@ -26,9 +26,6 @@
 #define MAX_EXP			4932
 // max in the pow_map
 #define MAX_POW			400
-
-#define OJ_ERR_INIT		{ .code = 0, .line = 0, .col = 0, .msg = { '\0' } }
-#define OJ_ERR_START		300
 
 #define MIN_SLEEP	(1000000000LL / (double)CLOCKS_PER_SEC)
 
@@ -96,78 +93,6 @@ enum {
     CHAR_ERR		= '.',
     DONE		= 'X',
 };
-
-typedef enum {
-    OJ_NONE    = '\0',
-    OJ_NULL    = 'n',
-    OJ_TRUE    = 't',
-    OJ_FALSE   = 'f',
-    OJ_INT     = 'i',
-    OJ_DECIMAL = 'd',
-    OJ_BIG     = 'b', // indicates parser buf is used
-    OJ_STRING  = 's',
-    OJ_OBJECT  = 'o',
-    OJ_ARRAY   = 'a',
-} ojType;
-
-
-// TBD
-// implement parser_new and parse
-// add options
-//  where? want different options for each mode
-//  maybe pass on to delegate
-//   delegate is map of names to functions
-//     called by method_missing
-//     if doesn't work then option and set_option
-
-typedef struct _num {
-    long double dub;
-    int64_t     fixnum;  // holds all digits
-    uint32_t    len;
-    int16_t     div;  // 10^div
-    int16_t     exp;
-    uint8_t     shift;  // shift of fixnum to get decimal
-    bool        neg;
-    bool        exp_neg;
-    bool        calc;  // if true value has been calculated
-    // for numbers as strings, reuse buf
-} * Num;
-
-typedef struct _ojParser {
-    const char		*map;
-    const char		*next_map;
-    struct _err		err;
-    int			depth;
-    char		stack[1024];
-
-    const char		*end; // TBD ???
-
-    // value data
-    ojType		type;  // valType
-    struct _num		num;
-    struct _buf		key;
-    struct _buf		buf;
-
-    void		(*add_null)(void *ctx, const char *key);
-    void		(*add_true)(void *ctx, const char *key);
-    void		(*add_false)(void *ctx, const char *key);
-    void		(*add_int)(void *ctx, const char *key, int64_t num);
-    void		(*add_float)(void *ctx, const char *key, double num);
-    void		(*add_big)(void *ctx, const char *key, const char *str, size_t len);
-    void		(*add_str)(void *ctx, const char *key, const char *str, size_t len);
-    void		(*open_array)(void *ctx, const char *key);
-    void		(*close_array)(void *ctx);
-    void		(*open_object)(void *ctx, const char *key);
-    void		(*close_object)(void *ctx);
-
-    void		*ctx;
-
-    char		token[8];
-    int			line;
-    int			col;
-    int			ri;
-    uint32_t		ucode;
-} *ojParser;
 
 #if 0
 typedef struct _ReadBlock {
@@ -546,50 +471,6 @@ static long double	pow_map[401] = {
 
 static VALUE parser_class;
 
-#if DEBUG
-static void
-print_val(ojParser p, const char *label) {
-    switch (p->type) {
-    case OJ_NONE:
-	printf("*** %s: no type\n", label);
-	break;
-    case OJ_NULL:
-	printf("*** %s: null\n", label);
-	break;
-    case OJ_TRUE:
-	printf("*** %s: true\n", label);
-	break;
-    case OJ_FALSE:
-	printf("*** %s: false\n", label);
-	break;
-    case OJ_INT:
-	printf("*** %s: %lld\n", label, (long long)p->num.fixnum); // should be smarter
-	break;
-    case OJ_DECIMAL:
-	printf("*** %s: (decimal)%lld\n", label, (long long)p->num.fixnum); // should be smarter, call calc then reset?
-	break;
-    case OJ_BIG:
-	printf("*** %s: (big)%s\n", label, buf_str(&p->buf));
-	break;
-    case OJ_STRING:
-	printf("*** %s: %s\n", label, buf_str(&p->buf));
-	break;
-    case OJ_OBJECT:
-	printf("*** %s: object\n", label);
-	break;
-    case OJ_ARRAY:
-	printf("*** %s: array\n", label);
-	break;
-    default:
-	printf("*** %s: unknown type\n", label);
-	break;
-    }
-    p->stack[p->depth+1] = '\0';
-    printf("*** stack: %d (%s)\n", p->depth, p->stack);
-}
-#endif
-
-
 // Works with extended unicode as well. \Uffffffff if support is desired in
 // the future.
 static size_t
@@ -635,7 +516,7 @@ parse_error(ojParser p, const char *fmt, ...) {
     va_start(ap, fmt);
     vsnprintf(buf, sizeof(buf), fmt, ap);
     va_end(ap);
-    rb_raise(oj_json_parser_error_class, "%s at %d:%d", buf, p->line, p->col);
+    rb_raise(oj_json_parser_error_class, "%s at %ld:%ld", buf, p->line, p->col);
 }
 
 static void
@@ -665,6 +546,7 @@ calc_num(ojParser p) {
     case OJ_INT:
 	if (p->num.neg) {
 	    p->num.fixnum = -p->num.fixnum;
+	    p->num.neg = false;
 	}
 	if (0 < p->depth && '{' == p->stack[p->depth - 1]) {
 	    p->add_int(p, buf_str(&p->key), p->num.fixnum);
@@ -785,9 +667,6 @@ parse(ojParser p, const byte *json) {
     printf("*** parse - mode: %c %s\n", p->map[256], (const char*)json);
 #endif
     for (; '\0' != *b; b++) {
-#if DEBUG
-	print_val(p, "loop");
-#endif
 	switch (p->map[*b]) {
 	case SKIP_NEWLINE:
 	    p->line++;
@@ -879,7 +758,6 @@ parse(ojParser p, const byte *json) {
 	    p->map = (0 == p->depth) ? value_map : after_map;
 	    if (p->depth < 0 || '[' != p->stack[p->depth]) {
 		p->col = b - json - p->col + 1;
-		printf("*** depth: %d stack: %c\n", p->depth, p->stack[p->depth]);
 		parse_error(p, "unexpected array close");
 		return;
 	    }
@@ -897,7 +775,6 @@ parse(ojParser p, const byte *json) {
 	    p->num.fixnum = 0;
 	    p->num.neg = false;
 	    p->num.shift = 0;
-	    p->num.calc = false;
 	    p->num.len = 0;
 	    p->num.exp = 0;
 	    p->num.exp_neg = false;
@@ -907,7 +784,6 @@ parse(ojParser p, const byte *json) {
 	    p->num.fixnum = 0;
 	    p->num.neg = true;
 	    p->num.shift = 0;
-	    p->num.calc = false;
 	    p->num.len = 0;
 	    p->num.exp = 0;
 	    p->num.exp_neg = false;
@@ -917,7 +793,6 @@ parse(ojParser p, const byte *json) {
 	    p->num.fixnum = 0;
 	    p->num.neg = false;
 	    p->num.shift = 0;
-	    p->num.calc = false;
 	    p->num.exp = 0;
 	    p->num.exp_neg = false;
 	    p->num.len = 0;
@@ -1907,101 +1782,97 @@ _oj_val_append_str(ojParser p, const byte *s, size_t len) {
 }
 #endif
 
-void
-add_null(void *ctx, const char *key) {
-    printf("*** add_null %s\n", key);
+static void parser_free(void *ptr) {
+    ojParser	p;
+
+    if (0 == ptr) {
+        return;
+    }
+    p = (ojParser)ptr;
+    buf_cleanup(&p->key);
+    buf_cleanup(&p->buf);
+    xfree(ptr);
 }
 
-void
-add_true(void *ctx, const char *key) {
-    printf("*** add_true %s\n", key);
+extern void oj_set_parser_validator(ojParser p);
+extern void oj_set_parser_debug(ojParser p);
+
+/* Document-method: new
+ * call-seq: new(mode=nil)
+ *
+ * Creates a new Parser with the specified mode. If no mode is provided
+ * validation is assumed.
+ */
+static VALUE parser_new(VALUE self, VALUE mode) {
+    ojParser	p = ALLOC(struct _ojParser);
+
+    memset(p, 0, sizeof(struct _ojParser));
+    p->map = value_map;
+    if (Qnil == mode) {
+	oj_set_parser_validator(p);
+    } else {
+	const char	*ms = NULL;
+
+	switch (rb_type(mode)) {
+	case RUBY_T_SYMBOL:
+	    mode = rb_sym_to_s(mode);
+	    // fall through
+	case RUBY_T_STRING:
+	    ms = rb_string_value_ptr(&mode);
+	    break;
+	default:
+	    rb_raise(rb_eArgError, "mode must be :validate, :strict, :object, :compat, or :rails");
+	}
+	if (0 == strcmp("strict", ms)) {
+	} else if (0 == strcmp("object", ms)) {
+	} else if (0 == strcmp("compat", ms)) {
+	} else if (0 == strcmp("rails", ms)) {
+	} else if (0 == strcmp("validate", ms)) {
+	    oj_set_parser_validator(p);
+	} else if (0 == strcmp("debug", ms)) {
+	    oj_set_parser_debug(p);
+	} else {
+	    rb_raise(rb_eArgError, "mode must be :validate, :strict, :object, :compat, or :rails");
+	}
+    }
+    return Data_Wrap_Struct(parser_class, 0, parser_free, p);
 }
 
-void
-add_false(void *ctx, const char *key) {
-    printf("*** add_false %s\n", key);
+static VALUE parser_missing(int argc, VALUE *argv, VALUE self) {
+    ojParser		p = (ojParser)DATA_PTR(self);
+    const char		*key = NULL;
+    volatile VALUE	rkey = *argv;
+    volatile VALUE	rv = Qnil;
+
+    switch (rb_type(rkey)) {
+    case RUBY_T_SYMBOL:
+	rkey = rb_sym_to_s(rkey);
+	// fall through
+    case RUBY_T_STRING:
+	key = rb_string_value_ptr(&rkey);
+	break;
+    default:
+	rb_raise(rb_eArgError, "mode must be :validate, :strict, :object, :compat, or :rails");
+    }
+    if (1 < argc) {
+	rv = argv[1];
+    }
+    return p->option(p->ctx, key, rv);
 }
 
-void
-add_int(void *ctx, const char *key, int64_t num) {
-    printf("*** add_int %s\n", key);
+static VALUE parser_parse(VALUE self, VALUE json) {
+    ojParser	p = (ojParser)DATA_PTR(self);
+
+    if (RUBY_T_STRING == rb_type(json)) {
+	const char	*s = rb_string_value_ptr(&json);
+
+	parse(p, (const byte*)s);
+    } else {
+	// TBD
+	rb_raise(rb_eArgError, "can only parse a String or IO object");
+    }
+    return p->result(p);
 }
-
-void
-add_float(void *ctx, const char *key, double num) {
-    printf("*** add_float %s\n", key);
-}
-
-void
-add_big(void *ctx, const char *key, const char *str, size_t len) {
-    printf("*** add_big %s\n", key);
-}
-
-void
-add_str(void *ctx, const char *key, const char *str, size_t len) {
-    printf("*** add_str %s\n", key);
-}
-
-void
-open_array(void *ctx, const char *key) {
-    printf("*** open_array %s\n", key);
-}
-
-void
-close_array(void *ctx) {
-    printf("*** close_array\n");
-}
-
-void
-open_object(void *ctx, const char *key) {
-    printf("*** open_object %s\n", key);
-}
-
-void
-close_object(void *ctx) {
-    printf("*** close_object\n");
-}
-
-
-static VALUE parser_new(VALUE self) {
-
-    const char *foo = "[true, false]";
-    struct _ojParser	p;
-
-    memset(&p, 0, sizeof(p));
-    p.map = value_map;
-
-    p.add_null = add_null;
-    p.add_true = add_true;
-    p.add_false = add_false;
-    p.add_int = add_int;
-    p.add_float = add_float;
-    p.add_big = add_big;
-    p.add_str = add_str;
-    p.open_array = open_array;
-    p.close_array = close_array;
-    p.open_object = open_object;
-    p.close_object = close_object;
-
-    parse(&p, (const byte*)foo);
-    // TBD
-
-    return Qnil;
-}
-
-static VALUE parser_parse(int argc, VALUE *argv, VALUE self) {
-
-    const char *foo = "[trux, false]";
-    struct _ojParser	p;
-
-    memset(&p, 0, sizeof(p));
-    parse(&p, (byte*)foo);
-
-    // TBD
-
-    return Qnil;
-}
-
 
 /* Document-class: Oj::Parser
  *
@@ -2009,6 +1880,7 @@ static VALUE parser_parse(int argc, VALUE *argv, VALUE self) {
  */
 void oj_parser_init() {
     parser_class = rb_define_class_under(Oj, "Parser", rb_cObject);
-    rb_define_module_function(parser_class, "new", parser_new, 0);
-    rb_define_method(parser_class, "parser", parser_parse, -1);
+    rb_define_module_function(parser_class, "new", parser_new, 1);
+    rb_define_method(parser_class, "parse", parser_parse, 1);
+    rb_define_method(parser_class, "method_missing", parser_missing, -1);
 }

@@ -10,6 +10,20 @@
  - optimize callbacks
  - consider a 4.0 if API changes would be better
   - separate defaults for each mode
+ - or maybe just a new set of parsers
+  - Oj::Parser.new()
+   - validate
+   - callback parser (callback is just scp re-written)
+    - or maybe add handler to make the parse a callback parser
+   - to core/basic
+   - to object
+   - options
+    - create id for objects
+    - symbol keys
+    - float options for bigdecimal
+   - create parser and set options on it
+   - cache keys and values
+   - callback - if not provided then expect just one
 
 - big decimal
  - just in custom mode, maybe in strict?
