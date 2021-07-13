@@ -499,7 +499,7 @@ static VALUE get_def_opts(VALUE self) {
         }
         rb_hash_aset(opts, ignore_sym, a);
     }
-    return opts;
+    return rb_obj_freeze(opts);
 }
 
 /* Document-method: default_options=

@@ -152,6 +152,10 @@ class Juice < Minitest::Test
     assert_equal(orig, opts);
   end
 
+  def test_options_frozen
+    assert_raises(FrozenError) { Oj.default_options[:mode] = :strict }
+  end
+
   def test_nil
     dump_and_load(nil, false)
   end
