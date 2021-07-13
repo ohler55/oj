@@ -41,24 +41,25 @@ typedef struct _ojParser {
     const char *end;  // TBD ???
 
     // value data
-    ojType      type;  // valType
     struct _num num;
     struct _buf key;
     struct _buf buf;
 
-    void (*add_null)(void *ctx, const char *key);
-    void (*add_true)(void *ctx, const char *key);
-    void (*add_false)(void *ctx, const char *key);
-    void (*add_int)(void *ctx, const char *key, int64_t num);
-    void (*add_float)(void *ctx, const char *key, double num);
-    void (*add_big)(void *ctx, const char *key, const char *str, size_t len);
-    void (*add_str)(void *ctx, const char *key, const char *str, size_t len);
-    void (*open_array)(void *ctx, const char *key);
-    void (*close_array)(void *ctx);
-    void (*open_object)(void *ctx, const char *key);
-    void (*close_object)(void *ctx);
-    VALUE (*option)(void *ctx, const char *key, VALUE value);
-    VALUE (*result)(void *ctx);
+    void (*add_null)(struct _ojParser *p, const char *key);
+    void (*add_true)(struct _ojParser *p, const char *key);
+    void (*add_false)(struct _ojParser *p, const char *key);
+    void (*add_int)(struct _ojParser *p, const char *key, int64_t num);
+    void (*add_float)(struct _ojParser *p, const char *key, double num);
+    void (*add_big)(struct _ojParser *p, const char *key, const char *str, size_t len);
+    void (*add_str)(struct _ojParser *p, const char *key, const char *str, size_t len);
+    void (*open_array)(struct _ojParser *p, const char *key);
+    void (*close_array)(struct _ojParser *p);
+    void (*open_object)(struct _ojParser *p, const char *key);
+    void (*close_object)(struct _ojParser *p);
+    VALUE (*option)(struct _ojParser *p, const char *key, VALUE value);
+    VALUE (*result)(struct _ojParser *p);
+    void (*free)(struct _ojParser *p);
+    void (*mark)(struct _ojParser *p);
 
     void *ctx;
 
@@ -67,6 +68,9 @@ typedef struct _ojParser {
     long     col;
     int      ri;
     uint32_t ucode;
+    uint32_t	cache_str;
+    ojType      type;  // valType
+    bool	cache_keys;
 } * ojParser;
 
 #endif /* OJ_PARSER_H */

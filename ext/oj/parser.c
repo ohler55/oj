@@ -361,7 +361,6 @@ static const char	esc_map[257] = "\
 ................................\
 ................................~";
 
-#if 0
 static const char	esc_byte_map[257] = "\
 ................................\
 ..\"............/................\
@@ -371,7 +370,7 @@ static const char	esc_byte_map[257] = "\
 ................................\
 ................................\
 ................................b";
-#endif
+
 static const char	u_map[257] = "\
 ................................\
 ................EEEEEEEEEE......\
@@ -548,9 +547,9 @@ calc_num(ojParser p) {
 	    p->num.fixnum = -p->num.fixnum;
 	    p->num.neg = false;
 	}
-	if (0 < p->depth && '{' == p->stack[p->depth - 1]) {
+	if (0 < p->depth && '{' == p->stack[p->depth-1]) {
 	    p->add_int(p, buf_str(&p->key), p->num.fixnum);
-	    p->buf.tail = p->buf.head;
+	    p->key.tail = p->key.head;
 	} else {
 	    p->add_int(p, NULL, p->num.fixnum);
 	}
@@ -578,18 +577,18 @@ calc_num(ojParser p) {
 		d *= x;
 	    }
 	}
-	if (0 < p->depth && '{' == p->stack[p->depth - 1]) {
-	    p->add_int(p, buf_str(&p->key), d);
-	    p->buf.tail = p->buf.head;
+	if (0 < p->depth && '{' == p->stack[p->depth-1]) {
+	    p->add_float(p, buf_str(&p->key), d);
+	    p->key.tail = p->key.head;
 	} else {
-	    p->add_int(p, NULL, d);
+	    p->add_float(p, NULL, d);
 	}
 	break;
     }
     case OJ_BIG:
-	if (0 < p->depth && '{' == p->stack[p->depth - 1]) {
+	if (0 < p->depth && '{' == p->stack[p->depth-1]) {
 	    p->add_big(p, buf_str(&p->key), buf_str(&p->buf), buf_len(&p->buf));
-	    p->buf.tail = p->buf.head;
+	    p->key.tail = p->key.head;
 	} else {
 	    p->add_big(p, NULL, buf_str(&p->buf), buf_len(&p->buf));
 	}
@@ -660,7 +659,7 @@ big_change(ojParser p) {
 
 static void
 parse(ojParser p, const byte *json) {
-    //const byte *start;
+    const byte *start;
     const byte	*b = json;
 
 #if DEBUG
@@ -687,15 +686,15 @@ parse(ojParser p, const byte *json) {
 	    break;
 	case KEY_QUOTE:
 	    b++;
-	    //start = b;
+	    p->key.tail = p->key.head;
+	    start = b;
 	    for (; STR_OK == string_map[*b]; b++) {
 	    }
+	    buf_append_string(&p->key, (const char*)start, b - start);
 	    if ('"' == *b) {
-		//_oj_val_set_key(v, (char*)start, b - start);
 		p->map = colon_map;
 		break;
 	    }
-	    //_oj_val_set_key(v, (char*)start, b - start);
 	    b--;
 	    p->map = string_map;
 	    p->next_map = colon_map;
@@ -709,20 +708,32 @@ parse(ojParser p, const byte *json) {
 	    break;
 	case VAL_QUOTE:
 	    b++;
-	    //start = b;
+	    start = b;
+	    p->buf.tail = p->buf.head;
 	    for (; STR_OK == string_map[*b]; b++) {
 	    }
 	    if ('"' == *b) {
-		//_oj_val_set_str(v, (char*)start, b - start);
+		if (0 < p->depth && '{' == p->stack[p->depth-1]) {
+		    p->add_str(p, buf_str(&p->key), (const char*)start, b - start);
+		    p->key.tail = p->key.head;
+		} else {
+		    p->add_str(p, NULL, (const char*)start, b - start);
+		}
 		p->map = (NULL == p->stack) ? value_map : after_map;
 		break;
 	    }
-	    //_oj_val_set_str(v, (char*)start, b - start);
+	    buf_append_string(&p->buf, (const char*)start, b - start);
 	    b--;
 	    p->map = string_map;
 	    p->next_map = (0 == p->depth) ? value_map : after_map;
 	    break;
 	case OPEN_OBJECT:
+	    if (0 < p->depth && '{' == p->stack[p->depth-1]) {
+		p->open_object(p, buf_str(&p->key));
+		p->key.tail = p->key.head;
+	    } else {
+		p->open_object(p, NULL);
+	    }
 	    p->stack[p->depth] = '{';
 	    p->depth++;
 	    p->map = key1_map;
@@ -738,13 +749,14 @@ parse(ojParser p, const byte *json) {
 		parse_error(p, "unexpected object close");
 		return;
 	    }
+	    p->close_object(p);
 	    break;
 	case OPEN_ARRAY:
-	    if (0 < p->depth && '{' == p->stack[p->depth - 1]) {
+	    if (0 < p->depth && '{' == p->stack[p->depth-1]) {
 		p->open_array(p, buf_str(&p->key));
-		p->buf.tail = p->buf.head;
+		p->key.tail = p->key.head;
 	    } else {
-		    p->open_array(p, NULL);
+		p->open_array(p, NULL);
 	    }
 	    p->stack[p->depth] = '[';
 	    p->depth++;
@@ -772,6 +784,7 @@ parse(ojParser p, const byte *json) {
 	    }
 	    break;
 	case VAL0:
+	    p->type = OJ_INT;
 	    p->num.fixnum = 0;
 	    p->num.neg = false;
 	    p->num.shift = 0;
@@ -781,6 +794,7 @@ parse(ojParser p, const byte *json) {
 	    p->map = zero_map;
 	    break;
 	case VAL_NEG:
+	    p->type = OJ_INT;
 	    p->num.fixnum = 0;
 	    p->num.neg = true;
 	    p->num.shift = 0;
@@ -790,6 +804,7 @@ parse(ojParser p, const byte *json) {
 	    p->map = neg_map;
 	    break;;
 	case VAL_DIGIT:
+	    p->type = OJ_INT;
 	    p->num.fixnum = 0;
 	    p->num.neg = false;
 	    p->num.shift = 0;
@@ -889,38 +904,38 @@ parse(ojParser p, const byte *json) {
 	    b--;
 	    break;
 	case BIG_DIGIT:
-	    //start = b;
+	    start = b;
 	    for (; NUM_DIGIT == digit_map[*b]; b++) {
 	    }
-	    //_oj_append_num(&p->err, &p->stack->num, (char*)start, b - start);
+	    buf_append_string(&p->buf, (const char*)start, b - start);
 	    b--;
 	    break;
 	case BIG_DOT:
 	    p->type = OJ_DECIMAL;
-	    //_oj_append_num(&p->err, &p->stack->num, ".", 1);
+	    buf_append(&p->buf, '.');
 	    p->map = big_dot_map;
 	    break;
 	case BIG_FRAC:
 	    p->map = big_frac_map;
-	    //start = b;
+	    start = b;
 	    for (; NUM_FRAC == frac_map[*b]; b++) {
 	    }
-	    //_oj_append_num(&p->err, &p->stack->num, (char*)start, b - start);
+	    buf_append_string(&p->buf, (const char*)start, b - start);
 	    b--;
 	case BIG_E:
 	    p->type = OJ_DECIMAL;
-	    //_oj_append_num(&p->err, &p->stack->num, (const char*)b, 1);
+	    buf_append(&p->buf, *b);
 	    p->map = big_exp_sign_map;
 	    break;
 	case BIG_EXP_SIGN:
-	    //_oj_append_num(&p->err, &p->stack->num, (const char*)b, 1);
+	    buf_append(&p->buf, *b);
 	    p->map = big_exp_zero_map;
 	    break;
 	case BIG_EXP:
-	    //start = b;
+	    start = b;
 	    for (; NUM_DIGIT == digit_map[*b]; b++) {
 	    }
-	    //_oj_append_num(&p->err, &p->stack->num, (char*)start, b - start);
+	    buf_append_string(&p->buf, (const char*)start, b - start);
 	    b--;
 	    p->map = big_exp_map;
 	    break;
@@ -939,19 +954,16 @@ parse(ojParser p, const byte *json) {
 	    b--;
 	    break;
 	case STR_OK:
-	    //start = b;
+	    start = b;
 	    for (; STR_OK == string_map[*b]; b++) {
 	    }
 	    if (':' == p->next_map[256]) {
-		//_oj_append_str(&p->err, &p->stack->key, start, b - start);
+		buf_append_string(&p->key, (const char*)start, b - start);
 	    } else {
-		//_oj_append_str(&p->err, &p->stack->str, start, b - start);
+		buf_append_string(&p->buf, (const char*)start, b - start);
 	    }
 	    if ('"' == *b) {
 		p->map = p->next_map;
-		if (':' != p->map[256]) {
-		    //pop_val(p);
-		}
 		break;
 	    }
 	    b--;
@@ -961,9 +973,6 @@ parse(ojParser p, const byte *json) {
 	    break;
 	case STR_QUOTE:
 	    p->map = p->next_map;
-	    if (':' != p->map[256]) {
-		//pop_val(p);
-	    }
 	    break;
 	case ESC_U:
 	    p->map = u_map;
@@ -979,9 +988,9 @@ parse(ojParser p, const byte *json) {
 
 		if (0 < ulen) {
 		    if (':' == p->next_map[256]) {
-			//_oj_append_str(&p->err, &p->stack->key, utf8, ulen);
+			buf_append_string(&p->key, (const char*)utf8, ulen);
 		    } else {
-			//_oj_append_str(&p->err, &p->stack->str, utf8, ulen);
+			buf_append_string(&p->buf, (const char*)utf8, ulen);
 		    }
 		} else {
 		    parse_error(p, "invalid unicode");
@@ -992,9 +1001,9 @@ parse(ojParser p, const byte *json) {
 	    break;
 	case ESC_OK:
 	    if (':' == p->next_map[256]) {
-		//_oj_append_str(&p->err, &p->stack->key, (byte*)&esc_byte_map[*b], 1);
+		buf_append(&p->key, esc_byte_map[*b]);
 	    } else {
-		//_oj_append_str(&p->err, &p->stack->str, (byte*)&esc_byte_map[*b], 1);
+		buf_append(&p->buf, esc_byte_map[*b]);
 	    }
 	    p->map = string_map;
 	    break;
@@ -1002,35 +1011,35 @@ parse(ojParser p, const byte *json) {
 	    p->ri = 1;
 	    p->map = utf_map;
 	    if (':' == p->next_map[256]) {
-		//_oj_append_str(&p->err, &p->stack->key, b, 1);
+		buf_append(&p->key, *b);
 	    } else {
-		//_oj_append_str(&p->err, &p->stack->str, b, 1);
+		buf_append(&p->buf, *b);
 	    }
 	    break;
 	case UTF2:
 	    p->ri = 2;
 	    p->map = utf_map;
 	    if (':' == p->next_map[256]) {
-		//_oj_append_str(&p->err, &p->stack->key, b, 1);
+		buf_append(&p->key, *b);
 	    } else {
-		//_oj_append_str(&p->err, &p->stack->str, b, 1);
+		buf_append(&p->buf, *b);
 	    }
 	    break;
 	case UTF3:
 	    p->ri = 3;
 	    p->map = utf_map;
 	    if (':' == p->next_map[256]) {
-		//_oj_append_str(&p->err, &p->stack->key, b, 1);
+		buf_append(&p->key, *b);
 	    } else {
-		//_oj_append_str(&p->err, &p->stack->str, b, 1);
+		buf_append(&p->buf, *b);
 	    }
 	    break;
 	case UTFX:
 	    p->ri--;
 	    if (':' == p->next_map[256]) {
-		//_oj_append_str(&p->err, &p->stack->key, b, 1);
+		buf_append(&p->key, *b);
 	    } else {
-		//_oj_append_str(&p->err, &p->stack->str, b, 1);
+		buf_append(&p->buf, *b);
 	    }
 	    if (p->ri <= 0) {
 		p->map = string_map;
@@ -1039,17 +1048,13 @@ parse(ojParser p, const byte *json) {
 	case VAL_NULL:
 	    if ('u' == b[1] && 'l' == b[2] && 'l' == b[3]) {
 		b += 3;
-		if (0 == p->depth) {
-		    p->add_null(p, NULL);
-		    p->map = value_map;
-		} else {
-		    if ('{' == p->stack[p->depth - 1]) {
-			p->add_null(p, buf_str(&p->key));
-			p->buf.tail = p->buf.head;
-		    } else {
-			p->add_null(p, NULL);
-		    }
+		if (0 < p->depth && '{' == p->stack[p->depth-1]) {
+		    p->add_null(p, buf_str(&p->key));
+		    p->key.tail = p->key.head;
 		    p->map = after_map;
+		} else {
+		    p->add_null(p, NULL);
+		    p->map = (0 == p->depth) ? value_map : after_map;
 		}
 		break;
 	    }
@@ -1074,17 +1079,13 @@ parse(ojParser p, const byte *json) {
 	case VAL_TRUE:
 	    if ('r' == b[1] && 'u' == b[2] && 'e' == b[3]) {
 		b += 3;
-		if (0 == p->depth) {
-		    p->add_true(p, NULL);
-		    p->map = value_map;
-		} else {
-		    if ('{' == p->stack[p->depth - 1]) {
-			p->add_true(p, buf_str(&p->key));
-			p->buf.tail = p->buf.head;
-		    } else {
-			p->add_true(p, NULL);
-		    }
+		if (0 < p->depth && '{' == p->stack[p->depth-1]) {
+		    p->add_true(p, buf_str(&p->key));
+		    p->key.tail = p->key.head;
 		    p->map = after_map;
+		} else {
+		    p->add_true(p, NULL);
+		    p->map = (0 == p->depth) ? value_map : after_map;
 		}
 		break;
 	    }
@@ -1109,17 +1110,13 @@ parse(ojParser p, const byte *json) {
 	case VAL_FALSE:
 	    if ('a' == b[1] && 'l' == b[2] && 's' == b[3] && 'e' == b[4]) {
 		b += 4;
-		if (0 == p->depth) {
-		    p->add_false(p, NULL);
-		    p->map = value_map;
-		} else {
-		    if ('{' == p->stack[p->depth - 1]) {
-			p->add_false(p, buf_str(&p->key));
-			p->buf.tail = p->buf.head;
-		    } else {
-			p->add_false(p, NULL);
-		    }
+		if (0 < p->depth && '{' == p->stack[p->depth-1]) {
+		    p->add_false(p, buf_str(&p->key));
+		    p->key.tail = p->key.head;
 		    p->map = after_map;
+		} else {
+		    p->add_false(p, NULL);
+		    p->map = (0 == p->depth) ? value_map : after_map;
 		}
 		break;
 	    }
@@ -1791,10 +1788,12 @@ static void parser_free(void *ptr) {
     p = (ojParser)ptr;
     buf_cleanup(&p->key);
     buf_cleanup(&p->buf);
+    p->free(p);
     xfree(ptr);
 }
 
 extern void oj_set_parser_validator(ojParser p);
+extern void oj_set_parser_saj(ojParser p);
 extern void oj_set_parser_debug(ojParser p);
 
 /* Document-method: new
@@ -1807,6 +1806,10 @@ static VALUE parser_new(VALUE self, VALUE mode) {
     ojParser	p = ALLOC(struct _ojParser);
 
     memset(p, 0, sizeof(struct _ojParser));
+    buf_init(&p->key);
+    buf_init(&p->buf);
+    p->cache_keys = true;
+
     p->map = value_map;
     if (Qnil == mode) {
 	oj_set_parser_validator(p);
@@ -1825,6 +1828,8 @@ static VALUE parser_new(VALUE self, VALUE mode) {
 	}
 	if (0 == strcmp("strict", ms)) {
 	} else if (0 == strcmp("object", ms)) {
+	} else if (0 == strcmp("saj", ms)) {
+	    oj_set_parser_saj(p);
 	} else if (0 == strcmp("compat", ms)) {
 	} else if (0 == strcmp("rails", ms)) {
 	} else if (0 == strcmp("validate", ms)) {
@@ -1852,12 +1857,12 @@ static VALUE parser_missing(int argc, VALUE *argv, VALUE self) {
 	key = rb_string_value_ptr(&rkey);
 	break;
     default:
-	rb_raise(rb_eArgError, "mode must be :validate, :strict, :object, :compat, or :rails");
+	rb_raise(rb_eArgError, "mode must be :validate, :strict, :saj, :object, :compat, or :rails");
     }
     if (1 < argc) {
 	rv = argv[1];
     }
-    return p->option(p->ctx, key, rv);
+    return p->option(p, key, rv);
 }
 
 static VALUE parser_parse(VALUE self, VALUE json) {
@@ -1874,6 +1879,34 @@ static VALUE parser_parse(VALUE self, VALUE json) {
     return p->result(p);
 }
 
+static VALUE parser_cache_keys(VALUE self) {
+    ojParser	p = (ojParser)DATA_PTR(self);
+
+    return p->cache_keys ? Qtrue : Qfalse;
+}
+
+static VALUE parser_cache_keys_set(VALUE self, VALUE v) {
+    ojParser	p = (ojParser)DATA_PTR(self);
+
+    p->cache_keys = (Qtrue == v);
+
+    return p->cache_keys ? Qtrue : Qfalse;
+}
+
+static VALUE parser_cache_str(VALUE self) {
+    ojParser	p = (ojParser)DATA_PTR(self);
+
+    return INT2NUM((int)p->cache_str);
+}
+
+static VALUE parser_cache_str_set(VALUE self, VALUE v) {
+    ojParser	p = (ojParser)DATA_PTR(self);
+
+    p->cache_str = NUM2INT(v);
+
+    return INT2NUM((int)p->cache_str);
+}
+
 /* Document-class: Oj::Parser
  *
  * TBD
@@ -1882,5 +1915,9 @@ void oj_parser_init() {
     parser_class = rb_define_class_under(Oj, "Parser", rb_cObject);
     rb_define_module_function(parser_class, "new", parser_new, 1);
     rb_define_method(parser_class, "parse", parser_parse, 1);
+    rb_define_method(parser_class, "cache_keys", parser_cache_keys, 0);
+    rb_define_method(parser_class, "cache_keys=", parser_cache_keys_set, 1);
+    rb_define_method(parser_class, "cache_strings", parser_cache_str, 0);
+    rb_define_method(parser_class, "cache_strings=", parser_cache_str_set, 1);
     rb_define_method(parser_class, "method_missing", parser_missing, -1);
 }

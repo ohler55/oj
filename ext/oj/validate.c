@@ -3,59 +3,63 @@
 #include "parser.h"
 
 static void
-add_null(void *ctx, const char *key) {
+add_null(struct _ojParser *p, const char *key) {
 }
 
 static void
-add_true(void *ctx, const char *key) {
+add_true(struct _ojParser *p, const char *key) {
 }
 
 static void
-add_false(void *ctx, const char *key) {
+add_false(struct _ojParser *p, const char *key) {
 }
 
 static void
-add_int(void *ctx, const char *key, int64_t num) {
+add_int(struct _ojParser *p, const char *key, int64_t num) {
 }
 
 static void
-add_float(void *ctx, const char *key, double num) {
+add_float(struct _ojParser *p, const char *key, double num) {
 }
 
 static void
-add_big(void *ctx, const char *key, const char *str, size_t len) {
+add_big(struct _ojParser *p, const char *key, const char *str, size_t len) {
 }
 
 static void
-add_str(void *ctx, const char *key, const char *str, size_t len) {
+add_str(struct _ojParser *p, const char *key, const char *str, size_t len) {
 }
 
 static void
-open_array(void *ctx, const char *key) {
+open_array(struct _ojParser *p, const char *key) {
 }
 
 static void
-close_array(void *ctx) {
+close_array(struct _ojParser *p) {
 }
 
 static void
-open_object(void *ctx, const char *key) {
+open_object(struct _ojParser *p, const char *key) {
 }
 
 static void
-close_object(void *ctx) {
+close_object(struct _ojParser *p) {
 }
 
 
 static VALUE
-option(void *ctx, const char *key, VALUE value) {
+option(ojParser p, const char *key, VALUE value) {
     rb_raise(rb_eArgError, "%s is not an option for the validate delegate", key);
     return Qnil;
 }
 
 static VALUE
-result(void *ctx) {
+result(struct _ojParser *p) {
     return Qnil;
+}
+
+static void
+dfree(struct _ojParser *p) {
 }
 
 void oj_set_parser_validator(ojParser p) {
@@ -73,4 +77,5 @@ void oj_set_parser_validator(ojParser p) {
     p->close_object = close_object;
     p->option = option;
     p->result = result;
+    p->free = dfree;
 }
