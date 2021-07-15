@@ -3,10 +3,6 @@
 ^c^d hide subtree
 ^c^s show subtree
 
-- parser re-write
- - try scp as well as saj
-
-
 - freeze
 - more efficient array and hash creation
   - void rb_hash_bulk_insert(long, const VALUE *, VALUE);
@@ -14,28 +10,7 @@
   - VALUE rb_ary_new_from_values(long n, const VALUE *elts);
   - or VALUE rb_ary_new_from_args(long n, ...);
 
-
-
- - use ojc as a starting point
-  - should hash be a stack with indicator for either hash or object?
-   - detect object if create key is encountered else hash
- - optimize callbacks
- - consider a 4.0 if API changes would be better
-  - separate defaults for each mode
- - or maybe just a new set of parsers
-  - Oj::Parser.new()
-   - validate
-   - callback parser (callback is just scp re-written)
-    - or maybe add handler to make the parse a callback parser
-   - to core/basic
-   - to object
-   - options
-    - create id for objects
-    - symbol keys
-    - float options for bigdecimal
-   - create parser and set options on it
-   - cache keys and values
-   - callback - if not provided then expect just one
+- add default_options[]= method
 
 - big decimal
  - just in custom mode, maybe in strict?

@@ -84,18 +84,23 @@ if $verbose
 end
 
 p_val = Oj::Parser.new(:validate)
-=begin
+
 p_all = Oj::Parser.new(:saj)
 p_all.handler = all_handler
 p_all.cache_keys = $cache_keys
 p_all.cache_strings = 5
-=end
+
+puts '-' * 80
+puts "Validate Performance"
+perf = Perf.new()
+perf.add('Oj::Parser.validate', 'none') { p_val.parse($json) }
+perf.add('Oj::Saj.none', 'none') { Oj.saj_parse(no_handler, $json) }
+perf.run($iter)
+
 puts '-' * 80
 puts "Parse Performance"
 perf = Perf.new()
-perf.add('Oj::Parser.validate', 'none') { p_val.parse($json) }
-#perf.add('Oj::Parser.saj', 'all') { p_all.parse($json) }
-perf.add('Oj::Saj.none', 'none') { Oj.saj_parse(no_handler, $json) }
+perf.add('Oj::Parser.saj', 'all') { p_all.parse($json) }
 perf.add('Oj::Saj.all', 'all') { Oj.saj_parse(all_handler, $json) }
 perf.run($iter)
 
