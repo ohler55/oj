@@ -5,6 +5,7 @@
 #include "oj.h"
 #include "parser.h"
 
+#if 0
 static void add_null(struct _ojParser *p, const char *key) {
 }
 
@@ -50,6 +51,7 @@ static VALUE get_key(ojParser p, const char *key) {
 
         if (Qnil == (rkey = oj_str_hash_get(key, len, &slot))) {
             rkey  = oj_encode(rb_str_new(key, len));
+	    rkey = rb_str_freeze(rkey);
             *slot = rkey;
             rb_gc_register_address(slot);
         }
@@ -95,6 +97,7 @@ static void handle_add_str(struct _ojParser *p, const char *key, const char *str
 
         if (Qnil == (rstr = oj_str_hash_get(str, len, &slot))) {
             rstr  = oj_encode(rb_str_new(str, len));
+	    rstr = rb_str_freeze(rstr);
             *slot = rstr;
             rb_gc_register_address(slot);
         }
@@ -154,7 +157,7 @@ static VALUE option(ojParser p, const char *key, VALUE value) {
     rb_raise(rb_eArgError, "%s is not an option for the validate delegate", key);
     return Qnil;
 }
-
+#endif
 static VALUE result(struct _ojParser *p) {
     return Qnil;
 }
@@ -164,6 +167,7 @@ static void dfree(struct _ojParser *p) {
 
 void oj_set_parser_saj(ojParser p) {
     p->ctx          = (void *)Qnil;
+    /*
     p->add_null     = add_null;
     p->add_true     = add_true;
     p->add_false    = add_false;
@@ -176,6 +180,7 @@ void oj_set_parser_saj(ojParser p) {
     p->open_object  = open_object;
     p->close_object = close_object;
     p->option       = option;
+    */
     p->result       = result;
     p->free         = dfree;
 }

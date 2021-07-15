@@ -7,6 +7,10 @@
 #include "buf.h"
 #include "ruby.h"
 
+#define TOP_FUN		0
+#define ARRAY_FUN	1
+#define OBJECT_FUN	2
+
 typedef enum {
     OJ_NONE    = '\0',
     OJ_NULL    = 'n',
@@ -32,30 +36,35 @@ typedef struct _num {
     // for numbers as strings, reuse buf
 } * Num;
 
-typedef struct _ojParser {
-    const char *map;
-    const char *next_map;
-    int         depth;
-    char        stack[1024];
+struct _ojParser;
 
-    const char *end;  // TBD ???
+typedef struct _funcs {
+    void (*add_null)(struct _ojParser *p);
+    void (*add_true)(struct _ojParser *p);
+    void (*add_false)(struct _ojParser *p);
+    void (*add_int)(struct _ojParser *p);
+    void (*add_float)(struct _ojParser *p);
+    void (*add_big)(struct _ojParser *p);
+    void (*add_str)(struct _ojParser *p);
+    void (*open_array)(struct _ojParser *p);
+    void (*close_array)(struct _ojParser *p);
+    void (*open_object)(struct _ojParser *p);
+    void (*close_object)(struct _ojParser *p);
+} * Funcs;
+
+typedef struct _ojParser {
+    const char *  map;
+    const char *  next_map;
+    int           depth;
+    unsigned char stack[1024];
 
     // value data
     struct _num num;
     struct _buf key;
     struct _buf buf;
 
-    void (*add_null)(struct _ojParser *p, const char *key);
-    void (*add_true)(struct _ojParser *p, const char *key);
-    void (*add_false)(struct _ojParser *p, const char *key);
-    void (*add_int)(struct _ojParser *p, const char *key, int64_t num);
-    void (*add_float)(struct _ojParser *p, const char *key, double num);
-    void (*add_big)(struct _ojParser *p, const char *key, const char *str, size_t len);
-    void (*add_str)(struct _ojParser *p, const char *key, const char *str, size_t len);
-    void (*open_array)(struct _ojParser *p, const char *key);
-    void (*close_array)(struct _ojParser *p);
-    void (*open_object)(struct _ojParser *p, const char *key);
-    void (*close_object)(struct _ojParser *p);
+    struct _funcs funcs[3];
+
     VALUE (*option)(struct _ojParser *p, const char *key, VALUE value);
     VALUE (*result)(struct _ojParser *p);
     void (*free)(struct _ojParser *p);
@@ -68,9 +77,9 @@ typedef struct _ojParser {
     long     col;
     int      ri;
     uint32_t ucode;
-    uint32_t	cache_str;
-    ojType      type;  // valType
-    bool	cache_keys;
+    uint32_t cache_str;
+    ojType   type;  // valType
+    bool     cache_keys;
 } * ojParser;
 
 #endif /* OJ_PARSER_H */

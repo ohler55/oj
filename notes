@@ -4,6 +4,18 @@
 ^c^s show subtree
 
 - parser re-write
+ - try scp as well as saj
+
+
+- freeze
+- more efficient array and hash creation
+  - void rb_hash_bulk_insert(long, const VALUE *, VALUE);
+  - rb_hash_bulk_insert_into_st_table(long argc, const VALUE *argv, VALUE hash)
+  - VALUE rb_ary_new_from_values(long n, const VALUE *elts);
+  - or VALUE rb_ary_new_from_args(long n, ...);
+
+
+
  - use ojc as a starting point
   - should hash be a stack with indicator for either hash or object?
    - detect object if create key is encountered else hash

@@ -547,12 +547,7 @@ calc_num(ojParser p) {
 	    p->num.fixnum = -p->num.fixnum;
 	    p->num.neg = false;
 	}
-	if (0 < p->depth && '{' == p->stack[p->depth-1]) {
-	    p->add_int(p, buf_str(&p->key), p->num.fixnum);
-	    p->key.tail = p->key.head;
-	} else {
-	    p->add_int(p, NULL, p->num.fixnum);
-	}
+	p->funcs[p->stack[p->depth]].add_int(p);
 	break;
     case OJ_DECIMAL: {
 	long double	d = (long double)p->num.fixnum;
@@ -577,21 +572,12 @@ calc_num(ojParser p) {
 		d *= x;
 	    }
 	}
-	if (0 < p->depth && '{' == p->stack[p->depth-1]) {
-	    p->add_float(p, buf_str(&p->key), d);
-	    p->key.tail = p->key.head;
-	} else {
-	    p->add_float(p, NULL, d);
-	}
+	p->num.dub = d;
+	p->funcs[p->stack[p->depth]].add_float(p);
 	break;
     }
     case OJ_BIG:
-	if (0 < p->depth && '{' == p->stack[p->depth-1]) {
-	    p->add_big(p, buf_str(&p->key), buf_str(&p->buf), buf_len(&p->buf));
-	    p->key.tail = p->key.head;
-	} else {
-	    p->add_big(p, NULL, buf_str(&p->buf), buf_len(&p->buf));
-	}
+	p->funcs[p->stack[p->depth]].add_big(p);
     default:
 	// nothing to do
 	break;
@@ -700,7 +686,7 @@ parse(ojParser p, const byte *json) {
 	    p->next_map = colon_map;
 	    break;
 	case AFTER_COMMA:
-	    if (0 < p->depth && '{' == p->stack[p->depth-1]) {
+	    if (0 < p->depth && OBJECT_FUN == p->stack[p->depth]) {
 		p->map = key_map;
 	    } else {
 		p->map = comma_map;
@@ -712,72 +698,57 @@ parse(ojParser p, const byte *json) {
 	    p->buf.tail = p->buf.head;
 	    for (; STR_OK == string_map[*b]; b++) {
 	    }
+	    buf_append_string(&p->buf, (const char*)start, b - start);
 	    if ('"' == *b) {
-		if (0 < p->depth && '{' == p->stack[p->depth-1]) {
-		    p->add_str(p, buf_str(&p->key), (const char*)start, b - start);
-		    p->key.tail = p->key.head;
-		} else {
-		    p->add_str(p, NULL, (const char*)start, b - start);
-		}
-		p->map = (NULL == p->stack) ? value_map : after_map;
+		p->funcs[p->stack[p->depth]].add_str(p);
+		p->map = (0 == p->depth) ? value_map : after_map;
 		break;
 	    }
-	    buf_append_string(&p->buf, (const char*)start, b - start);
 	    b--;
 	    p->map = string_map;
 	    p->next_map = (0 == p->depth) ? value_map : after_map;
 	    break;
 	case OPEN_OBJECT:
-	    if (0 < p->depth && '{' == p->stack[p->depth-1]) {
-		p->open_object(p, buf_str(&p->key));
-		p->key.tail = p->key.head;
-	    } else {
-		p->open_object(p, NULL);
-	    }
-	    p->stack[p->depth] = '{';
+	    p->funcs[p->stack[p->depth]].open_object(p);
 	    p->depth++;
+	    p->stack[p->depth] = OBJECT_FUN;
 	    p->map = key1_map;
 	    break;
 	case NUM_CLOSE_OBJECT:
 	    calc_num(p);
 	    // flow through
 	case CLOSE_OBJECT:
-	    p->depth--;
-	    p->map = (0 == p->depth) ? value_map : after_map;
-	    if (p->depth < 0 || '{' != p->stack[p->depth]) {
+	    p->map = (1 == p->depth) ? value_map : after_map;
+	    if (p->depth <= 0 || OBJECT_FUN != p->stack[p->depth]) {
 		p->col = b - json - p->col + 1;
 		parse_error(p, "unexpected object close");
 		return;
 	    }
-	    p->close_object(p);
+	    p->funcs[p->stack[p->depth]].close_object(p);
+	    p->depth--;
 	    break;
 	case OPEN_ARRAY:
-	    if (0 < p->depth && '{' == p->stack[p->depth-1]) {
-		p->open_array(p, buf_str(&p->key));
-		p->key.tail = p->key.head;
-	    } else {
-		p->open_array(p, NULL);
-	    }
-	    p->stack[p->depth] = '[';
+	    p->funcs[p->stack[p->depth]].open_array(p);
 	    p->depth++;
+	    p->stack[p->depth] = ARRAY_FUN;
 	    p->map = value_map;
 	    break;
 	case NUM_CLOSE_ARRAY:
 	    calc_num(p);
 	    // flow through
 	case CLOSE_ARRAY:
-	    p->depth--;
-	    p->map = (0 == p->depth) ? value_map : after_map;
-	    if (p->depth < 0 || '[' != p->stack[p->depth]) {
+	    p->map = (1 == p->depth) ? value_map : after_map;
+	    if (p->depth <= 0 || ARRAY_FUN != p->stack[p->depth]) {
 		p->col = b - json - p->col + 1;
 		parse_error(p, "unexpected array close");
 		return;
 	    }
-	    p->close_array(p);
+	    p->funcs[p->stack[p->depth]].close_array(p);
+	    p->depth--;
 	    break;
 	case NUM_COMMA:
 	    calc_num(p);
-	    if (0 < p->depth && '{' == p->stack[p->depth-1]) {
+	    if (0 < p->depth && OBJECT_FUN == p->stack[p->depth]) {
 		p->map = key_map;
 	    } else {
 		p->map = comma_map;
@@ -1048,14 +1019,8 @@ parse(ojParser p, const byte *json) {
 	case VAL_NULL:
 	    if ('u' == b[1] && 'l' == b[2] && 'l' == b[3]) {
 		b += 3;
-		if (0 < p->depth && '{' == p->stack[p->depth-1]) {
-		    p->add_null(p, buf_str(&p->key));
-		    p->key.tail = p->key.head;
-		    p->map = after_map;
-		} else {
-		    p->add_null(p, NULL);
-		    p->map = (0 == p->depth) ? value_map : after_map;
-		}
+		p->funcs[p->stack[p->depth]].add_null(p);
+		p->map = (0 == p->depth) ? value_map : after_map;
 		break;
 	    }
 	    p->ri = 0;
@@ -1079,14 +1044,8 @@ parse(ojParser p, const byte *json) {
 	case VAL_TRUE:
 	    if ('r' == b[1] && 'u' == b[2] && 'e' == b[3]) {
 		b += 3;
-		if (0 < p->depth && '{' == p->stack[p->depth-1]) {
-		    p->add_true(p, buf_str(&p->key));
-		    p->key.tail = p->key.head;
-		    p->map = after_map;
-		} else {
-		    p->add_true(p, NULL);
-		    p->map = (0 == p->depth) ? value_map : after_map;
-		}
+		p->funcs[p->stack[p->depth]].add_true(p);
+		p->map = (0 == p->depth) ? value_map : after_map;
 		break;
 	    }
 	    p->ri = 0;
@@ -1110,14 +1069,8 @@ parse(ojParser p, const byte *json) {
 	case VAL_FALSE:
 	    if ('a' == b[1] && 'l' == b[2] && 's' == b[3] && 'e' == b[4]) {
 		b += 4;
-		if (0 < p->depth && '{' == p->stack[p->depth-1]) {
-		    p->add_false(p, buf_str(&p->key));
-		    p->key.tail = p->key.head;
-		    p->map = after_map;
-		} else {
-		    p->add_false(p, NULL);
-		    p->map = (0 == p->depth) ? value_map : after_map;
-		}
+		p->funcs[p->stack[p->depth]].add_false(p);
+		p->map = (0 == p->depth) ? value_map : after_map;
 		break;
 	    }
 	    p->ri = 0;
@@ -1202,7 +1155,7 @@ parse(ojParser p, const byte *json) {
     }
     */
     if ('R' == p->map[256]) {
-	p->end = (const char*)b + 1;
+	//p->end = (const char*)b + 1;
     }
     return;
 }
