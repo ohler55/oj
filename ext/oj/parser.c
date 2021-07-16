@@ -1153,8 +1153,7 @@ static void parse(ojParser p, const byte *json) {
         default: break;
         }
     }
-    /*
-    if (NULL != p->stack && NULL == p->stack->next) {
+    if (0 == p->depth) {
         switch (p->map[256]) {
         case '0':
         case 'd':
@@ -1164,14 +1163,10 @@ static void parse(ojParser p, const byte *json) {
         case 'D':
         case 'g':
         case 'Y':
-            calc_num(p->stack);
-            if (pop_val(p)) {
-                return; // Abort
-            }
+            calc_num(p);
             break;
         }
     }
-    */
     if ('R' == p->map[256]) {
         // p->end = (const char*)b + 1;
     }
