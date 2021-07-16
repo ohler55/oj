@@ -5,6 +5,13 @@
 #include "oj.h"
 #include "parser.h"
 
+typedef struct _delegate {
+    VALUE  handler;
+    VALUE *keys;
+    VALUE *tail;
+    size_t klen;
+} * Delegate;
+
 static VALUE get_key(ojParser p) {
     const char *   key = buf_str(&p->key);
     volatile VALUE rkey;
@@ -25,71 +32,115 @@ static VALUE get_key(ojParser p) {
     return rkey;
 }
 
+static void push_key(Delegate d, VALUE key) {
+    if (d->klen <= (size_t)(d->tail - d->keys)) {
+        size_t off = d->tail - d->keys;
+
+        d->klen += d->klen / 2;
+        REALLOC_N(d->keys, VALUE, d->klen);
+        d->tail = d->keys + off;
+    }
+    *d->tail = key;
+    d->tail++;
+}
+
 static void noop(struct _ojParser *p) {
 }
 
 static void open_object(struct _ojParser *p) {
-    rb_funcall((VALUE)p->ctx, oj_hash_start_id, 1, Qnil);
+    rb_funcall(((Delegate)p->ctx)->handler, oj_hash_start_id, 1, Qnil);
 }
 
 static void open_object_key(struct _ojParser *p) {
-    rb_funcall((VALUE)p->ctx, oj_hash_start_id, 1, get_key(p));
+    Delegate       d   = (Delegate)p->ctx;
+    volatile VALUE key = get_key(p);
+
+    push_key(d, key);
+    rb_funcall(d->handler, oj_hash_start_id, 1, key);
 }
 
 static void open_array(struct _ojParser *p) {
-    rb_funcall((VALUE)p->ctx, oj_array_start_id, 1, Qnil);
+    rb_funcall(((Delegate)p->ctx)->handler, oj_array_start_id, 1, Qnil);
 }
 
 static void open_array_key(struct _ojParser *p) {
-    rb_funcall((VALUE)p->ctx, oj_array_start_id, 1, get_key(p));
+    Delegate       d   = (Delegate)p->ctx;
+    volatile VALUE key = get_key(p);
+
+    push_key(d, key);
+    rb_funcall(d->handler, oj_array_start_id, 1, key);
 }
 
 static void close_object(struct _ojParser *p) {
-    rb_funcall((VALUE)p->ctx, oj_hash_end_id, 1, Qnil);
+    Delegate d   = (Delegate)p->ctx;
+    VALUE    key = Qnil;
+
+    if (OBJECT_FUN == p->stack[p->depth]) {
+        d->tail--;
+        if (d->tail < d->keys) {
+            rb_raise(rb_eIndexError, "accessing key stack");
+        }
+        key = *d->tail;
+    }
+    rb_funcall(d->handler, oj_hash_end_id, 1, key);
 }
 
 static void close_array(struct _ojParser *p) {
-    rb_funcall((VALUE)p->ctx, oj_array_end_id, 1, Qnil);
+    Delegate d   = (Delegate)p->ctx;
+    VALUE    key = Qnil;
+
+    if (OBJECT_FUN == p->stack[p->depth]) {
+        d->tail--;
+        if (d->tail < d->keys) {
+            rb_raise(rb_eIndexError, "accessing key stack");
+        }
+        key = *d->tail;
+    }
+    rb_funcall(d->handler, oj_array_end_id, 1, key);
 }
 
 static void add_null(struct _ojParser *p) {
-    rb_funcall((VALUE)p->ctx, oj_add_value_id, 2, Qnil, Qnil);
+    rb_funcall(((Delegate)p->ctx)->handler, oj_add_value_id, 2, Qnil, Qnil);
 }
 
 static void add_null_key(struct _ojParser *p) {
-    rb_funcall((VALUE)p->ctx, oj_add_value_id, 2, Qnil, get_key(p));
+    rb_funcall(((Delegate)p->ctx)->handler, oj_add_value_id, 2, Qnil, get_key(p));
 }
 
 static void add_true(struct _ojParser *p) {
-    rb_funcall((VALUE)p->ctx, oj_add_value_id, 2, Qtrue, Qnil);
+    rb_funcall(((Delegate)p->ctx)->handler, oj_add_value_id, 2, Qtrue, Qnil);
 }
 
 static void add_true_key(struct _ojParser *p) {
-    rb_funcall((VALUE)p->ctx, oj_add_value_id, 2, Qtrue, get_key(p));
+    rb_funcall(((Delegate)p->ctx)->handler, oj_add_value_id, 2, Qtrue, get_key(p));
 }
 
 static void add_false(struct _ojParser *p) {
-    rb_funcall((VALUE)p->ctx, oj_add_value_id, 2, Qfalse, Qnil);
+    rb_funcall(((Delegate)p->ctx)->handler, oj_add_value_id, 2, Qfalse, Qnil);
 }
 
 static void add_false_key(struct _ojParser *p) {
-    rb_funcall((VALUE)p->ctx, oj_add_value_id, 2, Qfalse, get_key(p));
+    rb_funcall(((Delegate)p->ctx)->handler, oj_add_value_id, 2, Qfalse, get_key(p));
 }
 
 static void add_int(struct _ojParser *p) {
-    rb_funcall((VALUE)p->ctx, oj_add_value_id, 2, LONG2NUM(p->num.fixnum), Qnil);
+    rb_funcall(((Delegate)p->ctx)->handler, oj_add_value_id, 2, LONG2NUM(p->num.fixnum), Qnil);
 }
 
 static void add_int_key(struct _ojParser *p) {
-    rb_funcall((VALUE)p->ctx, oj_add_value_id, 2, LONG2NUM(p->num.fixnum), get_key(p));
+    rb_funcall(((Delegate)p->ctx)->handler, oj_add_value_id, 2, LONG2NUM(p->num.fixnum), get_key(p));
 }
 
 static void add_float(struct _ojParser *p) {
-    rb_funcall((VALUE)p->ctx, oj_add_value_id, 2, rb_float_new(p->num.dub), Qnil);
+    rb_funcall(((Delegate)p->ctx)->handler, oj_add_value_id, 2, rb_float_new(p->num.dub), Qnil);
 }
 
 static void add_float_key(struct _ojParser *p) {
-    rb_funcall((VALUE)p->ctx, oj_add_value_id, 2, rb_float_new(p->num.dub), get_key(p));
+    rb_funcall(((Delegate)p->ctx)->handler,
+               oj_add_value_id,
+               2,
+               rb_float_new(p->num.dub),
+               get_key(p));
 }
 
 static void add_big(struct _ojParser *p) {
@@ -127,7 +178,7 @@ static void add_str(struct _ojParser *p) {
     } else {
         rstr = oj_encode(rb_str_new(str, len));
     }
-    rb_funcall((VALUE)p->ctx, oj_add_value_id, 2, rstr, Qnil);
+    rb_funcall(((Delegate)p->ctx)->handler, oj_add_value_id, 2, rstr, Qnil);
 }
 
 static void add_str_key(struct _ojParser *p) {
@@ -147,11 +198,10 @@ static void add_str_key(struct _ojParser *p) {
     } else {
         rstr = oj_encode(rb_str_new(str, len));
     }
-    rb_funcall((VALUE)p->ctx, oj_add_value_id, 2, rstr, get_key(p));
+    rb_funcall(((Delegate)p->ctx)->handler, oj_add_value_id, 2, rstr, get_key(p));
 }
 
 static void reset(ojParser p) {
-    p->ctx    = (void *)Qnil;
     Funcs end = p->funcs + 3;
 
     for (Funcs f = p->funcs; f < end; f++) {
@@ -174,7 +224,11 @@ static VALUE option(ojParser p, const char *key, VALUE value) {
         return (VALUE)p->ctx;
     }
     if (0 == strcmp(key, "handler=")) {
-        p->ctx = (void *)value;
+        Delegate d = (Delegate)p->ctx;
+
+        d->tail    = d->keys;
+        d->handler = value;
+	reset(p);
         if (rb_respond_to(value, oj_hash_start_id)) {
             p->funcs[0].open_object = open_object;
             p->funcs[1].open_object = open_object;
@@ -234,16 +288,48 @@ static VALUE result(struct _ojParser *p) {
     return Qnil;
 }
 
+static void start(struct _ojParser *p) {
+    Delegate d = (Delegate)p->ctx;
+
+    d->tail = d->keys;
+}
+
 static void dfree(struct _ojParser *p) {
+    Delegate d = (Delegate)p->ctx;
+
+    if (NULL != d->keys) {
+        xfree(d->keys);
+    }
+    xfree(p->ctx);
 }
 
 static void mark(struct _ojParser *p) {
+    if (NULL == p->ctx) {
+        return;
+    }
+    Delegate d = (Delegate)p->ctx;
+
+    if (Qnil != d->handler) {
+        rb_gc_mark(d->handler);
+    }
+    if (!p->cache_keys) {
+        for (VALUE *kp = d->keys; kp < d->tail; kp++) {
+            rb_gc_mark(*kp);
+        }
+    }
 }
 
 void oj_set_parser_saj(ojParser p) {
+    Delegate d   = ALLOC(struct _delegate);
+
+    d->klen = 256;
+    d->keys = ALLOC_N(VALUE, d->klen);
+    d->tail = d->keys;
+    p->ctx  = (void *)d;
     reset(p);
     p->option = option;
     p->result = result;
     p->free   = dfree;
-    p->free   = mark;
+    p->mark   = mark;
+    p->start = start;
 }

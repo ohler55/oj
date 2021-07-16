@@ -3,7 +3,14 @@
 ^c^d hide subtree
 ^c^s show subtree
 
-- freeze
+- parser
+ - saj
+  - tests
+ - strict
+  - grow stack with market for start of hash or array (for object mode flag for hash or object)
+  - double stacks?
+   - one for values and one for hash/array start mark
+
 - more efficient array and hash creation
   - void rb_hash_bulk_insert(long, const VALUE *, VALUE);
   - rb_hash_bulk_insert_into_st_table(long argc, const VALUE *argv, VALUE hash)
@@ -11,6 +18,7 @@
   - or VALUE rb_ary_new_from_args(long n, ...);
 
 - add default_options[]= method
+- freeze cached strings
 
 - big decimal
  - just in custom mode, maybe in strict?

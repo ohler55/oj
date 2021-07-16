@@ -65,6 +65,7 @@ typedef struct _ojParser {
 
     struct _funcs funcs[3];
 
+    void (*start)(struct _ojParser *p);
     VALUE (*option)(struct _ojParser *p, const char *key, VALUE value);
     VALUE (*result)(struct _ojParser *p);
     void (*free)(struct _ojParser *p);

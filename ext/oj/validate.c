@@ -45,5 +45,6 @@ void oj_set_parser_validator(ojParser p) {
     p->option = option;
     p->result = result;
     p->free = dfree;
-    p->free = mark;
+    p->mark = mark;
+    p->start = noop;
 }
