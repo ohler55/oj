@@ -197,4 +197,20 @@ class SajTest < Minitest::Test
                   [:hash_end, nil]], handler.calls)
   end
 
+  def test_multiple
+    handler = AllSaj.new()
+    json = %|[true][false]|
+    p = Oj::Parser.new(:saj)
+    p.handler = handler
+    p.parse(json)
+    assert_equal([
+		   [:array_start, nil],
+                   [:add_value, true, nil],
+                   [:array_end, nil],
+		   [:array_start, nil],
+                   [:add_value, false, nil],
+                   [:array_end, nil],
+		 ], handler.calls)
+  end
+
 end

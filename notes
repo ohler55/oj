@@ -5,7 +5,15 @@
 
 - parser
  - saj
-  - tests
+  - from io - same thread
+  - from file
+   - if over a certain size then separate thread
+
+ - modes
+  - strict and compat can be the same - standard/regular/common/usual
+   - stardard and common as aliases
+  - object is different
+
  - strict
   - grow stack with market for start of hash or array (for object mode flag for hash or object)
   - double stacks?
