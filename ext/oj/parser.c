@@ -1149,9 +1149,7 @@ static void parse(ojParser p, const byte *json) {
         case 'X':
         case 'D':
         case 'g':
-        case 'Y':
-            calc_num(p);
-            break;
+        case 'Y': calc_num(p); break;
         }
     }
     return;
@@ -1210,17 +1208,15 @@ static VALUE parser_new(VALUE self, VALUE mode) {
         default:
             rb_raise(rb_eArgError, "mode must be :validate, :strict, :object, :compat, or :rails");
         }
-	if (0 == strcmp("common", ms) ||
-	    0 == strcmp("standard", ms) ||
-	    0 == strcmp("strict", ms) ||
-	    0 == strcmp("compat", ms)) {
-	    // TBD
+        if (0 == strcmp("common", ms) || 0 == strcmp("standard", ms) || 0 == strcmp("strict", ms) ||
+            0 == strcmp("compat", ms)) {
+            // TBD
         } else if (0 == strcmp("object", ms)) {
-	    // TBD
+            // TBD
         } else if (0 == strcmp("saj", ms)) {
             oj_set_parser_saj(p);
         } else if (0 == strcmp("rails", ms)) {
-	    // TBD
+            // TBD
         } else if (0 == strcmp("validate", ms)) {
             oj_set_parser_validator(p);
         } else if (0 == strcmp("debug", ms)) {
@@ -1243,8 +1239,7 @@ static VALUE parser_missing(int argc, VALUE *argv, VALUE self) {
         rkey = rb_sym_to_s(rkey);
         // fall through
     case RUBY_T_STRING: key = rb_string_value_ptr(&rkey); break;
-    default:
-        rb_raise(rb_eArgError, "option method must be a symbol or string");
+    default: rb_raise(rb_eArgError, "option method must be a symbol or string");
     }
     if (1 < argc) {
         rv = argv[1];
@@ -1253,17 +1248,43 @@ static VALUE parser_missing(int argc, VALUE *argv, VALUE self) {
 }
 
 static VALUE parser_parse(VALUE self, VALUE json) {
+    ojParser    p = (ojParser)DATA_PTR(self);
+
+    Check_Type(json, T_STRING);
+    p->start(p);
+    parse(p, (const byte *)rb_string_value_ptr(&json));
+
+    return p->result(p);
+}
+
+static VALUE parser_load(VALUE self, VALUE reader) {
     ojParser p = (ojParser)DATA_PTR(self);
 
-    p->start(p);
-    if (RUBY_T_STRING == rb_type(json)) {
-        const char *s = rb_string_value_ptr(&json);
+`   // TBD
 
-        parse(p, (const byte *)s);
-    } else {
-        // TBD
-        rb_raise(rb_eArgError, "can only parse a String or IO object");
+    if (rb_respond_to(reader, oj_readpartial_id)) {
+        //reader->read_func = read_from_io_partial;
+        //reader->io        = io;
+    } else if (rb_respond_to(reader, oj_read_id)) {
+        //reader->read_func = read_from_io;
+        //reader->io        = io;
     }
+    return p->result(p);
+}
+
+static VALUE parser_file(VALUE self, VALUE filename) {
+    ojParser p = (ojParser)DATA_PTR(self);
+    const char *path;
+
+    Check_Type(filename, T_STRING);
+    path = rb_string_value_ptr(&filename);
+
+    p->start(p);
+
+    // TBD open file, check size, pick read method (separate thread or same) start reading file
+
+    //parse(p, (const byte *)s);
+
     return p->result(p);
 }
 
@@ -1303,6 +1324,8 @@ void oj_parser_init() {
     parser_class = rb_define_class_under(Oj, "Parser", rb_cObject);
     rb_define_module_function(parser_class, "new", parser_new, 1);
     rb_define_method(parser_class, "parse", parser_parse, 1);
+    rb_define_method(parser_class, "load", parser_load, 1);
+    rb_define_method(parser_class, "file", parser_file, 1);
     rb_define_method(parser_class, "cache_keys", parser_cache_keys, 0);
     rb_define_method(parser_class, "cache_keys=", parser_cache_keys_set, 1);
     rb_define_method(parser_class, "cache_strings", parser_cache_str, 0);
