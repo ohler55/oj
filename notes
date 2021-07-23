@@ -8,6 +8,9 @@
   - from io - same thread
   - from file
    - if over a certain size then separate thread
+ - intern
+  - rb_enc_interned_str
+
 
  - modes
   - strict and compat can be the same - standard/regular/common/usual

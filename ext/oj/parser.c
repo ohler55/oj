@@ -1260,7 +1260,7 @@ static VALUE parser_parse(VALUE self, VALUE json) {
 static VALUE parser_load(VALUE self, VALUE reader) {
     ojParser p = (ojParser)DATA_PTR(self);
 
-`   // TBD
+    // TBD
 
     if (rb_respond_to(reader, oj_readpartial_id)) {
         //reader->read_func = read_from_io_partial;
@@ -1281,6 +1281,7 @@ static VALUE parser_file(VALUE self, VALUE filename) {
 
     p->start(p);
 
+    printf("*** path %s\n", path);
     // TBD open file, check size, pick read method (separate thread or same) start reading file
 
     //parse(p, (const byte *)s);

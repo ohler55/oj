@@ -30,6 +30,11 @@ have_func('rb_ivar_foreach')
 have_func('rb_gc_mark_movable')
 have_func('stpcpy')
 have_func('pthread_mutex_init')
+have_func('rb_enc_associate')
+#have_func('rb_interned_str', 'ruby.h')
+#have_func('rb_interned_str_cstr', 'ruby.h')
+#have_func('rb_enc_interned_str', 'ruby.h')
+#have_func('rb_enc_interned_str_cstr', 'ruby.h')
 
 dflags['OJ_DEBUG'] = true unless ENV['OJ_DEBUG'].nil?
 

@@ -32,7 +32,7 @@ struct _hash intern_hash;
 
 static uint32_t hash_calc(const uint8_t *key, size_t len) {
     const uint8_t *end     = key + len;
-    const uint8_t *endless = key + (len / 4 * 4);
+    const uint8_t *endless = key + (len & 0xFFFFFFFC);
     uint32_t       h       = (uint32_t)len;
     uint32_t       k;
 

@@ -17,8 +17,12 @@ static VALUE get_key(ojParser p) {
     volatile VALUE rkey;
 
     if (p->cache_keys) {
+        size_t len = buf_len(&p->key);
+#if HAVE_RB_ENC_INTERNED_STR_CSTR
+	//rkey = rb_enc_interned_str_cstr(key, oj_utf8_encoding);
+	rkey = rb_enc_interned_str(key, len, oj_utf8_encoding);
+#else
         VALUE *slot;
-        size_t len = strlen(key);
 
         if (Qnil == (rkey = oj_str_hash_get(key, len, &slot))) {
             rkey  = oj_encode(rb_str_new(key, len));
@@ -26,6 +30,7 @@ static VALUE get_key(ojParser p) {
             *slot = rkey;
             rb_gc_register_address(slot);
         }
+#endif
     } else {
         rkey = oj_encode(rb_str_new2(key));
     }
