@@ -1172,6 +1172,9 @@ static void parser_mark(void *ptr) {
     if (NULL != ptr) {
         ojParser p = (ojParser)ptr;
 
+	if (0 != p->reader) {
+	    rb_gc_mark(p->reader);
+	}
         p->mark(p);
     }
 }
@@ -1248,7 +1251,7 @@ static VALUE parser_missing(int argc, VALUE *argv, VALUE self) {
 }
 
 static VALUE parser_parse(VALUE self, VALUE json) {
-    ojParser    p = (ojParser)DATA_PTR(self);
+    ojParser p = (ojParser)DATA_PTR(self);
 
     Check_Type(json, T_STRING);
     p->start(p);
@@ -1257,23 +1260,37 @@ static VALUE parser_parse(VALUE self, VALUE json) {
     return p->result(p);
 }
 
+static VALUE load_rescue(VALUE self, VALUE x) {
+    return Qfalse;
+}
+
+static VALUE load(VALUE self) {
+    ojParser       p    = (ojParser)DATA_PTR(self);
+    volatile VALUE rbuf = rb_str_new2("");
+
+    while (true) {
+	rb_funcall(p->reader, oj_readpartial_id, 2, INT2NUM(5), rbuf);
+        long  cnt = RSTRING_LEN(rbuf);
+
+	printf("*** read %ld %s\n", cnt, StringValuePtr(rbuf));
+	if (0 < cnt) {
+	    parse(p, (byte*)StringValuePtr(rbuf));
+	}
+    }
+    return Qtrue;
+}
+
 static VALUE parser_load(VALUE self, VALUE reader) {
     ojParser p = (ojParser)DATA_PTR(self);
 
-    // TBD
+    p->reader    = reader;
+    rb_rescue2(load, self, load_rescue, Qnil, rb_eEOFError, 0);
 
-    if (rb_respond_to(reader, oj_readpartial_id)) {
-        //reader->read_func = read_from_io_partial;
-        //reader->io        = io;
-    } else if (rb_respond_to(reader, oj_read_id)) {
-        //reader->read_func = read_from_io;
-        //reader->io        = io;
-    }
     return p->result(p);
 }
 
 static VALUE parser_file(VALUE self, VALUE filename) {
-    ojParser p = (ojParser)DATA_PTR(self);
+    ojParser    p = (ojParser)DATA_PTR(self);
     const char *path;
 
     Check_Type(filename, T_STRING);
@@ -1284,7 +1301,7 @@ static VALUE parser_file(VALUE self, VALUE filename) {
     printf("*** path %s\n", path);
     // TBD open file, check size, pick read method (separate thread or same) start reading file
 
-    //parse(p, (const byte *)s);
+    // parse(p, (const byte *)s);
 
     return p->result(p);
 }

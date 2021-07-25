@@ -7,9 +7,9 @@
 #include "buf.h"
 #include "ruby.h"
 
-#define TOP_FUN		0
-#define ARRAY_FUN	1
-#define OBJECT_FUN	2
+#define TOP_FUN 0
+#define ARRAY_FUN 1
+#define OBJECT_FUN 2
 
 typedef enum {
     OJ_NONE    = '\0',
@@ -72,6 +72,7 @@ typedef struct _ojParser {
     void (*mark)(struct _ojParser *p);
 
     void *ctx;
+    VALUE reader;
 
     char     token[8];
     long     line;

@@ -55,14 +55,6 @@ end # AllSaj
 
 class SajTest < Minitest::Test
 
-  def setup
-    @default_options = Oj.default_options
-  end
-
-  def teardown
-    Oj.default_options = @default_options
-  end
-
   def test_nil
     handler = AllSaj.new()
     json = %{null}
@@ -211,6 +203,22 @@ class SajTest < Minitest::Test
                    [:add_value, false, nil],
                    [:array_end, nil],
 		 ], handler.calls)
+  end
+
+  def test_io
+    handler = AllSaj.new()
+    json = %|[true,false]|
+    p = Oj::Parser.new(:saj)
+    p.handler = handler
+    p.load(StringIO.new(json))
+    assert_equal([
+		   [:array_start, nil],
+		   [:add_value, true, nil],
+		   [:add_value, false, nil],
+		   [:array_end, nil],
+		 ], handler.calls)
+
+    # TBD try [null] and {"x": null}
   end
 
 end
