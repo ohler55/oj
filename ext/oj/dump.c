@@ -535,7 +535,7 @@ void oj_dump_xml_time(VALUE obj, Out out) {
     }
     if ((0 == nsec && !out->opts->sec_prec_set) || 0 == out->opts->sec_prec) {
         if (0 == tzsecs && rb_funcall2(obj, oj_utcq_id, 0, 0)) {
-            sprintf(buf,
+            int len = sprintf(buf,
                     "%04d-%02d-%02dT%02d:%02d:%02dZ",
                     ti.year,
                     ti.mon,
@@ -543,9 +543,9 @@ void oj_dump_xml_time(VALUE obj, Out out) {
                     ti.hour,
                     ti.min,
                     ti.sec);
-            oj_dump_cstr(buf, 20, 0, 0, out);
+            oj_dump_cstr(buf, len, 0, 0, out);
         } else {
-            sprintf(buf,
+            int len = sprintf(buf,
                     "%04d-%02d-%02dT%02d:%02d:%02d%c%02d:%02d",
                     ti.year,
                     ti.mon,
@@ -556,27 +556,25 @@ void oj_dump_xml_time(VALUE obj, Out out) {
                     tzsign,
                     tzhour,
                     tzmin);
-            oj_dump_cstr(buf, 25, 0, 0, out);
+            oj_dump_cstr(buf, len, 0, 0, out);
         }
     } else if (0 == tzsecs && rb_funcall2(obj, oj_utcq_id, 0, 0)) {
         char format[64] = "%04d-%02d-%02dT%02d:%02d:%02d.%09ldZ";
-        int  len        = 30;
+        int  len;
 
         if (9 > out->opts->sec_prec) {
             format[32] = '0' + out->opts->sec_prec;
-            len -= 9 - out->opts->sec_prec;
         }
-        sprintf(buf, format, ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec, (long)nsec);
+        len = sprintf(buf, format, ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec, (long)nsec);
         oj_dump_cstr(buf, len, 0, 0, out);
     } else {
         char format[64] = "%04d-%02d-%02dT%02d:%02d:%02d.%09ld%c%02d:%02d";
-        int  len        = 35;
+        int  len;
 
         if (9 > out->opts->sec_prec) {
             format[32] = '0' + out->opts->sec_prec;
-            len -= 9 - out->opts->sec_prec;
         }
-        sprintf(buf,
+        len = sprintf(buf,
                 format,
                 ti.year,
                 ti.mon,
@@ -827,9 +825,8 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
         if (is_sym) {
             *out->cur++ = ':';
         }
-        for (; '\0' != *str; str++) {
-            *out->cur++ = *str;
-        }
+        strncpy(out->cur, str, cnt);
+        out->cur += cnt;
         *out->cur++ = '"';
     } else {
         const char *end         = str + cnt;
