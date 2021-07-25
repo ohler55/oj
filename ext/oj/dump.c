@@ -536,26 +536,26 @@ void oj_dump_xml_time(VALUE obj, Out out) {
     if ((0 == nsec && !out->opts->sec_prec_set) || 0 == out->opts->sec_prec) {
         if (0 == tzsecs && rb_funcall2(obj, oj_utcq_id, 0, 0)) {
             int len = sprintf(buf,
-                    "%04d-%02d-%02dT%02d:%02d:%02dZ",
-                    ti.year,
-                    ti.mon,
-                    ti.day,
-                    ti.hour,
-                    ti.min,
-                    ti.sec);
+                              "%04d-%02d-%02dT%02d:%02d:%02dZ",
+                              ti.year,
+                              ti.mon,
+                              ti.day,
+                              ti.hour,
+                              ti.min,
+                              ti.sec);
             oj_dump_cstr(buf, len, 0, 0, out);
         } else {
             int len = sprintf(buf,
-                    "%04d-%02d-%02dT%02d:%02d:%02d%c%02d:%02d",
-                    ti.year,
-                    ti.mon,
-                    ti.day,
-                    ti.hour,
-                    ti.min,
-                    ti.sec,
-                    tzsign,
-                    tzhour,
-                    tzmin);
+                              "%04d-%02d-%02dT%02d:%02d:%02d%c%02d:%02d",
+                              ti.year,
+                              ti.mon,
+                              ti.day,
+                              ti.hour,
+                              ti.min,
+                              ti.sec,
+                              tzsign,
+                              tzhour,
+                              tzmin);
             oj_dump_cstr(buf, len, 0, 0, out);
         }
     } else if (0 == tzsecs && rb_funcall2(obj, oj_utcq_id, 0, 0)) {
@@ -575,17 +575,17 @@ void oj_dump_xml_time(VALUE obj, Out out) {
             format[32] = '0' + out->opts->sec_prec;
         }
         len = sprintf(buf,
-                format,
-                ti.year,
-                ti.mon,
-                ti.day,
-                ti.hour,
-                ti.min,
-                ti.sec,
-                (long)nsec,
-                tzsign,
-                tzhour,
-                tzmin);
+                      format,
+                      ti.year,
+                      ti.mon,
+                      ti.day,
+                      ti.hour,
+                      ti.min,
+                      ti.sec,
+                      (long)nsec,
+                      tzsign,
+                      tzhour,
+                      tzmin);
         oj_dump_cstr(buf, len, 0, 0, out);
     }
 }
@@ -825,7 +825,7 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
         if (is_sym) {
             *out->cur++ = ':';
         }
-        strncpy(out->cur, str, cnt);
+        memcpy(out->cur, str, cnt);
         out->cur += cnt;
         *out->cur++ = '"';
     } else {
@@ -1203,7 +1203,7 @@ void oj_dump_float(VALUE obj, int depth, Out out, bool as_ok) {
         if ((int)sizeof(buf) <= cnt) {
             cnt = sizeof(buf) - 1;
         }
-        strncpy(buf, rb_string_value_ptr((VALUE *)&rstr), cnt);
+        memcpy(buf, rb_string_value_ptr((VALUE *)&rstr), cnt);
         buf[cnt] = '\0';
     } else {
         cnt = oj_dump_float_printf(buf, sizeof(buf), obj, d, out->opts->float_fmt);

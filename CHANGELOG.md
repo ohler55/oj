@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.12.2 - 2021-07-25
+
+- Thanks to Watson1978 for the dump performance for time values.
+
 ## 3.12.1 - 2021-07-09
 
 - Fixed `:cache_keys` not being honored in compat mode.
