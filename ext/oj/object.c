@@ -433,22 +433,22 @@ void oj_set_obj_ivar(Val parent, Val kval, VALUE value) {
             char *buf = ALLOC_N(char, klen + 2);
 
             if ('~' == *key) {
-                strncpy(buf, key + 1, klen - 1);
+                memcpy(buf, key + 1, klen - 1);
                 buf[klen - 1] = '\0';
             } else {
                 *buf = '@';
-                strncpy(buf + 1, key, klen);
+                memcpy(buf + 1, key, klen);
                 buf[klen + 1] = '\0';
             }
             var_id = rb_intern(buf);
             xfree(buf);
         } else {
             if ('~' == *key) {
-                strncpy(attr, key + 1, klen - 1);
+                memcpy(attr, key + 1, klen - 1);
                 attr[klen - 1] = '\0';
             } else {
                 *attr = '@';
-                strncpy(attr + 1, key, klen);
+                memcpy(attr + 1, key, klen);
                 attr[klen + 1] = '\0';
             }
             var_id = rb_intern(attr);

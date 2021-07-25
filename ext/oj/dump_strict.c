@@ -98,7 +98,7 @@ static void dump_float(VALUE obj, int depth, Out out, bool as_ok) {
             if ((int)sizeof(buf) <= cnt) {
                 cnt = sizeof(buf) - 1;
             }
-            strncpy(buf, rb_string_value_ptr((VALUE *)&rstr), cnt);
+            memcpy(buf, rb_string_value_ptr((VALUE *)&rstr), cnt);
             buf[cnt] = '\0';
         } else {
             cnt = oj_dump_float_printf(buf, sizeof(buf), obj, d, out->opts->float_fmt);
