@@ -535,59 +535,57 @@ void oj_dump_xml_time(VALUE obj, Out out) {
     }
     if ((0 == nsec && !out->opts->sec_prec_set) || 0 == out->opts->sec_prec) {
         if (0 == tzsecs && rb_funcall2(obj, oj_utcq_id, 0, 0)) {
-            sprintf(buf,
-                    "%04d-%02d-%02dT%02d:%02d:%02dZ",
-                    ti.year,
-                    ti.mon,
-                    ti.day,
-                    ti.hour,
-                    ti.min,
-                    ti.sec);
-            oj_dump_cstr(buf, 20, 0, 0, out);
+            int len = sprintf(buf,
+                              "%04d-%02d-%02dT%02d:%02d:%02dZ",
+                              ti.year,
+                              ti.mon,
+                              ti.day,
+                              ti.hour,
+                              ti.min,
+                              ti.sec);
+            oj_dump_cstr(buf, len, 0, 0, out);
         } else {
-            sprintf(buf,
-                    "%04d-%02d-%02dT%02d:%02d:%02d%c%02d:%02d",
-                    ti.year,
-                    ti.mon,
-                    ti.day,
-                    ti.hour,
-                    ti.min,
-                    ti.sec,
-                    tzsign,
-                    tzhour,
-                    tzmin);
-            oj_dump_cstr(buf, 25, 0, 0, out);
+            int len = sprintf(buf,
+                              "%04d-%02d-%02dT%02d:%02d:%02d%c%02d:%02d",
+                              ti.year,
+                              ti.mon,
+                              ti.day,
+                              ti.hour,
+                              ti.min,
+                              ti.sec,
+                              tzsign,
+                              tzhour,
+                              tzmin);
+            oj_dump_cstr(buf, len, 0, 0, out);
         }
     } else if (0 == tzsecs && rb_funcall2(obj, oj_utcq_id, 0, 0)) {
         char format[64] = "%04d-%02d-%02dT%02d:%02d:%02d.%09ldZ";
-        int  len        = 30;
+        int  len;
 
         if (9 > out->opts->sec_prec) {
             format[32] = '0' + out->opts->sec_prec;
-            len -= 9 - out->opts->sec_prec;
         }
-        sprintf(buf, format, ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec, (long)nsec);
+        len = sprintf(buf, format, ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec, (long)nsec);
         oj_dump_cstr(buf, len, 0, 0, out);
     } else {
         char format[64] = "%04d-%02d-%02dT%02d:%02d:%02d.%09ld%c%02d:%02d";
-        int  len        = 35;
+        int  len;
 
         if (9 > out->opts->sec_prec) {
             format[32] = '0' + out->opts->sec_prec;
-            len -= 9 - out->opts->sec_prec;
         }
-        sprintf(buf,
-                format,
-                ti.year,
-                ti.mon,
-                ti.day,
-                ti.hour,
-                ti.min,
-                ti.sec,
-                (long)nsec,
-                tzsign,
-                tzhour,
-                tzmin);
+        len = sprintf(buf,
+                      format,
+                      ti.year,
+                      ti.mon,
+                      ti.day,
+                      ti.hour,
+                      ti.min,
+                      ti.sec,
+                      (long)nsec,
+                      tzsign,
+                      tzhour,
+                      tzmin);
         oj_dump_cstr(buf, len, 0, 0, out);
     }
 }
@@ -827,9 +825,8 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
         if (is_sym) {
             *out->cur++ = ':';
         }
-        for (; '\0' != *str; str++) {
-            *out->cur++ = *str;
-        }
+        memcpy(out->cur, str, cnt);
+        out->cur += cnt;
         *out->cur++ = '"';
     } else {
         const char *end         = str + cnt;
@@ -1206,7 +1203,7 @@ void oj_dump_float(VALUE obj, int depth, Out out, bool as_ok) {
         if ((int)sizeof(buf) <= cnt) {
             cnt = sizeof(buf) - 1;
         }
-        strncpy(buf, rb_string_value_ptr((VALUE *)&rstr), cnt);
+        memcpy(buf, rb_string_value_ptr((VALUE *)&rstr), cnt);
         buf[cnt] = '\0';
     } else {
         cnt = oj_dump_float_printf(buf, sizeof(buf), obj, d, out->opts->float_fmt);

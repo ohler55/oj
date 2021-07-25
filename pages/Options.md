@@ -251,7 +251,13 @@ compatibility. Using just indent as an integer gives better performance.
 
 ### :symbol_keys [Boolean]
 
-Use symbols instead of strings for hash keys. :symbolize_names is an alias.
+Use symbols instead of strings for hash keys.
+
+### :symbolize_names [Boolean]
+
+Like :symbol_keys has keys are made into symbols but only when
+mimicing the JSON gem and then only as the JSON gem honors it so
+JSON.parse honors the option but JSON.load does not.
 
 ### :trace
 
