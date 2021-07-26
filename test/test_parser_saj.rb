@@ -207,7 +207,7 @@ class SajTest < Minitest::Test
 
   def test_io
     handler = AllSaj.new()
-    json = %|[true,false]|
+    json = %| [true,false]  |
     p = Oj::Parser.new(:saj)
     p.handler = handler
     p.load(StringIO.new(json))

@@ -73,6 +73,7 @@ typedef struct _ojParser {
 
     void *ctx;
     VALUE reader;
+    int   fd;
 
     char     token[8];
     long     line;
@@ -82,6 +83,7 @@ typedef struct _ojParser {
     uint32_t cache_str;
     ojType   type;  // valType
     bool     cache_keys;
+    bool     just_one;
 } * ojParser;
 
 #endif /* OJ_PARSER_H */

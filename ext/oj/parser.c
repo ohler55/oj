@@ -402,6 +402,16 @@ a...............................\
 ................................\
 ................................S";
 
+static const char trail_map[257] = "\
+.........ab..a..................\
+a...............................\
+................................\
+................................\
+................................\
+................................\
+................................\
+................................R";
+
 static const byte hex_map[256] = "\
 ................................\
 ................\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09......\
@@ -1110,6 +1120,8 @@ static void parse(ojParser p, const byte *json) {
                         parse_error(p, "expected null");
                         return;
                     }
+                    p->funcs[p->stack[p->depth]].add_null(p);
+                    p->map = (0 == p->depth) ? value_map : after_map;
                 }
                 break;
             case 'F':
@@ -1119,6 +1131,8 @@ static void parse(ojParser p, const byte *json) {
                         parse_error(p, "expected false");
                         return;
                     }
+                    p->funcs[p->stack[p->depth]].add_false(p);
+                    p->map = (0 == p->depth) ? value_map : after_map;
                 }
                 break;
             case 'T':
@@ -1128,6 +1142,8 @@ static void parse(ojParser p, const byte *json) {
                         parse_error(p, "expected true");
                         return;
                     }
+                    p->funcs[p->stack[p->depth]].add_true(p);
+                    p->map = (0 == p->depth) ? value_map : after_map;
                 }
                 break;
             default:
@@ -1138,6 +1154,9 @@ static void parse(ojParser p, const byte *json) {
             break;
         case CHAR_ERR: byte_error(p, *b); return;
         default: break;
+        }
+        if (0 == p->depth && 'v' == p->map[256] && p->just_one) {
+            p->map = trail_map;
         }
     }
     if (0 == p->depth) {
@@ -1172,9 +1191,9 @@ static void parser_mark(void *ptr) {
     if (NULL != ptr) {
         ojParser p = (ojParser)ptr;
 
-	if (0 != p->reader) {
-	    rb_gc_mark(p->reader);
-	}
+        if (0 != p->reader) {
+            rb_gc_mark(p->reader);
+        }
         p->mark(p);
     }
 }
@@ -1254,6 +1273,8 @@ static VALUE parser_parse(VALUE self, VALUE json) {
     ojParser p = (ojParser)DATA_PTR(self);
 
     Check_Type(json, T_STRING);
+    p->reader = 0;
+    p->fd = 0;
     p->start(p);
     parse(p, (const byte *)rb_string_value_ptr(&json));
 
@@ -1261,6 +1282,7 @@ static VALUE parser_parse(VALUE self, VALUE json) {
 }
 
 static VALUE load_rescue(VALUE self, VALUE x) {
+    // Normal EOF. No action needed other than to stop loading.
     return Qfalse;
 }
 
@@ -1268,14 +1290,12 @@ static VALUE load(VALUE self) {
     ojParser       p    = (ojParser)DATA_PTR(self);
     volatile VALUE rbuf = rb_str_new2("");
 
+    p->start(p);
     while (true) {
-	rb_funcall(p->reader, oj_readpartial_id, 2, INT2NUM(5), rbuf);
-        long  cnt = RSTRING_LEN(rbuf);
-
-	printf("*** read %ld %s\n", cnt, StringValuePtr(rbuf));
-	if (0 < cnt) {
-	    parse(p, (byte*)StringValuePtr(rbuf));
-	}
+        rb_funcall(p->reader, oj_readpartial_id, 2, INT2NUM(16385), rbuf);
+        if (0 < RSTRING_LEN(rbuf)) {
+            parse(p, (byte *)StringValuePtr(rbuf));
+        }
     }
     return Qtrue;
 }
@@ -1283,7 +1303,8 @@ static VALUE load(VALUE self) {
 static VALUE parser_load(VALUE self, VALUE reader) {
     ojParser p = (ojParser)DATA_PTR(self);
 
-    p->reader    = reader;
+    p->reader = reader;
+    p->fd = 0;
     rb_rescue2(load, self, load_rescue, Qnil, rb_eEOFError, 0);
 
     return p->result(p);
@@ -1296,13 +1317,23 @@ static VALUE parser_file(VALUE self, VALUE filename) {
     Check_Type(filename, T_STRING);
     path = rb_string_value_ptr(&filename);
 
+    printf("*** path %s\n", path);
+    p->reader = 0;
+    p->fd = 0;
     p->start(p);
 
-    printf("*** path %s\n", path);
-    // TBD open file, check size, pick read method (separate thread or same) start reading file
-
-    // parse(p, (const byte *)s);
-
+    if (0 > (p->fd = open(path, O_RDONLY))) {
+        rb_raise(rb_eIOError, "error opening %s", path);
+    }
+    struct stat info;
+    // st_size will be 0 if not a file
+    if (0 == fstat(p->fd, &info) && USE_THREAD_LIMIT < info.st_size) {
+        // Use threaded version.
+        // TBD parse_large(p, fd);
+    } else {
+        // TBD normal read and parse
+	// call protected
+    }
     return p->result(p);
 }
 
@@ -1334,6 +1365,20 @@ static VALUE parser_cache_str_set(VALUE self, VALUE v) {
     return INT2NUM((int)p->cache_str);
 }
 
+static VALUE parser_just_one(VALUE self) {
+    ojParser p = (ojParser)DATA_PTR(self);
+
+    return p->just_one ? Qtrue : Qfalse;
+}
+
+static VALUE parser_just_one_set(VALUE self, VALUE v) {
+    ojParser p = (ojParser)DATA_PTR(self);
+
+    p->just_one = (Qtrue == v);
+
+    return p->just_one ? Qtrue : Qfalse;
+}
+
 /* Document-class: Oj::Parser
  *
  * TBD
@@ -1348,5 +1393,8 @@ void oj_parser_init() {
     rb_define_method(parser_class, "cache_keys=", parser_cache_keys_set, 1);
     rb_define_method(parser_class, "cache_strings", parser_cache_str, 0);
     rb_define_method(parser_class, "cache_strings=", parser_cache_str_set, 1);
+    rb_define_method(parser_class, "just_one", parser_just_one, 0);
+    rb_define_method(parser_class, "just_one=", parser_just_one_set, 1);
+
     rb_define_method(parser_class, "method_missing", parser_missing, -1);
 }
