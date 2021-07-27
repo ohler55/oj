@@ -15,6 +15,7 @@ $iter = 50_000
 $with_bignum = false
 $size = 1
 $cache_keys = true
+$thread_safe = false
 
 opts = OptionParser.new
 opts.on("-v", "verbose")                                  { $verbose = true }
@@ -23,6 +24,7 @@ opts.on("-i", "--indent [Int]", Integer, "indentation")   { |i| $indent = i }
 opts.on("-s", "--size [Int]", Integer, "size (~Kbytes)")  { |i| $size = i }
 opts.on("-b", "with bignum")                              { $with_bignum = true }
 opts.on("-k", "no cache")                                 { $cache_keys = false }
+opts.on("-r", "ractor safe")                              { $thread_safe = true }
 opts.on("-h", "--help", "Show this display")              { puts opts; Process.exit!(0) }
 files = opts.parse(ARGV)
 
@@ -45,8 +47,6 @@ if 0 < $size
     $obj << o
   end
 end
-
-Oj.default_options = { :indent => $indent, :mode => :strict, cache_keys: true, cache_str: 5 }
 
 $json = Oj.dump($obj)
 $failed = {} # key is same as String used in tests later
@@ -88,6 +88,7 @@ p_val = Oj::Parser.new(:validate)
 p_all = Oj::Parser.new(:saj)
 p_all.handler = all_handler
 p_all.cache_keys = $cache_keys
+p_all.thread_safe = $thread_safe
 p_all.cache_strings = 5
 
 puts '-' * 80

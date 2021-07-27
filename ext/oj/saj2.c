@@ -10,6 +10,7 @@ typedef struct _delegate {
     VALUE *keys;
     VALUE *tail;
     size_t klen;
+    bool   thread_safe;
 } * Delegate;
 
 static VALUE get_key(ojParser p) {
@@ -19,12 +20,22 @@ static VALUE get_key(ojParser p) {
     if (p->cache_keys) {
         size_t len = buf_len(&p->key);
 #if HAVE_RB_ENC_INTERNED_STR_CSTR
-	//rkey = rb_enc_interned_str_cstr(key, oj_utf8_encoding);
-	rkey = rb_enc_interned_str(key, len, oj_utf8_encoding);
+        // rkey = rb_enc_interned_str_cstr(key, oj_utf8_encoding);
+        rkey = rb_enc_interned_str(key, len, oj_utf8_encoding);
 #else
-        VALUE *slot;
+        VALUE *  slot;
+        Delegate d = (Delegate)p->ctx;
 
-        if (Qnil == (rkey = oj_str_hash_get(key, len, &slot))) {
+        if (d->thread_safe) {
+            oj_str_hash_lock();
+            if (Qnil == (rkey = oj_str_hash_get(key, len, &slot))) {
+                rkey  = oj_encode(rb_str_new(key, len));
+                rkey  = rb_str_freeze(rkey);
+                *slot = rkey;
+                rb_gc_register_address(slot);
+            }
+            oj_str_hash_unlock();
+        } else if (Qnil == (rkey = oj_str_hash_get(key, len, &slot))) {
             rkey  = oj_encode(rb_str_new(key, len));
             rkey  = rb_str_freeze(rkey);
             *slot = rkey;
@@ -172,9 +183,19 @@ static void add_str(struct _ojParser *p) {
     size_t         len = buf_len(&p->buf);
 
     if (p->cache_str <= len) {
-        VALUE *slot;
+        VALUE *  slot;
+        Delegate d = (Delegate)p->ctx;
 
-        if (Qnil == (rstr = oj_str_hash_get(str, len, &slot))) {
+        if (d->thread_safe) {
+            oj_str_hash_lock();
+            if (Qnil == (rstr = oj_str_hash_get(str, len, &slot))) {
+                rstr  = oj_encode(rb_str_new(str, len));
+                rstr  = rb_str_freeze(rstr);
+                *slot = rstr;
+                rb_gc_register_address(slot);
+            }
+            oj_str_hash_unlock();
+        } else if (Qnil == (rstr = oj_str_hash_get(str, len, &slot))) {
             rstr  = oj_encode(rb_str_new(str, len));
             rstr  = rb_str_freeze(rstr);
             *slot = rstr;
@@ -192,9 +213,19 @@ static void add_str_key(struct _ojParser *p) {
     size_t         len = buf_len(&p->buf);
 
     if (p->cache_str <= len) {
-        VALUE *slot;
+        VALUE *  slot;
+        Delegate d = (Delegate)p->ctx;
 
-        if (Qnil == (rstr = oj_str_hash_get(str, len, &slot))) {
+        if (d->thread_safe) {
+            oj_str_hash_lock();
+            if (Qnil == (rstr = oj_str_hash_get(str, len, &slot))) {
+                rstr  = oj_encode(rb_str_new(str, len));
+                rstr  = rb_str_freeze(rstr);
+                *slot = rstr;
+                rb_gc_register_address(slot);
+            }
+            oj_str_hash_unlock();
+        } else if (Qnil == (rstr = oj_str_hash_get(str, len, &slot))) {
             rstr  = oj_encode(rb_str_new(str, len));
             rstr  = rb_str_freeze(rstr);
             *slot = rstr;
@@ -233,7 +264,7 @@ static VALUE option(ojParser p, const char *key, VALUE value) {
 
         d->tail    = d->keys;
         d->handler = value;
-	reset(p);
+        reset(p);
         if (rb_respond_to(value, oj_hash_start_id)) {
             p->funcs[0].open_object = open_object;
             p->funcs[1].open_object = open_object;
@@ -285,6 +316,19 @@ static VALUE option(ojParser p, const char *key, VALUE value) {
         }
         return Qnil;
     }
+    if (0 == strcmp(key, "ractor_safe") || 0 == strcmp(key, "thread_safe")) {
+        return ((Delegate)p->ctx)->thread_safe ? Qtrue : Qfalse;
+    }
+    if (0 == strcmp(key, "ractor_safe=") || 0 == strcmp(key, "thread_safe=")) {
+        if (Qtrue == value) {
+            ((Delegate)p->ctx)->thread_safe = true;
+        } else if (Qfalse == value) {
+            ((Delegate)p->ctx)->thread_safe = false;
+        } else {
+            rb_raise(rb_eArgError, "invalid value for thread_safe/ractor_safe option");
+        }
+        return value;
+    }
     rb_raise(rb_eArgError, "%s is not an option for the validate delegate", key);
     return Qnil;
 }
@@ -325,7 +369,7 @@ static void mark(struct _ojParser *p) {
 }
 
 void oj_set_parser_saj(ojParser p) {
-    Delegate d   = ALLOC(struct _delegate);
+    Delegate d = ALLOC(struct _delegate);
 
     d->klen = 256;
     d->keys = ALLOC_N(VALUE, d->klen);
@@ -336,5 +380,5 @@ void oj_set_parser_saj(ojParser p) {
     p->result = result;
     p->free   = dfree;
     p->mark   = mark;
-    p->start = start;
+    p->start  = start;
 }

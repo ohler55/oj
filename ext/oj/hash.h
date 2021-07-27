@@ -12,6 +12,8 @@ extern void oj_hash_init();
 
 extern VALUE oj_class_hash_get(const char *key, size_t len, VALUE **slotp);
 extern VALUE oj_str_hash_get(const char *key, size_t len, VALUE **slotp);
+extern void  oj_str_hash_lock();
+extern void  oj_str_hash_unlock();
 extern VALUE oj_sym_hash_get(const char *key, size_t len, VALUE **slotp);
 extern ID    oj_attr_hash_get(const char *key, size_t len, ID **slotp);
 

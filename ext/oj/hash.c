@@ -17,12 +17,13 @@ typedef struct _keyVal {
 
 struct _hash {
     struct _keyVal slots[HASH_SLOT_CNT];
+    VALUE mutex;
 };
 
 struct _hash class_hash;
 struct _hash str_hash;
 struct _hash sym_hash;
-struct _hash intern_hash;
+struct _hash attr_hash;
 
 // almost the Murmur hash algorithm
 #define M 0x5bd1e995
@@ -66,9 +67,20 @@ static uint32_t hash_calc(const uint8_t *key, size_t len) {
 
 void oj_hash_init() {
     memset(class_hash.slots, 0, sizeof(class_hash.slots));
+    class_hash.mutex = rb_mutex_new();
+    rb_gc_register_address(&class_hash.mutex);
+
     memset(str_hash.slots, 0, sizeof(str_hash.slots));
+    str_hash.mutex = rb_mutex_new();
+    rb_gc_register_address(&str_hash.mutex);
+
     memset(sym_hash.slots, 0, sizeof(sym_hash.slots));
-    memset(intern_hash.slots, 0, sizeof(intern_hash.slots));
+    sym_hash.mutex = rb_mutex_new();
+    rb_gc_register_address(&sym_hash.mutex);
+
+    memset(attr_hash.slots, 0, sizeof(attr_hash.slots));
+    attr_hash.mutex = rb_mutex_new();
+    rb_gc_register_address(&attr_hash.mutex);
 }
 
 // if slotp is 0 then just lookup
@@ -149,13 +161,23 @@ oj_str_hash_get(const char *key, size_t len, VALUE **slotp) {
     return hash_get(&str_hash, key, len, slotp, Qnil);
 }
 
+void
+oj_str_hash_lock() {
+    rb_mutex_lock(str_hash.mutex);
+}
+
+void
+oj_str_hash_unlock() {
+    rb_mutex_unlock(str_hash.mutex);
+}
+
 VALUE
 oj_sym_hash_get(const char *key, size_t len, VALUE **slotp) {
     return hash_get(&sym_hash, key, len, slotp, Qnil);
 }
 
 ID oj_attr_hash_get(const char *key, size_t len, ID **slotp) {
-    return (ID)hash_get(&intern_hash, key, len, (VALUE **)slotp, 0);
+    return (ID)hash_get(&attr_hash, key, len, (VALUE **)slotp, 0);
 }
 
 char *oj_strndup(const char *s, size_t len) {
