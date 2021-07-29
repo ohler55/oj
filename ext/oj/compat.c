@@ -44,12 +44,7 @@ static void hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, c
                         rb_gc_register_address(slot);
                     }
                 } else {
-                    if (Qnil == (rkey = oj_str_hash_get(key, klen, &slot))) {
-                        rkey  = rb_str_new(key, klen);
-                        rkey  = oj_encode(rkey);
-                        *slot = rkey;
-                        rb_gc_register_address(slot);
-                    }
+		    rkey = oj_str_intern(key, klen, false); // TBD lock if thread_safe
                 }
             }
         }

@@ -19,24 +19,9 @@ static VALUE get_key(ojParser p) {
 
     if (p->cache_keys) {
         size_t   len = buf_len(&p->key);
-        VALUE *  slot;
         Delegate d = (Delegate)p->ctx;
 
-        if (d->thread_safe) {
-            oj_str_hash_lock();
-            if (Qnil == (rkey = oj_str_hash_get(key, len, &slot))) {
-                rkey  = oj_encode(rb_str_new(key, len));
-                rkey  = rb_str_freeze(rkey);
-                *slot = rkey;
-                rb_gc_register_address(slot);
-            }
-            oj_str_hash_unlock();
-        } else if (Qnil == (rkey = oj_str_hash_get(key, len, &slot))) {
-            rkey  = oj_encode(rb_str_new(key, len));
-            rkey  = rb_str_freeze(rkey);
-            *slot = rkey;
-            rb_gc_register_address(slot);
-        }
+	rkey = oj_str_intern(key, len, d->thread_safe);
     } else {
         rkey = oj_encode(rb_str_new2(key));
     }
@@ -178,24 +163,7 @@ static void add_str(struct _ojParser *p) {
     size_t         len = buf_len(&p->buf);
 
     if (p->cache_str <= len) {
-        VALUE *  slot;
-        Delegate d = (Delegate)p->ctx;
-
-        if (d->thread_safe) {
-            oj_str_hash_lock();
-            if (Qnil == (rstr = oj_str_hash_get(str, len, &slot))) {
-                rstr  = oj_encode(rb_str_new(str, len));
-                rstr  = rb_str_freeze(rstr);
-                *slot = rstr;
-                rb_gc_register_address(slot);
-            }
-            oj_str_hash_unlock();
-        } else if (Qnil == (rstr = oj_str_hash_get(str, len, &slot))) {
-            rstr  = oj_encode(rb_str_new(str, len));
-            rstr  = rb_str_freeze(rstr);
-            *slot = rstr;
-            rb_gc_register_address(slot);
-        }
+	rstr = oj_str_intern(str, len, ((Delegate)p->ctx)->thread_safe);
     } else {
         rstr = oj_encode(rb_str_new(str, len));
     }
@@ -208,24 +176,7 @@ static void add_str_key(struct _ojParser *p) {
     size_t         len = buf_len(&p->buf);
 
     if (p->cache_str <= len) {
-        VALUE *  slot;
-        Delegate d = (Delegate)p->ctx;
-
-        if (d->thread_safe) {
-            oj_str_hash_lock();
-            if (Qnil == (rstr = oj_str_hash_get(str, len, &slot))) {
-                rstr  = oj_encode(rb_str_new(str, len));
-                rstr  = rb_str_freeze(rstr);
-                *slot = rstr;
-                rb_gc_register_address(slot);
-            }
-            oj_str_hash_unlock();
-        } else if (Qnil == (rstr = oj_str_hash_get(str, len, &slot))) {
-            rstr  = oj_encode(rb_str_new(str, len));
-            rstr  = rb_str_freeze(rstr);
-            *slot = rstr;
-            rb_gc_register_address(slot);
-        }
+	rstr = oj_str_intern(str, len, ((Delegate)p->ctx)->thread_safe);
     } else {
         rstr = oj_encode(rb_str_new(str, len));
     }

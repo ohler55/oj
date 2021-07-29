@@ -180,6 +180,11 @@ oj_str_intern(const char *key, size_t len, bool safe) {
 
             for (b = bucket; 0 != b; b = b->next) {
                 if (len == b->len && 0 == strncmp(b->key, key, len)) {
+#if HAVE_PTHREAD_MUTEX_INIT
+		    pthread_mutex_unlock(&str_hash.mutex);
+#else
+		    rb_mutex_unlock(str_hash.mutex);
+#endif
                     return b->val;
                 }
                 bucket = b;
@@ -231,22 +236,6 @@ oj_class_hash_get(const char *key, size_t len, VALUE **slotp) {
 VALUE
 oj_str_hash_get(const char *key, size_t len, VALUE **slotp) {
     return hash_get(&str_hash, key, len, slotp, Qnil);
-}
-
-void oj_str_hash_lock() {
-#if HAVE_PTHREAD_MUTEX_INIT
-    pthread_mutex_lock(&attr_hash.mutex);
-#else
-    rb_mutex_lock(str_hash.mutex);
-#endif
-}
-
-void oj_str_hash_unlock() {
-#if HAVE_PTHREAD_MUTEX_INIT
-    pthread_mutex_unlock(&attr_hash.mutex);
-#else
-    rb_mutex_unlock(str_hash.mutex);
-#endif
 }
 
 VALUE

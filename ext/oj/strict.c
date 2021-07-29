@@ -17,14 +17,7 @@ VALUE oj_cstr_to_value(const char *str, size_t len, size_t cache_str) {
     volatile VALUE rstr = Qnil;
 
     if (len <= cache_str) {
-        VALUE *slot;
-
-        if (Qnil == (rstr = oj_str_hash_get(str, len, &slot))) {
-            rstr  = rb_str_new(str, len);
-            rstr  = oj_encode(rstr);
-            *slot = rstr;
-            rb_gc_register_address(slot);
-        }
+	rstr = oj_str_intern(str, len, false); // TBD lock if thread_safe
     } else {
         rstr = rb_str_new(str, len);
         rstr = oj_encode(rstr);
@@ -57,12 +50,7 @@ VALUE oj_calc_hash_key(ParseInfo pi, Val parent) {
             rb_gc_register_address(slot);
         }
     } else {
-        if (Qnil == (rkey = oj_str_hash_get(parent->key, parent->klen, &slot))) {
-            rkey  = rb_str_new(parent->key, parent->klen);
-            rkey  = oj_encode(rkey);
-            *slot = rkey;
-            rb_gc_register_address(slot);
-        }
+	rkey = oj_str_intern(parent->key, parent->klen, false); // TBD lock if thread_safe
     }
     return rkey;
 }
