@@ -416,51 +416,7 @@ static int hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, vol
 }
 
 void oj_set_obj_ivar(Val parent, Val kval, VALUE value) {
-    const char *key  = kval->key;
-    int         klen = kval->klen;
-    ID          var_id;
-    ID *        slot;
-
-#ifdef HAVE_PTHREAD_MUTEX_INIT
-    pthread_mutex_lock(&oj_cache_mutex);
-#else
-    rb_mutex_lock(oj_cache_mutex);
-#endif
-    if (0 == (var_id = oj_attr_hash_get(key, klen, &slot))) {
-        char attr[256];
-
-        if ((int)sizeof(attr) <= klen + 2) {
-            char *buf = ALLOC_N(char, klen + 2);
-
-            if ('~' == *key) {
-                memcpy(buf, key + 1, klen - 1);
-                buf[klen - 1] = '\0';
-            } else {
-                *buf = '@';
-                memcpy(buf + 1, key, klen);
-                buf[klen + 1] = '\0';
-            }
-            var_id = rb_intern(buf);
-            xfree(buf);
-        } else {
-            if ('~' == *key) {
-                memcpy(attr, key + 1, klen - 1);
-                attr[klen - 1] = '\0';
-            } else {
-                *attr = '@';
-                memcpy(attr + 1, key, klen);
-                attr[klen + 1] = '\0';
-            }
-            var_id = rb_intern(attr);
-        }
-        *slot = var_id;
-    }
-#ifdef HAVE_PTHREAD_MUTEX_INIT
-    pthread_mutex_unlock(&oj_cache_mutex);
-#else
-    rb_mutex_unlock(oj_cache_mutex);
-#endif
-    rb_ivar_set(parent->val, var_id, value);
+    rb_ivar_set(parent->val, oj_attr_intern(kval->key, kval->klen, true), value);
 }
 
 static void hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *orig) {

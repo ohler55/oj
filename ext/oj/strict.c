@@ -39,16 +39,8 @@ VALUE oj_calc_hash_key(ParseInfo pi, Val parent) {
         }
         return rkey;
     }
-    VALUE *slot;
-
     if (Yes == pi->options.sym_key) {
-        if (Qnil == (rkey = oj_sym_hash_get(parent->key, parent->klen, &slot))) {
-            rkey  = rb_str_new(parent->key, parent->klen);
-            rkey  = oj_encode(rkey);
-            rkey  = rb_str_intern(rkey);
-            *slot = rkey;
-            rb_gc_register_address(slot);
-        }
+	rkey = oj_sym_intern(parent->key, parent->klen, false);
     } else {
 	rkey = oj_str_intern(parent->key, parent->klen, false); // TBD lock if thread_safe
     }

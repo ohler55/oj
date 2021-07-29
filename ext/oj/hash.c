@@ -168,6 +168,7 @@ VALUE
 oj_str_intern(const char *key, size_t len, bool safe) {
     uint32_t h      = hash_calc((const uint8_t *)key, len) & HASH_MASK;
     KeyVal   bucket = str_hash.slots + h;
+    KeyVal   b;
 
     if (safe) {
 #if HAVE_PTHREAD_MUTEX_INIT
@@ -175,15 +176,13 @@ oj_str_intern(const char *key, size_t len, bool safe) {
 #else
         rb_mutex_lock(str_hash.mutex);
 #endif
-        if (NULL != bucket->key) {
-            KeyVal b;
-
+        if (NULL != bucket->key) {  // not the top slot
             for (b = bucket; 0 != b; b = b->next) {
                 if (len == b->len && 0 == strncmp(b->key, key, len)) {
 #if HAVE_PTHREAD_MUTEX_INIT
-		    pthread_mutex_unlock(&str_hash.mutex);
+                    pthread_mutex_unlock(&str_hash.mutex);
 #else
-		    rb_mutex_unlock(str_hash.mutex);
+                    rb_mutex_unlock(str_hash.mutex);
 #endif
                     return b->val;
                 }
@@ -206,8 +205,6 @@ oj_str_intern(const char *key, size_t len, bool safe) {
 #endif
     } else {
         if (NULL != bucket->key) {
-            KeyVal b;
-
             for (b = bucket; 0 != b; b = b->next) {
                 if (len == b->len && 0 == strncmp(b->key, key, len)) {
                     return b->val;
@@ -229,22 +226,157 @@ oj_str_intern(const char *key, size_t len, bool safe) {
 }
 
 VALUE
+oj_sym_intern(const char *key, size_t len, bool safe) {
+    uint32_t h      = hash_calc((const uint8_t *)key, len) & HASH_MASK;
+    KeyVal   bucket = sym_hash.slots + h;
+    KeyVal   b;
+
+    if (safe) {
+#if HAVE_PTHREAD_MUTEX_INIT
+        pthread_mutex_lock(&sym_hash.mutex);
+#else
+        rb_mutex_lock(sym_hash.mutex);
+#endif
+        if (NULL != bucket->key) {  // not the top slot
+            for (b = bucket; 0 != b; b = b->next) {
+                if (len == b->len && 0 == strncmp(b->key, key, len)) {
+#if HAVE_PTHREAD_MUTEX_INIT
+                    pthread_mutex_unlock(&sym_hash.mutex);
+#else
+                    rb_mutex_unlock(sym_hash.mutex);
+#endif
+                    return b->val;
+                }
+                bucket = b;
+            }
+            b            = ALLOC(struct _keyVal);
+            b->next      = NULL;
+            bucket->next = b;
+            bucket       = b;
+        }
+        bucket->key = oj_strndup(key, len);
+        bucket->len = len;
+        bucket->val = oj_encode(rb_str_new(key, len));
+        bucket->val = rb_str_intern(bucket->val);
+        rb_gc_register_address(&bucket->val);
+#if HAVE_PTHREAD_MUTEX_INIT
+        pthread_mutex_unlock(&sym_hash.mutex);
+#else
+        rb_mutex_unlock(sym_hash.mutex);
+#endif
+    } else {
+        if (NULL != bucket->key) {
+            for (b = bucket; 0 != b; b = b->next) {
+                if (len == b->len && 0 == strncmp(b->key, key, len)) {
+                    return b->val;
+                }
+                bucket = b;
+            }
+            b            = ALLOC(struct _keyVal);
+            b->next      = NULL;
+            bucket->next = b;
+            bucket       = b;
+        }
+        bucket->key = oj_strndup(key, len);
+        bucket->len = len;
+        bucket->val = oj_encode(rb_str_new(key, len));
+        bucket->val = rb_str_intern(bucket->val);
+        rb_gc_register_address(&bucket->val);
+    }
+    return bucket->val;
+}
+
+static ID form_attr(const char *key, size_t klen) {
+    char attr[256];
+    ID   var_id;
+
+    if ((int)sizeof(attr) <= klen + 2) {
+        char *buf = ALLOC_N(char, klen + 2);
+
+        if ('~' == *key) {
+            memcpy(buf, key + 1, klen - 1);
+            buf[klen - 1] = '\0';
+        } else {
+            *buf = '@';
+            memcpy(buf + 1, key, klen);
+            buf[klen + 1] = '\0';
+        }
+        var_id = rb_intern(buf);
+        xfree(buf);
+    } else {
+        if ('~' == *key) {
+            memcpy(attr, key + 1, klen - 1);
+            attr[klen - 1] = '\0';
+        } else {
+            *attr = '@';
+            memcpy(attr + 1, key, klen);
+            attr[klen + 1] = '\0';
+        }
+        var_id = rb_intern(attr);
+    }
+    return var_id;
+}
+
+ID oj_attr_intern(const char *key, size_t len, bool safe) {
+    uint32_t h      = hash_calc((const uint8_t *)key, len) & HASH_MASK;
+    KeyVal   bucket = attr_hash.slots + h;
+    KeyVal   b;
+
+    if (safe) {
+#if HAVE_PTHREAD_MUTEX_INIT
+        pthread_mutex_lock(&attr_hash.mutex);
+#else
+        rb_mutex_lock(attr_hash.mutex);
+#endif
+        if (NULL != bucket->key) {  // not the top slot
+            for (b = bucket; 0 != b; b = b->next) {
+                if (len == b->len && 0 == strncmp(b->key, key, len)) {
+#if HAVE_PTHREAD_MUTEX_INIT
+                    pthread_mutex_unlock(&attr_hash.mutex);
+#else
+                    rb_mutex_unlock(attr_hash.mutex);
+#endif
+                    return (ID)b->val;
+                }
+                bucket = b;
+            }
+            b            = ALLOC(struct _keyVal);
+            b->next      = NULL;
+            bucket->next = b;
+            bucket       = b;
+        }
+        bucket->key = oj_strndup(key, len);
+        bucket->len = len;
+        bucket->val = (VALUE)form_attr(key, len);
+#if HAVE_PTHREAD_MUTEX_INIT
+        pthread_mutex_unlock(&attr_hash.mutex);
+#else
+        rb_mutex_unlock(attr_hash.mutex);
+#endif
+    } else {
+        if (NULL != bucket->key) {
+            for (b = bucket; 0 != b; b = b->next) {
+                if (len == b->len && 0 == strncmp(b->key, key, len)) {
+                    return (ID)b->val;
+                }
+                bucket = b;
+            }
+            b            = ALLOC(struct _keyVal);
+            b->next      = NULL;
+            bucket->next = b;
+            bucket       = b;
+        }
+        bucket->key = oj_strndup(key, len);
+        bucket->len = len;
+        bucket->val = (VALUE)form_attr(key, len);
+    }
+    return (ID)bucket->val;
+}
+
+// TBD replace
+VALUE
 oj_class_hash_get(const char *key, size_t len, VALUE **slotp) {
     return hash_get(&class_hash, key, len, slotp, Qnil);
-}
-
-VALUE
-oj_str_hash_get(const char *key, size_t len, VALUE **slotp) {
-    return hash_get(&str_hash, key, len, slotp, Qnil);
-}
-
-VALUE
-oj_sym_hash_get(const char *key, size_t len, VALUE **slotp) {
-    return hash_get(&sym_hash, key, len, slotp, Qnil);
-}
-
-ID oj_attr_hash_get(const char *key, size_t len, ID **slotp) {
-    return (ID)hash_get(&attr_hash, key, len, (VALUE **)slotp, 0);
 }
 
 char *oj_strndup(const char *s, size_t len) {

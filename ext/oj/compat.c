@@ -32,20 +32,10 @@ static void hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, c
                 if (Yes == pi->options.sym_key) {
                     rkey = rb_str_intern(rkey);
                 }
+            } else if (Yes == pi->options.sym_key) {
+                rkey = oj_sym_intern(key, klen, false);
             } else {
-                VALUE *slot;
-
-                if (Yes == pi->options.sym_key) {
-                    if (Qnil == (rkey = oj_sym_hash_get(key, klen, &slot))) {
-                        rkey  = rb_str_new(key, klen);
-                        rkey  = oj_encode(rkey);
-                        rkey  = rb_str_intern(rkey);
-                        *slot = rkey;
-                        rb_gc_register_address(slot);
-                    }
-                } else {
-		    rkey = oj_str_intern(key, klen, false); // TBD lock if thread_safe
-                }
+                rkey = oj_str_intern(key, klen, false);  // TBD lock if thread_safe
             }
         }
         if (Yes == pi->options.create_ok && NULL != pi->options.str_rx.head) {
