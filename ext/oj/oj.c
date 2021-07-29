@@ -1727,6 +1727,9 @@ static VALUE protect_require(VALUE x) {
 void Init_oj() {
     int err = 0;
 
+#if HAVE_RB_EXT_RACTOR_SAFE
+    rb_ext_ractor_safe(true);
+#endif
     Oj = rb_define_module("Oj");
 
     oj_cstack_class = rb_define_class_under(Oj, "CStack", rb_cObject);

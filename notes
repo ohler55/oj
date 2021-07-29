@@ -4,12 +4,17 @@
 ^c^s show subtree
 
 - parser
+ - try pthread mutex in hash
+ - put creation of value in hash internals
+
  - saj
   - from io - same thread
   - from file
    - if over a certain size then separate thread
  - flag for only one
   - where to put the check?
+ - ractor test
+  - is self set ? get in C code?
 
  - modes
   - strict and compat can be the same - standard/regular/common/usual

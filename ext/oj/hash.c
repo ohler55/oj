@@ -5,6 +5,11 @@
 
 #include <stdint.h>
 
+#include "encode.h"
+#if HAVE_PTHREAD_MUTEX_INIT
+#include <pthread.h>
+#endif
+
 #define HASH_SLOT_CNT ((uint32_t)8192)
 #define HASH_MASK (HASH_SLOT_CNT - 1)
 
@@ -17,7 +22,11 @@ typedef struct _keyVal {
 
 struct _hash {
     struct _keyVal slots[HASH_SLOT_CNT];
+#if HAVE_PTHREAD_MUTEX_INIT
+    pthread_mutex_t mutex;
+#else
     VALUE mutex;
+#endif
 };
 
 struct _hash class_hash;
@@ -67,20 +76,24 @@ static uint32_t hash_calc(const uint8_t *key, size_t len) {
 
 void oj_hash_init() {
     memset(class_hash.slots, 0, sizeof(class_hash.slots));
+    memset(str_hash.slots, 0, sizeof(str_hash.slots));
+    memset(sym_hash.slots, 0, sizeof(sym_hash.slots));
+    memset(attr_hash.slots, 0, sizeof(attr_hash.slots));
+#if HAVE_PTHREAD_MUTEX_INIT
+    pthread_mutex_init(&class_hash.mutex, NULL);
+    pthread_mutex_init(&str_hash.mutex, NULL);
+    pthread_mutex_init(&sym_hash.mutex, NULL);
+    pthread_mutex_init(&attr_hash.mutex, NULL);
+#else
     class_hash.mutex = rb_mutex_new();
     rb_gc_register_address(&class_hash.mutex);
-
-    memset(str_hash.slots, 0, sizeof(str_hash.slots));
     str_hash.mutex = rb_mutex_new();
     rb_gc_register_address(&str_hash.mutex);
-
-    memset(sym_hash.slots, 0, sizeof(sym_hash.slots));
     sym_hash.mutex = rb_mutex_new();
     rb_gc_register_address(&sym_hash.mutex);
-
-    memset(attr_hash.slots, 0, sizeof(attr_hash.slots));
     attr_hash.mutex = rb_mutex_new();
     rb_gc_register_address(&attr_hash.mutex);
+#endif
 }
 
 // if slotp is 0 then just lookup
@@ -152,6 +165,65 @@ void oj_hash_sizes() {
 }
 
 VALUE
+oj_str_intern(const char *key, size_t len, bool safe) {
+    uint32_t h      = hash_calc((const uint8_t *)key, len) & HASH_MASK;
+    KeyVal   bucket = str_hash.slots + h;
+
+    if (safe) {
+#if HAVE_PTHREAD_MUTEX_INIT
+        pthread_mutex_lock(&str_hash.mutex);
+#else
+        rb_mutex_lock(str_hash.mutex);
+#endif
+        if (NULL != bucket->key) {
+            KeyVal b;
+
+            for (b = bucket; 0 != b; b = b->next) {
+                if (len == b->len && 0 == strncmp(b->key, key, len)) {
+                    return b->val;
+                }
+                bucket = b;
+            }
+            b            = ALLOC(struct _keyVal);
+            b->next      = NULL;
+            bucket->next = b;
+            bucket       = b;
+        }
+        bucket->key = oj_strndup(key, len);
+        bucket->len = len;
+        bucket->val = oj_encode(rb_str_new(key, len));
+        bucket->val = rb_str_freeze(bucket->val);
+        rb_gc_register_address(&bucket->val);
+#if HAVE_PTHREAD_MUTEX_INIT
+        pthread_mutex_unlock(&str_hash.mutex);
+#else
+        rb_mutex_unlock(str_hash.mutex);
+#endif
+    } else {
+        if (NULL != bucket->key) {
+            KeyVal b;
+
+            for (b = bucket; 0 != b; b = b->next) {
+                if (len == b->len && 0 == strncmp(b->key, key, len)) {
+                    return b->val;
+                }
+                bucket = b;
+            }
+            b            = ALLOC(struct _keyVal);
+            b->next      = NULL;
+            bucket->next = b;
+            bucket       = b;
+        }
+        bucket->key = oj_strndup(key, len);
+        bucket->len = len;
+        bucket->val = oj_encode(rb_str_new(key, len));
+        bucket->val = rb_str_freeze(bucket->val);
+        rb_gc_register_address(&bucket->val);
+    }
+    return bucket->val;
+}
+
+VALUE
 oj_class_hash_get(const char *key, size_t len, VALUE **slotp) {
     return hash_get(&class_hash, key, len, slotp, Qnil);
 }
@@ -161,14 +233,20 @@ oj_str_hash_get(const char *key, size_t len, VALUE **slotp) {
     return hash_get(&str_hash, key, len, slotp, Qnil);
 }
 
-void
-oj_str_hash_lock() {
+void oj_str_hash_lock() {
+#if HAVE_PTHREAD_MUTEX_INIT
+    pthread_mutex_lock(&attr_hash.mutex);
+#else
     rb_mutex_lock(str_hash.mutex);
+#endif
 }
 
-void
-oj_str_hash_unlock() {
+void oj_str_hash_unlock() {
+#if HAVE_PTHREAD_MUTEX_INIT
+    pthread_mutex_unlock(&attr_hash.mutex);
+#else
     rb_mutex_unlock(str_hash.mutex);
+#endif
 }
 
 VALUE

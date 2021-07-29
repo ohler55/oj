@@ -1211,6 +1211,9 @@ extern void oj_set_parser_debug(ojParser p);
 static VALUE parser_new(VALUE self, VALUE mode) {
     ojParser p = ALLOC(struct _ojParser);
 
+#if HAVE_RB_EXT_RACTOR_SAFE
+    rb_ext_ractor_safe(true);
+#endif
     memset(p, 0, sizeof(struct _ojParser));
     buf_init(&p->key);
     buf_init(&p->buf);
@@ -1256,6 +1259,9 @@ static VALUE parser_missing(int argc, VALUE *argv, VALUE self) {
     volatile VALUE rkey = *argv;
     volatile VALUE rv   = Qnil;
 
+#if HAVE_RB_EXT_RACTOR_SAFE
+    rb_ext_ractor_safe(true);
+#endif
     switch (rb_type(rkey)) {
     case RUBY_T_SYMBOL:
         rkey = rb_sym_to_s(rkey);
@@ -1329,6 +1335,7 @@ static VALUE parser_file(VALUE self, VALUE filename) {
     // st_size will be 0 if not a file
     if (0 == fstat(p->fd, &info) && USE_THREAD_LIMIT < info.st_size) {
         // Use threaded version.
+	// TBD only if has pthreads
         // TBD parse_large(p, fd);
     } else {
         // TBD normal read and parse
