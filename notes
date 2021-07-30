@@ -15,6 +15,28 @@
    - bigdecimal_load* [_:bigdecimal_|_:float_|_:auto_|_:fast_]
    - hash_class
    - array_class
+   - detect_time
+  - design
+   - objects more common than array probably
+   - can keep separate allocation for array creation
+   - stack could be struct
+    - VALUE
+    - klen
+    - union of key[16] and kp for allocated
+    - can klen be 8 bit or 16bit?
+
+    union {
+	struct {
+	    uint16_t len;
+	    byte buf[22];
+	};
+	struct {
+	    uint16_t xlen;
+	    char *key;
+	};
+    };
+    - or just tolerate the extra 6 bytes
+
   - stack of VALUEs
   - stack of indices pointing to last collection
   - on close, use stack for settind array in batch

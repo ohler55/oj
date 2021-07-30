@@ -1379,11 +1379,24 @@ static VALUE parser_just_one_set(VALUE self, VALUE v) {
     return p->just_one ? Qtrue : Qfalse;
 }
 
+    union foo {
+	struct {
+	    uint16_t len;
+	    byte buf[22];
+	};
+	struct {
+	    uint16_t xlen;
+	    char *key;
+	};
+    };
+
+
 /* Document-class: Oj::Parser
  *
  * TBD
  */
 void oj_parser_init() {
+    printf("*** size: %ld\n", sizeof(union foo));
     parser_class = rb_define_class_under(Oj, "Parser", rb_cObject);
     rb_define_module_function(parser_class, "new", parser_new, 1);
     rb_define_method(parser_class, "parse", parser_parse, 1);
