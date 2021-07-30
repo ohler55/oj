@@ -318,7 +318,7 @@ static void mark(struct _ojParser *p) {
     }
 }
 
-void oj_set_parser_saj(ojParser p) {
+void oj_set_parser_usual(ojParser p) {
     Delegate d = ALLOC(struct _delegate);
 
     d->klen = 256;

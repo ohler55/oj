@@ -9,7 +9,7 @@
 #endif
 
 #include "err.h"
-#include "hash.h"
+#include "intern.h"
 #include "oj.h"
 #include "parse.h"
 
@@ -66,28 +66,10 @@ resolve_classpath(ParseInfo pi, const char *name, size_t len, int auto_define, V
 
 VALUE
 oj_name2class(ParseInfo pi, const char *name, size_t len, int auto_define, VALUE error_class) {
-    VALUE  clas;
-    VALUE *slot;
-
     if (No == pi->options.class_cache) {
         return resolve_classpath(pi, name, len, auto_define, error_class);
     }
-#ifdef HAVE_PTHREAD_MUTEX_INIT
-    pthread_mutex_lock(&oj_cache_mutex);
-#else
-    rb_mutex_lock(oj_cache_mutex);
-#endif
-    if (Qnil == (clas = oj_class_hash_get(name, len, &slot))) {
-        if (Qundef != (clas = resolve_classpath(pi, name, len, auto_define, error_class))) {
-            *slot = clas;
-        }
-    }
-#ifdef HAVE_PTHREAD_MUTEX_INIT
-    pthread_mutex_unlock(&oj_cache_mutex);
-#else
-    rb_mutex_unlock(oj_cache_mutex);
-#endif
-    return clas;
+    return oj_class_intern(name, len, true, pi, auto_define, error_class);
 }
 
 VALUE

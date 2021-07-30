@@ -83,13 +83,8 @@ if $verbose
   puts "json:\n#{$json}\n"
 end
 
+### Validate ######################
 p_val = Oj::Parser.new(:validate)
-
-p_all = Oj::Parser.new(:saj)
-p_all.handler = all_handler
-p_all.cache_keys = $cache_keys
-p_all.thread_safe = $thread_safe
-p_all.cache_strings = 5
 
 puts '-' * 80
 puts "Validate Performance"
@@ -98,11 +93,31 @@ perf.add('Oj::Parser.validate', 'none') { p_val.parse($json) }
 perf.add('Oj::Saj.none', 'none') { Oj.saj_parse(no_handler, $json) }
 perf.run($iter)
 
+### SAJ ######################
+p_all = Oj::Parser.new(:saj)
+p_all.handler = all_handler
+p_all.cache_keys = $cache_keys
+p_all.thread_safe = $thread_safe
+p_all.cache_strings = 5
+
 puts '-' * 80
-puts "Parse Performance"
+puts "Parse Callback Performance"
 perf = Perf.new()
 perf.add('Oj::Parser.saj', 'all') { p_all.parse($json) }
 perf.add('Oj::Saj.all', 'all') { Oj.saj_parse(all_handler, $json) }
+perf.run($iter)
+
+### Usual ######################
+p_usual = Oj::Parser.new(:usual)
+p_usual.cache_keys = $cache_keys
+p_usual.thread_safe = $thread_safe
+p_usual.cache_strings = 5
+
+puts '-' * 80
+puts "Parse Usual Performance"
+perf = Perf.new()
+perf.add('Oj::Parser.usual', '') { p_usual.parse($json) }
+perf.add('Oj::strict_load', '') { Oj.strict_load($json) }
 perf.run($iter)
 
 unless $failed.empty?

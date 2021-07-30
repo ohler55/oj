@@ -13,7 +13,7 @@
 
 #include "dump.h"
 #include "encode.h"
-#include "hash.h"
+#include "intern.h"
 #include "odd.h"
 #include "parse.h"
 #include "rails.h"

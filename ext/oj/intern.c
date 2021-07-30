@@ -1,14 +1,15 @@
-// Copyright (c) 2011 Peter Ohler. All rights reserved.
+// Copyright (c) 2011, 2021 Peter Ohler. All rights reserved.
 // Licensed under the MIT License. See LICENSE file in the project root for license details.
 
-#include "hash.h"
+#include "intern.h"
 
 #include <stdint.h>
 
-#include "encode.h"
 #if HAVE_PTHREAD_MUTEX_INIT
 #include <pthread.h>
 #endif
+#include "encode.h"
+#include "parse.h"
 
 #define HASH_SLOT_CNT ((uint32_t)8192)
 #define HASH_MASK (HASH_SLOT_CNT - 1)
@@ -20,14 +21,14 @@ typedef struct _keyVal {
     VALUE           val;
 } * KeyVal;
 
-struct _hash {
+typedef struct _hash {
     struct _keyVal slots[HASH_SLOT_CNT];
 #if HAVE_PTHREAD_MUTEX_INIT
     pthread_mutex_t mutex;
 #else
     VALUE mutex;
 #endif
-};
+} * Hash;
 
 struct _hash class_hash;
 struct _hash str_hash;
@@ -94,38 +95,6 @@ void oj_hash_init() {
     attr_hash.mutex = rb_mutex_new();
     rb_gc_register_address(&attr_hash.mutex);
 #endif
-}
-
-// if slotp is 0 then just lookup
-static VALUE hash_get(Hash hash, const char *key, size_t len, VALUE **slotp, VALUE def_value) {
-    uint32_t h      = hash_calc((const uint8_t *)key, len) & HASH_MASK;
-    KeyVal   bucket = hash->slots + h;
-
-    if (0 != bucket->key) {
-        KeyVal b;
-
-        for (b = bucket; 0 != b; b = b->next) {
-            if (len == b->len && 0 == strncmp(b->key, key, len)) {
-                *slotp = &b->val;
-                return b->val;
-            }
-            bucket = b;
-        }
-    }
-    if (0 != slotp) {
-        if (0 != bucket->key) {
-            KeyVal b = ALLOC(struct _keyVal);
-
-            b->next      = 0;
-            bucket->next = b;
-            bucket       = b;
-        }
-        bucket->key = oj_strndup(key, len);
-        bucket->len = len;
-        bucket->val = def_value;
-        *slotp      = &bucket->val;
-    }
-    return def_value;
 }
 
 void oj_hash_print() {
@@ -373,10 +342,116 @@ ID oj_attr_intern(const char *key, size_t len, bool safe) {
     return (ID)bucket->val;
 }
 
-// TBD replace
-VALUE
-oj_class_hash_get(const char *key, size_t len, VALUE **slotp) {
-    return hash_get(&class_hash, key, len, slotp, Qnil);
+static VALUE resolve_classname(VALUE mod, const char *classname, int auto_define) {
+    VALUE clas;
+    ID    ci = rb_intern(classname);
+
+    if (rb_const_defined_at(mod, ci)) {
+        clas = rb_const_get_at(mod, ci);
+    } else if (auto_define) {
+        clas = rb_define_class_under(mod, classname, oj_bag_class);
+    } else {
+        clas = Qundef;
+    }
+    return clas;
+}
+
+static VALUE
+resolve_classpath(ParseInfo pi, const char *name, size_t len, int auto_define, VALUE error_class) {
+    char        class_name[1024];
+    VALUE       clas;
+    char *      end = class_name + sizeof(class_name) - 1;
+    char *      s;
+    const char *n = name;
+
+    clas = rb_cObject;
+    for (s = class_name; 0 < len; n++, len--) {
+        if (':' == *n) {
+            *s = '\0';
+            n++;
+            len--;
+            if (':' != *n) {
+                return Qundef;
+            }
+            if (Qundef == (clas = resolve_classname(clas, class_name, auto_define))) {
+                return Qundef;
+            }
+            s = class_name;
+        } else if (end <= s) {
+            return Qundef;
+        } else {
+            *s++ = *n;
+        }
+    }
+    *s = '\0';
+    if (Qundef == (clas = resolve_classname(clas, class_name, auto_define))) {
+        oj_set_error_at(pi, error_class, __FILE__, __LINE__, "class %s is not defined", name);
+        if (Qnil != error_class) {
+            pi->err_class = error_class;
+        }
+    }
+    return clas;
+}
+
+VALUE oj_class_intern(const char *key,
+                      size_t      len,
+                      bool        safe,
+                      ParseInfo   pi,
+                      int         auto_define,
+                      VALUE       error_class) {
+    uint32_t h      = hash_calc((const uint8_t *)key, len) & HASH_MASK;
+    KeyVal   bucket = class_hash.slots + h;
+    KeyVal   b;
+
+    if (safe) {
+#if HAVE_PTHREAD_MUTEX_INIT
+        pthread_mutex_lock(&class_hash.mutex);
+#else
+        rb_mutex_lock(class_hash.mutex);
+#endif
+        if (NULL != bucket->key) {  // not the top slot
+            for (b = bucket; 0 != b; b = b->next) {
+                if (len == b->len && 0 == strncmp(b->key, key, len)) {
+#if HAVE_PTHREAD_MUTEX_INIT
+                    pthread_mutex_unlock(&class_hash.mutex);
+#else
+                    rb_mutex_unlock(class_hash.mutex);
+#endif
+                    return b->val;
+                }
+                bucket = b;
+            }
+            b            = ALLOC(struct _keyVal);
+            b->next      = NULL;
+            bucket->next = b;
+            bucket       = b;
+        }
+        bucket->key = oj_strndup(key, len);
+        bucket->len = len;
+        bucket->val = resolve_classpath(pi, key, len, auto_define, error_class);
+#if HAVE_PTHREAD_MUTEX_INIT
+        pthread_mutex_unlock(&class_hash.mutex);
+#else
+        rb_mutex_unlock(class_hash.mutex);
+#endif
+    } else {
+        if (NULL != bucket->key) {
+            for (b = bucket; 0 != b; b = b->next) {
+                if (len == b->len && 0 == strncmp(b->key, key, len)) {
+                    return (ID)b->val;
+                }
+                bucket = b;
+            }
+            b            = ALLOC(struct _keyVal);
+            b->next      = NULL;
+            bucket->next = b;
+            bucket       = b;
+        }
+        bucket->key = oj_strndup(key, len);
+        bucket->len = len;
+        bucket->val = resolve_classpath(pi, key, len, auto_define, error_class);
+    }
+    return bucket->val;
 }
 
 char *oj_strndup(const char *s, size_t len) {

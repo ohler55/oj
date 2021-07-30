@@ -63,7 +63,7 @@ typedef struct _ojParser {
     struct _buf key;
     struct _buf buf;
 
-    struct _funcs funcs[3];
+    struct _funcs funcs[3]; // indexed by XXX_FUN defines
 
     void (*start)(struct _ojParser *p);
     VALUE (*option)(struct _ojParser *p, const char *key, VALUE value);
@@ -73,7 +73,6 @@ typedef struct _ojParser {
 
     void *ctx;
     VALUE reader;
-    int   fd;
 
     char     token[8];
     long     line;

@@ -10,7 +10,7 @@
 #include "dump.h"
 #include "encode.h"
 #include "err.h"
-#include "hash.h"
+#include "intern.h"
 #include "oj.h"
 #include "parse.h"
 #include "trace.h"

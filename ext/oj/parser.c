@@ -23,21 +23,13 @@
 
 #define DEBUG 0
 
-#define USE_THREAD_LIMIT 100000
+#define USE_THREAD_LIMIT 0
+// #define USE_THREAD_LIMIT 100000
 #define MAX_EXP 4932
 // max in the pow_map
 #define MAX_POW 400
 
 #define MIN_SLEEP (1000000000LL / (double)CLOCKS_PER_SEC)
-
-#if 0
-static void
-one_beat() {
-    struct timespec	ts = { .tv_sec = 0, .tv_nsec = 100 };
-
-    pselect(0, NULL, NULL, NULL, &ts, 0);
-}
-#endif
 
 // Give better performance with indented JSON but worse with unindented.
 //#define SPACE_JUMP
@@ -94,21 +86,6 @@ enum {
     CHAR_ERR         = '.',
     DONE             = 'X',
 };
-
-#if 0
-typedef struct _ReadBlock {
-    atomic_flag		busy;
-    ojStatus		status;
-    bool		eof;
-    byte		buf[16385];
-} *ReadBlock;
-
-typedef struct _ReadCtx {
-    struct _ReadBlock	blocks[16];
-    ReadBlock		bend;
-    int			fd;
-} *ReadCtx;
-#endif
 
 /*
 0123456789abcdef0123456789abcdef */
@@ -1200,6 +1177,7 @@ static void parser_mark(void *ptr) {
 
 extern void oj_set_parser_validator(ojParser p);
 extern void oj_set_parser_saj(ojParser p);
+extern void oj_set_parser_usual(ojParser p);
 extern void oj_set_parser_debug(ojParser p);
 
 /* Document-method: new
@@ -1212,6 +1190,7 @@ static VALUE parser_new(VALUE self, VALUE mode) {
     ojParser p = ALLOC(struct _ojParser);
 
 #if HAVE_RB_EXT_RACTOR_SAFE
+    // This doesn't seem to do anything.
     rb_ext_ractor_safe(true);
 #endif
     memset(p, 0, sizeof(struct _ojParser));
@@ -1233,9 +1212,9 @@ static VALUE parser_new(VALUE self, VALUE mode) {
         default:
             rb_raise(rb_eArgError, "mode must be :validate, :strict, :object, :compat, or :rails");
         }
-        if (0 == strcmp("common", ms) || 0 == strcmp("standard", ms) || 0 == strcmp("strict", ms) ||
+        if (0 == strcmp("usual", ms) || 0 == strcmp("standard", ms) || 0 == strcmp("strict", ms) ||
             0 == strcmp("compat", ms)) {
-            // TBD
+            oj_set_parser_usual(p);
         } else if (0 == strcmp("object", ms)) {
             // TBD
         } else if (0 == strcmp("saj", ms)) {
@@ -1247,7 +1226,7 @@ static VALUE parser_new(VALUE self, VALUE mode) {
         } else if (0 == strcmp("debug", ms)) {
             oj_set_parser_debug(p);
         } else {
-            rb_raise(rb_eArgError, "mode must be :validate, :common, :object, :rails, or :saj");
+            rb_raise(rb_eArgError, "mode must be :validate, :usual, :object, :rails, or :saj");
         }
     }
     return Data_Wrap_Struct(parser_class, parser_mark, parser_free, p);
@@ -1260,6 +1239,7 @@ static VALUE parser_missing(int argc, VALUE *argv, VALUE self) {
     volatile VALUE rv   = Qnil;
 
 #if HAVE_RB_EXT_RACTOR_SAFE
+    // This doesn't seem to do anything.
     rb_ext_ractor_safe(true);
 #endif
     switch (rb_type(rkey)) {
@@ -1280,7 +1260,6 @@ static VALUE parser_parse(VALUE self, VALUE json) {
 
     Check_Type(json, T_STRING);
     p->reader = 0;
-    p->fd = 0;
     p->start(p);
     parse(p, (const byte *)rb_string_value_ptr(&json));
 
@@ -1310,7 +1289,6 @@ static VALUE parser_load(VALUE self, VALUE reader) {
     ojParser p = (ojParser)DATA_PTR(self);
 
     p->reader = reader;
-    p->fd = 0;
     rb_rescue2(load, self, load_rescue, Qnil, rb_eEOFError, 0);
 
     return p->result(p);
@@ -1319,27 +1297,42 @@ static VALUE parser_load(VALUE self, VALUE reader) {
 static VALUE parser_file(VALUE self, VALUE filename) {
     ojParser    p = (ojParser)DATA_PTR(self);
     const char *path;
+    int         fd;
 
     Check_Type(filename, T_STRING);
     path = rb_string_value_ptr(&filename);
 
-    printf("*** path %s\n", path);
     p->reader = 0;
-    p->fd = 0;
     p->start(p);
 
-    if (0 > (p->fd = open(path, O_RDONLY))) {
+    if (0 > (fd = open(path, O_RDONLY))) {
         rb_raise(rb_eIOError, "error opening %s", path);
     }
+#if USE_THREAD_LIMIT
     struct stat info;
     // st_size will be 0 if not a file
-    if (0 == fstat(p->fd, &info) && USE_THREAD_LIMIT < info.st_size) {
+    if (0 == fstat(fd, &info) && USE_THREAD_LIMIT < info.st_size) {
         // Use threaded version.
-	// TBD only if has pthreads
+        // TBD only if has pthreads
         // TBD parse_large(p, fd);
-    } else {
-        // TBD normal read and parse
-	// call protected
+        return p->result(p);
+    }
+#endif
+    byte   buf[16385];
+    size_t size = sizeof(buf) - 1;
+    size_t rsize;
+
+    while (true) {
+        if (0 < (rsize = read(fd, buf, size))) {
+            buf[rsize] = '\0';
+            parse(p, buf);
+        }
+        if (rsize <= 0) {
+            if (0 != rsize) {
+                rb_raise(rb_eIOError, "error reading from %s", path);
+            }
+            break;
+        }
     }
     return p->result(p);
 }
