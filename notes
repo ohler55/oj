@@ -17,8 +17,14 @@
    - array_class
    - detect_time
   - design
-   - objects more common than array probably
-   - can keep separate allocation for array creation
+   - approaches
+    - stack for values (array creation)
+     - separate key stack for object
+      - node of stack is klen and key/buf
+     - how to mark start of array or hash?
+      - a third stack with value start, key start, type, VALUE if needed for object
+     - alternate values in stack for future placement of sym or str when creating a hash
+     - if an object then use keys and every other value to set
    - stack could be struct
     - VALUE
     - klen
@@ -51,6 +57,12 @@
  - rails
  - object?
 
+- new parser reasons
+ - parser itself is faster dues to reduced branching
+ - bulk array create - 15x
+ - bulk hash - 3x
+ - reuse of memory
+ - better control over options
 
  - modes
   - strict and compat can be the same - standard/regular/common/usual
