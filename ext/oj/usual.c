@@ -5,8 +5,26 @@
 #include "oj.h"
 #include "parser.h"
 
+typedef union _key {
+    struct {
+        int16_t len;
+        byte    buf[22];
+    };
+    struct {
+        int16_t xlen;  // should be the same as len
+        char *  key;
+    };
+} * Key;
+
 typedef struct _delegate {
-    VALUE  handler;
+    VALUE handler;
+
+    // TBD change keys type to *Key
+
+    VALUE *val_stack;
+    VALUE *val_tail;
+    size_t vcap;
+
     VALUE *keys;
     VALUE *tail;
     size_t klen;
@@ -212,52 +230,52 @@ static VALUE option(ojParser p, const char *key, VALUE value) {
         d->handler = value;
         reset(p);
         if (rb_respond_to(value, oj_hash_start_id)) {
-            p->funcs[TOP_FUN].open_object = open_object;
-            p->funcs[ARRAY_FUN].open_object = open_object;
+            p->funcs[TOP_FUN].open_object    = open_object;
+            p->funcs[ARRAY_FUN].open_object  = open_object;
             p->funcs[OBJECT_FUN].open_object = open_object_key;
         }
         if (rb_respond_to(value, oj_array_start_id)) {
-            p->funcs[TOP_FUN].open_array = open_array;
-            p->funcs[ARRAY_FUN].open_array = open_array;
+            p->funcs[TOP_FUN].open_array    = open_array;
+            p->funcs[ARRAY_FUN].open_array  = open_array;
             p->funcs[OBJECT_FUN].open_array = open_array_key;
         }
         if (rb_respond_to(value, oj_hash_end_id)) {
-            p->funcs[TOP_FUN].close_object = close_object;
-            p->funcs[ARRAY_FUN].close_object = close_object;
+            p->funcs[TOP_FUN].close_object    = close_object;
+            p->funcs[ARRAY_FUN].close_object  = close_object;
             p->funcs[OBJECT_FUN].close_object = close_object;
         }
         if (rb_respond_to(value, oj_array_end_id)) {
-            p->funcs[TOP_FUN].close_array = close_array;
-            p->funcs[ARRAY_FUN].close_array = close_array;
+            p->funcs[TOP_FUN].close_array    = close_array;
+            p->funcs[ARRAY_FUN].close_array  = close_array;
             p->funcs[OBJECT_FUN].close_array = close_array;
         }
         if (rb_respond_to(value, oj_add_value_id)) {
-            p->funcs[TOP_FUN].add_null = add_null;
-            p->funcs[ARRAY_FUN].add_null = add_null;
+            p->funcs[TOP_FUN].add_null    = add_null;
+            p->funcs[ARRAY_FUN].add_null  = add_null;
             p->funcs[OBJECT_FUN].add_null = add_null_key;
 
-            p->funcs[TOP_FUN].add_true = add_true;
-            p->funcs[ARRAY_FUN].add_true = add_true;
+            p->funcs[TOP_FUN].add_true    = add_true;
+            p->funcs[ARRAY_FUN].add_true  = add_true;
             p->funcs[OBJECT_FUN].add_true = add_true_key;
 
-            p->funcs[TOP_FUN].add_false = add_false;
-            p->funcs[ARRAY_FUN].add_false = add_false;
+            p->funcs[TOP_FUN].add_false    = add_false;
+            p->funcs[ARRAY_FUN].add_false  = add_false;
             p->funcs[OBJECT_FUN].add_false = add_false_key;
 
-            p->funcs[TOP_FUN].add_int = add_int;
-            p->funcs[ARRAY_FUN].add_int = add_int;
+            p->funcs[TOP_FUN].add_int    = add_int;
+            p->funcs[ARRAY_FUN].add_int  = add_int;
             p->funcs[OBJECT_FUN].add_int = add_int_key;
 
-            p->funcs[TOP_FUN].add_float = add_float;
-            p->funcs[ARRAY_FUN].add_float = add_float;
+            p->funcs[TOP_FUN].add_float    = add_float;
+            p->funcs[ARRAY_FUN].add_float  = add_float;
             p->funcs[OBJECT_FUN].add_float = add_float_key;
 
-            p->funcs[TOP_FUN].add_big = add_big;
-            p->funcs[ARRAY_FUN].add_big = add_big;
+            p->funcs[TOP_FUN].add_big    = add_big;
+            p->funcs[ARRAY_FUN].add_big  = add_big;
             p->funcs[OBJECT_FUN].add_big = add_big_key;
 
-            p->funcs[TOP_FUN].add_str = add_str;
-            p->funcs[ARRAY_FUN].add_str = add_str;
+            p->funcs[TOP_FUN].add_str    = add_str;
+            p->funcs[ARRAY_FUN].add_str  = add_str;
             p->funcs[OBJECT_FUN].add_str = add_str_key;
         }
         return Qnil;
@@ -277,7 +295,7 @@ static VALUE option(ojParser p, const char *key, VALUE value) {
     }
     rb_raise(rb_eArgError, "%s is not an option for the SAJ (Simple API for JSON) delegate", key);
 
-    return Qnil; // Never reached due to the raise but required by the compiler.
+    return Qnil;  // Never reached due to the raise but required by the compiler.
 }
 
 static VALUE result(struct _ojParser *p) {

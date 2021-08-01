@@ -11,6 +11,8 @@
 #define ARRAY_FUN 1
 #define OBJECT_FUN 2
 
+typedef uint8_t byte;
+
 typedef enum {
     OJ_NONE    = '\0',
     OJ_NULL    = 'n',

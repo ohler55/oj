@@ -34,8 +34,6 @@
 // Give better performance with indented JSON but worse with unindented.
 //#define SPACE_JUMP
 
-typedef uint8_t byte;
-
 enum {
     SKIP_CHAR        = 'a',
     SKIP_NEWLINE     = 'b',

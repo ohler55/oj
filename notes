@@ -33,11 +33,11 @@
 
     union {
 	struct {
-	    uint16_t len;
+	    int16_t len;
 	    byte buf[22];
 	};
 	struct {
-	    uint16_t xlen;
+	    int16_t xlen;
 	    char *key;
 	};
     };
