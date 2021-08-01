@@ -113,14 +113,22 @@ p_usual.cache_keys = $cache_keys
 p_usual.thread_safe = $thread_safe
 p_usual.cache_strings = 5
 
-=begin
+$json = %|[
+  [true,false,null,123,"abc",[0,1,2,3,4,5,6,7,8,9]],
+  [true,false,null,123,"abc",[0,1,2,3,4,5,6,7,8,9]],
+  [true,false,null,123,"abc",[0,1,2,3,4,5,6,7,8,9]],
+  [true,false,null,123,"abc",[0,1,2,3,4,5,6,7,8,9]],
+  [true,false,null,123,"abc",[0,1,2,3,4,5,6,7,8,9]],
+  [true,false,null,123,"abc",[0,1,2,3,4,5,6,7,8,9]],
+  [true,false,null,123,"abc",[0,1,2,3,4,5,6,7,8,9]],
+  [true,false,null,123,"abc",[0,1,2,3,4,5,6,7,8,9]]
+]|
 puts '-' * 80
 puts "Parse Usual Performance"
 perf = Perf.new()
 perf.add('Oj::Parser.usual', '') { p_usual.parse($json) }
 perf.add('Oj::strict_load', '') { Oj.strict_load($json) }
 perf.run($iter)
-=end
 
 unless $failed.empty?
   puts "The following packages were not included for the reason listed"

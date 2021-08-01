@@ -6,6 +6,8 @@
 - parser
  - saj
  - usual
+  - test all primitive types
+  - create collection stack (index into vstack, index to key stack (negative indicates arrary)
   - options
    - symbol_keys
    - class create option (create_id)

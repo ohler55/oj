@@ -30,6 +30,9 @@
 #define MAX_POW 400
 
 #define MIN_SLEEP (1000000000LL / (double)CLOCKS_PER_SEC)
+// 9,223,372,036,854,775,807
+#define BIG_LIMIT LLONG_MAX / 10
+#define FRAC_LIMIT 10000000000000000ULL
 
 // Give better performance with indented JSON but worse with unindented.
 //#define SPACE_JUMP
@@ -517,6 +520,16 @@ static size_t unicodeToUtf8(uint32_t code, byte *buf) {
     return buf - start;
 }
 
+static void parser_reset(ojParser p) {
+    p->reader = 0;
+    memset(&p->num, 0, sizeof(p->num));
+    buf_reset(&p->key);
+    buf_reset(&p->buf);
+    p->map = value_map;
+    p->next_map = NULL;
+    p->depth = 0;
+}
+
 static void parse_error(ojParser p, const char *fmt, ...) {
     va_list ap;
     char    buf[256];
@@ -790,7 +803,7 @@ static void parse(ojParser p, const byte *json) {
                 // Tried just checking for an int less than zero but that
                 // fails when optimization is on for some reason with the
                 // clang compiler so us a bit mask instead.
-                if (0 == (0x8000000000000000ULL & x)) {
+                if (x < BIG_LIMIT) {
                     p->num.fixnum = (int64_t)x;
                 } else {
                     big_change(p);
@@ -804,7 +817,7 @@ static void parse(ojParser p, const byte *json) {
             for (; NUM_DIGIT == digit_map[*b]; b++) {
                 uint64_t x = p->num.fixnum * 10 + (uint64_t)(*b - '0');
 
-                if (0 == (0x8000000000000000ULL & x)) {
+                if (x < BIG_LIMIT) {
                     p->num.fixnum = (int64_t)x;
                 } else {
                     big_change(p);
@@ -823,7 +836,7 @@ static void parse(ojParser p, const byte *json) {
             for (; NUM_FRAC == frac_map[*b]; b++) {
                 uint64_t x = p->num.fixnum * 10 + (uint64_t)(*b - '0');
 
-                if (0 == (0x8000000000000000ULL & x)) {
+                if (x < FRAC_LIMIT) {
                     p->num.fixnum = (int64_t)x;
                     p->num.shift++;
                 } else {
@@ -843,7 +856,7 @@ static void parse(ojParser p, const byte *json) {
             for (; NUM_DIGIT == digit_map[*b]; b++) {
                 uint64_t x = p->num.fixnum * 10 + (uint64_t)(*b - '0');
 
-                if (0 == (0x8000000000000000ULL & x)) {
+                if (x < BIG_LIMIT) {
                     p->num.fixnum = (int64_t)x;
                 } else {
                     big_change(p);
@@ -881,7 +894,6 @@ static void parse(ojParser p, const byte *json) {
             b--;
             break;
         case BIG_DOT:
-            p->type = OJ_DECIMAL;
             buf_append(&p->buf, '.');
             p->map = big_dot_map;
             break;
@@ -893,7 +905,6 @@ static void parse(ojParser p, const byte *json) {
             buf_append_string(&p->buf, (const char *)start, b - start);
             b--;
         case BIG_E:
-            p->type = OJ_DECIMAL;
             buf_append(&p->buf, *b);
             p->map = big_exp_sign_map;
             break;
@@ -1143,6 +1154,7 @@ static void parse(ojParser p, const byte *json) {
         case 'X':
         case 'D':
         case 'g':
+        case 'B':
         case 'Y': calc_num(p); break;
         }
     }
@@ -1257,7 +1269,7 @@ static VALUE parser_parse(VALUE self, VALUE json) {
     ojParser p = (ojParser)DATA_PTR(self);
 
     Check_Type(json, T_STRING);
-    p->reader = 0;
+    parser_reset(p);
     p->start(p);
     parse(p, (const byte *)rb_string_value_ptr(&json));
 
@@ -1286,6 +1298,7 @@ static VALUE load(VALUE self) {
 static VALUE parser_load(VALUE self, VALUE reader) {
     ojParser p = (ojParser)DATA_PTR(self);
 
+    parser_reset(p);
     p->reader = reader;
     rb_rescue2(load, self, load_rescue, Qnil, rb_eEOFError, 0);
 
@@ -1300,7 +1313,7 @@ static VALUE parser_file(VALUE self, VALUE filename) {
     Check_Type(filename, T_STRING);
     path = rb_string_value_ptr(&filename);
 
-    p->reader = 0;
+    parser_reset(p);
     p->start(p);
 
     if (0 > (fd = open(path, O_RDONLY))) {
@@ -1377,24 +1390,11 @@ static VALUE parser_just_one_set(VALUE self, VALUE v) {
     return p->just_one ? Qtrue : Qfalse;
 }
 
-    union foo {
-	struct {
-	    uint16_t len;
-	    byte buf[22];
-	};
-	struct {
-	    uint16_t xlen;
-	    char *key;
-	};
-    };
-
-
 /* Document-class: Oj::Parser
  *
  * TBD
  */
 void oj_parser_init() {
-    printf("*** size: %ld\n", sizeof(union foo));
     parser_class = rb_define_class_under(Oj, "Parser", rb_cObject);
     rb_define_module_function(parser_class, "new", parser_new, 1);
     rb_define_method(parser_class, "parse", parser_parse, 1);

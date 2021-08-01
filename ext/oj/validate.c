@@ -3,7 +3,7 @@
 #include "parser.h"
 
 static void
-noop(struct _ojParser *p) {
+noop(ojParser p) {
 }
 
 static VALUE
@@ -13,16 +13,16 @@ option(ojParser p, const char *key, VALUE value) {
 }
 
 static VALUE
-result(struct _ojParser *p) {
+result(ojParser p) {
     return Qnil;
 }
 
 static void
-dfree(struct _ojParser *p) {
+dfree(ojParser p) {
 }
 
 static void
-mark(struct _ojParser *p) {
+mark(ojParser p) {
 }
 
 void oj_set_parser_validator(ojParser p) {
