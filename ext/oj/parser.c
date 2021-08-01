@@ -525,9 +525,9 @@ static void parser_reset(ojParser p) {
     memset(&p->num, 0, sizeof(p->num));
     buf_reset(&p->key);
     buf_reset(&p->buf);
-    p->map = value_map;
+    p->map      = value_map;
     p->next_map = NULL;
-    p->depth = 0;
+    p->depth    = 0;
 }
 
 static void parse_error(ojParser p, const char *fmt, ...) {
@@ -606,24 +606,25 @@ static void big_change(ojParser p) {
     int64_t i   = p->num.fixnum;
     int     len = 0;
 
+    buf[sizeof(buf) - 1] = '\0';
     p->buf.tail = p->buf.head;
     switch (p->type) {
     case OJ_INT:
         // If an int then it will fit in the num.raw so no need to check length;
-        for (len = sizeof(buf); 0 < i; len--, i /= 10) {
+        for (len = sizeof(buf) - 1; 0 < i; len--, i /= 10) {
             buf[len] = '0' + (i % 10);
         }
         if (p->num.neg) {
             buf[len] = '-';
             len--;
         }
-        buf_append_string(&p->buf, buf + len + 1, len);
+        buf_append_string(&p->buf, buf + len + 1, sizeof(buf) - len - 1);
         p->type = OJ_BIG;
         break;
     case OJ_DECIMAL: {
         int shift = p->num.shift;
 
-        for (len = sizeof(buf); 0 < i; len--, i /= 10, shift--) {
+        for (len = sizeof(buf) - 1; 0 < i; len--, i /= 10, shift--) {
             if (0 == shift) {
                 buf[len] = '.';
                 len--;
@@ -634,7 +635,7 @@ static void big_change(ojParser p) {
             buf[len] = '-';
             len--;
         }
-        buf_append_string(&p->buf, buf + len + 1, len);
+        buf_append_string(&p->buf, buf + len + 1, sizeof(buf) - len - 1);
         if (0 < p->num.exp) {
             int  x = p->num.exp;
             int  d;

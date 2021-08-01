@@ -142,8 +142,9 @@ static void add_float_key(ojParser p) {
 }
 
 static void add_big(ojParser p) {
-    VALUE big = rb_funcall(rb_cObject, oj_bigdecimal_id, 1, rb_str_new(buf_str(&p->buf), buf_len(&p->buf)));
-    push(p, big);
+    push(
+        p,
+        rb_funcall(rb_cObject, oj_bigdecimal_id, 1, rb_str_new(buf_str(&p->buf), buf_len(&p->buf))));
 }
 
 static void add_big_key(ojParser p) {

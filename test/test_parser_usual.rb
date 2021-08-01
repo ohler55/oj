@@ -29,7 +29,9 @@ class UsualTest < Minitest::Test
 
   def test_big
     p = Oj::Parser.new(:usual)
-    doc = p.parse('1234567890.12345678901234567890')
+    doc = p.parse('12345678901234567890123456789')
+    assert_equal(BigDecimal, doc.class)
+    doc = p.parse('1234567890.1234567890123456789')
     assert_equal(BigDecimal, doc.class)
   end
 
