@@ -6,8 +6,8 @@
 #include "parser.h"
 
 typedef struct _col {
-    int vi;  // value stack index
-    int ki;  // key stack index if an hash else -1 for an array
+    long vi;  // value stack index
+    long ki;  // key stack index if an hash else -1 for an array
 } * Col;
 
 typedef union _key {
