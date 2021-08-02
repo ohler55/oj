@@ -1237,6 +1237,38 @@ static VALUE safe_load(VALUE self, VALUE doc) {
  * - *io* [_IO__|_String_] IO Object to read from
  */
 
+struct dump_arg {
+    struct _out     *out;
+    struct _options *copts;
+    int    argc;
+    VALUE *argv;
+};
+
+static VALUE dump_body(VALUE a)
+{
+    volatile struct dump_arg *arg = (void *)a;
+    VALUE           rstr;
+
+    oj_dump_obj_to_json_using_params(*arg->argv, arg->copts, arg->out, arg->argc - 1, arg->argv + 1);
+    if (0 == arg->out->buf) {
+        rb_raise(rb_eNoMemError, "Not enough memory.");
+    }
+    rstr = rb_str_new2(arg->out->buf);
+    rstr = oj_encode(rstr);
+
+    return rstr;
+}
+
+static VALUE dump_ensure(VALUE a)
+{
+    volatile struct dump_arg *arg = (void *)a;
+
+    if (arg->out->allocated) {
+        xfree(arg->out->buf);
+    }
+    return Qnil;
+}
+
 /* Document-method: dump
  * call-seq: dump(obj, options={})
  *
@@ -1246,9 +1278,9 @@ static VALUE safe_load(VALUE self, VALUE doc) {
  */
 static VALUE dump(int argc, VALUE *argv, VALUE self) {
     char            buf[4096];
+    struct dump_arg arg;
     struct _out     out;
     struct _options copts = oj_default_options;
-    VALUE           rstr;
 
     if (1 > argc) {
         rb_raise(rb_eArgError, "wrong number of arguments (0 for 1).");
@@ -1262,21 +1294,18 @@ static VALUE dump(int argc, VALUE *argv, VALUE self) {
     if (CompatMode == copts.mode && copts.escape_mode != ASCIIEsc) {
         copts.escape_mode = JSONEsc;
     }
-    out.buf       = buf;
-    out.end       = buf + sizeof(buf) - 10;
-    out.allocated = false;
-    out.omit_nil  = copts.dump_opts.omit_nil;
-    out.caller    = CALLER_DUMP;
-    oj_dump_obj_to_json_using_params(*argv, &copts, &out, argc - 1, argv + 1);
-    if (0 == out.buf) {
-        rb_raise(rb_eNoMemError, "Not enough memory.");
-    }
-    rstr = rb_str_new2(out.buf);
-    rstr = oj_encode(rstr);
-    if (out.allocated) {
-        xfree(out.buf);
-    }
-    return rstr;
+    arg.out = &out;
+    arg.copts = &copts;
+    arg.argc = argc;
+    arg.argv = argv;
+
+    arg.out->buf       = buf;
+    arg.out->end       = buf + sizeof(buf) - 10;
+    arg.out->allocated = false;
+    arg.out->omit_nil  = copts.dump_opts.omit_nil;
+    arg.out->caller    = CALLER_DUMP;
+
+    return rb_ensure(dump_body, (VALUE)&arg, dump_ensure, (VALUE)&arg);
 }
 
 /* Document-method: to_json
