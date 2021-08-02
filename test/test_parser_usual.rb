@@ -50,4 +50,14 @@ class UsualTest < Minitest::Test
     }
   end
 
+  def test_hash
+    p = Oj::Parser.new(:usual)
+    [
+      ['{}', {}],
+    ].each { |x|
+      doc = p.parse(x[0])
+      assert_equal(x[1], doc)
+    }
+  end
+
 end

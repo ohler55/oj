@@ -22,8 +22,6 @@ typedef union _key {
 } * Key;
 
 typedef struct _delegate {
-    // TBD change keys type to *Key
-
     VALUE *vhead;
     VALUE *vtail;
     VALUE *vend;
@@ -55,8 +53,26 @@ static void push(ojParser p, VALUE v) {
     d->vtail++;
 }
 
+// TBD key_push similar to push but with key
+//  skip one value then push
+//  add key
+
 static void open_object(ojParser p) {
-    // TBD
+    Delegate d = (Delegate)p->ctx;
+
+    if (d->cend <= d->ctail) {
+        size_t cap = d->cend - d->chead;
+        long   pos = d->ctail - d->chead;
+
+        cap *= 2;
+        REALLOC_N(d->chead, struct _col, cap);
+        d->ctail = d->chead + pos;
+        d->cend  = d->chead + cap;
+    }
+    d->ctail->vi = d->vtail - d->vhead;
+    d->ctail->ki = d->ktail - d->khead;
+    d->ctail++;
+    push(p, Qundef);
 }
 
 static void open_object_key(ojParser p) {
@@ -86,7 +102,10 @@ static void open_array_key(ojParser p) {
 }
 
 static void close_object(ojParser p) {
-    // TBD
+    // TBD determine if object or hash and create
+    //  if hash then populate alternate values with symbol or string
+    //    void rb_hash_bulk_insert(long, const VALUE *, VALUE);
+
 }
 
 static void close_array(ojParser p) {
