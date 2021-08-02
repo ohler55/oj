@@ -54,6 +54,11 @@ class UsualTest < Minitest::Test
     p = Oj::Parser.new(:usual)
     [
       ['{}', {}],
+      ['{"a": null}', {'a' => nil}],
+      ['{"t": true, "f": false, "s": "abc"}', {'t' => true, 'f' => false, 's' => 'abc'}],
+      ['{"a": {}}', {'a' => {}}],
+      ['{"a": {"b": 2}}', {'a' => {'b' => 2}}],
+      ['{"a": [true]}', {'a' => [true]}],
     ].each { |x|
       doc = p.parse(x[0])
       assert_equal(x[1], doc)

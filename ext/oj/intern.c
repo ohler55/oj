@@ -8,7 +8,6 @@
 #if HAVE_PTHREAD_MUTEX_INIT
 #include <pthread.h>
 #endif
-#include "encode.h"
 #include "parse.h"
 
 #define HASH_SLOT_CNT ((uint32_t)8192)
@@ -164,7 +163,7 @@ oj_str_intern(const char *key, size_t len, bool safe) {
         }
         bucket->key = oj_strndup(key, len);
         bucket->len = len;
-        bucket->val = oj_encode(rb_str_new(key, len));
+        bucket->val = rb_utf8_str_new(key, len);
         bucket->val = rb_str_freeze(bucket->val);
         rb_gc_register_address(&bucket->val);
 #if HAVE_PTHREAD_MUTEX_INIT
@@ -187,7 +186,7 @@ oj_str_intern(const char *key, size_t len, bool safe) {
         }
         bucket->key = oj_strndup(key, len);
         bucket->len = len;
-        bucket->val = oj_encode(rb_str_new(key, len));
+        bucket->val = rb_utf8_str_new(key, len);
         bucket->val = rb_str_freeze(bucket->val);
         rb_gc_register_address(&bucket->val);
     }
@@ -225,7 +224,7 @@ oj_sym_intern(const char *key, size_t len, bool safe) {
         }
         bucket->key = oj_strndup(key, len);
         bucket->len = len;
-        bucket->val = oj_encode(rb_str_new(key, len));
+        bucket->val = rb_utf8_str_new(key, len);
         bucket->val = rb_str_intern(bucket->val);
         rb_gc_register_address(&bucket->val);
 #if HAVE_PTHREAD_MUTEX_INIT
@@ -248,7 +247,7 @@ oj_sym_intern(const char *key, size_t len, bool safe) {
         }
         bucket->key = oj_strndup(key, len);
         bucket->len = len;
-        bucket->val = oj_encode(rb_str_new(key, len));
+        bucket->val = rb_utf8_str_new(key, len);
         bucket->val = rb_str_intern(bucket->val);
         rb_gc_register_address(&bucket->val);
     }

@@ -32,7 +32,7 @@ $obj = {
   'a' => 'Alpha', # string
   'b' => true,    # boolean
   'c' => 12345,   # number
-  'd' => [ true, [false, [-123456789, nil], 3.9676, ['Something else.', false], nil]], # mix it up array
+  'd' => [ true, [false, [-123456789, nil], 3.9676, ['Something else.', false, 1, nil], nil]], # mix it up array
   'e' => { 'zero' => nil, 'one' => 1, 'two' => 2, 'three' => [3], 'four' => [0, 1, 2, 3, 4] }, # hash
   'f' => nil,     # nil
   'h' => { 'a' => { 'b' => { 'c' => { 'd' => {'e' => { 'f' => { 'g' => nil }}}}}}}, # deep hash, not that deep
@@ -113,16 +113,6 @@ p_usual.cache_keys = $cache_keys
 p_usual.thread_safe = $thread_safe
 p_usual.cache_strings = 5
 
-$json = %|[
-  [true,false,null,123,"abc",[0,1,2,3,4,5,6,7,8,9]],
-  [true,false,null,123,"abc",[0,1,2,3,4,5,6,7,8,9]],
-  [true,false,null,123,"abc",[0,1,2,3,4,5,6,7,8,9]],
-  [true,false,null,123,"abc",[0,1,2,3,4,5,6,7,8,9]],
-  [true,false,null,123,"abc",[0,1,2,3,4,5,6,7,8,9]],
-  [true,false,null,123,"abc",[0,1,2,3,4,5,6,7,8,9]],
-  [true,false,null,123,"abc",[0,1,2,3,4,5,6,7,8,9]],
-  [true,false,null,123,"abc",[0,1,2,3,4,5,6,7,8,9]]
-]|
 puts '-' * 80
 puts "Parse Usual Performance"
 perf = Perf.new()
