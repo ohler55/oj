@@ -1207,7 +1207,6 @@ static VALUE parser_new(VALUE self, VALUE mode) {
     memset(p, 0, sizeof(struct _ojParser));
     buf_init(&p->key);
     buf_init(&p->buf);
-    p->cache_keys = true;
 
     p->map = value_map;
     if (Qnil == mode) {
@@ -1349,34 +1348,6 @@ static VALUE parser_file(VALUE self, VALUE filename) {
     return p->result(p);
 }
 
-static VALUE parser_cache_keys(VALUE self) {
-    ojParser p = (ojParser)DATA_PTR(self);
-
-    return p->cache_keys ? Qtrue : Qfalse;
-}
-
-static VALUE parser_cache_keys_set(VALUE self, VALUE v) {
-    ojParser p = (ojParser)DATA_PTR(self);
-
-    p->cache_keys = (Qtrue == v);
-
-    return p->cache_keys ? Qtrue : Qfalse;
-}
-
-static VALUE parser_cache_str(VALUE self) {
-    ojParser p = (ojParser)DATA_PTR(self);
-
-    return INT2NUM((int)p->cache_str);
-}
-
-static VALUE parser_cache_str_set(VALUE self, VALUE v) {
-    ojParser p = (ojParser)DATA_PTR(self);
-
-    p->cache_str = NUM2INT(v);
-
-    return INT2NUM((int)p->cache_str);
-}
-
 static VALUE parser_just_one(VALUE self) {
     ojParser p = (ojParser)DATA_PTR(self);
 
@@ -1401,10 +1372,6 @@ void oj_parser_init() {
     rb_define_method(parser_class, "parse", parser_parse, 1);
     rb_define_method(parser_class, "load", parser_load, 1);
     rb_define_method(parser_class, "file", parser_file, 1);
-    rb_define_method(parser_class, "cache_keys", parser_cache_keys, 0);
-    rb_define_method(parser_class, "cache_keys=", parser_cache_keys_set, 1);
-    rb_define_method(parser_class, "cache_strings", parser_cache_str, 0);
-    rb_define_method(parser_class, "cache_strings=", parser_cache_str_set, 1);
     rb_define_method(parser_class, "just_one", parser_just_one, 0);
     rb_define_method(parser_class, "just_one=", parser_just_one_set, 1);
 

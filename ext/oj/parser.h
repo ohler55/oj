@@ -81,9 +81,7 @@ typedef struct _ojParser {
     long     col;
     int      ri;
     uint32_t ucode;
-    uint32_t cache_str;
     ojType   type;  // valType
-    bool     cache_keys;
     bool     just_one;
 } * ojParser;
 

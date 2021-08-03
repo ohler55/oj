@@ -232,23 +232,4 @@ class SajTest < Minitest::Test
 		 ], handler.calls)
   end
 
-  def test_ractor
-    json = %| [true,false]  |
-    r = Ractor.new(json) { |j|
-      p = Oj::Parser.new(:saj)
-      p.thread_safe = true
-      handler = AllSaj.new()
-      p.handler = handler
-
-      p.parse(j)
-      handler.calls
-    }
-    assert_equal([
-		   [:array_start, nil],
-		   [:add_value, true, nil],
-		   [:add_value, false, nil],
-		   [:array_end, nil],
-		 ], r.take)
-  end
-
 end

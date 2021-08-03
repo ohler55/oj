@@ -1,6 +1,6 @@
 // Copyright (c) 2021, Peter Ohler, All rights reserved.
 
-#include "intern.h"
+#include "cache.h"
 #include "oj.h"
 #include "parser.h"
 
@@ -36,7 +36,12 @@ typedef struct _delegate {
     Key kend;
 
     VALUE (*get_key)(ojParser p, Key kp);
-    bool thread_safe;
+    struct _cache *key_cache;  // same as str_cache or sym_cache
+    struct _cache *str_cache;
+
+    uint8_t cache_str;
+    bool    cache_keys;
+    bool    thread_safe;
 } * Delegate;
 
 #if DEBUG
@@ -96,6 +101,15 @@ static void debug(const char *label, Delegate d) {
 }
 #endif
 
+static char *str_dup(const char *s, size_t len) {
+    char *d = ALLOC_N(char, len + 1);
+
+    memcpy(d, s, len);
+    d[len] = '\0';
+
+    return d;
+}
+
 static void assure_cstack(Delegate d) {
     if (d->cend <= d->ctail + 1) {
         size_t cap = d->cend - d->chead;
@@ -124,18 +138,18 @@ static void push(ojParser p, VALUE v) {
     d->vtail++;
 }
 
-static VALUE intern_key(ojParser p, Key kp) {
+static VALUE cache_key(ojParser p, Key kp) {
     Delegate d = (Delegate)p->ctx;
 
     if ((size_t)kp->len < sizeof(kp->buf) - 1) {
-        return oj_str_intern(kp->buf, kp->len, d->thread_safe);
+        return cache_intern(d->key_cache, kp->buf, kp->len);
     }
-    return oj_str_intern(kp->key, kp->len, d->thread_safe);
+    return cache_intern(d->key_cache, kp->key, kp->len);
 }
 
 static VALUE create_key(ojParser p, Key kp) {
     if ((size_t)kp->len < sizeof(kp->buf) - 1) {
-	return rb_utf8_str_new(kp->buf, kp->len);
+        return rb_utf8_str_new(kp->buf, kp->len);
     }
     return rb_utf8_str_new(kp->key, kp->len);
 }
@@ -159,7 +173,7 @@ static void push_key(ojParser p) {
         memcpy(d->ktail->buf, key, klen);
         d->ktail->buf[klen] = '\0';
     } else {
-        d->ktail->key = oj_strndup(key, klen);
+        d->ktail->key = str_dup(key, klen);
     }
     d->ktail++;
 }
@@ -239,9 +253,9 @@ static void close_object(ojParser p) {
     for (VALUE *vp = head; kp < d->ktail; kp++, vp += 2) {
         // TBD symbol or string
         *vp = d->get_key(p, kp);
-	if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
-	    xfree(kp->key);
-	}
+        if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
+            xfree(kp->key);
+        }
     }
     d->ktail = d->khead + c->ki;
     rb_hash_bulk_insert(d->vtail - head, head, obj);
@@ -317,12 +331,13 @@ static void add_big_key(ojParser p) {
 }
 
 static void add_str(ojParser p) {
+    Delegate       d = (Delegate)p->ctx;
     volatile VALUE rstr;
     const char *   str = buf_str(&p->buf);
     size_t         len = buf_len(&p->buf);
 
-    if (len < p->cache_str) {
-        rstr = oj_str_intern(str, len, ((Delegate)p->ctx)->thread_safe);
+    if (len < d->cache_str) {
+        rstr = cache_intern(d->str_cache, str, len);
     } else {
         rstr = rb_utf8_str_new(str, len);
     }
@@ -330,12 +345,13 @@ static void add_str(ojParser p) {
 }
 
 static void add_str_key(ojParser p) {
+    Delegate       d = (Delegate)p->ctx;
     volatile VALUE rstr;
     const char *   str = buf_str(&p->buf);
     size_t         len = buf_len(&p->buf);
 
-    if (len < p->cache_str) {
-        rstr = oj_str_intern(str, len, ((Delegate)p->ctx)->thread_safe);
+    if (len < d->cache_str) {
+        rstr = cache_intern(d->str_cache, str, len);
     } else {
         rstr = rb_utf8_str_new(str, len);
     }
@@ -344,18 +360,38 @@ static void add_str_key(ojParser p) {
 }
 
 static VALUE option(ojParser p, const char *key, VALUE value) {
-    if (0 == strcmp(key, "ractor_safe") || 0 == strcmp(key, "thread_safe")) {
-        return ((Delegate)p->ctx)->thread_safe ? Qtrue : Qfalse;
+    Delegate d = (Delegate)p->ctx;
+
+    if (0 == strcmp(key, "cache_keys")) {
+        return d->cache_keys ? Qtrue : Qfalse;
     }
-    if (0 == strcmp(key, "ractor_safe=") || 0 == strcmp(key, "thread_safe=")) {
-        if (Qtrue == value) {
-            ((Delegate)p->ctx)->thread_safe = true;
-        } else if (Qfalse == value) {
-            ((Delegate)p->ctx)->thread_safe = false;
-        } else {
-            rb_raise(rb_eArgError, "invalid value for thread_safe/ractor_safe option");
+    if (0 == strcmp(key, "cache_keys=")) {
+	if (Qtrue == value) {
+	    d->cache_keys = true;
+	    d->get_key = cache_key;
+	    // TBD check symbol_keys
+	    d->key_cache = d->str_cache;
+	} else {
+	    d->cache_keys = false;
+	    d->get_key = create_key;
+	    // TBD check symbol_keys
+	}
+        return d->cache_keys ? Qtrue : Qfalse;
+    }
+    if (0 == strcmp(key, "cache_strings")) {
+        return INT2NUM((int)d->cache_str);
+    }
+    if (0 == strcmp(key, "cache_strings=")) {
+        int limit = NUM2INT(value);
+
+        if (CACHE_MAX_KEY < limit) {
+            limit = CACHE_MAX_KEY;
+        } else if (limit < 0) {
+            limit = 0;
         }
-        return value;
+        d->cache_str = limit;
+
+        return INT2NUM((int)d->cache_str);
     }
     rb_raise(rb_eArgError, "%s is not an option for the Usual delegate", key);
 
@@ -374,9 +410,6 @@ static VALUE result(ojParser p) {
 static void start(ojParser p) {
     Delegate d = (Delegate)p->ctx;
 
-#if HAVE_RB_EXT_RACTOR_SAFE
-    rb_ext_ractor_safe(d->thread_safe || (!p->cache_keys && p->cache_str <= 0));
-#endif
     d->vtail = d->vhead;
     d->ctail = d->chead;
     d->ktail = d->khead;
@@ -385,6 +418,7 @@ static void start(ojParser p) {
 static void dfree(ojParser p) {
     Delegate d = (Delegate)p->ctx;
 
+    cache_free(d->str_cache);
     xfree(d->vhead);
     xfree(d->chead);
     xfree(d->khead);
@@ -403,6 +437,9 @@ static void mark(ojParser p) {
         }
     }
 }
+static VALUE form_str(const char *str, size_t len) {
+    return rb_str_freeze(rb_utf8_str_new(str, len));
+}
 
 void oj_set_parser_usual(ojParser p) {
     Delegate d   = ALLOC(struct _delegate);
@@ -412,11 +449,12 @@ void oj_set_parser_usual(ojParser p) {
     d->vend  = d->vhead + cap;
     d->vtail = d->vhead;
 
-    d->khead   = ALLOC_N(union _key, cap);
-    d->kend    = d->khead + cap;
-    d->ktail   = d->khead;
-    d->get_key = intern_key;
-    //d->get_key = create_key;
+    d->khead = ALLOC_N(union _key, cap);
+    d->kend  = d->khead + cap;
+    d->ktail = d->khead;
+    d->get_key = cache_key;
+    d->cache_keys = true;
+    d->cache_str = 6;
 
     cap      = 256;
     d->chead = ALLOC_N(struct _col, cap);
@@ -461,6 +499,9 @@ void oj_set_parser_usual(ojParser p) {
     f->close_array  = close_array;
     f->open_object  = open_object_key;
     f->close_object = close_object;
+
+    d->str_cache = cache_create(0, form_str, true);
+    d->key_cache = d->str_cache;
 
     p->ctx    = (void *)d;
     p->option = option;

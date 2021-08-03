@@ -1,29 +1,30 @@
 // Copyright (c) 2021, Peter Ohler, All rights reserved.
 
-#include "encode.h"
-#include "intern.h"
+#include "cache.h"
 #include "oj.h"
 #include "parser.h"
 
 typedef struct _delegate {
-    VALUE  handler;
-    VALUE *keys;
-    VALUE *tail;
-    size_t klen;
-    bool   thread_safe;
+    VALUE          handler;
+    VALUE *        keys;
+    VALUE *        tail;
+    size_t         klen;
+    struct _cache *str_cache;
+    uint8_t        cache_str;
+    bool           cache_keys;
+    bool           thread_safe;
 } * Delegate;
 
 static VALUE get_key(ojParser p) {
+    Delegate       d   = (Delegate)p->ctx;
     const char *   key = buf_str(&p->key);
+    size_t         len = buf_len(&p->key);
     volatile VALUE rkey;
 
-    if (p->cache_keys) {
-        size_t   len = buf_len(&p->key);
-        Delegate d   = (Delegate)p->ctx;
-
-        rkey = oj_str_intern(key, len, d->thread_safe);
+    if (d->cache_keys) {
+        rkey = cache_intern(d->str_cache, key, len);
     } else {
-        rkey = oj_encode(rb_str_new2(key));
+        rkey = rb_utf8_str_new(key, len);
     }
     return rkey;
 }
@@ -132,55 +133,51 @@ static void add_float(ojParser p) {
 }
 
 static void add_float_key(ojParser p) {
-    rb_funcall(((Delegate)p->ctx)->handler,
-               oj_add_value_id,
-               2,
-               rb_float_new(p->num.dub),
-               get_key(p));
+    rb_funcall(((Delegate)p->ctx)->handler, oj_add_value_id, 2, rb_float_new(p->num.dub), get_key(p));
 }
 
 static void add_big(ojParser p) {
-    rb_funcall(
-        (VALUE)p->ctx,
-        oj_add_value_id,
-        2,
-        rb_funcall(rb_cObject, oj_bigdecimal_id, 1, rb_str_new(buf_str(&p->buf), buf_len(&p->buf))),
-        Qnil);
+    rb_funcall((VALUE)p->ctx,
+               oj_add_value_id,
+               2,
+               rb_funcall(rb_cObject, oj_bigdecimal_id, 1, rb_str_new(buf_str(&p->buf), buf_len(&p->buf))),
+               Qnil);
 }
 
 static void add_big_key(ojParser p) {
-    rb_funcall(
-        (VALUE)p->ctx,
-        oj_add_value_id,
-        2,
-        rb_funcall(rb_cObject, oj_bigdecimal_id, 1, rb_str_new(buf_str(&p->buf), buf_len(&p->buf))),
-        get_key(p));
+    rb_funcall((VALUE)p->ctx,
+               oj_add_value_id,
+               2,
+               rb_funcall(rb_cObject, oj_bigdecimal_id, 1, rb_str_new(buf_str(&p->buf), buf_len(&p->buf))),
+               get_key(p));
 }
 
 static void add_str(ojParser p) {
+    Delegate       d = (Delegate)p->ctx;
     volatile VALUE rstr;
     const char *   str = buf_str(&p->buf);
     size_t         len = buf_len(&p->buf);
 
-    if (p->cache_str <= len) {
-        rstr = oj_str_intern(str, len, ((Delegate)p->ctx)->thread_safe);
+    if (d->cache_str <= len) {
+        rstr = cache_intern(d->str_cache, str, len);
     } else {
-        rstr = oj_encode(rb_str_new(str, len));
+        rstr = rb_utf8_str_new(str, len);
     }
-    rb_funcall(((Delegate)p->ctx)->handler, oj_add_value_id, 2, rstr, Qnil);
+    rb_funcall(d->handler, oj_add_value_id, 2, rstr, Qnil);
 }
 
 static void add_str_key(ojParser p) {
+    Delegate       d = (Delegate)p->ctx;
     volatile VALUE rstr;
     const char *   str = buf_str(&p->buf);
     size_t         len = buf_len(&p->buf);
 
-    if (p->cache_str <= len) {
-        rstr = oj_str_intern(str, len, ((Delegate)p->ctx)->thread_safe);
+    if (d->cache_str <= len) {
+        rstr = cache_intern(d->str_cache, str, len);
     } else {
-        rstr = oj_encode(rb_str_new(str, len));
+        rstr = rb_utf8_str_new(str, len);
     }
-    rb_funcall(((Delegate)p->ctx)->handler, oj_add_value_id, 2, rstr, get_key(p));
+    rb_funcall(d->handler, oj_add_value_id, 2, rstr, get_key(p));
 }
 
 static void reset(ojParser p) {
@@ -202,12 +199,12 @@ static void reset(ojParser p) {
 }
 
 static VALUE option(ojParser p, const char *key, VALUE value) {
+    Delegate d = (Delegate)p->ctx;
+
     if (0 == strcmp(key, "handler")) {
-        return (VALUE)p->ctx;
+        return d->handler;
     }
     if (0 == strcmp(key, "handler=")) {
-        Delegate d = (Delegate)p->ctx;
-
         d->tail    = d->keys;
         d->handler = value;
         reset(p);
@@ -262,18 +259,28 @@ static VALUE option(ojParser p, const char *key, VALUE value) {
         }
         return Qnil;
     }
-    if (0 == strcmp(key, "ractor_safe") || 0 == strcmp(key, "thread_safe")) {
-        return ((Delegate)p->ctx)->thread_safe ? Qtrue : Qfalse;
+    if (0 == strcmp(key, "cache_keys")) {
+        return d->cache_keys ? Qtrue : Qfalse;
     }
-    if (0 == strcmp(key, "ractor_safe=") || 0 == strcmp(key, "thread_safe=")) {
-        if (Qtrue == value) {
-            ((Delegate)p->ctx)->thread_safe = true;
-        } else if (Qfalse == value) {
-            ((Delegate)p->ctx)->thread_safe = false;
-        } else {
-            rb_raise(rb_eArgError, "invalid value for thread_safe/ractor_safe option");
+    if (0 == strcmp(key, "cache_keys=")) {
+        d->cache_keys = (Qtrue == value);
+
+        return d->cache_keys ? Qtrue : Qfalse;
+    }
+    if (0 == strcmp(key, "cache_strings")) {
+        return INT2NUM((int)d->cache_str);
+    }
+    if (0 == strcmp(key, "cache_strings=")) {
+        int limit = NUM2INT(value);
+
+        if (CACHE_MAX_KEY < limit) {
+            limit = CACHE_MAX_KEY;
+        } else if (limit < 0) {
+            limit = 0;
         }
-        return value;
+        d->cache_str = limit;
+
+        return INT2NUM((int)d->cache_str);
     }
     rb_raise(rb_eArgError, "%s is not an option for the SAJ (Simple API for JSON) delegate", key);
 
@@ -287,9 +294,6 @@ static VALUE result(ojParser p) {
 static void start(ojParser p) {
     Delegate d = (Delegate)p->ctx;
 
-#if HAVE_RB_EXT_RACTOR_SAFE
-    rb_ext_ractor_safe(d->thread_safe || (!p->cache_keys && p->cache_str <= 0));
-#endif
     d->tail = d->keys;
 }
 
@@ -311,20 +315,26 @@ static void mark(ojParser p) {
     if (Qnil != d->handler) {
         rb_gc_mark(d->handler);
     }
-    if (!p->cache_keys) {
+    if (!d->cache_keys) {
         for (VALUE *kp = d->keys; kp < d->tail; kp++) {
             rb_gc_mark(*kp);
         }
     }
 }
 
+static VALUE form_str(const char *str, size_t len) {
+    return rb_str_freeze(rb_utf8_str_new(str, len));
+}
+
 void oj_set_parser_saj(ojParser p) {
     Delegate d = ALLOC(struct _delegate);
 
-    d->klen = 256;
-    d->keys = ALLOC_N(VALUE, d->klen);
-    d->tail = d->keys;
-    p->ctx  = (void *)d;
+    d->klen      = 256;
+    d->keys      = ALLOC_N(VALUE, d->klen);
+    d->tail      = d->keys;
+    d->str_cache = cache_create(0, form_str, true);
+
+    p->ctx = (void *)d;
     reset(p);
     p->option = option;
     p->result = result;

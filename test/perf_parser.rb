@@ -100,8 +100,7 @@ perf.run($iter)
 p_all = Oj::Parser.new(:saj)
 p_all.handler = all_handler
 p_all.cache_keys = $cache_keys
-p_all.thread_safe = $thread_safe
-p_all.cache_strings = 5
+p_all.cache_strings = 6
 
 puts '-' * 80
 puts "Parse Callback Performance"
@@ -113,8 +112,7 @@ perf.run($iter)
 ### Usual ######################
 p_usual = Oj::Parser.new(:usual)
 p_usual.cache_keys = $cache_keys
-p_usual.cache_strings = ($cache_keys ? 5 : 0)
-p_usual.thread_safe = $thread_safe
+p_usual.cache_strings = ($cache_keys ? 6 : 0)
 
 puts '-' * 80
 puts "Parse Usual Performance"
