@@ -24,7 +24,7 @@ module Oj
     circular: false,
     class_cache: false,
     cache_keys: true,
-    cache_str: false,
+    cache_str: 5,
     create_additions: false,
     create_id: "json_class",
     empty_string: false,
