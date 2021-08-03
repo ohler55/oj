@@ -40,7 +40,6 @@ ID oj_error_id;
 ID oj_file_id;
 ID oj_fileno_id;
 ID oj_ftype_id;
-ID oj_has_key_id;
 ID oj_hash_end_id;
 ID oj_hash_key_id;
 ID oj_hash_set_id;
@@ -584,6 +583,14 @@ static VALUE set_def_opts(VALUE self, VALUE opts) {
     return Qnil;
 }
 
+bool oj_hash_has_key(VALUE hash, VALUE key)
+{
+    if (Qundef == rb_hash_lookup2(hash, key, Qundef)) {
+        return false;
+    }
+    return true;
+}
+
 void oj_parse_options(VALUE ropts, Options copts) {
     struct _yesNoOpt ynos[] = {{circular_sym, &copts->circular},
                                {auto_define_sym, &copts->auto_define},
@@ -614,7 +621,7 @@ void oj_parse_options(VALUE ropts, Options copts) {
     if (T_HASH != rb_type(ropts)) {
         return;
     }
-    if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_indent_sym)) {
+    if (oj_hash_has_key(ropts, oj_indent_sym)) {
         v = rb_hash_lookup(ropts, oj_indent_sym);
         switch (rb_type(v)) {
         case T_NIL:
@@ -775,7 +782,7 @@ void oj_parse_options(VALUE ropts, Options copts) {
     if (Qnil != (v = rb_hash_lookup(ropts, compat_bigdecimal_sym))) {
         copts->compat_bigdec = (Qtrue == v);
     }
-    if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_decimal_class_sym)) {
+    if (oj_hash_has_key(ropts, oj_decimal_class_sym)) {
         v = rb_hash_lookup(ropts, oj_decimal_class_sym);
         if (rb_cFloat == v) {
             copts->compat_bigdec = false;
@@ -785,7 +792,7 @@ void oj_parse_options(VALUE ropts, Options copts) {
             rb_raise(rb_eArgError, ":decimal_class must be BigDecimal or Float.");
         }
     }
-    if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, create_id_sym)) {
+    if (oj_hash_has_key(ropts, create_id_sym)) {
         v = rb_hash_lookup(ropts, create_id_sym);
         if (Qnil == v) {
             if (oj_json_class != oj_default_options.create_id && NULL != copts->create_id) {
@@ -807,7 +814,7 @@ void oj_parse_options(VALUE ropts, Options copts) {
         }
     }
     for (o = ynos; 0 != o->attr; o++) {
-        if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, o->sym)) {
+        if (oj_hash_has_key(ropts, o->sym)) {
             v = rb_hash_lookup(ropts, o->sym);
             if (Qnil == v) {
                 *o->attr = NotSet;
@@ -822,7 +829,7 @@ void oj_parse_options(VALUE ropts, Options copts) {
             }
         }
     }
-    if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_space_sym)) {
+    if (oj_hash_has_key(ropts, oj_space_sym)) {
         if (Qnil == (v = rb_hash_lookup(ropts, oj_space_sym))) {
             copts->dump_opts.after_size = 0;
             *copts->dump_opts.after_sep = '\0';
@@ -837,7 +844,7 @@ void oj_parse_options(VALUE ropts, Options copts) {
             copts->dump_opts.after_size = (uint8_t)len;
         }
     }
-    if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_space_before_sym)) {
+    if (oj_hash_has_key(ropts, oj_space_before_sym)) {
         if (Qnil == (v = rb_hash_lookup(ropts, oj_space_before_sym))) {
             copts->dump_opts.before_size = 0;
             *copts->dump_opts.before_sep = '\0';
@@ -852,7 +859,7 @@ void oj_parse_options(VALUE ropts, Options copts) {
             copts->dump_opts.before_size = (uint8_t)len;
         }
     }
-    if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_object_nl_sym)) {
+    if (oj_hash_has_key(ropts, oj_object_nl_sym)) {
         if (Qnil == (v = rb_hash_lookup(ropts, oj_object_nl_sym))) {
             copts->dump_opts.hash_size = 0;
             *copts->dump_opts.hash_nl  = '\0';
@@ -867,7 +874,7 @@ void oj_parse_options(VALUE ropts, Options copts) {
             copts->dump_opts.hash_size = (uint8_t)len;
         }
     }
-    if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_array_nl_sym)) {
+    if (oj_hash_has_key(ropts, oj_array_nl_sym)) {
         if (Qnil == (v = rb_hash_lookup(ropts, oj_array_nl_sym))) {
             copts->dump_opts.array_size = 0;
             *copts->dump_opts.array_nl  = '\0';
@@ -916,7 +923,7 @@ void oj_parse_options(VALUE ropts, Options copts) {
     } else if (Qfalse == v) {
         copts->escape_mode = JSONEsc;
     }
-    if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_hash_class_sym)) {
+    if (oj_hash_has_key(ropts, oj_hash_class_sym)) {
         if (Qnil == (v = rb_hash_lookup(ropts, oj_hash_class_sym))) {
             copts->hash_class = Qnil;
         } else {
@@ -924,7 +931,7 @@ void oj_parse_options(VALUE ropts, Options copts) {
             copts->hash_class = v;
         }
     }
-    if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_object_class_sym)) {
+    if (oj_hash_has_key(ropts, oj_object_class_sym)) {
         if (Qnil == (v = rb_hash_lookup(ropts, oj_object_class_sym))) {
             copts->hash_class = Qnil;
         } else {
@@ -932,7 +939,7 @@ void oj_parse_options(VALUE ropts, Options copts) {
             copts->hash_class = v;
         }
     }
-    if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_array_class_sym)) {
+    if (oj_hash_has_key(ropts, oj_array_class_sym)) {
         if (Qnil == (v = rb_hash_lookup(ropts, oj_array_class_sym))) {
             copts->array_class = Qnil;
         } else {
@@ -941,7 +948,7 @@ void oj_parse_options(VALUE ropts, Options copts) {
         }
     }
     oj_parse_opt_match_string(&copts->str_rx, ropts);
-    if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, ignore_sym)) {
+    if (oj_hash_has_key(ropts, ignore_sym)) {
         xfree(copts->ignore);
         copts->ignore = NULL;
         if (Qnil != (v = rb_hash_lookup(ropts, ignore_sym))) {
@@ -1239,6 +1246,38 @@ static VALUE safe_load(VALUE self, VALUE doc) {
  * - *io* [_IO__|_String_] IO Object to read from
  */
 
+struct dump_arg {
+    struct _out     *out;
+    struct _options *copts;
+    int    argc;
+    VALUE *argv;
+};
+
+static VALUE dump_body(VALUE a)
+{
+    volatile struct dump_arg *arg = (void *)a;
+    VALUE           rstr;
+
+    oj_dump_obj_to_json_using_params(*arg->argv, arg->copts, arg->out, arg->argc - 1, arg->argv + 1);
+    if (0 == arg->out->buf) {
+        rb_raise(rb_eNoMemError, "Not enough memory.");
+    }
+    rstr = rb_str_new2(arg->out->buf);
+    rstr = oj_encode(rstr);
+
+    return rstr;
+}
+
+static VALUE dump_ensure(VALUE a)
+{
+    volatile struct dump_arg *arg = (void *)a;
+
+    if (arg->out->allocated) {
+        xfree(arg->out->buf);
+    }
+    return Qnil;
+}
+
 /* Document-method: dump
  * call-seq: dump(obj, options={})
  *
@@ -1248,9 +1287,9 @@ static VALUE safe_load(VALUE self, VALUE doc) {
  */
 static VALUE dump(int argc, VALUE *argv, VALUE self) {
     char            buf[4096];
+    struct dump_arg arg;
     struct _out     out;
     struct _options copts = oj_default_options;
-    VALUE           rstr;
 
     if (1 > argc) {
         rb_raise(rb_eArgError, "wrong number of arguments (0 for 1).");
@@ -1264,21 +1303,18 @@ static VALUE dump(int argc, VALUE *argv, VALUE self) {
     if (CompatMode == copts.mode && copts.escape_mode != ASCIIEsc) {
         copts.escape_mode = JSONEsc;
     }
-    out.buf       = buf;
-    out.end       = buf + sizeof(buf) - 10;
-    out.allocated = false;
-    out.omit_nil  = copts.dump_opts.omit_nil;
-    out.caller    = CALLER_DUMP;
-    oj_dump_obj_to_json_using_params(*argv, &copts, &out, argc - 1, argv + 1);
-    if (0 == out.buf) {
-        rb_raise(rb_eNoMemError, "Not enough memory.");
-    }
-    rstr = rb_str_new2(out.buf);
-    rstr = oj_encode(rstr);
-    if (out.allocated) {
-        xfree(out.buf);
-    }
-    return rstr;
+    arg.out = &out;
+    arg.copts = &copts;
+    arg.argc = argc;
+    arg.argv = argv;
+
+    arg.out->buf       = buf;
+    arg.out->end       = buf + sizeof(buf) - 10;
+    arg.out->allocated = false;
+    arg.out->omit_nil  = copts.dump_opts.omit_nil;
+    arg.out->caller    = CALLER_DUMP;
+
+    return rb_ensure(dump_body, (VALUE)&arg, dump_ensure, (VALUE)&arg);
 }
 
 /* Document-method: to_json
@@ -1790,7 +1826,6 @@ void Init_oj() {
     oj_file_id               = rb_intern("file?");
     oj_fileno_id             = rb_intern("fileno");
     oj_ftype_id              = rb_intern("ftype");
-    oj_has_key_id            = rb_intern("has_key?");
     oj_hash_end_id           = rb_intern("hash_end");
     oj_hash_key_id           = rb_intern("hash_key");
     oj_hash_set_id           = rb_intern("hash_set");

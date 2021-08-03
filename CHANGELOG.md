@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.12.3 - 2021-08-02
+
+- Update documents for the `:cache_keys` and `:cache_strings`.
+
+- Watson1978 increasd dump performance for rails mode.
+
 ## 3.12.2 - 2021-07-25
 
 - Thanks to Watson1978 for the dump performance for time values.

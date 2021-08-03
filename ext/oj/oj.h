@@ -245,6 +245,7 @@ extern VALUE oj_compat_parse_cstr(int argc, VALUE *argv, char *json, size_t len)
 extern VALUE oj_object_parse_cstr(int argc, VALUE *argv, char *json, size_t len);
 extern VALUE oj_custom_parse_cstr(int argc, VALUE *argv, char *json, size_t len);
 
+extern bool oj_hash_has_key(VALUE hash, VALUE key);
 extern void oj_parse_options(VALUE ropts, Options copts);
 
 extern void oj_dump_obj_to_json(VALUE obj, Options copts, Out out);
@@ -327,7 +328,6 @@ extern ID oj_exclude_end_id;
 extern ID oj_file_id;
 extern ID oj_fileno_id;
 extern ID oj_ftype_id;
-extern ID oj_has_key_id;
 extern ID oj_hash_end_id;
 extern ID oj_hash_key_id;
 extern ID oj_hash_set_id;

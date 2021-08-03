@@ -70,13 +70,17 @@ This can also be set with `:decimal_class` when used as a load or
 parse option to match the JSON gem. In that case either `Float`,
 `BigDecimal`, or `nil` can be provided.
 
-### :compat_bigdecimal [Boolean]
+### :cache_keys [Boolean]
 
-Determines how to load decimals when in `:compat` mode.
+If true Hash keys are cached or interned. There are trade-offs with
+caching keys. Large caches will use more memory and in extreme cases
+(like over a million) the cache may be slower than not using
+it. Repeated parsing of similar JSON docs is where cache_keys shines.
 
- - `true` convert all decimal numbers to BigDecimal.
+### :cache_strings [Int]
 
- - `false` convert all decimal numbers to Float.
+Shorter strings can be cached for better performance. A limit,
+cache_strings, defines the upper limit on what strings are cached.
 
 ### :circular [Boolean]
 
@@ -89,6 +93,14 @@ recreate the looped references on load.
 
 Cache classes for faster parsing. This option should not be used if
 dynamically modifying classes or reloading classes then don't use this.
+
+### :compat_bigdecimal [Boolean]
+
+Determines how to load decimals when in `:compat` mode.
+
+ - `true` convert all decimal numbers to BigDecimal.
+
+ - `false` convert all decimal numbers to Float.
 
 ### :create_additions
 
