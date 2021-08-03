@@ -97,6 +97,8 @@ information.
 | :bigdecimal_as_decimal | Boolean |         |         |         |       3 |       x |       x |         |
 | :bigdecimal_load       | Boolean |         |         |         |         |         |       x |         |
 | :compat_bigdecimal     | Boolean |         |         |       x |         |         |       x |         |
+| :cache_keys            | Boolean |       x |       x |       x |       x |         |       x |         |
+| :cache_strings         | Fixnum  |       x |       x |       x |       x |         |       x |         |
 | :circular              | Boolean |       x |       x |       x |       x |       x |       x |         |
 | :class_cache           | Boolean |         |         |         |         |       x |       x |         |
 | :create_additions      | Boolean |         |         |       x |       x |         |       x |         |

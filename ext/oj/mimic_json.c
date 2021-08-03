@@ -464,19 +464,19 @@ oj_mimic_pretty_generate(int argc, VALUE *argv, VALUE self) {
     } else {
         h = argv[1];
     }
-    if (Qfalse == rb_funcall(h, oj_has_key_id, 1, oj_indent_sym)) {
+    if (!oj_hash_has_key(h, oj_indent_sym)) {
         rb_hash_aset(h, oj_indent_sym, rb_str_new2("  "));
     }
-    if (Qfalse == rb_funcall(h, oj_has_key_id, 1, oj_space_before_sym)) {
+    if (!oj_hash_has_key(h, oj_space_before_sym)) {
         rb_hash_aset(h, oj_space_before_sym, rb_str_new2(""));
     }
-    if (Qfalse == rb_funcall(h, oj_has_key_id, 1, oj_space_sym)) {
+    if (!oj_hash_has_key(h, oj_space_sym)) {
         rb_hash_aset(h, oj_space_sym, rb_str_new2(" "));
     }
-    if (Qfalse == rb_funcall(h, oj_has_key_id, 1, oj_object_nl_sym)) {
+    if (!oj_hash_has_key(h, oj_object_nl_sym)) {
         rb_hash_aset(h, oj_object_nl_sym, rb_str_new2("\n"));
     }
-    if (Qfalse == rb_funcall(h, oj_has_key_id, 1, oj_array_nl_sym)) {
+    if (!oj_hash_has_key(h, oj_array_nl_sym)) {
         rb_hash_aset(h, oj_array_nl_sym, rb_str_new2("\n"));
     }
     if (Qundef == state_class) {
@@ -548,7 +548,7 @@ static VALUE mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
             pi.options.allow_nan = (Qtrue == v) ? Yes : No;
         }
 
-        if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_hash_class_sym)) {
+        if (oj_hash_has_key(ropts, oj_hash_class_sym)) {
             if (Qnil == (v = rb_hash_lookup(ropts, oj_hash_class_sym))) {
                 pi.options.hash_class = Qnil;
             } else {
@@ -556,7 +556,7 @@ static VALUE mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
                 pi.options.hash_class = v;
             }
         }
-        if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_object_class_sym)) {
+        if (oj_hash_has_key(ropts, oj_object_class_sym)) {
             if (Qnil == (v = rb_hash_lookup(ropts, oj_object_class_sym))) {
                 pi.options.hash_class = Qnil;
             } else {
@@ -564,7 +564,7 @@ static VALUE mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
                 pi.options.hash_class = v;
             }
         }
-        if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_array_class_sym)) {
+        if (oj_hash_has_key(ropts, oj_array_class_sym)) {
             if (Qnil == (v = rb_hash_lookup(ropts, oj_array_class_sym))) {
                 pi.options.array_class = Qnil;
             } else {
@@ -572,7 +572,7 @@ static VALUE mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
                 pi.options.array_class = v;
             }
         }
-        if (Qtrue == rb_funcall(ropts, oj_has_key_id, 1, oj_decimal_class_sym)) {
+        if (oj_hash_has_key(ropts, oj_decimal_class_sym)) {
             pi.options.compat_bigdec = (oj_bigdecimal_class ==
                                         rb_hash_lookup(ropts, oj_decimal_class_sym));
         }
