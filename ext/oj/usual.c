@@ -239,7 +239,11 @@ static void close_object(ojParser p) {
     for (VALUE *vp = head; kp < d->ktail; kp++, vp += 2) {
         // TBD symbol or string
         *vp = d->get_key(p, kp);
+	if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
+	    xfree(kp->key);
+	}
     }
+    d->ktail = d->khead + c->ki;
     rb_hash_bulk_insert(d->vtail - head, head, obj);
     d->vtail = head;
     head--;
