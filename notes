@@ -9,6 +9,12 @@
   - move cache/intern options to delegates
   - move intern to delegates so no need for lock
    - create as needed based on options
+   - Hash
+    - oj_hash_create(int size, VALUE (*intern)(const char *key, size_t len))
+     - size is bits (13 for 8192)
+    - always return VALUE, cast to ID if needed
+    - oj_hash_intern(const char *key, size_t len)
+
 
   - options
    - symbol_keys
