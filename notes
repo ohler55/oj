@@ -19,6 +19,7 @@
    - hash_class
    - array_class
    - detect_time
+   - initial size (stack sizes and intern hash?)
   - design
 
   - stack of VALUEs
