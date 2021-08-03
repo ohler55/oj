@@ -35,6 +35,7 @@ typedef struct _delegate {
     Key ktail;
     Key kend;
 
+    VALUE (*get_key)(ojParser p, Key kp);
     bool thread_safe;
 } * Delegate;
 
@@ -81,13 +82,13 @@ static void debug(const char *label, Delegate d) {
         }
     }
     if (NULL != kp) {
-	for (int i = 0; kp < d->ktail; kp++, i++) {
-	    const char *key = kp->buf;
-	    if ((int)(sizeof(kp->buf) - 1) <= kp->len) {
-		key = kp->key;
-	    }
-	    snprintf(lines[(d->ctail - 1)->vi + 1 + 2 * i].pre, sizeof(lines->pre), "  '%s'", key);
-	}
+        for (int i = 0; kp < d->ktail; kp++, i++) {
+            const char *key = kp->buf;
+            if ((int)(sizeof(kp->buf) - 1) <= kp->len) {
+                key = kp->key;
+            }
+            snprintf(lines[(d->ctail - 1)->vi + 1 + 2 * i].pre, sizeof(lines->pre), "  '%s'", key);
+        }
     }
     for (lp = lines; '\0' != *lp->val; lp++) {
         printf("  %-16s %s\n", lp->pre, lp->val);
@@ -123,24 +124,20 @@ static void push(ojParser p, VALUE v) {
     d->vtail++;
 }
 
-static VALUE get_key(ojParser p, Key kp) {
-    Delegate       d = (Delegate)p->ctx;
-    volatile VALUE rkey;
+static VALUE intern_key(ojParser p, Key kp) {
+    Delegate d = (Delegate)p->ctx;
 
-    if (p->cache_keys) {
-        if ((size_t)kp->len < sizeof(kp->buf) - 1) {
-            rkey = oj_str_intern(kp->buf, kp->len, d->thread_safe);
-        } else {
-            rkey = oj_str_intern(kp->key, kp->len, d->thread_safe);
-        }
-    } else {
-        if ((size_t)kp->len < sizeof(kp->buf) - 1) {
-	    rkey = rb_utf8_str_new(kp->buf, kp->len);
-        } else {
-	    rkey = rb_utf8_str_new(kp->key, kp->len);
-        }
+    if ((size_t)kp->len < sizeof(kp->buf) - 1) {
+        return oj_str_intern(kp->buf, kp->len, d->thread_safe);
     }
-    return rkey;
+    return oj_str_intern(kp->key, kp->len, d->thread_safe);
+}
+
+static VALUE create_key(ojParser p, Key kp) {
+    if ((size_t)kp->len < sizeof(kp->buf) - 1) {
+	return rb_utf8_str_new(kp->buf, kp->len);
+    }
+    return rb_utf8_str_new(kp->key, kp->len);
 }
 
 static void push_key(ojParser p) {
@@ -241,7 +238,7 @@ static void close_object(ojParser p) {
     obj = rb_hash_new();
     for (VALUE *vp = head; kp < d->ktail; kp++, vp += 2) {
         // TBD symbol or string
-        *vp = get_key(p, kp);
+        *vp = d->get_key(p, kp);
     }
     rb_hash_bulk_insert(d->vtail - head, head, obj);
     d->vtail = head;
@@ -320,7 +317,7 @@ static void add_str(ojParser p) {
     const char *   str = buf_str(&p->buf);
     size_t         len = buf_len(&p->buf);
 
-    if (p->cache_str <= len) {
+    if (len < p->cache_str) {
         rstr = oj_str_intern(str, len, ((Delegate)p->ctx)->thread_safe);
     } else {
         rstr = rb_utf8_str_new(str, len);
@@ -333,7 +330,7 @@ static void add_str_key(ojParser p) {
     const char *   str = buf_str(&p->buf);
     size_t         len = buf_len(&p->buf);
 
-    if (p->cache_str <= len) {
+    if (len < p->cache_str) {
         rstr = oj_str_intern(str, len, ((Delegate)p->ctx)->thread_safe);
     } else {
         rstr = rb_utf8_str_new(str, len);
@@ -356,7 +353,7 @@ static VALUE option(ojParser p, const char *key, VALUE value) {
         }
         return value;
     }
-    rb_raise(rb_eArgError, "%s is not an option for the SAJ (Simple API for JSON) delegate", key);
+    rb_raise(rb_eArgError, "%s is not an option for the Usual delegate", key);
 
     return Qnil;  // Never reached due to the raise but required by the compiler.
 }
@@ -411,9 +408,11 @@ void oj_set_parser_usual(ojParser p) {
     d->vend  = d->vhead + cap;
     d->vtail = d->vhead;
 
-    d->khead = ALLOC_N(union _key, cap);
-    d->kend  = d->khead + cap;
-    d->ktail = d->khead;
+    d->khead   = ALLOC_N(union _key, cap);
+    d->kend    = d->khead + cap;
+    d->ktail   = d->khead;
+    d->get_key = intern_key;
+    //d->get_key = create_key;
 
     cap      = 256;
     d->chead = ALLOC_N(struct _col, cap);

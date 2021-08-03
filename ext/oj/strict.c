@@ -17,7 +17,7 @@ VALUE oj_cstr_to_value(const char *str, size_t len, size_t cache_str) {
     volatile VALUE rstr = Qnil;
 
     if (len <= cache_str) {
-	rstr = oj_str_intern(str, len, false); // TBD lock if thread_safe
+	rstr = oj_str_intern(str, len, true); // TBD lock if thread_safe
     } else {
         rstr = rb_str_new(str, len);
         rstr = oj_encode(rstr);
@@ -40,9 +40,9 @@ VALUE oj_calc_hash_key(ParseInfo pi, Val parent) {
         return rkey;
     }
     if (Yes == pi->options.sym_key) {
-	rkey = oj_sym_intern(parent->key, parent->klen, false);
+	rkey = oj_sym_intern(parent->key, parent->klen, true);
     } else {
-	rkey = oj_str_intern(parent->key, parent->klen, false); // TBD lock if thread_safe
+	rkey = oj_str_intern(parent->key, parent->klen, true); // TBD lock if thread_safe
     }
     return rkey;
 }

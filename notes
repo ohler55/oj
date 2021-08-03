@@ -6,8 +6,9 @@
 - parser
  - saj
  - usual
-  - test all primitive types
-  - create collection stack (index into vstack, index to key stack (negative indicates arrary)
+  - move cache/intern options to delegates
+  - move intern to delegates so no need for lock
+   - create as needed based on options
 
   - options
    - symbol_keys

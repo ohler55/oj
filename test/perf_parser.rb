@@ -10,7 +10,6 @@ require 'perf'
 require 'oj'
 
 $verbose = false
-$indent = 0
 $iter = 50_000
 $with_bignum = false
 $size = 1
@@ -20,7 +19,6 @@ $thread_safe = false
 opts = OptionParser.new
 opts.on("-v", "verbose")                                  { $verbose = true }
 opts.on("-c", "--count [Int]", Integer, "iterations")     { |i| $iter = i }
-opts.on("-i", "--indent [Int]", Integer, "indentation")   { |i| $indent = i }
 opts.on("-s", "--size [Int]", Integer, "size (~Kbytes)")  { |i| $size = i }
 opts.on("-b", "with bignum")                              { $with_bignum = true }
 opts.on("-k", "no cache")                                 { $cache_keys = false }
@@ -50,6 +48,11 @@ end
 
 $json = Oj.dump($obj)
 $failed = {} # key is same as String used in tests later
+if $cache_keys
+  Oj.default_options = {cache_keys: true, cache_str: 5}
+else
+  Oj.default_options = {cache_keys: false, cache_str: 0}
+end
 
 class AllSaj
   def initialize()
@@ -82,7 +85,7 @@ all_handler = AllSaj.new()
 if $verbose
   puts "json:\n#{$json}\n"
 end
-
+=begin
 ### Validate ######################
 p_val = Oj::Parser.new(:validate)
 
@@ -106,12 +109,12 @@ perf = Perf.new()
 perf.add('Oj::Parser.saj', 'all') { p_all.parse($json) }
 perf.add('Oj::Saj.all', 'all') { Oj.saj_parse(all_handler, $json) }
 perf.run($iter)
-
+=end
 ### Usual ######################
 p_usual = Oj::Parser.new(:usual)
 p_usual.cache_keys = $cache_keys
+p_usual.cache_strings = ($cache_keys ? 5 : 0)
 p_usual.thread_safe = $thread_safe
-p_usual.cache_strings = 5
 
 puts '-' * 80
 puts "Parse Usual Performance"
