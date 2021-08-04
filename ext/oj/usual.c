@@ -38,10 +38,10 @@ typedef struct _delegate {
     VALUE (*get_key)(ojParser p, Key kp);
     struct _cache *key_cache;  // same as str_cache or sym_cache
     struct _cache *str_cache;
+    struct _cache *sym_cache;
 
     uint8_t cache_str;
     bool    cache_keys;
-    bool    thread_safe;
 } * Delegate;
 
 #if DEBUG
@@ -110,6 +110,14 @@ static char *str_dup(const char *s, size_t len) {
     return d;
 }
 
+static VALUE form_str(const char *str, size_t len) {
+    return rb_str_freeze(rb_utf8_str_new(str, len));
+}
+
+static VALUE form_sym(const char *str, size_t len) {
+    return rb_str_intern(rb_utf8_str_new(str, len));
+}
+
 static void assure_cstack(Delegate d) {
     if (d->cend <= d->ctail + 1) {
         size_t cap = d->cend - d->chead;
@@ -147,11 +155,18 @@ static VALUE cache_key(ojParser p, Key kp) {
     return cache_intern(d->key_cache, kp->key, kp->len);
 }
 
-static VALUE create_key(ojParser p, Key kp) {
+static VALUE str_key(ojParser p, Key kp) {
     if ((size_t)kp->len < sizeof(kp->buf) - 1) {
         return rb_utf8_str_new(kp->buf, kp->len);
     }
     return rb_utf8_str_new(kp->key, kp->len);
+}
+
+static VALUE sym_key(ojParser p, Key kp) {
+    if ((size_t)kp->len < sizeof(kp->buf) - 1) {
+        return rb_str_intern(rb_utf8_str_new(kp->buf, kp->len));
+    }
+    return rb_str_intern(rb_utf8_str_new(kp->key, kp->len));
 }
 
 static void push_key(ojParser p) {
@@ -366,16 +381,22 @@ static VALUE option(ojParser p, const char *key, VALUE value) {
         return d->cache_keys ? Qtrue : Qfalse;
     }
     if (0 == strcmp(key, "cache_keys=")) {
-	if (Qtrue == value) {
-	    d->cache_keys = true;
-	    d->get_key = cache_key;
-	    // TBD check symbol_keys
-	    d->key_cache = d->str_cache;
-	} else {
-	    d->cache_keys = false;
-	    d->get_key = create_key;
-	    // TBD check symbol_keys
-	}
+        if (Qtrue == value) {
+            d->cache_keys = true;
+            d->get_key    = cache_key;
+            if (NULL == d->sym_cache) {
+                d->key_cache = d->str_cache;
+            } else {
+                d->key_cache = d->sym_cache;
+            }
+        } else {
+            d->cache_keys = false;
+            if (NULL == d->sym_cache) {
+                d->get_key = str_key;
+            } else {
+                d->get_key = sym_key;
+            }
+        }
         return d->cache_keys ? Qtrue : Qfalse;
     }
     if (0 == strcmp(key, "cache_strings")) {
@@ -392,6 +413,49 @@ static VALUE option(ojParser p, const char *key, VALUE value) {
         d->cache_str = limit;
 
         return INT2NUM((int)d->cache_str);
+    }
+    if (0 == strcmp(key, "symbol_keys")) {
+        return (NULL != d->sym_cache) ? Qtrue : Qfalse;
+    }
+    if (0 == strcmp(key, "symbol_keys=")) {
+        if (Qtrue == value) {
+            d->sym_cache = cache_create(0, form_sym, true);
+            d->key_cache = d->sym_cache;
+            if (!d->cache_keys) {
+                d->get_key = sym_key;
+            }
+        } else {
+            if (NULL != d->sym_cache) {
+                cache_free(d->sym_cache);
+                d->sym_cache = NULL;
+            }
+            if (!d->cache_keys) {
+                d->get_key = str_key;
+            }
+        }
+        return (NULL != d->sym_cache) ? Qtrue : Qfalse;
+    }
+    if (0 == strcmp(key, "capacity")) {
+        return ULONG2NUM(d->vend - d->vhead);
+    }
+    if (0 == strcmp(key, "capacity=")) {
+        long cap = NUM2LONG(value);
+
+	if (d->vend - d->vhead < cap) {
+	    long   pos = d->vtail - d->vhead;
+
+	    REALLOC_N(d->vhead, VALUE, cap);
+	    d->vtail = d->vhead + pos;
+	    d->vend  = d->vhead + cap;
+	}
+	if (d->kend - d->khead < cap) {
+	    long   pos = d->ktail - d->khead;
+
+	    REALLOC_N(d->khead, union _key, cap);
+	    d->ktail = d->khead + pos;
+	    d->kend  = d->khead + cap;
+	}
+        return ULONG2NUM(d->vend - d->vhead);
     }
     rb_raise(rb_eArgError, "%s is not an option for the Usual delegate", key);
 
@@ -419,6 +483,9 @@ static void dfree(ojParser p) {
     Delegate d = (Delegate)p->ctx;
 
     cache_free(d->str_cache);
+    if (NULL != d->sym_cache) {
+        cache_free(d->sym_cache);
+    }
     xfree(d->vhead);
     xfree(d->chead);
     xfree(d->khead);
@@ -437,9 +504,6 @@ static void mark(ojParser p) {
         }
     }
 }
-static VALUE form_str(const char *str, size_t len) {
-    return rb_str_freeze(rb_utf8_str_new(str, len));
-}
 
 void oj_set_parser_usual(ojParser p) {
     Delegate d   = ALLOC(struct _delegate);
@@ -449,17 +513,19 @@ void oj_set_parser_usual(ojParser p) {
     d->vend  = d->vhead + cap;
     d->vtail = d->vhead;
 
-    d->khead = ALLOC_N(union _key, cap);
-    d->kend  = d->khead + cap;
-    d->ktail = d->khead;
-    d->get_key = cache_key;
-    d->cache_keys = true;
-    d->cache_str = 6;
+    d->khead      = ALLOC_N(union _key, cap);
+    d->kend       = d->khead + cap;
+    d->ktail      = d->khead;
 
     cap      = 256;
     d->chead = ALLOC_N(struct _col, cap);
     d->cend  = d->chead + cap;
     d->ctail = d->chead;
+
+    d->get_key    = cache_key;
+    d->cache_keys = true;
+    d->cache_str  = 6;
+    d->sym_cache  = NULL;
 
     Funcs f         = &p->funcs[TOP_FUN];
     f->add_null     = add_null;

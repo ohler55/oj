@@ -65,4 +65,20 @@ class UsualTest < Minitest::Test
     }
   end
 
+  def test_symbol_keys
+    p = Oj::Parser.new(:usual)
+    assert_equal(false, p.symbol_keys)
+    p.symbol_keys = true
+    doc = p.parse('{"a": true, "b": false}')
+    assert_equal({a: true, b: false}, doc)
+  end
+
+  def test_capacity
+    p = Oj::Parser.new(:usual)
+    p.capacity = 1000
+    assert_equal(4096, p.capacity)
+    p.capacity = 5000
+    assert_equal(5000, p.capacity)
+  end
+
 end

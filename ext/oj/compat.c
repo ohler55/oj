@@ -33,9 +33,9 @@ static void hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, c
                     rkey = rb_str_intern(rkey);
                 }
             } else if (Yes == pi->options.sym_key) {
-                rkey = oj_sym_intern(key, klen, false);
+                rkey = oj_sym_intern(key, klen);
             } else {
-                rkey = oj_str_intern(key, klen, false);  // TBD lock if thread_safe
+                rkey = oj_str_intern(key, klen);
             }
         }
         if (Yes == pi->options.create_ok && NULL != pi->options.str_rx.head) {

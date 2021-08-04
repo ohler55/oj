@@ -14,7 +14,7 @@ $iter = 50_000
 $with_bignum = false
 $size = 1
 $cache_keys = true
-$thread_safe = false
+$symbol_keys = false
 
 opts = OptionParser.new
 opts.on("-v", "verbose")                                  { $verbose = true }
@@ -22,7 +22,7 @@ opts.on("-c", "--count [Int]", Integer, "iterations")     { |i| $iter = i }
 opts.on("-s", "--size [Int]", Integer, "size (~Kbytes)")  { |i| $size = i }
 opts.on("-b", "with bignum")                              { $with_bignum = true }
 opts.on("-k", "no cache")                                 { $cache_keys = false }
-opts.on("-r", "ractor safe")                              { $thread_safe = true }
+opts.on("-sym", "symbol keys")                            { $symbol_keys = true }
 opts.on("-h", "--help", "Show this display")              { puts opts; Process.exit!(0) }
 files = opts.parse(ARGV)
 
@@ -49,9 +49,9 @@ end
 $json = Oj.dump($obj)
 $failed = {} # key is same as String used in tests later
 if $cache_keys
-  Oj.default_options = {cache_keys: true, cache_str: 5}
+  Oj.default_options = {cache_keys: true, cache_str: 6, symbol_keys: $symbol_keys}
 else
-  Oj.default_options = {cache_keys: false, cache_str: 0}
+  Oj.default_options = {cache_keys: false, cache_str: 0, symbol_keys: $symbol_keys}
 end
 
 class AllSaj
@@ -113,6 +113,7 @@ perf.run($iter)
 p_usual = Oj::Parser.new(:usual)
 p_usual.cache_keys = $cache_keys
 p_usual.cache_strings = ($cache_keys ? 6 : 0)
+p_usual.symbol_keys = $symbol_keys
 
 puts '-' * 80
 puts "Parse Usual Performance"

@@ -10,9 +10,9 @@ struct _parseInfo;
 
 extern void oj_hash_init();
 
-extern VALUE oj_str_intern(const char *key, size_t len, bool safe);
-extern VALUE oj_sym_intern(const char *key, size_t len, bool safe);
-extern ID    oj_attr_intern(const char *key, size_t len, bool safe);
+extern VALUE oj_str_intern(const char *key, size_t len);
+extern VALUE oj_sym_intern(const char *key, size_t len);
+extern ID    oj_attr_intern(const char *key, size_t len);
 extern VALUE oj_class_intern(const char *       key,
                              size_t             len,
                              bool               safe,

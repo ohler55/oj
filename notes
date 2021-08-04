@@ -4,69 +4,30 @@
 ^c^s show subtree
 
 - parser
- - saj
-  - use cache instead of itern
  - usual
-  - move cache/intern options to delegates
-  - move intern to delegates so no need for lock
-   - create as needed based on options
-   - Hash
-    - oj_hash_create(int size, VALUE (*intern)(const char *key, size_t len))
-     - size is bits (13 for 8192)
-    - always return VALUE, cast to ID if needed
-    - oj_hash_intern(const char *key, size_t len)
-
   - options
-   - symbol_keys
-   - class create option (create_id)
-   - class_cache
-   - omit_null - skip null hash and object members
+   + symbol_keys
+   + initial size
    - bigdecimal_load* [_:bigdecimal_|_:float_|_:auto_|_:fast_]
+   - class create option (create_id)
    - hash_class
    - array_class
+   - class_cache
+   - omit_null - skip null hash and object members
    - detect_time
-   - initial size (stack sizes and intern hash?)
-  - design
-
-  - stack of VALUEs
-  - stack of indices pointing to last collection
-  - on close, use stack for settind array in batch
-   - for has put keys on stack too
-    - what happens when switching to an object?
-     - maybe object uses ID for setting
-     - sym does go to id or str(value)
-    - maybe parallel set of keys as string (could resuse or cache and reuse allocated string)
-    -
-
 
  - rails
  - object?
 
-- new parser reasons
- - parser itself is faster dues to reduced branching
+- new parser reasons or design notes
+ - parser itself is faster due to reduced branching
  - bulk array create - 15x
  - bulk hash - 3x
  - reuse of memory
  - better control over options
-
- - modes
-  - strict and compat can be the same - standard/regular/common/usual
-   - stardard and common as aliases
-  - object is different
-
- - strict
-  - grow stack with market for start of hash or array (for object mode flag for hash or object)
-  - double stacks?
-   - one for values and one for hash/array start mark
-
-- more efficient array and hash creation
-  - void rb_hash_bulk_insert(long, const VALUE *, VALUE);
-  - rb_hash_bulk_insert_into_st_table(long argc, const VALUE *argv, VALUE hash)
-  - VALUE rb_ary_new_from_values(long n, const VALUE *elts);
-  - or VALUE rb_ary_new_from_args(long n, ...);
+ - auto rehash of cache
 
 - add default_options[]= method
-- freeze cached strings
 
 - big decimal
  - just in custom mode, maybe in strict?

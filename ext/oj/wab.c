@@ -303,7 +303,7 @@ static VALUE calc_hash_key(ParseInfo pi, Val parent) {
         return rkey;
     }
     if (Yes == pi->options.cache_keys) {
-        rkey = oj_sym_intern(parent->key, parent->klen, false);
+        rkey = oj_sym_intern(parent->key, parent->klen);
     } else {
         rkey = rb_str_new(parent->key, parent->klen);
         rkey = oj_encode(rkey);

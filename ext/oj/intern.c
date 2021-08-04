@@ -133,124 +133,84 @@ void oj_hash_sizes() {
 }
 
 VALUE
-oj_str_intern(const char *key, size_t len, bool safe) {
+oj_str_intern(const char *key, size_t len) {
     uint32_t h      = hash_calc((const uint8_t *)key, len) & HASH_MASK;
     KeyVal   bucket = str_hash.slots + h;
     KeyVal   b;
 
-    if (safe) {
 #if HAVE_PTHREAD_MUTEX_INIT
-        pthread_mutex_lock(&str_hash.mutex);
+    pthread_mutex_lock(&str_hash.mutex);
 #else
-        rb_mutex_lock(str_hash.mutex);
+    rb_mutex_lock(str_hash.mutex);
 #endif
-        if (NULL != bucket->key) {  // not the top slot
-            for (b = bucket; 0 != b; b = b->next) {
-                if (len == b->len && 0 == strncmp(b->key, key, len)) {
+    if (NULL != bucket->key) {  // not the top slot
+        for (b = bucket; 0 != b; b = b->next) {
+            if (len == b->len && 0 == strncmp(b->key, key, len)) {
 #if HAVE_PTHREAD_MUTEX_INIT
-                    pthread_mutex_unlock(&str_hash.mutex);
+                pthread_mutex_unlock(&str_hash.mutex);
 #else
-                    rb_mutex_unlock(str_hash.mutex);
+                rb_mutex_unlock(str_hash.mutex);
 #endif
-                    return b->val;
-                }
-                bucket = b;
+                return b->val;
             }
-            b            = ALLOC(struct _keyVal);
-            b->next      = NULL;
-            bucket->next = b;
-            bucket       = b;
+            bucket = b;
         }
-        bucket->key = oj_strndup(key, len);
-        bucket->len = len;
-        bucket->val = rb_utf8_str_new(key, len);
-        bucket->val = rb_str_freeze(bucket->val);
-        rb_gc_register_address(&bucket->val);
-#if HAVE_PTHREAD_MUTEX_INIT
-        pthread_mutex_unlock(&str_hash.mutex);
-#else
-        rb_mutex_unlock(str_hash.mutex);
-#endif
-    } else {
-        if (NULL != bucket->key) {
-            for (b = bucket; 0 != b; b = b->next) {
-                if (len == b->len && 0 == strncmp(b->key, key, len)) {
-                    return b->val;
-                }
-                bucket = b;
-            }
-            b            = ALLOC(struct _keyVal);
-            b->next      = NULL;
-            bucket->next = b;
-            bucket       = b;
-        }
-        bucket->key = oj_strndup(key, len);
-        bucket->len = len;
-        bucket->val = rb_utf8_str_new(key, len);
-        bucket->val = rb_str_freeze(bucket->val);
-        rb_gc_register_address(&bucket->val);
+        b            = ALLOC(struct _keyVal);
+        b->next      = NULL;
+        bucket->next = b;
+        bucket       = b;
     }
+    bucket->key = oj_strndup(key, len);
+    bucket->len = len;
+    bucket->val = rb_utf8_str_new(key, len);
+    bucket->val = rb_str_freeze(bucket->val);
+    rb_gc_register_address(&bucket->val);
+#if HAVE_PTHREAD_MUTEX_INIT
+    pthread_mutex_unlock(&str_hash.mutex);
+#else
+    rb_mutex_unlock(str_hash.mutex);
+#endif
     return bucket->val;
 }
 
 VALUE
-oj_sym_intern(const char *key, size_t len, bool safe) {
+oj_sym_intern(const char *key, size_t len) {
     uint32_t h      = hash_calc((const uint8_t *)key, len) & HASH_MASK;
     KeyVal   bucket = sym_hash.slots + h;
     KeyVal   b;
 
-    if (safe) {
 #if HAVE_PTHREAD_MUTEX_INIT
-        pthread_mutex_lock(&sym_hash.mutex);
+    pthread_mutex_lock(&sym_hash.mutex);
 #else
-        rb_mutex_lock(sym_hash.mutex);
+    rb_mutex_lock(sym_hash.mutex);
 #endif
-        if (NULL != bucket->key) {  // not the top slot
-            for (b = bucket; 0 != b; b = b->next) {
-                if (len == b->len && 0 == strncmp(b->key, key, len)) {
+    if (NULL != bucket->key) {  // not the top slot
+        for (b = bucket; 0 != b; b = b->next) {
+            if (len == b->len && 0 == strncmp(b->key, key, len)) {
 #if HAVE_PTHREAD_MUTEX_INIT
-                    pthread_mutex_unlock(&sym_hash.mutex);
+                pthread_mutex_unlock(&sym_hash.mutex);
 #else
-                    rb_mutex_unlock(sym_hash.mutex);
+                rb_mutex_unlock(sym_hash.mutex);
 #endif
-                    return b->val;
-                }
-                bucket = b;
+                return b->val;
             }
-            b            = ALLOC(struct _keyVal);
-            b->next      = NULL;
-            bucket->next = b;
-            bucket       = b;
+            bucket = b;
         }
-        bucket->key = oj_strndup(key, len);
-        bucket->len = len;
-        bucket->val = rb_utf8_str_new(key, len);
-        bucket->val = rb_str_intern(bucket->val);
-        rb_gc_register_address(&bucket->val);
-#if HAVE_PTHREAD_MUTEX_INIT
-        pthread_mutex_unlock(&sym_hash.mutex);
-#else
-        rb_mutex_unlock(sym_hash.mutex);
-#endif
-    } else {
-        if (NULL != bucket->key) {
-            for (b = bucket; 0 != b; b = b->next) {
-                if (len == b->len && 0 == strncmp(b->key, key, len)) {
-                    return b->val;
-                }
-                bucket = b;
-            }
-            b            = ALLOC(struct _keyVal);
-            b->next      = NULL;
-            bucket->next = b;
-            bucket       = b;
-        }
-        bucket->key = oj_strndup(key, len);
-        bucket->len = len;
-        bucket->val = rb_utf8_str_new(key, len);
-        bucket->val = rb_str_intern(bucket->val);
-        rb_gc_register_address(&bucket->val);
+        b            = ALLOC(struct _keyVal);
+        b->next      = NULL;
+        bucket->next = b;
+        bucket       = b;
     }
+    bucket->key = oj_strndup(key, len);
+    bucket->len = len;
+    bucket->val = rb_utf8_str_new(key, len);
+    bucket->val = rb_str_intern(bucket->val);
+    rb_gc_register_address(&bucket->val);
+#if HAVE_PTHREAD_MUTEX_INIT
+    pthread_mutex_unlock(&sym_hash.mutex);
+#else
+    rb_mutex_unlock(sym_hash.mutex);
+#endif
     return bucket->val;
 }
 
@@ -285,59 +245,41 @@ static ID form_attr(const char *key, size_t klen) {
     return var_id;
 }
 
-ID oj_attr_intern(const char *key, size_t len, bool safe) {
+ID oj_attr_intern(const char *key, size_t len) {
     uint32_t h      = hash_calc((const uint8_t *)key, len) & HASH_MASK;
     KeyVal   bucket = attr_hash.slots + h;
     KeyVal   b;
 
-    if (safe) {
 #if HAVE_PTHREAD_MUTEX_INIT
-        pthread_mutex_lock(&attr_hash.mutex);
+    pthread_mutex_lock(&attr_hash.mutex);
 #else
-        rb_mutex_lock(attr_hash.mutex);
+    rb_mutex_lock(attr_hash.mutex);
 #endif
-        if (NULL != bucket->key) {  // not the top slot
-            for (b = bucket; 0 != b; b = b->next) {
-                if (len == b->len && 0 == strncmp(b->key, key, len)) {
+    if (NULL != bucket->key) {  // not the top slot
+        for (b = bucket; 0 != b; b = b->next) {
+            if (len == b->len && 0 == strncmp(b->key, key, len)) {
 #if HAVE_PTHREAD_MUTEX_INIT
-                    pthread_mutex_unlock(&attr_hash.mutex);
+                pthread_mutex_unlock(&attr_hash.mutex);
 #else
-                    rb_mutex_unlock(attr_hash.mutex);
+                rb_mutex_unlock(attr_hash.mutex);
 #endif
-                    return (ID)b->val;
-                }
-                bucket = b;
+                return (ID)b->val;
             }
-            b            = ALLOC(struct _keyVal);
-            b->next      = NULL;
-            bucket->next = b;
-            bucket       = b;
+            bucket = b;
         }
-        bucket->key = oj_strndup(key, len);
-        bucket->len = len;
-        bucket->val = (VALUE)form_attr(key, len);
-#if HAVE_PTHREAD_MUTEX_INIT
-        pthread_mutex_unlock(&attr_hash.mutex);
-#else
-        rb_mutex_unlock(attr_hash.mutex);
-#endif
-    } else {
-        if (NULL != bucket->key) {
-            for (b = bucket; 0 != b; b = b->next) {
-                if (len == b->len && 0 == strncmp(b->key, key, len)) {
-                    return (ID)b->val;
-                }
-                bucket = b;
-            }
-            b            = ALLOC(struct _keyVal);
-            b->next      = NULL;
-            bucket->next = b;
-            bucket       = b;
-        }
-        bucket->key = oj_strndup(key, len);
-        bucket->len = len;
-        bucket->val = (VALUE)form_attr(key, len);
+        b            = ALLOC(struct _keyVal);
+        b->next      = NULL;
+        bucket->next = b;
+        bucket       = b;
     }
+    bucket->key = oj_strndup(key, len);
+    bucket->len = len;
+    bucket->val = (VALUE)form_attr(key, len);
+#if HAVE_PTHREAD_MUTEX_INIT
+    pthread_mutex_unlock(&attr_hash.mutex);
+#else
+    rb_mutex_unlock(attr_hash.mutex);
+#endif
     return (ID)bucket->val;
 }
 
@@ -355,8 +297,7 @@ static VALUE resolve_classname(VALUE mod, const char *classname, int auto_define
     return clas;
 }
 
-static VALUE
-resolve_classpath(ParseInfo pi, const char *name, size_t len, int auto_define, VALUE error_class) {
+static VALUE resolve_classpath(ParseInfo pi, const char *name, size_t len, int auto_define, VALUE error_class) {
     char        class_name[1024];
     VALUE       clas;
     char *      end = class_name + sizeof(class_name) - 1;
@@ -392,12 +333,7 @@ resolve_classpath(ParseInfo pi, const char *name, size_t len, int auto_define, V
     return clas;
 }
 
-VALUE oj_class_intern(const char *key,
-                      size_t      len,
-                      bool        safe,
-                      ParseInfo   pi,
-                      int         auto_define,
-                      VALUE       error_class) {
+VALUE oj_class_intern(const char *key, size_t len, bool safe, ParseInfo pi, int auto_define, VALUE error_class) {
     uint32_t h      = hash_calc((const uint8_t *)key, len) & HASH_MASK;
     KeyVal   bucket = class_hash.slots + h;
     KeyVal   b;

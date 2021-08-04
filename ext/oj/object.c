@@ -416,7 +416,7 @@ static int hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, vol
 }
 
 void oj_set_obj_ivar(Val parent, Val kval, VALUE value) {
-    rb_ivar_set(parent->val, oj_attr_intern(kval->key, kval->klen, true), value);
+    rb_ivar_set(parent->val, oj_attr_intern(kval->key, kval->klen), value);
 }
 
 static void hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *orig) {
