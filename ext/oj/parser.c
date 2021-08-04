@@ -905,6 +905,7 @@ static void parse(ojParser p, const byte *json) {
             }
             buf_append_string(&p->buf, (const char *)start, b - start);
             b--;
+	    break;
         case BIG_E:
             buf_append(&p->buf, *b);
             p->map = big_exp_sign_map;

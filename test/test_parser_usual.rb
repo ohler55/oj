@@ -81,4 +81,32 @@ class UsualTest < Minitest::Test
     assert_equal(5000, p.capacity)
   end
 
+  def test_decimal
+    p = Oj::Parser.new(:usual)
+    assert_equal(:auto, p.decimal)
+    doc = p.parse('1.234567890123456789')
+    assert_equal(BigDecimal, doc.class)
+    assert_equal('0.1234567890123456789e1', doc.to_s)
+    doc = p.parse('1.25')
+    assert_equal(Float, doc.class)
+
+    p.decimal = :float
+    assert_equal(:float, p.decimal)
+    doc = p.parse('1.234567890123456789')
+    assert_equal(Float, doc.class)
+
+    p.decimal = :bigdecimal
+    assert_equal(:bigdecimal, p.decimal)
+    doc = p.parse('1.234567890123456789')
+    assert_equal(BigDecimal, doc.class)
+    doc = p.parse('1.25')
+    assert_equal(BigDecimal, doc.class)
+    assert_equal('0.125e1', doc.to_s)
+
+    p.decimal = :ruby
+    assert_equal(:ruby, p.decimal)
+    doc = p.parse('1.234567890123456789')
+    assert_equal(Float, doc.class)
+  end
+
 end

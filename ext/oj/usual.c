@@ -4,8 +4,33 @@
 #include "oj.h"
 #include "parser.h"
 
+// The Usual delegate builds Ruby objects during parsing. It makes use of
+// three stacks. The first is the value stack. This is where parsed values are
+// placed. With the value stack the bulk creation and setting can be used
+// which is significantly faster than setting Array (15x) or Hash (3x)
+// elements one at a time.
+//
+// The second stack is the collection stack. Each element on the collection
+// stack marks the start of a Hash, Array, or Object.
+//
+// The third stack is the key stack which is used for Hash and Object
+// members. The key stack elements store the keys that could be used for
+// either a Hash or Object. Since the decision on whether the parent is a Hash
+// or Object can not be made until the end of the JSON object the keys remain
+// as strings until just before setting the Hash or Object members.
+//
+// The approach taken with the usual delegate is to configure the delegate for
+// the parser up front so that the various options are not checked during
+// parsing and thus avoiding conditionals as much as reasonably possible in
+// the more time sensitive parsing. Configuration is simply setting the
+// function pointers to point to the function to be used for the selected
+// option.
+
 #define DEBUG 0
 
+// Used to mark the start of each Hash, Array, or Object. The members point at
+// positions of the start in the value stack and if not an Array into the key
+// stack.
 typedef struct _col {
     long vi;  // value stack index
     long ki;  // key stack index if an hash else -1 for an array
@@ -336,6 +361,23 @@ static void add_float_key(ojParser p) {
     push2(p, rb_float_new(p->num.dub));
 }
 
+static void add_float_as_big(ojParser p) {
+    char buf[64];
+
+    // fails on ubuntu
+    // snprintf(buf, sizeof(buf), "%Lg", p->num.dub);
+    sprintf(buf, "%Lg", p->num.dub);
+    push(p, rb_funcall(rb_cObject, oj_bigdecimal_id, 1, rb_str_new2(buf)));
+}
+
+static void add_float_as_big_key(ojParser p) {
+    char buf[64];
+
+    snprintf(buf, sizeof(buf), "%Lg", p->num.dub);
+    push_key(p);
+    push2(p, rb_funcall(rb_cObject, oj_bigdecimal_id, 1, rb_str_new2(buf)));
+}
+
 static void add_big(ojParser p) {
     push(p, rb_funcall(rb_cObject, oj_bigdecimal_id, 1, rb_str_new(buf_str(&p->buf), buf_len(&p->buf))));
 }
@@ -343,6 +385,28 @@ static void add_big(ojParser p) {
 static void add_big_key(ojParser p) {
     push_key(p);
     push2(p, rb_funcall(rb_cObject, oj_bigdecimal_id, 1, rb_str_new(buf_str(&p->buf), buf_len(&p->buf))));
+}
+
+static void add_big_as_float(ojParser p) {
+    volatile VALUE big = rb_funcall(rb_cObject, oj_bigdecimal_id, 1, rb_str_new(buf_str(&p->buf), buf_len(&p->buf)));
+
+    push(p, rb_funcall(big, rb_intern("to_f"), 0));
+}
+
+static void add_big_as_float_key(ojParser p) {
+    volatile VALUE big = rb_funcall(rb_cObject, oj_bigdecimal_id, 1, rb_str_new(buf_str(&p->buf), buf_len(&p->buf)));
+
+    push_key(p);
+    push2(p, rb_funcall(big, rb_intern("to_f"), 0));
+}
+
+static void add_big_as_ruby(ojParser p) {
+    push(p, rb_funcall(rb_str_new(buf_str(&p->buf), buf_len(&p->buf)), rb_intern("to_f"), 0));
+}
+
+static void add_big_as_ruby_key(ojParser p) {
+    push_key(p);
+    push2(p, rb_funcall(rb_str_new(buf_str(&p->buf), buf_len(&p->buf)), rb_intern("to_f"), 0));
 }
 
 static void add_str(ojParser p) {
@@ -372,94 +436,6 @@ static void add_str_key(ojParser p) {
     }
     push_key(p);
     push2(p, rstr);
-}
-
-static VALUE option(ojParser p, const char *key, VALUE value) {
-    Delegate d = (Delegate)p->ctx;
-
-    if (0 == strcmp(key, "cache_keys")) {
-        return d->cache_keys ? Qtrue : Qfalse;
-    }
-    if (0 == strcmp(key, "cache_keys=")) {
-        if (Qtrue == value) {
-            d->cache_keys = true;
-            d->get_key    = cache_key;
-            if (NULL == d->sym_cache) {
-                d->key_cache = d->str_cache;
-            } else {
-                d->key_cache = d->sym_cache;
-            }
-        } else {
-            d->cache_keys = false;
-            if (NULL == d->sym_cache) {
-                d->get_key = str_key;
-            } else {
-                d->get_key = sym_key;
-            }
-        }
-        return d->cache_keys ? Qtrue : Qfalse;
-    }
-    if (0 == strcmp(key, "cache_strings")) {
-        return INT2NUM((int)d->cache_str);
-    }
-    if (0 == strcmp(key, "cache_strings=")) {
-        int limit = NUM2INT(value);
-
-        if (CACHE_MAX_KEY < limit) {
-            limit = CACHE_MAX_KEY;
-        } else if (limit < 0) {
-            limit = 0;
-        }
-        d->cache_str = limit;
-
-        return INT2NUM((int)d->cache_str);
-    }
-    if (0 == strcmp(key, "symbol_keys")) {
-        return (NULL != d->sym_cache) ? Qtrue : Qfalse;
-    }
-    if (0 == strcmp(key, "symbol_keys=")) {
-        if (Qtrue == value) {
-            d->sym_cache = cache_create(0, form_sym, true);
-            d->key_cache = d->sym_cache;
-            if (!d->cache_keys) {
-                d->get_key = sym_key;
-            }
-        } else {
-            if (NULL != d->sym_cache) {
-                cache_free(d->sym_cache);
-                d->sym_cache = NULL;
-            }
-            if (!d->cache_keys) {
-                d->get_key = str_key;
-            }
-        }
-        return (NULL != d->sym_cache) ? Qtrue : Qfalse;
-    }
-    if (0 == strcmp(key, "capacity")) {
-        return ULONG2NUM(d->vend - d->vhead);
-    }
-    if (0 == strcmp(key, "capacity=")) {
-        long cap = NUM2LONG(value);
-
-	if (d->vend - d->vhead < cap) {
-	    long   pos = d->vtail - d->vhead;
-
-	    REALLOC_N(d->vhead, VALUE, cap);
-	    d->vtail = d->vhead + pos;
-	    d->vend  = d->vhead + cap;
-	}
-	if (d->kend - d->khead < cap) {
-	    long   pos = d->ktail - d->khead;
-
-	    REALLOC_N(d->khead, union _key, cap);
-	    d->ktail = d->khead + pos;
-	    d->kend  = d->khead + cap;
-	}
-        return ULONG2NUM(d->vend - d->vhead);
-    }
-    rb_raise(rb_eArgError, "%s is not an option for the Usual delegate", key);
-
-    return Qnil;  // Never reached due to the raise but required by the compiler.
 }
 
 static VALUE result(ojParser p) {
@@ -505,6 +481,224 @@ static void mark(ojParser p) {
     }
 }
 
+///// options /////////////////////////////////////////////////////////////////
+
+// Each option is handled by a separate function and then added to an assoc
+// list (struct opt}. The list is then iterated over until there is a name
+// match. This is done primarily to keep each option separate and easier to
+// understand instead of placing all in one large function.
+
+struct opt {
+    const char *name;
+    VALUE (*func)(ojParser p, VALUE value);
+};
+
+static VALUE opt_cache_keys(ojParser p, VALUE value) {
+    Delegate d = (Delegate)p->ctx;
+
+    return d->cache_keys ? Qtrue : Qfalse;
+}
+
+static VALUE opt_cache_keys_set(ojParser p, VALUE value) {
+    Delegate d = (Delegate)p->ctx;
+
+    if (Qtrue == value) {
+        d->cache_keys = true;
+        d->get_key    = cache_key;
+        if (NULL == d->sym_cache) {
+            d->key_cache = d->str_cache;
+        } else {
+            d->key_cache = d->sym_cache;
+        }
+    } else {
+        d->cache_keys = false;
+        if (NULL == d->sym_cache) {
+            d->get_key = str_key;
+        } else {
+            d->get_key = sym_key;
+        }
+    }
+    return d->cache_keys ? Qtrue : Qfalse;
+}
+
+static VALUE opt_cache_strings(ojParser p, VALUE value) {
+    Delegate d = (Delegate)p->ctx;
+
+    return INT2NUM((int)d->cache_str);
+}
+
+static VALUE opt_cache_strings_set(ojParser p, VALUE value) {
+    Delegate d     = (Delegate)p->ctx;
+    int      limit = NUM2INT(value);
+
+    if (CACHE_MAX_KEY < limit) {
+        limit = CACHE_MAX_KEY;
+    } else if (limit < 0) {
+        limit = 0;
+    }
+    d->cache_str = limit;
+
+    return INT2NUM((int)d->cache_str);
+}
+
+static VALUE opt_symbol_keys(ojParser p, VALUE value) {
+    Delegate d = (Delegate)p->ctx;
+
+    return (NULL != d->sym_cache) ? Qtrue : Qfalse;
+}
+
+static VALUE opt_symbol_keys_set(ojParser p, VALUE value) {
+    Delegate d = (Delegate)p->ctx;
+
+    if (Qtrue == value) {
+        d->sym_cache = cache_create(0, form_sym, true);
+        d->key_cache = d->sym_cache;
+        if (!d->cache_keys) {
+            d->get_key = sym_key;
+        }
+    } else {
+        if (NULL != d->sym_cache) {
+            cache_free(d->sym_cache);
+            d->sym_cache = NULL;
+        }
+        if (!d->cache_keys) {
+            d->get_key = str_key;
+        }
+    }
+    return (NULL != d->sym_cache) ? Qtrue : Qfalse;
+}
+
+static VALUE opt_capacity(ojParser p, VALUE value) {
+    Delegate d = (Delegate)p->ctx;
+
+    return ULONG2NUM(d->vend - d->vhead);
+}
+
+static VALUE opt_capacity_set(ojParser p, VALUE value) {
+    Delegate d   = (Delegate)p->ctx;
+    long     cap = NUM2LONG(value);
+
+    if (d->vend - d->vhead < cap) {
+        long pos = d->vtail - d->vhead;
+
+        REALLOC_N(d->vhead, VALUE, cap);
+        d->vtail = d->vhead + pos;
+        d->vend  = d->vhead + cap;
+    }
+    if (d->kend - d->khead < cap) {
+        long pos = d->ktail - d->khead;
+
+        REALLOC_N(d->khead, union _key, cap);
+        d->ktail = d->khead + pos;
+        d->kend  = d->khead + cap;
+    }
+    return ULONG2NUM(d->vend - d->vhead);
+}
+
+static VALUE opt_decimal(ojParser p, VALUE value) {
+    if (add_float_as_big == p->funcs[TOP_FUN].add_float) {
+        return ID2SYM(rb_intern("bigdecimal"));
+    }
+    if (add_big == p->funcs[TOP_FUN].add_big) {
+        return ID2SYM(rb_intern("auto"));
+    }
+    if (add_big_as_float == p->funcs[TOP_FUN].add_big) {
+        return ID2SYM(rb_intern("float"));
+    }
+    if (add_big_as_ruby == p->funcs[TOP_FUN].add_big) {
+        return ID2SYM(rb_intern("ruby"));
+    }
+    return Qnil;
+}
+
+static VALUE opt_decimal_set(ojParser p, VALUE value) {
+    const char *   mode;
+    volatile VALUE s;
+
+    switch (rb_type(value)) {
+    case T_STRING: mode = rb_string_value_ptr(&value); break;
+    case T_SYMBOL:
+        s    = rb_sym_to_s(value);
+        mode = rb_string_value_ptr(&s);
+        break;
+    default:
+        rb_raise(rb_eTypeError,
+                 "the decimal options must be a Symbol or String, not %s.",
+                 rb_class2name(rb_obj_class(value)));
+        break;
+    }
+    if (0 == strcmp("auto", mode)) {
+        p->funcs[TOP_FUN].add_big      = add_big;
+        p->funcs[ARRAY_FUN].add_big    = add_big;
+        p->funcs[OBJECT_FUN].add_big   = add_big_key;
+        p->funcs[TOP_FUN].add_float    = add_float;
+        p->funcs[ARRAY_FUN].add_float  = add_float;
+        p->funcs[OBJECT_FUN].add_float = add_float_key;
+
+        return opt_decimal(p, Qnil);
+    }
+    if (0 == strcmp("bigdecimal", mode)) {
+        p->funcs[TOP_FUN].add_big      = add_big;
+        p->funcs[ARRAY_FUN].add_big    = add_big;
+        p->funcs[OBJECT_FUN].add_big   = add_big_key;
+        p->funcs[TOP_FUN].add_float    = add_float_as_big;
+        p->funcs[ARRAY_FUN].add_float  = add_float_as_big;
+        p->funcs[OBJECT_FUN].add_float = add_float_as_big_key;
+
+        return opt_decimal(p, Qnil);
+    }
+    if (0 == strcmp("float", mode)) {
+        p->funcs[TOP_FUN].add_big      = add_big_as_float;
+        p->funcs[ARRAY_FUN].add_big    = add_big_as_float;
+        p->funcs[OBJECT_FUN].add_big   = add_big_as_float_key;
+        p->funcs[TOP_FUN].add_float    = add_float;
+        p->funcs[ARRAY_FUN].add_float  = add_float;
+        p->funcs[OBJECT_FUN].add_float = add_float_key;
+
+        return opt_decimal(p, Qnil);
+    }
+    if (0 == strcmp("ruby", mode)) {
+        p->funcs[TOP_FUN].add_big      = add_big_as_ruby;
+        p->funcs[ARRAY_FUN].add_big    = add_big_as_ruby;
+        p->funcs[OBJECT_FUN].add_big   = add_big_as_ruby_key;
+        p->funcs[TOP_FUN].add_float    = add_float;
+        p->funcs[ARRAY_FUN].add_float  = add_float;
+        p->funcs[OBJECT_FUN].add_float = add_float_key;
+
+        return opt_decimal(p, Qnil);
+    }
+    rb_raise(rb_eArgError, "%s is not a valid option for the decimal option.", mode);
+
+    return Qnil;
+}
+
+static VALUE option(ojParser p, const char *key, VALUE value) {
+    struct opt opts[] = {
+        {.name = "cache_keys", .func = opt_cache_keys},
+        {.name = "cache_keys=", .func = opt_cache_keys_set},
+        {.name = "cache_strings", .func = opt_cache_strings},
+        {.name = "cache_strings=", .func = opt_cache_strings_set},
+        {.name = "symbol_keys", .func = opt_symbol_keys},
+        {.name = "symbol_keys=", .func = opt_symbol_keys_set},
+        {.name = "capacity", .func = opt_capacity},
+        {.name = "capacity=", .func = opt_capacity_set},
+        {.name = "decimal", .func = opt_decimal},
+        {.name = "decimal=", .func = opt_decimal_set},
+        {.name = NULL},
+    };
+
+    for (struct opt *op = opts; NULL != op->name; op++) {
+        if (0 == strcmp(key, op->name)) {
+            return op->func(p, value);
+        }
+    }
+    rb_raise(rb_eArgError, "%s is not an option for the Usual delegate", key);
+
+    return Qnil;  // Never reached due to the raise but required by the compiler.
+}
+
+///// the set up //////////////////////////////////////////////////////////////
+
 void oj_set_parser_usual(ojParser p) {
     Delegate d   = ALLOC(struct _delegate);
     int      cap = 4096;
@@ -513,9 +707,9 @@ void oj_set_parser_usual(ojParser p) {
     d->vend  = d->vhead + cap;
     d->vtail = d->vhead;
 
-    d->khead      = ALLOC_N(union _key, cap);
-    d->kend       = d->khead + cap;
-    d->ktail      = d->khead;
+    d->khead = ALLOC_N(union _key, cap);
+    d->kend  = d->khead + cap;
+    d->ktail = d->khead;
 
     cap      = 256;
     d->chead = ALLOC_N(struct _col, cap);
