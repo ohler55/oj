@@ -69,6 +69,8 @@ typedef struct _delegate {
     bool    cache_keys;
 } * Delegate;
 
+static ID	to_f_id = 0;
+
 #if DEBUG
 struct debug_line {
     char pre[16];
@@ -316,6 +318,9 @@ static void close_array(ojParser p) {
     *head = a;
 }
 
+static void noop(ojParser p) {
+}
+
 static void add_null(ojParser p) {
     push(p, Qnil);
 }
@@ -390,23 +395,23 @@ static void add_big_key(ojParser p) {
 static void add_big_as_float(ojParser p) {
     volatile VALUE big = rb_funcall(rb_cObject, oj_bigdecimal_id, 1, rb_str_new(buf_str(&p->buf), buf_len(&p->buf)));
 
-    push(p, rb_funcall(big, rb_intern("to_f"), 0));
+    push(p, rb_funcall(big, to_f_id, 0));
 }
 
 static void add_big_as_float_key(ojParser p) {
     volatile VALUE big = rb_funcall(rb_cObject, oj_bigdecimal_id, 1, rb_str_new(buf_str(&p->buf), buf_len(&p->buf)));
 
     push_key(p);
-    push2(p, rb_funcall(big, rb_intern("to_f"), 0));
+    push2(p, rb_funcall(big, to_f_id, 0));
 }
 
 static void add_big_as_ruby(ojParser p) {
-    push(p, rb_funcall(rb_str_new(buf_str(&p->buf), buf_len(&p->buf)), rb_intern("to_f"), 0));
+    push(p, rb_funcall(rb_str_new(buf_str(&p->buf), buf_len(&p->buf)), to_f_id, 0));
 }
 
 static void add_big_as_ruby_key(ojParser p) {
     push_key(p);
-    push2(p, rb_funcall(rb_str_new(buf_str(&p->buf), buf_len(&p->buf)), rb_intern("to_f"), 0));
+    push2(p, rb_funcall(rb_str_new(buf_str(&p->buf), buf_len(&p->buf)), to_f_id, 0));
 }
 
 static void add_str(ojParser p) {
@@ -672,6 +677,19 @@ static VALUE opt_decimal_set(ojParser p, VALUE value) {
     return Qnil;
 }
 
+static VALUE opt_omit_null(ojParser p, VALUE value) {
+    return (noop == p->funcs[OBJECT_FUN].add_null) ? Qtrue : Qfalse;
+}
+
+static VALUE opt_omit_null_set(ojParser p, VALUE value) {
+    if (Qtrue == value) {
+	p->funcs[OBJECT_FUN].add_null = noop;
+    } else {
+	p->funcs[OBJECT_FUN].add_null = add_null_key;
+    }
+    return (noop == p->funcs[OBJECT_FUN].add_null) ? Qtrue : Qfalse;
+}
+
 static VALUE option(ojParser p, const char *key, VALUE value) {
     struct opt opts[] = {
         {.name = "cache_keys", .func = opt_cache_keys},
@@ -684,6 +702,8 @@ static VALUE option(ojParser p, const char *key, VALUE value) {
         {.name = "capacity=", .func = opt_capacity_set},
         {.name = "decimal", .func = opt_decimal},
         {.name = "decimal=", .func = opt_decimal_set},
+        {.name = "omit_null", .func = opt_omit_null},
+        {.name = "omit_null=", .func = opt_omit_null_set},
         {.name = NULL},
     };
 
@@ -769,4 +789,8 @@ void oj_set_parser_usual(ojParser p) {
     p->free   = dfree;
     p->mark   = mark;
     p->start  = start;
+
+    if (0 == to_f_id) {
+	to_f_id = rb_intern("to_f");
+    }
 }

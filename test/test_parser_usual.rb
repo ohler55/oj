@@ -109,4 +109,15 @@ class UsualTest < Minitest::Test
     assert_equal(Float, doc.class)
   end
 
+  def test_omit_null
+    p = Oj::Parser.new(:usual)
+    p.omit_null = true
+    doc = p.parse('{"a":true,"b":null}')
+    assert_equal({'a'=>true}, doc)
+
+    p.omit_null = false
+    doc = p.parse('{"a":true,"b":null}')
+    assert_equal({'a'=>true, 'b'=>nil}, doc)
+  end
+
 end

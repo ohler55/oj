@@ -8,14 +8,17 @@
   - options
    + symbol_keys
    + initial size
-   - bigdecimal_load* [_:bigdecimal_|_:float_|_:auto_|_:fast_]
-   - class create option (create_id)
+   + bigdecimal_load_|_:float_|_:auto_|_:fast_]
+   + omit_null
    - hash_class
    - array_class
+   - class create option (create_id)
    - class_cache
-   - omit_null - skip null hash and object members
    - detect_time
-
+ - docs
+  - parser and methods
+  - each delegate
+   - part of parser?
  - rails
  - object?
 

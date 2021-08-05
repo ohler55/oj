@@ -1243,6 +1243,34 @@ static VALUE parser_new(VALUE self, VALUE mode) {
     return Data_Wrap_Struct(parser_class, parser_mark, parser_free, p);
 }
 
+/* Document-method: method_missing(value)
+ * call-seq: method_missing(value)
+ *
+ * Methods not handled by the parser are passed to the delegate. The methods
+ * supported by delegate are:
+ *
+ * - *:saj*
+ *   - _cache_keys=_ sets the value of the _cache_keys_ flag.
+ *   - _cache_keys_ returns the value of the _cache_keys_ flag.
+ *   - _cache_strings=_ sets the value of the _cache_strings_ to an positive integer less than 35. Strings shorter than that length are cached.
+ *   - _cache_strings_ returns the value of the _cache_strings_ integer value.
+ *   - _handler=_ sets the SAJ handler
+ *   - _handler_ returns the SAJ handler
+ *
+ * - *:usual*
+ *   - _cache_keys=_ sets the value of the _cache_keys_ flag.
+ *   - _cache_keys_ returns the value of the _cache_keys_ flag.
+ *   - _cache_strings=_ sets the value of the _cache_strings_ to an positive integer less than 35. Strings shorter than that length are cached.
+ *   - _cache_strings_ returns the value of the _cache_strings_ integer value.
+ *   - _capacity=_ sets the capacity of the parser. The parser grows automatically but can be updated directly with this call.
+ *   - _capacity_ returns the current capacity of the parser's internal stack.
+ *   - _decimal=_ sets the approach to how decimals are parser. If _:auto_ then the decimals with significant digits are 16 or less are Floats and long ones are BigDecimal. _:ruby_ uses a call to Ruby to convert a string to a Float. _:float_ always generates a Float. _:bigdecimal_ always results in a BigDecimal.
+ *   - _decimal_ returns the value of the decimal conversion option which can be :auto (default), :ruby, :float, or :bigdecimal.
+ *   - _omit_null=_ sets the _omit_null_ flag. If true then null values in a map or object are omitted from the resulting Hash or Object.
+ *   - _omit_null_ returns the value of the _omit_null_ flag.
+ *   - _symbol_keys=_ sets the flag that indicates Hash keys should be parsed to Symbols versus Strings.
+ *   - _symbol_keys_ returns the value of the _symbol_keys_ flag.
+ */
 static VALUE parser_missing(int argc, VALUE *argv, VALUE self) {
     ojParser       p    = (ojParser)DATA_PTR(self);
     const char *   key  = NULL;
@@ -1266,6 +1294,13 @@ static VALUE parser_missing(int argc, VALUE *argv, VALUE self) {
     return p->option(p, key, rv);
 }
 
+/* Document-method: parser(json)
+ * call-seq: parser(json)
+ *
+ * Parse a JSON string.
+ *
+ * Returns the result according to the delegate of the parser.
+ */
 static VALUE parser_parse(VALUE self, VALUE json) {
     ojParser p = (ojParser)DATA_PTR(self);
 
@@ -1296,6 +1331,13 @@ static VALUE load(VALUE self) {
     return Qtrue;
 }
 
+/* Document-method: load(reader)
+ * call-seq: load(reader)
+ *
+ * Parse a JSON stream.
+ *
+ * Returns the result according to the delegate of the parser.
+ */
 static VALUE parser_load(VALUE self, VALUE reader) {
     ojParser p = (ojParser)DATA_PTR(self);
 
@@ -1306,6 +1348,13 @@ static VALUE parser_load(VALUE self, VALUE reader) {
     return p->result(p);
 }
 
+/* Document-method: file(filename)
+ * call-seq: file(filename)
+ *
+ * Parse a JSON file.
+ *
+ * Returns the result according to the delegate of the parser.
+ */
 static VALUE parser_file(VALUE self, VALUE filename) {
     ojParser    p = (ojParser)DATA_PTR(self);
     const char *path;
@@ -1349,12 +1398,25 @@ static VALUE parser_file(VALUE self, VALUE filename) {
     return p->result(p);
 }
 
+/* Document-method: just_one
+ * call-seq: just_one
+ *
+ * Returns the current state of the just_one [_Boolean_] option.
+ */
 static VALUE parser_just_one(VALUE self) {
     ojParser p = (ojParser)DATA_PTR(self);
 
     return p->just_one ? Qtrue : Qfalse;
 }
 
+/* Document-method: just_one=
+ * call-seq: just_one=(value)
+ *
+ * Sets the *just_one* option which limits the parsing of a string or or
+ * stream to a single JSON element.
+ *
+ * Returns the current state of the just_one [_Boolean_] option.
+ */
 static VALUE parser_just_one_set(VALUE self, VALUE v) {
     ojParser p = (ojParser)DATA_PTR(self);
 
@@ -1365,7 +1427,14 @@ static VALUE parser_just_one_set(VALUE self, VALUE v) {
 
 /* Document-class: Oj::Parser
  *
- * TBD
+ * A reusable parser that makes use of named delegates to determine the
+ * handling of parsed data. Delegates are available for validation, a callback
+ * parser (SAJ), and a usual delegate that builds Ruby objects as parsing
+ * proceeds.
+ *
+ * This parser is considerably faster than the older Oj.parse call and
+ * isolates options to just the parser so that other parts of the code are not
+ * forced to use the same options.
  */
 void oj_parser_init() {
     parser_class = rb_define_class_under(Oj, "Parser", rb_cObject);
