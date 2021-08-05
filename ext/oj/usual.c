@@ -184,16 +184,16 @@ static VALUE cache_key(ojParser p, Key kp) {
 
 static VALUE str_key(ojParser p, Key kp) {
     if ((size_t)kp->len < sizeof(kp->buf) - 1) {
-        return rb_utf8_str_new(kp->buf, kp->len);
+        return rb_str_freeze(rb_utf8_str_new(kp->buf, kp->len));
     }
-    return rb_utf8_str_new(kp->key, kp->len);
+    return rb_str_freeze(rb_utf8_str_new(kp->key, kp->len));
 }
 
 static VALUE sym_key(ojParser p, Key kp) {
     if ((size_t)kp->len < sizeof(kp->buf) - 1) {
-        return rb_str_intern(rb_utf8_str_new(kp->buf, kp->len));
+        return rb_str_freeze(rb_str_intern(rb_utf8_str_new(kp->buf, kp->len)));
     }
-    return rb_str_intern(rb_utf8_str_new(kp->key, kp->len));
+    return rb_str_freeze(rb_str_intern(rb_utf8_str_new(kp->key, kp->len)));
 }
 
 static void push_key(ojParser p) {
