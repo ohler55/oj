@@ -70,6 +70,7 @@ static VALUE calc_hash_key(ParseInfo pi, Val kval, char k1) {
         }
     }
 #endif
+    OBJ_FREEZE(rkey);
     return rkey;
 }
 

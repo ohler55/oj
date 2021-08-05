@@ -318,6 +318,7 @@ static VALUE calc_hash_key(ParseInfo pi, Val parent) {
         *slot = rkey;
         rb_gc_register_address(slot);
     }
+    OBJ_FREEZE(rkey);
     return rkey;
 }
 
