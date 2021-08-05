@@ -44,6 +44,7 @@ VALUE oj_calc_hash_key(ParseInfo pi, Val parent) {
         if (Yes == pi->options.sym_key) {
             rkey = rb_str_intern(rkey);
         }
+        OBJ_FREEZE(rkey);
         return rkey;
     }
     VALUE *slot;
@@ -64,6 +65,7 @@ VALUE oj_calc_hash_key(ParseInfo pi, Val parent) {
             rb_gc_register_address(slot);
         }
     }
+    OBJ_FREEZE(rkey);
     return rkey;
 }
 
