@@ -309,6 +309,7 @@ static VALUE calc_hash_key(ParseInfo pi, Val parent) {
         rkey = oj_encode(rkey);
         rkey = rb_str_intern(rkey);
     }
+    OBJ_FREEZE(rkey);
     return rkey;
 }
 
