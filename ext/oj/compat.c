@@ -27,19 +27,18 @@ static void hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, c
 
         if (Qundef == rkey) {
             if (Yes != pi->options.cache_keys) {
-                rkey = rb_str_new(key, klen);
-                rkey = oj_encode(rkey);
                 if (Yes == pi->options.sym_key) {
-                    rkey = rb_str_intern(rkey);
+                    rkey = ID2SYM(rb_intern3(key, klen, oj_utf8_encoding));
+                } else {
+                    rkey = rb_str_new(key, klen);
+                    rkey = oj_encode(rkey);
                 }
             } else {
                 VALUE *slot;
 
                 if (Yes == pi->options.sym_key) {
                     if (Qnil == (rkey = oj_sym_hash_get(key, klen, &slot))) {
-                        rkey  = rb_str_new(key, klen);
-                        rkey  = oj_encode(rkey);
-                        rkey  = rb_str_intern(rkey);
+                        rkey  = ID2SYM(rb_intern3(key, klen, oj_utf8_encoding));
                         *slot = rkey;
                         rb_gc_register_address(slot);
                     }

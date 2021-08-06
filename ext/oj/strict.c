@@ -39,10 +39,11 @@ VALUE oj_calc_hash_key(ParseInfo pi, Val parent) {
         return rkey;
     }
     if (Yes != pi->options.cache_keys) {
-        rkey = rb_str_new(parent->key, parent->klen);
-        rkey = oj_encode(rkey);
         if (Yes == pi->options.sym_key) {
-            rkey = rb_str_intern(rkey);
+            rkey = ID2SYM(rb_intern3(parent->key, parent->klen, oj_utf8_encoding));
+        } else {
+            rkey = rb_str_new(parent->key, parent->klen);
+            rkey = oj_encode(rkey);
         }
         OBJ_FREEZE(rkey);
         return rkey;
@@ -51,9 +52,7 @@ VALUE oj_calc_hash_key(ParseInfo pi, Val parent) {
 
     if (Yes == pi->options.sym_key) {
         if (Qnil == (rkey = oj_sym_hash_get(parent->key, parent->klen, &slot))) {
-            rkey  = rb_str_new(parent->key, parent->klen);
-            rkey  = oj_encode(rkey);
-            rkey  = rb_str_intern(rkey);
+            rkey  = ID2SYM(rb_intern3(parent->key, parent->klen, oj_utf8_encoding));
             *slot = rkey;
             rb_gc_register_address(slot);
         }
