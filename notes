@@ -10,11 +10,14 @@
    + initial size
    + bigdecimal_load_|_:float_|_:auto_|_:fast_]
    + omit_null
-   - hash_class
-   - array_class
+   + hash_class
+   + array_class
    - class create option (create_id)
+    - is create_id the correct term and behavior?
+    - fix TBDs
+    - why is second part of test failing?
    - class_cache
-   - detect_time
+   - detect_time (maybe)
  - docs
   - parser and methods
   - each delegate

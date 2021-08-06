@@ -65,11 +65,18 @@ typedef struct _delegate {
     struct _cache *str_cache;
     struct _cache *sym_cache;
 
+    VALUE array_class;
+    VALUE hash_class;
+
+    char *  create_id;
+    uint8_t create_id_len;
     uint8_t cache_str;
     bool    cache_keys;
 } * Delegate;
 
-static ID	to_f_id = 0;
+static ID to_f_id = 0;
+static ID ltlt_id = 0;
+static ID hset_id = 0;
 
 #if DEBUG
 struct debug_line {
@@ -196,6 +203,20 @@ static VALUE sym_key(ojParser p, Key kp) {
     return rb_str_freeze(rb_str_intern(rb_utf8_str_new(kp->key, kp->len)));
 }
 
+static ID get_attr_id(ojParser p, Key kp) {
+    char buf[256]; // TBD needs to be smarter
+
+    *buf = '@';
+    if ((size_t)kp->len < sizeof(kp->buf) - 1) {
+	memcpy(buf + 1, kp->buf,  kp->len);
+    } else {
+	memcpy(buf + 1, kp->key,  kp->len);
+    }
+    buf[kp->len + 1] = '\0';
+
+    return rb_intern2(buf, kp->len + 1);
+}
+
 static void push_key(ojParser p) {
     Delegate    d    = (Delegate)p->ctx;
     size_t      klen = buf_len(&p->key);
@@ -288,12 +309,9 @@ static void close_object(ojParser p) {
     Col            c    = d->ctail;
     Key            kp   = d->khead + c->ki;
     VALUE *        head = d->vhead + c->vi + 1;
-    volatile VALUE obj;
+    volatile VALUE obj  = rb_hash_new();
 
-    // TBD deal with provided hash and/or object
-    obj = rb_hash_new();
     for (VALUE *vp = head; kp < d->ktail; kp++, vp += 2) {
-        // TBD symbol or string
         *vp = d->get_key(p, kp);
         if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
             xfree(kp->key);
@@ -306,6 +324,76 @@ static void close_object(ojParser p) {
     *head = obj;
 }
 
+static void close_object_class(ojParser p) {
+    Delegate d = (Delegate)p->ctx;
+
+    d->ctail--;
+
+    Col            c    = d->ctail;
+    Key            kp   = d->khead + c->ki;
+    VALUE *        head = d->vhead + c->vi + 1;
+    volatile VALUE obj  = rb_class_new_instance(0, NULL, d->hash_class);
+
+    for (VALUE *vp = head; kp < d->ktail; kp++, vp += 2) {
+        rb_hash_aset(obj, d->get_key(p, kp), *(vp + 1));
+        if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
+            xfree(kp->key);
+        }
+    }
+    d->ktail = d->khead + c->ki;
+    d->vtail = head;
+    head--;
+    *head = obj;
+}
+
+static void close_object_create(ojParser p) {
+    Delegate d = (Delegate)p->ctx;
+
+    d->ctail--;
+
+    Col            c    = d->ctail;
+    Key            kp   = d->khead + c->ki;
+    VALUE *        head = d->vhead + c->vi;
+    volatile VALUE obj;
+
+    if (Qundef == *head) {
+        head++;
+        if (Qnil == d->hash_class) {
+            obj = rb_hash_new();
+            for (VALUE *vp = head; kp < d->ktail; kp++, vp += 2) {
+                *vp = d->get_key(p, kp);
+                if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
+                    xfree(kp->key);
+                }
+            }
+            rb_hash_bulk_insert(d->vtail - head, head, obj);
+        } else {
+            volatile VALUE obj = rb_class_new_instance(0, NULL, d->hash_class);
+
+            for (VALUE *vp = head; kp < d->ktail; kp++, vp += 2) {
+                rb_hash_aset(obj, d->get_key(p, kp), *(vp + 1));
+                if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
+                    xfree(kp->key);
+                }
+            }
+        }
+    } else {
+        obj = *head;
+        head++;
+        for (VALUE *vp = head; kp < d->ktail; kp++, vp += 2) {
+	    printf("*** set attr\n");
+            rb_ivar_set(obj, get_attr_id(p, kp), *(vp + 1));
+            if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
+                xfree(kp->key);
+            }
+        }
+    }
+    d->ktail = d->khead + c->ki;
+    d->vtail = head;
+    head--;
+    *head = obj;
+}
+
 static void close_array(ojParser p) {
     Delegate d = (Delegate)p->ctx;
 
@@ -313,6 +401,21 @@ static void close_array(ojParser p) {
     VALUE *        head = d->vhead + d->ctail->vi + 1;
     volatile VALUE a    = rb_ary_new_from_values(d->vtail - head, head);
 
+    d->vtail = head;
+    head--;
+    *head = a;
+}
+
+static void close_array_class(ojParser p) {
+    Delegate d = (Delegate)p->ctx;
+
+    d->ctail--;
+    VALUE *        head = d->vhead + d->ctail->vi + 1;
+    volatile VALUE a    = rb_class_new_instance(0, NULL, d->array_class);
+
+    for (VALUE *vp = head; vp < d->vtail; vp++) {
+        rb_funcall(a, ltlt_id, 1, *vp);
+    }
     d->vtail = head;
     head--;
     *head = a;
@@ -443,6 +546,77 @@ static void add_str_key(ojParser p) {
     push2(p, rstr);
 }
 
+static VALUE resolve_classname(VALUE mod, const char *classname, bool auto_define) {
+    VALUE clas;
+    ID    ci = rb_intern(classname);
+
+    if (rb_const_defined_at(mod, ci)) {
+        clas = rb_const_get_at(mod, ci);
+    } else if (auto_define) {
+        clas = rb_define_class_under(mod, classname, oj_bag_class);
+    } else {
+        clas = Qundef;
+    }
+    return clas;
+}
+
+static VALUE resolve_classpath(const char *name, size_t len, bool auto_define) {
+    char        class_name[1024];
+    VALUE       clas;
+    char *      end = class_name + sizeof(class_name) - 1;
+    char *      s;
+    const char *n = name;
+
+    clas = rb_cObject;
+    for (s = class_name; 0 < len; n++, len--) {
+        if (':' == *n) {
+            *s = '\0';
+            n++;
+            len--;
+            if (':' != *n) {
+                return Qundef;
+            }
+            if (Qundef == (clas = resolve_classname(clas, class_name, auto_define))) {
+                return Qundef;
+            }
+            s = class_name;
+        } else if (end <= s) {
+            return Qundef;
+        } else {
+            *s++ = *n;
+        }
+    }
+    *s = '\0';
+    return resolve_classname(clas, class_name, auto_define);
+}
+
+static void add_str_key_create(ojParser p) {
+    Delegate       d = (Delegate)p->ctx;
+    volatile VALUE rstr;
+    const char *   str  = buf_str(&p->buf);
+    size_t         len  = buf_len(&p->buf);
+    const char *   key  = buf_str(&p->key);
+    size_t         klen = buf_len(&p->key);
+
+    if (klen == (size_t)d->create_id_len && 0 == strncmp(d->create_id, key, klen)) {
+        Col   c = d->ctail - 1;
+        VALUE clas;
+
+        // TBD if class_cache ...
+
+        clas                = resolve_classpath(str, len, true);  // TBD auto_define?
+        *(d->vhead + c->vi) = rb_class_new_instance(0, NULL, clas);
+        return;
+    }
+    if (len < d->cache_str) {
+        rstr = cache_intern(d->str_cache, str, len);
+    } else {
+        rstr = rb_utf8_str_new(str, len);
+    }
+    push_key(p);
+    push2(p, rstr);
+}
+
 static VALUE result(ojParser p) {
     Delegate d = (Delegate)p->ctx;
 
@@ -470,6 +644,7 @@ static void dfree(ojParser p) {
     xfree(d->vhead);
     xfree(d->chead);
     xfree(d->khead);
+    xfree(d->create_id);
     xfree(p->ctx);
 }
 
@@ -683,11 +858,112 @@ static VALUE opt_omit_null(ojParser p, VALUE value) {
 
 static VALUE opt_omit_null_set(ojParser p, VALUE value) {
     if (Qtrue == value) {
-	p->funcs[OBJECT_FUN].add_null = noop;
+        p->funcs[OBJECT_FUN].add_null = noop;
     } else {
-	p->funcs[OBJECT_FUN].add_null = add_null_key;
+        p->funcs[OBJECT_FUN].add_null = add_null_key;
     }
     return (noop == p->funcs[OBJECT_FUN].add_null) ? Qtrue : Qfalse;
+}
+
+static VALUE opt_array_class(ojParser p, VALUE value) {
+    Delegate d = (Delegate)p->ctx;
+
+    return d->array_class;
+}
+
+static VALUE opt_array_class_set(ojParser p, VALUE value) {
+    Delegate d = (Delegate)p->ctx;
+
+    if (Qnil == value) {
+        p->funcs[TOP_FUN].close_array    = close_array;
+        p->funcs[ARRAY_FUN].close_array  = close_array;
+        p->funcs[OBJECT_FUN].close_array = close_array;
+    } else {
+        rb_check_type(value, T_CLASS);
+        if (!rb_method_boundp(value, ltlt_id, 1)) {
+            rb_raise(rb_eArgError, "An array class must implement the << method.");
+        }
+        p->funcs[TOP_FUN].close_array    = close_array_class;
+        p->funcs[ARRAY_FUN].close_array  = close_array_class;
+        p->funcs[OBJECT_FUN].close_array = close_array_class;
+    }
+    d->array_class = value;
+
+    return d->array_class;
+}
+
+static VALUE opt_hash_class(ojParser p, VALUE value) {
+    Delegate d = (Delegate)p->ctx;
+
+    return d->hash_class;
+}
+
+static VALUE opt_hash_class_set(ojParser p, VALUE value) {
+    Delegate d = (Delegate)p->ctx;
+
+    if (Qnil != value) {
+        rb_check_type(value, T_CLASS);
+        if (!rb_method_boundp(value, hset_id, 1)) {
+            rb_raise(rb_eArgError, "A hash class must implement the []= method.");
+        }
+    }
+    printf("*** create_id: %s\n", d->create_id);
+    if (NULL == d->create_id) {
+        if (Qnil == value) {
+            p->funcs[TOP_FUN].close_object    = close_object;
+            p->funcs[ARRAY_FUN].close_object  = close_object;
+            p->funcs[OBJECT_FUN].close_object = close_object;
+        } else {
+            p->funcs[TOP_FUN].close_object    = close_object_class;
+            p->funcs[ARRAY_FUN].close_object  = close_object_class;
+            p->funcs[OBJECT_FUN].close_object = close_object_class;
+        }
+    }
+    d->hash_class = value;
+
+    return d->hash_class;
+}
+
+static VALUE opt_create_id(ojParser p, VALUE value) {
+    Delegate d = (Delegate)p->ctx;
+
+    if (NULL == d->create_id) {
+        return Qnil;
+    }
+    return rb_utf8_str_new(d->create_id, d->create_id_len);
+}
+
+static VALUE opt_create_id_set(ojParser p, VALUE value) {
+    Delegate d = (Delegate)p->ctx;
+
+    if (Qnil == value) {
+        d->create_id                 = NULL;
+        d->create_id_len             = 0;
+        p->funcs[OBJECT_FUN].add_str = add_str_key;
+        if (Qnil == d->hash_class) {
+            p->funcs[TOP_FUN].close_object    = close_object;
+            p->funcs[ARRAY_FUN].close_object  = close_object;
+            p->funcs[OBJECT_FUN].close_object = close_object;
+        } else {
+            p->funcs[TOP_FUN].close_object    = close_object_class;
+            p->funcs[ARRAY_FUN].close_object  = close_object_class;
+            p->funcs[OBJECT_FUN].close_object = close_object_class;
+        }
+    } else {
+        rb_check_type(value, T_STRING);
+        size_t len = RSTRING_LEN(value);
+
+        if (1 << sizeof(d->create_id_len) <= len) {
+            rb_raise(rb_eArgError, "The create_id values is limited to %d bytes.", 1 << sizeof(d->create_id_len));
+        }
+        d->create_id_len                  = (uint8_t)len;
+        d->create_id                      = str_dup(rb_string_value_ptr(&value), len);
+        p->funcs[OBJECT_FUN].add_str      = add_str_key_create;
+        p->funcs[TOP_FUN].close_object    = close_object_create;
+        p->funcs[ARRAY_FUN].close_object  = close_object_create;
+        p->funcs[OBJECT_FUN].close_object = close_object_create;
+    }
+    return opt_create_id(p, value);
 }
 
 static VALUE option(ojParser p, const char *key, VALUE value) {
@@ -704,6 +980,12 @@ static VALUE option(ojParser p, const char *key, VALUE value) {
         {.name = "decimal=", .func = opt_decimal_set},
         {.name = "omit_null", .func = opt_omit_null},
         {.name = "omit_null=", .func = opt_omit_null_set},
+        {.name = "array_class", .func = opt_array_class},
+        {.name = "array_class=", .func = opt_array_class_set},
+        {.name = "hash_class", .func = opt_hash_class},
+        {.name = "hash_class=", .func = opt_hash_class_set},
+        {.name = "create_id", .func = opt_create_id},
+        {.name = "create_id=", .func = opt_create_id_set},
         {.name = NULL},
     };
 
@@ -736,10 +1018,14 @@ void oj_set_parser_usual(ojParser p) {
     d->cend  = d->chead + cap;
     d->ctail = d->chead;
 
-    d->get_key    = cache_key;
-    d->cache_keys = true;
-    d->cache_str  = 6;
-    d->sym_cache  = NULL;
+    d->get_key       = cache_key;
+    d->cache_keys    = true;
+    d->cache_str     = 6;
+    d->sym_cache     = NULL;
+    d->array_class   = Qnil;
+    d->hash_class    = Qnil;
+    d->create_id     = NULL;
+    d->create_id_len = 0;
 
     Funcs f         = &p->funcs[TOP_FUN];
     f->add_null     = add_null;
@@ -791,6 +1077,12 @@ void oj_set_parser_usual(ojParser p) {
     p->start  = start;
 
     if (0 == to_f_id) {
-	to_f_id = rb_intern("to_f");
+        to_f_id = rb_intern("to_f");
+    }
+    if (0 == ltlt_id) {
+        ltlt_id = rb_intern("<<");
+    }
+    if (0 == hset_id) {
+        hset_id = rb_intern("[]=");
     }
 }

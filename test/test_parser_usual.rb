@@ -120,4 +120,56 @@ class UsualTest < Minitest::Test
     assert_equal({'a'=>true, 'b'=>nil}, doc)
   end
 
+  class MyArray < Array
+  end
+
+  def test_array_class
+    p = Oj::Parser.new(:usual)
+    p.array_class = MyArray
+    assert_equal(MyArray, p.array_class)
+    doc = p.parse('[true]')
+    assert_equal(MyArray, doc.class)
+  end
+
+  class MyHash < Hash
+  end
+
+  def test_hash_class
+    p = Oj::Parser.new(:usual)
+    p.hash_class = MyHash
+    assert_equal(MyHash, p.hash_class)
+    doc = p.parse('{"a":true}')
+    assert_equal(MyHash, doc.class)
+  end
+
+  class MyClass
+    attr_accessor :a
+    attr_accessor :b
+
+    def to_s
+      "MyClass{a: #{@a} b: #{b}}"
+    end
+  end
+
+  def test_create_id
+    p = Oj::Parser.new(:usual)
+    p.create_id = '^'
+    doc = p.parse('{"a":true}')
+    assert_equal(Hash, doc.class)
+    doc = p.parse('{"a":true,"^":"UsualTest::MyClass","b":false}')
+
+    puts "\n*** #{doc.class} #{doc}"
+
+    return
+    p.hash_class = MyHash
+    assert_equal(MyHash, p.hash_class)
+    doc = p.parse('{"a":true}')
+    assert_equal(MyHash, doc.class)
+
+    doc = p.parse('{"a":true,"^":"UsualTest::MyClass","b":false}')
+
+    puts "\n*** #{doc.class} #{doc}"
+    # TBD
+  end
+
 end
