@@ -59,14 +59,13 @@ static VALUE calc_hash_key(ParseInfo pi, Val kval, char k1) {
     }
 #else
     if (':' == k1) {
-        rkey = rb_str_new(kval->key + 1, kval->klen - 1);
-        rkey = oj_encode(rkey);
-	rkey  = rb_str_intern(rkey);
+        rkey = ID2SYM(rb_intern3(kval->key + 1, kval->klen - 1, oj_utf8_encoding));
     } else {
-        rkey = rb_str_new(kval->key, kval->klen);
-        rkey = oj_encode(rkey);
         if (Yes == pi->options.sym_key) {
-            rkey = rb_str_intern(rkey);
+            rkey = ID2SYM(rb_intern3(kval->key, kval->klen, oj_utf8_encoding));
+        } else {
+            rkey = rb_str_new(kval->key, kval->klen);
+            rkey = oj_encode(rkey);
         }
     }
 #endif
@@ -78,9 +77,7 @@ static VALUE str_to_value(ParseInfo pi, const char *str, size_t len, const char 
     volatile VALUE rstr = Qnil;
 
     if (':' == *orig && 0 < len) {
-        rstr = rb_str_new(str + 1, len - 1);
-        rstr = oj_encode(rstr);
-        rstr = rb_funcall(rstr, oj_to_sym_id, 0);
+        rstr = ID2SYM(rb_intern3(str + 1, len - 1, oj_utf8_encoding));
     } else if (pi->circ_array && 3 <= len && '^' == *orig && 'r' == orig[1]) {
         long i = read_long(str + 2, len - 2);
 
@@ -259,9 +256,7 @@ static int hat_cstr(ParseInfo pi, Val parent, Val kval, const char *str, size_t 
             parent->odd_args = oj_odd_alloc_args(odd);
         } break;
         case 'm':
-            parent->val = rb_str_new(str + 1, len - 1);
-            parent->val = oj_encode(parent->val);
-            parent->val = rb_funcall(parent->val, oj_to_sym_id, 0);
+            parent->val = ID2SYM(rb_intern3(str + 1, len - 1, oj_utf8_encoding));
             break;
         case 's':
             parent->val = rb_str_new(str, len);

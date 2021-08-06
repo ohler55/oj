@@ -959,12 +959,13 @@ static void hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, c
         volatile VALUE rstr = rb_str_new(str, len);
 
         if (Qundef == rkey) {
-            rkey = rb_str_new(key, klen);
-            rstr = oj_encode(rstr);
-            rkey = oj_encode(rkey);
             if (Yes == pi->options.sym_key) {
-                rkey = rb_str_intern(rkey);
+                rkey = ID2SYM(rb_intern3(key, klen, oj_utf8_encoding));
+            } else {
+                rkey = rb_str_new(key, klen);
+                rkey = oj_encode(rkey);
             }
+            rstr = oj_encode(rstr);
         }
         if (Yes == pi->options.create_ok && NULL != pi->options.str_rx.head) {
             VALUE clas = oj_rxclass_match(&pi->options.str_rx, str, (int)len);
