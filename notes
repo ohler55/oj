@@ -13,9 +13,9 @@
    + hash_class
    + array_class
    - class create option (create_id)
-    - is create_id the correct term and behavior?
-    - fix TBDs
-    - why is second part of test failing?
+    - add class_cache to usual
+    - cache attr_ids
+    - use cache for attr id (compare perforance)
    - class_cache
    - detect_time (maybe)
  - docs

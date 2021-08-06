@@ -149,6 +149,7 @@ static VALUE form_str(const char *str, size_t len) {
 }
 
 static VALUE form_sym(const char *str, size_t len) {
+    //return ID2SYM(rb_intern3(str, len, oj_utf8_encoding));
     return rb_str_intern(rb_utf8_str_new(str, len));
 }
 
@@ -204,13 +205,13 @@ static VALUE sym_key(ojParser p, Key kp) {
 }
 
 static ID get_attr_id(ojParser p, Key kp) {
-    char buf[256]; // TBD needs to be smarter
+    char buf[256];  // TBD needs to be smarter
 
     *buf = '@';
     if ((size_t)kp->len < sizeof(kp->buf) - 1) {
-	memcpy(buf + 1, kp->buf,  kp->len);
+        memcpy(buf + 1, kp->buf, kp->len);
     } else {
-	memcpy(buf + 1, kp->key,  kp->len);
+        memcpy(buf + 1, kp->key, kp->len);
     }
     buf[kp->len + 1] = '\0';
 
@@ -368,8 +369,7 @@ static void close_object_create(ojParser p) {
             }
             rb_hash_bulk_insert(d->vtail - head, head, obj);
         } else {
-            volatile VALUE obj = rb_class_new_instance(0, NULL, d->hash_class);
-
+            obj = rb_class_new_instance(0, NULL, d->hash_class);
             for (VALUE *vp = head; kp < d->ktail; kp++, vp += 2) {
                 rb_hash_aset(obj, d->get_key(p, kp), *(vp + 1));
                 if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
@@ -378,13 +378,27 @@ static void close_object_create(ojParser p) {
             }
         }
     } else {
-        obj = *head;
+        VALUE clas = *head;
+
         head++;
-        for (VALUE *vp = head; kp < d->ktail; kp++, vp += 2) {
-	    printf("*** set attr\n");
-            rb_ivar_set(obj, get_attr_id(p, kp), *(vp + 1));
-            if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
-                xfree(kp->key);
+        if (rb_respond_to(clas, oj_json_create_id)) {
+            volatile VALUE arg = rb_hash_new();
+
+            for (VALUE *vp = head; kp < d->ktail; kp++, vp += 2) {
+                *vp = d->get_key(p, kp);
+                if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
+                    xfree(kp->key);
+                }
+            }
+            rb_hash_bulk_insert(d->vtail - head, head, arg);
+            obj = rb_funcall(clas, oj_json_create_id, 1, arg);
+        } else {
+            obj = rb_class_new_instance(0, NULL, clas);
+            for (VALUE *vp = head; kp < d->ktail; kp++, vp += 2) {
+                rb_ivar_set(obj, get_attr_id(p, kp), *(vp + 1));
+                if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
+                    xfree(kp->key);
+                }
             }
         }
     }
@@ -605,7 +619,7 @@ static void add_str_key_create(ojParser p) {
         // TBD if class_cache ...
 
         clas                = resolve_classpath(str, len, true);  // TBD auto_define?
-        *(d->vhead + c->vi) = rb_class_new_instance(0, NULL, clas);
+        *(d->vhead + c->vi) = clas;
         return;
     }
     if (len < d->cache_str) {
@@ -907,7 +921,7 @@ static VALUE opt_hash_class_set(ojParser p, VALUE value) {
             rb_raise(rb_eArgError, "A hash class must implement the []= method.");
         }
     }
-    printf("*** create_id: %s\n", d->create_id);
+    d->hash_class = value;
     if (NULL == d->create_id) {
         if (Qnil == value) {
             p->funcs[TOP_FUN].close_object    = close_object;
@@ -919,8 +933,6 @@ static VALUE opt_hash_class_set(ojParser p, VALUE value) {
             p->funcs[OBJECT_FUN].close_object = close_object_class;
         }
     }
-    d->hash_class = value;
-
     return d->hash_class;
 }
 

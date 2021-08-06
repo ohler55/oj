@@ -48,6 +48,7 @@ end
 
 $json = Oj.dump($obj)
 $failed = {} # key is same as String used in tests later
+Oj.default_options = {create_id: '^', create_additions: true, class_cache: true}
 if $cache_keys
   Oj.default_options = {cache_keys: true, cache_str: 6, symbol_keys: $symbol_keys}
 else
@@ -109,6 +110,7 @@ perf.add('Oj::Parser.saj', 'all') { p_all.parse($json) }
 perf.add('Oj::Saj.all', 'all') { Oj.saj_parse(all_handler, $json) }
 perf.run($iter)
 =end
+
 ### Usual ######################
 p_usual = Oj::Parser.new(:usual)
 p_usual.cache_keys = $cache_keys
@@ -120,6 +122,66 @@ puts "Parse Usual Performance"
 perf = Perf.new()
 perf.add('Oj::Parser.usual', '') { p_usual.parse($json) }
 perf.add('Oj::strict_load', '') { Oj.strict_load($json) }
+perf.run($iter)
+
+### Usual Objects ######################
+
+class Stuff
+  attr_accessor :alpha, :bravo, :charlie, :delta, :echo, :foxtrot, :golf, :hotel, :india, :juliet
+end
+
+class Stuff2 < Stuff
+  def self.json_create(arg)
+    obj = self.new
+    obj.alpha = arg["alpha"]
+    obj.bravo = arg["bravo"]
+    obj.charlie = arg["charlie"]
+    obj.delta = arg["delta"]
+    obj.echo = arg["echo"]
+    obj.foxtrot = arg["foxtrot"]
+    obj.golf = arg["golf"]
+    obj.hotel = arg["hotel"]
+    obj.india = arg["india"]
+    obj.juliet = arg["juliet"]
+    obj
+  end
+end
+
+$obj_json = %|{
+  "alpha": [0, 1,2,3,4,5,6,7,8,9],
+  "bravo": true,
+  "charlie": 123,
+  "delta": "some string",
+  "echo": null,
+  "^": "Stuff",
+  "foxtrot": false,
+  "golf": "gulp",
+  "hotel": {"x": true, "y": false},
+  "india": [null, true, 123],
+  "juliet": "junk"
+}|
+
+$obj_json2 = %|{
+  "alpha": [0, 1,2,3,4,5,6,7,8,9],
+  "bravo": true,
+  "charlie": 123,
+  "delta": "some string",
+  "echo": null,
+  "^": "Stuff2",
+  "foxtrot": false,
+  "golf": "gulp",
+  "hotel": {"x": true, "y": false},
+  "india": [null, true, 123],
+  "juliet": "junk"
+}|
+
+p_usual.create_id = '^'
+
+puts '-' * 80
+puts "Parse Usual Object Performance"
+perf = Perf.new()
+perf.add('Oj::Parser.usual', '') { p_usual.parse($obj_json) }
+perf.add('Oj::compat_load', '') { Oj.compat_load($obj_json2) }
 perf.run($iter)
 
 unless $failed.empty?

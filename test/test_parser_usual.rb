@@ -147,7 +147,16 @@ class UsualTest < Minitest::Test
     attr_accessor :b
 
     def to_s
-      "MyClass{a: #{@a} b: #{b}}"
+      "#{self.class}{a: #{@a} b: #{b}}"
+    end
+  end
+
+  class MyClass2 < MyClass
+    def self.json_create(arg)
+      obj = new
+      obj.a = arg['a']
+      obj.b = arg['b']
+      obj
     end
   end
 
@@ -157,19 +166,18 @@ class UsualTest < Minitest::Test
     doc = p.parse('{"a":true}')
     assert_equal(Hash, doc.class)
     doc = p.parse('{"a":true,"^":"UsualTest::MyClass","b":false}')
+    assert_equal('UsualTest::MyClass{a: true b: false}', doc.to_s)
 
-    puts "\n*** #{doc.class} #{doc}"
+    doc = p.parse('{"a":true,"^":"UsualTest::MyClass2","b":false}')
+    assert_equal('UsualTest::MyClass2{a: true b: false}', doc.to_s)
 
-    return
     p.hash_class = MyHash
     assert_equal(MyHash, p.hash_class)
     doc = p.parse('{"a":true}')
     assert_equal(MyHash, doc.class)
 
     doc = p.parse('{"a":true,"^":"UsualTest::MyClass","b":false}')
-
-    puts "\n*** #{doc.class} #{doc}"
-    # TBD
+    assert_equal('UsualTest::MyClass{a: true b: false}', doc.to_s)
   end
 
 end
