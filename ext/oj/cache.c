@@ -29,6 +29,10 @@ typedef struct _cache {
 #define C2 0x1B873593
 #define N 0xE6546B64
 
+void cache_set_form(Cache c, VALUE (*form)(const char *str, size_t len)) {
+    c->form = form;
+}
+
 #if 0
 // For debugging only.
 static void cache_print(Cache c) {

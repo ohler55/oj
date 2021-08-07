@@ -12,11 +12,10 @@
    + omit_null
    + hash_class
    + array_class
-   - class create option (create_id)
-    - add class_cache to usual
-    - cache attr_ids
-    - use cache for attr id (compare perforance)
-   - class_cache
+   + class create option (create_id)
+   + option for missing_class handling
+   + class_cache
+   _ option to ignore_json_create
    - detect_time (maybe)
  - docs
   - parser and methods
@@ -32,6 +31,8 @@
  - reuse of memory
  - better control over options
  - auto rehash of cache
+ - memory use when reading from a file
+
 
 - add default_options[]= method
 

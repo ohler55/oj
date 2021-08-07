@@ -180,4 +180,30 @@ class UsualTest < Minitest::Test
     assert_equal('UsualTest::MyClass{a: true b: false}', doc.to_s)
   end
 
+  def test_missing_class
+    p = Oj::Parser.new(:usual)
+    p.create_id = '^'
+    json = '{"a":true,"^":"Auto","b":false}'
+    doc = p.parse(json)
+    assert_equal(Hash, doc.class)
+
+    p.missing_class = :auto
+    doc = p.parse(json)
+    # Auto should be defined after parsing
+    assert_equal(Auto, doc.class)
+  end
+
+  def test_class_cache
+    p = Oj::Parser.new(:usual)
+    p.create_id = '^'
+    p.class_cache = true
+    p.missing_class = :auto
+    json = '{"a":true,"^":"Auto","b":false}'
+    doc = p.parse(json)
+    assert_equal(Auto, doc.class)
+
+    doc = p.parse(json)
+    assert_equal(Auto, doc.class)
+  end
+
 end

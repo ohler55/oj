@@ -1264,8 +1264,14 @@ static VALUE parser_new(VALUE self, VALUE mode) {
  *   - _cache_strings_ returns the value of the _cache_strings_ integer value.
  *   - _capacity=_ sets the capacity of the parser. The parser grows automatically but can be updated directly with this call.
  *   - _capacity_ returns the current capacity of the parser's internal stack.
+ *   - _create_id_ returns the value _create_id_ or _nil_ if there is no _create_id_.
+ *   - _create_id=_ sets the value _create_id_ or if _nil_ unsets it. Parsed JSON objects that include the specified element use the element value as the name of the class to create an object from instead of a Hash.
  *   - _decimal=_ sets the approach to how decimals are parser. If _:auto_ then the decimals with significant digits are 16 or less are Floats and long ones are BigDecimal. _:ruby_ uses a call to Ruby to convert a string to a Float. _:float_ always generates a Float. _:bigdecimal_ always results in a BigDecimal.
  *   - _decimal_ returns the value of the decimal conversion option which can be :auto (default), :ruby, :float, or :bigdecimal.
+ *   - _ignore_json_create_ returns the value of the _ignore_json_create_ flag.
+ *   - _ignore_json_create=_ sets the value of the _ignore_json_create_ flag. When set the class json_create method is ignored on parsing in favor of creating an instance and populating directly.
+ *   - _missing_class_ return the value of the _missing_class_ indicator.
+ *   - _missing_class=_ sets the value of the _missing_class_ flag. Valid values are _:auto_ which creates any missing classes on parse, :ignore which ignores and continues as a Hash (default), and :raise which raises an exception if the class is not found.
  *   - _omit_null=_ sets the _omit_null_ flag. If true then null values in a map or object are omitted from the resulting Hash or Object.
  *   - _omit_null_ returns the value of the _omit_null_ flag.
  *   - _symbol_keys=_ sets the flag that indicates Hash keys should be parsed to Symbols versus Strings.

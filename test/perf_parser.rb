@@ -86,7 +86,7 @@ all_handler = AllSaj.new()
 if $verbose
   puts "json:\n#{$json}\n"
 end
-=begin
+
 ### Validate ######################
 p_val = Oj::Parser.new(:validate)
 
@@ -109,7 +109,6 @@ perf = Perf.new()
 perf.add('Oj::Parser.saj', 'all') { p_all.parse($json) }
 perf.add('Oj::Saj.all', 'all') { Oj.saj_parse(all_handler, $json) }
 perf.run($iter)
-=end
 
 ### Usual ######################
 p_usual = Oj::Parser.new(:usual)
@@ -126,11 +125,12 @@ perf.run($iter)
 
 ### Usual Objects ######################
 
+# Original Oj follows the JSON gem for creating objects which uses the class
+# json_create(arg) method. Oj::Parser in usual mode supprts the same but also
+# handles populating the object variables directly which is faster.
+
 class Stuff
   attr_accessor :alpha, :bravo, :charlie, :delta, :echo, :foxtrot, :golf, :hotel, :india, :juliet
-end
-
-class Stuff2 < Stuff
   def self.json_create(arg)
     obj = self.new
     obj.alpha = arg["alpha"]
@@ -161,27 +161,15 @@ $obj_json = %|{
   "juliet": "junk"
 }|
 
-$obj_json2 = %|{
-  "alpha": [0, 1,2,3,4,5,6,7,8,9],
-  "bravo": true,
-  "charlie": 123,
-  "delta": "some string",
-  "echo": null,
-  "^": "Stuff2",
-  "foxtrot": false,
-  "golf": "gulp",
-  "hotel": {"x": true, "y": false},
-  "india": [null, true, 123],
-  "juliet": "junk"
-}|
-
 p_usual.create_id = '^'
+p_usual.class_cache = true
+p_usual.ignore_json_create = true
 
 puts '-' * 80
 puts "Parse Usual Object Performance"
 perf = Perf.new()
 perf.add('Oj::Parser.usual', '') { p_usual.parse($obj_json) }
-perf.add('Oj::compat_load', '') { Oj.compat_load($obj_json2) }
+perf.add('Oj::compat_load', '') { Oj.compat_load($obj_json) }
 perf.run($iter)
 
 unless $failed.empty?
