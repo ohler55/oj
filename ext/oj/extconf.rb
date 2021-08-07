@@ -32,6 +32,7 @@ have_func('stpcpy')
 have_func('pthread_mutex_init')
 have_func('rb_enc_associate')
 have_func('rb_ext_ractor_safe', 'ruby.h')
+have_func('rb_hash_bulk_insert', 'ruby.h')
 
 #have_func('rb_interned_str', 'ruby.h')
 #have_func('rb_interned_str_cstr', 'ruby.h')

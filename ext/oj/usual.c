@@ -332,14 +332,23 @@ static void close_object(ojParser p) {
     VALUE *        head = d->vhead + c->vi + 1;
     volatile VALUE obj  = rb_hash_new();
 
+#if HAVE_RB_HASH_BULK_INSERT
     for (VALUE *vp = head; kp < d->ktail; kp++, vp += 2) {
         *vp = d->get_key(p, kp);
         if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
             xfree(kp->key);
         }
     }
-    d->ktail = d->khead + c->ki;
     rb_hash_bulk_insert(d->vtail - head, head, obj);
+#else
+    for (VALUE *vp = head; kp < d->ktail; kp++, vp += 2) {
+        rb_hash_aset(obj, d->get_key(p, kp), *(vp + 1));
+        if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
+            xfree(kp->key);
+        }
+    }
+#endif
+    d->ktail = d->khead + c->ki;
     d->vtail = head;
     head--;
     *head = obj;
@@ -356,7 +365,7 @@ static void close_object_class(ojParser p) {
     volatile VALUE obj  = rb_class_new_instance(0, NULL, d->hash_class);
 
     for (VALUE *vp = head; kp < d->ktail; kp++, vp += 2) {
-        rb_hash_aset(obj, d->get_key(p, kp), *(vp + 1));
+        rb_funcall(obj, hset_id, 2, d->get_key(p, kp), *(vp + 1));
         if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
             xfree(kp->key);
         }
@@ -381,6 +390,7 @@ static void close_object_create(ojParser p) {
         head++;
         if (Qnil == d->hash_class) {
             obj = rb_hash_new();
+#if HAVE_RB_HASH_BULK_INSERT
             for (VALUE *vp = head; kp < d->ktail; kp++, vp += 2) {
                 *vp = d->get_key(p, kp);
                 if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
@@ -388,10 +398,18 @@ static void close_object_create(ojParser p) {
                 }
             }
             rb_hash_bulk_insert(d->vtail - head, head, obj);
+#else
+	    for (VALUE *vp = head; kp < d->ktail; kp++, vp += 2) {
+		rb_hash_aset(obj, d->get_key(p, kp), *(vp + 1));
+		if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
+		    xfree(kp->key);
+		}
+	    }
+#endif
         } else {
             obj = rb_class_new_instance(0, NULL, d->hash_class);
             for (VALUE *vp = head; kp < d->ktail; kp++, vp += 2) {
-                rb_hash_aset(obj, d->get_key(p, kp), *(vp + 1));
+		rb_funcall(obj, hset_id, 2, d->get_key(p, kp), *(vp + 1));
                 if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
                     xfree(kp->key);
                 }
@@ -404,6 +422,7 @@ static void close_object_create(ojParser p) {
         if (!d->ignore_json_create && rb_respond_to(clas, oj_json_create_id)) {
             volatile VALUE arg = rb_hash_new();
 
+#if HAVE_RB_HASH_BULK_INSERT
             for (VALUE *vp = head; kp < d->ktail; kp++, vp += 2) {
                 *vp = d->get_key(p, kp);
                 if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
@@ -411,6 +430,14 @@ static void close_object_create(ojParser p) {
                 }
             }
             rb_hash_bulk_insert(d->vtail - head, head, arg);
+#else
+	    for (VALUE *vp = head; kp < d->ktail; kp++, vp += 2) {
+		rb_hash_aset(arg, d->get_key(p, kp), *(vp + 1));
+		if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
+		    xfree(kp->key);
+		}
+	    }
+#endif
             obj = rb_funcall(clas, oj_json_create_id, 1, arg);
         } else {
             obj = rb_class_new_instance(0, NULL, clas);

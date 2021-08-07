@@ -198,12 +198,12 @@ class UsualTest < Minitest::Test
     p.create_id = '^'
     p.class_cache = true
     p.missing_class = :auto
-    json = '{"a":true,"^":"Auto","b":false}'
+    json = '{"a":true,"^":"Auto2","b":false}'
     doc = p.parse(json)
-    assert_equal(Auto, doc.class)
+    assert_equal(Auto2, doc.class)
 
     doc = p.parse(json)
-    assert_equal(Auto, doc.class)
+    assert_equal(Auto2, doc.class)
   end
 
 end
