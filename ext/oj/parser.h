@@ -4,8 +4,10 @@
 #ifndef OJ_PARSER_H
 #define OJ_PARSER_H
 
+#include <stdbool.h>
+#include <ruby.h>
+
 #include "buf.h"
-#include "ruby.h"
 
 #define TOP_FUN 0
 #define ARRAY_FUN 1
