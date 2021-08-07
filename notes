@@ -6,23 +6,17 @@
 - parser
  - usual
   - options
-   + symbol_keys
-   + initial size
-   + bigdecimal_load_|_:float_|_:auto_|_:fast_]
-   + omit_null
-   + hash_class
-   + array_class
-   + class create option (create_id)
-   + option for missing_class handling
-   + class_cache
-   _ option to ignore_json_create
    - detect_time (maybe)
  - docs
-  - parser and methods
-  - each delegate
-   - part of parser?
  - rails
+  - how is it different?
  - object?
+
+- future
+ - usual delegate
+   - detect_time (maybe)
+ - parser
+  - read file in separate thread
 
 - new parser reasons or design notes
  - parser itself is faster due to reduced branching
@@ -50,10 +44,7 @@
  - ActiveSupport::Multibyte::Chars
  - ActiveRecord::Relation
 
-- debug
- - instrument for parsing floats/bigdecimal
-  - branch
-
+- future
  - option to allow invalid unicode through
  - unit tests for 32 bit - test_float_parse
   - look at RUBY_PLATFORM maybe?
@@ -65,8 +56,6 @@
   - replace with best attempt such as \ud83d => \xED\xA0\xBD
   - that would be the normal replacement
  - allow_invalid_unicode
-
-- streaming parser for scp and saj
 
 ---------------------------
 Tried a separate thread for the parser and the results were poor. The parsing is

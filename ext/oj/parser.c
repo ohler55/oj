@@ -1221,7 +1221,7 @@ static VALUE parser_new(VALUE self, VALUE mode) {
             // fall through
         case RUBY_T_STRING: ms = rb_string_value_ptr(&mode); break;
         default:
-            rb_raise(rb_eArgError, "mode must be :validate, :strict, :object, :compat, or :rails");
+            rb_raise(rb_eArgError, "mode must be :validate, :usual, :saj, or :object");
         }
         if (0 == strcmp("usual", ms) || 0 == strcmp("standard", ms) || 0 == strcmp("strict", ms) ||
             0 == strcmp("compat", ms)) {
@@ -1230,14 +1230,12 @@ static VALUE parser_new(VALUE self, VALUE mode) {
             // TBD
         } else if (0 == strcmp("saj", ms)) {
             oj_set_parser_saj(p);
-        } else if (0 == strcmp("rails", ms)) {
-            // TBD
         } else if (0 == strcmp("validate", ms)) {
             oj_set_parser_validator(p);
         } else if (0 == strcmp("debug", ms)) {
             oj_set_parser_debug(p);
         } else {
-            rb_raise(rb_eArgError, "mode must be :validate, :usual, :object, :rails, or :saj");
+            rb_raise(rb_eArgError, "mode must be :validate, :usual, :saj, or :object");
         }
     }
     return Data_Wrap_Struct(parser_class, parser_mark, parser_free, p);
@@ -1248,6 +1246,9 @@ static VALUE parser_new(VALUE self, VALUE mode) {
  *
  * Methods not handled by the parser are passed to the delegate. The methods
  * supported by delegate are:
+ *
+ * - *:validate*
+ *   - no options
  *
  * - *:saj*
  *   - _cache_keys=_ sets the value of the _cache_keys_ flag.
