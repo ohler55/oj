@@ -32,8 +32,6 @@ jobs:
           - os: macos
             ruby: head
           - os: macos
-            ruby: '3.0'
-          - os: macos
             ruby: '2.5'
             gemfile: rails_5
 
