@@ -203,8 +203,7 @@ oj_sym_intern(const char *key, size_t len) {
     }
     bucket->key = oj_strndup(key, len);
     bucket->len = len;
-    bucket->val = rb_utf8_str_new(key, len);
-    bucket->val = rb_str_intern(bucket->val);
+    bucket->val = ID2SYM(rb_intern3(key, len, oj_utf8_encoding));
     rb_gc_register_address(&bucket->val);
 #if HAVE_PTHREAD_MUTEX_INIT
     pthread_mutex_unlock(&sym_hash.mutex);
