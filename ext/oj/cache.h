@@ -4,6 +4,7 @@
 #ifndef CACHE_H
 #define CACHE_H
 
+#include <stdbool.h>
 #include <ruby.h>
 
 #define CACHE_MAX_KEY 35
