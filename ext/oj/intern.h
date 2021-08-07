@@ -4,7 +4,8 @@
 #ifndef OJ_INTERN_H
 #define OJ_INTERN_H
 
-#include "ruby.h"
+#include <stdbool.h>
+#include <ruby.h>
 
 struct _parseInfo;
 
