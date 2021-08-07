@@ -589,7 +589,8 @@ bool oj_hash_has_key(VALUE hash, VALUE key)
     return true;
 }
 
-void oj_parse_options(VALUE ropts, Options copts) {
+bool set_yesno_options(VALUE key, VALUE value, Options copts)
+{
     struct _yesNoOpt ynos[] = {{circular_sym, &copts->circular},
                                {auto_define_sym, &copts->auto_define},
                                {symbol_keys_sym, &copts->sym_key},
@@ -612,15 +613,37 @@ void oj_parse_options(VALUE ropts, Options copts) {
                                {oj_create_additions_sym, &copts->create_ok},
                                {cache_keys_sym, &copts->cache_keys},
                                {Qnil, 0}};
-    YesNoOpt         o;
-    volatile VALUE   v;
-    size_t           len;
+    YesNoOpt o;
 
-    if (T_HASH != rb_type(ropts)) {
-        return;
+     for (o = ynos; 0 != o->attr; o++) {
+         if (key == o->sym) {
+             if (Qnil == value) {
+                 *o->attr = NotSet;
+             } else if (Qtrue == value) {
+                 *o->attr = Yes;
+             } else if (Qfalse == value) {
+                 *o->attr = No;
+             } else {
+                 rb_raise(rb_eArgError,
+                          "%s must be true, false, or nil.",
+                          rb_id2name(key));
+             }
+             return true;
+         }
+     }
+    return false;
+}
+
+static int parse_options_cb(VALUE k, VALUE v, VALUE opts)
+{
+    Options copts = (Options)opts;
+    size_t  len;
+
+    if (set_yesno_options(k, v, copts)) {
+        return ST_CONTINUE;
     }
-    if (oj_hash_has_key(ropts, oj_indent_sym)) {
-        v = rb_hash_lookup(ropts, oj_indent_sym);
+
+    if (oj_indent_sym == k) {
         switch (rb_type(v)) {
         case T_NIL:
             copts->dump_opts.indent_size = 0;
@@ -644,8 +667,7 @@ void oj_parse_options(VALUE ropts, Options copts) {
             break;
         default: rb_raise(rb_eTypeError, "indent must be a Fixnum, String, or nil."); break;
         }
-    }
-    if (Qnil != (v = rb_hash_lookup(ropts, float_prec_sym))) {
+    } else if (float_prec_sym == k) {
         int n;
 
 #ifdef RUBY_INTEGER_UNIFICATION
@@ -668,8 +690,7 @@ void oj_parse_options(VALUE ropts, Options copts) {
             sprintf(copts->float_fmt, "%%0.%dg", n);
             copts->float_prec = n;
         }
-    }
-    if (Qnil != (v = rb_hash_lookup(ropts, cache_str_sym))) {
+    } else if (cache_str_sym == k) {
         int n;
 
 #ifdef RUBY_INTEGER_UNIFICATION
@@ -690,8 +711,7 @@ void oj_parse_options(VALUE ropts, Options copts) {
             }
             copts->cache_str = (char)n;
         }
-    }
-    if (Qnil != (v = rb_hash_lookup(ropts, sec_prec_sym))) {
+    } else if (sec_prec_sym == k) {
         int n;
 
 #ifdef RUBY_INTEGER_UNIFICATION
@@ -714,8 +734,7 @@ void oj_parse_options(VALUE ropts, Options copts) {
             copts->sec_prec_set = true;
         }
         copts->sec_prec = n;
-    }
-    if (Qnil != (v = rb_hash_lookup(ropts, mode_sym))) {
+    } else if (mode_sym == k) {
         if (wab_sym == v) {
             copts->mode = WabMode;
         } else if (object_sym == v) {
@@ -734,8 +753,7 @@ void oj_parse_options(VALUE ropts, Options copts) {
             rb_raise(rb_eArgError,
                      ":mode must be :object, :strict, :compat, :null, :custom, :rails, or :wab.");
         }
-    }
-    if (Qnil != (v = rb_hash_lookup(ropts, time_format_sym))) {
+    } else if (time_format_sym == k) {
         if (unix_sym == v) {
             copts->time_format = UnixTime;
         } else if (unix_zone_sym == v) {
@@ -747,8 +765,7 @@ void oj_parse_options(VALUE ropts, Options copts) {
         } else {
             rb_raise(rb_eArgError, ":time_format must be :unix, :unix_zone, :xmlschema, or :ruby.");
         }
-    }
-    if (Qnil != (v = rb_hash_lookup(ropts, escape_mode_sym))) {
+    } else if (escape_mode_sym == k) {
         if (newline_sym == v) {
             copts->escape_mode = NLEsc;
         } else if (json_sym == v) {
@@ -763,8 +780,11 @@ void oj_parse_options(VALUE ropts, Options copts) {
             rb_raise(rb_eArgError,
                      ":encoding must be :newline, :json, :xss_safe, :unicode_xss, or :ascii.");
         }
-    }
-    if (Qnil != (v = rb_hash_lookup(ropts, bigdecimal_load_sym))) {
+    } else if (bigdecimal_load_sym == k) {
+        if (Qnil == v) {
+            return ST_CONTINUE;
+        }
+
         if (bigdecimal_sym == v || Qtrue == v) {
             copts->bigdec_load = BigDec;
         } else if (float_sym == v) {
@@ -776,12 +796,13 @@ void oj_parse_options(VALUE ropts, Options copts) {
         } else {
             rb_raise(rb_eArgError, ":bigdecimal_load must be :bigdecimal, :float, or :auto.");
         }
-    }
-    if (Qnil != (v = rb_hash_lookup(ropts, compat_bigdecimal_sym))) {
+    } else if (compat_bigdecimal_sym == k) {
+        if (Qnil == v) {
+            return ST_CONTINUE;
+        }
+
         copts->compat_bigdec = (Qtrue == v);
-    }
-    if (oj_hash_has_key(ropts, oj_decimal_class_sym)) {
-        v = rb_hash_lookup(ropts, oj_decimal_class_sym);
+    } else if (oj_decimal_class_sym == k) {
         if (rb_cFloat == v) {
             copts->compat_bigdec = false;
         } else if (oj_bigdecimal_class == v) {
@@ -789,9 +810,7 @@ void oj_parse_options(VALUE ropts, Options copts) {
         } else {
             rb_raise(rb_eArgError, ":decimal_class must be BigDecimal or Float.");
         }
-    }
-    if (oj_hash_has_key(ropts, create_id_sym)) {
-        v = rb_hash_lookup(ropts, create_id_sym);
+    } else if (create_id_sym == k) {
         if (Qnil == v) {
             if (oj_json_class != oj_default_options.create_id && NULL != copts->create_id) {
                 xfree((char *)oj_default_options.create_id);
@@ -810,25 +829,8 @@ void oj_parse_options(VALUE ropts, Options copts) {
         } else {
             rb_raise(rb_eArgError, ":create_id must be string.");
         }
-    }
-    for (o = ynos; 0 != o->attr; o++) {
-        if (oj_hash_has_key(ropts, o->sym)) {
-            v = rb_hash_lookup(ropts, o->sym);
-            if (Qnil == v) {
-                *o->attr = NotSet;
-            } else if (Qtrue == v) {
-                *o->attr = Yes;
-            } else if (Qfalse == v) {
-                *o->attr = No;
-            } else {
-                rb_raise(rb_eArgError,
-                         "%s must be true, false, or nil.",
-                         rb_id2name(SYM2ID(o->sym)));
-            }
-        }
-    }
-    if (oj_hash_has_key(ropts, oj_space_sym)) {
-        if (Qnil == (v = rb_hash_lookup(ropts, oj_space_sym))) {
+    } else if (oj_space_sym == k) {
+        if (Qnil == v) {
             copts->dump_opts.after_size = 0;
             *copts->dump_opts.after_sep = '\0';
         } else {
@@ -841,9 +843,8 @@ void oj_parse_options(VALUE ropts, Options copts) {
             strcpy(copts->dump_opts.after_sep, StringValuePtr(v));
             copts->dump_opts.after_size = (uint8_t)len;
         }
-    }
-    if (oj_hash_has_key(ropts, oj_space_before_sym)) {
-        if (Qnil == (v = rb_hash_lookup(ropts, oj_space_before_sym))) {
+    } else if (oj_space_before_sym == k) {
+        if (Qnil == v) {
             copts->dump_opts.before_size = 0;
             *copts->dump_opts.before_sep = '\0';
         } else {
@@ -856,9 +857,8 @@ void oj_parse_options(VALUE ropts, Options copts) {
             strcpy(copts->dump_opts.before_sep, StringValuePtr(v));
             copts->dump_opts.before_size = (uint8_t)len;
         }
-    }
-    if (oj_hash_has_key(ropts, oj_object_nl_sym)) {
-        if (Qnil == (v = rb_hash_lookup(ropts, oj_object_nl_sym))) {
+    } else if (oj_object_nl_sym == k) {
+        if (Qnil == v) {
             copts->dump_opts.hash_size = 0;
             *copts->dump_opts.hash_nl  = '\0';
         } else {
@@ -871,9 +871,8 @@ void oj_parse_options(VALUE ropts, Options copts) {
             strcpy(copts->dump_opts.hash_nl, StringValuePtr(v));
             copts->dump_opts.hash_size = (uint8_t)len;
         }
-    }
-    if (oj_hash_has_key(ropts, oj_array_nl_sym)) {
-        if (Qnil == (v = rb_hash_lookup(ropts, oj_array_nl_sym))) {
+    } else if (oj_array_nl_sym == k) {
+        if (Qnil == v) {
             copts->dump_opts.array_size = 0;
             *copts->dump_opts.array_nl  = '\0';
         } else {
@@ -886,8 +885,11 @@ void oj_parse_options(VALUE ropts, Options copts) {
             strcpy(copts->dump_opts.array_nl, StringValuePtr(v));
             copts->dump_opts.array_size = (uint8_t)len;
         }
-    }
-    if (Qnil != (v = rb_hash_lookup(ropts, nan_sym))) {
+    } else if (nan_sym == k) {
+        if (Qnil == v) {
+            return ST_CONTINUE;
+        }
+
         if (null_sym == v) {
             copts->dump_opts.nan_dump = NullNan;
         } else if (huge_sym == v) {
@@ -901,11 +903,11 @@ void oj_parse_options(VALUE ropts, Options copts) {
         } else {
             rb_raise(rb_eArgError, ":nan must be :null, :huge, :word, :raise, or :auto.");
         }
-    }
-    copts->dump_opts.use = (0 < copts->dump_opts.indent_size || 0 < copts->dump_opts.after_size ||
-                            0 < copts->dump_opts.before_size || 0 < copts->dump_opts.hash_size ||
-                            0 < copts->dump_opts.array_size);
-    if (Qnil != (v = rb_hash_lookup(ropts, omit_nil_sym))) {
+    } else if (omit_nil_sym == k) {
+        if (Qnil == v) {
+            return ST_CONTINUE;
+        }
+
         if (Qtrue == v) {
             copts->dump_opts.omit_nil = true;
         } else if (Qfalse == v) {
@@ -913,43 +915,38 @@ void oj_parse_options(VALUE ropts, Options copts) {
         } else {
             rb_raise(rb_eArgError, ":omit_nil must be true or false.");
         }
-    }
-    // This is here only for backwards compatibility with the original Oj.
-    v = rb_hash_lookup(ropts, oj_ascii_only_sym);
-    if (Qtrue == v) {
-        copts->escape_mode = ASCIIEsc;
-    } else if (Qfalse == v) {
-        copts->escape_mode = JSONEsc;
-    }
-    if (oj_hash_has_key(ropts, oj_hash_class_sym)) {
-        if (Qnil == (v = rb_hash_lookup(ropts, oj_hash_class_sym))) {
+    } else if(oj_ascii_only_sym == k) {
+        // This is here only for backwards compatibility with the original Oj.
+        if (Qtrue == v) {
+            copts->escape_mode = ASCIIEsc;
+        } else if (Qfalse == v) {
+            copts->escape_mode = JSONEsc;
+        }
+    } else if (oj_hash_class_sym == k) {
+        if (Qnil == v) {
             copts->hash_class = Qnil;
         } else {
             rb_check_type(v, T_CLASS);
             copts->hash_class = v;
         }
-    }
-    if (oj_hash_has_key(ropts, oj_object_class_sym)) {
-        if (Qnil == (v = rb_hash_lookup(ropts, oj_object_class_sym))) {
+    } else if (oj_object_class_sym == k) {
+        if (Qnil == v) {
             copts->hash_class = Qnil;
         } else {
             rb_check_type(v, T_CLASS);
             copts->hash_class = v;
         }
-    }
-    if (oj_hash_has_key(ropts, oj_array_class_sym)) {
-        if (Qnil == (v = rb_hash_lookup(ropts, oj_array_class_sym))) {
+    } else if (oj_array_class_sym == k) {
+        if (Qnil == v) {
             copts->array_class = Qnil;
         } else {
             rb_check_type(v, T_CLASS);
             copts->array_class = v;
         }
-    }
-    oj_parse_opt_match_string(&copts->str_rx, ropts);
-    if (oj_hash_has_key(ropts, ignore_sym)) {
+    } else if (ignore_sym == k) {
         xfree(copts->ignore);
         copts->ignore = NULL;
-        if (Qnil != (v = rb_hash_lookup(ropts, ignore_sym))) {
+        if (Qnil != v) {
             int cnt;
 
             rb_check_type(v, T_ARRAY);
@@ -964,8 +961,11 @@ void oj_parse_options(VALUE ropts, Options copts) {
                 copts->ignore[i] = Qnil;
             }
         }
-    }
-    if (Qnil != (v = rb_hash_lookup(ropts, integer_range_sym))) {
+    } else if (integer_range_sym == k) {
+        if (Qnil == v) {
+            return ST_CONTINUE;
+        }
+
         if (TYPE(v) == T_STRUCT && rb_obj_class(v) == rb_cRange) {
             VALUE min = rb_funcall(v, oj_begin_id, 0);
             VALUE max = rb_funcall(v, oj_end_id, 0);
@@ -980,6 +980,22 @@ void oj_parse_options(VALUE ropts, Options copts) {
             rb_raise(rb_eArgError, ":integer_range must be a range of Fixnum.");
         }
     }
+
+    return ST_CONTINUE;
+}
+
+void oj_parse_options(VALUE ropts, Options copts) {
+    if (T_HASH != rb_type(ropts)) {
+        return;
+    }
+
+    rb_hash_foreach(ropts, parse_options_cb, (VALUE)copts);
+    oj_parse_opt_match_string(&copts->str_rx, ropts);
+
+    copts->dump_opts.use = (0 < copts->dump_opts.indent_size || 0 < copts->dump_opts.after_size ||
+                            0 < copts->dump_opts.before_size || 0 < copts->dump_opts.hash_size ||
+                            0 < copts->dump_opts.array_size);
+    return;
 }
 
 static int match_string_cb(VALUE key, VALUE value, VALUE rx) {
