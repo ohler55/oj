@@ -3,20 +3,19 @@
 ^c^d hide subtree
 ^c^s show subtree
 
-- parser
- - usual
-  - options
-   - detect_time (maybe)
- - docs
- - rails
-  - how is it different?
- - object?
+- plan
+ - merge to develop
+ - write article on changes and features
+ - release
+ - future
+  - object delegate first
 
 - future
  - usual delegate
    - detect_time (maybe)
  - parser
   - read file in separate thread
+  - object delegate
 
 - new parser reasons or design notes
  - parser itself is faster due to reduced branching
