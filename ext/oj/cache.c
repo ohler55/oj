@@ -136,6 +136,7 @@ void cache_free(Cache c) {
             xfree(s);
         }
     }
+    xfree(c->slots);
     xfree(c);
 }
 

@@ -662,6 +662,7 @@ static void dfree(ojParser p) {
     Delegate d = (Delegate)p->ctx;
 
     cache_free(d->str_cache);
+    cache_free(d->attr_cache);
     if (NULL != d->sym_cache) {
         cache_free(d->sym_cache);
     }

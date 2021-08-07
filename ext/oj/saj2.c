@@ -303,6 +303,7 @@ static void dfree(ojParser p) {
     if (NULL != d->keys) {
         xfree(d->keys);
     }
+    cache_free(d->str_cache);
     xfree(p->ctx);
 }
 
