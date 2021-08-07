@@ -34,6 +34,12 @@ jobs:
           - os: macos
             ruby: '2.5'
             gemfile: rails_5
+          - os: ubuntu
+            ruby: '3.0'
+            gemfile: rails_5
+          - os: ubuntu
+            ruby: '3.0'
+            gemfile: rails_6
 
     env:
       BUNDLE_GEMFILE: gemfiles/${{ matrix.gemfile }}.gemfile
