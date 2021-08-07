@@ -31,14 +31,9 @@ jobs:
         exclude:
           - os: macos
             ruby: head
-          - os: macos
-            ruby: '2.5'
+          - ruby: '3.0'
             gemfile: rails_5
-          - os: ubuntu
-            ruby: '3.0'
-            gemfile: rails_5
-          - os: ubuntu
-            ruby: '3.0'
+          - ruby: '3.0'
             gemfile: rails_6
 
     env:
