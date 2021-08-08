@@ -708,10 +708,10 @@ void oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
 }
 
 void oj_dump_str(VALUE obj, int depth, Out out, bool as_ok) {
-    rb_encoding *enc = rb_to_encoding(rb_obj_encoding(obj));
+    rb_encoding *enc = rb_enc_get(obj);
 
-    if (rb_utf8_encoding() != enc) {
-        obj = rb_str_conv_enc(obj, enc, rb_utf8_encoding());
+    if (oj_utf8_encoding != enc) {
+        obj = rb_str_conv_enc(obj, enc, oj_utf8_encoding);
     }
     oj_dump_cstr(RSTRING_PTR(obj), (int)RSTRING_LEN(obj), 0, 0, out);
 }
