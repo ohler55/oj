@@ -233,7 +233,7 @@ static void dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
     } else if (oj_bigdecimal_class == clas) {
         volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-        oj_dump_raw(rb_string_value_ptr((VALUE *)&rstr), (int)RSTRING_LEN(rstr), out);
+        oj_dump_raw(RSTRING_PTR(rstr), (int)RSTRING_LEN(rstr), out);
     } else if (resolve_wab_uuid_class() == clas) {
         oj_dump_str(rb_funcall(obj, oj_to_s_id, 0), depth, out, false);
     } else if (resolve_uri_http_class() == clas) {
