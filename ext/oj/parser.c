@@ -1437,7 +1437,8 @@ static VALUE usual_parser = Qundef;
 /* Document-method: usual
  * call-seq: usual
  *
- * Returns the default usual parser.
+ * Returns the default usual parser. Note the default usual parser can not be
+ * used concurrently in more than one thread.
  */
 static VALUE parser_usual(VALUE self) {
     if (Qundef == usual_parser) {
@@ -1459,7 +1460,8 @@ static VALUE saj_parser = Qundef;
 /* Document-method: saj
  * call-seq: saj
  *
- * Returns the default saj parser.
+ * Returns the default saj parser. Note the default SAJ parser can not be used
+ * concurrently in more than one thread.
  */
 static VALUE parser_saj(VALUE self) {
     if (Qundef == saj_parser) {

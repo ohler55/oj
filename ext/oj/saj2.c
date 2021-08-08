@@ -313,6 +313,7 @@ static void mark(ojParser p) {
     }
     Delegate d = (Delegate)p->ctx;
 
+    cache_mark(d->str_cache);
     if (Qnil != d->handler) {
         rb_gc_mark(d->handler);
     }
