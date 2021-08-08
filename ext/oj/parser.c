@@ -1301,8 +1301,8 @@ static VALUE parser_missing(int argc, VALUE *argv, VALUE self) {
     return p->option(p, key, rv);
 }
 
-/* Document-method: parser(json)
- * call-seq: parser(json)
+/* Document-method: parse(json)
+ * call-seq: parse(json)
  *
  * Parse a JSON string.
  *
