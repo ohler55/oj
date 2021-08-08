@@ -31,11 +31,10 @@ jobs:
         exclude:
           - os: macos
             ruby: head
-          - os: macos
-            ruby: '3.0'
-          - os: macos
-            ruby: '2.5'
+          - ruby: '3.0'
             gemfile: rails_5
+          - ruby: '3.0'
+            gemfile: rails_6
 
     env:
       BUNDLE_GEMFILE: gemfiles/${{ matrix.gemfile }}.gemfile

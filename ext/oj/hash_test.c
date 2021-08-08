@@ -3,7 +3,7 @@
 
 // if windows, comment out the whole file. It's only a performance test.
 #ifndef _WIN32
-#include "hash.h"
+#include "intern.h"
 
 #include <stdint.h>
 #include <sys/time.h>
@@ -424,8 +424,6 @@ static uint64_t micro_time() {
 
 static void perf() {
     StrLen   d;
-    VALUE    v;
-    VALUE *  slot = 0;
     uint64_t dt, start;
     int      i, iter = 1000000;
     int      dataCnt = sizeof(data) / sizeof(*data);
@@ -434,13 +432,7 @@ static void perf() {
     start = micro_time();
     for (i = iter; 0 < i; i--) {
         for (d = data; 0 != d->str; d++) {
-            v = oj_class_hash_get(d->str, d->len, &slot);
-            if (Qundef == v) {
-                if (0 != slot) {
-                    v     = ID2SYM(rb_intern(d->str));
-                    *slot = v;
-                }
-            }
+	    oj_class_intern(d->str, d->len, false, NULL, false, Qnil);
         }
     }
     dt = micro_time() - start;
@@ -459,29 +451,10 @@ static void perf() {
 
 void oj_hash_test() {
     StrLen d;
-    VALUE  v;
-    VALUE *slot = 0;
-    ;
 
     oj_hash_init();
     for (d = data; 0 != d->str; d++) {
-        char *s = oj_strndup(d->str, d->len);
-        v       = oj_class_hash_get(d->str, d->len, &slot);
-        if (Qnil == v) {
-            if (0 == slot) {
-                printf("*** failed to get a slot for %s\n", s);
-            } else {
-                v     = ID2SYM(rb_intern(d->str));
-                *slot = v;
-            }
-        } else {
-            VALUE rs = rb_funcall2(v, rb_intern("to_s"), 0, 0);
-
-            printf("*** get on '%s' returned '%s' (%s)\n",
-                   s,
-                   StringValuePtr(rs),
-                   rb_class2name(rb_obj_class(v)));
-        }
+	oj_class_intern(d->str, d->len, false, NULL, false, Qnil);
         /*oj_hash_print(c);*/
     }
     printf("*** ---------- hash table ------------\n");

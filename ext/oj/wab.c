@@ -10,7 +10,7 @@
 #include "dump.h"
 #include "encode.h"
 #include "err.h"
-#include "hash.h"
+#include "intern.h"
 #include "oj.h"
 #include "parse.h"
 #include "trace.h"
@@ -302,21 +302,12 @@ static VALUE calc_hash_key(ParseInfo pi, Val parent) {
 
         return rkey;
     }
-    if (Yes != pi->options.cache_keys) {
+    if (Yes == pi->options.cache_keys) {
+        rkey = oj_sym_intern(parent->key, parent->klen);
+    } else {
         rkey = rb_str_new(parent->key, parent->klen);
         rkey = oj_encode(rkey);
-	rkey = rb_str_intern(rkey);
-
-        return rkey;
-    }
-    VALUE *slot;
-
-    if (Qnil == (rkey = oj_sym_hash_get(parent->key, parent->klen, &slot))) {
-        rkey  = rb_str_new(parent->key, parent->klen);
-        rkey  = oj_encode(rkey);
-        rkey  = rb_str_intern(rkey);
-        *slot = rkey;
-        rb_gc_register_address(slot);
+        rkey = rb_str_intern(rkey);
     }
     OBJ_FREEZE(rkey);
     return rkey;
@@ -476,8 +467,8 @@ static VALUE cstr_to_rstr(ParseInfo pi, const char *str, size_t len) {
         return rb_funcall(wab_uuid_clas, oj_new_id, 1, rb_str_new(str, len));
     }
     if (7 < len && 0 == strncasecmp("http://", str, 7)) {
-        int            err = 0;
-	v = rb_str_new(str, len);
+        int err            = 0;
+        v                  = rb_str_new(str, len);
         volatile VALUE uri = rb_protect(protect_uri, v, &err);
 
         if (0 == err) {

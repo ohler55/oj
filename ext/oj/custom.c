@@ -8,7 +8,7 @@
 #include "dump.h"
 #include "encode.h"
 #include "err.h"
-#include "hash.h"
+#include "intern.h"
 #include "odd.h"
 #include "oj.h"
 #include "parse.h"

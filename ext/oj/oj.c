@@ -13,7 +13,7 @@
 
 #include "dump.h"
 #include "encode.h"
-#include "hash.h"
+#include "intern.h"
 #include "odd.h"
 #include "parse.h"
 #include "rails.h"
@@ -157,6 +157,8 @@ pthread_mutex_t oj_cache_mutex;
 #else
 VALUE oj_cache_mutex = Qnil;
 #endif
+
+extern void oj_parser_init();
 
 const char oj_json_class[] = "json_class";
 
@@ -1777,6 +1779,9 @@ static VALUE protect_require(VALUE x) {
 void Init_oj() {
     int err = 0;
 
+#if HAVE_RB_EXT_RACTOR_SAFE
+    rb_ext_ractor_safe(true);
+#endif
     Oj = rb_define_module("Oj");
 
     oj_cstack_class = rb_define_class_under(Oj, "CStack", rb_cObject);
@@ -2051,4 +2056,6 @@ void Init_oj() {
     rb_gc_register_address(&oj_cache_mutex);
 #endif
     oj_init_doc();
+
+    oj_parser_init();
 }

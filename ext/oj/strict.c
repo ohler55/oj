@@ -8,7 +8,7 @@
 
 #include "encode.h"
 #include "err.h"
-#include "hash.h"
+#include "intern.h"
 #include "oj.h"
 #include "parse.h"
 #include "trace.h"
@@ -17,14 +17,7 @@ VALUE oj_cstr_to_value(const char *str, size_t len, size_t cache_str) {
     volatile VALUE rstr = Qnil;
 
     if (len <= cache_str) {
-        VALUE *slot;
-
-        if (Qnil == (rstr = oj_str_hash_get(str, len, &slot))) {
-            rstr  = rb_str_new(str, len);
-            rstr  = oj_encode(rstr);
-            *slot = rstr;
-            rb_gc_register_address(slot);
-        }
+	rstr = oj_str_intern(str, len);
     } else {
         rstr = rb_str_new(str, len);
         rstr = oj_encode(rstr);
@@ -48,21 +41,10 @@ VALUE oj_calc_hash_key(ParseInfo pi, Val parent) {
         OBJ_FREEZE(rkey);
         return rkey;
     }
-    VALUE *slot;
-
     if (Yes == pi->options.sym_key) {
-        if (Qnil == (rkey = oj_sym_hash_get(parent->key, parent->klen, &slot))) {
-            rkey  = ID2SYM(rb_intern3(parent->key, parent->klen, oj_utf8_encoding));
-            *slot = rkey;
-            rb_gc_register_address(slot);
-        }
+	rkey = oj_sym_intern(parent->key, parent->klen);
     } else {
-        if (Qnil == (rkey = oj_str_hash_get(parent->key, parent->klen, &slot))) {
-            rkey  = rb_str_new(parent->key, parent->klen);
-            rkey  = oj_encode(rkey);
-            *slot = rkey;
-            rb_gc_register_address(slot);
-        }
+	rkey = oj_str_intern(parent->key, parent->klen);
     }
     OBJ_FREEZE(rkey);
     return rkey;
