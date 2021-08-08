@@ -206,4 +206,8 @@ class UsualTest < Minitest::Test
     assert_equal(Auto2, doc.class)
   end
 
+  def test_default_parser
+    doc = Oj::Parser.usual.parse('{"a":true,"b":null}')
+    assert_equal({'a'=>true, 'b'=>nil}, doc)
+  end
 end

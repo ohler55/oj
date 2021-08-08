@@ -1219,7 +1219,7 @@ static VALUE parser_new(VALUE self, VALUE mode) {
         case RUBY_T_SYMBOL:
             mode = rb_sym_to_s(mode);
             // fall through
-        case RUBY_T_STRING: ms = rb_string_value_ptr(&mode); break;
+        case RUBY_T_STRING: ms = RSTRING_PTR(mode); break;
         default:
             rb_raise(rb_eArgError, "mode must be :validate, :usual, :saj, or :object");
         }
@@ -1432,6 +1432,72 @@ static VALUE parser_just_one_set(VALUE self, VALUE v) {
     return p->just_one ? Qtrue : Qfalse;
 }
 
+static VALUE usual_parser = Qundef;
+
+/* Document-method: usual
+ * call-seq: usual
+ *
+ * Returns the default usual parser.
+ */
+static VALUE parser_usual(VALUE self) {
+    if (Qundef == usual_parser) {
+	ojParser p = ALLOC(struct _ojParser);
+
+	memset(p, 0, sizeof(struct _ojParser));
+	buf_init(&p->key);
+	buf_init(&p->buf);
+	p->map = value_map;
+	oj_set_parser_usual(p);
+	usual_parser = Data_Wrap_Struct(parser_class, parser_mark, parser_free, p);
+	rb_gc_register_address(&usual_parser);
+    }
+    return usual_parser;
+}
+
+static VALUE saj_parser = Qundef;
+
+/* Document-method: saj
+ * call-seq: saj
+ *
+ * Returns the default saj parser.
+ */
+static VALUE parser_saj(VALUE self) {
+    if (Qundef == saj_parser) {
+	ojParser p = ALLOC(struct _ojParser);
+
+	memset(p, 0, sizeof(struct _ojParser));
+	buf_init(&p->key);
+	buf_init(&p->buf);
+	p->map = value_map;
+	oj_set_parser_saj(p);
+	saj_parser = Data_Wrap_Struct(parser_class, parser_mark, parser_free, p);
+	rb_gc_register_address(&saj_parser);
+    }
+    return saj_parser;
+}
+
+static VALUE validate_parser = Qundef;
+
+/* Document-method: validate
+ * call-seq: validate
+ *
+ * Returns the default validate parser.
+ */
+static VALUE parser_validate(VALUE self) {
+    if (Qundef == validate_parser) {
+	ojParser p = ALLOC(struct _ojParser);
+
+	memset(p, 0, sizeof(struct _ojParser));
+	buf_init(&p->key);
+	buf_init(&p->buf);
+	p->map = value_map;
+	oj_set_parser_validator(p);
+	validate_parser = Data_Wrap_Struct(parser_class, parser_mark, parser_free, p);
+	rb_gc_register_address(&validate_parser);
+    }
+    return validate_parser;
+}
+
 /* Document-class: Oj::Parser
  *
  * A reusable parser that makes use of named delegates to determine the
@@ -1451,6 +1517,9 @@ void oj_parser_init() {
     rb_define_method(parser_class, "file", parser_file, 1);
     rb_define_method(parser_class, "just_one", parser_just_one, 0);
     rb_define_method(parser_class, "just_one=", parser_just_one_set, 1);
-
     rb_define_method(parser_class, "method_missing", parser_missing, -1);
+
+    rb_define_module_function(parser_class, "usual", parser_usual, 0);
+    rb_define_module_function(parser_class, "saj", parser_saj, 0);
+    rb_define_module_function(parser_class, "validate", parser_validate, 0);
 }

@@ -62,8 +62,6 @@ class SajTest < Minitest::Test
     p.handler = handler
     p.parse(json)
     assert_equal([[:add_value, nil, nil]], handler.calls)
-
-    # TBD try [null] and {"x": null}
   end
 
   def test_true
@@ -229,6 +227,18 @@ class SajTest < Minitest::Test
 		   [:add_value, true, nil],
 		   [:add_value, false, nil],
 		   [:array_end, nil],
+		 ], handler.calls)
+  end
+
+  def test_default
+    handler = AllSaj.new()
+    json = %|[true]|
+    Oj::Parser.saj.handler = handler
+    Oj::Parser.saj.parse(json)
+    assert_equal([
+		   [:array_start, nil],
+                   [:add_value, true, nil],
+                   [:array_end, nil],
 		 ], handler.calls)
   end
 
