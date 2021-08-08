@@ -159,7 +159,7 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
     for (i = 0; i < cnt; i++) {
         volatile VALUE s = rb_sym_to_s(rb_ary_entry(ma, i));
 
-        name = rb_string_value_ptr((VALUE *)&s);
+        name = RSTRING_PTR(s);
         len  = (int)RSTRING_LEN(s);
         assure_size(out, size + sep_len + 6);
         if (0 < i) {
@@ -202,7 +202,7 @@ static void dump_enumerable(VALUE obj, int depth, Out out, bool as_ok) {
 
 static void dump_bigdecimal(VALUE obj, int depth, Out out, bool as_ok) {
     volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
-    const char *   str  = rb_string_value_ptr((VALUE *)&rstr);
+    const char *   str  = RSTRING_PTR(rstr);
 
     if ('I' == *str || 'N' == *str || ('-' == *str && 'I' == str[1])) {
         oj_dump_nil(Qnil, depth, out, false);
@@ -355,7 +355,7 @@ static void dump_timewithzone(VALUE obj, int depth, Out out, bool as_ok) {
 static void dump_to_s(VALUE obj, int depth, Out out, bool as_ok) {
     volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-    oj_dump_cstr(rb_string_value_ptr((VALUE *)&rstr), (int)RSTRING_LEN(rstr), 0, 0, out);
+    oj_dump_cstr(RSTRING_PTR(rstr), (int)RSTRING_LEN(rstr), 0, 0, out);
 }
 
 static ID parameters_id = 0;
@@ -1224,7 +1224,7 @@ static void dump_float(VALUE obj, int depth, Out out, bool as_ok) {
         } else {
             volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-            strcpy(buf, rb_string_value_ptr((VALUE *)&rstr));
+            strcpy(buf, RSTRING_PTR(rstr));
             cnt = (int)RSTRING_LEN(rstr);
         }
     }

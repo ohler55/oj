@@ -129,7 +129,7 @@ dump_to_json(VALUE obj, Out out) {
 	oj_trace("to_json", obj, __FILE__, __LINE__, 0, TraceRubyOut);
     }
 
-    s = rb_string_value_ptr((VALUE*)&rs);
+    s = RSTRING_PTR(rs);
     len = (int)RSTRING_LEN(rs);
 
     assure_size(out, len + 1);
@@ -635,7 +635,7 @@ dump_float(VALUE obj, int depth, Out out, bool as_ok) {
     } else {
 	volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-	strcpy(buf, rb_string_value_ptr((VALUE*)&rstr));
+	strcpy(buf, RSTRING_PTR(rstr));
 	cnt = (int)RSTRING_LEN(rstr);
     }
     assure_size(out, cnt);
@@ -886,7 +886,7 @@ dump_bignum(VALUE obj, int depth, Out out, bool as_ok) {
     } else {
 	assure_size(out, cnt);
     }
-    memcpy(out->cur, rb_string_value_ptr((VALUE*)&rs), cnt);
+    memcpy(out->cur, RSTRING_PTR(rs), cnt);
     out->cur += cnt;
     if (dump_as_string) {
 	*out->cur++ = '"';

@@ -206,7 +206,7 @@ void oj_reg_odd(VALUE  clas,
         *fp = 0;
         switch (rb_type(*members)) {
         case T_STRING:
-            if (NULL == (*np = strdup(rb_string_value_ptr(members)))) {
+            if (NULL == (*np = strdup(RSTRING_PTR(*members)))) {
                 rb_raise(rb_eNoMemError, "for attribute name.");
             }
             break;
