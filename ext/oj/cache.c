@@ -8,10 +8,10 @@
 
 typedef struct _slot {
     struct _slot *next;
+    VALUE         val;
     uint32_t      hash;
     uint8_t       klen;
     char          key[CACHE_MAX_KEY];
-    VALUE         val;
 } * Slot;
 
 typedef struct _cache {
@@ -20,7 +20,7 @@ typedef struct _cache {
     VALUE (*form)(const char *str, size_t len);
     uint32_t size;
     uint32_t mask;
-    bool     reg;
+    bool     mark;
 } * Cache;
 
 // almost the Murmur hash algorithm
@@ -83,7 +83,7 @@ static uint32_t hash_calc(const uint8_t *key, size_t len) {
     return h;
 }
 
-Cache cache_create(size_t size, VALUE (*form)(const char *str, size_t len), bool reg) {
+Cache cache_create(size_t size, VALUE (*form)(const char *str, size_t len), bool mark) {
     Cache c     = ALLOC(struct _cache);
     int   shift = 0;
 
@@ -98,7 +98,7 @@ Cache cache_create(size_t size, VALUE (*form)(const char *str, size_t len), bool
     memset(c->slots, 0, sizeof(Slot) * c->size);
     c->form = form;
     c->cnt  = 0;
-    c->reg  = reg;
+    c->mark  = mark;
 
     return c;
 }
@@ -115,7 +115,8 @@ static void rehash(Cache c) {
     for (Slot *sp = c->slots; sp < end; sp++) {
         Slot s    = *sp;
         Slot next = NULL;
-        *sp       = NULL;
+
+        *sp = NULL;
         for (; NULL != s; s = next) {
             next = s->next;
 
@@ -140,6 +141,16 @@ void cache_free(Cache c) {
     xfree(c);
 }
 
+void cache_mark(Cache c) {
+    if (c->mark) {
+        for (uint32_t i = 0; i < c->size; i++) {
+            for (Slot s = c->slots[i]; NULL != s; s = s->next) {
+		rb_gc_mark(s->val);
+            }
+        }
+    }
+}
+
 VALUE
 cache_intern(Cache c, const char *key, size_t len) {
     if (CACHE_MAX_KEY < len) {
@@ -159,16 +170,14 @@ cache_intern(Cache c, const char *key, size_t len) {
     b       = ALLOC(struct _slot);
     b->hash = h;
     b->next = NULL;
+    memcpy(b->key, key, len);
+    b->klen     = (uint8_t)len;
+    b->key[len] = '\0';
+    b->val      = c->form(key, len);
     if (NULL == tail) {
         *bucket = b;
     } else {
         tail->next = b;
-    }
-    memcpy(b->key, key, len);
-    b->klen = (uint8_t)len;
-    b->val  = c->form(key, len);
-    if (c->reg) {
-        rb_gc_register_address(&b->val);
     }
     c->cnt++;
     if (REHASH_LIMIT < c->cnt / c->size) {

@@ -399,17 +399,17 @@ static void close_object_create(ojParser p) {
             }
             rb_hash_bulk_insert(d->vtail - head, head, obj);
 #else
-	    for (VALUE *vp = head; kp < d->ktail; kp++, vp += 2) {
-		rb_hash_aset(obj, d->get_key(p, kp), *(vp + 1));
-		if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
-		    xfree(kp->key);
-		}
-	    }
+            for (VALUE *vp = head; kp < d->ktail; kp++, vp += 2) {
+                rb_hash_aset(obj, d->get_key(p, kp), *(vp + 1));
+                if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
+                    xfree(kp->key);
+                }
+            }
 #endif
         } else {
             obj = rb_class_new_instance(0, NULL, d->hash_class);
             for (VALUE *vp = head; kp < d->ktail; kp++, vp += 2) {
-		rb_funcall(obj, hset_id, 2, d->get_key(p, kp), *(vp + 1));
+                rb_funcall(obj, hset_id, 2, d->get_key(p, kp), *(vp + 1));
                 if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
                     xfree(kp->key);
                 }
@@ -431,12 +431,12 @@ static void close_object_create(ojParser p) {
             }
             rb_hash_bulk_insert(d->vtail - head, head, arg);
 #else
-	    for (VALUE *vp = head; kp < d->ktail; kp++, vp += 2) {
-		rb_hash_aset(arg, d->get_key(p, kp), *(vp + 1));
-		if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
-		    xfree(kp->key);
-		}
-	    }
+            for (VALUE *vp = head; kp < d->ktail; kp++, vp += 2) {
+                rb_hash_aset(arg, d->get_key(p, kp), *(vp + 1));
+                if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
+                    xfree(kp->key);
+                }
+            }
 #endif
             obj = rb_funcall(clas, oj_json_create_id, 1, arg);
         } else {
@@ -674,6 +674,7 @@ static void dfree(ojParser p) {
     xfree(d->khead);
     xfree(d->create_id);
     xfree(p->ctx);
+    p->ctx = NULL;
 }
 
 static void mark(ojParser p) {
@@ -682,6 +683,16 @@ static void mark(ojParser p) {
     }
     Delegate d = (Delegate)p->ctx;
 
+    if (NULL == d) {
+	return;
+    }
+    cache_mark(d->str_cache);
+    if (NULL != d->sym_cache) {
+        cache_mark(d->sym_cache);
+    }
+    if (NULL != d->class_cache) {
+        cache_mark(d->class_cache);
+    }
     for (VALUE *vp = d->vhead; vp < d->vtail; vp++) {
         if (Qundef != *vp) {
             rb_gc_mark(*vp);
@@ -860,7 +871,7 @@ static VALUE opt_create_id_set(ojParser p, VALUE value) {
             rb_raise(rb_eArgError, "The create_id values is limited to %d bytes.", 1 << sizeof(d->create_id_len));
         }
         d->create_id_len                  = (uint8_t)len;
-        d->create_id                      = str_dup(rb_string_value_ptr(&value), len);
+        d->create_id                      = str_dup(RSTRING_PTR(value), len);
         p->funcs[OBJECT_FUN].add_str      = add_str_key_create;
         p->funcs[TOP_FUN].close_object    = close_object_create;
         p->funcs[ARRAY_FUN].close_object  = close_object_create;
@@ -890,10 +901,10 @@ static VALUE opt_decimal_set(ojParser p, VALUE value) {
     volatile VALUE s;
 
     switch (rb_type(value)) {
-    case T_STRING: mode = rb_string_value_ptr(&value); break;
+    case T_STRING: mode = RSTRING_PTR(value); break;
     case T_SYMBOL:
         s    = rb_sym_to_s(value);
-        mode = rb_string_value_ptr(&s);
+        mode = RSTRING_PTR(s);
         break;
     default:
         rb_raise(rb_eTypeError,
@@ -1007,10 +1018,10 @@ static VALUE opt_missing_class_set(ojParser p, VALUE value) {
     volatile VALUE s;
 
     switch (rb_type(value)) {
-    case T_STRING: mode = rb_string_value_ptr(&value); break;
+    case T_STRING: mode = RSTRING_PTR(value); break;
     case T_SYMBOL:
         s    = rb_sym_to_s(value);
-        mode = rb_string_value_ptr(&s);
+        mode = RSTRING_PTR(s);
         break;
     default:
         rb_raise(rb_eTypeError,
