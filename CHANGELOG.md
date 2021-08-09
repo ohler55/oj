@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 3.13.1 - unreleased
+## 3.13.1 - 2021-08-09
 
 - Fixed failing build on Windows.
 
