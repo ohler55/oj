@@ -200,9 +200,7 @@ static VALUE leaf_value(Doc doc, Leaf leaf) {
             break;
         case T_ARRAY: return leaf_array_value(doc, leaf); break;
         case T_HASH: return leaf_hash_value(doc, leaf); break;
-        default:
-            rb_raise(rb_const_get_at(Oj, rb_intern("Error")), "Unexpected type %02x.", leaf->rtype);
-            break;
+        default: rb_raise(rb_const_get_at(Oj, rb_intern("Error")), "Unexpected type %02x.", leaf->rtype); break;
         }
     }
     return leaf->value;
@@ -773,7 +771,7 @@ static VALUE parse_json(VALUE clas, char *json, bool given, bool allocated) {
     pi.doc = doc;
 #if IS_WINDOWS
     // assume a 1M stack and give half to ruby
-    pi.stack_min = (void *)((char *)&pi - (512 * 1024));
+    pi.stack_min = (void*)((char*)&pi - (512 * 1024));
 #else
     {
         struct rlimit lim;
@@ -825,9 +823,7 @@ static Leaf get_doc_leaf(Doc doc, const char *path) {
             size_t cnt = doc->where - doc->where_path;
 
             if (MAX_STACK <= cnt) {
-                rb_raise(rb_const_get_at(Oj, rb_intern("DepthError")),
-                         "Path too deep. Limit is %d levels.",
-                         MAX_STACK);
+                rb_raise(rb_const_get_at(Oj, rb_intern("DepthError")), "Path too deep. Limit is %d levels.", MAX_STACK);
             }
             memcpy(stack, doc->where_path, sizeof(Leaf) * (cnt + 1));
             lp = stack + cnt;
@@ -868,9 +864,7 @@ static Leaf get_leaf(Leaf *stack, Leaf *lp, const char *path) {
     Leaf leaf = *lp;
 
     if (MAX_STACK <= lp - stack) {
-        rb_raise(rb_const_get_at(Oj, rb_intern("DepthError")),
-                 "Path too deep. Limit is %d levels.",
-                 MAX_STACK);
+        rb_raise(rb_const_get_at(Oj, rb_intern("DepthError")), "Path too deep. Limit is %d levels.", MAX_STACK);
     }
     if ('\0' != *path) {
         if ('.' == *path && '.' == *(path + 1)) {
@@ -946,9 +940,7 @@ static void each_leaf(Doc doc, VALUE self) {
 
             doc->where++;
             if (MAX_STACK <= doc->where - doc->where_path) {
-                rb_raise(rb_const_get_at(Oj, rb_intern("DepthError")),
-                         "Path too deep. Limit is %d levels.",
-                         MAX_STACK);
+                rb_raise(rb_const_get_at(Oj, rb_intern("DepthError")), "Path too deep. Limit is %d levels.", MAX_STACK);
             }
             do {
                 *doc->where = e;
@@ -964,9 +956,7 @@ static void each_leaf(Doc doc, VALUE self) {
 
 static int move_step(Doc doc, const char *path, int loc) {
     if (MAX_STACK <= doc->where - doc->where_path) {
-        rb_raise(rb_const_get_at(Oj, rb_intern("DepthError")),
-                 "Path too deep. Limit is %d levels.",
-                 MAX_STACK);
+        rb_raise(rb_const_get_at(Oj, rb_intern("DepthError")), "Path too deep. Limit is %d levels.", MAX_STACK);
     }
     if ('\0' == *path) {
         loc = 0;
@@ -1263,7 +1253,6 @@ static VALUE doc_where_q(VALUE self) {
 static VALUE doc_path(VALUE self) {
     return doc_where(self);
 }
-
 
 /* @overload local_key() => String, Fixnum, nil
  *

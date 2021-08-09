@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.13.1 - unreleased
+
+- Fixed failing build on Windows.
+
 ## 3.13.0 - 2021-08-08
 
 - Added `Oj::Parser`, a faster parser with better option management.
