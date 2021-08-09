@@ -1217,7 +1217,7 @@ static VALUE parser_new(VALUE self, VALUE mode) {
 
         switch (rb_type(mode)) {
         case RUBY_T_SYMBOL:
-            mode = rb_sym_to_s(mode);
+            mode = rb_sym2str(mode);
             // fall through
         case RUBY_T_STRING: ms = RSTRING_PTR(mode); break;
         default:
@@ -1290,7 +1290,7 @@ static VALUE parser_missing(int argc, VALUE *argv, VALUE self) {
 #endif
     switch (rb_type(rkey)) {
     case RUBY_T_SYMBOL:
-        rkey = rb_sym_to_s(rkey);
+        rkey = rb_sym2str(rkey);
         // fall through
     case RUBY_T_STRING: key = rb_string_value_ptr(&rkey); break;
     default: rb_raise(rb_eArgError, "option method must be a symbol or string");
