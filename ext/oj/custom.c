@@ -833,7 +833,7 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
             v = rb_struct_aref(obj, INT2FIX(i));
 #endif
             if (ma != Qnil) {
-                volatile VALUE s = rb_sym_to_s(rb_ary_entry(ma, i));
+                volatile VALUE s = rb_sym2str(rb_ary_entry(ma, i));
 
                 name = RSTRING_PTR(s);
                 len  = (int)RSTRING_LEN(s);
