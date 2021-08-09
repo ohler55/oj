@@ -8,6 +8,7 @@ $: << File.join(File.dirname(__FILE__), "../ext")
 require 'optparse'
 require 'perf'
 require 'oj'
+require 'json'
 
 $verbose = false
 $iter = 50_000
@@ -54,6 +55,7 @@ if $cache_keys
 else
   Oj.default_options = {cache_keys: false, cache_str: 0, symbol_keys: $symbol_keys}
 end
+JSON.parser = JSON::Ext::Parser
 
 class AllSaj
   def initialize()
@@ -121,6 +123,7 @@ puts "Parse Usual Performance"
 perf = Perf.new()
 perf.add('Oj::Parser.usual', '') { p_usual.parse($json) }
 perf.add('Oj::strict_load', '') { Oj.strict_load($json) }
+perf.add('JSON::Ext', 'parse') { JSON.load($json) }
 perf.run($iter)
 
 ### Usual Objects ######################
@@ -165,11 +168,14 @@ p_usual.create_id = '^'
 p_usual.class_cache = true
 p_usual.ignore_json_create = true
 
+JSON.create_id = '^'
+
 puts '-' * 80
 puts "Parse Usual Object Performance"
 perf = Perf.new()
 perf.add('Oj::Parser.usual', '') { p_usual.parse($obj_json) }
 perf.add('Oj::compat_load', '') { Oj.compat_load($obj_json) }
+perf.add('JSON::Ext', 'parse') { JSON.load($obj_json) }
 perf.run($iter)
 
 unless $failed.empty?
