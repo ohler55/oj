@@ -1,10 +1,16 @@
 # CHANGELOG
 
+## 3.13.0 - 2021-08-08
+
+- Added `Oj::Parser`, a faster parser with better option management.
+
+- Watson1978 increasd dump performance ever more and is now a collaborator on Oj!
+
 ## 3.12.3 - 2021-08-02
 
 - Update documents for the `:cache_keys` and `:cache_strings`.
 
-- Watson1978 increasd dump performance for rails mode.
+- Watson1978 increased dump performance for rails mode.
 
 ## 3.12.2 - 2021-07-25
 

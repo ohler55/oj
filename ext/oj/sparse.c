@@ -9,7 +9,7 @@
 
 #include "buf.h"
 #include "encode.h"
-#include "hash.h"  // for oj_strndup()
+#include "intern.h"  // for oj_strndup()
 #include "oj.h"
 #include "parse.h"
 #include "val_stack.h"

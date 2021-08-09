@@ -56,9 +56,9 @@ static VALUE buffer_size_sym = Qundef;
 /* Document-method: new
  * call-seq: new(io, options)
  *
- * Creates a new StreamWriter. Options are supported according the the
- * specified mode or the mode in the default options. Note that if mimic_JSON
- * or Oj.optimize_rails has not been called then the behavior of the modes may
+ * Creates a new StreamWriter. Options are supported according the specified
+ * mode or the mode in the default options. Note that if mimic_JSON or
+ * Oj.optimize_rails has not been called then the behavior of the modes may
  * not be the same as if they were.
  *
  * In addition to the regular dump options for the various modes a

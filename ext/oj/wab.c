@@ -10,7 +10,7 @@
 #include "dump.h"
 #include "encode.h"
 #include "err.h"
-#include "hash.h"
+#include "intern.h"
 #include "oj.h"
 #include "parse.h"
 #include "trace.h"
@@ -233,7 +233,7 @@ static void dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
     } else if (oj_bigdecimal_class == clas) {
         volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-        oj_dump_raw(rb_string_value_ptr((VALUE *)&rstr), (int)RSTRING_LEN(rstr), out);
+        oj_dump_raw(RSTRING_PTR(rstr), (int)RSTRING_LEN(rstr), out);
     } else if (resolve_wab_uuid_class() == clas) {
         oj_dump_str(rb_funcall(obj, oj_to_s_id, 0), depth, out, false);
     } else if (resolve_uri_http_class() == clas) {
@@ -302,22 +302,14 @@ static VALUE calc_hash_key(ParseInfo pi, Val parent) {
 
         return rkey;
     }
-    if (Yes != pi->options.cache_keys) {
+    if (Yes == pi->options.cache_keys) {
+        rkey = oj_sym_intern(parent->key, parent->klen);
+    } else {
         rkey = rb_str_new(parent->key, parent->klen);
         rkey = oj_encode(rkey);
-	rkey = rb_str_intern(rkey);
-
-        return rkey;
+        rkey = rb_str_intern(rkey);
     }
-    VALUE *slot;
-
-    if (Qnil == (rkey = oj_sym_hash_get(parent->key, parent->klen, &slot))) {
-        rkey  = rb_str_new(parent->key, parent->klen);
-        rkey  = oj_encode(rkey);
-        rkey  = rb_str_intern(rkey);
-        *slot = rkey;
-        rb_gc_register_address(slot);
-    }
+    OBJ_FREEZE(rkey);
     return rkey;
 }
 
@@ -475,8 +467,8 @@ static VALUE cstr_to_rstr(ParseInfo pi, const char *str, size_t len) {
         return rb_funcall(wab_uuid_clas, oj_new_id, 1, rb_str_new(str, len));
     }
     if (7 < len && 0 == strncasecmp("http://", str, 7)) {
-        int            err = 0;
-	v = rb_str_new(str, len);
+        int err            = 0;
+        v                  = rb_str_new(str, len);
         volatile VALUE uri = rb_protect(protect_uri, v, &err);
 
         if (0 == err) {

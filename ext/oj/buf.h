@@ -19,6 +19,10 @@ inline static void buf_init(Buf buf) {
     buf->tail = buf->head;
 }
 
+inline static void buf_reset(Buf buf) {
+    buf->tail = buf->head;
+}
+
 inline static void buf_cleanup(Buf buf) {
     if (buf->base != buf->head) {
         xfree(buf->head);
@@ -27,6 +31,11 @@ inline static void buf_cleanup(Buf buf) {
 
 inline static size_t buf_len(Buf buf) {
     return buf->tail - buf->head;
+}
+
+inline static const char *buf_str(Buf buf) {
+    *buf->tail = '\0';
+    return buf->head;
 }
 
 inline static void buf_append_string(Buf buf, const char *s, size_t slen) {

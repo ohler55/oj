@@ -964,12 +964,12 @@ static VALUE protect_parse(VALUE pip) {
 extern int oj_utf8_index;
 
 static void oj_pi_set_input_str(ParseInfo pi, volatile VALUE *inputp) {
-    rb_encoding *enc = rb_to_encoding(rb_obj_encoding(*inputp));
+    rb_encoding *enc = rb_enc_get(*inputp);
 
-    if (rb_utf8_encoding() != enc) {
-        *inputp = rb_str_conv_enc(*inputp, enc, rb_utf8_encoding());
+    if (oj_utf8_encoding != enc) {
+        *inputp = rb_str_conv_enc(*inputp, enc, oj_utf8_encoding);
     }
-    pi->json = rb_string_value_ptr((VALUE *)inputp);
+    pi->json = RSTRING_PTR(*inputp);
     pi->end  = pi->json + RSTRING_LEN(*inputp);
 }
 

@@ -5,7 +5,7 @@
 
 #include "encode.h"
 #include "err.h"
-#include "hash.h"
+#include "intern.h"
 #include "oj.h"
 #include "parse.h"
 #include "resolve.h"
@@ -27,30 +27,16 @@ static void hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, c
 
         if (Qundef == rkey) {
             if (Yes != pi->options.cache_keys) {
-                rkey = rb_str_new(key, klen);
-                rkey = oj_encode(rkey);
                 if (Yes == pi->options.sym_key) {
-                    rkey = rb_str_intern(rkey);
-                }
-            } else {
-                VALUE *slot;
-
-                if (Yes == pi->options.sym_key) {
-                    if (Qnil == (rkey = oj_sym_hash_get(key, klen, &slot))) {
-                        rkey  = rb_str_new(key, klen);
-                        rkey  = oj_encode(rkey);
-                        rkey  = rb_str_intern(rkey);
-                        *slot = rkey;
-                        rb_gc_register_address(slot);
-                    }
+                    rkey = ID2SYM(rb_intern3(key, klen, oj_utf8_encoding));
                 } else {
-                    if (Qnil == (rkey = oj_str_hash_get(key, klen, &slot))) {
-                        rkey  = rb_str_new(key, klen);
-                        rkey  = oj_encode(rkey);
-                        *slot = rkey;
-                        rb_gc_register_address(slot);
-                    }
+                    rkey = rb_str_new(key, klen);
+                    rkey = oj_encode(rkey);
                 }
+            } else if (Yes == pi->options.sym_key) {
+                rkey = oj_sym_intern(key, klen);
+            } else {
+                rkey = oj_str_intern(key, klen);
             }
         }
         if (Yes == pi->options.create_ok && NULL != pi->options.str_rx.head) {

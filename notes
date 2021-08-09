@@ -3,13 +3,31 @@
 ^c^d hide subtree
 ^c^s show subtree
 
-- parser re-write
- - use ojc as a starting point
-  - should hash be a stack with indicator for either hash or object?
-   - detect object if create key is encountered else hash
- - optimize callbacks
- - consider a 4.0 if API changes would be better
-  - separate defaults for each mode
+- plan
+ - merge to develop
+ - write article on changes and features
+ - release
+ - future
+  - object delegate first
+
+- future
+ - usual delegate
+   - detect_time (maybe)
+ - parser
+  - read file in separate thread
+  - object delegate
+
+- new parser reasons or design notes
+ - parser itself is faster due to reduced branching
+ - bulk array create - 15x
+ - bulk hash - 3x
+ - reuse of memory
+ - better control over options
+ - auto rehash of cache
+ - memory use when reading from a file
+
+
+- add default_options[]= method
 
 - big decimal
  - just in custom mode, maybe in strict?
@@ -25,10 +43,7 @@
  - ActiveSupport::Multibyte::Chars
  - ActiveRecord::Relation
 
-- debug
- - instrument for parsing floats/bigdecimal
-  - branch
-
+- future
  - option to allow invalid unicode through
  - unit tests for 32 bit - test_float_parse
   - look at RUBY_PLATFORM maybe?
@@ -40,8 +55,6 @@
   - replace with best attempt such as \ud83d => \xED\xA0\xBD
   - that would be the normal replacement
  - allow_invalid_unicode
-
-- streaming parser for scp and saj
 
 ---------------------------
 Tried a separate thread for the parser and the results were poor. The parsing is

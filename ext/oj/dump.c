@@ -472,7 +472,7 @@ void oj_dump_time(VALUE obj, Out out, int withZone) {
 void oj_dump_ruby_time(VALUE obj, Out out) {
     volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-    oj_dump_cstr(rb_string_value_ptr((VALUE *)&rstr), (int)RSTRING_LEN(rstr), 0, 0, out);
+    oj_dump_cstr(RSTRING_PTR(rstr), (int)RSTRING_LEN(rstr), 0, 0, out);
 }
 
 void oj_dump_xml_time(VALUE obj, Out out) {
@@ -708,12 +708,12 @@ void oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
 }
 
 void oj_dump_str(VALUE obj, int depth, Out out, bool as_ok) {
-    rb_encoding *enc = rb_to_encoding(rb_obj_encoding(obj));
+    rb_encoding *enc = rb_enc_get(obj);
 
-    if (rb_utf8_encoding() != enc) {
-        obj = rb_str_conv_enc(obj, enc, rb_utf8_encoding());
+    if (oj_utf8_encoding != enc) {
+        obj = rb_str_conv_enc(obj, enc, oj_utf8_encoding);
     }
-    oj_dump_cstr(rb_string_value_ptr((VALUE *)&obj), (int)RSTRING_LEN(obj), 0, 0, out);
+    oj_dump_cstr(RSTRING_PTR(obj), (int)RSTRING_LEN(obj), 0, 0, out);
 }
 
 void oj_dump_sym(VALUE obj, int depth, Out out, bool as_ok) {
@@ -722,7 +722,7 @@ void oj_dump_sym(VALUE obj, int depth, Out out, bool as_ok) {
 
     volatile VALUE s = rb_sym_to_s(obj);
 
-    oj_dump_cstr(rb_string_value_ptr((VALUE *)&s), (int)RSTRING_LEN(s), 0, 0, out);
+    oj_dump_cstr(RSTRING_PTR(s), (int)RSTRING_LEN(s), 0, 0, out);
 }
 
 static void debug_raise(const char *orig, size_t cnt, int line) {
@@ -760,7 +760,7 @@ void oj_dump_raw_json(VALUE obj, int depth, Out out) {
         if (Yes == out->opts->trace) {
             oj_trace("raw_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyOut);
         }
-        oj_dump_raw(rb_string_value_ptr((VALUE *)&jv), (size_t)RSTRING_LEN(jv), out);
+        oj_dump_raw(RSTRING_PTR(jv), (size_t)RSTRING_LEN(jv), out);
     }
 }
 
@@ -958,7 +958,7 @@ void oj_dump_class(VALUE obj, int depth, Out out, bool as_ok) {
 void oj_dump_obj_to_s(VALUE obj, Out out) {
     volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-    oj_dump_cstr(rb_string_value_ptr((VALUE *)&rstr), (int)RSTRING_LEN(rstr), 0, 0, out);
+    oj_dump_cstr(RSTRING_PTR(rstr), (int)RSTRING_LEN(rstr), 0, 0, out);
 }
 
 void oj_dump_raw(const char *str, size_t cnt, Out out) {
@@ -1075,7 +1075,7 @@ void oj_dump_bignum(VALUE obj, int depth, Out out, bool as_ok) {
     } else {
         assure_size(out, cnt);
     }
-    memcpy(out->cur, rb_string_value_ptr((VALUE *)&rs), cnt);
+    memcpy(out->cur, RSTRING_PTR(rs), cnt);
     out->cur += cnt;
     if (dump_as_string) {
         *out->cur++ = '"';
@@ -1203,7 +1203,7 @@ void oj_dump_float(VALUE obj, int depth, Out out, bool as_ok) {
         if ((int)sizeof(buf) <= cnt) {
             cnt = sizeof(buf) - 1;
         }
-        memcpy(buf, rb_string_value_ptr((VALUE *)&rstr), cnt);
+        memcpy(buf, RSTRING_PTR(rstr), cnt);
         buf[cnt] = '\0';
     } else {
         cnt = oj_dump_float_printf(buf, sizeof(buf), obj, d, out->opts->float_fmt);
@@ -1223,7 +1223,7 @@ int oj_dump_float_printf(char *buf, size_t blen, VALUE obj, double d, const char
     if (17 <= cnt && (0 == strcmp("0001", buf + cnt - 4) || 0 == strcmp("9999", buf + cnt - 4))) {
         volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-        strcpy(buf, rb_string_value_ptr((VALUE *)&rstr));
+        strcpy(buf, RSTRING_PTR(rstr));
         cnt = (int)RSTRING_LEN(rstr);
     }
     return cnt;

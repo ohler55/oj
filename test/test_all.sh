@@ -3,6 +3,12 @@
 echo "----- General tests (tests.rb) -----"
 ruby tests.rb
 
+echo "----- Parser(:saj) tests (test_parser_saj.rb) -----"
+ruby test_parser_saj.rb
+
+echo "----- Parser(:usual) tests (test_parser_usual.rb) -----"
+ruby test_parser_usual.rb
+
 echo "----- Mimic tests (tests_mimic.rb) -----"
 ruby tests_mimic.rb
 

@@ -9,7 +9,7 @@
 #include <unistd.h>
 
 #include "encode.h"
-#include "hash.h"
+#include "intern.h"
 #include "oj.h"
 #include "parse.h"
 

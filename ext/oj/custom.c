@@ -8,7 +8,7 @@
 #include "dump.h"
 #include "encode.h"
 #include "err.h"
-#include "hash.h"
+#include "intern.h"
 #include "odd.h"
 #include "oj.h"
 #include "parse.h"
@@ -31,14 +31,14 @@ static void dump_obj_str(VALUE obj, int depth, Out out) {
 
 static void dump_obj_as_str(VALUE obj, int depth, Out out) {
     volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
-    const char *   str  = rb_string_value_ptr((VALUE *)&rstr);
+    const char *   str  = RSTRING_PTR(rstr);
 
     oj_dump_cstr(str, RSTRING_LEN(rstr), 0, 0, out);
 }
 
 static void bigdecimal_dump(VALUE obj, int depth, Out out) {
     volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
-    const char *   str  = rb_string_value_ptr((VALUE *)&rstr);
+    const char *   str  = RSTRING_PTR(rstr);
     int            len  = (int)RSTRING_LEN(rstr);
 
     if (0 == strcasecmp("Infinity", str)) {
@@ -123,7 +123,7 @@ static void date_dump(VALUE obj, int depth, Out out) {
         case RubyTime:
         case XmlTime:
             v = rb_funcall(obj, rb_intern("iso8601"), 0);
-            oj_dump_cstr(rb_string_value_ptr((VALUE *)&v), (int)RSTRING_LEN(v), 0, 0, out);
+            oj_dump_cstr(RSTRING_PTR(v), (int)RSTRING_LEN(v), 0, 0, out);
             break;
         case UnixZTime:
             v = rb_funcall(obj, rb_intern("to_time"), 0);
@@ -420,7 +420,7 @@ static void dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
         if (Qundef == v || T_STRING != rb_type(v)) {
             rb_raise(rb_eEncodingError, "Invalid type for raw JSON.\n");
         } else {
-            const char *s    = rb_string_value_ptr((VALUE *)&v);
+            const char *s    = RSTRING_PTR(v);
             int         len  = (int)RSTRING_LEN(v);
             const char *name = rb_id2name(*odd->attrs);
             size_t      nlen = strlen(name);
@@ -510,7 +510,7 @@ static VALUE dump_common(VALUE obj, int depth, Out out) {
         if (Yes == out->opts->trace) {
             oj_trace("to_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyOut);
         }
-        s   = rb_string_value_ptr((VALUE *)&rs);
+        s   = RSTRING_PTR(rs);
         len = (int)RSTRING_LEN(rs);
 
         assure_size(out, len + 1);
@@ -537,7 +537,7 @@ static VALUE dump_common(VALUE obj, int depth, Out out) {
         if (aj == obj) {
             volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-            oj_dump_cstr(rb_string_value_ptr((VALUE *)&rstr),
+            oj_dump_cstr(RSTRING_PTR(rstr),
                          (int)RSTRING_LEN(rstr),
                          false,
                          false,
@@ -835,7 +835,7 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
             if (ma != Qnil) {
                 volatile VALUE s = rb_sym_to_s(rb_ary_entry(ma, i));
 
-                name = rb_string_value_ptr((VALUE *)&s);
+                name = RSTRING_PTR(s);
                 len  = (int)RSTRING_LEN(s);
             } else {
                 len  = snprintf(num_id, sizeof(num_id), "%d", i);
@@ -959,12 +959,13 @@ static void hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, c
         volatile VALUE rstr = rb_str_new(str, len);
 
         if (Qundef == rkey) {
-            rkey = rb_str_new(key, klen);
-            rstr = oj_encode(rstr);
-            rkey = oj_encode(rkey);
             if (Yes == pi->options.sym_key) {
-                rkey = rb_str_intern(rkey);
+                rkey = ID2SYM(rb_intern3(key, klen, oj_utf8_encoding));
+            } else {
+                rkey = rb_str_new(key, klen);
+                rkey = oj_encode(rkey);
             }
+            rstr = oj_encode(rstr);
         }
         if (Yes == pi->options.create_ok && NULL != pi->options.str_rx.head) {
             VALUE clas = oj_rxclass_match(&pi->options.str_rx, str, (int)len);
