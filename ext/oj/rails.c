@@ -157,7 +157,7 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
     assure_size(out, 2);
     *out->cur++ = '{';
     for (i = 0; i < cnt; i++) {
-        volatile VALUE s = rb_sym_to_s(rb_ary_entry(ma, i));
+        volatile VALUE s = rb_sym2str(rb_ary_entry(ma, i));
 
         name = RSTRING_PTR(s);
         len  = (int)RSTRING_LEN(s);

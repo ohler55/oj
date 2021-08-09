@@ -903,7 +903,7 @@ static VALUE opt_decimal_set(ojParser p, VALUE value) {
     switch (rb_type(value)) {
     case T_STRING: mode = RSTRING_PTR(value); break;
     case T_SYMBOL:
-        s    = rb_sym_to_s(value);
+        s    = rb_sym2str(value);
         mode = RSTRING_PTR(s);
         break;
     default:
@@ -1020,7 +1020,7 @@ static VALUE opt_missing_class_set(ojParser p, VALUE value) {
     switch (rb_type(value)) {
     case T_STRING: mode = RSTRING_PTR(value); break;
     case T_SYMBOL:
-        s    = rb_sym_to_s(value);
+        s    = rb_sym2str(value);
         mode = RSTRING_PTR(s);
         break;
     default:

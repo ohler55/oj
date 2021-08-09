@@ -1,24 +1,8 @@
 // Copyright (c) 2020, 2021, Peter Ohler, All rights reserved.
 
-#include "parser.h"
-
-#include <errno.h>
 #include <fcntl.h>
-#include <limits.h>
-#include <math.h>
-#include <pthread.h>
-#include <signal.h>
-#include <stdarg.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <sys/time.h>
-#include <time.h>
-#include <unistd.h>
 
+#include "parser.h"
 #include "oj.h"
 
 #define DEBUG 0
@@ -1217,7 +1201,7 @@ static VALUE parser_new(VALUE self, VALUE mode) {
 
         switch (rb_type(mode)) {
         case RUBY_T_SYMBOL:
-            mode = rb_sym_to_s(mode);
+            mode = rb_sym2str(mode);
             // fall through
         case RUBY_T_STRING: ms = RSTRING_PTR(mode); break;
         default:
@@ -1290,7 +1274,7 @@ static VALUE parser_missing(int argc, VALUE *argv, VALUE self) {
 #endif
     switch (rb_type(rkey)) {
     case RUBY_T_SYMBOL:
-        rkey = rb_sym_to_s(rkey);
+        rkey = rb_sym2str(rkey);
         // fall through
     case RUBY_T_STRING: key = rb_string_value_ptr(&rkey); break;
     default: rb_raise(rb_eArgError, "option method must be a symbol or string");

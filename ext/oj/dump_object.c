@@ -208,7 +208,7 @@ static void dump_str(VALUE obj, int depth, Out out, bool as_ok) {
 }
 
 static void dump_sym(VALUE obj, int depth, Out out, bool as_ok) {
-    volatile VALUE s = rb_sym_to_s(obj);
+    volatile VALUE s = rb_sym2str(obj);
 
     oj_dump_cstr(RSTRING_PTR(s), (int)RSTRING_LEN(s), 1, 0, out);
 }
@@ -694,7 +694,7 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
 
         *out->cur++ = '[';
         for (i = 0; i < cnt; i++) {
-            volatile VALUE s = rb_sym_to_s(rb_ary_entry(ma, i));
+            volatile VALUE s = rb_sym2str(rb_ary_entry(ma, i));
 
             name = RSTRING_PTR(s);
             len  = (int)RSTRING_LEN(s);
