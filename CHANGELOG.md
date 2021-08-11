@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.13.2 - 2021-08-11
+
+- Fixed C99 compiler errors.
+
 ## 3.13.1 - 2021-08-09
 
 - Fixed failing build on Windows.
