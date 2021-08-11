@@ -268,7 +268,7 @@ Use symbols instead of strings for hash keys.
 ### :symbolize_names [Boolean]
 
 Like :symbol_keys has keys are made into symbols but only when
-mimicing the JSON gem and then only as the JSON gem honors it so
+mimicking the JSON gem and then only as the JSON gem honors it so
 JSON.parse honors the option but JSON.load does not.
 
 ### :trace
