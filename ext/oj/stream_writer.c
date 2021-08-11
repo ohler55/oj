@@ -67,7 +67,7 @@ static VALUE buffer_size_sym = Qundef;
  * should be and also a hint on when to flush.
  *
  * - *io* [_IO_] stream to write to
- * - *options* [_Hash_] formating options
+ * - *options* [_Hash_] formatting options
  */
 static VALUE stream_writer_new(int argc, VALUE *argv, VALUE self) {
     StreamWriterType type   = STREAM_IO;

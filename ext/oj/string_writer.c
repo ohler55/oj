@@ -248,7 +248,7 @@ static void str_writer_free(void *ptr) {
  * should be.
  *
  * - *io* [_IO_] stream to write to
- * - *options* [_Hash_] formating options
+ * - *options* [_Hash_] formatting options
  */
 static VALUE str_writer_new(int argc, VALUE *argv, VALUE self) {
     StrWriter sw = ALLOC(struct _strWriter);
@@ -466,7 +466,7 @@ static VALUE str_writer_as_json(VALUE self) {
  * by pushing values into the document. Pushing an array or an object will
  * create that element in the JSON document and subsequent pushes will add the
  * elements to that array or object until a pop() is called. When complete
- * calling to_s() will return the JSON document. Note tha calling to_s() before
+ * calling to_s() will return the JSON document. Note that calling to_s() before
  * construction is complete will return the document in it's current state.
  */
 void oj_string_writer_init() {

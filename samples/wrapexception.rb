@@ -15,7 +15,7 @@ require 'oj'
 # Oj is not able to automatically deserialize all classes that are a subclass of
 # a Ruby Exception. Only exception that take one required string argument in the
 # initialize() method are supported. This is an example of how to write an
-# Exception subclass that supports both a single string intializer and an
+# Exception subclass that supports both a single string initializer and an
 # Exception as an argument. Additional optional arguments can be added as well.
 #
 # The reason for this restriction has to do with a design decision on the part

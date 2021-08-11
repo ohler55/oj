@@ -16,7 +16,7 @@ module Oj
   # An Exception that is raised if a file fails to load.
   LoadError = Class.new(Error)
 
-  # An Exception that is raised if there is a conflict with mimicing JSON
+  # An Exception that is raised if there is a conflict with mimicking JSON
   MimicError = Class.new(Error)
 
 end # Oj

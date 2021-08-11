@@ -77,7 +77,7 @@ Oj.optimize_rails
 Oj.default_options = { mode: :rails, bigdecimal_as_decimal: true }
 
 It does the job - Oj dumps BigDecimal as number.
-If I later add bigdecimal_as_decimal: true explicitely in the dump it works for single number dump, but not for Hash.
+If I later add bigdecimal_as_decimal: true explicitly in the dump it works for single number dump, but not for Hash.
 
 Oj.dump(BigDecimal('1.2')) # => "1.2"
 Oj.dump({a: BigDecimal('1.2')}) # => "{\"a\":1.2}"

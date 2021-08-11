@@ -42,12 +42,12 @@ bleed over to other instances.
 
 ## How
 
-It's wonderfull to wish for a faster parser that solves all the
+It's wonderful to wish for a faster parser that solves all the
 annoyances of the previous parser but how was it done is a much more
 interesting question to answer.
 
 At the core, the API for parsing was changed. Instead of a sinle
-global parser any number of parsers can be created and each is seprate
+global parser any number of parsers can be created and each is separate
 from the others. The parser itself is able to rip through a JSON
 string, stream, or file and then make calls to a delegate to process
 the JSON elements according to the delegate behavior. This is similar
@@ -206,7 +206,7 @@ in array creation.
 
 For Hash the story is a little different. The bulk insert for Hash
 alternates keys and values but there is a wrinkle to consider. Since
-Ruby Object creation is triggered by the occurance of an element that
+Ruby Object creation is triggered by the occurrence of an element that
 matches a creation identifier the creation of a collection is not just
 for Array and Hash but also Object. Setting Object attributes uses an
 ID and not a VALUE. For that reason the keys should not be created as

@@ -113,7 +113,7 @@ EOT
   end
 
   # TBD Implement JSON.state to return state class.
-  # set state attibutes from defaults
+  # set state attributes from defaults
   # implement methods
   # circular should use circular in defaults or maybe always set to true, allow changes with [:check_circular]=
   def test_states

@@ -1472,7 +1472,7 @@ static VALUE doc_move(VALUE self, VALUE str) {
  * to the block on yield is the Doc instance after moving to the child
  * location.
  *   @param [String] path if provided it identified the top of the branch to
- * process the chilren of
+ * process the children of
  * @yieldparam [Doc] Doc at the child location
  * @example
  *   Oj::Doc.open('[3,[2,1]]') { |doc|
