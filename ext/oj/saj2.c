@@ -182,8 +182,9 @@ static void add_str_key(ojParser p) {
 
 static void reset(ojParser p) {
     Funcs end = p->funcs + 3;
+    Funcs f;
 
-    for (Funcs f = p->funcs; f < end; f++) {
+    for (f = p->funcs; f < end; f++) {
         f->add_null     = noop;
         f->add_true     = noop;
         f->add_false    = noop;
@@ -312,13 +313,14 @@ static void mark(ojParser p) {
         return;
     }
     Delegate d = (Delegate)p->ctx;
+    VALUE *kp;
 
     cache_mark(d->str_cache);
     if (Qnil != d->handler) {
         rb_gc_mark(d->handler);
     }
     if (!d->cache_keys) {
-        for (VALUE *kp = d->keys; kp < d->tail; kp++) {
+        for (kp = d->keys; kp < d->tail; kp++) {
             rb_gc_mark(*kp);
         }
     }

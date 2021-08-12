@@ -129,7 +129,9 @@ static void rehash(Cache c) {
 }
 
 void cache_free(Cache c) {
-    for (uint32_t i = 0; i < c->size; i++) {
+    uint32_t i;
+
+    for (i = 0; i < c->size; i++) {
         Slot next;
         Slot s;
 
@@ -147,7 +149,8 @@ void cache_mark(Cache c) {
 	uint32_t i;
 
         for (i = 0; i < c->size; i++) {
-            for (Slot s = c->slots[i]; NULL != s; s = s->next) {
+            Slot s;
+            for (s = c->slots[i]; NULL != s; s = s->next) {
                 rb_gc_mark(s->val);
             }
         }
