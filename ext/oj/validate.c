@@ -28,8 +28,9 @@ mark(ojParser p) {
 void oj_set_parser_validator(ojParser p) {
     p->ctx = NULL;
     Funcs	end = p->funcs + 3;
+    Funcs f;
 
-    for (Funcs f = p->funcs; f < end; f++) {
+    for (f = p->funcs; f < end; f++) {
 	f->add_null = noop;
 	f->add_true = noop;
 	f->add_false = noop;
