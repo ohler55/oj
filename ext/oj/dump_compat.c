@@ -645,6 +645,16 @@ dump_float(VALUE obj, int depth, Out out, bool as_ok) {
     *out->cur = '\0';
 }
 
+static void
+dump_time(VALUE obj, int depth, Out out, bool as_ok) {
+    if ((as_ok && rb_respond_to(obj, oj_to_json_id)) &&
+        (Yes == out->opts->to_json || rb_respond_to(obj, oj_as_json_id))) {
+        dump_to_json(obj, out);
+        return;
+    }
+    oj_dump_ruby_time(obj, out);
+}
+
 static int
 hash_cb(VALUE key, VALUE value, VALUE ov) {
     Out	out = (Out)ov;
@@ -765,6 +775,11 @@ dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
     if (Yes == out->opts->raw_json && rb_respond_to(obj, oj_raw_json_id)) {
 	oj_dump_raw_json(obj, depth, out);
 	return;
+    }
+
+    if (rb_cTime == rb_obj_class(obj)) {
+        dump_time(obj, depth, out, as_ok);
+        return;
     }
     if (as_ok && rb_respond_to(obj, oj_to_json_id)) {
 	dump_to_json(obj, out);
