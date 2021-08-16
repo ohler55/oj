@@ -628,7 +628,7 @@ static void saj_parse(VALUE handler, char *json) {
  * @param [IO|String] io IO Object to read from
  * @deprecated The sc_parse() method along with the ScHandler is the preferred
  * callback parser. It is slightly faster and handles streams while the
- * saj_parse() methos requires a complete read before parsing.
+ * saj_parse() method requires a complete read before parsing.
  * @see sc_parse
  */
 VALUE

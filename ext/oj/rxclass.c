@@ -110,7 +110,7 @@ oj_rxclass_match(RxClass rc, const char *str, int len) {
             }
         } else if (len < (int)sizeof(buf)) {
 #if !IS_WINDOWS
-            // string is not \0 terminated so copy and atempt a match
+            // string is not \0 terminated so copy and attempt a match
             memcpy(buf, str, len);
             buf[len] = '\0';
             if (0 == regexec(&rxc->rx, buf, 0, NULL, 0)) {  // match

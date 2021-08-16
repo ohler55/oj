@@ -509,7 +509,7 @@ static VALUE get_def_opts(VALUE self) {
  * Sets the default options for load and dump.
  * - *opts* [_Hash_] options to change
  *   - *:indent* [_Fixnum_|_String_|_nil_] number of spaces to indent each element in a JSON
- *document or the String to use for identation.
+ *document or the String to use for indentation.
  *   - :circular [_Boolean_|_nil_] support circular references while dumping.
  *   - *:auto_define* [_Boolean_|_nil_] automatically define classes if they do not exist.
  *   - *:symbol_keys* [_Boolean_|_nil_] convert hash keys to symbols.
@@ -1398,7 +1398,7 @@ static VALUE to_json(int argc, VALUE *argv, VALUE self) {
  * Dumps an Object to the specified file.
  * - *file* [_String_] _path file path to write the JSON document to
  * - *obj* [_Object_] Object to serialize as an JSON document String
- * - *options* [_Hash_] formating options
+ * - *options* [_Hash_] formatting options
  *   - *:indent* [_Fixnum_] format expected
  *   - *:circular* [_Boolean_] allow circular references, default: false
  */
@@ -1420,7 +1420,7 @@ static VALUE to_file(int argc, VALUE *argv, VALUE self) {
  * Dumps an Object to the specified IO stream.
  * - *io* [_IO_] IO stream to write the JSON document to
  * - *obj* [_Object_] Object to serialize as an JSON document String
- * - *options* [_Hash_] formating options
+ * - *options* [_Hash_] formatting options
  *   - *:indent* [_Fixnum_] format expected
  *   - *:circular* [_Boolean_] allow circular references, default: false
  */

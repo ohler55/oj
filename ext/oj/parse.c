@@ -489,7 +489,7 @@ static void read_num(ParseInfo pi) {
         if ('.' == *pi->cur) {
             pi->cur++;
             // A trailing . is not a valid decimal but if encountered allow it
-            // except when mimicing the JSON gem or in strict mode.
+            // except when mimicking the JSON gem or in strict mode.
             if (StrictMode == pi->options.mode || CompatMode == pi->options.mode) {
                 int pos = (int)(pi->cur - ni.str);
 

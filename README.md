@@ -53,7 +53,7 @@ For more details on options, modes, advanced features, and more follow these
 links.
 
  - [{file:Options.md}](pages/Options.md) for parse and dump options.
- - [{file:Modes.md}](pages/Modes.md) for details on modes for strict JSON compliance, mimicing the JSON gem, and mimicing Rails and ActiveSupport behavior.
+ - [{file:Modes.md}](pages/Modes.md) for details on modes for strict JSON compliance, mimicking the JSON gem, and mimicking Rails and ActiveSupport behavior.
  - [{file:JsonGem.md}](pages/JsonGem.md) includes more details on json gem compatibility and use.
  - [{file:Rails.md}](pages/Rails.md) includes more details on Rails and ActiveSupport compatibility and use.
  - [{file:Custom.md}](pages/Custom.md) includes more details on Custom mode.

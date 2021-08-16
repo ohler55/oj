@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.13.2 - 2021-08-11
+
+- Fixed C99 compiler errors.
+
 ## 3.13.1 - 2021-08-09
 
 - Fixed failing build on Windows.
@@ -175,13 +179,13 @@ Remove license from code.
 
 - Fixed issue #569. `:compat` mode not restricts the escape mode as indicated in the documentation.
 
-- Fixed issue #570. In `:strict` mode number parsing follows the JSON specification more closely as indended.
+- Fixed issue #570. In `:strict` mode number parsing follows the JSON specification more closely as intended.
 
 - Added `:ignore_under` which when true will ignore attributes that begin with a `_` when dumping in `:object` or `:custom` mode.
 
 ## 3.9.2 - 2019-10-01
 
-- Fixed wrong exception type when mimicing the JSON gem.
+- Fixed wrong exception type when mimicking the JSON gem.
 
 ## 3.9.1 - 2019-08-31
 
@@ -225,7 +229,7 @@ Remove license from code.
 
 - Return correct value in `create_opt` C function.
 
-- Return `Oj::ParseError` if an invalid big decimal string is encounted instead of an argument error
+- Return `Oj::ParseError` if an invalid big decimal string is encountered instead of an argument error
 
 ## 3.7.8 - 2019-01-21
 
@@ -251,11 +255,11 @@ Remove license from code.
 
 ## 3.7.5 - 2018-12-27
 
-  - Address issue #517 with a special escape table for mimicing the JSON gem.
+  - Address issue #517 with a special escape table for mimicking the JSON gem.
 
 ## 3.7.4 - 2018-11-29
 
-  - Allow `+` in front of numbers in parse as well as stream parse **EXCEPT** when mimicing the JSON gem.
+  - Allow `+` in front of numbers in parse as well as stream parse **EXCEPT** when mimicking the JSON gem.
 
 ## 3.7.3 - 2018-11-29
 
@@ -293,7 +297,7 @@ Remove license from code.
 
 ## 3.6.10 - 2018-09-13
 
-  - Additional occurances of `SYM2ID(sym)` replaced.
+  - Additional occurrences of `SYM2ID(sym)` replaced.
 
 ## 3.6.9 - 2018-09-12
 
@@ -301,7 +305,7 @@ Remove license from code.
 
 ## 3.6.8 - 2018-09-08
 
-  - Stopped setting the default options when optimze rails is called as the documentaiton has indicated.
+  - Stopped setting the default options when optimize rails is called as the documentation has indicated.
 
   - In custom mode `Date` and `DateTime` instances default to use the `:time_format` option is the `:create_additions` option is false.
 
@@ -479,7 +483,7 @@ Remove license from code.
 
 - Float significant digits now match Ruby's unless optimized and then significant digits are set to 16.
 
-- Rails Hash post merging of identical keys after calling as_json is preserved only for un-optimized Hashs.
+- Rails Hash post merging of identical keys after calling as_json is preserved only for un-optimized Hashes.
 
 - Raise an exception to match json gem behavior on invalid unicode.
 
@@ -526,7 +530,7 @@ Remove license from code.
 
 ## 3.0.0 - 2017-04-24
 
-- Major changes focussed on json gem and Rails compatibility. A new :custom
+- Major changes focused on json gem and Rails compatibility. A new :custom
   mode was added as well. Starting with this release the json gem tests are
   being used to test the :compat mode and the ActiveSupport 5 tests are being
   used to test the :rails mode.
@@ -705,8 +709,8 @@ Remove license from code.
 
 ## 2.12.0 - 2015-03-06
 
-- String formats for UTC time are now explitly UTC instead of offset of zero. This fixes a problem with pre-2.2.0 Rubies that automatically convert zero offset times to local times.
-- Added :unix_zone time_format option for formating numeric time. This option is the same as the :unix time option but the UTC offset is included as an exponent to the number time value. A value of 86400 is an indication of UTC time.
+- String formats for UTC time are now explicitly UTC instead of offset of zero. This fixes a problem with pre-2.2.0 Rubies that automatically convert zero offset times to local times.
+- Added :unix_zone time_format option for formatting numeric time. This option is the same as the :unix time option but the UTC offset is included as an exponent to the number time value. A value of 86400 is an indication of UTC time.
 
 ## 2.11.5 - 2015-02-25
 
@@ -819,7 +823,7 @@ Remove license from code.
 
 ## 2.9.0 - 2014-05-01
 
-- Added support for detection and handling of Strng, Array, and Hash subclasses.
+- Added support for detection and handling of String, Array, and Hash subclasses.
 - Oj.load() can now take a block which will be yielded to on every object parsed when used with a file or string with multiple JSON entries.
 
 ## 2.8.1 - 2014-04-21
@@ -1057,7 +1061,7 @@ Remove license from code.
 
 ## 1.4.4 - 2012-11-07
 
-- Fixed bug in mimic that missed mimicing json_pure.
+- Fixed bug in mimic that missed mimicking json_pure.
 
 ## 1.4.3 - 2012-10-19
 
