@@ -138,6 +138,39 @@ dump_to_json(VALUE obj, Out out) {
     *out->cur = '\0';
 }
 
+static void dump_as_json(VALUE obj, int depth, Out out, bool as_ok) {
+    volatile VALUE ja;
+
+    if (Yes == out->opts->trace) {
+        oj_trace("as_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyIn);
+    }
+    // Some classes elect to not take an options argument so check the arity
+    // of as_json.
+    if (0 == rb_obj_method_arity(obj, oj_as_json_id)) {
+        ja = rb_funcall(obj, oj_as_json_id, 0);
+    } else {
+        ja = rb_funcall2(obj, oj_as_json_id, out->argc, out->argv);
+    }
+    if (Yes == out->opts->trace) {
+        oj_trace("as_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyOut);
+    }
+
+    out->argc = 0;
+    if (ja == obj || !as_ok) {
+        // Once as_json is called it should never be called again on the same
+        // object with as_ok.
+        oj_dump_compat_val(ja, depth, out, false);
+    } else {
+        int type = rb_type(ja);
+
+        if (T_HASH == type || T_ARRAY == type) {
+            oj_dump_compat_val(ja, depth, out, true);
+        } else {
+            oj_dump_compat_val(ja, depth, out, true);
+        }
+    }
+}
+
 static void
 dump_array(VALUE a, int depth, Out out, bool as_ok) {
     size_t	size;
@@ -645,16 +678,6 @@ dump_float(VALUE obj, int depth, Out out, bool as_ok) {
     *out->cur = '\0';
 }
 
-static void
-dump_time(VALUE obj, int depth, Out out, bool as_ok) {
-    if ((as_ok && rb_respond_to(obj, oj_to_json_id)) &&
-        (Yes == out->opts->to_json || rb_respond_to(obj, oj_as_json_id))) {
-        dump_to_json(obj, out);
-        return;
-    }
-    oj_dump_ruby_time(obj, out);
-}
-
 static int
 hash_cb(VALUE key, VALUE value, VALUE ov) {
     Out	out = (Out)ov;
@@ -777,8 +800,12 @@ dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
 	return;
     }
 
+    if (as_ok && rb_respond_to(obj, oj_as_json_id)) {
+        dump_as_json(obj, depth, out, true);
+        return;
+    }
     if (rb_cTime == rb_obj_class(obj)) {
-        dump_time(obj, depth, out, as_ok);
+        oj_dump_ruby_time(obj, out);
         return;
     }
     if (as_ok && rb_respond_to(obj, oj_to_json_id)) {
