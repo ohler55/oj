@@ -622,14 +622,14 @@ static void big_change(ojParser p) {
         buf_append_string(&p->buf, buf + len + 1, sizeof(buf) - len - 1);
         if (0 < p->num.exp) {
             int  x = p->num.exp;
-            int  d;
+            int  d, div;
             bool started = false;
 
             buf_append(&p->buf, 'e');
             if (0 < p->num.exp_neg) {
                 buf_append(&p->buf, '-');
             }
-            for (int div = 1000; 0 < div; div /= 10) {
+            for (div = 1000; 0 < div; div /= 10) {
                 d = x / div % 10;
                 if (started || 0 < d) {
                     buf_append(&p->buf, '0' + d);
@@ -646,6 +646,7 @@ static void big_change(ojParser p) {
 static void parse(ojParser p, const byte *json) {
     const byte *start;
     const byte *b = json;
+    int i;
 
 #if DEBUG
     printf("*** parse - mode: %c %s\n", p->map[256], (const char *)json);
@@ -1015,7 +1016,7 @@ static void parse(ojParser p, const byte *json) {
             }
             p->ri     = 0;
             *p->token = *b++;
-            for (int i = 1; i < 4; i++) {
+            for (i = 1; i < 4; i++) {
                 if ('\0' == *b) {
                     p->ri = i;
                     break;
@@ -1040,7 +1041,7 @@ static void parse(ojParser p, const byte *json) {
             }
             p->ri     = 0;
             *p->token = *b++;
-            for (int i = 1; i < 4; i++) {
+            for (i = 1; i < 4; i++) {
                 if ('\0' == *b) {
                     p->ri = i;
                     break;
@@ -1065,7 +1066,7 @@ static void parse(ojParser p, const byte *json) {
             }
             p->ri     = 0;
             *p->token = *b++;
-            for (int i = 1; i < 5; i++) {
+            for (i = 1; i < 5; i++) {
                 if ('\0' == *b) {
                     p->ri = i;
                     break;

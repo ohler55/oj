@@ -98,31 +98,30 @@ Cache cache_create(size_t size, VALUE (*form)(const char *str, size_t len), bool
     memset(c->slots, 0, sizeof(Slot) * c->size);
     c->form = form;
     c->cnt  = 0;
-    c->mark  = mark;
+    c->mark = mark;
 
     return c;
 }
 
 static void rehash(Cache c) {
     uint32_t osize = c->size;
+    Slot *   end   = c->slots + osize;
+    Slot *   sp;
 
     c->size = osize * 4;
     c->mask = c->size - 1;
     REALLOC_N(c->slots, Slot, c->size);
     memset(c->slots + osize, 0, sizeof(Slot) * osize * 3);
-
-    Slot *end = c->slots + osize;
-    for (Slot *sp = c->slots; sp < end; sp++) {
+    for (sp = c->slots; sp < end; sp++) {
         Slot s    = *sp;
         Slot next = NULL;
 
         *sp = NULL;
         for (; NULL != s; s = next) {
-            next = s->next;
-
             uint32_t h      = s->hash & c->mask;
             Slot *   bucket = c->slots + h;
 
+            next    = s->next;
             s->next = *bucket;
             *bucket = s;
         }
@@ -130,9 +129,13 @@ static void rehash(Cache c) {
 }
 
 void cache_free(Cache c) {
-    for (uint32_t i = 0; i < c->size; i++) {
+    uint32_t i;
+
+    for (i = 0; i < c->size; i++) {
         Slot next;
-        for (Slot s = c->slots[i]; NULL != s; s = next) {
+        Slot s;
+
+        for (s = c->slots[i]; NULL != s; s = next) {
             next = s->next;
             xfree(s);
         }
@@ -143,9 +146,12 @@ void cache_free(Cache c) {
 
 void cache_mark(Cache c) {
     if (c->mark) {
-        for (uint32_t i = 0; i < c->size; i++) {
-            for (Slot s = c->slots[i]; NULL != s; s = s->next) {
-		rb_gc_mark(s->val);
+	uint32_t i;
+
+        for (i = 0; i < c->size; i++) {
+            Slot s;
+            for (s = c->slots[i]; NULL != s; s = s->next) {
+                rb_gc_mark(s->val);
             }
         }
     }

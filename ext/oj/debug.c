@@ -109,8 +109,9 @@ static void mark(struct _ojParser *p) {
 
 void oj_set_parser_debug(ojParser p) {
     Funcs end = p->funcs + 3;
+    Funcs f;
 
-    for (Funcs f = p->funcs; f < end; f++) {
+    for (f = p->funcs; f < end; f++) {
         f->add_null     = add_null;
         f->add_true     = add_true;
         f->add_false    = add_false;

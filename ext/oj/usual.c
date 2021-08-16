@@ -323,6 +323,7 @@ static void open_array_key(ojParser p) {
 }
 
 static void close_object(ojParser p) {
+    VALUE *vp;
     Delegate d = (Delegate)p->ctx;
 
     d->ctail--;
@@ -333,7 +334,7 @@ static void close_object(ojParser p) {
     volatile VALUE obj  = rb_hash_new();
 
 #if HAVE_RB_HASH_BULK_INSERT
-    for (VALUE *vp = head; kp < d->ktail; kp++, vp += 2) {
+    for (vp = head; kp < d->ktail; kp++, vp += 2) {
         *vp = d->get_key(p, kp);
         if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
             xfree(kp->key);
@@ -341,7 +342,7 @@ static void close_object(ojParser p) {
     }
     rb_hash_bulk_insert(d->vtail - head, head, obj);
 #else
-    for (VALUE *vp = head; kp < d->ktail; kp++, vp += 2) {
+    for (vp = head; kp < d->ktail; kp++, vp += 2) {
         rb_hash_aset(obj, d->get_key(p, kp), *(vp + 1));
         if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
             xfree(kp->key);
@@ -355,6 +356,7 @@ static void close_object(ojParser p) {
 }
 
 static void close_object_class(ojParser p) {
+    VALUE *vp;
     Delegate d = (Delegate)p->ctx;
 
     d->ctail--;
@@ -364,7 +366,7 @@ static void close_object_class(ojParser p) {
     VALUE *        head = d->vhead + c->vi + 1;
     volatile VALUE obj  = rb_class_new_instance(0, NULL, d->hash_class);
 
-    for (VALUE *vp = head; kp < d->ktail; kp++, vp += 2) {
+    for (vp = head; kp < d->ktail; kp++, vp += 2) {
         rb_funcall(obj, hset_id, 2, d->get_key(p, kp), *(vp + 1));
         if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
             xfree(kp->key);
@@ -377,6 +379,7 @@ static void close_object_class(ojParser p) {
 }
 
 static void close_object_create(ojParser p) {
+    VALUE *vp;
     Delegate d = (Delegate)p->ctx;
 
     d->ctail--;
@@ -391,7 +394,7 @@ static void close_object_create(ojParser p) {
         if (Qnil == d->hash_class) {
             obj = rb_hash_new();
 #if HAVE_RB_HASH_BULK_INSERT
-            for (VALUE *vp = head; kp < d->ktail; kp++, vp += 2) {
+            for (vp = head; kp < d->ktail; kp++, vp += 2) {
                 *vp = d->get_key(p, kp);
                 if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
                     xfree(kp->key);
@@ -399,7 +402,7 @@ static void close_object_create(ojParser p) {
             }
             rb_hash_bulk_insert(d->vtail - head, head, obj);
 #else
-            for (VALUE *vp = head; kp < d->ktail; kp++, vp += 2) {
+            for (vp = head; kp < d->ktail; kp++, vp += 2) {
                 rb_hash_aset(obj, d->get_key(p, kp), *(vp + 1));
                 if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
                     xfree(kp->key);
@@ -408,7 +411,7 @@ static void close_object_create(ojParser p) {
 #endif
         } else {
             obj = rb_class_new_instance(0, NULL, d->hash_class);
-            for (VALUE *vp = head; kp < d->ktail; kp++, vp += 2) {
+            for (vp = head; kp < d->ktail; kp++, vp += 2) {
                 rb_funcall(obj, hset_id, 2, d->get_key(p, kp), *(vp + 1));
                 if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
                     xfree(kp->key);
@@ -423,7 +426,7 @@ static void close_object_create(ojParser p) {
             volatile VALUE arg = rb_hash_new();
 
 #if HAVE_RB_HASH_BULK_INSERT
-            for (VALUE *vp = head; kp < d->ktail; kp++, vp += 2) {
+            for (vp = head; kp < d->ktail; kp++, vp += 2) {
                 *vp = d->get_key(p, kp);
                 if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
                     xfree(kp->key);
@@ -431,7 +434,7 @@ static void close_object_create(ojParser p) {
             }
             rb_hash_bulk_insert(d->vtail - head, head, arg);
 #else
-            for (VALUE *vp = head; kp < d->ktail; kp++, vp += 2) {
+            for (vp = head; kp < d->ktail; kp++, vp += 2) {
                 rb_hash_aset(arg, d->get_key(p, kp), *(vp + 1));
                 if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
                     xfree(kp->key);
@@ -441,7 +444,7 @@ static void close_object_create(ojParser p) {
             obj = rb_funcall(clas, oj_json_create_id, 1, arg);
         } else {
             obj = rb_class_new_instance(0, NULL, clas);
-            for (VALUE *vp = head; kp < d->ktail; kp++, vp += 2) {
+            for (vp = head; kp < d->ktail; kp++, vp += 2) {
                 rb_ivar_set(obj, get_attr_id(p, kp), *(vp + 1));
                 if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
                     xfree(kp->key);
@@ -468,13 +471,14 @@ static void close_array(ojParser p) {
 }
 
 static void close_array_class(ojParser p) {
+    VALUE *vp;
     Delegate d = (Delegate)p->ctx;
 
     d->ctail--;
     VALUE *        head = d->vhead + d->ctail->vi + 1;
     volatile VALUE a    = rb_class_new_instance(0, NULL, d->array_class);
 
-    for (VALUE *vp = head; vp < d->vtail; vp++) {
+    for (vp = head; vp < d->vtail; vp++) {
         rb_funcall(a, ltlt_id, 1, *vp);
     }
     d->vtail = head;
@@ -682,6 +686,7 @@ static void mark(ojParser p) {
         return;
     }
     Delegate d = (Delegate)p->ctx;
+    VALUE *vp;
 
     if (NULL == d) {
 	return;
@@ -693,7 +698,7 @@ static void mark(ojParser p) {
     if (NULL != d->class_cache) {
         cache_mark(d->class_cache);
     }
-    for (VALUE *vp = d->vhead; vp < d->vtail; vp++) {
+    for (vp = d->vhead; vp < d->vtail; vp++) {
         if (Qundef != *vp) {
             rb_gc_mark(*vp);
         }
@@ -1091,6 +1096,7 @@ static VALUE opt_symbol_keys_set(ojParser p, VALUE value) {
 }
 
 static VALUE option(ojParser p, const char *key, VALUE value) {
+    struct opt *op;
     struct opt opts[] = {
         {.name = "array_class", .func = opt_array_class},
         {.name = "array_class=", .func = opt_array_class_set},
@@ -1119,7 +1125,7 @@ static VALUE option(ojParser p, const char *key, VALUE value) {
         {.name = NULL},
     };
 
-    for (struct opt *op = opts; NULL != op->name; op++) {
+    for (op = opts; NULL != op->name; op++) {
         if (0 == strcmp(key, op->name)) {
             return op->func(p, value);
         }
