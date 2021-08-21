@@ -305,11 +305,15 @@ static VALUE calc_hash_key(ParseInfo pi, Val parent) {
     if (Yes == pi->options.cache_keys) {
         rkey = oj_sym_intern(parent->key, parent->klen);
     } else {
+#if HAVE_RB_ENC_INTERNED_STR
+        rkey = rb_enc_interned_str(parent->key, parent->klen, oj_utf8_encoding);
+#else
         rkey = rb_str_new(parent->key, parent->klen);
         rkey = oj_encode(rkey);
         rkey = rb_str_intern(rkey);
+        OBJ_FREEZE(rkey);
+#endif
     }
-    OBJ_FREEZE(rkey);
     return rkey;
 }
 
