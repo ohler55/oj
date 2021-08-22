@@ -64,12 +64,16 @@ static VALUE calc_hash_key(ParseInfo pi, Val kval, char k1) {
         if (Yes == pi->options.sym_key) {
             rkey = ID2SYM(rb_intern3(kval->key, kval->klen, oj_utf8_encoding));
         } else {
+#if HAVE_RB_ENC_INTERNED_STR
+            rkey = rb_enc_interned_str(kval->key, kval->klen, oj_utf8_encoding);
+#else
             rkey = rb_str_new(kval->key, kval->klen);
             rkey = oj_encode(rkey);
+            OBJ_FREEZE(rkey);
+#endif
         }
     }
 #endif
-    OBJ_FREEZE(rkey);
     return rkey;
 }
 
