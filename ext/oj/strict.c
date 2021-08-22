@@ -49,7 +49,6 @@ VALUE oj_calc_hash_key(ParseInfo pi, Val parent) {
 	rkey = oj_sym_intern(parent->key, parent->klen);
     } else {
 	rkey = oj_str_intern(parent->key, parent->klen);
-    OBJ_FREEZE(rkey);
     }
     return rkey;
 }
