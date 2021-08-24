@@ -21,7 +21,6 @@ extern VALUE oj_class_intern(const char *       key,
                              int                auto_define,
                              VALUE              error_class);
 
-extern void  oj_hash_print();
 extern char *oj_strndup(const char *s, size_t len);
 
 #endif /* OJ_INTERN_H */

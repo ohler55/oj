@@ -336,7 +336,7 @@ void oj_set_parser_saj(ojParser p) {
     d->klen      = 256;
     d->keys      = ALLOC_N(VALUE, d->klen);
     d->tail      = d->keys;
-    d->str_cache = cache_create(0, form_str, true);
+    d->str_cache = cache_create(0, form_str, true, false);
 
     p->ctx = (void *)d;
     reset(p);

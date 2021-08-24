@@ -830,11 +830,7 @@ static VALUE opt_class_cache_set(ojParser p, VALUE value) {
 
     if (Qtrue == value) {
         if (NULL == d->class_cache) {
-            if (MISS_AUTO == d->miss_class) {
-                d->class_cache = cache_create(0, form_class_auto, true);
-            } else {
-                d->class_cache = cache_create(0, form_class, false);
-            }
+	    d->class_cache = cache_create(0, form_class_auto, MISS_AUTO == d->miss_class, false);
         }
     } else if (NULL != d->class_cache) {
         cache_free(d->class_cache);
@@ -1078,7 +1074,7 @@ static VALUE opt_symbol_keys_set(ojParser p, VALUE value) {
     Delegate d = (Delegate)p->ctx;
 
     if (Qtrue == value) {
-        d->sym_cache = cache_create(0, form_sym, true);
+        d->sym_cache = cache_create(0, form_sym, true, false);
         d->key_cache = d->sym_cache;
         if (!d->cache_keys) {
             d->get_key = sym_key;
@@ -1203,8 +1199,8 @@ void oj_set_parser_usual(ojParser p) {
     f->open_object  = open_object_key;
     f->close_object = close_object;
 
-    d->str_cache   = cache_create(0, form_str, true);
-    d->attr_cache  = cache_create(0, form_attr, false);
+    d->str_cache   = cache_create(0, form_str, true, false);
+    d->attr_cache  = cache_create(0, form_attr, false, false);
     d->sym_cache   = NULL;
     d->class_cache = NULL;
     d->key_cache   = d->str_cache;

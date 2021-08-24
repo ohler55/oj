@@ -24,8 +24,8 @@ File.open(filename, "w") { |f|
   f.puts('"_last":0}')
 }
 
-Oj.default_options = { mode: :strict, cache_keys: false, cache_str: -1 }
-#Oj.load_file('tmp.json')
+Oj.default_options = { mode: :strict, cache_keys: true, cache_str: -1 }
+Oj.load_file('tmp.json')
 start = Time.now
 Oj.load_file('tmp.json')
 dur = Time.now - start

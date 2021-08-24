@@ -89,9 +89,10 @@ if $verbose
   puts "json:\n#{$json}\n"
 end
 
+=begin
 ### Validate ######################
 p_val = Oj::Parser.new(:validate)
-=begin
+
 puts '-' * 80
 puts "Validate Performance"
 perf = Perf.new()
@@ -112,6 +113,7 @@ perf.add('Oj::Parser.saj', 'all') { p_all.parse($json) }
 perf.add('Oj::Saj.all', 'all') { Oj.saj_parse(all_handler, $json) }
 perf.run($iter)
 =end
+
 ### Usual ######################
 p_usual = Oj::Parser.new(:usual)
 p_usual.cache_keys = $cache_keys
@@ -169,7 +171,7 @@ p_usual.class_cache = true
 p_usual.ignore_json_create = true
 
 JSON.create_id = '^'
-
+=begin
 puts '-' * 80
 puts "Parse Usual Object Performance"
 perf = Perf.new()
@@ -177,6 +179,7 @@ perf.add('Oj::Parser.usual', '') { p_usual.parse($obj_json) }
 perf.add('Oj::compat_load', '') { Oj.compat_load($obj_json) }
 perf.add('JSON::Ext', 'parse') { JSON.load($obj_json) }
 perf.run($iter)
+=end
 
 unless $failed.empty?
   puts "The following packages were not included for the reason listed"
