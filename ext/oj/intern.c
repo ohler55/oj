@@ -8,8 +8,8 @@
 #if HAVE_PTHREAD_MUTEX_INIT
 #include <pthread.h>
 #endif
-#include "parse.h"
 #include "cache.h"
+#include "parse.h"
 
 #define HASH_SLOT_CNT ((uint64_t)16384)
 #define HASH_MASK (HASH_SLOT_CNT - 1)
@@ -34,10 +34,16 @@ typedef struct _hash {
 } * Hash;
 
 struct _hash class_hash;
-struct _hash sym_hash;
 struct _hash attr_hash;
 
-static struct _cache	*str_cache = NULL;
+static struct _cache *str_cache = NULL;
+static VALUE          str_cache_obj;
+
+static struct _cache *sym_cache = NULL;
+static VALUE          sym_cache_obj;
+
+static struct _cache *attr_cache = NULL;
+static VALUE          attr_cache_obj;
 
 static uint64_t hash_calc(const uint8_t *key, size_t len) {
     const uint8_t *end     = key + len;
@@ -77,137 +83,40 @@ static VALUE form_str(const char *str, size_t len) {
     return rb_str_freeze(rb_utf8_str_new(str, len));
 }
 
-void oj_hash_init() {
-    str_cache = cache_create(0, form_str, true, true);
-    memset(class_hash.slots, 0, sizeof(class_hash.slots));
-    memset(sym_hash.slots, 0, sizeof(sym_hash.slots));
-    memset(attr_hash.slots, 0, sizeof(attr_hash.slots));
-#if HAVE_PTHREAD_MUTEX_INIT
-    pthread_mutex_init(&class_hash.mutex, NULL);
-    pthread_mutex_init(&sym_hash.mutex, NULL);
-    pthread_mutex_init(&attr_hash.mutex, NULL);
-#else
-    class_hash.mutex = rb_mutex_new();
-    rb_gc_register_address(&class_hash.mutex);
-    sym_hash.mutex = rb_mutex_new();
-    rb_gc_register_address(&sym_hash.mutex);
-    attr_hash.mutex = rb_mutex_new();
-    rb_gc_register_address(&attr_hash.mutex);
-#endif
+static VALUE form_sym(const char *str, size_t len) {
+    return rb_str_intern(rb_utf8_str_new(str, len));
 }
 
-VALUE
-oj_str_intern(const char *key, size_t len) {
-    return cache_intern(str_cache, key, len);
-}
+static VALUE form_attr(const char *str, size_t len) {
+    char buf[256];
 
-VALUE
-oj_sym_intern(const char *key, size_t len) {
-    uint64_t h      = hash_calc((const uint8_t *)key, len) & HASH_MASK;
-    KeyVal   bucket = sym_hash.slots + h;
-    KeyVal   b;
+    if (sizeof(buf) - 2 <= len) {
+        char *b = ALLOC_N(char, len + 2);
+        ID    id;
 
-#if HAVE_PTHREAD_MUTEX_INIT
-    pthread_mutex_lock(&sym_hash.mutex);
-#else
-    rb_mutex_lock(sym_hash.mutex);
-#endif
-    if (NULL != bucket->key) {  // not the top slot
-        for (b = bucket; 0 != b; b = b->next) {
-            if (len == b->len && 0 == strncmp(b->key, key, len)) {
-#if HAVE_PTHREAD_MUTEX_INIT
-                pthread_mutex_unlock(&sym_hash.mutex);
-#else
-                rb_mutex_unlock(sym_hash.mutex);
-#endif
-                return b->val;
-            }
-            bucket = b;
-        }
-        b            = ALLOC(struct _keyVal);
-        b->next      = NULL;
-        bucket->next = b;
-        bucket       = b;
+        if ('~' == *str) {
+	    memcpy(b, str + 1, len - 1);
+	    b[len - 1] = '\0';
+	    len -= 2;
+	} else {
+	    *b = '@';
+	    memcpy(b + 1, str, len);
+	    b[len + 1] = '\0';
+	}
+        id = rb_intern3(buf, len + 1, oj_utf8_encoding);
+        xfree(b);
+        return id;
     }
-    bucket->key = oj_strndup(key, len);
-    bucket->len = len;
-    bucket->val = ID2SYM(rb_intern3(key, len, oj_utf8_encoding));
-    rb_gc_register_address(&bucket->val);
-#if HAVE_PTHREAD_MUTEX_INIT
-    pthread_mutex_unlock(&sym_hash.mutex);
-#else
-    rb_mutex_unlock(sym_hash.mutex);
-#endif
-    return bucket->val;
-}
-
-static ID form_attr(const char *key, size_t klen) {
-    char attr[256];
-    ID   var_id;
-
-    if ((int)sizeof(attr) <= klen + 2) {
-        char *buf = ALLOC_N(char, klen + 2);
-
-        if ('~' == *key) {
-            memcpy(buf, key + 1, klen - 1);
-            buf[klen - 1] = '\0';
-        } else {
-            *buf = '@';
-            memcpy(buf + 1, key, klen);
-            buf[klen + 1] = '\0';
-        }
-        var_id = rb_intern(buf);
-        xfree(buf);
+    if ('~' == *str) {
+	memcpy(buf, str + 1, len - 1);
+	buf[len - 1] = '\0';
+	len -= 2;
     } else {
-        if ('~' == *key) {
-            memcpy(attr, key + 1, klen - 1);
-            attr[klen - 1] = '\0';
-        } else {
-            *attr = '@';
-            memcpy(attr + 1, key, klen);
-            attr[klen + 1] = '\0';
-        }
-        var_id = rb_intern(attr);
+	*buf = '@';
+	memcpy(buf + 1, str, len);
+	buf[len + 1] = '\0';
     }
-    return var_id;
-}
-
-ID oj_attr_intern(const char *key, size_t len) {
-    uint64_t h      = hash_calc((const uint8_t *)key, len) & HASH_MASK;
-    KeyVal   bucket = attr_hash.slots + h;
-    KeyVal   b;
-
-#if HAVE_PTHREAD_MUTEX_INIT
-    pthread_mutex_lock(&attr_hash.mutex);
-#else
-    rb_mutex_lock(attr_hash.mutex);
-#endif
-    if (NULL != bucket->key) {  // not the top slot
-        for (b = bucket; 0 != b; b = b->next) {
-            if (len == b->len && 0 == strncmp(b->key, key, len)) {
-#if HAVE_PTHREAD_MUTEX_INIT
-                pthread_mutex_unlock(&attr_hash.mutex);
-#else
-                rb_mutex_unlock(attr_hash.mutex);
-#endif
-                return (ID)b->val;
-            }
-            bucket = b;
-        }
-        b            = ALLOC(struct _keyVal);
-        b->next      = NULL;
-        bucket->next = b;
-        bucket       = b;
-    }
-    bucket->key = oj_strndup(key, len);
-    bucket->len = len;
-    bucket->val = (VALUE)form_attr(key, len);
-#if HAVE_PTHREAD_MUTEX_INIT
-    pthread_mutex_unlock(&attr_hash.mutex);
-#else
-    rb_mutex_unlock(attr_hash.mutex);
-#endif
-    return (ID)bucket->val;
+    return (VALUE)rb_intern3(buf, len + 1, oj_utf8_encoding);
 }
 
 static VALUE resolve_classname(VALUE mod, const char *classname, int auto_define) {
@@ -258,6 +167,45 @@ static VALUE resolve_classpath(ParseInfo pi, const char *name, size_t len, int a
         }
     }
     return clas;
+}
+
+void oj_hash_init() {
+    VALUE cache_class = rb_define_class_under(Oj, "Cache", rb_cObject);
+
+    str_cache     = cache_create(0, form_str, true, true);
+    str_cache_obj = Data_Wrap_Struct(cache_class, cache_mark, cache_free, str_cache);
+    rb_gc_register_address(&str_cache_obj);
+
+    sym_cache     = cache_create(0, form_sym, true, true);
+    sym_cache_obj = Data_Wrap_Struct(cache_class, cache_mark, cache_free, sym_cache);
+    rb_gc_register_address(&sym_cache_obj);
+
+    attr_cache     = cache_create(0, form_attr, false, true);
+    attr_cache_obj = Data_Wrap_Struct(cache_class, cache_mark, cache_free, attr_cache);
+    rb_gc_register_address(&attr_cache_obj);
+
+    memset(class_hash.slots, 0, sizeof(class_hash.slots));
+#if HAVE_PTHREAD_MUTEX_INIT
+    pthread_mutex_init(&class_hash.mutex, NULL);
+#else
+    class_hash.mutex = rb_mutex_new();
+    rb_gc_register_address(&class_hash.mutex);
+#endif
+}
+
+VALUE
+oj_str_intern(const char *key, size_t len) {
+    return cache_intern(str_cache, key, len);
+}
+
+VALUE
+oj_sym_intern(const char *key, size_t len) {
+    return cache_intern(sym_cache, key, len);
+}
+
+ID
+oj_attr_intern(const char *key, size_t len) {
+    return cache_intern(attr_cache, key, len);
 }
 
 VALUE oj_class_intern(const char *key, size_t len, bool safe, ParseInfo pi, int auto_define, VALUE error_class) {

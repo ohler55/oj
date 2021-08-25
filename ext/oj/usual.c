@@ -100,7 +100,6 @@ static VALUE form_str(const char *str, size_t len) {
 }
 
 static VALUE form_sym(const char *str, size_t len) {
-    // return ID2SYM(rb_intern3(str, len, oj_utf8_encoding));
     return rb_str_intern(rb_utf8_str_new(str, len));
 }
 

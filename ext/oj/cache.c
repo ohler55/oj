@@ -21,6 +21,10 @@
 // almost the Murmur hash algorithm
 #define M 0x5bd1e995
 
+// Slots are allocated and freed using stdlib malloc() and free() since using
+// ALLOC() and xfree() across the GC thread and a Ruby worker thread cause a
+// core dump and the GC thread (cache_mark()) is where the less used Slots are
+// removed.
 typedef struct _slot {
     struct _slot *next;
     VALUE         val;
@@ -42,7 +46,8 @@ typedef struct _cache {
 #else
     VALUE mutex;
 #endif
-    bool mark;
+    uint8_t xrate;
+    bool    mark;
 } * Cache;
 
 void cache_set_form(Cache c, VALUE (*form)(const char *str, size_t len)) {
@@ -101,14 +106,14 @@ static uint64_t hash_calc(const uint8_t *key, size_t len) {
 
 static void rehash(Cache c) {
     uint64_t osize = c->size;
-    Slot *   end   = c->slots + osize;
+    Slot *   end;
     Slot *   sp;
 
     c->size = osize * 4;
-    printf("*** rehash size: %ld\n", c->size);
     c->mask = c->size - 1;
     REALLOC_N(c->slots, Slot, c->size);
     memset(c->slots + osize, 0, sizeof(Slot) * osize * 3);
+    end = c->slots + osize;
     for (sp = c->slots; sp < end; sp++) {
         Slot s    = *sp;
         Slot next = NULL;
@@ -133,19 +138,19 @@ static VALUE lockless_intern(Cache c, const char *key, size_t len) {
 
     for (b = *bucket; NULL != b; b = b->next) {
         if ((uint8_t)len == b->klen && 0 == strncmp(b->key, key, len)) {
-            b->use_cnt++;
+            b->use_cnt += 4;
             return b->val;
         }
         tail = b;
     }
-    b       = ALLOC(struct _slot);
+    b       = (Slot)malloc(sizeof(struct _slot));
     b->hash = h;
     b->next = NULL;
     memcpy(b->key, key, len);
     b->klen     = (uint8_t)len;
     b->key[len] = '\0';
     b->val      = c->form(key, len);
-    b->use_cnt  = 1;
+    b->use_cnt  = 4;
 
     if (NULL == tail) {
         *bucket = b;
@@ -171,7 +176,7 @@ static VALUE locking_intern(Cache c, const char *key, size_t len) {
     bucket = c->slots + (h & c->mask);
     for (b = *bucket; NULL != b; b = b->next) {
         if ((uint8_t)len == b->klen && 0 == strncmp(b->key, key, len)) {
-            b->use_cnt++;
+            b->use_cnt += 4;
             CACHE_UNLOCK(c);
             return b->val;
         }
@@ -181,14 +186,14 @@ static VALUE locking_intern(Cache c, const char *key, size_t len) {
     // The creation of a new value may trigger a GC which be a problem if the
     // cache is locked so make sure it is unlocked for the key value creation.
     CACHE_UNLOCK(c);
-    b       = ALLOC(struct _slot);
+    b       = (Slot)malloc(sizeof(struct _slot));
     b->hash = h;
     b->next = NULL;
     memcpy(b->key, key, len);
     b->klen     = (uint8_t)len;
     b->key[len] = '\0';
     b->val      = c->form(key, len);
-    b->use_cnt  = 1;
+    b->use_cnt  = 4;
 
     // Lock again to add the new entry.
     CACHE_LOCK(c);
@@ -225,19 +230,23 @@ Cache cache_create(size_t size, VALUE (*form)(const char *str, size_t len), bool
     c->mutex = rb_mutex_new();
 #endif
     c->size  = 1 << shift;
-    printf("*** size: %ld\n", c->size);
     c->mask  = c->size - 1;
     c->slots = ALLOC_N(Slot, c->size);
     memset(c->slots, 0, sizeof(Slot) * c->size);
-    c->form = form;
-    c->cnt  = 0;
-    c->mark = mark;
+    c->form  = form;
+    c->cnt   = 0;
+    c->xrate = 1;  // low
+    c->mark  = mark;
     if (locking) {
         c->intern = locking_intern;
     } else {
         c->intern = lockless_intern;
     }
     return c;
+}
+
+void cache_set_expiration_rate(Cache c, int rate) {
+    c->xrate = (uint8_t)rate;
 }
 
 void cache_free(Cache c) {
@@ -249,7 +258,7 @@ void cache_free(Cache c) {
 
         for (s = c->slots[i]; NULL != s; s = next) {
             next = s->next;
-            xfree(s);
+            free(s);
         }
     }
     xfree(c->slots);
@@ -257,29 +266,34 @@ void cache_free(Cache c) {
 }
 
 void cache_mark(Cache c) {
-    if (c->mark) {
-        uint64_t i;
+    uint64_t i;
 
-        for (i = 0; i < c->size; i++) {
-            Slot s;
-            Slot prev = NULL;
-            Slot next;
+    for (i = 0; i < c->size; i++) {
+        Slot s;
+        Slot prev = NULL;
+        Slot next;
 
-            for (s = c->slots[i]; NULL != s; s = next) {
-                next = s->next;
-                if (0 == s->use_cnt) {
-                    if (NULL == prev) {
-                        c->slots[i] = next;
-                    } else {
-                        prev->next = next;
-                    }
-                    xfree(s);
-                    continue;
+        for (s = c->slots[i]; NULL != s; s = next) {
+            next = s->next;
+            if (0 == s->use_cnt) {
+                if (NULL == prev) {
+                    c->slots[i] = next;
+                } else {
+                    prev->next = next;
                 }
-                s->use_cnt /= 2;
-                rb_gc_mark(s->val);
-                prev = s;
+                free(s);
+                continue;
             }
+            switch (c->xrate) {
+            case 0: break;
+            case 2: s->use_cnt -= 2; break;
+            case 3: s->use_cnt /= 2; break;
+            default: s->use_cnt--; break;
+            }
+            if (c->mark) {
+                rb_gc_mark(s->val);
+            }
+            prev = s;
         }
     }
 }

@@ -16,5 +16,6 @@ extern void           cache_free(struct _cache *c);
 extern void           cache_mark(struct _cache *c);
 extern void           cache_set_form(struct _cache *c, VALUE (*form)(const char *str, size_t len));
 extern VALUE          cache_intern(struct _cache *c, const char *key, size_t len);
+extern void           cache_set_expiration_rate(struct _cache *c, int rate);
 
 #endif /* CACHE_H */

@@ -24,9 +24,35 @@ File.open(filename, "w") { |f|
   f.puts('"_last":0}')
 }
 
-Oj.default_options = { mode: :strict, cache_keys: true, cache_str: -1 }
-Oj.load_file('tmp.json')
+def mem
+  `ps -o rss= -p #{$$}`.to_i
+end
+
+Oj.default_options = { mode: :strict, cache_keys: false, cache_str: -1 }
 start = Time.now
 Oj.load_file('tmp.json')
 dur = Time.now - start
-puts "duration: #{dur}"
+GC.start
+puts "no cache duration: #{dur} @ #{mem}"
+
+Oj.default_options = { cache_keys: true }
+start = Time.now
+Oj.load_file('tmp.json')
+dur = Time.now - start
+GC.start
+puts "initial cache duration: #{dur} @ #{mem}"
+
+start = Time.now
+Oj.load_file('tmp.json')
+dur = Time.now - start
+GC.start
+puts "second cache duration: #{dur} @ #{mem}"
+
+10.times{ GC.start }
+start = Time.now
+Oj.load_file('tmp.json')
+dur = Time.now - start
+GC.start
+puts "after several GCs cache duration: #{dur} @ #{mem}"
+
+# TBD check memory use
