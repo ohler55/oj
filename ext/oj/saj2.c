@@ -158,7 +158,7 @@ static void add_str(ojParser p) {
     const char *   str = buf_str(&p->buf);
     size_t         len = buf_len(&p->buf);
 
-    if (d->cache_str <= len) {
+    if (d->cache_str < len) {
         rstr = cache_intern(d->str_cache, str, len);
     } else {
         rstr = rb_utf8_str_new(str, len);
@@ -172,7 +172,7 @@ static void add_str_key(ojParser p) {
     const char *   str = buf_str(&p->buf);
     size_t         len = buf_len(&p->buf);
 
-    if (d->cache_str <= len) {
+    if (d->cache_str < len) {
         rstr = cache_intern(d->str_cache, str, len);
     } else {
         rstr = rb_utf8_str_new(str, len);

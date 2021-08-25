@@ -11,7 +11,8 @@
 #include "cache.h"
 #include "parse.h"
 
-#define HASH_SLOT_CNT ((uint64_t)16384)
+// Only used for the class cache so 256 should be sufficient.
+#define HASH_SLOT_CNT ((uint64_t)256)
 #define HASH_MASK (HASH_SLOT_CNT - 1)
 
 // almost the Murmur hash algorithm
@@ -44,40 +45,6 @@ static VALUE          sym_cache_obj;
 
 static struct _cache *attr_cache = NULL;
 static VALUE          attr_cache_obj;
-
-static uint64_t hash_calc(const uint8_t *key, size_t len) {
-    const uint8_t *end     = key + len;
-    const uint8_t *endless = key + (len & 0xFFFFFFFC);
-    uint64_t       h       = (uint64_t)len;
-    uint64_t       k;
-
-    while (key < endless) {
-        k = (uint64_t)*key++;
-        k |= (uint64_t)*key++ << 8;
-        k |= (uint64_t)*key++ << 16;
-        k |= (uint64_t)*key++ << 24;
-
-        k *= M;
-        k ^= k >> 24;
-        h *= M;
-        h ^= k * M;
-    }
-    if (1 < end - key) {
-        uint16_t k16 = (uint16_t)*key++;
-
-        k16 |= (uint16_t)*key++ << 8;
-        h ^= k16 << 8;
-    }
-    if (key < end) {
-        h ^= *key;
-    }
-    h *= M;
-    h ^= h >> 13;
-    h *= M;
-    h ^= h >> 15;
-
-    return h;
-}
 
 static VALUE form_str(const char *str, size_t len) {
     return rb_str_freeze(rb_utf8_str_new(str, len));
@@ -117,6 +84,79 @@ static VALUE form_attr(const char *str, size_t len) {
 	buf[len + 1] = '\0';
     }
     return (VALUE)rb_intern3(buf, len + 1, oj_utf8_encoding);
+}
+
+void oj_hash_init() {
+    VALUE cache_class = rb_define_class_under(Oj, "Cache", rb_cObject);
+
+    str_cache     = cache_create(0, form_str, true, true);
+    str_cache_obj = Data_Wrap_Struct(cache_class, cache_mark, cache_free, str_cache);
+    rb_gc_register_address(&str_cache_obj);
+
+    sym_cache     = cache_create(0, form_sym, true, true);
+    sym_cache_obj = Data_Wrap_Struct(cache_class, cache_mark, cache_free, sym_cache);
+    rb_gc_register_address(&sym_cache_obj);
+
+    attr_cache     = cache_create(0, form_attr, false, true);
+    attr_cache_obj = Data_Wrap_Struct(cache_class, cache_mark, cache_free, attr_cache);
+    rb_gc_register_address(&attr_cache_obj);
+
+    memset(class_hash.slots, 0, sizeof(class_hash.slots));
+#if HAVE_PTHREAD_MUTEX_INIT
+    pthread_mutex_init(&class_hash.mutex, NULL);
+#else
+    class_hash.mutex = rb_mutex_new();
+    rb_gc_register_address(&class_hash.mutex);
+#endif
+}
+
+VALUE
+oj_str_intern(const char *key, size_t len) {
+    return cache_intern(str_cache, key, len);
+}
+
+VALUE
+oj_sym_intern(const char *key, size_t len) {
+    return cache_intern(sym_cache, key, len);
+}
+
+ID
+oj_attr_intern(const char *key, size_t len) {
+    return cache_intern(attr_cache, key, len);
+}
+
+static uint64_t hash_calc(const uint8_t *key, size_t len) {
+    const uint8_t *end     = key + len;
+    const uint8_t *endless = key + (len & 0xFFFFFFFC);
+    uint64_t       h       = (uint64_t)len;
+    uint64_t       k;
+
+    while (key < endless) {
+        k = (uint64_t)*key++;
+        k |= (uint64_t)*key++ << 8;
+        k |= (uint64_t)*key++ << 16;
+        k |= (uint64_t)*key++ << 24;
+
+        k *= M;
+        k ^= k >> 24;
+        h *= M;
+        h ^= k * M;
+    }
+    if (1 < end - key) {
+        uint16_t k16 = (uint16_t)*key++;
+
+        k16 |= (uint16_t)*key++ << 8;
+        h ^= k16 << 8;
+    }
+    if (key < end) {
+        h ^= *key;
+    }
+    h *= M;
+    h ^= h >> 13;
+    h *= M;
+    h ^= h >> 15;
+
+    return h;
 }
 
 static VALUE resolve_classname(VALUE mod, const char *classname, int auto_define) {
@@ -167,45 +207,6 @@ static VALUE resolve_classpath(ParseInfo pi, const char *name, size_t len, int a
         }
     }
     return clas;
-}
-
-void oj_hash_init() {
-    VALUE cache_class = rb_define_class_under(Oj, "Cache", rb_cObject);
-
-    str_cache     = cache_create(0, form_str, true, true);
-    str_cache_obj = Data_Wrap_Struct(cache_class, cache_mark, cache_free, str_cache);
-    rb_gc_register_address(&str_cache_obj);
-
-    sym_cache     = cache_create(0, form_sym, true, true);
-    sym_cache_obj = Data_Wrap_Struct(cache_class, cache_mark, cache_free, sym_cache);
-    rb_gc_register_address(&sym_cache_obj);
-
-    attr_cache     = cache_create(0, form_attr, false, true);
-    attr_cache_obj = Data_Wrap_Struct(cache_class, cache_mark, cache_free, attr_cache);
-    rb_gc_register_address(&attr_cache_obj);
-
-    memset(class_hash.slots, 0, sizeof(class_hash.slots));
-#if HAVE_PTHREAD_MUTEX_INIT
-    pthread_mutex_init(&class_hash.mutex, NULL);
-#else
-    class_hash.mutex = rb_mutex_new();
-    rb_gc_register_address(&class_hash.mutex);
-#endif
-}
-
-VALUE
-oj_str_intern(const char *key, size_t len) {
-    return cache_intern(str_cache, key, len);
-}
-
-VALUE
-oj_sym_intern(const char *key, size_t len) {
-    return cache_intern(sym_cache, key, len);
-}
-
-ID
-oj_attr_intern(const char *key, size_t len) {
-    return cache_intern(attr_cache, key, len);
 }
 
 VALUE oj_class_intern(const char *key, size_t len, bool safe, ParseInfo pi, int auto_define, VALUE error_class) {

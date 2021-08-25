@@ -245,7 +245,7 @@ Cache cache_create(size_t size, VALUE (*form)(const char *str, size_t len), bool
     return c;
 }
 
-void cache_set_expiration_rate(Cache c, int rate) {
+void cache_set_expunge_rate(Cache c, int rate) {
     c->xrate = (uint8_t)rate;
 }
 

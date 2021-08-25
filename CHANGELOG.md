@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.13.3 - [unreleased]
+
+- Caches are now self adjusting and clearing so less used entries are expunged to avoid memory growth.
+
 ## 3.13.2 - 2021-08-11
 
 - Fixed C99 compiler errors.
