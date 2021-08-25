@@ -4,11 +4,17 @@
 ^c^s show subtree
 
 - plan
- - merge to develop
- - write article on changes and features
- - release
+ - replace intern calls with cache
+  - option for expiration
+  + str
+  + sym
+  + attr
+  - class
+   - need to handle auto create
+    - return Qundef does not store
+
  - future
-  - object delegate first
+  - object mode delegate
 
 - future
  - usual delegate
