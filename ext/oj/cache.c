@@ -9,7 +9,7 @@
 
 #define REHASH_LIMIT 4
 #define MIN_SHIFT 8
-#define REUSE_MAX 1024
+#define REUSE_MAX 8192
 
 #if HAVE_PTHREAD_MUTEX_INIT
 #define CACHE_LOCK(c) pthread_mutex_lock(&((c)->mutex))
@@ -262,7 +262,7 @@ Cache cache_create(size_t size, VALUE (*form)(const char *str, size_t len), bool
     memset(c->slots, 0, sizeof(Slot) * c->size);
     c->form  = form;
     c->cnt   = 0;
-    c->xrate = 2;  // low
+    c->xrate = 1;  // low
     c->mark  = mark;
     c->reuse = NULL;
     c->rcnt  = 0;
