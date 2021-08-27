@@ -40,8 +40,7 @@ static VALUE calc_hash_key(ParseInfo pi, Val kval, char k1) {
 #if HAVE_RB_ENC_INTERNED_STR
     rkey = rb_enc_interned_str(kval->key, kval->klen, oj_utf8_encoding);
 #else
-    rkey = rb_str_new(kval->key, kval->klen);
-    rkey = oj_encode(rkey);
+    rkey = rb_utf8_str_new(kval->key, kval->klen);
     OBJ_FREEZE(rkey);
 #endif
     return rkey;
@@ -61,8 +60,7 @@ static VALUE str_to_value(ParseInfo pi, const char *str, size_t len, const char 
         }
         rstr = oj_circ_array_get(pi->circ_array, i);
     } else {
-        rstr = rb_str_new(str, len);
-        rstr = oj_encode(rstr);
+	rstr = rb_utf8_str_new(str, len);
     }
     return rstr;
 }
@@ -233,8 +231,7 @@ static int hat_cstr(ParseInfo pi, Val parent, Val kval, const char *str, size_t 
             parent->val = ID2SYM(rb_intern3(str + 1, len - 1, oj_utf8_encoding));
             break;
         case 's':
-            parent->val = rb_str_new(str, len);
-            parent->val = oj_encode(parent->val);
+	    parent->val = rb_utf8_str_new(str, len);
             break;
         case 'c':  // class
         {

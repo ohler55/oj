@@ -30,8 +30,7 @@ static void hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, c
                 if (Yes == pi->options.sym_key) {
                     rkey = ID2SYM(rb_intern3(key, klen, oj_utf8_encoding));
                 } else {
-                    rkey = rb_str_new(key, klen);
-                    rkey = oj_encode(rkey);
+		    rkey = rb_utf8_str_new(key, klen);
                 }
             } else if (Yes == pi->options.sym_key) {
                 rkey = oj_sym_intern(key, klen);

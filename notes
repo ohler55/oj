@@ -12,12 +12,6 @@
   - class
    - need to handle auto create
     - return Qundef does not store
- - slot memory management
-  - use malloc
-  - for free put on atomic ptr as list
-  - in intern, take off and then free
-
- - use rb_utf8_str_new(str, len) instead of oj_encode
 
  - future
   - object mode delegate

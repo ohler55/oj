@@ -7,7 +7,7 @@ $: << File.join(File.dirname(__FILE__), "../ext")
 
 require 'oj'
 
-Oj.default_options = { mode: :rails, cache_keys: true, cache_str: -1 }
+Oj.default_options = { mode: :rails, cache_keys: false, cache_str: -1 }
 
 def mem
   `ps -o rss= -p #{$$}`.to_i
