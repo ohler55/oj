@@ -22,10 +22,6 @@
 // almost the Murmur hash algorithm
 #define M 0x5bd1e995
 
-// Slots are allocated and freed using stdlib malloc() and free() since using
-// ALLOC() and xfree() across the GC thread and a Ruby worker thread cause a
-// core dump and the GC thread (cache_mark()) is where the less used Slots are
-// removed.
 typedef struct _slot {
     struct _slot *next;
     VALUE         val;
@@ -141,7 +137,7 @@ static VALUE lockless_intern(Cache c, const char *key, size_t len) {
     while (REUSE_MAX < c->rcnt) {
         if (NULL != (b = c->reuse)) {
             c->reuse = b->next;
-            free(b);
+            xfree(b);
             c->rcnt--;
         } else {
             // An accounting error occured somewhere so correct it.
@@ -158,7 +154,7 @@ static VALUE lockless_intern(Cache c, const char *key, size_t len) {
         volatile VALUE rkey = c->form(key, len);
 
         if (NULL == (b = c->reuse)) {
-            b = (Slot)malloc(sizeof(struct _slot));
+            b = ALLOC(struct _slot);
         } else {
             c->reuse = b->next;
             c->rcnt--;
@@ -189,7 +185,7 @@ static VALUE locking_intern(Cache c, const char *key, size_t len) {
     while (REUSE_MAX < c->rcnt) {
         if (NULL != (b = c->reuse)) {
             c->reuse = b->next;
-            free(b);
+            xfree(b);
             c->rcnt--;
         } else {
             // An accounting error occured somewhere so correct it.
@@ -209,7 +205,7 @@ static VALUE locking_intern(Cache c, const char *key, size_t len) {
     // The creation of a new value may trigger a GC which be a problem if the
     // cache is locked so make sure it is unlocked for the key value creation.
     if (NULL == (b = c->reuse)) {
-        b = (Slot)malloc(sizeof(struct _slot));
+        b = ALLOC(struct _slot);
     } else {
         c->reuse = b->next;
         c->rcnt--;
@@ -287,7 +283,7 @@ void cache_free(Cache c) {
 
         for (s = c->slots[i]; NULL != s; s = next) {
             next = s->next;
-            free(s);
+            xfree(s);
         }
     }
     xfree(c->slots);
