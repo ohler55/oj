@@ -18,9 +18,11 @@ end
     ('a'..'z').each { |c|
       ('a'..'z').each { |d|
 	('a'..'z').each { |e|
-	  key = "#{a}#{b}#{c}#{d}#{e}"
-	  x = Oj.load(%|{ "#{key}": 101}|)
-	  #Oj.dump(x)
+	  ('a'..'z').each { |f|
+	    key = "#{a}#{b}#{c}#{d}#{e}#{f}"
+	    x = Oj.load(%|{ "#{key}": 101}|)
+	    #Oj.dump(x)
+	  }
 	}
       }
     }
