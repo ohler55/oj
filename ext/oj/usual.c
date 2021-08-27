@@ -800,18 +800,18 @@ static VALUE opt_cache_expunge(ojParser p, VALUE value) {
 
 static VALUE opt_cache_expunge_set(ojParser p, VALUE value) {
     Delegate d    = (Delegate)p->ctx;
-    uint8_t  rate = (uint8_t)NUM2INT(value);
+    int      rate = NUM2INT(value);
 
     if (rate < 0) {
-	rate = 0;
+        rate = 0;
     } else if (3 < rate) {
         rate = 3;
     }
-    d->cache_xrate = rate;
+    d->cache_xrate = (uint8_t)rate;
     cache_set_expunge_rate(d->str_cache, rate);
     cache_set_expunge_rate(d->attr_cache, rate);
     if (NULL != d->sym_cache) {
-	cache_set_expunge_rate(d->sym_cache, rate);
+        cache_set_expunge_rate(d->sym_cache, rate);
     }
     return INT2NUM((int)rate);
 }
@@ -1099,7 +1099,7 @@ static VALUE opt_symbol_keys_set(ojParser p, VALUE value) {
 
     if (Qtrue == value) {
         d->sym_cache = cache_create(0, form_sym, true, false);
-	cache_set_expunge_rate(d->sym_cache, d->cache_xrate);
+        cache_set_expunge_rate(d->sym_cache, d->cache_xrate);
         d->key_cache = d->sym_cache;
         if (!d->cache_keys) {
             d->get_key = sym_key;

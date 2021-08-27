@@ -10,6 +10,7 @@
 #define REHASH_LIMIT 4
 #define MIN_SHIFT 8
 
+//#undef HAVE_PTHREAD_MUTEX_INIT
 #if HAVE_PTHREAD_MUTEX_INIT
 #define CACHE_LOCK(c) pthread_mutex_lock(&((c)->mutex))
 #define CACHE_UNLOCK(c) pthread_mutex_unlock(&((c)->mutex))
@@ -41,6 +42,7 @@ typedef struct _cache {
     uint64_t size;
     uint64_t mask;
     VALUE (*intern)(struct _cache *c, const char *key, size_t len);
+    Slot freed;
 #if HAVE_PTHREAD_MUTEX_INIT
     pthread_mutex_t mutex;
 #else
@@ -134,29 +136,29 @@ static VALUE lockless_intern(Cache c, const char *key, size_t len) {
     uint64_t h      = hash_calc((const uint8_t *)key, len);
     Slot *   bucket = c->slots + (h & c->mask);
     Slot     b;
-    Slot     tail = NULL;
+
+    // TBD if freed too long then free some
+    // same for locked
 
     for (b = *bucket; NULL != b; b = b->next) {
         if ((uint8_t)len == b->klen && 0 == strncmp(b->key, key, len)) {
             b->use_cnt += 4;
             return b->val;
         }
-        tail = b;
     }
-    b       = (Slot)malloc(sizeof(struct _slot));
+    if (NULL == (b = c->freed)) {
+        b = (Slot)malloc(sizeof(struct _slot));
+    } else {
+        c->freed = b->next;
+    }
     b->hash = h;
-    b->next = NULL;
     memcpy(b->key, key, len);
     b->klen     = (uint8_t)len;
     b->key[len] = '\0';
     b->val      = c->form(key, len);
     b->use_cnt  = 4;
-
-    if (NULL == tail) {
-        *bucket = b;
-    } else {
-        tail->next = b;
-    }
+    b->next     = *bucket;
+    *bucket     = b;
     c->cnt++;  // Don't worry about wrapping. Worse case is the entry is removed and recreated.
     if (REHASH_LIMIT < c->cnt / c->size) {
         rehash(c);
@@ -168,10 +170,13 @@ static VALUE locking_intern(Cache c, const char *key, size_t len) {
     uint64_t h;
     Slot *   bucket;
     Slot     b;
-    Slot     tail = NULL;
     uint64_t old_size;
 
     CACHE_LOCK(c);
+    while (NULL != (b = c->freed)) {
+        c->freed = b->next;
+        free(b);
+    }
     h      = hash_calc((const uint8_t *)key, len);
     bucket = c->slots + (h & c->mask);
     for (b = *bucket; NULL != b; b = b->next) {
@@ -180,38 +185,36 @@ static VALUE locking_intern(Cache c, const char *key, size_t len) {
             CACHE_UNLOCK(c);
             return b->val;
         }
-        tail = b;
     }
     old_size = c->size;
     // The creation of a new value may trigger a GC which be a problem if the
     // cache is locked so make sure it is unlocked for the key value creation.
     CACHE_UNLOCK(c);
-    b       = (Slot)malloc(sizeof(struct _slot));
-    b->hash = h;
-    b->next = NULL;
-    memcpy(b->key, key, len);
-    b->klen     = (uint8_t)len;
-    b->key[len] = '\0';
-    b->val      = c->form(key, len);
-    b->use_cnt  = 4;
+    {
+        volatile VALUE rkey = c->form(key, len);
 
-    // Lock again to add the new entry.
-    CACHE_LOCK(c);
-    if (old_size != c->size) {
-        h      = hash_calc((const uint8_t *)key, len);
-        bucket = c->slots + (h & c->mask);
-    }
-    if (NULL == tail) {
+        b       = (Slot)malloc(sizeof(struct _slot));
+        b->hash = h;
+        memcpy(b->key, key, len);
+        b->klen     = (uint8_t)len;
+        b->key[len] = '\0';
+        b->val      = rkey;
+        b->use_cnt  = 4;
+
+        // Lock again to add the new entry.
+        CACHE_LOCK(c);
+        if (old_size != c->size) {
+            h      = hash_calc((const uint8_t *)key, len);
+            bucket = c->slots + (h & c->mask);
+        }
+        b->next = *bucket;
         *bucket = b;
-    } else {
-        tail->next = b;
+        c->cnt++;  // Don't worry about wrapping. Worse case is the entry is removed and recreated.
+        if (REHASH_LIMIT < c->cnt / c->size) {
+            rehash(c);
+        }
+        CACHE_UNLOCK(c);
     }
-    c->cnt++;  // Don't worry about wrapping. Worse case is the entry is removed and recreated.
-    if (REHASH_LIMIT < c->cnt / c->size) {
-        rehash(c);
-    }
-    CACHE_UNLOCK(c);
-
     return b->val;
 }
 
@@ -235,8 +238,9 @@ Cache cache_create(size_t size, VALUE (*form)(const char *str, size_t len), bool
     memset(c->slots, 0, sizeof(Slot) * c->size);
     c->form  = form;
     c->cnt   = 0;
-    c->xrate = 1;  // low
+    c->xrate = 2;  // low
     c->mark  = mark;
+    c->freed = NULL;
     if (locking) {
         c->intern = locking_intern;
     } else {
@@ -268,6 +272,13 @@ void cache_free(Cache c) {
 void cache_mark(Cache c) {
     uint64_t i;
 
+#if !HAVE_PTHREAD_MUTEX_INIT
+    rb_gc_mark(c->mutex);
+#endif
+    if (0 == c->cnt) {
+        return;
+    }
+    // printf("*** size: %ld - %ld\n", c->size, c->cnt);
     for (i = 0; i < c->size; i++) {
         Slot s;
         Slot prev = NULL;
@@ -281,7 +292,11 @@ void cache_mark(Cache c) {
                 } else {
                     prev->next = next;
                 }
-                free(s);
+                c->cnt--;
+                // TBD
+                // free(s);
+                s->next  = c->freed;
+                c->freed = s;
                 continue;
             }
             switch (c->xrate) {

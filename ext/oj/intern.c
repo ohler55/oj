@@ -273,3 +273,9 @@ char *oj_strndup(const char *s, size_t len) {
 
     return d;
 }
+
+void intern_cleanup() {
+    cache_free(str_cache);
+    cache_free(sym_cache);
+    cache_free(attr_cache);
+}

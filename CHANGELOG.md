@@ -2,7 +2,12 @@
 
 ## 3.13.3 - [unreleased]
 
-- Caches are now self adjusting and clearing so less used entries are expunged to avoid memory growth.
+- Caches are now self adjusting and clearing so less used entries are
+  expunged to avoid memory growth.
+
+- When mimicking the JSON gem the JSON::State now handles all Hash
+  methods. While this is different than the actually JSON gem it
+  avoids failing due to errors in Rails code and other gems.
 
 ## 3.13.2 - 2021-08-11
 
