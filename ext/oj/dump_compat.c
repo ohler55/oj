@@ -800,12 +800,12 @@ dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
 	return;
     }
 
-    if (as_ok && rb_respond_to(obj, oj_as_json_id)) {
-        dump_as_json(obj, depth, out, true);
-        return;
-    }
     if (rb_cTime == rb_obj_class(obj)) {
-        oj_dump_ruby_time(obj, out);
+        if (as_ok && rb_respond_to(obj, oj_as_json_id)) {
+            dump_as_json(obj, depth, out, true);
+        } else {
+            oj_dump_ruby_time(obj, out);
+        }
         return;
     }
     if (as_ok && rb_respond_to(obj, oj_to_json_id)) {
