@@ -53,7 +53,7 @@ Oj.default_options = {create_id: '^', create_additions: true, class_cache: true}
 if $cache_keys
   Oj.default_options = {cache_keys: true, cache_str: 6, symbol_keys: $symbol_keys}
 else
-  Oj.default_options = {cache_keys: false, cache_str: 0, symbol_keys: $symbol_keys}
+  Oj.default_options = {cache_keys: false, cache_str: -1, symbol_keys: $symbol_keys}
 end
 JSON.parser = JSON::Ext::Parser
 
@@ -164,6 +164,11 @@ $obj_json = %|{
   "juliet": "junk"
 }|
 
+
+p_usual = Oj::Parser.new(:usual)
+p_usual.cache_keys = $cache_keys
+p_usual.cache_strings = ($cache_keys ? 6 : 0)
+p_usual.symbol_keys = $symbol_keys
 p_usual.create_id = '^'
 p_usual.class_cache = true
 p_usual.ignore_json_create = true

@@ -190,7 +190,7 @@ struct _options oj_default_options = {
     false,          // sec_prec_set
     No,             // ignore_under
     Yes,            // cache_keys
-    3,              // cache_str
+    0,              // cache_str
     0,              // int_range_min
     0,              // int_range_max
     oj_json_class,  // create_id
@@ -288,7 +288,7 @@ struct _options oj_default_options = {
  * - *:ignore_under* [_Boolean_] if true then attributes that start with _ are ignored when dumping in
  *object or custom mode.
  * - *:cache_keys* [_Boolean_] if true then hash keys are cached
- * - *:cache_str* [_Fixnum_] maximum string value length to cache
+ * - *:cache_str* [_Fixnum_] maximum string value length to cache (strings less than this are cached)
  * - *:integer_range* [_Range_] Dump integers outside range as strings.
  * - *:trace* [_true,_|_false_] Trace all load and dump calls, default is false (trace is off)
  * - *:safe* [_true,_|_false_] Safe mimic breaks JSON mimic to be safer, default is false (safe is
@@ -571,7 +571,7 @@ static VALUE get_def_opts(VALUE self) {
  *   - *:ignore_under* [_Boolean_] if true then attributes that start with _ are ignored when
  *dumping in object or custom mode.
  *   - *:cache_keys* [_Boolean_] if true then hash keys are cached
- *   - *:cache_str* [_Fixnum_] maximum string vsalue length to cache
+ *   - *:cache_str* [_Fixnum_] maximum string value length to cache (strings less than this are cached)
  *   - *:integer_range* [_Range_] Dump integers outside range as strings.
  *   - *:trace* [_Boolean_] turn trace on or off.
  *   - *:safe* [_Boolean_] turn safe mimic on or off.

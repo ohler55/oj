@@ -682,7 +682,7 @@ static VALUE mimic_set_create_id(VALUE self, VALUE id) {
  */
 static VALUE mimic_create_id(VALUE self) {
     if (NULL != oj_default_options.create_id) {
-        return oj_encode(rb_str_new_cstr(oj_default_options.create_id));
+        return  rb_utf8_str_new(oj_default_options.create_id, oj_default_options.create_id_len);
     }
     return rb_str_new_cstr(oj_json_class);
 }
@@ -714,7 +714,7 @@ static struct _options mimic_object_to_json_options = {0,              // indent
                                                        false,          // sec_prec_set
                                                        No,             // ignore_under
                                                        Yes,            // cache_keys
-                                                       3,              // cache_str
+                                                       0,              // cache_str
                                                        0,              // int_range_min
                                                        0,              // int_range_max
                                                        oj_json_class,  // create_id

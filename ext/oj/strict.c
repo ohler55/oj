@@ -37,8 +37,8 @@ VALUE oj_calc_hash_key(ParseInfo pi, Val parent) {
         } else {
             rkey = rb_str_new(parent->key, parent->klen);
             rkey = oj_encode(rkey);
+            OBJ_FREEZE(rkey);
         }
-        OBJ_FREEZE(rkey);
         return rkey;
     }
     if (Yes == pi->options.sym_key) {
@@ -46,7 +46,6 @@ VALUE oj_calc_hash_key(ParseInfo pi, Val parent) {
     } else {
 	rkey = oj_str_intern(parent->key, parent->klen);
     }
-    OBJ_FREEZE(rkey);
     return rkey;
 }
 

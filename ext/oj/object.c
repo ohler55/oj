@@ -30,46 +30,19 @@ inline static long read_long(const char *str, size_t len) {
 
 static VALUE calc_hash_key(ParseInfo pi, Val kval, char k1) {
     volatile VALUE rkey;
-#if 0
-    VALUE *slot;
 
     if (':' == k1) {
-        if (Qnil == (rkey = oj_sym_hash_get(kval->key + 1, kval->klen - 1, &slot))) {
-            rkey  = rb_str_new(kval->key + 1, kval->klen - 1);
-            rkey  = oj_encode(rkey);
-            rkey  = rb_str_intern(rkey);
-            *slot = rkey;
-            rb_gc_register_address(slot);
-        }
-    } else if (Yes == pi->options.sym_key) {
-        if (Qnil == (rkey = oj_sym_hash_get(kval->key, kval->klen, &slot))) {
-            rkey  = rb_str_new(kval->key, kval->klen);
-            rkey  = oj_encode(rkey);
-            rkey  = rb_str_intern(rkey);
-            *slot = rkey;
-            rb_gc_register_address(slot);
-        }
-    } else {
-        if (Qnil == (rkey = oj_str_hash_get(kval->key, kval->klen, &slot))) {
-            rkey  = rb_str_new(kval->key, kval->klen);
-            rkey  = oj_encode(rkey);
-            *slot = rkey;
-            rb_gc_register_address(slot);
-        }
+        return ID2SYM(rb_intern3(kval->key + 1, kval->klen - 1, oj_utf8_encoding));
     }
+    if (Yes == pi->options.sym_key) {
+	return ID2SYM(rb_intern3(kval->key, kval->klen, oj_utf8_encoding));
+    }
+#if HAVE_RB_ENC_INTERNED_STR
+    rkey = rb_enc_interned_str(kval->key, kval->klen, oj_utf8_encoding);
 #else
-    if (':' == k1) {
-        rkey = ID2SYM(rb_intern3(kval->key + 1, kval->klen - 1, oj_utf8_encoding));
-    } else {
-        if (Yes == pi->options.sym_key) {
-            rkey = ID2SYM(rb_intern3(kval->key, kval->klen, oj_utf8_encoding));
-        } else {
-            rkey = rb_str_new(kval->key, kval->klen);
-            rkey = oj_encode(rkey);
-        }
-    }
-#endif
+    rkey = rb_utf8_str_new(kval->key, kval->klen);
     OBJ_FREEZE(rkey);
+#endif
     return rkey;
 }
 
@@ -87,8 +60,7 @@ static VALUE str_to_value(ParseInfo pi, const char *str, size_t len, const char 
         }
         rstr = oj_circ_array_get(pi->circ_array, i);
     } else {
-        rstr = rb_str_new(str, len);
-        rstr = oj_encode(rstr);
+	rstr = rb_utf8_str_new(str, len);
     }
     return rstr;
 }
@@ -259,8 +231,7 @@ static int hat_cstr(ParseInfo pi, Val parent, Val kval, const char *str, size_t 
             parent->val = ID2SYM(rb_intern3(str + 1, len - 1, oj_utf8_encoding));
             break;
         case 's':
-            parent->val = rb_str_new(str, len);
-            parent->val = oj_encode(parent->val);
+	    parent->val = rb_utf8_str_new(str, len);
             break;
         case 'c':  // class
         {

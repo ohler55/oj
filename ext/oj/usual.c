@@ -77,6 +77,7 @@ typedef struct _delegate {
     char *  create_id;
     uint8_t create_id_len;
     uint8_t cache_str;
+    uint8_t cache_xrate;
     uint8_t miss_class;
     bool    cache_keys;
     bool    ignore_json_create;
@@ -100,7 +101,6 @@ static VALUE form_str(const char *str, size_t len) {
 }
 
 static VALUE form_sym(const char *str, size_t len) {
-    // return ID2SYM(rb_intern3(str, len, oj_utf8_encoding));
     return rb_str_intern(rb_utf8_str_new(str, len));
 }
 
@@ -323,7 +323,7 @@ static void open_array_key(ojParser p) {
 }
 
 static void close_object(ojParser p) {
-    VALUE *vp;
+    VALUE *  vp;
     Delegate d = (Delegate)p->ctx;
 
     d->ctail--;
@@ -356,7 +356,7 @@ static void close_object(ojParser p) {
 }
 
 static void close_object_class(ojParser p) {
-    VALUE *vp;
+    VALUE *  vp;
     Delegate d = (Delegate)p->ctx;
 
     d->ctail--;
@@ -379,7 +379,7 @@ static void close_object_class(ojParser p) {
 }
 
 static void close_object_create(ojParser p) {
-    VALUE *vp;
+    VALUE *  vp;
     Delegate d = (Delegate)p->ctx;
 
     d->ctail--;
@@ -471,7 +471,7 @@ static void close_array(ojParser p) {
 }
 
 static void close_array_class(ojParser p) {
-    VALUE *vp;
+    VALUE *  vp;
     Delegate d = (Delegate)p->ctx;
 
     d->ctail--;
@@ -686,10 +686,10 @@ static void mark(ojParser p) {
         return;
     }
     Delegate d = (Delegate)p->ctx;
-    VALUE *vp;
+    VALUE *  vp;
 
     if (NULL == d) {
-	return;
+        return;
     }
     cache_mark(d->str_cache);
     if (NULL != d->sym_cache) {
@@ -792,6 +792,30 @@ static VALUE opt_cache_strings_set(ojParser p, VALUE value) {
     return INT2NUM((int)d->cache_str);
 }
 
+static VALUE opt_cache_expunge(ojParser p, VALUE value) {
+    Delegate d = (Delegate)p->ctx;
+
+    return INT2NUM((int)d->cache_xrate);
+}
+
+static VALUE opt_cache_expunge_set(ojParser p, VALUE value) {
+    Delegate d    = (Delegate)p->ctx;
+    int      rate = NUM2INT(value);
+
+    if (rate < 0) {
+        rate = 0;
+    } else if (3 < rate) {
+        rate = 3;
+    }
+    d->cache_xrate = (uint8_t)rate;
+    cache_set_expunge_rate(d->str_cache, rate);
+    cache_set_expunge_rate(d->attr_cache, rate);
+    if (NULL != d->sym_cache) {
+        cache_set_expunge_rate(d->sym_cache, rate);
+    }
+    return INT2NUM((int)rate);
+}
+
 static VALUE opt_capacity(ojParser p, VALUE value) {
     Delegate d = (Delegate)p->ctx;
 
@@ -830,11 +854,7 @@ static VALUE opt_class_cache_set(ojParser p, VALUE value) {
 
     if (Qtrue == value) {
         if (NULL == d->class_cache) {
-            if (MISS_AUTO == d->miss_class) {
-                d->class_cache = cache_create(0, form_class_auto, true);
-            } else {
-                d->class_cache = cache_create(0, form_class, false);
-            }
+            d->class_cache = cache_create(0, form_class_auto, MISS_AUTO == d->miss_class, false);
         }
     } else if (NULL != d->class_cache) {
         cache_free(d->class_cache);
@@ -1078,7 +1098,8 @@ static VALUE opt_symbol_keys_set(ojParser p, VALUE value) {
     Delegate d = (Delegate)p->ctx;
 
     if (Qtrue == value) {
-        d->sym_cache = cache_create(0, form_sym, true);
+        d->sym_cache = cache_create(0, form_sym, true, false);
+        cache_set_expunge_rate(d->sym_cache, d->cache_xrate);
         d->key_cache = d->sym_cache;
         if (!d->cache_keys) {
             d->get_key = sym_key;
@@ -1097,13 +1118,15 @@ static VALUE opt_symbol_keys_set(ojParser p, VALUE value) {
 
 static VALUE option(ojParser p, const char *key, VALUE value) {
     struct opt *op;
-    struct opt opts[] = {
+    struct opt  opts[] = {
         {.name = "array_class", .func = opt_array_class},
         {.name = "array_class=", .func = opt_array_class_set},
         {.name = "cache_keys", .func = opt_cache_keys},
         {.name = "cache_keys=", .func = opt_cache_keys_set},
         {.name = "cache_strings", .func = opt_cache_strings},
         {.name = "cache_strings=", .func = opt_cache_strings_set},
+        {.name = "cache_expunge", .func = opt_cache_expunge},
+        {.name = "cache_expunge=", .func = opt_cache_expunge_set},
         {.name = "capacity", .func = opt_capacity},
         {.name = "capacity=", .func = opt_capacity_set},
         {.name = "class_cache", .func = opt_class_cache},
@@ -1163,6 +1186,7 @@ void oj_set_parser_usual(ojParser p) {
     d->create_id          = NULL;
     d->create_id_len      = 0;
     d->miss_class         = MISS_IGNORE;
+    d->cache_xrate        = 1;
 
     Funcs f         = &p->funcs[TOP_FUN];
     f->add_null     = add_null;
@@ -1203,8 +1227,8 @@ void oj_set_parser_usual(ojParser p) {
     f->open_object  = open_object_key;
     f->close_object = close_object;
 
-    d->str_cache   = cache_create(0, form_str, true);
-    d->attr_cache  = cache_create(0, form_attr, false);
+    d->str_cache   = cache_create(0, form_str, true, false);
+    d->attr_cache  = cache_create(0, form_attr, false, false);
     d->sym_cache   = NULL;
     d->class_cache = NULL;
     d->key_cache   = d->str_cache;

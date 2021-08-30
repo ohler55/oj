@@ -956,16 +956,14 @@ static void hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, c
         }
     } else {
 	//volatile VALUE rstr = oj_cstr_to_value(str, len, (size_t)pi->options.cache_str);
-        volatile VALUE rstr = rb_str_new(str, len);
+        volatile VALUE rstr = rb_utf8_str_new(str, len);
 
         if (Qundef == rkey) {
             if (Yes == pi->options.sym_key) {
                 rkey = ID2SYM(rb_intern3(key, klen, oj_utf8_encoding));
             } else {
-                rkey = rb_str_new(key, klen);
-                rkey = oj_encode(rkey);
+		rkey = rb_utf8_str_new(key, klen);
             }
-            rstr = oj_encode(rstr);
         }
         if (Yes == pi->options.create_ok && NULL != pi->options.str_rx.head) {
             VALUE clas = oj_rxclass_match(&pi->options.str_rx, str, (int)len);
@@ -1090,9 +1088,8 @@ static void array_append_num(ParseInfo pi, NumInfo ni) {
 }
 
 static void array_append_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
-    volatile VALUE rstr = rb_str_new(str, len);
+    volatile VALUE rstr = rb_utf8_str_new(str, len);
 
-    rstr = oj_encode(rstr);
     if (Yes == pi->options.create_ok && NULL != pi->options.str_rx.head) {
         VALUE clas = oj_rxclass_match(&pi->options.str_rx, str, (int)len);
 

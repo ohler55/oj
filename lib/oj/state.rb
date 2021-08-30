@@ -1,7 +1,7 @@
 
 module JSON
   module Ext
-    module Generator 
+    module Generator
       unless defined?(::JSON::Ext::Generator::State)
         # This class exists for json gem compatibility only. While it can be
         # used as the options for other than compatibility a simple Hash is
@@ -44,11 +44,11 @@ module JSON
           def to_h()
             return @attrs.dup
           end
-          
+
           def to_hash()
             return @attrs.dup
           end
-          
+
           def allow_nan?()
             @attrs[:allow_nan]
           end
@@ -104,7 +104,7 @@ module JSON
           def has_key?(k)
             @attrs.has_key?(key.to_sym)
           end
-          
+
           # Handles requests for Hash values. Others cause an Exception to be raised.
           # @param [Symbol|String] m method symbol
           # @return [Boolean] the value of the specified instance variable.
@@ -116,11 +116,12 @@ module JSON
               m = m.to_s[0..-2]
               m = m.to_sym
               return @attrs.store(m, args[0])
-            else
+	    end
+	    if @attrs.has_key?(m.to_sym)
               raise ArgumentError.new("wrong number of arguments (#{args.size} for 0 with #{m}) to method #{m}") unless args.nil? or args.empty?
               return @attrs[m.to_sym]
-            end
-            raise NoMethodError.new("undefined method #{m}", m)
+	    end
+	    return @attrs.send(m, *args, &block)
           end
 
         end # State
