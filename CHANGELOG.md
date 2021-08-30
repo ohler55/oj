@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 3.13.3 - [unreleased]
+## 3.13.3 - 2021-08-30
 
 - Caches are now self adjusting and clearing so less used entries are
   expunged to avoid memory growth.
