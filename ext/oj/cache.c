@@ -333,7 +333,7 @@ void cache_mark(Cache c) {
 
 VALUE
 cache_intern(Cache c, const char *key, size_t len) {
-    if (CACHE_MAX_KEY < len) {
+    if (CACHE_MAX_KEY <= len) {
         return c->form(key, len);
     }
     return c->intern(c, key, len);

@@ -75,12 +75,22 @@ parse option to match the JSON gem. In that case either `Float`,
 If true Hash keys are cached or interned. There are trade-offs with
 caching keys. Large caches will use more memory and in extreme cases
 (like over a million) the cache may be slower than not using
-it. Repeated parsing of similar JSON docs is where cache_keys shines.
+it. Repeated parsing of similar JSON docs is where cache_keys shines
+especially with symbol keys.
+
+There is a maximum length for cached keys. Any key longer than 34
+bytes is not cached. Everything still works but the key is not cached.
 
 ### :cache_strings [Int]
 
 Shorter strings can be cached for better performance. A limit,
-cache_strings, defines the upper limit on what strings are cached.
+cache_strings, defines the upper limit on what strings are cached. As
+with cached keys only strings less than 35 bytes are cached even if
+the limit is set higher. Setting the limit to zero effectively
+disables the caching of string values.
+
+Note that caching for strings is for string values and not Hash keys
+or Object attributes.
 
 ### :circular [Boolean]
 

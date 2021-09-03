@@ -107,6 +107,7 @@ static VALUE bigdecimal_load_sym;
 static VALUE bigdecimal_sym;
 static VALUE cache_keys_sym;
 static VALUE cache_str_sym;
+static VALUE cache_string_sym;
 static VALUE circular_sym;
 static VALUE class_cache_sym;
 static VALUE compat_bigdecimal_sym;
@@ -287,7 +288,7 @@ struct _options oj_default_options = {
  * - *:ignore* [_nil_|_Array_] either nil or an Array of classes to ignore when dumping
  * - *:ignore_under* [_Boolean_] if true then attributes that start with _ are ignored when dumping in
  *object or custom mode.
- * - *:cache_keys* [_Boolean_] if true then hash keys are cached
+ * - *:cache_keys* [_Boolean_] if true then hash keys are cached if less than 35 bytes.
  * - *:cache_str* [_Fixnum_] maximum string value length to cache (strings less than this are cached)
  * - *:integer_range* [_Range_] Dump integers outside range as strings.
  * - *:trace* [_true,_|_false_] Trace all load and dump calls, default is false (trace is off)
@@ -692,7 +693,7 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts)
             sprintf(copts->float_fmt, "%%0.%dg", n);
             copts->float_prec = n;
         }
-    } else if (cache_str_sym == k) {
+    } else if (cache_str_sym == k || cache_string_sym == k) {
         int n;
 
 #ifdef RUBY_INTEGER_UNIFICATION
@@ -1920,6 +1921,8 @@ void Init_oj() {
     rb_gc_register_address(&cache_keys_sym);
     cache_str_sym = ID2SYM(rb_intern("cache_str"));
     rb_gc_register_address(&cache_str_sym);
+    cache_string_sym = ID2SYM(rb_intern("cache_string"));
+    rb_gc_register_address(&cache_string_sym);
     circular_sym = ID2SYM(rb_intern("circular"));
     rb_gc_register_address(&circular_sym);
     class_cache_sym = ID2SYM(rb_intern("class_cache"));
