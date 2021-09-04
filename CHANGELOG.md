@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.13.4 - 2021-09-04
+
+- Fixed concurrent GC issue in the cache.
+
 ## 3.13.3 - 2021-08-30
 
 - Caches are now self adjusting and clearing so less used entries are
