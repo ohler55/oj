@@ -12,8 +12,6 @@
 // ALLOC_N, REALLOC, and xfree since the later could trigger a GC which will
 // either corrupt memory or if the mark function locks will deadlock.
 
-#define LOCK_PARANOID 0
-
 #define REHASH_LIMIT 4
 #define MIN_SHIFT 8
 #define REUSE_MAX 8192
@@ -54,7 +52,6 @@ typedef struct _cache {
 #endif
     uint8_t xrate;
     bool    mark;
-    bool    locking;
 } * Cache;
 
 void cache_set_form(Cache c, VALUE (*form)(const char *str, size_t len)) {
@@ -250,7 +247,6 @@ Cache cache_create(size_t size, VALUE (*form)(const char *str, size_t len), bool
     c->form    = form;
     c->xrate   = 1;  // low
     c->mark    = mark;
-    c->locking = locking;
     if (locking) {
         c->intern = locking_intern;
     } else {
@@ -288,11 +284,6 @@ void cache_mark(Cache c) {
     if (0 == c->cnt) {
         return;
     }
-#if LOCK_PARANOID
-    if (c->locking) {
-        CACHE_LOCK(c);
-    }
-#endif
     for (i = 0; i < c->size; i++) {
         Slot s;
         Slot prev = NULL;
@@ -324,11 +315,6 @@ void cache_mark(Cache c) {
             prev = s;
         }
     }
-#if LOCK_PARANOID
-    if (c->locking) {
-        CACHE_UNLOCK(c);
-    }
-#endif
 }
 
 VALUE

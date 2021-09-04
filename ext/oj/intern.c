@@ -112,7 +112,14 @@ void oj_hash_init() {
 
 VALUE
 oj_str_intern(const char *key, size_t len) {
+    // For huge cache sizes over half a million the rb_enc_interned_str
+    // performs slightly better but at more "normal" size of a several
+    // thousands the cache intern performs about 20% better.
+#if HAVE_RB_ENC_INTERNED_STR && 0
+    return rb_enc_interned_str(key, len, rb_utf8_encoding());
+#else
     return cache_intern(str_cache, key, len);
+#endif
 }
 
 VALUE
