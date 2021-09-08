@@ -22,7 +22,7 @@ Gem::Specification.new do |s|
   s.licenses = ['MIT']
   s.required_ruby_version = ">= 2.4"
 
-  s.files = Dir["{lib,ext,test}/**/*.{rb,h,c}"] + ['LICENSE', 'README.md', 'CHANGELOG.md'] + Dir["pages/*.md"]
+  s.files = Dir["{lib,ext,test}/**/*.{rb,h,c}"] + ['LICENSE', 'README.md', 'CHANGELOG.md', 'RELEASE_NOTES.md'] + Dir["pages/*.md"]
   s.test_files = Dir["test/**/*.rb"]
   s.extensions = ["ext/oj/extconf.rb"]
 
