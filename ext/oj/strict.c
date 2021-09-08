@@ -16,7 +16,7 @@
 VALUE oj_cstr_to_value(const char *str, size_t len, size_t cache_str) {
     volatile VALUE rstr = Qnil;
 
-    if (len <= cache_str) {
+    if (len < cache_str) {
 	rstr = oj_str_intern(str, len);
     } else {
         rstr = rb_str_new(str, len);
@@ -37,7 +37,7 @@ VALUE oj_calc_hash_key(ParseInfo pi, Val parent) {
         } else {
             rkey = rb_str_new(parent->key, parent->klen);
             rkey = oj_encode(rkey);
-            OBJ_FREEZE(rkey);
+	    OBJ_FREEZE(rkey); // frozen when used as a Hash key anyway
         }
         return rkey;
     }
