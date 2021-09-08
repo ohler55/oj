@@ -955,8 +955,8 @@ static void hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, c
             }
         }
     } else {
-	//volatile VALUE rstr = oj_cstr_to_value(str, len, (size_t)pi->options.cache_str);
-        volatile VALUE rstr = rb_utf8_str_new(str, len);
+	volatile VALUE rstr = oj_cstr_to_value(str, len, (size_t)pi->options.cache_str);
+        //volatile VALUE rstr = rb_utf8_str_new(str, len);
 
         if (Qundef == rkey) {
             if (Yes == pi->options.sym_key) {

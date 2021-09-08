@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.13.5 - 2021-09-08
+
+- Assure value strings of zero length are not always cached.
+
 ## 3.13.4 - 2021-09-04
 
 - Fixed concurrent GC issue in the cache.
