@@ -1211,7 +1211,7 @@ static VALUE parser_new(VALUE self, VALUE mode) {
  * - *:usual*
  *   - _cache_keys=_ sets the value of the _cache_keys_ flag.
  *   - _cache_keys_ returns the value of the _cache_keys_ flag.
- *   - _cache_strings=_ sets the value of the _cache_strings_ to an positive integer less than 35. Strings shorter than
+ *   - _cache_strings=_ sets the value of the _cache_strings_ to a positive integer less than 35. Strings shorter than
  * that length are cached.
  *   - _cache_strings_ returns the value of the _cache_strings_ integer value.
  *   - _cache_expunge=_ sets the value of the _cache_expunge_ where 0 never expunges, 1 expunges slowly, 2 expunges

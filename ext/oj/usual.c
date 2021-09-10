@@ -39,7 +39,7 @@ typedef struct _col {
 typedef union _key {
     struct {
         int16_t len;
-        char    buf[22];
+        char    buf[30];
     };
     struct {
         int16_t xlen;  // should be the same as len
@@ -209,21 +209,21 @@ static void push(ojParser p, VALUE v) {
 static VALUE cache_key(ojParser p, Key kp) {
     Delegate d = (Delegate)p->ctx;
 
-    if ((size_t)kp->len < sizeof(kp->buf) - 1) {
+    if ((size_t)kp->len < sizeof(kp->buf)) {
         return cache_intern(d->key_cache, kp->buf, kp->len);
     }
     return cache_intern(d->key_cache, kp->key, kp->len);
 }
 
 static VALUE str_key(ojParser p, Key kp) {
-    if ((size_t)kp->len < sizeof(kp->buf) - 1) {
+    if ((size_t)kp->len < sizeof(kp->buf)) {
         return rb_str_freeze(rb_utf8_str_new(kp->buf, kp->len));
     }
     return rb_str_freeze(rb_utf8_str_new(kp->key, kp->len));
 }
 
 static VALUE sym_key(ojParser p, Key kp) {
-    if ((size_t)kp->len < sizeof(kp->buf) - 1) {
+    if ((size_t)kp->len < sizeof(kp->buf)) {
         return rb_str_freeze(rb_str_intern(rb_utf8_str_new(kp->buf, kp->len)));
     }
     return rb_str_freeze(rb_str_intern(rb_utf8_str_new(kp->key, kp->len)));
@@ -232,7 +232,7 @@ static VALUE sym_key(ojParser p, Key kp) {
 static ID get_attr_id(ojParser p, Key kp) {
     Delegate d = (Delegate)p->ctx;
 
-    if ((size_t)kp->len < sizeof(kp->buf) - 1) {
+    if ((size_t)kp->len < sizeof(kp->buf)) {
         return (ID)cache_intern(d->attr_cache, kp->buf, kp->len);
     }
     return (ID)cache_intern(d->attr_cache, kp->key, kp->len);
@@ -253,7 +253,7 @@ static void push_key(ojParser p) {
         d->kend  = d->khead + cap;
     }
     d->ktail->len = klen;
-    if (klen <= sizeof(d->ktail->buf) + 1) {
+    if (klen < sizeof(d->ktail->buf)) {
         memcpy(d->ktail->buf, key, klen);
         d->ktail->buf[klen] = '\0';
     } else {
@@ -336,7 +336,7 @@ static void close_object(ojParser p) {
 #if HAVE_RB_HASH_BULK_INSERT
     for (vp = head; kp < d->ktail; kp++, vp += 2) {
         *vp = d->get_key(p, kp);
-        if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
+        if (sizeof(kp->buf) <= (size_t)kp->len) {
             xfree(kp->key);
         }
     }
@@ -344,7 +344,7 @@ static void close_object(ojParser p) {
 #else
     for (vp = head; kp < d->ktail; kp++, vp += 2) {
         rb_hash_aset(obj, d->get_key(p, kp), *(vp + 1));
-        if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
+        if (sizeof(kp->buf) <= (size_t)kp->len) {
             xfree(kp->key);
         }
     }
@@ -368,7 +368,7 @@ static void close_object_class(ojParser p) {
 
     for (vp = head; kp < d->ktail; kp++, vp += 2) {
         rb_funcall(obj, hset_id, 2, d->get_key(p, kp), *(vp + 1));
-        if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
+        if (sizeof(kp->buf) <= (size_t)kp->len) {
             xfree(kp->key);
         }
     }
@@ -396,7 +396,7 @@ static void close_object_create(ojParser p) {
 #if HAVE_RB_HASH_BULK_INSERT
             for (vp = head; kp < d->ktail; kp++, vp += 2) {
                 *vp = d->get_key(p, kp);
-                if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
+                if (sizeof(kp->buf) <= (size_t)kp->len) {
                     xfree(kp->key);
                 }
             }
@@ -404,7 +404,7 @@ static void close_object_create(ojParser p) {
 #else
             for (vp = head; kp < d->ktail; kp++, vp += 2) {
                 rb_hash_aset(obj, d->get_key(p, kp), *(vp + 1));
-                if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
+                if (sizeof(kp->buf) <= (size_t)kp->len) {
                     xfree(kp->key);
                 }
             }
@@ -413,7 +413,7 @@ static void close_object_create(ojParser p) {
             obj = rb_class_new_instance(0, NULL, d->hash_class);
             for (vp = head; kp < d->ktail; kp++, vp += 2) {
                 rb_funcall(obj, hset_id, 2, d->get_key(p, kp), *(vp + 1));
-                if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
+                if (sizeof(kp->buf) <= (size_t)kp->len) {
                     xfree(kp->key);
                 }
             }
@@ -428,7 +428,7 @@ static void close_object_create(ojParser p) {
 #if HAVE_RB_HASH_BULK_INSERT
             for (vp = head; kp < d->ktail; kp++, vp += 2) {
                 *vp = d->get_key(p, kp);
-                if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
+                if (sizeof(kp->buf) <= (size_t)kp->len) {
                     xfree(kp->key);
                 }
             }
@@ -436,7 +436,7 @@ static void close_object_create(ojParser p) {
 #else
             for (vp = head; kp < d->ktail; kp++, vp += 2) {
                 rb_hash_aset(arg, d->get_key(p, kp), *(vp + 1));
-                if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
+                if (sizeof(kp->buf) <= (size_t)kp->len) {
                     xfree(kp->key);
                 }
             }
@@ -446,7 +446,7 @@ static void close_object_create(ojParser p) {
             obj = rb_class_new_instance(0, NULL, clas);
             for (vp = head; kp < d->ktail; kp++, vp += 2) {
                 rb_ivar_set(obj, get_attr_id(p, kp), *(vp + 1));
-                if (sizeof(kp->buf) - 1 < (size_t)kp->len) {
+                if (sizeof(kp->buf) <= (size_t)kp->len) {
                     xfree(kp->key);
                 }
             }
