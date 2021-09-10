@@ -610,6 +610,9 @@ static void parse(ojParser p, const byte *json) {
     printf("*** parse - mode: %c %s\n", p->map[256], (const char *)json);
 #endif
     for (; '\0' != *b; b++) {
+#if DEBUG
+        printf("*** parse - mode: %c %02x %s => %c\n", p->map[256], *b, b, p->map[*b]);
+#endif
         switch (p->map[*b]) {
         case SKIP_NEWLINE:
             p->line++;
@@ -887,13 +890,17 @@ static void parse(ojParser p, const byte *json) {
                 buf_append_string(&p->buf, (const char *)start, b - start);
             }
             if ('"' == *b) {
+                p->funcs[p->stack[p->depth]].add_str(p);
                 p->map = p->next_map;
                 break;
             }
             b--;
             break;
         case STR_SLASH: p->map = esc_map; break;
-        case STR_QUOTE: p->map = p->next_map; break;
+        case STR_QUOTE:
+            p->funcs[p->stack[p->depth]].add_str(p);
+            p->map = p->next_map;
+            break;
         case ESC_U:
             p->map   = u_map;
             p->ri    = 0;

@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-# encoding: UTF-8
+# encoding: utf-8
 
 $: << File.dirname(__FILE__)
 
@@ -71,6 +71,12 @@ class UsualTest < Minitest::Test
     p.symbol_keys = true
     doc = p.parse('{"a": true, "b": false}')
     assert_equal({a: true, b: false}, doc)
+  end
+
+  def test_strings
+    p = Oj::Parser.new(:usual)
+    doc = p.parse('{"ぴ": "", "ぴ ": "x", "c": "ぴーたー", "d": " ぴーたー "}')
+    assert_equal({'ぴ' => '', 'ぴ ' => 'x', 'c' => 'ぴーたー', 'd' => ' ぴーたー '}, doc)
   end
 
   def test_capacity

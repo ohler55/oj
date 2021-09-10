@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.13.6 - 2021-09-10
+
+- Fixed unicode UTF 8 parsing in string values.
+
 ## 3.13.5 - 2021-09-08
 
 - Assure value strings of zero length are not always cached.
