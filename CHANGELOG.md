@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 3.13.6 - 2021-09-10
+## 3.13.6 - 2021-09-11
 
 - Fixed unicode UTF 8 parsing in string values.
 
