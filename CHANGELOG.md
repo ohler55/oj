@@ -6,6 +6,10 @@
 
 - Fixed hash key allocation issue.
 
+- The `Oj::Parser.new()` function now allows optional arguments that
+  set the allowed options for the mode. As an example
+  `Oj::Parser.new(:usual, cache_keys: true)`.
+
 ## 3.13.5 - 2021-09-08
 
 - Assure value strings of zero length are not always cached.

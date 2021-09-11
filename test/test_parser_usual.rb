@@ -80,8 +80,7 @@ class UsualTest < Minitest::Test
   end
 
   def test_capacity
-    p = Oj::Parser.new(:usual)
-    p.capacity = 1000
+    p = Oj::Parser.new(:usual, capacity: 1000)
     assert_equal(4096, p.capacity)
     p.capacity = 5000
     assert_equal(5000, p.capacity)
@@ -187,8 +186,7 @@ class UsualTest < Minitest::Test
   end
 
   def test_missing_class
-    p = Oj::Parser.new(:usual)
-    p.create_id = '^'
+    p = Oj::Parser.new(:usual, create_id: '^')
     json = '{"a":true,"^":"Auto","b":false}'
     doc = p.parse(json)
     assert_equal(Hash, doc.class)
