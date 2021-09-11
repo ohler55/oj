@@ -610,6 +610,9 @@ static void parse(ojParser p, const byte *json) {
     printf("*** parse - mode: %c %s\n", p->map[256], (const char *)json);
 #endif
     for (; '\0' != *b; b++) {
+#if DEBUG
+        printf("*** parse - mode: %c %02x %s => %c\n", p->map[256], *b, b, p->map[*b]);
+#endif
         switch (p->map[*b]) {
         case SKIP_NEWLINE:
             p->line++;
@@ -887,13 +890,17 @@ static void parse(ojParser p, const byte *json) {
                 buf_append_string(&p->buf, (const char *)start, b - start);
             }
             if ('"' == *b) {
+                p->funcs[p->stack[p->depth]].add_str(p);
                 p->map = p->next_map;
                 break;
             }
             b--;
             break;
         case STR_SLASH: p->map = esc_map; break;
-        case STR_QUOTE: p->map = p->next_map; break;
+        case STR_QUOTE:
+            p->funcs[p->stack[p->depth]].add_str(p);
+            p->map = p->next_map;
+            break;
         case ESC_U:
             p->map   = u_map;
             p->ri    = 0;
@@ -1135,13 +1142,42 @@ extern void oj_set_parser_saj(ojParser p);
 extern void oj_set_parser_usual(ojParser p);
 extern void oj_set_parser_debug(ojParser p);
 
+static int opt_cb(VALUE rkey, VALUE value, VALUE ptr) {
+    ojParser    p   = (ojParser)ptr;
+    const char *key = NULL;
+    char        set_key[64];
+    long        klen;
+
+    switch (rb_type(rkey)) {
+    case RUBY_T_SYMBOL:
+        rkey = rb_sym2str(rkey);
+        // fall through
+    case RUBY_T_STRING:
+        key  = rb_string_value_ptr(&rkey);
+        klen = RSTRING_LEN(rkey);
+        break;
+    default: rb_raise(rb_eArgError, "option keys must be a symbol or string");
+    }
+    if ((long)sizeof(set_key) - 1 <= klen) {
+        return ST_CONTINUE;
+    }
+    memcpy(set_key, key, klen);
+    set_key[klen]     = '=';
+    set_key[klen + 1] = '\0';
+    p->option(p, set_key, value);
+
+    return ST_CONTINUE;
+}
+
 /* Document-method: new
  * call-seq: new(mode=nil)
  *
  * Creates a new Parser with the specified mode. If no mode is provided
- * validation is assumed.
+ * validation is assumed. Optional arguments can be provided that match the
+ * mode. For example with the :usual mode the call might look like
+ * Oj::Parser.new(:usual, cache_keys: true).
  */
-static VALUE parser_new(VALUE self, VALUE mode) {
+static VALUE parser_new(int argc, VALUE *argv, VALUE self) {
     ojParser p = ALLOC(struct _ojParser);
 
 #if HAVE_RB_EXT_RACTOR_SAFE
@@ -1151,33 +1187,45 @@ static VALUE parser_new(VALUE self, VALUE mode) {
     memset(p, 0, sizeof(struct _ojParser));
     buf_init(&p->key);
     buf_init(&p->buf);
-
     p->map = value_map;
-    if (Qnil == mode) {
-        oj_set_parser_validator(p);
-    } else {
-        const char *ms = NULL;
 
-        switch (rb_type(mode)) {
-        case RUBY_T_SYMBOL:
-            mode = rb_sym2str(mode);
-            // fall through
-        case RUBY_T_STRING: ms = RSTRING_PTR(mode); break;
-        default: rb_raise(rb_eArgError, "mode must be :validate, :usual, :saj, or :object");
-        }
-        if (0 == strcmp("usual", ms) || 0 == strcmp("standard", ms) || 0 == strcmp("strict", ms) ||
-            0 == strcmp("compat", ms)) {
-            oj_set_parser_usual(p);
-        } else if (0 == strcmp("object", ms)) {
-            // TBD
-        } else if (0 == strcmp("saj", ms)) {
-            oj_set_parser_saj(p);
-        } else if (0 == strcmp("validate", ms)) {
+    if (argc < 1) {
+	oj_set_parser_validator(p);
+    } else {
+        VALUE mode = argv[0];
+
+        if (Qnil == mode) {
             oj_set_parser_validator(p);
-        } else if (0 == strcmp("debug", ms)) {
-            oj_set_parser_debug(p);
         } else {
-            rb_raise(rb_eArgError, "mode must be :validate, :usual, :saj, or :object");
+            const char *ms = NULL;
+
+            switch (rb_type(mode)) {
+            case RUBY_T_SYMBOL:
+                mode = rb_sym2str(mode);
+                // fall through
+            case RUBY_T_STRING: ms = RSTRING_PTR(mode); break;
+            default: rb_raise(rb_eArgError, "mode must be :validate, :usual, :saj, or :object");
+            }
+            if (0 == strcmp("usual", ms) || 0 == strcmp("standard", ms) || 0 == strcmp("strict", ms) ||
+                0 == strcmp("compat", ms)) {
+                oj_set_parser_usual(p);
+            } else if (0 == strcmp("object", ms)) {
+                // TBD
+            } else if (0 == strcmp("saj", ms)) {
+                oj_set_parser_saj(p);
+            } else if (0 == strcmp("validate", ms)) {
+                oj_set_parser_validator(p);
+            } else if (0 == strcmp("debug", ms)) {
+                oj_set_parser_debug(p);
+            } else {
+                rb_raise(rb_eArgError, "mode must be :validate, :usual, :saj, or :object");
+            }
+        }
+        if (1 < argc) {
+            VALUE ropts = argv[1];
+
+            Check_Type(ropts, T_HASH);
+            rb_hash_foreach(ropts, opt_cb, (VALUE)p);
         }
     }
     return Data_Wrap_Struct(parser_class, parser_mark, parser_free, p);
@@ -1204,7 +1252,7 @@ static VALUE parser_new(VALUE self, VALUE mode) {
  * - *:usual*
  *   - _cache_keys=_ sets the value of the _cache_keys_ flag.
  *   - _cache_keys_ returns the value of the _cache_keys_ flag.
- *   - _cache_strings=_ sets the value of the _cache_strings_ to an positive integer less than 35. Strings shorter than
+ *   - _cache_strings=_ sets the value of the _cache_strings_ to a positive integer less than 35. Strings shorter than
  * that length are cached.
  *   - _cache_strings_ returns the value of the _cache_strings_ integer value.
  *   - _cache_expunge=_ sets the value of the _cache_expunge_ where 0 never expunges, 1 expunges slowly, 2 expunges
@@ -1469,7 +1517,7 @@ static VALUE parser_validate(VALUE self) {
  */
 void oj_parser_init() {
     parser_class = rb_define_class_under(Oj, "Parser", rb_cObject);
-    rb_define_module_function(parser_class, "new", parser_new, 1);
+    rb_define_module_function(parser_class, "new", parser_new, -1);
     rb_define_method(parser_class, "parse", parser_parse, 1);
     rb_define_method(parser_class, "load", parser_load, 1);
     rb_define_method(parser_class, "file", parser_file, 1);

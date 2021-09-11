@@ -26,7 +26,7 @@ Gem::Specification.new do |s|
   s.test_files = Dir["test/**/*.rb"]
   s.extensions = ["ext/oj/extconf.rb"]
 
-  s.extra_rdoc_files = ['README.md'] + Dir["pages/*.md"]
+  s.extra_rdoc_files = ['README.md', 'LICENSE', 'CHANGELOG.md', 'RELEASE_NOTES.md'] + Dir["pages/*.md"]
   s.rdoc_options = ['--title', 'Oj', '--main', 'README.md']
 
   s.add_development_dependency 'rake-compiler', '>= 0.9', '< 2.0'
