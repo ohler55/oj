@@ -516,7 +516,7 @@ static VALUE mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
     pi.options               = oj_default_options;
     pi.options.auto_define   = No;
     pi.options.quirks_mode   = Yes;
-    pi.options.allow_invalid = No;
+    pi.options.allow_invalid = Yes;
     pi.options.empty_string  = No;
     pi.options.create_ok     = No;
     pi.options.allow_nan     = (bang ? Yes : No);
@@ -573,8 +573,7 @@ static VALUE mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
             }
         }
         if (oj_hash_has_key(ropts, oj_decimal_class_sym)) {
-            pi.options.compat_bigdec = (oj_bigdecimal_class ==
-                                        rb_hash_lookup(ropts, oj_decimal_class_sym));
+            pi.options.compat_bigdec = (oj_bigdecimal_class == rb_hash_lookup(ropts, oj_decimal_class_sym));
         }
         v = rb_hash_lookup(ropts, oj_max_nesting_sym);
         if (Qtrue == v) {
@@ -682,7 +681,7 @@ static VALUE mimic_set_create_id(VALUE self, VALUE id) {
  */
 static VALUE mimic_create_id(VALUE self) {
     if (NULL != oj_default_options.create_id) {
-        return  rb_utf8_str_new(oj_default_options.create_id, oj_default_options.create_id_len);
+        return rb_utf8_str_new(oj_default_options.create_id, oj_default_options.create_id_len);
     }
     return rb_str_new_cstr(oj_json_class);
 }
@@ -706,7 +705,7 @@ static struct _options mimic_object_to_json_options = {0,              // indent
                                                        No,             // empty_string
                                                        Yes,            // allow_gc
                                                        Yes,            // quirks_mode
-                                                       No,             // allow_invalid
+                                                       Yes,            // allow_invalid
                                                        No,             // create_ok
                                                        No,             // allow_nan
                                                        No,             // trace
