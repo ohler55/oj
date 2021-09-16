@@ -5,6 +5,12 @@ see the See [{file:CHANGELOG.md}](CHANGELOG.md) file. In this file are
 the steps to take to aid in keeping things rolling after updating to
 the latest version.
 
+## 3.13.7
+
+The default for JSON when mimicked by Oj is now to set
+`:allow_invalid_unicode`. To change that behavior JSON.load, set that
+option to false.
+
 ## 3.13.x
 
 This release included a new cache that performs better than the

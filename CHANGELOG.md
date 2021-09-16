@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 3.13.7 - 2021-09-16
+
+- The JSON gem allows invalid unicode so Oj, when mimicing JSON now
+  allows it as well. Use `:allow_invalid_unicode` to change that.
+
 ## 3.13.6 - 2021-09-11
 
 - Fixed unicode UTF 8 parsing in string values.
