@@ -208,6 +208,7 @@ static VALUE resolve_classpath(ParseInfo pi, const char *name, size_t len, int a
     }
     *s = '\0';
     if (Qundef == (clas = resolve_classname(clas, class_name, auto_define))) {
+	printf("*** resolve_classname failed for %s. pi: %p\n", class_name, pi);
         oj_set_error_at(pi, error_class, __FILE__, __LINE__, "class %s is not defined", name);
         if (Qnil != error_class) {
             pi->err_class = error_class;

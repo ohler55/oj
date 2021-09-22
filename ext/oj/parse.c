@@ -369,6 +369,7 @@ static void read_str(ParseInfo pi) {
             parent->next = NEXT_HASH_COLON;
             break;
         case NEXT_HASH_VALUE:
+	    printf("*** read_str pi: %p\n", pi);
             pi->hash_set_cstr(pi, parent, str, pi->cur - str, str);
             if (0 != parent->key && 0 < parent->klen &&
                 (parent->key < pi->json || pi->cur < parent->key)) {
@@ -956,6 +957,7 @@ void oj_set_error_at(ParseInfo   pi,
 }
 
 static VALUE protect_parse(VALUE pip) {
+    printf("*** protect_parse pip: %p\n", (void*)pip);
     oj_parse2((ParseInfo)pip);
 
     return Qnil;
@@ -1065,6 +1067,7 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
     // data object and poviding a mark function for ruby objects on the
     // value stack (while it is in scope).
     wrapped_stack = oj_stack_init(&pi->stack);
+    printf("*** oj_pi_parse pi: %p\n", pi);
     rb_protect(protect_parse, (VALUE)pi, &line);
     if (Qundef == pi->stack.head->val && !empty_ok(&pi->options)) {
         if (No == pi->options.nilnil ||

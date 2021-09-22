@@ -211,7 +211,9 @@ static int hat_cstr(ParseInfo pi, Val parent, Val kval, const char *str, size_t 
         switch (key[1]) {
         case 'o':  // object
         {          // name2class sets an error if the class is not found or created
-            VALUE clas = oj_name2class(pi, str, len, Yes == pi->options.auto_define, rb_eArgError);
+	    VALUE clas;
+	    printf("*** hat_cstr pi: %p\n", pi);
+            clas = oj_name2class(pi, str, len, Yes == pi->options.auto_define, rb_eArgError);
 
             if (Qundef != clas) {
                 parent->val = rb_obj_alloc(clas);
