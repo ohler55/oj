@@ -879,6 +879,10 @@ static Leaf get_leaf(Leaf *stack, Leaf *lp, const char *path) {
             }
         } else if (NULL == leaf->elements) {
             leaf = NULL;
+        } else if (STR_VAL == leaf->value_type || RUBY_VAL == leaf->value_type) {
+            // We are trying to get a children of a leaf, which
+            // doesn't exist.
+            leaf = NULL;
         } else if (COL_VAL == leaf->value_type) {
             Leaf first = leaf->elements->next;
             Leaf e     = first;
@@ -1373,8 +1377,8 @@ static VALUE doc_fetch(int argc, VALUE *argv, VALUE self) {
  * Returns true if the value at the location identified by the path exists.
  *   @param [String] path path to the location
  * @example
- *   Oj::Doc.open('[1,2]') { |doc| doc.exists('/1') }  #=> true
- *   Oj::Doc.open('[1,2]') { |doc| doc.exists('/3') }  #=> false
+ *   Oj::Doc.open('[1,2]') { |doc| doc.exists?('/1') }  #=> true
+ *   Oj::Doc.open('[1,2]') { |doc| doc.exists?('/3') }  #=> false
  */
 static VALUE doc_exists(VALUE self, VALUE str) {
     Doc  doc;
