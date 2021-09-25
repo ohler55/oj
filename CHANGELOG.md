@@ -1,5 +1,13 @@
 # CHANGELOG
 
+- Fix `Oj::Doc` behaviour for inexisting path.
+  ```ruby
+  Oj::Doc.open('{"foo":1}') do |doc|
+    doc.fetch('/foo/bar') # used to give `1`, now gives `nil`
+    doc.exists?('/foo/bar') # used to give `true`, now gives `false`
+  end
+  ```
+
 ## 3.13.7 - 2021-09-16
 
 - The JSON gem allows invalid unicode so Oj, when mimicing JSON now
