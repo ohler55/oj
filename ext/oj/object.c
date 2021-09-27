@@ -65,11 +65,6 @@ static VALUE str_to_value(ParseInfo pi, const char *str, size_t len, const char 
     return rstr;
 }
 
-#if (RUBY_VERSION_MAJOR == 1 && RUBY_VERSION_MINOR == 8)
-static VALUE oj_parse_xml_time(const char *str, int len) {
-    return rb_funcall(rb_cTime, oj_parse_id, 1, rb_str_new(str, len));
-}
-#else
 // The much faster approach (4x faster)
 static int parse_num(const char *str, const char *end, int cnt) {
     int  n = 0;
@@ -201,7 +196,6 @@ oj_parse_xml_time(const char *str, int len) {
     }
     return rb_funcall2(rb_cTime, oj_new_id, 7, args);
 }
-#endif
 
 static int hat_cstr(ParseInfo pi, Val parent, Val kval, const char *str, size_t len) {
     const char *key  = kval->key;
