@@ -35,7 +35,7 @@ static VALUE calc_hash_key(ParseInfo pi, Val kval, char k1) {
         return ID2SYM(rb_intern3(kval->key + 1, kval->klen - 1, oj_utf8_encoding));
     }
     if (Yes == pi->options.sym_key) {
-	return ID2SYM(rb_intern3(kval->key, kval->klen, oj_utf8_encoding));
+        return ID2SYM(rb_intern3(kval->key, kval->klen, oj_utf8_encoding));
     }
 #if HAVE_RB_ENC_INTERNED_STR
     rkey = rb_enc_interned_str(kval->key, kval->klen, oj_utf8_encoding);
@@ -60,16 +60,16 @@ static VALUE str_to_value(ParseInfo pi, const char *str, size_t len, const char 
         }
         rstr = oj_circ_array_get(pi->circ_array, i);
     } else {
-	rstr = rb_utf8_str_new(str, len);
+        rstr = rb_utf8_str_new(str, len);
     }
     return rstr;
 }
 
 // The much faster approach (4x faster)
 static int parse_num(const char *str, const char *end, int cnt) {
-    int  n = 0;
+    int n = 0;
     char c;
-    int  i;
+    int i;
 
     for (i = cnt; 0 < i; i--, str++) {
         c = *str;
@@ -83,9 +83,9 @@ static int parse_num(const char *str, const char *end, int cnt) {
 
 VALUE
 oj_parse_xml_time(const char *str, int len) {
-    VALUE       args[8];
+    VALUE args[8];
     const char *end = str + len;
-    int         n;
+    int n;
 
     // year
     if (0 > (n = parse_num(str, end, 4))) {
@@ -220,13 +220,10 @@ static int hat_cstr(ParseInfo pi, Val parent, Val kval, const char *str, size_t 
             }
             parent->val      = odd->clas;
             parent->odd_args = oj_odd_alloc_args(odd);
-        } break;
-        case 'm':
-            parent->val = ID2SYM(rb_intern3(str + 1, len - 1, oj_utf8_encoding));
             break;
-        case 's':
-	    parent->val = rb_utf8_str_new(str, len);
-            break;
+        }
+        case 'm': parent->val = ID2SYM(rb_intern3(str + 1, len - 1, oj_utf8_encoding)); break;
+        case 's': parent->val = rb_utf8_str_new(str, len); break;
         case 'c':  // class
         {
             VALUE clas = oj_name2class(pi, str, len, Yes == pi->options.auto_define, rb_eArgError);
@@ -236,7 +233,8 @@ static int hat_cstr(ParseInfo pi, Val parent, Val kval, const char *str, size_t 
             } else {
                 parent->val = clas;
             }
-        } break;
+            break;
+        }
         case 't':  // time
             parent->val = oj_parse_xml_time(str, (int)len);
             break;
@@ -276,22 +274,21 @@ static int hat_num(ParseInfo pi, Val parent, Val kval, NumInfo ni) {
                     VALUE            args[8];
 
                     sec_as_time(t, &ti);
-                    args[0] = LONG2NUM((long)(ti.year));
-                    args[1] = LONG2NUM(ti.mon);
-                    args[2] = LONG2NUM(ti.day);
-                    args[3] = LONG2NUM(ti.hour);
-                    args[4] = LONG2NUM(ti.min);
-                    args[5] = rb_float_new((double)ti.sec + ((double)nsec + 0.5) / 1000000000.0);
-                    args[6] = LONG2NUM(ni->exp);
+                    args[0]     = LONG2NUM((long)(ti.year));
+                    args[1]     = LONG2NUM(ti.mon);
+                    args[2]     = LONG2NUM(ti.day);
+                    args[3]     = LONG2NUM(ti.hour);
+                    args[4]     = LONG2NUM(ti.min);
+                    args[5]     = rb_float_new((double)ti.sec + ((double)nsec + 0.5) / 1000000000.0);
+                    args[6]     = LONG2NUM(ni->exp);
                     parent->val = rb_funcall2(rb_cTime, oj_new_id, 7, args);
                 } else {
                     parent->val = rb_time_nano_new(ni->i, (long)nsec);
                 }
             }
             break;
-        case 'i':  // circular index
-            if (!ni->infinity && !ni->neg && 1 == ni->div && 0 == ni->exp &&
-                0 != pi->circ_array) {  // fixnum
+        case 'i':                                                                                    // circular index
+            if (!ni->infinity && !ni->neg && 1 == ni->div && 0 == ni->exp && 0 != pi->circ_array) {  // fixnum
                 if (Qnil == parent->val) {
                     parent->val = rb_hash_new();
                 }
@@ -396,9 +393,7 @@ WHICH_TYPE:
         }
         break;
     case T_HASH:
-        rb_hash_aset(parent->val,
-                     calc_hash_key(pi, kval, parent->k1),
-                     str_to_value(pi, str, len, orig));
+        rb_hash_aset(parent->val, calc_hash_key(pi, kval, parent->k1), str_to_value(pi, str, len, orig));
         break;
     case T_STRING:
         rval = str_to_value(pi, str, len, orig);
@@ -475,8 +470,8 @@ WHICH_TYPE:
         rb_hash_aset(parent->val, calc_hash_key(pi, kval, parent->k1), rval);
         break;
     case T_OBJECT:
-        if (2 == klen && '^' == *key && 'i' == key[1] && !ni->infinity && !ni->neg &&
-            1 == ni->div && 0 == ni->exp && 0 != pi->circ_array) {  // fixnum
+        if (2 == klen && '^' == *key && 'i' == key[1] && !ni->infinity && !ni->neg && 1 == ni->div && 0 == ni->exp &&
+            0 != pi->circ_array) {  // fixnum
             oj_circ_array_set(pi->circ_array, parent->val, ni->i);
         } else {
             rval = oj_num_as_value(ni);
@@ -553,11 +548,7 @@ WHICH_TYPE:
                 volatile VALUE *a   = RARRAY_PTR(value);
 
                 if (2 != len) {
-                    oj_set_error_at(pi,
-                                    oj_parse_error_class,
-                                    __FILE__,
-                                    __LINE__,
-                                    "invalid hash pair");
+                    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "invalid hash pair");
                     return;
                 }
                 rb_hash_aset(parent->val, *a, a[1]);
@@ -631,10 +622,7 @@ static void end_hash(ParseInfo pi) {
     } else if (NULL != parent->odd_args) {
         OddArgs oa = parent->odd_args;
 
-        parent->val = rb_funcall2(oa->odd->create_obj,
-                                  oa->odd->create_op,
-                                  oa->odd->attr_cnt,
-                                  oa->args);
+        parent->val = rb_funcall2(oa->odd->create_obj, oa->odd->create_op, oa->odd->attr_cnt, oa->args);
         oj_odd_free(oa);
         parent->odd_args = NULL;
     }
@@ -647,8 +635,7 @@ static void array_append_cstr(ParseInfo pi, const char *str, size_t len, const c
     volatile VALUE rval = Qnil;
 
     // orig lets us know whether the string was ^r1 or \u005er1
-    if (3 <= len && 0 != pi->circ_array && '^' == orig[0] &&
-        0 == rb_array_len(stack_peek(&pi->stack)->val)) {
+    if (3 <= len && 0 != pi->circ_array && '^' == orig[0] && 0 == rb_array_len(stack_peek(&pi->stack)->val)) {
         if ('i' == str[1]) {
             long i = read_long(str + 2, len - 2);
 

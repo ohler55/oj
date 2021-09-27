@@ -904,9 +904,17 @@ void oj_set_error_at(ParseInfo   pi,
     char *  end = p + sizeof(msg) - 2;
     char *  start;
     Val     vp;
+    int	mlen;
 
     va_start(ap, format);
-    p += vsnprintf(msg, sizeof(msg) - 1, format, ap);
+    mlen = vsnprintf(msg, sizeof(msg) - 1, format, ap);
+    if (0 < mlen) {
+	if (sizeof(msg) - 2 < (size_t)mlen) {
+	    p = end - 2;
+	} else {
+	    p += mlen;
+	}
+    }
     va_end(ap);
     pi->err.clas = err_clas;
     if (p + 3 < end) {
