@@ -537,7 +537,7 @@ static void add_float_key(ojParser p) {
 static void add_float_as_big(ojParser p) {
     char buf[64];
 
-    // fails on ubuntu
+    // snprintf fails on ubuntu and macOS for long double
     // snprintf(buf, sizeof(buf), "%Lg", p->num.dub);
     sprintf(buf, "%Lg", p->num.dub);
     push(p, rb_funcall(rb_cObject, oj_bigdecimal_id, 1, rb_str_new2(buf)));
@@ -546,7 +546,9 @@ static void add_float_as_big(ojParser p) {
 static void add_float_as_big_key(ojParser p) {
     char buf[64];
 
-    snprintf(buf, sizeof(buf), "%Lg", p->num.dub);
+    // snprintf fails on ubuntu and macOS for long double
+    // snprintf(buf, sizeof(buf), "%Lg", p->num.dub);
+    sprintf(buf, "%Lg", p->num.dub);
     push_key(p);
     push2(p, rb_funcall(rb_cObject, oj_bigdecimal_id, 1, rb_str_new2(buf)));
 }
