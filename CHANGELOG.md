@@ -1,6 +1,10 @@
 # CHANGELOG
 
 
+## 3.13.9 - 2021-10-06
+
+- Fix mimic JSON load so that it honors the `:symbolize_names` option.
+
 ## 3.13.8 - 2021-09-27
 
 - Fix `Oj::Doc` behaviour for inexisting path.
