@@ -6,8 +6,6 @@
 #include "oj.h"
 #include "parse.h"
 
-static VALUE symbolize_names_sym = Qundef;
-
 extern const char oj_json_class[];
 
 VALUE oj_array_nl_sym;
@@ -531,11 +529,7 @@ static VALUE mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
         if (T_HASH != rb_type(ropts)) {
             rb_raise(rb_eArgError, "options must be a hash.");
         }
-        if (Qundef == symbolize_names_sym) {
-            symbolize_names_sym = ID2SYM(rb_intern("symbolize_names"));
-            rb_gc_register_address(&symbolize_names_sym);
-        }
-        if (Qnil != (v = rb_hash_lookup(ropts, symbolize_names_sym))) {
+        if (Qnil != (v = rb_hash_lookup(ropts, oj_symbolize_names_sym))) {
             pi.options.sym_key = (Qtrue == v) ? Yes : No;
         }
         if (Qnil != (v = rb_hash_lookup(ropts, oj_quirks_mode_sym))) {
@@ -852,9 +846,6 @@ void oj_mimic_json_methods(VALUE json) {
     // Pull in the JSON::State mimic file.
     state_class = rb_const_get_at(generator, rb_intern("State"));
     rb_gc_register_mark_object(state_class);
-
-    symbolize_names_sym = ID2SYM(rb_intern("symbolize_names"));
-    rb_gc_register_address(&symbolize_names_sym);
 }
 
 /* Document-module: JSON

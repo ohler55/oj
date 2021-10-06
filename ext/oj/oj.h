@@ -311,6 +311,7 @@ extern VALUE oj_object_nl_sym;
 extern VALUE oj_quirks_mode_sym;
 extern VALUE oj_space_before_sym;
 extern VALUE oj_space_sym;
+extern VALUE oj_symbolize_names_sym;
 extern VALUE oj_trace_sym;
 
 extern VALUE oj_slash_string;
