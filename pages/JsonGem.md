@@ -1,5 +1,9 @@
 # Oj JSON Gem Compatibility
 
+To universally replace many `JSON` methods with their faster Oj counterparts,
+in a mode that is compatible with the json gem, simply run `Oj.mimic_json`
+after the json gem has been required.
+
 The `:compat` mode mimics the json gem. The json gem is built around the use
 of the `to_json(*)` method defined for a class. Oj attempts to provide the
 same functionality by being a drop in replacement for the 2.0.x version of the

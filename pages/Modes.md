@@ -39,7 +39,8 @@ if a non-native type is encountered instead of raising an Exception.
 The `:compat` mode mimics the json gem. The json gem is built around the use
 of the `to_json(*)` method defined for a class. Oj attempts to provide the
 same functionality by being a drop in replacement with a few
-exceptions. [{file:JsonGem.md}](JsonGem.md) includes more details on
+exceptions. To universally replace many `JSON` methods with their faster Oj counterparts,
+simply run `Oj.mimic_json`. [{file:JsonGem.md}](JsonGem.md) includes more details on
 compatibility and use.
 
 ## :rails Mode

@@ -32,6 +32,15 @@ puts "Same? #{h == h2}"
 # true
 ```
 
+## Universally and seamlessly replacing slow JSON methods with faster Oj equivalents
+
+* In a Rails project, run `Oj.optimize_rails` in an initializer.
+* In a non-rails project, run `Oj.mimic_JSON`. If the project does not already use the json gem,
+  `JSON` will become available. If the project does require the json gem, `Oj.mimic_JSON` should be invoke
+  after the json gem has been required.
+* Independent of the above two methods, code which uses [multi_json](https://github.com/intridea/multi_json)
+  will automatically prefer Oj if it is installed.
+
 ## Installation
 ```
 gem install oj
