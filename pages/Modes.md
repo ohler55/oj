@@ -141,7 +141,7 @@ information.
  3. By default the bigdecimal_as decimal is not set and the default encoding
     for Rails is as a string. Setting the value to true will encode a
     BigDecimal as a number which breaks compatibility.
-    **Beware**: after version 3.11.3 both `Oj.generate` and `JSON.generate`
+    Note: after version 3.11.3 both `Oj.generate` and `JSON.generate`
     will not honour this option in Rails Mode, detais on https://github.com/ohler55/oj/pull/716.
 
  4. The integer indent value in the default options will be honored by since
