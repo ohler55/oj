@@ -226,47 +226,54 @@ static int hash_cb(VALUE key, VALUE value, VALUE ov) {
     }
     assure_size(out, size);
     fill_indent(out, depth);
-    if (rb_type(key) == T_STRING) {
+    switch (rb_type(key)) {
+    case T_STRING:
         dump_str_class(key, Qundef, depth, out);
         *out->cur++ = ':';
         oj_dump_obj_val(value, depth, out);
-    } else if (rb_type(key) == T_SYMBOL) {
+        break;
+
+    case T_SYMBOL:
         dump_sym(key, 0, out, false);
         *out->cur++ = ':';
         oj_dump_obj_val(value, depth, out);
-    } else {
-        int     d2 = depth + 1;
-        long    s2 = size + out->indent + 1;
-        int     i;
-        int     started = 0;
-        uint8_t b;
+        break;
 
-        assure_size(out, s2 + 15);
-        *out->cur++ = '"';
-        *out->cur++ = '^';
-        *out->cur++ = '#';
-        out->hash_cnt++;
-        for (i = 28; 0 <= i; i -= 4) {
-            b = (uint8_t)((out->hash_cnt >> i) & 0x0000000F);
-            if ('\0' != b) {
-                started = 1;
+    default:
+        {
+            int     d2 = depth + 1;
+            long    s2 = size + out->indent + 1;
+            int     i;
+            int     started = 0;
+            uint8_t b;
+
+            assure_size(out, s2 + 15);
+            *out->cur++ = '"';
+            *out->cur++ = '^';
+            *out->cur++ = '#';
+            out->hash_cnt++;
+            for (i = 28; 0 <= i; i -= 4) {
+                b = (uint8_t)((out->hash_cnt >> i) & 0x0000000F);
+                if ('\0' != b) {
+                    started = 1;
+                }
+                if (started) {
+                    *out->cur++ = hex_chars[b];
+                }
             }
-            if (started) {
-                *out->cur++ = hex_chars[b];
-            }
+            *out->cur++ = '"';
+            *out->cur++ = ':';
+            *out->cur++ = '[';
+            fill_indent(out, d2);
+            oj_dump_obj_val(key, d2, out);
+            assure_size(out, s2);
+            *out->cur++ = ',';
+            fill_indent(out, d2);
+            oj_dump_obj_val(value, d2, out);
+            assure_size(out, size);
+            fill_indent(out, depth);
+            *out->cur++ = ']';
         }
-        *out->cur++ = '"';
-        *out->cur++ = ':';
-        *out->cur++ = '[';
-        fill_indent(out, d2);
-        oj_dump_obj_val(key, d2, out);
-        assure_size(out, s2);
-        *out->cur++ = ',';
-        fill_indent(out, d2);
-        oj_dump_obj_val(value, d2, out);
-        assure_size(out, size);
-        fill_indent(out, depth);
-        *out->cur++ = ']';
     }
     out->depth  = depth;
     *out->cur++ = ',';
