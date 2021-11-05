@@ -45,7 +45,7 @@ static void hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, c
                 rstr = rb_funcall(clas, oj_json_create_id, 1, rstr);
             }
         }
-        if (rb_cHash != rb_obj_class(parent->val)) {
+        if (T_HASH != rb_type(parent->val)) {
             // The rb_hash_set would still work but the unit tests for the
             // json gem require the less efficient []= method be called to set
             // values. Even using the store method to set the values will fail
@@ -125,7 +125,7 @@ static void add_num(ParseInfo pi, NumInfo ni) {
 static void hash_set_num(struct _parseInfo *pi, Val parent, NumInfo ni) {
     volatile VALUE rval = oj_num_as_value(ni);
 
-    if (!oj_use_hash_alt && rb_cHash != rb_obj_class(parent->val)) {
+    if (!oj_use_hash_alt && T_HASH != rb_type(parent->val)) {
         // The rb_hash_set would still work but the unit tests for the
         // json gem require the less efficient []= method be called to set
         // values. Even using the store method to set the values will fail
@@ -144,7 +144,7 @@ static void hash_set_num(struct _parseInfo *pi, Val parent, NumInfo ni) {
 }
 
 static void hash_set_value(ParseInfo pi, Val parent, VALUE value) {
-    if (rb_cHash != rb_obj_class(parent->val)) {
+    if (T_HASH != rb_type(parent->val)) {
         // The rb_hash_set would still work but the unit tests for the
         // json gem require the less efficient []= method be called to set
         // values. Even using the store method to set the values will fail
@@ -176,7 +176,7 @@ static void array_append_num(ParseInfo pi, NumInfo ni) {
     Val            parent = stack_peek(&pi->stack);
     volatile VALUE rval   = oj_num_as_value(ni);
 
-    if (!oj_use_array_alt && rb_cArray != rb_obj_class(parent->val)) {
+    if (!oj_use_array_alt && T_ARRAY != rb_type(parent->val)) {
         // The rb_ary_push would still work but the unit tests for the json
         // gem require the less efficient << method be called to push the
         // values.

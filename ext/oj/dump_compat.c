@@ -149,7 +149,7 @@ dump_array(VALUE a, int depth, Out out, bool as_ok) {
 	raise_json_err("Too deeply nested", "NestingError");
 	return;
     }
-    if (as_ok && !oj_use_hash_alt && rb_obj_class(a) != rb_cArray && rb_respond_to(a, oj_to_json_id)) {
+    if (as_ok && !oj_use_hash_alt && T_ARRAY != rb_type(a) && rb_respond_to(a, oj_to_json_id)) {
 	dump_to_json(a, out);
 	return;
     }
@@ -712,7 +712,7 @@ dump_hash(VALUE obj, int depth, Out out, bool as_ok) {
 	raise_json_err("Too deeply nested", "NestingError");
 	return;
     }
-    if (as_ok && !oj_use_hash_alt && rb_obj_class(obj) != rb_cHash && rb_respond_to(obj, oj_to_json_id)) {
+    if (as_ok && !oj_use_hash_alt && T_HASH != rb_type(obj) && rb_respond_to(obj, oj_to_json_id)) {
 	dump_to_json(obj, out);
 	return;
     }
