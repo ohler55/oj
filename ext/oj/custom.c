@@ -282,7 +282,7 @@ static int hash_cb(VALUE key, VALUE value, VALUE ov) {
     Out out   = (Out)ov;
     int depth = out->depth;
 
-    if (oj_dump_ignore(out->opts, value)) {
+    if (dump_ignore(out->opts, value)) {
         return ST_CONTINUE;
     }
     if (out->omit_nil && Qnil == value) {
@@ -577,7 +577,7 @@ static int dump_attr_cb(ID key, VALUE value, VALUE ov) {
     size_t      size;
     const char *attr;
 
-    if (oj_dump_ignore(out->opts, value)) {
+    if (dump_ignore(out->opts, value)) {
         return ST_CONTINUE;
     }
     if (out->omit_nil && Qnil == value) {

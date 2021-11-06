@@ -50,7 +50,6 @@ extern VALUE oj_remove_to_json(int argc, VALUE *argv, VALUE self);
 
 extern int oj_dump_float_printf(char *buf, size_t blen, VALUE obj, double d, const char *format);
 
-extern bool   oj_dump_ignore(Options opts, VALUE obj);
 extern time_t oj_sec_from_time_hard_way(VALUE obj);
 
 inline static void assure_size(Out out, size_t len) {
@@ -67,6 +66,20 @@ inline static void fill_indent(Out out, int cnt) {
             *out->cur++ = ' ';
         }
     }
+}
+
+inline static bool dump_ignore(Options opts, VALUE obj) {
+    if (NULL != opts->ignore && (ObjectMode == opts->mode || CustomMode == opts->mode)) {
+        VALUE *vp   = opts->ignore;
+        VALUE  clas = rb_obj_class(obj);
+
+        for (; Qnil != *vp; vp++) {
+            if (clas == *vp) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 inline static void dump_ulong(unsigned long num, Out out) {

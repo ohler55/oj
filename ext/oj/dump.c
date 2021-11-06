@@ -1225,17 +1225,3 @@ int oj_dump_float_printf(char *buf, size_t blen, VALUE obj, double d, const char
     }
     return cnt;
 }
-
-bool oj_dump_ignore(Options opts, VALUE obj) {
-    if (NULL != opts->ignore && (ObjectMode == opts->mode || CustomMode == opts->mode)) {
-        VALUE *vp   = opts->ignore;
-        VALUE  clas = rb_obj_class(obj);
-
-        for (; Qnil != *vp; vp++) {
-            if (clas == *vp) {
-                return true;
-            }
-        }
-    }
-    return false;
-}

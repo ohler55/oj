@@ -218,7 +218,7 @@ static int hash_cb(VALUE key, VALUE value, VALUE ov) {
     int  depth = out->depth;
     long size  = depth * out->indent + 1;
 
-    if (oj_dump_ignore(out->opts, value)) {
+    if (dump_ignore(out->opts, value)) {
         return ST_CONTINUE;
     }
     if (out->omit_nil && Qnil == value) {
@@ -349,7 +349,7 @@ static int dump_attr_cb(ID key, VALUE value, VALUE ov) {
     size_t      size  = depth * out->indent + 1;
     const char *attr  = rb_id2name(key);
 
-    if (oj_dump_ignore(out->opts, value)) {
+    if (dump_ignore(out->opts, value)) {
         return ST_CONTINUE;
     }
     if (out->omit_nil && Qnil == value) {
@@ -612,7 +612,7 @@ static void dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out)
             }
             value = rb_ivar_get(obj, vid);
 
-            if (oj_dump_ignore(out->opts, value)) {
+            if (dump_ignore(out->opts, value)) {
                 continue;
             }
             if (out->omit_nil && Qnil == value) {
@@ -737,7 +737,7 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
 
         for (i = 0; i < cnt; i++) {
             v = RSTRUCT_GET(obj, i);
-            if (oj_dump_ignore(out->opts, v)) {
+            if (dump_ignore(out->opts, v)) {
                 v = Qnil;
             }
             assure_size(out, size);
@@ -755,7 +755,7 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
         for (i = 0; i < slen; i++) {
             assure_size(out, size);
             fill_indent(out, d3);
-            if (oj_dump_ignore(out->opts, v)) {
+            if (dump_ignore(out->opts, v)) {
                 v = Qnil;
             }
             oj_dump_obj_val(rb_struct_aref(obj, INT2FIX(i)), d3, out, 0, 0, true);
