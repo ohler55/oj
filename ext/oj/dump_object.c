@@ -157,7 +157,7 @@ static void dump_array_class(VALUE a, VALUE clas, int depth, Out out) {
             } else {
                 fill_indent(out, d2);
             }
-            oj_dump_obj_val(rb_ary_entry(a, i), d2, out);
+            oj_dump_obj_val(RARRAY_AREF(a, i), d2, out);
             if (i < cnt) {
                 *out->cur++ = ',';
             }
@@ -701,7 +701,7 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
 
         *out->cur++ = '[';
         for (i = 0; i < cnt; i++) {
-            volatile VALUE s = rb_sym2str(rb_ary_entry(ma, i));
+            volatile VALUE s = rb_sym2str(RARRAY_AREF(ma, i));
 
             name = RSTRING_PTR(s);
             len  = (int)RSTRING_LEN(s);

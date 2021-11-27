@@ -916,7 +916,7 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
 
                 copts->ignore = ALLOC_N(VALUE, cnt + 1);
                 for (i = 0; i < cnt; i++) {
-                    copts->ignore[i] = rb_ary_entry(v, i);
+                    copts->ignore[i] = RARRAY_AREF(v, i);
                 }
                 copts->ignore[i] = Qnil;
             }

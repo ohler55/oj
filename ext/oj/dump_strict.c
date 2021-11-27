@@ -153,9 +153,9 @@ static void dump_array(VALUE a, int depth, Out out, bool as_ok) {
                 fill_indent(out, d2);
             }
             if (NullMode == out->opts->mode) {
-                oj_dump_null_val(rb_ary_entry(a, i), d2, out);
+                oj_dump_null_val(RARRAY_AREF(a, i), d2, out);
             } else {
-                oj_dump_strict_val(rb_ary_entry(a, i), d2, out);
+                oj_dump_strict_val(RARRAY_AREF(a, i), d2, out);
             }
             if (i < cnt) {
                 *out->cur++ = ',';
