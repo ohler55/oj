@@ -182,7 +182,7 @@ dump_array(VALUE a, int depth, Out out, bool as_ok) {
 	    } else {
 		fill_indent(out, d2);
 	    }
-	    oj_dump_compat_val(rb_ary_entry(a, i), d2, out, true);
+	    oj_dump_compat_val(RARRAY_AREF(a, i), d2, out, true);
 	    if (i < cnt) {
 		*out->cur++ = ',';
 	    }

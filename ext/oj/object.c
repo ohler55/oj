@@ -325,7 +325,7 @@ static int hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, vol
                 int            i, cnt = (int)RARRAY_LEN(e1);
 
                 for (i = 0; i < cnt; i++) {
-                    rstr    = rb_ary_entry(e1, i);
+                    rstr    = RARRAY_AREF(e1, i);
                     args[i] = rb_funcall(rstr, oj_to_sym_id, 0);
                 }
                 sc = rb_funcall2(rb_cStruct, oj_new_id, cnt, args);

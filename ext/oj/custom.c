@@ -749,7 +749,7 @@ static void dump_array(VALUE a, int depth, Out out, bool as_ok) {
             } else {
                 fill_indent(out, d2);
             }
-            oj_dump_custom_val(rb_ary_entry(a, i), d2, out, true);
+            oj_dump_custom_val(RARRAY_AREF(a, i), d2, out, true);
             if (i < cnt) {
                 *out->cur++ = ',';
             }
@@ -833,7 +833,7 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
             v = rb_struct_aref(obj, INT2FIX(i));
 #endif
             if (ma != Qnil) {
-                volatile VALUE s = rb_sym2str(rb_ary_entry(ma, i));
+                volatile VALUE s = rb_sym2str(RARRAY_AREF(ma, i));
 
                 name = RSTRING_PTR(s);
                 len  = (int)RSTRING_LEN(s);

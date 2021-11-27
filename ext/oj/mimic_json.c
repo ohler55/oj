@@ -272,7 +272,7 @@ static int mimic_walk(VALUE key, VALUE obj, VALUE proc) {
         size_t i;
 
         for (i = 0; i < cnt; i++) {
-            mimic_walk(Qnil, rb_ary_entry(obj, i), proc);
+            mimic_walk(Qnil, RARRAY_AREF(obj, i), proc);
         }
         break;
     }

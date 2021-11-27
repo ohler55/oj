@@ -157,7 +157,7 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
     assure_size(out, 2);
     *out->cur++ = '{';
     for (i = 0; i < cnt; i++) {
-        volatile VALUE s = rb_sym2str(rb_ary_entry(ma, i));
+        volatile VALUE s = rb_sym2str(RARRAY_AREF(ma, i));
 
         name = RSTRING_PTR(s);
         len  = (int)RSTRING_LEN(s);
@@ -383,7 +383,7 @@ static StrLen columns_array(VALUE rcols, int *ccnt) {
     *ccnt = cnt;
     cols  = ALLOC_N(struct _strLen, cnt);
     for (i = 0, cp = cols; i < cnt; i++, cp++) {
-        v = rb_ary_entry(rcols, i);
+        v = RARRAY_AREF(rcols, i);
         if (T_STRING != rb_type(v)) {
             v = rb_funcall(v, oj_to_s_id, 0);
         }
@@ -420,7 +420,7 @@ static void dump_row(VALUE row, StrLen cols, int ccnt, int depth, Out out) {
         }
         oj_dump_cstr(cols->str, cols->len, 0, 0, out);
         *out->cur++ = ':';
-        dump_rails_val(rb_ary_entry(row, i), depth, out, true);
+        dump_rails_val(RARRAY_AREF(row, i), depth, out, true);
         if (i < ccnt - 1) {
             *out->cur++ = ',';
         }
@@ -490,7 +490,7 @@ static void dump_activerecord_result(VALUE obj, int depth, Out out, bool as_ok) 
         } else {
             fill_indent(out, d2);
         }
-        dump_row(rb_ary_entry(rows, i), cols, ccnt, d2, out);
+        dump_row(RARRAY_AREF(rows, i), cols, ccnt, d2, out);
         if (i < rcnt - 1) {
             *out->cur++ = ',';
         }
@@ -1281,7 +1281,7 @@ static void dump_array(VALUE a, int depth, Out out, bool as_ok) {
             } else {
                 fill_indent(out, d2);
             }
-            dump_rails_val(rb_ary_entry(a, i), d2, out, true);
+            dump_rails_val(RARRAY_AREF(a, i), d2, out, true);
             if (i < cnt) {
                 *out->cur++ = ',';
             }
