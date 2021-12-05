@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# coding: utf-8
 # frozen_string_literal: true
 
 $: << File.dirname(__FILE__)
@@ -393,6 +394,19 @@ class DocTest < Minitest::Test
       doc.each_child('/array/1') { |d| locations << d.where? }
       assert_equal(['/array/1/num', '/array/1/string', '/array/1/hash'], locations)
     end
+  end
+
+  def test_nested_each_child
+    h = {}
+    Oj::Doc.open('{"a":1,"c":[2],"d":3}') do |doc|
+      doc.each_child('/') do |child|
+        h[child.path] = child.fetch
+        child.each_child do |grandchild|
+          h[grandchild.path] = grandchild.fetch
+        end
+      end
+    end
+    assert_equal({"/a"=>1, "/c"=>[2], "/c/1"=>2, "/d"=>3}, h)
   end
 
   def test_size

@@ -1492,6 +1492,7 @@ static VALUE doc_each_child(int argc, VALUE *argv, VALUE self) {
         Doc         doc  = self_doc(self);
         const char *path = 0;
         size_t      wlen;
+	Leaf       *where_orig = doc->where;
 
         wlen = doc->where - doc->where_path;
         if (0 < wlen) {
@@ -1508,6 +1509,7 @@ static VALUE doc_each_child(int argc, VALUE *argv, VALUE self) {
                 if (0 < wlen) {
                     memcpy(doc->where_path, save_path, sizeof(Leaf) * (wlen + 1));
                 }
+		doc->where = where_orig;
                 return Qnil;
             }
         }
@@ -1525,6 +1527,7 @@ static VALUE doc_each_child(int argc, VALUE *argv, VALUE self) {
         if (0 < wlen) {
             memcpy(doc->where_path, save_path, sizeof(Leaf) * (wlen + 1));
         }
+	doc->where = where_orig;
     }
     return Qnil;
 }
