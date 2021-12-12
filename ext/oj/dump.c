@@ -118,44 +118,36 @@ static void raise_strict(VALUE obj) {
              rb_class2name(rb_obj_class(obj)));
 }
 
-inline static size_t newline_friendly_size(const uint8_t *str, size_t len) {
+inline static size_t calculate_string_size(const uint8_t *str, size_t len, const char * table) {
     size_t size = 0;
     size_t i    = len;
 
-    for (; 0 < i; str++, i--) {
-        size += newline_friendly_chars[*str];
+    for (; 3 < i; i -= 4) {
+        size += table[*str++];
+        size += table[*str++];
+        size += table[*str++];
+        size += table[*str++];
+    }
+    for (; 0 < i; i--) {
+        size += table[*str++];
     }
     return size - len * (size_t)'0';
+}
+
+inline static size_t newline_friendly_size(const uint8_t *str, size_t len) {
+    return calculate_string_size(str, len, newline_friendly_chars);
 }
 
 inline static size_t hibit_friendly_size(const uint8_t *str, size_t len) {
-    size_t size = 0;
-    size_t i    = len;
-
-    for (; 0 < i; str++, i--) {
-        size += hibit_friendly_chars[*str];
-    }
-    return size - len * (size_t)'0';
+    return calculate_string_size(str, len, hibit_friendly_chars);
 }
 
 inline static size_t ascii_friendly_size(const uint8_t *str, size_t len) {
-    size_t size = 0;
-    size_t i    = len;
-
-    for (; 0 < i; str++, i--) {
-        size += ascii_friendly_chars[*str];
-    }
-    return size - len * (size_t)'0';
+    return calculate_string_size(str, len, ascii_friendly_chars);
 }
 
 inline static size_t xss_friendly_size(const uint8_t *str, size_t len) {
-    size_t size = 0;
-    size_t i    = len;
-
-    for (; 0 < i; str++, i--) {
-        size += xss_friendly_chars[*str];
-    }
-    return size - len * (size_t)'0';
+    return calculate_string_size(str, len, xss_friendly_chars);
 }
 
 inline static size_t hixss_friendly_size(const uint8_t *str, size_t len) {
@@ -188,12 +180,7 @@ inline static long rails_xss_friendly_size(const uint8_t *str, size_t len) {
 }
 
 inline static size_t rails_friendly_size(const uint8_t *str, size_t len) {
-    size_t size = 0;
-    size_t i    = len;
-
-    for (; 0 < i; str++, i--) {
-        size += rails_friendly_chars[*str];
-    }
+    size_t size = calculate_string_size(str, len, rails_friendly_chars);
     return size - len * (size_t)'0';
 }
 
