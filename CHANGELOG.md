@@ -4,7 +4,7 @@
 ## 3.13.10 - 2021-12-12
 
 - Fixed Oj::Doc re-entrant issue with each_child.
-- Fixed each_child on emoty Oj::Doc.
+- Fixed each_child on empty Oj::Doc.
 
 ## 3.13.9 - 2021-10-06
 

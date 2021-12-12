@@ -771,7 +771,7 @@ static VALUE parse_json(VALUE clas, char *json, bool given, bool allocated) {
     pi.doc = doc;
 #if IS_WINDOWS
     // assume a 1M stack and give half to ruby
-    pi.stack_min = (void*)((char*)&pi - (512 * 1024));
+    pi.stack_min = (void *)((char *)&pi - (512 * 1024));
 #else
     {
         struct rlimit lim;
@@ -1492,7 +1492,7 @@ static VALUE doc_each_child(int argc, VALUE *argv, VALUE self) {
         Doc         doc  = self_doc(self);
         const char *path = 0;
         size_t      wlen;
-	Leaf       *where_orig = doc->where;
+        Leaf *      where_orig = doc->where;
 
         wlen = doc->where - doc->where_path;
         if (0 < wlen) {
@@ -1509,13 +1509,13 @@ static VALUE doc_each_child(int argc, VALUE *argv, VALUE self) {
                 if (0 < wlen) {
                     memcpy(doc->where_path, save_path, sizeof(Leaf) * (wlen + 1));
                 }
-		doc->where = where_orig;
+                doc->where = where_orig;
                 return Qnil;
             }
         }
-	if (NULL == doc->where || NULL == *doc->where) {
-	    return Qnil;
-	}
+        if (NULL == doc->where || NULL == *doc->where) {
+            return Qnil;
+        }
         if (COL_VAL == (*doc->where)->value_type && 0 != (*doc->where)->elements) {
             Leaf first = (*doc->where)->elements->next;
             Leaf e     = first;
@@ -1530,7 +1530,7 @@ static VALUE doc_each_child(int argc, VALUE *argv, VALUE self) {
         if (0 < wlen) {
             memcpy(doc->where_path, save_path, sizeof(Leaf) * (wlen + 1));
         }
-	doc->where = where_orig;
+        doc->where = where_orig;
     }
     return Qnil;
 }
