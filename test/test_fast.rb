@@ -505,6 +505,11 @@ class DocTest < Minitest::Test
     assert_equal({'/a/x' => 2, '/b/y' => 4}, results)
   end
 
+  def test_doc_empty
+    result = Oj::Doc.open("") { |doc| doc.each_child {} }
+    assert_nil(result)
+  end
+
   def test_comment
     json = %{{
   "x"/*one*/:/*two*/true,//three

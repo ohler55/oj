@@ -1513,6 +1513,9 @@ static VALUE doc_each_child(int argc, VALUE *argv, VALUE self) {
                 return Qnil;
             }
         }
+	if (NULL == doc->where || NULL == *doc->where) {
+	    return Qnil;
+	}
         if (COL_VAL == (*doc->where)->value_type && 0 != (*doc->where)->elements) {
             Leaf first = (*doc->where)->elements->next;
             Leaf e     = first;
