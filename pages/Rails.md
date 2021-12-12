@@ -1,3 +1,15 @@
+# Rails Quickstart
+
+To universally replace Rails' use of the json gem with Oj, and also
+have Oj "take over" many methods on the JSON constant (`load`, `parse`, etc.) with
+their faster Oj counterparts, add this to an initializer:
+
+```ruby
+Oj.optimize_rails()
+```
+
+For more details and options, read on...
+
 # Oj Rails Compatibility
 
 The `:rails` mode mimics the ActiveSupport version 5 encoder. Rails and

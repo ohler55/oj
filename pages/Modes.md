@@ -39,7 +39,8 @@ if a non-native type is encountered instead of raising an Exception.
 The `:compat` mode mimics the json gem. The json gem is built around the use
 of the `to_json(*)` method defined for a class. Oj attempts to provide the
 same functionality by being a drop in replacement with a few
-exceptions. [{file:JsonGem.md}](JsonGem.md) includes more details on
+exceptions. To universally replace many `JSON` methods with their faster Oj counterparts,
+simply run `Oj.mimic_json`. [{file:JsonGem.md}](JsonGem.md) includes more details on
 compatibility and use.
 
 ## :rails Mode
@@ -108,11 +109,11 @@ information.
 | :float_precision       | Fixnum  |       x |       x |         |         |         |       x |         |
 | :hash_class            | Class   |         |         |       x |       x |         |       x |         |
 | :ignore                | Array   |         |         |         |         |       x |       x |         |
-| :indent                | Integer |       x |       x |       3 |       4 |       x |       x |       x |
+| :indent                | Integer |       x |       x |       4 |       4 |       x |       x |       x |
 | :indent_str            | String  |         |         |       x |       x |         |       x |         |
 | :integer_range         | Range   |       x |       x |       x |       x |       x |       x |       x |
 | :match_string          | Hash    |         |         |       x |       x |         |       x |         |
-| :max_nesting           | Fixnum  |       4 |       4 |       x |         |       5 |       4 |         |
+| :max_nesting           | Fixnum  |       5 |       5 |       x |         |       5 |       5 |         |
 | :mode                  | Symbol  |       - |       - |       - |       - |       - |       - |         |
 | :nan                   | Symbol  |         |         |         |         |         |       x |         |
 | :nilnil                | Boolean |         |         |         |         |         |       x |         |
@@ -140,6 +141,8 @@ information.
  3. By default the bigdecimal_as decimal is not set and the default encoding
     for Rails is as a string. Setting the value to true will encode a
     BigDecimal as a number which breaks compatibility.
+    Note: after version 3.11.3 both `Oj.generate` and `JSON.generate`
+    will not honour this option in Rails Mode, detais on https://github.com/ohler55/oj/pull/716.
 
  4. The integer indent value in the default options will be honored by since
     the json gem expects a String type the indent in calls to 'to_json()',

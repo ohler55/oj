@@ -272,7 +272,7 @@ static int mimic_walk(VALUE key, VALUE obj, VALUE proc) {
         size_t i;
 
         for (i = 0; i < cnt; i++) {
-            mimic_walk(Qnil, rb_ary_entry(obj, i), proc);
+            mimic_walk(Qnil, RARRAY_AREF(obj, i), proc);
         }
         break;
     }
@@ -499,6 +499,52 @@ oj_mimic_pretty_generate(int argc, VALUE *argv, VALUE self) {
     return mimic_generate_core(2, rargs, &copts);
 }
 
+static int parse_options_cb(VALUE k, VALUE v, VALUE info) {
+    struct _parseInfo *pi = (struct _parseInfo *)info;
+
+    if (oj_symbolize_names_sym == k) {
+        pi->options.sym_key = (Qtrue == v) ? Yes : No;
+    } else if (oj_quirks_mode_sym == k) {
+        pi->options.quirks_mode = (Qtrue == v) ? Yes : No;
+    } else if (oj_create_additions_sym == k) {
+        pi->options.create_ok = (Qtrue == v) ? Yes : No;
+    } else if (oj_allow_nan_sym == k) {
+        pi->options.allow_nan = (Qtrue == v) ? Yes : No;
+    } else if (oj_hash_class_sym == k) {
+        if (Qnil == v) {
+            pi->options.hash_class = Qnil;
+        } else {
+            rb_check_type(v, T_CLASS);
+            pi->options.hash_class = v;
+        }
+    } else if (oj_object_class_sym == k) {
+        if (Qnil == v) {
+            pi->options.hash_class = Qnil;
+        } else {
+            rb_check_type(v, T_CLASS);
+            pi->options.hash_class = v;
+        }
+    } else if (oj_array_class_sym == k) {
+        if (Qnil == v) {
+            pi->options.array_class = Qnil;
+        } else {
+            rb_check_type(v, T_CLASS);
+            pi->options.array_class = v;
+        }
+    } else if (oj_decimal_class_sym == k) {
+        pi->options.compat_bigdec = (oj_bigdecimal_class == v);
+    } else if (oj_max_nesting_sym == k) {
+        if (Qtrue == v) {
+            pi->max_depth = 100;
+        } else if (Qfalse == v || Qnil == v) {
+            pi->max_depth = 0;
+        } else if (T_FIXNUM == rb_type(v)) {
+            pi->max_depth = NUM2INT(v);
+        }
+    }
+    return ST_CONTINUE;
+}
+
 static VALUE mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
     struct _parseInfo pi;
     VALUE             ropts;
@@ -524,59 +570,11 @@ static VALUE mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
     pi.max_depth             = 100;
 
     if (Qnil != ropts) {
-        VALUE v;
-
         if (T_HASH != rb_type(ropts)) {
             rb_raise(rb_eArgError, "options must be a hash.");
         }
-        if (Qnil != (v = rb_hash_lookup(ropts, oj_symbolize_names_sym))) {
-            pi.options.sym_key = (Qtrue == v) ? Yes : No;
-        }
-        if (Qnil != (v = rb_hash_lookup(ropts, oj_quirks_mode_sym))) {
-            pi.options.quirks_mode = (Qtrue == v) ? Yes : No;
-        }
-        if (Qnil != (v = rb_hash_lookup(ropts, oj_create_additions_sym))) {
-            pi.options.create_ok = (Qtrue == v) ? Yes : No;
-        }
-        if (Qnil != (v = rb_hash_lookup(ropts, oj_allow_nan_sym))) {
-            pi.options.allow_nan = (Qtrue == v) ? Yes : No;
-        }
 
-        if (oj_hash_has_key(ropts, oj_hash_class_sym)) {
-            if (Qnil == (v = rb_hash_lookup(ropts, oj_hash_class_sym))) {
-                pi.options.hash_class = Qnil;
-            } else {
-                rb_check_type(v, T_CLASS);
-                pi.options.hash_class = v;
-            }
-        }
-        if (oj_hash_has_key(ropts, oj_object_class_sym)) {
-            if (Qnil == (v = rb_hash_lookup(ropts, oj_object_class_sym))) {
-                pi.options.hash_class = Qnil;
-            } else {
-                rb_check_type(v, T_CLASS);
-                pi.options.hash_class = v;
-            }
-        }
-        if (oj_hash_has_key(ropts, oj_array_class_sym)) {
-            if (Qnil == (v = rb_hash_lookup(ropts, oj_array_class_sym))) {
-                pi.options.array_class = Qnil;
-            } else {
-                rb_check_type(v, T_CLASS);
-                pi.options.array_class = v;
-            }
-        }
-        if (oj_hash_has_key(ropts, oj_decimal_class_sym)) {
-            pi.options.compat_bigdec = (oj_bigdecimal_class == rb_hash_lookup(ropts, oj_decimal_class_sym));
-        }
-        v = rb_hash_lookup(ropts, oj_max_nesting_sym);
-        if (Qtrue == v) {
-            pi.max_depth = 100;
-        } else if (Qfalse == v || Qnil == v) {
-            pi.max_depth = 0;
-        } else if (T_FIXNUM == rb_type(v)) {
-            pi.max_depth = NUM2INT(v);
-        }
+        rb_hash_foreach(ropts, parse_options_cb, (VALUE)&pi);
         oj_parse_opt_match_string(&pi.options.str_rx, ropts);
         if (Yes == pi.options.create_ok && Yes == pi.options.sym_key) {
             rb_raise(rb_eArgError, ":symbolize_names and :create_additions can not both be true.");

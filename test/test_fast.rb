@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# coding: utf-8
 # frozen_string_literal: true
 
 $: << File.dirname(__FILE__)
@@ -395,6 +396,19 @@ class DocTest < Minitest::Test
     end
   end
 
+  def test_nested_each_child
+    h = {}
+    Oj::Doc.open('{"a":1,"c":[2],"d":3}') do |doc|
+      doc.each_child('/') do |child|
+        h[child.path] = child.fetch
+        child.each_child do |grandchild|
+          h[grandchild.path] = grandchild.fetch
+        end
+      end
+    end
+    assert_equal({"/a"=>1, "/c"=>[2], "/c/1"=>2, "/d"=>3}, h)
+  end
+
   def test_size
     Oj::Doc.open('[1,2,3]') do |doc|
       assert_equal(4, doc.size)
@@ -489,6 +503,11 @@ class DocTest < Minitest::Test
       h
     end
     assert_equal({'/a/x' => 2, '/b/y' => 4}, results)
+  end
+
+  def test_doc_empty
+    result = Oj::Doc.open("") { |doc| doc.each_child {} }
+    assert_nil(result)
   end
 
   def test_comment

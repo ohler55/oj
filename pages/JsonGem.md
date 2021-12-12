@@ -1,3 +1,18 @@
+# JSON Quickstart
+
+To have Oj universally "take over" many methods on the JSON constant (`load`, `parse`, etc.) with
+their faster Oj counterparts, in a mode that is compatible with the json gem:
+
+```ruby
+Oj.mimic_JSON()
+```
+
+If the project does not already use the json gem, `JSON` will become available.
+If the project does require the json gem, `Oj.mimic_JSON()` should be invoked after the
+json gem has been required.
+
+For more details and options, read on...
+
 # Oj JSON Gem Compatibility
 
 The `:compat` mode mimics the json gem. The json gem is built around the use
