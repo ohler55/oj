@@ -180,8 +180,7 @@ inline static long rails_xss_friendly_size(const uint8_t *str, size_t len) {
 }
 
 inline static size_t rails_friendly_size(const uint8_t *str, size_t len) {
-    size_t size = calculate_string_size(str, len, rails_friendly_chars);
-    return size - len * (size_t)'0';
+    return calculate_string_size(str, len, rails_friendly_chars);
 }
 
 const char *oj_nan_str(VALUE obj, int opt, int mode, bool plus, int *lenp) {
