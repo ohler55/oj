@@ -282,6 +282,7 @@ extern VALUE oj_rails_encode(int argc, VALUE *argv, VALUE self);
 extern VALUE           Oj;
 extern struct _options oj_default_options;
 extern rb_encoding *   oj_utf8_encoding;
+extern int             oj_utf8_encoding_index;
 
 extern VALUE oj_bag_class;
 extern VALUE oj_bigdecimal_class;
