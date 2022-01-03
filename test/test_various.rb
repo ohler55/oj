@@ -553,6 +553,9 @@ class Juice < Minitest::Test
   end
 
   def test_io_file
+    # Windows does not support fork
+    return if RbConfig::CONFIG['host_os'] =~ /(mingw|mswin)/
+
     src = { 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}
     filename = File.join(File.dirname(__FILE__), 'open_file_test.json')
     File.open(filename, "w") { |f|
