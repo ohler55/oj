@@ -528,7 +528,7 @@ class Juice < Minitest::Test
     assert_equal(58, obj.y)
   end
 
-# Stream Deeply Nested
+  # Stream Deeply Nested
   def test_deep_nest_dump
     begin
       a = []
@@ -541,7 +541,7 @@ class Juice < Minitest::Test
     assert(false, "*** expected an exception")
   end
 
-# Stream IO
+  # Stream IO
   def test_io_string
     src = { 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}
     output = StringIO.open("", "w+")
@@ -562,6 +562,26 @@ class Juice < Minitest::Test
     obj = Oj.load(f, :mode => :strict)
     f.close()
     assert_equal(src, obj)
+  end
+
+  def test_io_stream
+    IO.pipe do |r, w|
+      if fork
+	r.close
+	#w.nonblock = false
+	a = []
+	10_000.times do |i|
+	  a << i
+	end
+	Oj.to_stream(w, a, indent: 2)
+      else
+	w.close
+	sleep(0.1) # to force a busy
+	r.each_line { }
+	r.close
+	Process.exit(0)
+      end
+    end
   end
 
 # comments
