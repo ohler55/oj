@@ -581,10 +581,7 @@ class Juice < Minitest::Test
       else
 	w.close
 	sleep(0.1) # to force a busy
-	begin
-	  r.each_line { }
-	rescue
-	end
+	r.each_line { }
 	r.close
 	Process.exit(0)
       end
