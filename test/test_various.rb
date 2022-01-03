@@ -577,6 +577,7 @@ class Juice < Minitest::Test
 	  a << i
 	end
 	Oj.to_stream(w, a, indent: 2)
+	w.close
       else
 	w.close
 	sleep(0.1) # to force a busy
