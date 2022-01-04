@@ -28,6 +28,7 @@ jobs:
           - rails_5
           - rails_6
           - rails_6.1
+          - rails_7
         exclude:
           - os: macos
             ruby: head
@@ -35,6 +36,10 @@ jobs:
             gemfile: rails_5
           - ruby: '3.0'
             gemfile: rails_6
+          - ruby: '2.5'
+            gemfile: rails_7
+          - ruby: '2.6'
+            gemfile: rails_7
 
     env:
       BUNDLE_GEMFILE: gemfiles/${{ matrix.gemfile }}.gemfile
