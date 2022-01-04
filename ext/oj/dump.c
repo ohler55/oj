@@ -5,12 +5,14 @@
 
 #include <errno.h>
 #include <math.h>
-#include <poll.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#if !IS_WINDOWS
+#include <poll.h>
+#endif
 
 #include "cache8.h"
 #include "odd.h"
