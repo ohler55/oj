@@ -13,6 +13,11 @@
    - need to handle auto create
     - return Qundef does not store
 
+- stream writes
+ - dump.c:685
+ - stream_writer.c
+ - use io C calls instead
+
  - future
   - object mode delegate
 

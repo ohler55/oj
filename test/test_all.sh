@@ -3,6 +3,10 @@
 echo "----- General tests (tests.rb) -----"
 ruby tests.rb
 
+echo "----- Various tests (test_various.rb) -----"
+# test_various forks which causes issues with other tests.
+ruby test_various.rb
+
 echo "----- Parser(:saj) tests (test_parser_saj.rb) -----"
 ruby test_parser_saj.rb
 
