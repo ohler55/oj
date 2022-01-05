@@ -16,3 +16,4 @@ Gemfile.lock
 *.so
 vendor
 gemfiles/*.lock
+tmp

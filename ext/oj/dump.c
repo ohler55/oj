@@ -10,6 +10,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#if !IS_WINDOWS
+#include <poll.h>
+#endif
 
 #include "cache8.h"
 #include "odd.h"
@@ -113,49 +116,39 @@ static char rails_friendly_chars[256] = "\
 11111111111111111111111111111111";
 
 static void raise_strict(VALUE obj) {
-    rb_raise(rb_eTypeError,
-             "Failed to dump %s Object to JSON in strict mode.",
-             rb_class2name(rb_obj_class(obj)));
+    rb_raise(rb_eTypeError, "Failed to dump %s Object to JSON in strict mode.", rb_class2name(rb_obj_class(obj)));
+}
+
+inline static size_t calculate_string_size(const uint8_t *str, size_t len, const char *table) {
+    size_t size = 0;
+    size_t i    = len;
+
+    for (; 3 < i; i -= 4) {
+        size += table[*str++];
+        size += table[*str++];
+        size += table[*str++];
+        size += table[*str++];
+    }
+    for (; 0 < i; i--) {
+        size += table[*str++];
+    }
+    return size - len * (size_t)'0';
 }
 
 inline static size_t newline_friendly_size(const uint8_t *str, size_t len) {
-    size_t size = 0;
-    size_t i    = len;
-
-    for (; 0 < i; str++, i--) {
-        size += newline_friendly_chars[*str];
-    }
-    return size - len * (size_t)'0';
+    return calculate_string_size(str, len, newline_friendly_chars);
 }
 
 inline static size_t hibit_friendly_size(const uint8_t *str, size_t len) {
-    size_t size = 0;
-    size_t i    = len;
-
-    for (; 0 < i; str++, i--) {
-        size += hibit_friendly_chars[*str];
-    }
-    return size - len * (size_t)'0';
+    return calculate_string_size(str, len, hibit_friendly_chars);
 }
 
 inline static size_t ascii_friendly_size(const uint8_t *str, size_t len) {
-    size_t size = 0;
-    size_t i    = len;
-
-    for (; 0 < i; str++, i--) {
-        size += ascii_friendly_chars[*str];
-    }
-    return size - len * (size_t)'0';
+    return calculate_string_size(str, len, ascii_friendly_chars);
 }
 
 inline static size_t xss_friendly_size(const uint8_t *str, size_t len) {
-    size_t size = 0;
-    size_t i    = len;
-
-    for (; 0 < i; str++, i--) {
-        size += xss_friendly_chars[*str];
-    }
-    return size - len * (size_t)'0';
+    return calculate_string_size(str, len, xss_friendly_chars);
 }
 
 inline static size_t hixss_friendly_size(const uint8_t *str, size_t len) {
@@ -188,13 +181,7 @@ inline static long rails_xss_friendly_size(const uint8_t *str, size_t len) {
 }
 
 inline static size_t rails_friendly_size(const uint8_t *str, size_t len) {
-    size_t size = 0;
-    size_t i    = len;
-
-    for (; 0 < i; str++, i--) {
-        size += rails_friendly_chars[*str];
-    }
-    return size - len * (size_t)'0';
+    return calculate_string_size(str, len, rails_friendly_chars);
 }
 
 const char *oj_nan_str(VALUE obj, int opt, int mode, bool plus, int *lenp) {
@@ -535,14 +522,7 @@ void oj_dump_xml_time(VALUE obj, Out out) {
     }
     if ((0 == nsec && !out->opts->sec_prec_set) || 0 == out->opts->sec_prec) {
         if (0 == tzsecs && rb_funcall2(obj, oj_utcq_id, 0, 0)) {
-            int len = sprintf(buf,
-                              "%04d-%02d-%02dT%02d:%02d:%02dZ",
-                              ti.year,
-                              ti.mon,
-                              ti.day,
-                              ti.hour,
-                              ti.min,
-                              ti.sec);
+            int len = sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02dZ", ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec);
             oj_dump_cstr(buf, len, 0, 0, out);
         } else {
             int len = sprintf(buf,
@@ -574,18 +554,7 @@ void oj_dump_xml_time(VALUE obj, Out out) {
         if (9 > out->opts->sec_prec) {
             format[32] = '0' + out->opts->sec_prec;
         }
-        len = sprintf(buf,
-                      format,
-                      ti.year,
-                      ti.mon,
-                      ti.day,
-                      ti.hour,
-                      ti.min,
-                      ti.sec,
-                      (long)nsec,
-                      tzsign,
-                      tzhour,
-                      tzmin);
+        len = sprintf(buf, format, ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec, (long)nsec, tzsign, tzhour, tzmin);
         oj_dump_cstr(buf, len, 0, 0, out);
     }
 }
@@ -666,6 +635,21 @@ void oj_write_obj_to_file(VALUE obj, const char *path, Options copts) {
     }
 }
 
+static void write_ready(int fd) {
+    struct pollfd pp;
+    int           i;
+
+    pp.fd      = fd;
+    pp.events  = POLLERR | POLLOUT;
+    pp.revents = 0;
+    if (0 >= (i = poll(&pp, 1, 5000))) {
+        if (0 == i || EAGAIN == errno) {
+            rb_raise(rb_eIOError, "write timed out");
+        }
+        rb_raise(rb_eIOError, "write failed. %d %s.", errno, strerror(errno));
+    }
+}
+
 void oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
     char        buf[4096];
     struct _out out;
@@ -685,13 +669,24 @@ void oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
     if (oj_stringio_class == clas) {
         rb_funcall(stream, oj_write_id, 1, rb_str_new(out.buf, size));
 #if !IS_WINDOWS
-    } else if (rb_respond_to(stream, oj_fileno_id) &&
-               Qnil != (s = rb_funcall(stream, oj_fileno_id, 0)) && 0 != (fd = FIX2INT(s))) {
-        if (size != write(fd, out.buf, size)) {
-            if (out.allocated) {
-                xfree(out.buf);
+    } else if (rb_respond_to(stream, oj_fileno_id) && Qnil != (s = rb_funcall(stream, oj_fileno_id, 0)) &&
+               0 != (fd = FIX2INT(s))) {
+        ssize_t cnt;
+        ssize_t total = 0;
+
+        while (true) {
+            if (0 > (cnt = write(fd, out.buf + total, size - total))) {
+                if (EAGAIN != errno) {
+                    rb_raise(rb_eIOError, "write failed. %d %s.", errno, strerror(errno));
+                    break;
+                }
             }
-            rb_raise(rb_eIOError, "Write failed. [%d:%s]", errno, strerror(errno));
+            total += cnt;
+            if (size <= total) {
+                // Completed
+                break;
+            }
+            write_ready(fd);
         }
 #endif
     } else if (rb_respond_to(stream, oj_write_id)) {
@@ -835,8 +830,7 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
         for (; str < end; str++) {
             switch (cmap[(uint8_t)*str]) {
             case '1':
-                if ((JXEsc == out->opts->escape_mode || RailsXEsc == out->opts->escape_mode) &&
-                    check_start <= str) {
+                if ((JXEsc == out->opts->escape_mode || RailsXEsc == out->opts->escape_mode) && check_start <= str) {
                     if (0 != (0x80 & (uint8_t)*str)) {
                         if (0xC0 == (0xC0 & (uint8_t)*str)) {
                             check_start = check_unicode(str, end, orig);
@@ -860,11 +854,9 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
                 }
                 break;
             case '3':  // Unicode
-                if (0xe2 == (uint8_t)*str &&
-                    (JXEsc == out->opts->escape_mode || RailsXEsc == out->opts->escape_mode) &&
+                if (0xe2 == (uint8_t)*str && (JXEsc == out->opts->escape_mode || RailsXEsc == out->opts->escape_mode) &&
                     2 <= end - str) {
-                    if (0x80 == (uint8_t)str[1] &&
-                        (0xa8 == (uint8_t)str[2] || 0xa9 == (uint8_t)str[2])) {
+                    if (0x80 == (uint8_t)str[1] && (0xa8 == (uint8_t)str[2] || 0xa9 == (uint8_t)str[2])) {
                         str = dump_unicode(str, end, out, orig);
                     } else {
                         check_start = check_unicode(str, end, orig);
@@ -883,10 +875,8 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
                     dump_hex((uint8_t)*str, out);
                 } else {
                     if (0xe2 == (uint8_t)*str &&
-                        (JXEsc == out->opts->escape_mode || RailsXEsc == out->opts->escape_mode) &&
-                        2 <= end - str) {
-                        if (0x80 == (uint8_t)str[1] &&
-                            (0xa8 == (uint8_t)str[2] || 0xa9 == (uint8_t)str[2])) {
+                        (JXEsc == out->opts->escape_mode || RailsXEsc == out->opts->escape_mode) && 2 <= end - str) {
+                        if (0x80 == (uint8_t)str[1] && (0xa8 == (uint8_t)str[2] || 0xa9 == (uint8_t)str[2])) {
                             str = dump_unicode(str, end, out, orig);
                         } else {
                             check_start = check_unicode(str, end, orig);
@@ -902,8 +892,8 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
         }
         *out->cur++ = '"';
     }
-    if ((JXEsc == out->opts->escape_mode || RailsXEsc == out->opts->escape_mode) &&
-        0 < str - orig && 0 != (0x80 & *(str - 1))) {
+    if ((JXEsc == out->opts->escape_mode || RailsXEsc == out->opts->escape_mode) && 0 < str - orig &&
+        0 != (0x80 & *(str - 1))) {
         uint8_t c = (uint8_t) * (str - 1);
         int     i;
         int     scnt = (int)(str - orig);
@@ -1064,8 +1054,7 @@ void oj_dump_bignum(VALUE obj, int depth, Out out, bool as_ok) {
     int            cnt            = (int)RSTRING_LEN(rs);
     bool           dump_as_string = false;
 
-    if (out->opts->int_range_max != 0 ||
-        out->opts->int_range_min != 0) {  // Bignum cannot be inside of Fixnum range
+    if (out->opts->int_range_max != 0 || out->opts->int_range_min != 0) {  // Bignum cannot be inside of Fixnum range
         dump_as_string = true;
         assure_size(out, cnt + 2);
         *out->cur++ = '"';

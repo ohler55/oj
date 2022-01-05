@@ -17,12 +17,12 @@ end
 =end
 
 task :test_all => [:clean, :compile] do
+  STDOUT.flush
   exitcode = 0
   status = 0
 
   cmds = "ruby test/tests.rb && ruby test/tests_mimic.rb && ruby test/tests_mimic_addition.rb"
-  puts "\n" + "#"*90
-  puts cmds
+  STDOUT.syswrite "\n#{'#'*90}\n#{cmds}\n"
   Bundler.with_original_env do
     status = system(cmds)
   end
@@ -33,10 +33,10 @@ task :test_all => [:clean, :compile] do
   # tests.
   if RUBY_VERSION >= '2.4'
     Dir.glob('test/json_gem/*_test.rb').each do |file|
-      cmd = "REAL_JSON_GEM=1 bundle exec ruby -Itest #{file}"
-      puts "\n" + "#"*90
-      puts cmd
+      cmd = "bundle exec ruby -Itest #{file}"
+      STDOUT.syswrite "\n#{'#'*90}\n#{cmd}\n"
       Bundler.with_original_env do
+        ENV['REAL_JSON_GEM'] = '1'
         status = system(cmd)
       end
       exitcode = 1 unless status

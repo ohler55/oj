@@ -180,7 +180,7 @@ class SajTest < Minitest::Test
     assert_equal([:add_value, 12345, nil], handler.calls.first)
     type, message, line, column = handler.calls.last
     assert_equal([:error, 1, 6], [type, line, column])
-    assert_match(%r{invalid format, extra characters at line 1, column 6 \[(?:[a-z\.]+/)*saj\.c:\d+\]}, message)
+    assert_match(%r{invalid format, extra characters at line 1, column 6 \[(?:[A-Za-z]:\/)?(?:[a-z\.]+/)*saj\.c:\d+\]}, message)
   end
 
 end
