@@ -613,18 +613,21 @@ dump_float(VALUE obj, int depth, Out out, bool as_ok) {
     } else if (OJ_INFINITY == d) {
 	if (WordNan == out->opts->dump_opts.nan_dump) {
 	    strcpy(buf, "Infinity");
+	    cnt = 8;
 	} else {
 	    raise_json_err("Infinity not allowed in JSON.", "GeneratorError");
 	}
     } else if (-OJ_INFINITY == d) {
 	if (WordNan == out->opts->dump_opts.nan_dump) {
 	    strcpy(buf, "-Infinity");
+	    cnt = 9;
 	} else {
 	    raise_json_err("-Infinity not allowed in JSON.", "GeneratorError");
 	}
     } else if (isnan(d)) {
 	if (WordNan == out->opts->dump_opts.nan_dump) {
 	    strcpy(buf, "NaN");
+	    cnt = 3;
 	} else {
 	    raise_json_err("NaN not allowed in JSON.", "GeneratorError");
 	}
@@ -639,9 +642,8 @@ dump_float(VALUE obj, int depth, Out out, bool as_ok) {
 	cnt = (int)RSTRING_LEN(rstr);
     }
     assure_size(out, cnt);
-    for (b = buf; '\0' != *b; b++) {
-	*out->cur++ = *b;
-    }
+    memcpy(out->cur, buf, cnt);
+    out->cur += cnt;
     *out->cur = '\0';
 }
 

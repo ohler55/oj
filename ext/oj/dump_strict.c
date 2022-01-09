@@ -105,9 +105,8 @@ static void dump_float(VALUE obj, int depth, Out out, bool as_ok) {
         }
     }
     assure_size(out, cnt);
-    for (b = buf; '\0' != *b; b++) {
-        *out->cur++ = *b;
-    }
+    memcpy(out->cur, buf, cnt);
+    out->cur += cnt;
     *out->cur = '\0';
 }
 
