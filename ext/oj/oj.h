@@ -39,6 +39,12 @@ enum st_retval { ST_CONTINUE = 0, ST_STOP = 1, ST_DELETE = 2, ST_CHECK };
 #define NINF_VAL "-3.0e14159265358979323846"
 #define NAN_VAL "3.3e14159265358979323846"
 
+#if __STDC_VERSION__ >= 199901L
+    // To avoid using ruby_snprintf with C99.
+    #undef snprintf
+    #include <stdio.h>
+#endif
+
 typedef enum { Yes = 'y', No = 'n', NotSet = 0 } YesNo;
 
 typedef enum {
