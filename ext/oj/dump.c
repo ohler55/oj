@@ -1012,6 +1012,7 @@ void oj_dump_fixnum(VALUE obj, int depth, Out out, bool as_ok) {
     char *    b              = buf + sizeof(buf) - 1;
     long long num            = rb_num2ll(obj);
     int       neg            = 0;
+    int       cnt            = 0;
     bool      dump_as_string = false;
 
     if (out->opts->int_range_max != 0 && out->opts->int_range_min != 0 &&
@@ -1042,10 +1043,10 @@ void oj_dump_fixnum(VALUE obj, int depth, Out out, bool as_ok) {
     if (dump_as_string) {
         *--b = '"';
     }
-    assure_size(out, (sizeof(buf) - (b - buf)));
-    for (; '\0' != *b; b++) {
-        *out->cur++ = *b;
-    }
+    cnt = sizeof(buf) - (b - buf) - 1;
+    assure_size(out, cnt);
+    memcpy(out->cur, b, cnt);
+    out->cur += cnt;
     *out->cur = '\0';
 }
 
@@ -1195,9 +1196,8 @@ void oj_dump_float(VALUE obj, int depth, Out out, bool as_ok) {
         cnt = oj_dump_float_printf(buf, sizeof(buf), obj, d, out->opts->float_fmt);
     }
     assure_size(out, cnt);
-    for (b = buf; '\0' != *b; b++) {
-        *out->cur++ = *b;
-    }
+    memcpy(out->cur, buf, cnt);
+    out->cur += cnt;
     *out->cur = '\0';
 }
 
