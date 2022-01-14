@@ -981,29 +981,22 @@ void oj_grow_out(Out out, size_t len) {
 
 void oj_dump_nil(VALUE obj, int depth, Out out, bool as_ok) {
     assure_size(out, 4);
-    *out->cur++ = 'n';
-    *out->cur++ = 'u';
-    *out->cur++ = 'l';
-    *out->cur++ = 'l';
+    memcpy(out->cur, "null", 4);
+    out->cur += 4;
     *out->cur   = '\0';
 }
 
 void oj_dump_true(VALUE obj, int depth, Out out, bool as_ok) {
     assure_size(out, 4);
-    *out->cur++ = 't';
-    *out->cur++ = 'r';
-    *out->cur++ = 'u';
-    *out->cur++ = 'e';
+    memcpy(out->cur, "true", 4);
+    out->cur += 4;
     *out->cur   = '\0';
 }
 
 void oj_dump_false(VALUE obj, int depth, Out out, bool as_ok) {
     assure_size(out, 5);
-    *out->cur++ = 'f';
-    *out->cur++ = 'a';
-    *out->cur++ = 'l';
-    *out->cur++ = 's';
-    *out->cur++ = 'e';
+    memcpy(out->cur, "false", 5);
+    out->cur += 5;
     *out->cur   = '\0';
 }
 
