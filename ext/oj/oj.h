@@ -45,6 +45,10 @@ enum st_retval { ST_CONTINUE = 0, ST_STOP = 1, ST_DELETE = 2, ST_CHECK };
     #include <stdio.h>
 #endif
 
+// To avoid using ruby_nonempty_memcpy().
+#undef memcpy
+#include <string.h>
+
 typedef enum { Yes = 'y', No = 'n', NotSet = 0 } YesNo;
 
 typedef enum {
