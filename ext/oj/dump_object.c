@@ -139,9 +139,9 @@ static void dump_array_class(VALUE a, VALUE clas, int depth, Out out) {
         } else {
             size = d2 * out->indent + 2;
         }
+        assure_size(out, size * cnt);
         cnt--;
         for (i = 0; i <= cnt; i++) {
-            assure_size(out, size);
             if (out->opts->dump_opts.use) {
                 if (0 < out->opts->dump_opts.array_size) {
                     strcpy(out->cur, out->opts->dump_opts.array_nl);
