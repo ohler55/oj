@@ -124,9 +124,9 @@ static void dump_array(VALUE a, int depth, Out out, bool as_ok) {
         *out->cur++ = ']';
     } else {
         size = d2 * out->indent + 2;
+        assure_size(out, size * cnt);
         cnt--;
         for (i = 0; i <= cnt; i++) {
-            assure_size(out, size);
             fill_indent(out, d2);
             oj_dump_wab_val(RARRAY_AREF(a, i), d2, out);
             if (i < cnt) {
