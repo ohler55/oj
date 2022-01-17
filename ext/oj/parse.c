@@ -972,9 +972,10 @@ static VALUE protect_parse(VALUE pip) {
 extern int oj_utf8_index;
 
 static void oj_pi_set_input_str(ParseInfo pi, volatile VALUE *inputp) {
-    rb_encoding *enc = rb_enc_get(*inputp);
+    int idx = RB_ENCODING_GET(*inputp);
 
-    if (oj_utf8_encoding != enc) {
+    if (oj_utf8_encoding_index != idx) {
+        rb_encoding *enc = rb_enc_from_index(idx);
         *inputp = rb_str_conv_enc(*inputp, enc, oj_utf8_encoding);
     }
     pi->json = RSTRING_PTR(*inputp);

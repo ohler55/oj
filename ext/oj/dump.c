@@ -703,9 +703,10 @@ void oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
 }
 
 void oj_dump_str(VALUE obj, int depth, Out out, bool as_ok) {
-    rb_encoding *enc = rb_enc_get(obj);
+    int idx = RB_ENCODING_GET(obj);
 
-    if (oj_utf8_encoding != enc) {
+    if (oj_utf8_encoding_index != idx) {
+        rb_encoding *enc = rb_enc_from_index(idx);
         obj = rb_str_conv_enc(obj, enc, oj_utf8_encoding);
     }
     oj_dump_cstr(RSTRING_PTR(obj), (int)RSTRING_LEN(obj), 0, 0, out);
