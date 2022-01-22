@@ -275,6 +275,7 @@ VALUE oj_class_intern(const char *key, size_t len, bool safe, ParseInfo pi, int 
         bucket->len = len;
         bucket->val = resolve_classpath(pi, key, len, auto_define, error_class);
     }
+    rb_gc_register_mark_object(bucket->val);
     return bucket->val;
 }
 
