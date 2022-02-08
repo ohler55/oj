@@ -330,12 +330,12 @@ static void dump_time(VALUE obj, int depth, Out out, bool as_ok) {
         sec  = (long long)ts.tv_sec;
         nsec = ts.tv_nsec;
     } else {
-        sec  = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
-        nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+        sec  = NUM2LL(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+        nsec = NUM2LL(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
     }
 #else
-    sec  = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
-    nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+    sec  = NUM2LL(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+    nsec = NUM2LL(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
 #endif
     dump_sec_nano(obj, sec, nsec, out);
 }
@@ -345,9 +345,9 @@ static void dump_timewithzone(VALUE obj, int depth, Out out, bool as_ok) {
     long long nsec = 0;
 
     if (rb_respond_to(obj, oj_tv_nsec_id)) {
-        nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+        nsec = NUM2LL(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
     } else if (rb_respond_to(obj, oj_tv_usec_id)) {
-        nsec = rb_num2ll(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
+        nsec = NUM2LL(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
     }
     dump_sec_nano(obj, sec, nsec, out);
 }
@@ -1263,9 +1263,9 @@ static void dump_array(VALUE a, int depth, Out out, bool as_ok) {
         } else {
             size = d2 * out->indent + 2;
         }
+        assure_size(out, size * cnt);
         cnt--;
         for (i = 0; i <= cnt; i++) {
-            assure_size(out, size);
             if (out->opts->dump_opts.use) {
                 if (0 < out->opts->dump_opts.array_size) {
                     strcpy(out->cur, out->opts->dump_opts.array_nl);

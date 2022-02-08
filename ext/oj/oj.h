@@ -45,6 +45,10 @@ enum st_retval { ST_CONTINUE = 0, ST_STOP = 1, ST_DELETE = 2, ST_CHECK };
     #include <stdio.h>
 #endif
 
+// To avoid using ruby_nonempty_memcpy().
+#undef memcpy
+#include <string.h>
+
 typedef enum { Yes = 'y', No = 'n', NotSet = 0 } YesNo;
 
 typedef enum {
@@ -288,6 +292,7 @@ extern VALUE oj_rails_encode(int argc, VALUE *argv, VALUE self);
 extern VALUE           Oj;
 extern struct _options oj_default_options;
 extern rb_encoding *   oj_utf8_encoding;
+extern int             oj_utf8_encoding_index;
 
 extern VALUE oj_bag_class;
 extern VALUE oj_bigdecimal_class;

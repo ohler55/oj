@@ -153,6 +153,7 @@ static VALUE xmlschema_sym;
 static VALUE xss_safe_sym;
 
 rb_encoding *oj_utf8_encoding = 0;
+int oj_utf8_encoding_index = 0;
 
 #ifdef HAVE_PTHREAD_MUTEX_INIT
 pthread_mutex_t oj_cache_mutex;
@@ -1748,7 +1749,8 @@ void Init_oj() {
     // On Rubinius the require fails but can be done from a ruby file.
     rb_protect(protect_require, Qnil, &err);
     rb_require("stringio");
-    oj_utf8_encoding = rb_enc_find("UTF-8");
+    oj_utf8_encoding_index = rb_enc_find_index("UTF-8");
+    oj_utf8_encoding = rb_enc_from_index(oj_utf8_encoding_index);
 
     // rb_define_module_function(Oj, "hash_test", hash_test, 0);
 

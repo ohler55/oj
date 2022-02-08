@@ -379,12 +379,12 @@ void oj_dump_time(VALUE obj, Out out, int withZone) {
         sec  = (long long)ts.tv_sec;
         nsec = ts.tv_nsec;
     } else {
-        sec  = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
-        nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+        sec  = NUM2LL(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+        nsec = NUM2LL(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
     }
 #else
-    sec  = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
-    nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+    sec  = NUM2LL(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+    nsec = NUM2LL(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
 #endif
 
     *b-- = '\0';
@@ -479,12 +479,12 @@ void oj_dump_xml_time(VALUE obj, Out out) {
         sec  = ts.tv_sec;
         nsec = ts.tv_nsec;
     } else {
-        sec  = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
-        nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+        sec  = NUM2LL(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+        nsec = NUM2LL(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
     }
 #else
-    sec  = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
-    nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+    sec  = NUM2LL(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+    nsec = NUM2LL(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
 #endif
 
     assure_size(out, 36);
@@ -703,9 +703,10 @@ void oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
 }
 
 void oj_dump_str(VALUE obj, int depth, Out out, bool as_ok) {
-    rb_encoding *enc = rb_enc_get(obj);
+    int idx = RB_ENCODING_GET(obj);
 
-    if (oj_utf8_encoding != enc) {
+    if (oj_utf8_encoding_index != idx) {
+        rb_encoding *enc = rb_enc_from_index(idx);
         obj = rb_str_conv_enc(obj, enc, oj_utf8_encoding);
     }
     oj_dump_cstr(RSTRING_PTR(obj), (int)RSTRING_LEN(obj), 0, 0, out);
@@ -981,36 +982,29 @@ void oj_grow_out(Out out, size_t len) {
 
 void oj_dump_nil(VALUE obj, int depth, Out out, bool as_ok) {
     assure_size(out, 4);
-    *out->cur++ = 'n';
-    *out->cur++ = 'u';
-    *out->cur++ = 'l';
-    *out->cur++ = 'l';
+    memcpy(out->cur, "null", 4);
+    out->cur += 4;
     *out->cur   = '\0';
 }
 
 void oj_dump_true(VALUE obj, int depth, Out out, bool as_ok) {
     assure_size(out, 4);
-    *out->cur++ = 't';
-    *out->cur++ = 'r';
-    *out->cur++ = 'u';
-    *out->cur++ = 'e';
+    memcpy(out->cur, "true", 4);
+    out->cur += 4;
     *out->cur   = '\0';
 }
 
 void oj_dump_false(VALUE obj, int depth, Out out, bool as_ok) {
     assure_size(out, 5);
-    *out->cur++ = 'f';
-    *out->cur++ = 'a';
-    *out->cur++ = 'l';
-    *out->cur++ = 's';
-    *out->cur++ = 'e';
+    memcpy(out->cur, "false", 5);
+    out->cur += 5;
     *out->cur   = '\0';
 }
 
 void oj_dump_fixnum(VALUE obj, int depth, Out out, bool as_ok) {
     char      buf[32];
-    char     *b              = buf + sizeof(buf) - 1;
-    long long num            = rb_num2ll(obj);
+    char *    b              = buf + sizeof(buf) - 1;
+    long long num            = NUM2LL(obj);
     int       neg            = 0;
     size_t    cnt            = 0;
     bool      dump_as_string = false;
