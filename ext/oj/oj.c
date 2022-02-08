@@ -1739,8 +1739,10 @@ void Init_oj() {
     rb_ext_ractor_safe(true);
 #endif
     Oj = rb_define_module("Oj");
+    rb_gc_register_address(&Oj);
 
     oj_cstack_class = rb_define_class_under(Oj, "CStack", rb_cObject);
+    rb_gc_register_address(&oj_cstack_class);
 
     oj_string_writer_init();
     oj_stream_writer_init();
