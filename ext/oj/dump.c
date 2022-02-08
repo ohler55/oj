@@ -234,7 +234,7 @@ inline static void dump_hex(uint8_t c, Out out) {
 static void raise_invalid_unicode(const char *str, int len, int pos) {
     char    c;
     char    code[32];
-    char *  cp = code;
+    char   *cp = code;
     int     i;
     uint8_t d;
 
@@ -361,9 +361,9 @@ long oj_check_circular(VALUE obj, Out out) {
 
 void oj_dump_time(VALUE obj, Out out, int withZone) {
     char      buf[64];
-    char *    b = buf + sizeof(buf) - 1;
+    char     *b = buf + sizeof(buf) - 1;
     long      size;
-    char *    dot;
+    char     *dot;
     int       neg = 0;
     long      one = 1000000000;
     long long sec;
@@ -608,7 +608,7 @@ void oj_write_obj_to_file(VALUE obj, const char *path, Options copts) {
     char        buf[4096];
     struct _out out;
     size_t      size;
-    FILE *      f;
+    FILE       *f;
     int         ok;
 
     out.buf       = buf;
@@ -719,7 +719,7 @@ void oj_dump_sym(VALUE obj, int depth, Out out, bool as_ok) {
 
 static void debug_raise(const char *orig, size_t cnt, int line) {
     char        buf[1024];
-    char *      b     = buf;
+    char       *b     = buf;
     const char *s     = orig;
     const char *s_end = s + cnt;
 
@@ -758,7 +758,7 @@ void oj_dump_raw_json(VALUE obj, int depth, Out out) {
 
 void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
     size_t      size;
-    char *      cmap;
+    char       *cmap;
     const char *orig   = str;
     bool        has_hi = false;
 
@@ -958,7 +958,7 @@ void oj_dump_raw(const char *str, size_t cnt, Out out) {
 void oj_grow_out(Out out, size_t len) {
     size_t size = out->end - out->buf;
     long   pos  = out->cur - out->buf;
-    char * buf  = out->buf;
+    char  *buf  = out->buf;
 
     size *= 2;
     if (size <= len * 2 + pos) {
@@ -1009,10 +1009,10 @@ void oj_dump_false(VALUE obj, int depth, Out out, bool as_ok) {
 
 void oj_dump_fixnum(VALUE obj, int depth, Out out, bool as_ok) {
     char      buf[32];
-    char *    b              = buf + sizeof(buf) - 1;
+    char     *b              = buf + sizeof(buf) - 1;
     long long num            = rb_num2ll(obj);
     int       neg            = 0;
-    int       cnt            = 0;
+    size_t    cnt            = 0;
     bool      dump_as_string = false;
 
     if (out->opts->int_range_max != 0 && out->opts->int_range_min != 0 &&
@@ -1073,7 +1073,7 @@ void oj_dump_bignum(VALUE obj, int depth, Out out, bool as_ok) {
 // Removed dependencies on math due to problems with CentOS 5.4.
 void oj_dump_float(VALUE obj, int depth, Out out, bool as_ok) {
     char   buf[64];
-    char * b;
+    char  *b;
     double d   = rb_num2dbl(obj);
     int    cnt = 0;
 

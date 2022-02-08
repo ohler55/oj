@@ -6,8 +6,10 @@
 #include <stdlib.h>
 #include <strings.h>
 #include <sys/types.h>
+#ifdef NEEDS_UIO
 #if NEEDS_UIO
 #include <sys/uio.h>
+#endif
 #endif
 #include <time.h>
 #include <unistd.h>

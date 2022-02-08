@@ -11,8 +11,8 @@
 #define USE_THREAD_LIMIT 0
 // #define USE_THREAD_LIMIT 100000
 #define MAX_EXP 4932
-// max in the pow_map
-#define MAX_POW 400
+// max in the pow_map which is the limit for double
+#define MAX_POW 308
 
 #define MIN_SLEEP (1000000000LL / (double)CLOCKS_PER_SEC)
 // 9,223,372,036,854,775,807
@@ -385,7 +385,7 @@ static const byte hex_map[256] = "\
 ................................\
 ................................";
 
-static long double pow_map[401] = {
+static long double pow_map[309] = {
     1.0L,     1.0e1L,   1.0e2L,   1.0e3L,   1.0e4L,   1.0e5L,   1.0e6L,   1.0e7L,   1.0e8L,   1.0e9L,   1.0e10L,
     1.0e11L,  1.0e12L,  1.0e13L,  1.0e14L,  1.0e15L,  1.0e16L,  1.0e17L,  1.0e18L,  1.0e19L,  1.0e20L,  1.0e21L,
     1.0e22L,  1.0e23L,  1.0e24L,  1.0e25L,  1.0e26L,  1.0e27L,  1.0e28L,  1.0e29L,  1.0e30L,  1.0e31L,  1.0e32L,
@@ -414,15 +414,7 @@ static long double pow_map[401] = {
     1.0e275L, 1.0e276L, 1.0e277L, 1.0e278L, 1.0e279L, 1.0e280L, 1.0e281L, 1.0e282L, 1.0e283L, 1.0e284L, 1.0e285L,
     1.0e286L, 1.0e287L, 1.0e288L, 1.0e289L, 1.0e290L, 1.0e291L, 1.0e292L, 1.0e293L, 1.0e294L, 1.0e295L, 1.0e296L,
     1.0e297L, 1.0e298L, 1.0e299L, 1.0e300L, 1.0e301L, 1.0e302L, 1.0e303L, 1.0e304L, 1.0e305L, 1.0e306L, 1.0e307L,
-    1.0e308L, 1.0e309L, 1.0e310L, 1.0e311L, 1.0e312L, 1.0e313L, 1.0e314L, 1.0e315L, 1.0e316L, 1.0e317L, 1.0e318L,
-    1.0e319L, 1.0e320L, 1.0e321L, 1.0e322L, 1.0e323L, 1.0e324L, 1.0e325L, 1.0e326L, 1.0e327L, 1.0e328L, 1.0e329L,
-    1.0e330L, 1.0e331L, 1.0e332L, 1.0e333L, 1.0e334L, 1.0e335L, 1.0e336L, 1.0e337L, 1.0e338L, 1.0e339L, 1.0e340L,
-    1.0e341L, 1.0e342L, 1.0e343L, 1.0e344L, 1.0e345L, 1.0e346L, 1.0e347L, 1.0e348L, 1.0e349L, 1.0e350L, 1.0e351L,
-    1.0e352L, 1.0e353L, 1.0e354L, 1.0e355L, 1.0e356L, 1.0e357L, 1.0e358L, 1.0e359L, 1.0e360L, 1.0e361L, 1.0e362L,
-    1.0e363L, 1.0e364L, 1.0e365L, 1.0e366L, 1.0e367L, 1.0e368L, 1.0e369L, 1.0e370L, 1.0e371L, 1.0e372L, 1.0e373L,
-    1.0e374L, 1.0e375L, 1.0e376L, 1.0e377L, 1.0e378L, 1.0e379L, 1.0e380L, 1.0e381L, 1.0e382L, 1.0e383L, 1.0e384L,
-    1.0e385L, 1.0e386L, 1.0e387L, 1.0e388L, 1.0e389L, 1.0e390L, 1.0e391L, 1.0e392L, 1.0e393L, 1.0e394L, 1.0e395L,
-    1.0e396L, 1.0e397L, 1.0e398L, 1.0e399L, 1.0e400L};
+    1.0e308L};
 
 static VALUE parser_class;
 
@@ -1190,7 +1182,7 @@ static VALUE parser_new(int argc, VALUE *argv, VALUE self) {
     p->map = value_map;
 
     if (argc < 1) {
-	oj_set_parser_validator(p);
+        oj_set_parser_validator(p);
     } else {
         VALUE mode = argv[0];
 
@@ -1284,7 +1276,7 @@ static VALUE parser_new(int argc, VALUE *argv, VALUE self) {
  */
 static VALUE parser_missing(int argc, VALUE *argv, VALUE self) {
     ojParser       p    = (ojParser)DATA_PTR(self);
-    const char *   key  = NULL;
+    const char    *key  = NULL;
     volatile VALUE rkey = *argv;
     volatile VALUE rv   = Qnil;
 
