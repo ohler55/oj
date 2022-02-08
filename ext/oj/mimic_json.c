@@ -362,6 +362,9 @@ static VALUE mimic_generate_core(int argc, VALUE *argv, Options copts) {
     struct _out out;
     VALUE       rstr;
 
+    if (0 == argc) {
+        rb_raise(rb_eArgError, "wrong number of arguments (0))");
+    }
     memset(buf, 0, sizeof(buf));
 
     out.buf       = buf;
@@ -457,9 +460,12 @@ oj_mimic_pretty_generate(int argc, VALUE *argv, VALUE self) {
     // a Hash. I haven't dug deep enough to find out why but using a State
     // instance and not a Hash gives the desired behavior.
     *rargs = *argv;
+    if (0 == argc) {
+        rb_raise(rb_eArgError, "wrong number of arguments (0))");
+    }
     if (1 == argc) {
         h = rb_hash_new();
-    } else {
+    } else  {
         h = argv[1];
     }
     if (!oj_hash_has_key(h, oj_indent_sym)) {
