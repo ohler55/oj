@@ -15,7 +15,7 @@ static ID  rational_id;
 
 static void set_class(Odd odd, const char *classname) {
     const char **np;
-    ID *         idp;
+    ID          *idp;
 
     odd->classname = classname;
     odd->clen      = strlen(classname);
@@ -173,7 +173,7 @@ Odd oj_get_oddc(const char *classname, size_t len) {
 
 OddArgs oj_odd_alloc_args(Odd odd) {
     OddArgs oa = ALLOC_N(struct _oddArgs, 1);
-    VALUE * a;
+    VALUE  *a;
     int     i;
 
     oa->odd = odd;
@@ -189,7 +189,7 @@ void oj_odd_free(OddArgs args) {
 
 int oj_odd_set_arg(OddArgs args, const char *key, size_t klen, VALUE value) {
     const char **np;
-    VALUE *      vp;
+    VALUE       *vp;
     int          i;
 
     for (i = args->odd->attr_cnt, np = args->odd->attr_names, vp = args->args; 0 < i; i--, np++, vp++) {
@@ -204,7 +204,7 @@ int oj_odd_set_arg(OddArgs args, const char *key, size_t klen, VALUE value) {
 void oj_reg_odd(VALUE clas, VALUE create_object, VALUE create_method, int mcnt, VALUE *members, bool raw) {
     Odd          odd;
     const char **np;
-    ID *         ap;
+    ID          *ap;
     AttrGetFunc *fp;
 
     odd       = odd_create();
@@ -228,7 +228,12 @@ void oj_reg_odd(VALUE clas, VALUE create_object, VALUE create_method, int mcnt, 
                 rb_raise(rb_eNoMemError, "for attribute name.");
             }
             break;
-        case T_SYMBOL: *np = rb_id2name(SYM2ID(*members)); break;
+        case T_SYMBOL:
+            // The symbol can move and invalidate the name so make a copy.
+            if (NULL == (*np = strdup(rb_id2name(SYM2ID(*members))))) {
+                rb_raise(rb_eNoMemError, "for attribute name.");
+            }
+            break;
         default: rb_raise(rb_eArgError, "registered member identifiers must be Strings or Symbols."); break;
         }
         *ap = rb_intern(*np);
