@@ -14,7 +14,6 @@ static ID           to_f_id;
 static ID           numerator_id;
 static ID           denominator_id;
 static ID           rational_id;
-static VALUE        rational_class;
 
 static void set_class(Odd odd, const char *classname) {
     const char **np;
@@ -23,7 +22,9 @@ static void set_class(Odd odd, const char *classname) {
     odd->classname  = classname;
     odd->clen       = strlen(classname);
     odd->clas       = rb_const_get(rb_cObject, rb_intern(classname));
+    rb_gc_register_address(&odd->clas);
     odd->create_obj = odd->clas;
+    rb_gc_register_address(&odd->create_obj);
     odd->create_op  = rb_intern("new");
     odd->is_module  = (T_MODULE == rb_type(odd->clas));
     odd->raw        = 0;
@@ -55,7 +56,6 @@ void oj_odd_init() {
     numerator_id    = rb_intern("numerator");
     denominator_id  = rb_intern("denominator");
     rational_id     = rb_intern("Rational");
-    rational_class  = rb_const_get(rb_cObject, rational_id);
 
     memset(_odds, 0, sizeof(_odds));
     odd = odds;
@@ -183,15 +183,23 @@ void oj_reg_odd(VALUE  clas,
     ID *         ap;
     AttrGetFunc *fp;
 
+    for (odd = odds + odd_cnt - 1; odds <= odd; odd--) {
+	rb_gc_unregister_address(&odd->clas);
+	rb_gc_unregister_address(&odd->create_obj);
+    }
     if (_odds == odds) {
         odds = ALLOC_N(struct _odd, odd_cnt + 1);
-
         memcpy(odds, _odds, sizeof(struct _odd) * odd_cnt);
     } else {
         REALLOC_N(odds, struct _odd, odd_cnt + 1);
     }
+    for (odd = odds + odd_cnt - 1; odds <= odd; odd--) {
+	rb_gc_register_address(&odd->clas);
+	rb_gc_register_address(&odd->create_obj);
+    }
     odd       = odds + odd_cnt;
     odd->clas = clas;
+    rb_gc_register_address(&odd->clas);
     if (NULL == (odd->classname = strdup(rb_class2name(clas)))) {
         rb_raise(rb_eNoMemError, "for attribute name.");
     }
