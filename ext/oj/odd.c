@@ -20,9 +20,9 @@ static void set_class(Odd odd, const char *classname) {
     odd->classname = classname;
     odd->clen      = strlen(classname);
     odd->clas      = rb_const_get(rb_cObject, rb_intern(classname));
-    rb_gc_register_address(&odd->clas);
+    rb_gc_register_mark_object(odd->clas);
     odd->create_obj = odd->clas;
-    rb_gc_register_address(&odd->create_obj);
+    rb_gc_register_mark_object(odd->create_obj);
     odd->create_op = rb_intern("new");
     odd->is_module = (T_MODULE == rb_type(odd->clas));
     odd->raw       = 0;
@@ -50,7 +50,7 @@ static void print_odd(Odd odd) {
 
     printf("  %s {\n", odd->classname);
     printf("    attr_cnt: %d %p\n", odd->attr_cnt, (void *)odd->attr_names);
-    printf("    attr_names: %p\n", (void*)*odd->attr_names);
+    printf("    attr_names: %p\n", (void *)*odd->attr_names);
     printf("    attr_names: %c\n", **odd->attr_names);
     for (i = odd->attr_cnt, np = odd->attr_names; 0 < i; i--, np++) {
         printf("    %d %s\n", i, *np);
@@ -67,6 +67,16 @@ void print_all_odds(const char *label) {
     printf("}\n");
 }
 
+static Odd odd_create(void) {
+    Odd odd = ALLOC(struct _odd);
+
+    memset(odd, 0, sizeof(struct _odd));
+    odd->next = odds;
+    odds      = odd;
+
+    return odd;
+}
+
 void oj_odd_init(void) {
     Odd          odd;
     const char **np;
@@ -79,62 +89,50 @@ void oj_odd_init(void) {
     rational_id     = rb_intern("Rational");
 
     // Rational
-    odd = ALLOC(struct _odd);
-    memset(odd, 0, sizeof(struct _odd));
-    odd->next = odds;
-    odds      = odd;
-    np        = odd->attr_names;
-    *np++     = "numerator";
-    *np++     = "denominator";
-    *np       = 0;
+    odd   = odd_create();
+    np    = odd->attr_names;
+    *np++ = "numerator";
+    *np++ = "denominator";
+    *np   = 0;
     set_class(odd, "Rational");
     odd->create_obj = rb_cObject;
     odd->create_op  = rational_id;
     odd->attr_cnt   = 2;
 
     // Date
-    odd = ALLOC(struct _odd);
-    memset(odd, 0, sizeof(struct _odd));
-    odd->next = odds;
-    odds      = odd;
-    np        = odd->attr_names;
-    *np++     = "year";
-    *np++     = "month";
-    *np++     = "day";
-    *np++     = "start";
-    *np++     = 0;
+    odd   = odd_create();
+    np    = odd->attr_names;
+    *np++ = "year";
+    *np++ = "month";
+    *np++ = "day";
+    *np++ = "start";
+    *np++ = 0;
     set_class(odd, "Date");
     odd->attr_cnt = 4;
 
     // DateTime
-    odd = ALLOC(struct _odd);
-    memset(odd, 0, sizeof(struct _odd));
-    odd->next = odds;
-    odds      = odd;
-    np        = odd->attr_names;
-    *np++     = "year";
-    *np++     = "month";
-    *np++     = "day";
-    *np++     = "hour";
-    *np++     = "min";
-    *np++     = "sec";
-    *np++     = "offset";
-    *np++     = "start";
-    *np++     = 0;
+    odd   = odd_create();
+    np    = odd->attr_names;
+    *np++ = "year";
+    *np++ = "month";
+    *np++ = "day";
+    *np++ = "hour";
+    *np++ = "min";
+    *np++ = "sec";
+    *np++ = "offset";
+    *np++ = "start";
+    *np++ = 0;
     set_class(odd, "DateTime");
     odd->attr_cnt     = 8;
     odd->attrFuncs[5] = get_datetime_secs;
 
     // Range
-    odd = ALLOC(struct _odd);
-    memset(odd, 0, sizeof(struct _odd));
-    odd->next = odds;
-    odds      = odd;
-    np        = odd->attr_names;
-    *np++     = "begin";
-    *np++     = "end";
-    *np++     = "exclude_end?";
-    *np++     = 0;
+    odd   = odd_create();
+    np    = odd->attr_names;
+    *np++ = "begin";
+    *np++ = "end";
+    *np++ = "exclude_end?";
+    *np++ = 0;
     set_class(odd, "Range");
     odd->attr_cnt = 3;
 }
@@ -209,22 +207,19 @@ void oj_reg_odd(VALUE clas, VALUE create_object, VALUE create_method, int mcnt, 
     ID *         ap;
     AttrGetFunc *fp;
 
-    odd = ALLOC(struct _odd);
-    memset(odd, 0, sizeof(struct _odd));
-    odd->next = odds;
-    odds      = odd;
+    odd       = odd_create();
     odd->clas = clas;
-    rb_gc_register_address(&odd->clas);
+    rb_gc_register_mark_object(odd->clas);
     if (NULL == (odd->classname = strdup(rb_class2name(clas)))) {
         rb_raise(rb_eNoMemError, "for class name.");
     }
     odd->clen       = strlen(odd->classname);
     odd->create_obj = create_object;
-    rb_gc_register_address(&odd->create_obj);
-    odd->create_op  = SYM2ID(create_method);
-    odd->attr_cnt   = mcnt;
-    odd->is_module  = (T_MODULE == rb_type(clas));
-    odd->raw        = raw;
+    rb_gc_register_mark_object(odd->create_obj);
+    odd->create_op = SYM2ID(create_method);
+    odd->attr_cnt  = mcnt;
+    odd->is_module = (T_MODULE == rb_type(clas));
+    odd->raw       = raw;
     for (ap = odd->attrs, np = odd->attr_names, fp = odd->attrFuncs; 0 < mcnt; mcnt--, ap++, np++, members++, fp++) {
         *fp = 0;
         switch (rb_type(*members)) {

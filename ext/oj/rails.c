@@ -1175,7 +1175,7 @@ oj_optimize_rails(VALUE self) {
  *
  * The Oj ActiveSupport compliant encoder.
  */
-void oj_mimic_rails_init() {
+void oj_mimic_rails_init(void) {
     VALUE rails = rb_define_module_under(Oj, "Rails");
 
     rb_define_module_function(rails, "encode", rails_encode, -1);

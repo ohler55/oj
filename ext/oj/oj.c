@@ -1705,9 +1705,10 @@ static VALUE protect_require(VALUE x) {
 }
 
 extern void print_all_odds(const char *label);
+
 static VALUE
-debug_odd(VALUE self) {
-    print_all_odds("");
+debug_odd(VALUE self, VALUE label) {
+    print_all_odds(RSTRING_PTR(label));
     return Qnil;
 }
 
@@ -1763,7 +1764,7 @@ void Init_oj(void) {
     oj_utf8_encoding = rb_enc_from_index(oj_utf8_encoding_index);
 
     // rb_define_module_function(Oj, "hash_test", hash_test, 0);
-    rb_define_module_function(Oj, "debug_odd", debug_odd, 0);
+    rb_define_module_function(Oj, "debug_odd", debug_odd, 1);
 
     rb_define_module_function(Oj, "default_options", get_def_opts, 0);
     rb_define_module_function(Oj, "default_options=", set_def_opts, 1);
