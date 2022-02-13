@@ -1752,6 +1752,7 @@ void Init_oj(void) {
 
     oj_cstack_class = rb_define_class_under(Oj, "CStack", rb_cObject);
     rb_gc_register_address(&oj_cstack_class);
+    rb_undef_alloc_func(oj_cstack_class);
 
     oj_string_writer_init();
     oj_stream_writer_init();

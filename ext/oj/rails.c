@@ -1181,6 +1181,9 @@ void oj_mimic_rails_init(void) {
     rb_define_module_function(rails, "encode", rails_encode, -1);
 
     encoder_class = rb_define_class_under(rails, "Encoder", rb_cObject);
+    rb_gc_register_address(&encoder_class);
+    rb_undef_alloc_func(encoder_class);
+
     rb_define_module_function(encoder_class, "new", encoder_new, -1);
     rb_define_module_function(rails, "optimize", rails_optimize, -1);
     rb_define_module_function(rails, "deoptimize", rails_deoptimize, -1);
