@@ -221,9 +221,15 @@ class ObjectJuice < Minitest::Test
 
   def teardown
     Oj.default_options = @default_options
-    if '3.1.0' < RUBY_VERSION
+=begin
+    print "teardown before verify "
+    Oj::debug_odd
+    if '3.1.0' <= RUBY_VERSION
       GC.verify_compaction_references(double_heap: true, toward: :empty)
     end
+    print "teardown after verify "
+    Oj::debug_odd
+=end
   end
 
   def test_nil

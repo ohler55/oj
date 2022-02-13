@@ -1717,7 +1717,7 @@ static VALUE doc_not_implemented(VALUE self) {
  *   # Now try again using a path to Oj::Doc.fetch() directly and not using a
  * block. doc = Oj::Doc.open(json) doc.fetch('/2/three')  #=> 3 doc.close()
  */
-void oj_init_doc() {
+void oj_init_doc(void) {
     oj_doc_class = rb_define_class_under(Oj, "Doc", rb_cObject);
     rb_define_singleton_method(oj_doc_class, "open", doc_open, 1);
     rb_define_singleton_method(oj_doc_class, "open_file", doc_open_file, 1);

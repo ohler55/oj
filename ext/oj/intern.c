@@ -86,7 +86,7 @@ static VALUE form_attr(const char *str, size_t len) {
     return (VALUE)rb_intern3(buf, len + 1, oj_utf8_encoding);
 }
 
-void oj_hash_init() {
+void oj_hash_init(void) {
     VALUE cache_class = rb_define_class_under(Oj, "Cache", rb_cObject);
 
     str_cache     = cache_create(0, form_str, true, true);
@@ -288,8 +288,10 @@ char *oj_strndup(const char *s, size_t len) {
     return d;
 }
 
-void intern_cleanup() {
+/*
+void intern_cleanup(void) {
     cache_free(str_cache);
     cache_free(sym_cache);
     cache_free(attr_cache);
 }
+*/

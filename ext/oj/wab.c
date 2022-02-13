@@ -35,7 +35,7 @@ static VALUE uri_http_clas = Qundef;
 
 ///// dump functions /////
 
-static VALUE resolve_wab_uuid_class() {
+static VALUE resolve_wab_uuid_class(void) {
     if (Qundef == wab_uuid_clas) {
         volatile VALUE wab_module;
 
@@ -50,7 +50,7 @@ static VALUE resolve_wab_uuid_class() {
     return wab_uuid_clas;
 }
 
-static VALUE resolve_uri_class() {
+static VALUE resolve_uri_class(void) {
     if (Qundef == uri_clas) {
         uri_clas = Qnil;
         if (rb_const_defined_at(rb_cObject, rb_intern("URI"))) {
@@ -60,7 +60,7 @@ static VALUE resolve_uri_class() {
     return uri_clas;
 }
 
-static VALUE resolve_uri_http_class() {
+static VALUE resolve_uri_http_class(void) {
     if (Qundef == uri_http_clas) {
         volatile VALUE uri_module;
 

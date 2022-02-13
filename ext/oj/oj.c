@@ -1704,6 +1704,14 @@ static VALUE protect_require(VALUE x) {
     return Qnil;
 }
 
+extern void print_all_odds(const char *label);
+static VALUE
+debug_odd(VALUE self) {
+    print_all_odds("");
+    return Qnil;
+}
+
+
 /* Document-module: Oj
  *
  * Optimized JSON (Oj), as the name implies was written to provide speed
@@ -1732,7 +1740,7 @@ static VALUE protect_require(VALUE x) {
  *
  * - *:wab* specifically for WAB data exchange.
  */
-void Init_oj() {
+void Init_oj(void) {
     int err = 0;
 
 #if HAVE_RB_EXT_RACTOR_SAFE
@@ -1755,6 +1763,7 @@ void Init_oj() {
     oj_utf8_encoding = rb_enc_from_index(oj_utf8_encoding_index);
 
     // rb_define_module_function(Oj, "hash_test", hash_test, 0);
+    rb_define_module_function(Oj, "debug_odd", debug_odd, 0);
 
     rb_define_module_function(Oj, "default_options", get_def_opts, 0);
     rb_define_module_function(Oj, "default_options=", set_def_opts, 1);
