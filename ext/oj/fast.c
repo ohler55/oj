@@ -1720,7 +1720,7 @@ static VALUE doc_not_implemented(VALUE self) {
 void oj_init_doc(void) {
     oj_doc_class = rb_define_class_under(Oj, "Doc", rb_cObject);
     rb_gc_register_address(&oj_doc_class);
-    rb_undef_alloc_func(oj_doc_class);
+    // rb_undef_alloc_func(oj_doc_class);
 
     rb_define_singleton_method(oj_doc_class, "open", doc_open, 1);
     rb_define_singleton_method(oj_doc_class, "open_file", doc_open_file, 1);
