@@ -222,7 +222,7 @@ class ObjectJuice < Minitest::Test
   def teardown
     Oj.default_options = @default_options
 #=begin
-    if '3.1.0' <= RUBY_VERSION && not (RbConfig::CONFIG['host_os'] =~ /(mingw|mswin)/)
+    if '3.1.0' <= RUBY_VERSION && !(RbConfig::CONFIG['host_os'] =~ /(mingw|mswin)/)
       puts "host OS: #{RbConfig::CONFIG['host_os']}"
       Oj::debug_odd("teardown before GC.verify_compaction_references")
       GC.verify_compaction_references(double_heap: true, toward: :empty)
