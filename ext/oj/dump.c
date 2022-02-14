@@ -635,6 +635,7 @@ void oj_write_obj_to_file(VALUE obj, const char *path, Options copts) {
     }
 }
 
+#if !IS_WINDOWS
 static void write_ready(int fd) {
     struct pollfd pp;
     int           i;
@@ -649,6 +650,7 @@ static void write_ready(int fd) {
         rb_raise(rb_eIOError, "write failed. %d %s.", errno, strerror(errno));
     }
 }
+#endif
 
 void oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
     char        buf[4096];
