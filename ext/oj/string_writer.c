@@ -469,8 +469,11 @@ static VALUE str_writer_as_json(VALUE self) {
  * calling to_s() will return the JSON document. Note that calling to_s() before
  * construction is complete will return the document in it's current state.
  */
-void oj_string_writer_init() {
+void oj_string_writer_init(void) {
     oj_string_writer_class = rb_define_class_under(Oj, "StringWriter", rb_cObject);
+    rb_gc_register_address(&oj_string_writer_class);
+    rb_undef_alloc_func(oj_string_writer_class);
+
     rb_define_module_function(oj_string_writer_class, "new", str_writer_new, -1);
     rb_define_method(oj_string_writer_class, "push_key", str_writer_push_key, 1);
     rb_define_method(oj_string_writer_class, "push_object", str_writer_push_object, -1);

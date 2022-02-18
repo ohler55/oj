@@ -275,8 +275,8 @@ extern void oj_str_writer_pop(StrWriter sw);
 extern void oj_str_writer_pop_all(StrWriter sw);
 
 extern void  oj_init_doc(void);
-extern void  oj_string_writer_init();
-extern void  oj_stream_writer_init();
+extern void  oj_string_writer_init(void);
+extern void  oj_stream_writer_init(void);
 extern void  oj_str_writer_init(StrWriter sw, int buf_size);
 extern VALUE oj_define_mimic_json(int argc, VALUE *argv, VALUE self);
 extern VALUE oj_mimic_generate(int argc, VALUE *argv, VALUE self);

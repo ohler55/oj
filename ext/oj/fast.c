@@ -771,7 +771,7 @@ static VALUE parse_json(VALUE clas, char *json, bool given, bool allocated) {
     pi.doc = doc;
 #if IS_WINDOWS
     // assume a 1M stack and give half to ruby
-    pi.stack_min = (void *)((char *)&pi - (512 * 1024));
+    pi.stack_min = (void *)((char *)&pi - (512L * 1024L));
 #else
     {
         struct rlimit lim;
@@ -1717,8 +1717,11 @@ static VALUE doc_not_implemented(VALUE self) {
  *   # Now try again using a path to Oj::Doc.fetch() directly and not using a
  * block. doc = Oj::Doc.open(json) doc.fetch('/2/three')  #=> 3 doc.close()
  */
-void oj_init_doc() {
+void oj_init_doc(void) {
     oj_doc_class = rb_define_class_under(Oj, "Doc", rb_cObject);
+    rb_gc_register_address(&oj_doc_class);
+    rb_undef_alloc_func(oj_doc_class);
+
     rb_define_singleton_method(oj_doc_class, "open", doc_open, 1);
     rb_define_singleton_method(oj_doc_class, "open_file", doc_open_file, 1);
     rb_define_singleton_method(oj_doc_class, "parse", doc_open, 1);

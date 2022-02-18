@@ -1704,6 +1704,15 @@ static VALUE protect_require(VALUE x) {
     return Qnil;
 }
 
+extern void print_all_odds(const char *label);
+
+static VALUE
+debug_odd(VALUE self, VALUE label) {
+    print_all_odds(RSTRING_PTR(label));
+    return Qnil;
+}
+
+
 /* Document-module: Oj
  *
  * Optimized JSON (Oj), as the name implies was written to provide speed
@@ -1732,15 +1741,18 @@ static VALUE protect_require(VALUE x) {
  *
  * - *:wab* specifically for WAB data exchange.
  */
-void Init_oj() {
+void Init_oj(void) {
     int err = 0;
 
 #if HAVE_RB_EXT_RACTOR_SAFE
     rb_ext_ractor_safe(true);
 #endif
     Oj = rb_define_module("Oj");
+    rb_gc_register_address(&Oj);
 
     oj_cstack_class = rb_define_class_under(Oj, "CStack", rb_cObject);
+    rb_gc_register_address(&oj_cstack_class);
+    rb_undef_alloc_func(oj_cstack_class);
 
     oj_string_writer_init();
     oj_stream_writer_init();
@@ -1753,6 +1765,7 @@ void Init_oj() {
     oj_utf8_encoding = rb_enc_from_index(oj_utf8_encoding_index);
 
     // rb_define_module_function(Oj, "hash_test", hash_test, 0);
+    rb_define_module_function(Oj, "debug_odd", debug_odd, 1);
 
     rb_define_module_function(Oj, "default_options", get_def_opts, 0);
     rb_define_module_function(Oj, "default_options=", set_def_opts, 1);

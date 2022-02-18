@@ -446,7 +446,7 @@ static void dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
             assure_size(out, size);
             name = rb_id2name(*idp);
             nlen = strlen(name);
-            if (0 != *fp) {
+            if (NULL != *fp) {
                 v = (*fp)(obj);
             } else if (0 == strchr(name, '.')) {
                 v = rb_funcall(obj, *idp, 0);

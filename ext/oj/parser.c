@@ -1507,8 +1507,11 @@ static VALUE parser_validate(VALUE self) {
  * isolates options to just the parser so that other parts of the code are not
  * forced to use the same options.
  */
-void oj_parser_init() {
+void oj_parser_init(void) {
     parser_class = rb_define_class_under(Oj, "Parser", rb_cObject);
+    rb_gc_register_address(&parser_class);
+    rb_undef_alloc_func(parser_class);
+
     rb_define_module_function(parser_class, "new", parser_new, -1);
     rb_define_method(parser_class, "parse", parser_parse, 1);
     rb_define_method(parser_class, "load", parser_load, 1);
