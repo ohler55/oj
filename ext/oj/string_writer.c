@@ -449,7 +449,7 @@ static VALUE str_writer_to_s(VALUE self) {
  * Returns the contents of the writer as a JSON element. If called from inside
  * an array or hash by Oj the raw buffer will be used othersize a more
  * inefficient parse of the contents and a return of the result is
- * completed. The parse uses the trict mode.
+ * completed. The parse uses the strict mode.
  *
  * *return* [_Hash_|_Array_|_String_|_Integer_|_Float_|_True_|_False_|_nil|)
  */
