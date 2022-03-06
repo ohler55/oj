@@ -62,9 +62,8 @@ inline static void fill_indent(Out out, int cnt) {
     if (0 < out->indent) {
         cnt *= out->indent;
         *out->cur++ = '\n';
-        for (; 0 < cnt; cnt--) {
-            *out->cur++ = ' ';
-        }
+        memset(out->cur, ' ', cnt);
+        out->cur += cnt;
     }
 }
 
