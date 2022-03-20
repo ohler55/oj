@@ -96,8 +96,7 @@ inline static void dump_ulong(unsigned long num, Out out) {
         *b = '0';
     }
     cnt = sizeof(buf) - (b - buf) - 1;
-    memcpy(out->cur, b, cnt);
-    out->cur += cnt;
+    APPEND_CHARS(out->cur, b, cnt);
     *out->cur = '\0';
 }
 
