@@ -336,9 +336,8 @@ exception_alt(VALUE obj, int depth, Out out) {
     assure_size(out, size + sep_len + 6);
     *out->cur++ = ',';
     fill_indent(out, d3);
-    *out->cur++ = '"';
-    *out->cur++ = 'm';
-    *out->cur++ = '"';
+    memcpy(out->cur, "\"m\"", 3);
+    out->cur += 3;
     if (0 < out->opts->dump_opts.before_size) {
 	strcpy(out->cur, out->opts->dump_opts.before_sep);
 	out->cur += out->opts->dump_opts.before_size;
@@ -352,9 +351,8 @@ exception_alt(VALUE obj, int depth, Out out) {
     assure_size(out, size + sep_len + 6);
     *out->cur++ = ',';
     fill_indent(out, d3);
-    *out->cur++ = '"';
-    *out->cur++ = 'b';
-    *out->cur++ = '"';
+    memcpy(out->cur, "\"b\"", 3);
+    out->cur += 3;
     if (0 < out->opts->dump_opts.before_size) {
 	strcpy(out->cur, out->opts->dump_opts.before_sep);
 	out->cur += out->opts->dump_opts.before_size;
@@ -398,9 +396,8 @@ range_alt(VALUE obj, int depth, Out out) {
     assure_size(out, size + sep_len + 6);
     *out->cur++ = ',';
     fill_indent(out, d3);
-    *out->cur++ = '"';
-    *out->cur++ = 'a';
-    *out->cur++ = '"';
+    memcpy(out->cur, "\"a\"", 3);
+    out->cur += 3;
     if (0 < out->opts->dump_opts.before_size) {
 	strcpy(out->cur, out->opts->dump_opts.before_sep);
 	out->cur += out->opts->dump_opts.before_size;
@@ -721,8 +718,8 @@ dump_hash(VALUE obj, int depth, Out out, bool as_ok) {
     cnt = (int)RHASH_SIZE(obj);
     assure_size(out, 2);
     if (0 == cnt) {
-	*out->cur++ = '{';
-	*out->cur++ = '}';
+	memcpy(out->cur, "{}", 2);
+	out->cur += 2;
     } else {
 	*out->cur++ = '{';
 	out->depth = depth + 1;
@@ -788,8 +785,8 @@ dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
 	*out->cur++ = '"';
 	oj_dump_compat_val(rb_funcall(obj, oj_begin_id, 0), 0, out, false);
 	assure_size(out, 3);
-	*out->cur++ = '.';
-	*out->cur++ = '.';
+	memcpy(out->cur, "..", 2);
+	out->cur += 2;
 	if (Qtrue == rb_funcall(obj, oj_exclude_end_id, 0)) {
 	    *out->cur++ = '.';
 	}
@@ -835,9 +832,8 @@ dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
 	assure_size(out, size + sep_len + 6);
 	*out->cur++ = ',';
 	fill_indent(out, d3);
-	*out->cur++ = '"';
-	*out->cur++ = 'v';
-	*out->cur++ = '"';
+	memcpy(out->cur, "\"v\"", 3);
+	out->cur += 3;
 	if (0 < out->opts->dump_opts.before_size) {
 	    strcpy(out->cur, out->opts->dump_opts.before_sep);
 	    out->cur += out->opts->dump_opts.before_size;

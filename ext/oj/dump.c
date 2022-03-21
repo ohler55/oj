@@ -291,14 +291,14 @@ static const char *dump_unicode(const char *str, const char *end, Out out, const
         code -= 0x00010000;
         c1          = ((code >> 10) & 0x000003FF) + 0x0000D800;
         code        = (code & 0x000003FF) + 0x0000DC00;
-        *out->cur++ = '\\';
-        *out->cur++ = 'u';
+        memcpy(out->cur, "\\u", 2);
+        out->cur += 2;
         for (i = 3; 0 <= i; i--) {
             *out->cur++ = hex_chars[(uint8_t)(c1 >> (i * 4)) & 0x0F];
         }
     }
-    *out->cur++ = '\\';
-    *out->cur++ = 'u';
+    memcpy(out->cur, "\\u", 2);
+    out->cur += 2;
     for (i = 3; 0 <= i; i--) {
         *out->cur++ = hex_chars[(uint8_t)(code >> (i * 4)) & 0x0F];
     }
@@ -347,9 +347,8 @@ long oj_check_circular(VALUE obj, Out out) {
         } else {
             if (ObjectMode == out->opts->mode) {
                 assure_size(out, 18);
-                *out->cur++ = '"';
-                *out->cur++ = '^';
-                *out->cur++ = 'r';
+                memcpy(out->cur, "\"^r", 3);
+                out->cur += 3;
                 dump_ulong(id, out);
                 *out->cur++ = '"';
             }
@@ -806,10 +805,8 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
     *out->cur++ = '"';
 
     if (escape1) {
-        *out->cur++ = '\\';
-        *out->cur++ = 'u';
-        *out->cur++ = '0';
-        *out->cur++ = '0';
+        memcpy(out->cur, "\\u00", 4);
+        out->cur += 4;
         dump_hex((uint8_t)*str, out);
         cnt--;
         size--;
@@ -871,10 +868,8 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
                 break;
             case '6':  // control characters
                 if (*(uint8_t *)str < 0x80) {
-                    *out->cur++ = '\\';
-                    *out->cur++ = 'u';
-                    *out->cur++ = '0';
-                    *out->cur++ = '0';
+                    memcpy(out->cur, "\\u00", 4);
+                    out->cur += 4;
                     dump_hex((uint8_t)*str, out);
                 } else {
                     if (0xe2 == (uint8_t)*str &&

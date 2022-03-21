@@ -344,8 +344,8 @@ static void dump_hash(VALUE obj, int depth, Out out, bool as_ok) {
     cnt = (int)RHASH_SIZE(obj);
     assure_size(out, 2);
     if (0 == cnt) {
-        *out->cur++ = '{';
-        *out->cur++ = '}';
+        memcpy(out->cur, "{}", 2);
+        out->cur += 2;
     } else {
         *out->cur++ = '{';
         out->depth  = depth + 1;
@@ -412,8 +412,8 @@ static void dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
         *out->cur++ = '"';
         memcpy(out->cur, classname, clen);
         out->cur += clen;
-        *out->cur++ = '"';
-        *out->cur++ = ',';
+        memcpy(out->cur, "\",", 2);
+        out->cur += 2;
     }
     if (odd->raw) {
         v = rb_funcall(obj, *odd->attrs, 0);
@@ -431,8 +431,8 @@ static void dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
             *out->cur++ = '"';
             memcpy(out->cur, name, nlen);
             out->cur += nlen;
-            *out->cur++ = '"';
-            *out->cur++ = ':';
+            memcpy(out->cur, "\":", 2);
+            out->cur += 2;
             memcpy(out->cur, s, len);
             out->cur += len;
             *out->cur = '\0';
@@ -800,8 +800,8 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
             *out->cur++ = '"';
             oj_dump_custom_val(rb_funcall(obj, oj_begin_id, 0), d3, out, false);
             assure_size(out, 3);
-            *out->cur++ = '.';
-            *out->cur++ = '.';
+            memcpy(out->cur, "..", 2);
+            out->cur += 2;
             if (Qtrue == rb_funcall(obj, oj_exclude_end_id, 0)) {
                 *out->cur++ = '.';
             }
@@ -846,8 +846,8 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
             *out->cur++ = '"';
             memcpy(out->cur, name, len);
             out->cur += len;
-            *out->cur++ = '"';
-            *out->cur++ = ':';
+            memcpy(out->cur, "\":", 2);
+            out->cur += 2;
             oj_dump_custom_val(v, d3, out, true);
             *out->cur++ = ',';
         }

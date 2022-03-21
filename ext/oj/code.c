@@ -190,10 +190,11 @@ void oj_code_attrs(VALUE obj, Attr attrs, int depth, Out out, bool with_class) {
                 default: oj_dump_time(attrs->time, out, false); break;
                 }
             } else {
-                char  buf[32];
-                char *b   = buf + sizeof(buf) - 1;
-                int   neg = 0;
-                long  num = attrs->num;
+                char   buf[32];
+                char  *b   = buf + sizeof(buf) - 1;
+                int    neg = 0;
+                long   num = attrs->num;
+                size_t cnt = 0;
 
                 if (0 > num) {
                     neg = 1;
@@ -212,10 +213,10 @@ void oj_code_attrs(VALUE obj, Attr attrs, int depth, Out out, bool with_class) {
                 } else {
                     *b = '0';
                 }
-                assure_size(out, (sizeof(buf) - (b - buf)));
-                for (; '\0' != *b; b++) {
-                    *out->cur++ = *b;
-                }
+                cnt = sizeof(buf) - (b - buf) - 1;
+                assure_size(out, cnt);
+                memcpy(out->cur, b, cnt);
+                out->cur += cnt;
             }
         } else {
             oj_dump_compat_val(attrs->value, d3, out, true);
