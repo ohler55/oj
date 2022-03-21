@@ -140,21 +140,17 @@ void oj_code_attrs(VALUE obj, Attr attrs, int depth, Out out, bool with_class) {
     if (with_class) {
         fill_indent(out, d2);
         *out->cur++ = '"';
-        memcpy(out->cur, out->opts->create_id, out->opts->create_id_len);
-        out->cur += out->opts->create_id_len;
+        APPEND_CHARS(out->cur, out->opts->create_id, out->opts->create_id_len);
         *out->cur++ = '"';
         if (0 < out->opts->dump_opts.before_size) {
-            strcpy(out->cur, out->opts->dump_opts.before_sep);
-            out->cur += out->opts->dump_opts.before_size;
+            APPEND_CHARS(out->cur, out->opts->dump_opts.before_sep, out->opts->dump_opts.before_size);
         }
         *out->cur++ = ':';
         if (0 < out->opts->dump_opts.after_size) {
-            strcpy(out->cur, out->opts->dump_opts.after_sep);
-            out->cur += out->opts->dump_opts.after_size;
+            APPEND_CHARS(out->cur, out->opts->dump_opts.after_sep, out->opts->dump_opts.after_size);
         }
         *out->cur++ = '"';
-        memcpy(out->cur, classname, len);
-        out->cur += len;
+        APPEND_CHARS(out->cur, classname, len);
         *out->cur++ = '"';
         no_comma    = false;
     }
@@ -168,17 +164,14 @@ void oj_code_attrs(VALUE obj, Attr attrs, int depth, Out out, bool with_class) {
         }
         fill_indent(out, d2);
         *out->cur++ = '"';
-        memcpy(out->cur, attrs->name, attrs->len);
-        out->cur += attrs->len;
+        APPEND_CHARS(out->cur, attrs->name, attrs->len);
         *out->cur++ = '"';
         if (0 < out->opts->dump_opts.before_size) {
-            strcpy(out->cur, out->opts->dump_opts.before_sep);
-            out->cur += out->opts->dump_opts.before_size;
+            APPEND_CHARS(out->cur, out->opts->dump_opts.before_sep, out->opts->dump_opts.before_size);
         }
         *out->cur++ = ':';
         if (0 < out->opts->dump_opts.after_size) {
-            strcpy(out->cur, out->opts->dump_opts.after_sep);
-            out->cur += out->opts->dump_opts.after_size;
+            APPEND_CHARS(out->cur, out->opts->dump_opts.after_sep, out->opts->dump_opts.after_size);
         }
         if (Qundef == attrs->value) {
             if (Qundef != attrs->time) {
@@ -190,10 +183,11 @@ void oj_code_attrs(VALUE obj, Attr attrs, int depth, Out out, bool with_class) {
                 default: oj_dump_time(attrs->time, out, false); break;
                 }
             } else {
-                char  buf[32];
-                char *b   = buf + sizeof(buf) - 1;
-                int   neg = 0;
-                long  num = attrs->num;
+                char   buf[32];
+                char  *b   = buf + sizeof(buf) - 1;
+                int    neg = 0;
+                long   num = attrs->num;
+                size_t cnt = 0;
 
                 if (0 > num) {
                     neg = 1;
@@ -212,10 +206,9 @@ void oj_code_attrs(VALUE obj, Attr attrs, int depth, Out out, bool with_class) {
                 } else {
                     *b = '0';
                 }
-                assure_size(out, (sizeof(buf) - (b - buf)));
-                for (; '\0' != *b; b++) {
-                    *out->cur++ = *b;
-                }
+                cnt = sizeof(buf) - (b - buf) - 1;
+                assure_size(out, cnt);
+                APPEND_CHARS(out->cur, b, cnt);
             }
         } else {
             oj_dump_compat_val(attrs->value, d3, out, true);

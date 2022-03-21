@@ -36,8 +36,7 @@ inline static void dump_chars(const char *s, size_t size, Out out) {
     if (out->end - out->cur <= (long)size) {
         grow(out, size);
     }
-    memcpy(out->cur, s, size);
-    out->cur += size;
+    APPEND_CHARS(out->cur, s, size);
     *out->cur = '\0';
 }
 

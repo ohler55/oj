@@ -167,17 +167,14 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
         }
         fill_indent(out, d3);
         *out->cur++ = '"';
-        memcpy(out->cur, name, len);
-        out->cur += len;
+        APPEND_CHARS(out->cur, name, len);
         *out->cur++ = '"';
         if (0 < out->opts->dump_opts.before_size) {
-            strcpy(out->cur, out->opts->dump_opts.before_sep);
-            out->cur += out->opts->dump_opts.before_size;
+            APPEND_CHARS(out->cur, out->opts->dump_opts.before_sep, out->opts->dump_opts.before_size);
         }
         *out->cur++ = ':';
         if (0 < out->opts->dump_opts.after_size) {
-            strcpy(out->cur, out->opts->dump_opts.after_sep);
-            out->cur += out->opts->dump_opts.after_size;
+            APPEND_CHARS(out->cur, out->opts->dump_opts.after_sep, out->opts->dump_opts.after_size);
         }
 #ifdef RSTRUCT_LEN
         v = RSTRUCT_GET(obj, i);
@@ -405,14 +402,12 @@ static void dump_row(VALUE row, StrLen cols, int ccnt, int depth, Out out) {
         assure_size(out, size);
         if (out->opts->dump_opts.use) {
             if (0 < out->opts->dump_opts.array_size) {
-                strcpy(out->cur, out->opts->dump_opts.array_nl);
-                out->cur += out->opts->dump_opts.array_size;
+                APPEND_CHARS(out->cur, out->opts->dump_opts.array_nl, out->opts->dump_opts.array_size);
             }
             if (0 < out->opts->dump_opts.indent_size) {
                 int i;
                 for (i = d2; 0 < i; i--) {
-                    strcpy(out->cur, out->opts->dump_opts.indent_str);
-                    out->cur += out->opts->dump_opts.indent_size;
+                    APPEND_CHARS(out->cur, out->opts->dump_opts.indent_str, out->opts->dump_opts.indent_size);
                 }
             }
         } else {
@@ -429,15 +424,13 @@ static void dump_row(VALUE row, StrLen cols, int ccnt, int depth, Out out) {
     assure_size(out, size);
     if (out->opts->dump_opts.use) {
         if (0 < out->opts->dump_opts.array_size) {
-            strcpy(out->cur, out->opts->dump_opts.array_nl);
-            out->cur += out->opts->dump_opts.array_size;
+            APPEND_CHARS(out->cur, out->opts->dump_opts.array_nl, out->opts->dump_opts.array_size);
         }
         if (0 < out->opts->dump_opts.indent_size) {
             int i;
 
             for (i = depth; 0 < i; i--) {
-                strcpy(out->cur, out->opts->dump_opts.indent_str);
-                out->cur += out->opts->dump_opts.indent_size;
+                APPEND_CHARS(out->cur, out->opts->dump_opts.indent_str, out->opts->dump_opts.indent_size);
             }
         }
     } else {
@@ -477,14 +470,12 @@ static void dump_activerecord_result(VALUE obj, int depth, Out out, bool as_ok) 
         assure_size(out, size);
         if (out->opts->dump_opts.use) {
             if (0 < out->opts->dump_opts.array_size) {
-                strcpy(out->cur, out->opts->dump_opts.array_nl);
-                out->cur += out->opts->dump_opts.array_size;
+                APPEND_CHARS(out->cur, out->opts->dump_opts.array_nl, out->opts->dump_opts.array_size);
             }
             if (0 < out->opts->dump_opts.indent_size) {
                 int i;
                 for (i = d2; 0 < i; i--) {
-                    strcpy(out->cur, out->opts->dump_opts.indent_str);
-                    out->cur += out->opts->dump_opts.indent_size;
+                    APPEND_CHARS(out->cur, out->opts->dump_opts.indent_str, out->opts->dump_opts.indent_size);
                 }
             }
         } else {
@@ -500,15 +491,13 @@ static void dump_activerecord_result(VALUE obj, int depth, Out out, bool as_ok) 
     assure_size(out, size);
     if (out->opts->dump_opts.use) {
         if (0 < out->opts->dump_opts.array_size) {
-            strcpy(out->cur, out->opts->dump_opts.array_nl);
-            out->cur += out->opts->dump_opts.array_size;
+            APPEND_CHARS(out->cur, out->opts->dump_opts.array_nl, out->opts->dump_opts.array_size);
         }
         if (0 < out->opts->dump_opts.indent_size) {
             int i;
 
             for (i = depth; 0 < i; i--) {
-                strcpy(out->cur, out->opts->dump_opts.indent_str);
-                out->cur += out->opts->dump_opts.indent_size;
+                APPEND_CHARS(out->cur, out->opts->dump_opts.indent_str, out->opts->dump_opts.indent_size);
             }
         }
     } else {
@@ -1271,14 +1260,12 @@ static void dump_array(VALUE a, int depth, Out out, bool as_ok) {
         for (i = 0; i <= cnt; i++) {
             if (out->opts->dump_opts.use) {
                 if (0 < out->opts->dump_opts.array_size) {
-                    strcpy(out->cur, out->opts->dump_opts.array_nl);
-                    out->cur += out->opts->dump_opts.array_size;
+                    APPEND_CHARS(out->cur, out->opts->dump_opts.array_nl, out->opts->dump_opts.array_size);
                 }
                 if (0 < out->opts->dump_opts.indent_size) {
                     int i;
                     for (i = d2; 0 < i; i--) {
-                        strcpy(out->cur, out->opts->dump_opts.indent_str);
-                        out->cur += out->opts->dump_opts.indent_size;
+                        APPEND_CHARS(out->cur, out->opts->dump_opts.indent_str, out->opts->dump_opts.indent_size);
                     }
                 }
             } else {
@@ -1293,15 +1280,13 @@ static void dump_array(VALUE a, int depth, Out out, bool as_ok) {
         assure_size(out, size);
         if (out->opts->dump_opts.use) {
             if (0 < out->opts->dump_opts.array_size) {
-                strcpy(out->cur, out->opts->dump_opts.array_nl);
-                out->cur += out->opts->dump_opts.array_size;
+                APPEND_CHARS(out->cur, out->opts->dump_opts.array_nl, out->opts->dump_opts.array_size);
             }
             if (0 < out->opts->dump_opts.indent_size) {
                 int i;
 
                 for (i = depth; 0 < i; i--) {
-                    strcpy(out->cur, out->opts->dump_opts.indent_str);
-                    out->cur += out->opts->dump_opts.indent_size;
+                    APPEND_CHARS(out->cur, out->opts->dump_opts.indent_str, out->opts->dump_opts.indent_size);
                 }
             }
         } else {
@@ -1339,14 +1324,12 @@ static int hash_cb(VALUE key, VALUE value, VALUE ov) {
         size = depth * out->opts->dump_opts.indent_size + out->opts->dump_opts.hash_size + 1;
         assure_size(out, size);
         if (0 < out->opts->dump_opts.hash_size) {
-            strcpy(out->cur, out->opts->dump_opts.hash_nl);
-            out->cur += out->opts->dump_opts.hash_size;
+            APPEND_CHARS(out->cur, out->opts->dump_opts.hash_nl, out->opts->dump_opts.hash_size);
         }
         if (0 < out->opts->dump_opts.indent_size) {
             int i;
             for (i = depth; 0 < i; i--) {
-                strcpy(out->cur, out->opts->dump_opts.indent_str);
-                out->cur += out->opts->dump_opts.indent_size;
+                APPEND_CHARS(out->cur, out->opts->dump_opts.indent_str, out->opts->dump_opts.indent_size);
             }
         }
         if (rtype == T_STRING) {
@@ -1357,13 +1340,11 @@ static int hash_cb(VALUE key, VALUE value, VALUE ov) {
         size = out->opts->dump_opts.before_size + out->opts->dump_opts.after_size + 2;
         assure_size(out, size);
         if (0 < out->opts->dump_opts.before_size) {
-            strcpy(out->cur, out->opts->dump_opts.before_sep);
-            out->cur += out->opts->dump_opts.before_size;
+            APPEND_CHARS(out->cur, out->opts->dump_opts.before_sep, out->opts->dump_opts.before_size);
         }
         *out->cur++ = ':';
         if (0 < out->opts->dump_opts.after_size) {
-            strcpy(out->cur, out->opts->dump_opts.after_sep);
-            out->cur += out->opts->dump_opts.after_size;
+            APPEND_CHARS(out->cur, out->opts->dump_opts.after_sep, out->opts->dump_opts.after_size);
         }
     }
     dump_rails_val(value, depth, out, true);
@@ -1406,15 +1387,13 @@ static void dump_hash(VALUE obj, int depth, Out out, bool as_ok) {
             size = depth * out->opts->dump_opts.indent_size + out->opts->dump_opts.hash_size + 1;
             assure_size(out, size);
             if (0 < out->opts->dump_opts.hash_size) {
-                strcpy(out->cur, out->opts->dump_opts.hash_nl);
-                out->cur += out->opts->dump_opts.hash_size;
+                APPEND_CHARS(out->cur, out->opts->dump_opts.hash_nl, out->opts->dump_opts.hash_size);
             }
             if (0 < out->opts->dump_opts.indent_size) {
                 int i;
 
                 for (i = depth; 0 < i; i--) {
-                    strcpy(out->cur, out->opts->dump_opts.indent_str);
-                    out->cur += out->opts->dump_opts.indent_size;
+                    APPEND_CHARS(out->cur, out->opts->dump_opts.indent_str, out->opts->dump_opts.indent_size);
                 }
             }
         }

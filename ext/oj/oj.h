@@ -375,6 +375,12 @@ extern bool oj_use_hash_alt;
 extern bool oj_use_array_alt;
 extern bool string_writer_optimized;
 
+#define APPEND_CHARS(buffer, chars, size) \
+    { \
+        memcpy(buffer, chars, size); \
+        buffer += size; \
+    }
+
 #ifdef HAVE_PTHREAD_MUTEX_INIT
 extern pthread_mutex_t oj_cache_mutex;
 #else

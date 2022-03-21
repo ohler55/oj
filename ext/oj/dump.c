@@ -291,14 +291,12 @@ static const char *dump_unicode(const char *str, const char *end, Out out, const
         code -= 0x00010000;
         c1          = ((code >> 10) & 0x000003FF) + 0x0000D800;
         code        = (code & 0x000003FF) + 0x0000DC00;
-        *out->cur++ = '\\';
-        *out->cur++ = 'u';
+        APPEND_CHARS(out->cur, "\\u", 2);
         for (i = 3; 0 <= i; i--) {
             *out->cur++ = hex_chars[(uint8_t)(c1 >> (i * 4)) & 0x0F];
         }
     }
-    *out->cur++ = '\\';
-    *out->cur++ = 'u';
+    APPEND_CHARS(out->cur, "\\u", 2);
     for (i = 3; 0 <= i; i--) {
         *out->cur++ = hex_chars[(uint8_t)(code >> (i * 4)) & 0x0F];
     }
@@ -347,9 +345,7 @@ long oj_check_circular(VALUE obj, Out out) {
         } else {
             if (ObjectMode == out->opts->mode) {
                 assure_size(out, 18);
-                *out->cur++ = '"';
-                *out->cur++ = '^';
-                *out->cur++ = 'r';
+                APPEND_CHARS(out->cur, "\"^r", 3);
                 dump_ulong(id, out);
                 *out->cur++ = '"';
             }
@@ -451,8 +447,7 @@ void oj_dump_time(VALUE obj, Out out, int withZone) {
     b++;
     size = sizeof(buf) - (b - buf) - 1;
     assure_size(out, size);
-    memcpy(out->cur, b, size);
-    out->cur += size;
+    APPEND_CHARS(out->cur, b, size);
     *out->cur = '\0';
 }
 
@@ -806,10 +801,7 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
     *out->cur++ = '"';
 
     if (escape1) {
-        *out->cur++ = '\\';
-        *out->cur++ = 'u';
-        *out->cur++ = '0';
-        *out->cur++ = '0';
+        APPEND_CHARS(out->cur, "\\u00", 4);
         dump_hex((uint8_t)*str, out);
         cnt--;
         size--;
@@ -820,8 +812,7 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
         if (is_sym) {
             *out->cur++ = ':';
         }
-        memcpy(out->cur, str, cnt);
-        out->cur += cnt;
+        APPEND_CHARS(out->cur, str, cnt);
         *out->cur++ = '"';
     } else {
         const char *end         = str + cnt;
@@ -871,10 +862,7 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
                 break;
             case '6':  // control characters
                 if (*(uint8_t *)str < 0x80) {
-                    *out->cur++ = '\\';
-                    *out->cur++ = 'u';
-                    *out->cur++ = '0';
-                    *out->cur++ = '0';
+                    APPEND_CHARS(out->cur, "\\u00", 4);
                     dump_hex((uint8_t)*str, out);
                 } else {
                     if (0xe2 == (uint8_t)*str &&
@@ -953,8 +941,7 @@ void oj_dump_obj_to_s(VALUE obj, Out out) {
 
 void oj_dump_raw(const char *str, size_t cnt, Out out) {
     assure_size(out, cnt + 10);
-    memcpy(out->cur, str, cnt);
-    out->cur += cnt;
+    APPEND_CHARS(out->cur, str, cnt);
     *out->cur = '\0';
 }
 
@@ -984,22 +971,19 @@ void oj_grow_out(Out out, size_t len) {
 
 void oj_dump_nil(VALUE obj, int depth, Out out, bool as_ok) {
     assure_size(out, 4);
-    memcpy(out->cur, "null", 4);
-    out->cur += 4;
+    APPEND_CHARS(out->cur, "null", 4);
     *out->cur   = '\0';
 }
 
 void oj_dump_true(VALUE obj, int depth, Out out, bool as_ok) {
     assure_size(out, 4);
-    memcpy(out->cur, "true", 4);
-    out->cur += 4;
+    APPEND_CHARS(out->cur, "true", 4);
     *out->cur   = '\0';
 }
 
 void oj_dump_false(VALUE obj, int depth, Out out, bool as_ok) {
     assure_size(out, 5);
-    memcpy(out->cur, "false", 5);
-    out->cur += 5;
+    APPEND_CHARS(out->cur, "false", 5);
     *out->cur   = '\0';
 }
 
@@ -1041,8 +1025,7 @@ void oj_dump_fixnum(VALUE obj, int depth, Out out, bool as_ok) {
     }
     cnt = sizeof(buf) - (b - buf) - 1;
     assure_size(out, cnt);
-    memcpy(out->cur, b, cnt);
-    out->cur += cnt;
+    APPEND_CHARS(out->cur, b, cnt);
     *out->cur = '\0';
 }
 
@@ -1058,8 +1041,7 @@ void oj_dump_bignum(VALUE obj, int depth, Out out, bool as_ok) {
     } else {
         assure_size(out, cnt);
     }
-    memcpy(out->cur, RSTRING_PTR(rs), cnt);
-    out->cur += cnt;
+    APPEND_CHARS(out->cur, RSTRING_PTR(rs), cnt);
     if (dump_as_string) {
         *out->cur++ = '"';
     }
@@ -1192,8 +1174,7 @@ void oj_dump_float(VALUE obj, int depth, Out out, bool as_ok) {
         cnt = oj_dump_float_printf(buf, sizeof(buf), obj, d, out->opts->float_fmt);
     }
     assure_size(out, cnt);
-    memcpy(out->cur, buf, cnt);
-    out->cur += cnt;
+    APPEND_CHARS(out->cur, buf, cnt);
     *out->cur = '\0';
 }
 
