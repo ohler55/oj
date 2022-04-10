@@ -38,20 +38,26 @@ static void next_non_white(ParseInfo pi) {
 
 static void skip_comment(ParseInfo pi) {
     if ('*' == *pi->cur) {
+        char *end = NULL;
+
         pi->cur++;
-        for (; pi->cur < pi->end; pi->cur++) {
-            if ('*' == *pi->cur && '/' == *(pi->cur + 1)) {
-                pi->cur += 2;
-                return;
-            } else if (pi->end <= pi->cur) {
-                oj_set_error_at(pi,
-                                oj_parse_error_class,
-                                __FILE__,
-                                __LINE__,
-                                "comment not terminated");
-                return;
-            }
+        end = strstr(pi->cur, "*/");
+
+        if (NULL == end) {
+            pi->cur = pi->end;
+            return;
         }
+
+        if (pi->end <= end) {
+            oj_set_error_at(pi,
+                            oj_parse_error_class,
+                            __FILE__,
+                            __LINE__,
+                            "comment not terminated");
+            pi->cur = end;
+            return;
+        }
+        pi->cur = end + 2;
     } else if ('/' == *pi->cur) {
         for (; 1; pi->cur++) {
             switch (*pi->cur) {
