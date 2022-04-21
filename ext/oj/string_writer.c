@@ -53,9 +53,9 @@ void oj_str_writer_init(StrWriter sw, int buf_size) {
     } else if (buf_size < 1024) {
         buf_size = 1024;
     }
-    sw->out.buf        = ALLOC_N(char, buf_size);
-    sw->out.end        = sw->out.buf + buf_size - BUFFER_EXTRA;
-    sw->out.allocated  = true;
+
+    oj_out_init_allocate_n(&sw->out, buf_size);
+
     sw->out.cur        = sw->out.buf;
     *sw->out.cur       = '\0';
     sw->out.circ_cache = NULL;
@@ -229,7 +229,9 @@ static void str_writer_free(void *ptr) {
         return;
     }
     sw = (StrWriter)ptr;
-    xfree(sw->out.buf);
+
+    oj_out_free(&sw->out);
+
     xfree(sw->types);
     xfree(ptr);
 }

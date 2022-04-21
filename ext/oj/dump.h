@@ -13,6 +13,13 @@
 // Extra padding at end of buffer.
 #define BUFFER_EXTRA 64
 
+#define DEFAULT_BUFFER_SIZE 4096
+#define STACK_BUFFER_SIZE 4096
+
+typedef struct __oj_stack_buffer {
+    char buffer[STACK_BUFFER_SIZE];
+} stack_buffer;
+
 extern void oj_dump_nil(VALUE obj, int depth, Out out, bool as_ok);
 extern void oj_dump_true(VALUE obj, int depth, Out out, bool as_ok);
 extern void oj_dump_false(VALUE obj, int depth, Out out, bool as_ok);
@@ -31,6 +38,15 @@ extern void oj_dump_time(VALUE obj, Out out, int withZone);
 extern void oj_dump_obj_to_s(VALUE obj, Out out);
 
 extern const char *oj_nan_str(VALUE obj, int opt, int mode, bool plus, int *lenp);
+
+// initialize an out buffer with the provided stack allocated memory
+extern void oj_out_init_stack_buffer(Out out, stack_buffer * buffer);
+// allocate default sized heap memory buffer and initialize out structure
+extern void oj_out_init_allocate(Out out);
+// allocate n sized heap memory buffer and initialize out structure
+extern void oj_out_init_allocate_n(Out out, size_t cnt);
+// clean up the out buffer if it uses heap allocated memory
+extern void oj_out_free(Out out);
 
 extern void oj_grow_out(Out out, size_t len);
 extern long oj_check_circular(VALUE obj, Out out);

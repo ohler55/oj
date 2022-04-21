@@ -1244,9 +1244,8 @@ static VALUE dump_body(VALUE a) {
 static VALUE dump_ensure(VALUE a) {
     volatile struct dump_arg *arg = (void *)a;
 
-    if (arg->out->allocated) {
-        xfree(arg->out->buf);
-    }
+    oj_out_free(arg->out);
+
     return Qnil;
 }
 
@@ -1258,7 +1257,7 @@ static VALUE dump_ensure(VALUE a) {
  * - *options* [_Hash_] same as default_options
  */
 static VALUE dump(int argc, VALUE *argv, VALUE self) {
-    char            buf[4096];
+    stack_buffer    buf;
     struct dump_arg arg;
     struct _out     out;
     struct _options copts = oj_default_options;
@@ -1280,9 +1279,8 @@ static VALUE dump(int argc, VALUE *argv, VALUE self) {
     arg.argc  = argc;
     arg.argv  = argv;
 
-    arg.out->buf       = buf;
-    arg.out->end       = buf + sizeof(buf) - BUFFER_EXTRA;
-    arg.out->allocated = false;
+    oj_out_init_stack_buffer(arg.out, &buf);
+
     arg.out->omit_nil  = copts.dump_opts.omit_nil;
     arg.out->caller    = CALLER_DUMP;
 
@@ -1314,7 +1312,7 @@ static VALUE dump(int argc, VALUE *argv, VALUE self) {
  * Returns [_String_] the encoded JSON.
  */
 static VALUE to_json(int argc, VALUE *argv, VALUE self) {
-    char            buf[4096];
+    stack_buffer    buf;
     struct _out     out;
     struct _options copts = oj_default_options;
     VALUE           rstr;
@@ -1329,9 +1327,9 @@ static VALUE to_json(int argc, VALUE *argv, VALUE self) {
     }
     copts.mode    = CompatMode;
     copts.to_json = Yes;
-    out.buf       = buf;
-    out.end       = buf + sizeof(buf) - BUFFER_EXTRA;
-    out.allocated = false;
+
+    oj_out_init_stack_buffer(&out, &buf);
+
     out.omit_nil  = copts.dump_opts.omit_nil;
     // For obj.to_json or generate nan is not allowed but if called from dump
     // it is.
@@ -1342,9 +1340,9 @@ static VALUE to_json(int argc, VALUE *argv, VALUE self) {
     }
     rstr = rb_str_new2(out.buf);
     rstr = oj_encode(rstr);
-    if (out.allocated) {
-        xfree(out.buf);
-    }
+
+    oj_out_free(&out);
+
     return rstr;
 }
 
