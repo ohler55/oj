@@ -207,7 +207,7 @@ static VALUE mimic_dump(int argc, VALUE *argv, VALUE self) {
     copts.str_rx.head = NULL;
     copts.str_rx.tail = NULL;
     out.buf           = buf;
-    out.end           = buf + sizeof(buf) - 10;
+    out.end           = buf + sizeof(buf) - BUFFER_EXTRA;
     out.allocated     = false;
     out.caller        = CALLER_DUMP;
     copts.escape_mode = JXEsc;
@@ -368,7 +368,7 @@ static VALUE mimic_generate_core(int argc, VALUE *argv, Options copts) {
     memset(buf, 0, sizeof(buf));
 
     out.buf       = buf;
-    out.end       = buf + sizeof(buf) - 10;
+    out.end       = buf + sizeof(buf) - BUFFER_EXTRA;
     out.allocated = false;
     out.omit_nil  = copts->dump_opts.omit_nil;
     out.caller    = CALLER_GENERATE;
@@ -754,7 +754,7 @@ static VALUE mimic_object_to_json(int argc, VALUE *argv, VALUE self) {
     copts.str_rx.head = NULL;
     copts.str_rx.tail = NULL;
     out.buf           = buf;
-    out.end           = buf + sizeof(buf) - 10;
+    out.end           = buf + sizeof(buf) - BUFFER_EXTRA;
     out.allocated     = false;
     out.omit_nil      = copts.dump_opts.omit_nil;
     copts.mode        = CompatMode;

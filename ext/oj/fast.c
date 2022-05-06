@@ -13,6 +13,7 @@
 
 #include "encode.h"
 #include "oj.h"
+#include "dump.h"
 
 // maximum to allocate on the stack, arbitrary limit
 #define SMALL_JSON 65536
@@ -1614,7 +1615,7 @@ static VALUE doc_dump(int argc, VALUE *argv, VALUE self) {
             struct _out out;
 
             out.buf       = buf;
-            out.end       = buf + sizeof(buf) - 10;
+            out.end       = buf + sizeof(buf) - BUFFER_EXTRA;
             out.allocated = false;
             out.omit_nil  = oj_default_options.dump_opts.omit_nil;
             oj_dump_leaf_to_json(leaf, &oj_default_options, &out);
