@@ -622,12 +622,13 @@ void oj_write_obj_to_file(VALUE obj, const char *path, Options copts) {
     if (out.allocated) {
         xfree(out.buf);
     }
-    fclose(f);
     if (!ok) {
         int err = ferror(f);
+        fclose(f);
 
         rb_raise(rb_eIOError, "Write failed. [%d:%s]", err, strerror(err));
     }
+    fclose(f);
 }
 
 #if !IS_WINDOWS
