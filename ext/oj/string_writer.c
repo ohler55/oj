@@ -54,7 +54,7 @@ void oj_str_writer_init(StrWriter sw, int buf_size) {
         buf_size = 1024;
     }
     sw->out.buf        = ALLOC_N(char, buf_size);
-    sw->out.end        = sw->out.buf + buf_size - 10;
+    sw->out.end        = sw->out.buf + buf_size - BUFFER_EXTRA;
     sw->out.allocated  = true;
     sw->out.cur        = sw->out.buf;
     *sw->out.cur       = '\0';

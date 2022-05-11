@@ -1281,7 +1281,7 @@ static VALUE dump(int argc, VALUE *argv, VALUE self) {
     arg.argv  = argv;
 
     arg.out->buf       = buf;
-    arg.out->end       = buf + sizeof(buf) - 10;
+    arg.out->end       = buf + sizeof(buf) - BUFFER_EXTRA;
     arg.out->allocated = false;
     arg.out->omit_nil  = copts.dump_opts.omit_nil;
     arg.out->caller    = CALLER_DUMP;
@@ -1330,7 +1330,7 @@ static VALUE to_json(int argc, VALUE *argv, VALUE self) {
     copts.mode    = CompatMode;
     copts.to_json = Yes;
     out.buf       = buf;
-    out.end       = buf + sizeof(buf) - 10;
+    out.end       = buf + sizeof(buf) - BUFFER_EXTRA;
     out.allocated = false;
     out.omit_nil  = copts.dump_opts.omit_nil;
     // For obj.to_json or generate nan is not allowed but if called from dump
