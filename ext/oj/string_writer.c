@@ -48,13 +48,8 @@ void oj_str_writer_init(StrWriter sw, int buf_size) {
     *sw->types     = '\0';
     sw->keyWritten = 0;
 
-    if (0 == buf_size) {
-        buf_size = 4096;
-    } else if (buf_size < 1024) {
-        buf_size = 1024;
-    }
-
-    oj_out_init_allocate_n(&sw->out, buf_size);
+    oj_out_init(&sw->out);
+    assure_size(&sw->out, buf_size);
 
     sw->out.cur        = sw->out.buf;
     *sw->out.cur       = '\0';

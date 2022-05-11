@@ -1611,10 +1611,9 @@ static VALUE doc_dump(int argc, VALUE *argv, VALUE self) {
         volatile VALUE rjson;
 
         if (0 == filename) {
-            stack_buffer buf;
-            struct _out  out;
+            struct _out out;
 
-            oj_out_init_stack_buffer(&out, &buf);
+            oj_out_init(&out);
 
             out.omit_nil  = oj_default_options.dump_opts.omit_nil;
             oj_dump_leaf_to_json(leaf, &oj_default_options, &out);

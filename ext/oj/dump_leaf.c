@@ -129,7 +129,7 @@ static void dump_leaf(Leaf leaf, int depth, Out out) {
 
 void oj_dump_leaf_to_json(Leaf leaf, Options copts, Out out) {
     if (0 == out->buf) {
-        oj_out_init_allocate(out);
+        oj_out_init(out);
     }
     out->cur      = out->buf;
     out->circ_cnt = 0;
@@ -140,12 +140,11 @@ void oj_dump_leaf_to_json(Leaf leaf, Options copts, Out out) {
 }
 
 void oj_write_leaf_to_file(Leaf leaf, const char *path, Options copts) {
-    stack_buffer buf;
-    struct _out  out;
-    size_t       size;
-    FILE *       f;
+    struct _out out;
+    size_t      size;
+    FILE *      f;
 
-    oj_out_init_stack_buffer(&out, &buf);
+    oj_out_init(&out);
 
     out.omit_nil  = copts->dump_opts.omit_nil;
     oj_dump_leaf_to_json(leaf, copts, &out);

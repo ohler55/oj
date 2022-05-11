@@ -1257,7 +1257,6 @@ static VALUE dump_ensure(VALUE a) {
  * - *options* [_Hash_] same as default_options
  */
 static VALUE dump(int argc, VALUE *argv, VALUE self) {
-    stack_buffer    buf;
     struct dump_arg arg;
     struct _out     out;
     struct _options copts = oj_default_options;
@@ -1279,7 +1278,7 @@ static VALUE dump(int argc, VALUE *argv, VALUE self) {
     arg.argc  = argc;
     arg.argv  = argv;
 
-    oj_out_init_stack_buffer(arg.out, &buf);
+    oj_out_init(arg.out);
 
     arg.out->omit_nil  = copts.dump_opts.omit_nil;
     arg.out->caller    = CALLER_DUMP;
@@ -1312,7 +1311,6 @@ static VALUE dump(int argc, VALUE *argv, VALUE self) {
  * Returns [_String_] the encoded JSON.
  */
 static VALUE to_json(int argc, VALUE *argv, VALUE self) {
-    stack_buffer    buf;
     struct _out     out;
     struct _options copts = oj_default_options;
     VALUE           rstr;
@@ -1328,7 +1326,7 @@ static VALUE to_json(int argc, VALUE *argv, VALUE self) {
     copts.mode    = CompatMode;
     copts.to_json = Yes;
 
-    oj_out_init_stack_buffer(&out, &buf);
+    oj_out_init(&out);
 
     out.omit_nil  = copts.dump_opts.omit_nil;
     // For obj.to_json or generate nan is not allowed but if called from dump

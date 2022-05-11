@@ -897,7 +897,6 @@ static VALUE protect_dump(VALUE ov) {
 }
 
 static VALUE encode(VALUE obj, ROptTable ropts, Options opts, int argc, VALUE *argv) {
-    stack_buffer    buf;
     struct _out     out;
     struct _options copts = *opts;
     volatile VALUE  rstr  = Qnil;
@@ -915,7 +914,7 @@ static VALUE encode(VALUE obj, ROptTable ropts, Options opts, int argc, VALUE *a
         copts.escape_mode = RailsEsc;
     }
 
-    oj_out_init_stack_buffer(&out, &buf);
+    oj_out_init(&out);
 
     out.omit_nil  = copts.dump_opts.omit_nil;
     out.caller    = 0;

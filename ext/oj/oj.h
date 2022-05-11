@@ -186,6 +186,7 @@ typedef struct _rOptTable {
 } * ROptTable;
 
 typedef struct _out {
+    char       stack_buffer[4096];
     char *     buf;
     char *     end;
     char *     cur;

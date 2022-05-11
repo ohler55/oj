@@ -560,7 +560,7 @@ void oj_dump_obj_to_json(VALUE obj, Options copts, Out out) {
 
 void oj_dump_obj_to_json_using_params(VALUE obj, Options copts, Out out, int argc, VALUE *argv) {
     if (0 == out->buf) {
-        oj_out_init_allocate(out);
+        oj_out_init(out);
     }
     out->cur      = out->buf;
     out->circ_cnt = 0;
@@ -597,13 +597,12 @@ void oj_dump_obj_to_json_using_params(VALUE obj, Options copts, Out out, int arg
 }
 
 void oj_write_obj_to_file(VALUE obj, const char *path, Options copts) {
-    stack_buffer buf;
-    struct _out  out;
-    size_t       size;
-    FILE        *f;
-    int          ok;
+    struct _out out;
+    size_t      size;
+    FILE       *f;
+    int         ok;
 
-    oj_out_init_stack_buffer(&out, &buf);
+    oj_out_init(&out);
 
     out.omit_nil  = copts->dump_opts.omit_nil;
     oj_dump_obj_to_json(obj, copts, &out);
@@ -644,16 +643,15 @@ static void write_ready(int fd) {
 #endif
 
 void oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
-    stack_buffer buf;
-    struct _out  out;
-    ssize_t      size;
-    VALUE        clas = rb_obj_class(stream);
+    struct _out out;
+    ssize_t     size;
+    VALUE       clas = rb_obj_class(stream);
 #if !IS_WINDOWS
     int   fd;
     VALUE s;
 #endif
 
-    oj_out_init_stack_buffer(&out, &buf);
+    oj_out_init(&out);
 
     out.omit_nil  = copts->dump_opts.omit_nil;
     oj_dump_obj_to_json(obj, copts, &out);
@@ -937,23 +935,10 @@ void oj_dump_raw(const char *str, size_t cnt, Out out) {
     *out->cur = '\0';
 }
 
-void oj_out_init_stack_buffer(Out out, stack_buffer * buffer) {
-    out->buf = buffer->buffer;
-    out->end = buffer->buffer + sizeof(buffer->buffer) - BUFFER_EXTRA;
-    out->allocated = false;
-}
-
-void oj_out_init_allocate(Out out) {
-    oj_out_init_allocate_n(out, DEFAULT_BUFFER_SIZE);
-}
-
-void oj_out_init_allocate_n(Out out, size_t cnt) {
-    if (cnt < BUFFER_EXTRA * 2) {
-        cnt += BUFFER_EXTRA;
-    }
-    out->buf = ALLOC_N(char, cnt);
-    out->end = out->buf + cnt - BUFFER_EXTRA;
-    out->allocated = true;
+void oj_out_init(Out out) {
+  out->buf = out->stack_buffer;
+  out->end = out->buf + sizeof(out->stack_buffer) - BUFFER_EXTRA;
+  out->allocated = false;
 }
 
 void oj_out_free(Out out) {

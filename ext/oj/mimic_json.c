@@ -198,7 +198,6 @@ static int mimic_limit_arg(VALUE a) {
  * Returns [_String_] a JSON string.
  */
 static VALUE mimic_dump(int argc, VALUE *argv, VALUE self) {
-    stack_buffer    buf;
     struct _out     out;
     struct _options copts = oj_default_options;
     VALUE           rstr;
@@ -207,7 +206,7 @@ static VALUE mimic_dump(int argc, VALUE *argv, VALUE self) {
     copts.str_rx.head = NULL;
     copts.str_rx.tail = NULL;
 
-    oj_out_init_stack_buffer(&out, &buf);
+    oj_out_init(&out);
 
     out.caller        = CALLER_DUMP;
     copts.escape_mode = JXEsc;
@@ -358,16 +357,15 @@ static VALUE mimic_dump_load(int argc, VALUE *argv, VALUE self) {
 }
 
 static VALUE mimic_generate_core(int argc, VALUE *argv, Options copts) {
-    stack_buffer buf;
     struct _out out;
     VALUE       rstr;
 
     if (0 == argc) {
         rb_raise(rb_eArgError, "wrong number of arguments (0))");
     }
-    memset(buf.buffer, 0, sizeof(buf.buffer));
+    memset(out.stack_buffer, 0, sizeof(out.stack_buffer));
 
-    oj_out_init_stack_buffer(&out, &buf);
+    oj_out_init(&out);
 
     out.omit_nil  = copts->dump_opts.omit_nil;
     out.caller    = CALLER_GENERATE;
@@ -745,7 +743,6 @@ static struct _options mimic_object_to_json_options = {0,              // indent
                                                        }};
 
 static VALUE mimic_object_to_json(int argc, VALUE *argv, VALUE self) {
-    stack_buffer    buf;
     struct _out     out;
     VALUE           rstr;
     struct _options copts = oj_default_options;
@@ -753,7 +750,7 @@ static VALUE mimic_object_to_json(int argc, VALUE *argv, VALUE self) {
     copts.str_rx.head = NULL;
     copts.str_rx.tail = NULL;
 
-    oj_out_init_stack_buffer(&out, &buf);
+    oj_out_init(&out);
 
     out.omit_nil      = copts.dump_opts.omit_nil;
     copts.mode        = CompatMode;
