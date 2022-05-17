@@ -1611,18 +1611,15 @@ static VALUE doc_dump(int argc, VALUE *argv, VALUE self) {
         volatile VALUE rjson;
 
         if (0 == filename) {
-            char        buf[4096];
             struct _out out;
 
-            out.buf       = buf;
-            out.end       = buf + sizeof(buf) - BUFFER_EXTRA;
-            out.allocated = false;
+            oj_out_init(&out);
+
             out.omit_nil  = oj_default_options.dump_opts.omit_nil;
             oj_dump_leaf_to_json(leaf, &oj_default_options, &out);
             rjson = rb_str_new2(out.buf);
-            if (out.allocated) {
-                xfree(out.buf);
-            }
+
+            oj_out_free(&out);
         } else {
             oj_write_leaf_to_file(leaf, filename, &oj_default_options);
             rjson = Qnil;

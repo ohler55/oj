@@ -560,10 +560,7 @@ void oj_dump_obj_to_json(VALUE obj, Options copts, Out out) {
 
 void oj_dump_obj_to_json_using_params(VALUE obj, Options copts, Out out, int argc, VALUE *argv) {
     if (0 == out->buf) {
-        out->buf = ALLOC_N(char, 4096);
-        // 1 less than end plus extra for possible errors
-        out->end       = out->buf + 4095 - BUFFER_EXTRA;
-        out->allocated = true;
+        oj_out_init(out);
     }
     out->cur      = out->buf;
     out->circ_cnt = 0;
@@ -600,28 +597,25 @@ void oj_dump_obj_to_json_using_params(VALUE obj, Options copts, Out out, int arg
 }
 
 void oj_write_obj_to_file(VALUE obj, const char *path, Options copts) {
-    char        buf[4096];
     struct _out out;
     size_t      size;
     FILE       *f;
     int         ok;
 
-    out.buf       = buf;
-    out.end       = buf + sizeof(buf) - BUFFER_EXTRA;
-    out.allocated = false;
+    oj_out_init(&out);
+
     out.omit_nil  = copts->dump_opts.omit_nil;
     oj_dump_obj_to_json(obj, copts, &out);
     size = out.cur - out.buf;
     if (0 == (f = fopen(path, "w"))) {
-        if (out.allocated) {
-            xfree(out.buf);
-        }
+        oj_out_free(&out);
         rb_raise(rb_eIOError, "%s", strerror(errno));
     }
     ok = (size == fwrite(out.buf, 1, size, f));
-    if (out.allocated) {
-        xfree(out.buf);
-    }
+
+    oj_out_free(&out);
+
+    fclose(f);
     if (!ok) {
         int err = ferror(f);
         fclose(f);
@@ -649,7 +643,6 @@ static void write_ready(int fd) {
 #endif
 
 void oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
-    char        buf[4096];
     struct _out out;
     ssize_t     size;
     VALUE       clas = rb_obj_class(stream);
@@ -658,9 +651,8 @@ void oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
     VALUE s;
 #endif
 
-    out.buf       = buf;
-    out.end       = buf + sizeof(buf) - BUFFER_EXTRA;
-    out.allocated = false;
+    oj_out_init(&out);
+
     out.omit_nil  = copts->dump_opts.omit_nil;
     oj_dump_obj_to_json(obj, copts, &out);
     size = out.cur - out.buf;
@@ -690,14 +682,11 @@ void oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
     } else if (rb_respond_to(stream, oj_write_id)) {
         rb_funcall(stream, oj_write_id, 1, rb_str_new(out.buf, size));
     } else {
-        if (out.allocated) {
-            xfree(out.buf);
-        }
+        oj_out_free(&out);
         rb_raise(rb_eArgError, "to_stream() expected an IO Object.");
     }
-    if (out.allocated) {
-        xfree(out.buf);
-    }
+
+    oj_out_free(&out);
 }
 
 void oj_dump_str(VALUE obj, int depth, Out out, bool as_ok) {
@@ -944,6 +933,18 @@ void oj_dump_raw(const char *str, size_t cnt, Out out) {
     assure_size(out, cnt + 10);
     APPEND_CHARS(out->cur, str, cnt);
     *out->cur = '\0';
+}
+
+void oj_out_init(Out out) {
+  out->buf = out->stack_buffer;
+  out->end = out->buf + sizeof(out->stack_buffer) - BUFFER_EXTRA;
+  out->allocated = false;
+}
+
+void oj_out_free(Out out) {
+    if (out->allocated) {
+        xfree(out->buf);
+    }
 }
 
 void oj_grow_out(Out out, size_t len) {

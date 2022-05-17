@@ -8,34 +8,8 @@
 
 static void dump_leaf(Leaf leaf, int depth, Out out);
 
-static void grow(Out out, size_t len) {
-    size_t size = out->end - out->buf;
-    long   pos  = out->cur - out->buf;
-    char * buf;
-
-    size *= 2;
-    if (size <= len * 2 + pos) {
-        size += len;
-    }
-    if (out->allocated) {
-        buf = REALLOC_N(out->buf, char, (size + BUFFER_EXTRA));
-    } else {
-        buf            = ALLOC_N(char, (size + BUFFER_EXTRA));
-        out->allocated = true;
-        memcpy(buf, out->buf, out->end - out->buf + BUFFER_EXTRA);
-    }
-    if (0 == buf) {
-        rb_raise(rb_eNoMemError, "Failed to create string. [%d:%s]\n", ENOSPC, strerror(ENOSPC));
-    }
-    out->buf = buf;
-    out->end = buf + size;
-    out->cur = out->buf + pos;
-}
-
 inline static void dump_chars(const char *s, size_t size, Out out) {
-    if (out->end - out->cur <= (long)size) {
-        grow(out, size);
-    }
+    assure_size(out, size);
     APPEND_CHARS(out->cur, s, size);
     *out->cur = '\0';
 }
@@ -80,9 +54,7 @@ static void dump_leaf_array(Leaf leaf, int depth, Out out) {
     int    d2 = depth + 1;
 
     size = 2;
-    if (out->end - out->cur <= (long)size) {
-        grow(out, size);
-    }
+    assure_size(out, size);
     *out->cur++ = '[';
     if (0 == leaf->elements) {
         *out->cur++ = ']';
@@ -92,9 +64,7 @@ static void dump_leaf_array(Leaf leaf, int depth, Out out) {
 
         size = d2 * out->indent + 2;
         do {
-            if (out->end - out->cur <= (long)size) {
-                grow(out, size);
-            }
+            assure_size(out, size);
             fill_indent(out, d2);
             dump_leaf(e, d2, out);
             if (e->next != first) {
@@ -103,9 +73,7 @@ static void dump_leaf_array(Leaf leaf, int depth, Out out) {
             e = e->next;
         } while (e != first);
         size = depth * out->indent + 1;
-        if (out->end - out->cur <= (long)size) {
-            grow(out, size);
-        }
+        assure_size(out, size);
         fill_indent(out, depth);
         *out->cur++ = ']';
     }
@@ -117,9 +85,7 @@ static void dump_leaf_hash(Leaf leaf, int depth, Out out) {
     int    d2 = depth + 1;
 
     size = 2;
-    if (out->end - out->cur <= (long)size) {
-        grow(out, size);
-    }
+    assure_size(out, size);
     *out->cur++ = '{';
     if (0 == leaf->elements) {
         *out->cur++ = '}';
@@ -129,9 +95,7 @@ static void dump_leaf_hash(Leaf leaf, int depth, Out out) {
 
         size = d2 * out->indent + 2;
         do {
-            if (out->end - out->cur <= (long)size) {
-                grow(out, size);
-            }
+            assure_size(out, size);
             fill_indent(out, d2);
             oj_dump_cstr(e->key, strlen(e->key), 0, 0, out);
             *out->cur++ = ':';
@@ -142,9 +106,7 @@ static void dump_leaf_hash(Leaf leaf, int depth, Out out) {
             e = e->next;
         } while (e != first);
         size = depth * out->indent + 1;
-        if (out->end - out->cur <= (long)size) {
-            grow(out, size);
-        }
+        assure_size(out, size);
         fill_indent(out, depth);
         *out->cur++ = '}';
     }
@@ -167,10 +129,7 @@ static void dump_leaf(Leaf leaf, int depth, Out out) {
 
 void oj_dump_leaf_to_json(Leaf leaf, Options copts, Out out) {
     if (0 == out->buf) {
-        out->buf = ALLOC_N(char, 4096);
-        out->end = out->buf + 4095 -
-                   BUFFER_EXTRA;  // 1 less than end plus extra for possible errors
-        out->allocated = true;
+        oj_out_init(out);
     }
     out->cur      = out->buf;
     out->circ_cnt = 0;
@@ -181,14 +140,12 @@ void oj_dump_leaf_to_json(Leaf leaf, Options copts, Out out) {
 }
 
 void oj_write_leaf_to_file(Leaf leaf, const char *path, Options copts) {
-    char        buf[4096];
     struct _out out;
     size_t      size;
     FILE *      f;
 
-    out.buf       = buf;
-    out.end       = buf + sizeof(buf) - BUFFER_EXTRA;
-    out.allocated = false;
+    oj_out_init(&out);
+
     out.omit_nil  = copts->dump_opts.omit_nil;
     oj_dump_leaf_to_json(leaf, copts, &out);
     size = out.cur - out.buf;
@@ -200,8 +157,8 @@ void oj_write_leaf_to_file(Leaf leaf, const char *path, Options copts) {
 
         rb_raise(rb_eIOError, "Write failed. [%d:%s]\n", err, strerror(err));
     }
-    if (out.allocated) {
-        xfree(out.buf);
-    }
+
+    oj_out_free(&out);
+
     fclose(f);
 }

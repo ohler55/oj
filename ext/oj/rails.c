@@ -897,7 +897,6 @@ static VALUE protect_dump(VALUE ov) {
 }
 
 static VALUE encode(VALUE obj, ROptTable ropts, Options opts, int argc, VALUE *argv) {
-    char            buf[4096];
     struct _out     out;
     struct _options copts = *opts;
     volatile VALUE  rstr  = Qnil;
@@ -914,9 +913,9 @@ static VALUE encode(VALUE obj, ROptTable ropts, Options opts, int argc, VALUE *a
     } else {
         copts.escape_mode = RailsEsc;
     }
-    out.buf       = buf;
-    out.end       = buf + sizeof(buf) - 10;
-    out.allocated = false;
+
+    oj_out_init(&out);
+
     out.omit_nil  = copts.dump_opts.omit_nil;
     out.caller    = 0;
     out.cur       = out.buf;
@@ -952,9 +951,9 @@ static VALUE encode(VALUE obj, ROptTable ropts, Options opts, int argc, VALUE *a
     if (Yes == copts.circular) {
         oj_cache8_delete(out.circ_cache);
     }
-    if (out.allocated) {
-        xfree(out.buf);
-    }
+
+    oj_out_free(&out);
+
     if (0 != line) {
         rb_jump_tag(line);
     }

@@ -32,6 +32,11 @@ extern void oj_dump_obj_to_s(VALUE obj, Out out);
 
 extern const char *oj_nan_str(VALUE obj, int opt, int mode, bool plus, int *lenp);
 
+// initialize an out buffer with the provided stack allocated memory
+extern void oj_out_init(Out out);
+// clean up the out buffer if it uses heap allocated memory
+extern void oj_out_free(Out out);
+
 extern void oj_grow_out(Out out, size_t len);
 extern long oj_check_circular(VALUE obj, Out out);
 
