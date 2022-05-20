@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.13.13 - <not released>
+
+- Fixed flooding stdout with debug output when dumping.
+
 ## 3.13.12 - 2022-05-20
 
 - Fixed crash on no arguments to pretty_generate. Now raises an exception.
