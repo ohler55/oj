@@ -562,7 +562,6 @@ void oj_dump_obj_to_json_using_params(VALUE obj, Options copts, Out out, int arg
     if (0 == out->buf) {
         oj_out_init(out);
     }
-    out->cur      = out->buf;
     out->circ_cnt = 0;
     out->opts     = copts;
     out->hash_cnt = 0;
@@ -685,7 +684,6 @@ void oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
         oj_out_free(&out);
         rb_raise(rb_eArgError, "to_stream() expected an IO Object.");
     }
-
     oj_out_free(&out);
 }
 
@@ -936,14 +934,15 @@ void oj_dump_raw(const char *str, size_t cnt, Out out) {
 }
 
 void oj_out_init(Out out) {
-  out->buf = out->stack_buffer;
-  out->end = out->buf + sizeof(out->stack_buffer) - BUFFER_EXTRA;
-  out->allocated = false;
+    out->buf = out->stack_buffer;
+    out->cur = out->buf;
+    out->end = out->buf + sizeof(out->stack_buffer) - BUFFER_EXTRA;
+    out->allocated = false;
 }
 
 void oj_out_free(Out out) {
     if (out->allocated) {
-        xfree(out->buf);
+        xfree(out->buf); // TBD
     }
 }
 
@@ -952,6 +951,7 @@ void oj_grow_out(Out out, size_t len) {
     long   pos  = out->cur - out->buf;
     char  *buf  = out->buf;
 
+    printf("*** grow %ld\n", len);
     size *= 2;
     if (size <= len * 2 + pos) {
         size += len;

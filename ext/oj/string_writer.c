@@ -48,10 +48,18 @@ void oj_str_writer_init(StrWriter sw, int buf_size) {
     *sw->types     = '\0';
     sw->keyWritten = 0;
 
-    oj_out_init(&sw->out);
-    assure_size(&sw->out, buf_size);
-
+    if (0 == buf_size) {
+        buf_size = 4096;
+    } else if (buf_size < 1024) {
+        buf_size = 1024;
+    }
+    // Must be allocated. Using the out.stack_buffer results in double frees
+    // and I haven't figured out why yet.
+    sw->out.buf        = ALLOC_N(char, buf_size);
     sw->out.cur        = sw->out.buf;
+    sw->out.end        = sw->out.buf + buf_size - BUFFER_EXTRA;
+    sw->out.allocated  = true;
+
     *sw->out.cur       = '\0';
     sw->out.circ_cache = NULL;
     sw->out.circ_cnt   = 0;

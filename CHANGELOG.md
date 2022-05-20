@@ -1,9 +1,10 @@
 # CHANGELOG
 
-## 3.13.12 - <not released>
+## 3.13.12 - 2022-05-20
 
 - Fixed crash on no arguments to pretty_generate. Now raises an exception.
 - Register all classes and globals.
+- Fixed memory issue with dumping.
 
 ## 3.13.11 - 2022-01-05
 
