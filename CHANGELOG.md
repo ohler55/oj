@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 3.13.13 - <not released>
+## 3.13.13 - 2022-05-20
 
 - Fixed flooding stdout with debug output when dumping.
 
