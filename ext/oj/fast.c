@@ -13,6 +13,7 @@
 
 #include "encode.h"
 #include "oj.h"
+#include "dump.h"
 
 // maximum to allocate on the stack, arbitrary limit
 #define SMALL_JSON 65536
@@ -771,7 +772,7 @@ static VALUE parse_json(VALUE clas, char *json, bool given, bool allocated) {
     pi.doc = doc;
 #if IS_WINDOWS
     // assume a 1M stack and give half to ruby
-    pi.stack_min = (void *)((char *)&pi - (512 * 1024));
+    pi.stack_min = (void *)((char *)&pi - (512L * 1024L));
 #else
     {
         struct rlimit lim;
@@ -1610,18 +1611,15 @@ static VALUE doc_dump(int argc, VALUE *argv, VALUE self) {
         volatile VALUE rjson;
 
         if (0 == filename) {
-            char        buf[4096];
             struct _out out;
 
-            out.buf       = buf;
-            out.end       = buf + sizeof(buf) - 10;
-            out.allocated = false;
+            oj_out_init(&out);
+
             out.omit_nil  = oj_default_options.dump_opts.omit_nil;
             oj_dump_leaf_to_json(leaf, &oj_default_options, &out);
             rjson = rb_str_new2(out.buf);
-            if (out.allocated) {
-                xfree(out.buf);
-            }
+
+            oj_out_free(&out);
         } else {
             oj_write_leaf_to_file(leaf, filename, &oj_default_options);
             rjson = Qnil;
@@ -1717,8 +1715,9 @@ static VALUE doc_not_implemented(VALUE self) {
  *   # Now try again using a path to Oj::Doc.fetch() directly and not using a
  * block. doc = Oj::Doc.open(json) doc.fetch('/2/three')  #=> 3 doc.close()
  */
-void oj_init_doc() {
+void oj_init_doc(void) {
     oj_doc_class = rb_define_class_under(Oj, "Doc", rb_cObject);
+    rb_gc_register_address(&oj_doc_class);
     rb_undef_alloc_func(oj_doc_class);
     rb_define_singleton_method(oj_doc_class, "open", doc_open, 1);
     rb_define_singleton_method(oj_doc_class, "open_file", doc_open_file, 1);

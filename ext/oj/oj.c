@@ -153,6 +153,7 @@ static VALUE xmlschema_sym;
 static VALUE xss_safe_sym;
 
 rb_encoding *oj_utf8_encoding = 0;
+int oj_utf8_encoding_index = 0;
 
 #ifdef HAVE_PTHREAD_MUTEX_INIT
 pthread_mutex_t oj_cache_mutex;
@@ -1243,9 +1244,8 @@ static VALUE dump_body(VALUE a) {
 static VALUE dump_ensure(VALUE a) {
     volatile struct dump_arg *arg = (void *)a;
 
-    if (arg->out->allocated) {
-        xfree(arg->out->buf);
-    }
+    oj_out_free(arg->out);
+
     return Qnil;
 }
 
@@ -1257,7 +1257,6 @@ static VALUE dump_ensure(VALUE a) {
  * - *options* [_Hash_] same as default_options
  */
 static VALUE dump(int argc, VALUE *argv, VALUE self) {
-    char            buf[4096];
     struct dump_arg arg;
     struct _out     out;
     struct _options copts = oj_default_options;
@@ -1279,9 +1278,8 @@ static VALUE dump(int argc, VALUE *argv, VALUE self) {
     arg.argc  = argc;
     arg.argv  = argv;
 
-    arg.out->buf       = buf;
-    arg.out->end       = buf + sizeof(buf) - 10;
-    arg.out->allocated = false;
+    oj_out_init(arg.out);
+
     arg.out->omit_nil  = copts.dump_opts.omit_nil;
     arg.out->caller    = CALLER_DUMP;
 
@@ -1313,7 +1311,6 @@ static VALUE dump(int argc, VALUE *argv, VALUE self) {
  * Returns [_String_] the encoded JSON.
  */
 static VALUE to_json(int argc, VALUE *argv, VALUE self) {
-    char            buf[4096];
     struct _out     out;
     struct _options copts = oj_default_options;
     VALUE           rstr;
@@ -1328,9 +1325,9 @@ static VALUE to_json(int argc, VALUE *argv, VALUE self) {
     }
     copts.mode    = CompatMode;
     copts.to_json = Yes;
-    out.buf       = buf;
-    out.end       = buf + sizeof(buf) - 10;
-    out.allocated = false;
+
+    oj_out_init(&out);
+
     out.omit_nil  = copts.dump_opts.omit_nil;
     // For obj.to_json or generate nan is not allowed but if called from dump
     // it is.
@@ -1341,9 +1338,9 @@ static VALUE to_json(int argc, VALUE *argv, VALUE self) {
     }
     rstr = rb_str_new2(out.buf);
     rstr = oj_encode(rstr);
-    if (out.allocated) {
-        xfree(out.buf);
-    }
+
+    oj_out_free(&out);
+
     return rstr;
 }
 
@@ -1703,6 +1700,15 @@ static VALUE protect_require(VALUE x) {
     return Qnil;
 }
 
+extern void print_all_odds(const char *label);
+
+static VALUE
+debug_odd(VALUE self, VALUE label) {
+    print_all_odds(RSTRING_PTR(label));
+    return Qnil;
+}
+
+
 /* Document-module: Oj
  *
  * Optimized JSON (Oj), as the name implies was written to provide speed
@@ -1731,15 +1737,18 @@ static VALUE protect_require(VALUE x) {
  *
  * - *:wab* specifically for WAB data exchange.
  */
-void Init_oj() {
+void Init_oj(void) {
     int err = 0;
 
 #if HAVE_RB_EXT_RACTOR_SAFE
     rb_ext_ractor_safe(true);
 #endif
     Oj = rb_define_module("Oj");
+    rb_gc_register_address(&Oj);
 
     oj_cstack_class = rb_define_class_under(Oj, "CStack", rb_cObject);
+    rb_gc_register_address(&oj_cstack_class);
+
     rb_undef_alloc_func(oj_cstack_class);
 
     oj_string_writer_init();
@@ -1749,9 +1758,11 @@ void Init_oj() {
     // On Rubinius the require fails but can be done from a ruby file.
     rb_protect(protect_require, Qnil, &err);
     rb_require("stringio");
-    oj_utf8_encoding = rb_enc_find("UTF-8");
+    oj_utf8_encoding_index = rb_enc_find_index("UTF-8");
+    oj_utf8_encoding = rb_enc_from_index(oj_utf8_encoding_index);
 
     // rb_define_module_function(Oj, "hash_test", hash_test, 0);
+    rb_define_module_function(Oj, "debug_odd", debug_odd, 1);
 
     rb_define_module_function(Oj, "default_options", get_def_opts, 0);
     rb_define_module_function(Oj, "default_options=", set_def_opts, 1);

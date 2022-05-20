@@ -221,6 +221,13 @@ class ObjectJuice < Minitest::Test
 
   def teardown
     Oj.default_options = @default_options
+#=begin
+    if '3.1.0' <= RUBY_VERSION && !(RbConfig::CONFIG['host_os'] =~ /(mingw|mswin)/)
+      #Oj::debug_odd("teardown before GC.verify_compaction_references")
+      GC.verify_compaction_references(double_heap: true, toward: :empty)
+      #Oj::debug_odd("teardown after GC.verify_compaction_references")
+    end
+#=end
   end
 
   def test_nil
@@ -948,6 +955,11 @@ class ObjectJuice < Minitest::Test
 
   def test_odd_date
     dump_and_load(Date.new(2012, 6, 19), false)
+
+    Oj.register_odd(Date, Date, :jd, :jd)
+    json = Oj.dump(Date.new(2015, 3, 7), :mode => :object)
+    assert_equal(%|{"^O":"Date","jd":2457089}|, json)
+    dump_and_load(Date.new(2012, 6, 19), false)
   end
 
   def test_odd_datetime
@@ -970,13 +982,6 @@ class ObjectJuice < Minitest::Test
     Oj.register_odd(Strung, Strung, :create, :to_s, 'safe?')
     s = Strung.new("Pete", true)
     dump_and_load(s, false)
-  end
-
-  def test_odd_date_replaced
-    Oj.register_odd(Date, Date, :jd, :jd)
-    json = Oj.dump(Date.new(2015, 3, 7), :mode => :object)
-    assert_equal(%|{"^O":"Date","jd":2457089}|, json)
-    dump_and_load(Date.new(2012, 6, 19), false)
   end
 
   def test_odd_raw

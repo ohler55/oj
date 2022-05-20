@@ -6,6 +6,9 @@ on:
       - '*'
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   Build:
     strategy:
@@ -48,7 +51,7 @@ jobs:
     continue-on-error: ${{ matrix.ruby == 'head'}}
     name: Ruby ${{ matrix.ruby }} (${{ matrix.os }}${{ matrix.gemfile != 'no_rails' && ', ' || '' }}${{ matrix.gemfile != 'no_rails' && matrix.gemfile || '' }})
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby }}
@@ -67,8 +70,8 @@ jobs:
     runs-on: windows-2022
     name: Ruby ${{ matrix.ruby }} (windows-2022)
     steps:
-      - uses: actions/checkout@v2
-      - uses: MSP-Greg/ruby-setup-ruby@win-ucrt-1
+      - uses: actions/checkout@v3
+      - uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true

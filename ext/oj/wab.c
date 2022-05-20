@@ -35,7 +35,7 @@ static VALUE uri_http_clas = Qundef;
 
 ///// dump functions /////
 
-static VALUE resolve_wab_uuid_class() {
+static VALUE resolve_wab_uuid_class(void) {
     if (Qundef == wab_uuid_clas) {
         volatile VALUE wab_module;
 
@@ -50,7 +50,7 @@ static VALUE resolve_wab_uuid_class() {
     return wab_uuid_clas;
 }
 
-static VALUE resolve_uri_class() {
+static VALUE resolve_uri_class(void) {
     if (Qundef == uri_clas) {
         uri_clas = Qnil;
         if (rb_const_defined_at(rb_cObject, rb_intern("URI"))) {
@@ -60,7 +60,7 @@ static VALUE resolve_uri_class() {
     return uri_clas;
 }
 
-static VALUE resolve_uri_http_class() {
+static VALUE resolve_uri_http_class(void) {
     if (Qundef == uri_http_clas) {
         volatile VALUE uri_module;
 
@@ -124,9 +124,9 @@ static void dump_array(VALUE a, int depth, Out out, bool as_ok) {
         *out->cur++ = ']';
     } else {
         size = d2 * out->indent + 2;
+        assure_size(out, size * cnt);
         cnt--;
         for (i = 0; i <= cnt; i++) {
-            assure_size(out, size);
             fill_indent(out, d2);
             oj_dump_wab_val(RARRAY_AREF(a, i), d2, out);
             if (i < cnt) {
@@ -201,12 +201,12 @@ static void dump_time(VALUE obj, Out out) {
         sec  = ts.tv_sec;
         nsec = ts.tv_nsec;
     } else {
-        sec  = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
-        nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+        sec  = NUM2LL(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+        nsec = NUM2LL(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
     }
 #else
-    sec  = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
-    nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+    sec  = NUM2LL(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+    nsec = NUM2LL(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
 #endif
 
     assure_size(out, 36);

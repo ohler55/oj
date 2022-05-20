@@ -198,7 +198,6 @@ static int mimic_limit_arg(VALUE a) {
  * Returns [_String_] a JSON string.
  */
 static VALUE mimic_dump(int argc, VALUE *argv, VALUE self) {
-    char            buf[4096];
     struct _out     out;
     struct _options copts = oj_default_options;
     VALUE           rstr;
@@ -206,9 +205,9 @@ static VALUE mimic_dump(int argc, VALUE *argv, VALUE self) {
 
     copts.str_rx.head = NULL;
     copts.str_rx.tail = NULL;
-    out.buf           = buf;
-    out.end           = buf + sizeof(buf) - 10;
-    out.allocated     = false;
+
+    oj_out_init(&out);
+
     out.caller        = CALLER_DUMP;
     copts.escape_mode = JXEsc;
     copts.mode        = CompatMode;
@@ -257,9 +256,9 @@ static VALUE mimic_dump(int argc, VALUE *argv, VALUE self) {
         rb_funcall2(io, oj_write_id, 1, args);
         rstr = io;
     }
-    if (out.allocated) {
-        xfree(out.buf);
-    }
+
+    oj_out_free(&out);
+
     return rstr;
 }
 
@@ -358,15 +357,16 @@ static VALUE mimic_dump_load(int argc, VALUE *argv, VALUE self) {
 }
 
 static VALUE mimic_generate_core(int argc, VALUE *argv, Options copts) {
-    char        buf[4096];
     struct _out out;
     VALUE       rstr;
 
-    memset(buf, 0, sizeof(buf));
+    if (0 == argc) {
+        rb_raise(rb_eArgError, "wrong number of arguments (0))");
+    }
+    memset(out.stack_buffer, 0, sizeof(out.stack_buffer));
 
-    out.buf       = buf;
-    out.end       = buf + sizeof(buf) - 10;
-    out.allocated = false;
+    oj_out_init(&out);
+
     out.omit_nil  = copts->dump_opts.omit_nil;
     out.caller    = CALLER_GENERATE;
     // For obj.to_json or generate nan is not allowed but if called from dump
@@ -398,9 +398,9 @@ static VALUE mimic_generate_core(int argc, VALUE *argv, Options copts) {
     }
     rstr = rb_str_new2(out.buf);
     rstr = oj_encode(rstr);
-    if (out.allocated) {
-        xfree(out.buf);
-    }
+
+    oj_out_free(&out);
+
     return rstr;
 }
 
@@ -457,9 +457,12 @@ oj_mimic_pretty_generate(int argc, VALUE *argv, VALUE self) {
     // a Hash. I haven't dug deep enough to find out why but using a State
     // instance and not a Hash gives the desired behavior.
     *rargs = *argv;
+    if (0 == argc) {
+        rb_raise(rb_eArgError, "wrong number of arguments (0))");
+    }
     if (1 == argc) {
         h = rb_hash_new();
-    } else {
+    } else  {
         h = argv[1];
     }
     if (!oj_hash_has_key(h, oj_indent_sym)) {
@@ -740,16 +743,15 @@ static struct _options mimic_object_to_json_options = {0,              // indent
                                                        }};
 
 static VALUE mimic_object_to_json(int argc, VALUE *argv, VALUE self) {
-    char            buf[4096];
     struct _out     out;
     VALUE           rstr;
     struct _options copts = oj_default_options;
 
     copts.str_rx.head = NULL;
     copts.str_rx.tail = NULL;
-    out.buf           = buf;
-    out.end           = buf + sizeof(buf) - 10;
-    out.allocated     = false;
+
+    oj_out_init(&out);
+
     out.omit_nil      = copts.dump_opts.omit_nil;
     copts.mode        = CompatMode;
     copts.to_json     = No;
@@ -765,9 +767,9 @@ static VALUE mimic_object_to_json(int argc, VALUE *argv, VALUE self) {
     }
     rstr = rb_str_new2(out.buf);
     rstr = oj_encode(rstr);
-    if (out.allocated) {
-        xfree(out.buf);
-    }
+
+    oj_out_free(&out);
+
     return rstr;
 }
 

@@ -234,7 +234,7 @@ inline static void dump_hex(uint8_t c, Out out) {
 static void raise_invalid_unicode(const char *str, int len, int pos) {
     char    c;
     char    code[32];
-    char *  cp = code;
+    char   *cp = code;
     int     i;
     uint8_t d;
 
@@ -291,14 +291,12 @@ static const char *dump_unicode(const char *str, const char *end, Out out, const
         code -= 0x00010000;
         c1          = ((code >> 10) & 0x000003FF) + 0x0000D800;
         code        = (code & 0x000003FF) + 0x0000DC00;
-        *out->cur++ = '\\';
-        *out->cur++ = 'u';
+        APPEND_CHARS(out->cur, "\\u", 2);
         for (i = 3; 0 <= i; i--) {
             *out->cur++ = hex_chars[(uint8_t)(c1 >> (i * 4)) & 0x0F];
         }
     }
-    *out->cur++ = '\\';
-    *out->cur++ = 'u';
+    APPEND_CHARS(out->cur, "\\u", 2);
     for (i = 3; 0 <= i; i--) {
         *out->cur++ = hex_chars[(uint8_t)(code >> (i * 4)) & 0x0F];
     }
@@ -347,9 +345,7 @@ long oj_check_circular(VALUE obj, Out out) {
         } else {
             if (ObjectMode == out->opts->mode) {
                 assure_size(out, 18);
-                *out->cur++ = '"';
-                *out->cur++ = '^';
-                *out->cur++ = 'r';
+                APPEND_CHARS(out->cur, "\"^r", 3);
                 dump_ulong(id, out);
                 *out->cur++ = '"';
             }
@@ -361,9 +357,9 @@ long oj_check_circular(VALUE obj, Out out) {
 
 void oj_dump_time(VALUE obj, Out out, int withZone) {
     char      buf[64];
-    char *    b = buf + sizeof(buf) - 1;
+    char     *b = buf + sizeof(buf) - 1;
     long      size;
-    char *    dot;
+    char     *dot;
     int       neg = 0;
     long      one = 1000000000;
     long long sec;
@@ -379,12 +375,12 @@ void oj_dump_time(VALUE obj, Out out, int withZone) {
         sec  = (long long)ts.tv_sec;
         nsec = ts.tv_nsec;
     } else {
-        sec  = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
-        nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+        sec  = NUM2LL(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+        nsec = NUM2LL(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
     }
 #else
-    sec  = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
-    nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+    sec  = NUM2LL(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+    nsec = NUM2LL(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
 #endif
 
     *b-- = '\0';
@@ -451,8 +447,7 @@ void oj_dump_time(VALUE obj, Out out, int withZone) {
     b++;
     size = sizeof(buf) - (b - buf) - 1;
     assure_size(out, size);
-    memcpy(out->cur, b, size);
-    out->cur += size;
+    APPEND_CHARS(out->cur, b, size);
     *out->cur = '\0';
 }
 
@@ -479,12 +474,12 @@ void oj_dump_xml_time(VALUE obj, Out out) {
         sec  = ts.tv_sec;
         nsec = ts.tv_nsec;
     } else {
-        sec  = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
-        nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+        sec  = NUM2LL(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+        nsec = NUM2LL(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
     }
 #else
-    sec  = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
-    nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+    sec  = NUM2LL(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+    nsec = NUM2LL(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
 #endif
 
     assure_size(out, 36);
@@ -565,12 +560,8 @@ void oj_dump_obj_to_json(VALUE obj, Options copts, Out out) {
 
 void oj_dump_obj_to_json_using_params(VALUE obj, Options copts, Out out, int argc, VALUE *argv) {
     if (0 == out->buf) {
-        out->buf = ALLOC_N(char, 4096);
-        // 1 less than end plus extra for possible errors
-        out->end       = out->buf + 4095 - BUFFER_EXTRA;
-        out->allocated = true;
+        oj_out_init(out);
     }
-    out->cur      = out->buf;
     out->circ_cnt = 0;
     out->opts     = copts;
     out->hash_cnt = 0;
@@ -605,36 +596,35 @@ void oj_dump_obj_to_json_using_params(VALUE obj, Options copts, Out out, int arg
 }
 
 void oj_write_obj_to_file(VALUE obj, const char *path, Options copts) {
-    char        buf[4096];
     struct _out out;
     size_t      size;
-    FILE *      f;
+    FILE       *f;
     int         ok;
 
-    out.buf       = buf;
-    out.end       = buf + sizeof(buf) - BUFFER_EXTRA;
-    out.allocated = false;
+    oj_out_init(&out);
+
     out.omit_nil  = copts->dump_opts.omit_nil;
     oj_dump_obj_to_json(obj, copts, &out);
     size = out.cur - out.buf;
     if (0 == (f = fopen(path, "w"))) {
-        if (out.allocated) {
-            xfree(out.buf);
-        }
+        oj_out_free(&out);
         rb_raise(rb_eIOError, "%s", strerror(errno));
     }
     ok = (size == fwrite(out.buf, 1, size, f));
-    if (out.allocated) {
-        xfree(out.buf);
-    }
+
+    oj_out_free(&out);
+
     fclose(f);
     if (!ok) {
         int err = ferror(f);
+        fclose(f);
 
         rb_raise(rb_eIOError, "Write failed. [%d:%s]", err, strerror(err));
     }
+    fclose(f);
 }
 
+#if !IS_WINDOWS
 static void write_ready(int fd) {
     struct pollfd pp;
     int           i;
@@ -649,9 +639,9 @@ static void write_ready(int fd) {
         rb_raise(rb_eIOError, "write failed. %d %s.", errno, strerror(errno));
     }
 }
+#endif
 
 void oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
-    char        buf[4096];
     struct _out out;
     ssize_t     size;
     VALUE       clas = rb_obj_class(stream);
@@ -660,9 +650,8 @@ void oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
     VALUE s;
 #endif
 
-    out.buf       = buf;
-    out.end       = buf + sizeof(buf) - BUFFER_EXTRA;
-    out.allocated = false;
+    oj_out_init(&out);
+
     out.omit_nil  = copts->dump_opts.omit_nil;
     oj_dump_obj_to_json(obj, copts, &out);
     size = out.cur - out.buf;
@@ -692,20 +681,17 @@ void oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
     } else if (rb_respond_to(stream, oj_write_id)) {
         rb_funcall(stream, oj_write_id, 1, rb_str_new(out.buf, size));
     } else {
-        if (out.allocated) {
-            xfree(out.buf);
-        }
+        oj_out_free(&out);
         rb_raise(rb_eArgError, "to_stream() expected an IO Object.");
     }
-    if (out.allocated) {
-        xfree(out.buf);
-    }
+    oj_out_free(&out);
 }
 
 void oj_dump_str(VALUE obj, int depth, Out out, bool as_ok) {
-    rb_encoding *enc = rb_enc_get(obj);
+    int idx = RB_ENCODING_GET(obj);
 
-    if (oj_utf8_encoding != enc) {
+    if (oj_utf8_encoding_index != idx) {
+        rb_encoding *enc = rb_enc_from_index(idx);
         obj = rb_str_conv_enc(obj, enc, oj_utf8_encoding);
     }
     oj_dump_cstr(RSTRING_PTR(obj), (int)RSTRING_LEN(obj), 0, 0, out);
@@ -719,7 +705,7 @@ void oj_dump_sym(VALUE obj, int depth, Out out, bool as_ok) {
 
 static void debug_raise(const char *orig, size_t cnt, int line) {
     char        buf[1024];
-    char *      b     = buf;
+    char       *b     = buf;
     const char *s     = orig;
     const char *s_end = s + cnt;
 
@@ -758,7 +744,7 @@ void oj_dump_raw_json(VALUE obj, int depth, Out out) {
 
 void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
     size_t      size;
-    char *      cmap;
+    char       *cmap;
     const char *orig   = str;
     bool        has_hi = false;
 
@@ -803,10 +789,7 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
     *out->cur++ = '"';
 
     if (escape1) {
-        *out->cur++ = '\\';
-        *out->cur++ = 'u';
-        *out->cur++ = '0';
-        *out->cur++ = '0';
+        APPEND_CHARS(out->cur, "\\u00", 4);
         dump_hex((uint8_t)*str, out);
         cnt--;
         size--;
@@ -817,8 +800,7 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
         if (is_sym) {
             *out->cur++ = ':';
         }
-        memcpy(out->cur, str, cnt);
-        out->cur += cnt;
+        APPEND_CHARS(out->cur, str, cnt);
         *out->cur++ = '"';
     } else {
         const char *end         = str + cnt;
@@ -868,10 +850,7 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
                 break;
             case '6':  // control characters
                 if (*(uint8_t *)str < 0x80) {
-                    *out->cur++ = '\\';
-                    *out->cur++ = 'u';
-                    *out->cur++ = '0';
-                    *out->cur++ = '0';
+                    APPEND_CHARS(out->cur, "\\u00", 4);
                     dump_hex((uint8_t)*str, out);
                 } else {
                     if (0xe2 == (uint8_t)*str &&
@@ -950,16 +929,29 @@ void oj_dump_obj_to_s(VALUE obj, Out out) {
 
 void oj_dump_raw(const char *str, size_t cnt, Out out) {
     assure_size(out, cnt + 10);
-    memcpy(out->cur, str, cnt);
-    out->cur += cnt;
+    APPEND_CHARS(out->cur, str, cnt);
     *out->cur = '\0';
+}
+
+void oj_out_init(Out out) {
+    out->buf = out->stack_buffer;
+    out->cur = out->buf;
+    out->end = out->buf + sizeof(out->stack_buffer) - BUFFER_EXTRA;
+    out->allocated = false;
+}
+
+void oj_out_free(Out out) {
+    if (out->allocated) {
+        xfree(out->buf); // TBD
+    }
 }
 
 void oj_grow_out(Out out, size_t len) {
     size_t size = out->end - out->buf;
     long   pos  = out->cur - out->buf;
-    char * buf  = out->buf;
+    char  *buf  = out->buf;
 
+    printf("*** grow %ld\n", len);
     size *= 2;
     if (size <= len * 2 + pos) {
         size += len;
@@ -981,37 +973,28 @@ void oj_grow_out(Out out, size_t len) {
 
 void oj_dump_nil(VALUE obj, int depth, Out out, bool as_ok) {
     assure_size(out, 4);
-    *out->cur++ = 'n';
-    *out->cur++ = 'u';
-    *out->cur++ = 'l';
-    *out->cur++ = 'l';
+    APPEND_CHARS(out->cur, "null", 4);
     *out->cur   = '\0';
 }
 
 void oj_dump_true(VALUE obj, int depth, Out out, bool as_ok) {
     assure_size(out, 4);
-    *out->cur++ = 't';
-    *out->cur++ = 'r';
-    *out->cur++ = 'u';
-    *out->cur++ = 'e';
+    APPEND_CHARS(out->cur, "true", 4);
     *out->cur   = '\0';
 }
 
 void oj_dump_false(VALUE obj, int depth, Out out, bool as_ok) {
     assure_size(out, 5);
-    *out->cur++ = 'f';
-    *out->cur++ = 'a';
-    *out->cur++ = 'l';
-    *out->cur++ = 's';
-    *out->cur++ = 'e';
+    APPEND_CHARS(out->cur, "false", 5);
     *out->cur   = '\0';
 }
 
 void oj_dump_fixnum(VALUE obj, int depth, Out out, bool as_ok) {
     char      buf[32];
     char *    b              = buf + sizeof(buf) - 1;
-    long long num            = rb_num2ll(obj);
+    long long num            = NUM2LL(obj);
     int       neg            = 0;
+    size_t    cnt            = 0;
     bool      dump_as_string = false;
 
     if (out->opts->int_range_max != 0 && out->opts->int_range_min != 0 &&
@@ -1042,10 +1025,9 @@ void oj_dump_fixnum(VALUE obj, int depth, Out out, bool as_ok) {
     if (dump_as_string) {
         *--b = '"';
     }
-    assure_size(out, (sizeof(buf) - (b - buf)));
-    for (; '\0' != *b; b++) {
-        *out->cur++ = *b;
-    }
+    cnt = sizeof(buf) - (b - buf) - 1;
+    assure_size(out, cnt);
+    APPEND_CHARS(out->cur, b, cnt);
     *out->cur = '\0';
 }
 
@@ -1061,8 +1043,7 @@ void oj_dump_bignum(VALUE obj, int depth, Out out, bool as_ok) {
     } else {
         assure_size(out, cnt);
     }
-    memcpy(out->cur, RSTRING_PTR(rs), cnt);
-    out->cur += cnt;
+    APPEND_CHARS(out->cur, RSTRING_PTR(rs), cnt);
     if (dump_as_string) {
         *out->cur++ = '"';
     }
@@ -1072,7 +1053,7 @@ void oj_dump_bignum(VALUE obj, int depth, Out out, bool as_ok) {
 // Removed dependencies on math due to problems with CentOS 5.4.
 void oj_dump_float(VALUE obj, int depth, Out out, bool as_ok) {
     char   buf[64];
-    char * b;
+    char  *b;
     double d   = rb_num2dbl(obj);
     int    cnt = 0;
 
@@ -1195,9 +1176,7 @@ void oj_dump_float(VALUE obj, int depth, Out out, bool as_ok) {
         cnt = oj_dump_float_printf(buf, sizeof(buf), obj, d, out->opts->float_fmt);
     }
     assure_size(out, cnt);
-    for (b = buf; '\0' != *b; b++) {
-        *out->cur++ = *b;
-    }
+    APPEND_CHARS(out->cur, buf, cnt);
     *out->cur = '\0';
 }
 

@@ -39,6 +39,16 @@ enum st_retval { ST_CONTINUE = 0, ST_STOP = 1, ST_DELETE = 2, ST_CHECK };
 #define NINF_VAL "-3.0e14159265358979323846"
 #define NAN_VAL "3.3e14159265358979323846"
 
+#if __STDC_VERSION__ >= 199901L
+    // To avoid using ruby_snprintf with C99.
+    #undef snprintf
+    #include <stdio.h>
+#endif
+
+// To avoid using ruby_nonempty_memcpy().
+#undef memcpy
+#include <string.h>
+
 typedef enum { Yes = 'y', No = 'n', NotSet = 0 } YesNo;
 
 typedef enum {
@@ -176,6 +186,7 @@ typedef struct _rOptTable {
 } * ROptTable;
 
 typedef struct _out {
+    char       stack_buffer[4096];
     char *     buf;
     char *     end;
     char *     cur;
@@ -265,8 +276,8 @@ extern void oj_str_writer_pop(StrWriter sw);
 extern void oj_str_writer_pop_all(StrWriter sw);
 
 extern void  oj_init_doc(void);
-extern void  oj_string_writer_init();
-extern void  oj_stream_writer_init();
+extern void  oj_string_writer_init(void);
+extern void  oj_stream_writer_init(void);
 extern void  oj_str_writer_init(StrWriter sw, int buf_size);
 extern VALUE oj_define_mimic_json(int argc, VALUE *argv, VALUE self);
 extern VALUE oj_mimic_generate(int argc, VALUE *argv, VALUE self);
@@ -282,6 +293,7 @@ extern VALUE oj_rails_encode(int argc, VALUE *argv, VALUE self);
 extern VALUE           Oj;
 extern struct _options oj_default_options;
 extern rb_encoding *   oj_utf8_encoding;
+extern int             oj_utf8_encoding_index;
 
 extern VALUE oj_bag_class;
 extern VALUE oj_bigdecimal_class;
@@ -363,6 +375,12 @@ extern ID oj_write_id;
 extern bool oj_use_hash_alt;
 extern bool oj_use_array_alt;
 extern bool string_writer_optimized;
+
+#define APPEND_CHARS(buffer, chars, size) \
+    { \
+        memcpy(buffer, chars, size); \
+        buffer += size; \
+    }
 
 #ifdef HAVE_PTHREAD_MUTEX_INIT
 extern pthread_mutex_t oj_cache_mutex;

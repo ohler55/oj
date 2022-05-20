@@ -32,6 +32,11 @@ extern void oj_dump_obj_to_s(VALUE obj, Out out);
 
 extern const char *oj_nan_str(VALUE obj, int opt, int mode, bool plus, int *lenp);
 
+// initialize an out buffer with the provided stack allocated memory
+extern void oj_out_init(Out out);
+// clean up the out buffer if it uses heap allocated memory
+extern void oj_out_free(Out out);
+
 extern void oj_grow_out(Out out, size_t len);
 extern long oj_check_circular(VALUE obj, Out out);
 
@@ -62,9 +67,8 @@ inline static void fill_indent(Out out, int cnt) {
     if (0 < out->indent) {
         cnt *= out->indent;
         *out->cur++ = '\n';
-        for (; 0 < cnt; cnt--) {
-            *out->cur++ = ' ';
-        }
+        memset(out->cur, ' ', cnt);
+        out->cur += cnt;
     }
 }
 
@@ -83,8 +87,9 @@ inline static bool dump_ignore(Options opts, VALUE obj) {
 }
 
 inline static void dump_ulong(unsigned long num, Out out) {
-    char  buf[32];
-    char *b = buf + sizeof(buf) - 1;
+    char   buf[32];
+    char  *b   = buf + sizeof(buf) - 1;
+    size_t cnt = 0;
 
     *b-- = '\0';
     if (0 < num) {
@@ -95,9 +100,8 @@ inline static void dump_ulong(unsigned long num, Out out) {
     } else {
         *b = '0';
     }
-    for (; '\0' != *b; b++) {
-        *out->cur++ = *b;
-    }
+    cnt = sizeof(buf) - (b - buf) - 1;
+    APPEND_CHARS(out->cur, b, cnt);
     *out->cur = '\0';
 }
 

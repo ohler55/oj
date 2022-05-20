@@ -53,10 +53,13 @@ void oj_str_writer_init(StrWriter sw, int buf_size) {
     } else if (buf_size < 1024) {
         buf_size = 1024;
     }
+    // Must be allocated. Using the out.stack_buffer results in double frees
+    // and I haven't figured out why yet.
     sw->out.buf        = ALLOC_N(char, buf_size);
-    sw->out.end        = sw->out.buf + buf_size - 10;
-    sw->out.allocated  = true;
     sw->out.cur        = sw->out.buf;
+    sw->out.end        = sw->out.buf + buf_size - BUFFER_EXTRA;
+    sw->out.allocated  = true;
+
     *sw->out.cur       = '\0';
     sw->out.circ_cache = NULL;
     sw->out.circ_cnt   = 0;
@@ -229,7 +232,9 @@ static void str_writer_free(void *ptr) {
         return;
     }
     sw = (StrWriter)ptr;
-    xfree(sw->out.buf);
+
+    oj_out_free(&sw->out);
+
     xfree(sw->types);
     xfree(ptr);
 }
@@ -449,7 +454,7 @@ static VALUE str_writer_to_s(VALUE self) {
  * Returns the contents of the writer as a JSON element. If called from inside
  * an array or hash by Oj the raw buffer will be used othersize a more
  * inefficient parse of the contents and a return of the result is
- * completed. The parse uses the trict mode.
+ * completed. The parse uses the strict mode.
  *
  * *return* [_Hash_|_Array_|_String_|_Integer_|_Float_|_True_|_False_|_nil|)
  */
@@ -469,8 +474,9 @@ static VALUE str_writer_as_json(VALUE self) {
  * calling to_s() will return the JSON document. Note that calling to_s() before
  * construction is complete will return the document in it's current state.
  */
-void oj_string_writer_init() {
+void oj_string_writer_init(void) {
     oj_string_writer_class = rb_define_class_under(Oj, "StringWriter", rb_cObject);
+    rb_gc_register_address(&oj_string_writer_class);
     rb_undef_alloc_func(oj_string_writer_class);
     rb_define_module_function(oj_string_writer_class, "new", str_writer_new, -1);
     rb_define_method(oj_string_writer_class, "push_key", str_writer_push_key, 1);

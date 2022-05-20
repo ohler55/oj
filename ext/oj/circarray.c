@@ -3,7 +3,7 @@
 
 #include "circarray.h"
 
-CircArray oj_circ_array_new() {
+CircArray oj_circ_array_new(void) {
     CircArray ca;
 
     if (0 == (ca = ALLOC(struct _circArray))) {

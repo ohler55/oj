@@ -86,8 +86,11 @@ static VALUE form_attr(const char *str, size_t len) {
     return (VALUE)rb_intern3(buf, len + 1, oj_utf8_encoding);
 }
 
-void oj_hash_init() {
+void oj_hash_init(void) {
     VALUE cache_class = rb_define_class_under(Oj, "Cache", rb_cObject);
+    rb_undef_alloc_func(cache_class);
+
+    rb_gc_register_address(&cache_class);
     rb_undef_alloc_func(cache_class);
 
     str_cache     = cache_create(0, form_str, true, true);
@@ -276,6 +279,7 @@ VALUE oj_class_intern(const char *key, size_t len, bool safe, ParseInfo pi, int 
         bucket->len = len;
         bucket->val = resolve_classpath(pi, key, len, auto_define, error_class);
     }
+    rb_gc_register_mark_object(bucket->val);
     return bucket->val;
 }
 
@@ -288,8 +292,10 @@ char *oj_strndup(const char *s, size_t len) {
     return d;
 }
 
-void intern_cleanup() {
+/*
+void intern_cleanup(void) {
     cache_free(str_cache);
     cache_free(sym_cache);
     cache_free(attr_cache);
 }
+*/

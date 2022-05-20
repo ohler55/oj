@@ -167,17 +167,14 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
         }
         fill_indent(out, d3);
         *out->cur++ = '"';
-        memcpy(out->cur, name, len);
-        out->cur += len;
+        APPEND_CHARS(out->cur, name, len);
         *out->cur++ = '"';
         if (0 < out->opts->dump_opts.before_size) {
-            strcpy(out->cur, out->opts->dump_opts.before_sep);
-            out->cur += out->opts->dump_opts.before_size;
+            APPEND_CHARS(out->cur, out->opts->dump_opts.before_sep, out->opts->dump_opts.before_size);
         }
         *out->cur++ = ':';
         if (0 < out->opts->dump_opts.after_size) {
-            strcpy(out->cur, out->opts->dump_opts.after_sep);
-            out->cur += out->opts->dump_opts.after_size;
+            APPEND_CHARS(out->cur, out->opts->dump_opts.after_sep, out->opts->dump_opts.after_size);
         }
 #ifdef RSTRUCT_LEN
         v = RSTRUCT_GET(obj, i);
@@ -330,12 +327,12 @@ static void dump_time(VALUE obj, int depth, Out out, bool as_ok) {
         sec  = (long long)ts.tv_sec;
         nsec = ts.tv_nsec;
     } else {
-        sec  = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
-        nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+        sec  = NUM2LL(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+        nsec = NUM2LL(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
     }
 #else
-    sec  = rb_num2ll(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
-    nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+    sec  = NUM2LL(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
+    nsec = NUM2LL(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
 #endif
     dump_sec_nano(obj, sec, nsec, out);
 }
@@ -345,9 +342,9 @@ static void dump_timewithzone(VALUE obj, int depth, Out out, bool as_ok) {
     long long nsec = 0;
 
     if (rb_respond_to(obj, oj_tv_nsec_id)) {
-        nsec = rb_num2ll(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
+        nsec = NUM2LL(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
     } else if (rb_respond_to(obj, oj_tv_usec_id)) {
-        nsec = rb_num2ll(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
+        nsec = NUM2LL(rb_funcall2(obj, oj_tv_usec_id, 0, 0)) * 1000;
     }
     dump_sec_nano(obj, sec, nsec, out);
 }
@@ -405,14 +402,12 @@ static void dump_row(VALUE row, StrLen cols, int ccnt, int depth, Out out) {
         assure_size(out, size);
         if (out->opts->dump_opts.use) {
             if (0 < out->opts->dump_opts.array_size) {
-                strcpy(out->cur, out->opts->dump_opts.array_nl);
-                out->cur += out->opts->dump_opts.array_size;
+                APPEND_CHARS(out->cur, out->opts->dump_opts.array_nl, out->opts->dump_opts.array_size);
             }
             if (0 < out->opts->dump_opts.indent_size) {
                 int i;
                 for (i = d2; 0 < i; i--) {
-                    strcpy(out->cur, out->opts->dump_opts.indent_str);
-                    out->cur += out->opts->dump_opts.indent_size;
+                    APPEND_CHARS(out->cur, out->opts->dump_opts.indent_str, out->opts->dump_opts.indent_size);
                 }
             }
         } else {
@@ -429,15 +424,13 @@ static void dump_row(VALUE row, StrLen cols, int ccnt, int depth, Out out) {
     assure_size(out, size);
     if (out->opts->dump_opts.use) {
         if (0 < out->opts->dump_opts.array_size) {
-            strcpy(out->cur, out->opts->dump_opts.array_nl);
-            out->cur += out->opts->dump_opts.array_size;
+            APPEND_CHARS(out->cur, out->opts->dump_opts.array_nl, out->opts->dump_opts.array_size);
         }
         if (0 < out->opts->dump_opts.indent_size) {
             int i;
 
             for (i = depth; 0 < i; i--) {
-                strcpy(out->cur, out->opts->dump_opts.indent_str);
-                out->cur += out->opts->dump_opts.indent_size;
+                APPEND_CHARS(out->cur, out->opts->dump_opts.indent_str, out->opts->dump_opts.indent_size);
             }
         }
     } else {
@@ -477,14 +470,12 @@ static void dump_activerecord_result(VALUE obj, int depth, Out out, bool as_ok) 
         assure_size(out, size);
         if (out->opts->dump_opts.use) {
             if (0 < out->opts->dump_opts.array_size) {
-                strcpy(out->cur, out->opts->dump_opts.array_nl);
-                out->cur += out->opts->dump_opts.array_size;
+                APPEND_CHARS(out->cur, out->opts->dump_opts.array_nl, out->opts->dump_opts.array_size);
             }
             if (0 < out->opts->dump_opts.indent_size) {
                 int i;
                 for (i = d2; 0 < i; i--) {
-                    strcpy(out->cur, out->opts->dump_opts.indent_str);
-                    out->cur += out->opts->dump_opts.indent_size;
+                    APPEND_CHARS(out->cur, out->opts->dump_opts.indent_str, out->opts->dump_opts.indent_size);
                 }
             }
         } else {
@@ -500,15 +491,13 @@ static void dump_activerecord_result(VALUE obj, int depth, Out out, bool as_ok) 
     assure_size(out, size);
     if (out->opts->dump_opts.use) {
         if (0 < out->opts->dump_opts.array_size) {
-            strcpy(out->cur, out->opts->dump_opts.array_nl);
-            out->cur += out->opts->dump_opts.array_size;
+            APPEND_CHARS(out->cur, out->opts->dump_opts.array_nl, out->opts->dump_opts.array_size);
         }
         if (0 < out->opts->dump_opts.indent_size) {
             int i;
 
             for (i = depth; 0 < i; i--) {
-                strcpy(out->cur, out->opts->dump_opts.indent_str);
-                out->cur += out->opts->dump_opts.indent_size;
+                APPEND_CHARS(out->cur, out->opts->dump_opts.indent_str, out->opts->dump_opts.indent_size);
             }
         }
     } else {
@@ -908,7 +897,6 @@ static VALUE protect_dump(VALUE ov) {
 }
 
 static VALUE encode(VALUE obj, ROptTable ropts, Options opts, int argc, VALUE *argv) {
-    char            buf[4096];
     struct _out     out;
     struct _options copts = *opts;
     volatile VALUE  rstr  = Qnil;
@@ -925,9 +913,9 @@ static VALUE encode(VALUE obj, ROptTable ropts, Options opts, int argc, VALUE *a
     } else {
         copts.escape_mode = RailsEsc;
     }
-    out.buf       = buf;
-    out.end       = buf + sizeof(buf) - 10;
-    out.allocated = false;
+
+    oj_out_init(&out);
+
     out.omit_nil  = copts.dump_opts.omit_nil;
     out.caller    = 0;
     out.cur       = out.buf;
@@ -963,9 +951,9 @@ static VALUE encode(VALUE obj, ROptTable ropts, Options opts, int argc, VALUE *a
     if (Yes == copts.circular) {
         oj_cache8_delete(out.circ_cache);
     }
-    if (out.allocated) {
-        xfree(out.buf);
-    }
+
+    oj_out_free(&out);
+
     if (0 != line) {
         rb_jump_tag(line);
     }
@@ -1175,12 +1163,15 @@ oj_optimize_rails(VALUE self) {
  *
  * The Oj ActiveSupport compliant encoder.
  */
-void oj_mimic_rails_init() {
+void oj_mimic_rails_init(void) {
     VALUE rails = rb_define_module_under(Oj, "Rails");
 
     rb_define_module_function(rails, "encode", rails_encode, -1);
 
     encoder_class = rb_define_class_under(rails, "Encoder", rb_cObject);
+    rb_gc_register_address(&encoder_class);
+    rb_undef_alloc_func(encoder_class);
+
     rb_define_module_function(encoder_class, "new", encoder_new, -1);
     rb_define_module_function(rails, "optimize", rails_optimize, -1);
     rb_define_module_function(rails, "deoptimize", rails_deoptimize, -1);
@@ -1263,19 +1254,17 @@ static void dump_array(VALUE a, int depth, Out out, bool as_ok) {
         } else {
             size = d2 * out->indent + 2;
         }
+        assure_size(out, size * cnt);
         cnt--;
         for (i = 0; i <= cnt; i++) {
-            assure_size(out, size);
             if (out->opts->dump_opts.use) {
                 if (0 < out->opts->dump_opts.array_size) {
-                    strcpy(out->cur, out->opts->dump_opts.array_nl);
-                    out->cur += out->opts->dump_opts.array_size;
+                    APPEND_CHARS(out->cur, out->opts->dump_opts.array_nl, out->opts->dump_opts.array_size);
                 }
                 if (0 < out->opts->dump_opts.indent_size) {
                     int i;
                     for (i = d2; 0 < i; i--) {
-                        strcpy(out->cur, out->opts->dump_opts.indent_str);
-                        out->cur += out->opts->dump_opts.indent_size;
+                        APPEND_CHARS(out->cur, out->opts->dump_opts.indent_str, out->opts->dump_opts.indent_size);
                     }
                 }
             } else {
@@ -1290,15 +1279,13 @@ static void dump_array(VALUE a, int depth, Out out, bool as_ok) {
         assure_size(out, size);
         if (out->opts->dump_opts.use) {
             if (0 < out->opts->dump_opts.array_size) {
-                strcpy(out->cur, out->opts->dump_opts.array_nl);
-                out->cur += out->opts->dump_opts.array_size;
+                APPEND_CHARS(out->cur, out->opts->dump_opts.array_nl, out->opts->dump_opts.array_size);
             }
             if (0 < out->opts->dump_opts.indent_size) {
                 int i;
 
                 for (i = depth; 0 < i; i--) {
-                    strcpy(out->cur, out->opts->dump_opts.indent_str);
-                    out->cur += out->opts->dump_opts.indent_size;
+                    APPEND_CHARS(out->cur, out->opts->dump_opts.indent_str, out->opts->dump_opts.indent_size);
                 }
             }
         } else {
@@ -1336,14 +1323,12 @@ static int hash_cb(VALUE key, VALUE value, VALUE ov) {
         size = depth * out->opts->dump_opts.indent_size + out->opts->dump_opts.hash_size + 1;
         assure_size(out, size);
         if (0 < out->opts->dump_opts.hash_size) {
-            strcpy(out->cur, out->opts->dump_opts.hash_nl);
-            out->cur += out->opts->dump_opts.hash_size;
+            APPEND_CHARS(out->cur, out->opts->dump_opts.hash_nl, out->opts->dump_opts.hash_size);
         }
         if (0 < out->opts->dump_opts.indent_size) {
             int i;
             for (i = depth; 0 < i; i--) {
-                strcpy(out->cur, out->opts->dump_opts.indent_str);
-                out->cur += out->opts->dump_opts.indent_size;
+                APPEND_CHARS(out->cur, out->opts->dump_opts.indent_str, out->opts->dump_opts.indent_size);
             }
         }
         if (rtype == T_STRING) {
@@ -1354,13 +1339,11 @@ static int hash_cb(VALUE key, VALUE value, VALUE ov) {
         size = out->opts->dump_opts.before_size + out->opts->dump_opts.after_size + 2;
         assure_size(out, size);
         if (0 < out->opts->dump_opts.before_size) {
-            strcpy(out->cur, out->opts->dump_opts.before_sep);
-            out->cur += out->opts->dump_opts.before_size;
+            APPEND_CHARS(out->cur, out->opts->dump_opts.before_sep, out->opts->dump_opts.before_size);
         }
         *out->cur++ = ':';
         if (0 < out->opts->dump_opts.after_size) {
-            strcpy(out->cur, out->opts->dump_opts.after_sep);
-            out->cur += out->opts->dump_opts.after_size;
+            APPEND_CHARS(out->cur, out->opts->dump_opts.after_sep, out->opts->dump_opts.after_size);
         }
     }
     dump_rails_val(value, depth, out, true);
@@ -1403,15 +1386,13 @@ static void dump_hash(VALUE obj, int depth, Out out, bool as_ok) {
             size = depth * out->opts->dump_opts.indent_size + out->opts->dump_opts.hash_size + 1;
             assure_size(out, size);
             if (0 < out->opts->dump_opts.hash_size) {
-                strcpy(out->cur, out->opts->dump_opts.hash_nl);
-                out->cur += out->opts->dump_opts.hash_size;
+                APPEND_CHARS(out->cur, out->opts->dump_opts.hash_nl, out->opts->dump_opts.hash_size);
             }
             if (0 < out->opts->dump_opts.indent_size) {
                 int i;
 
                 for (i = depth; 0 < i; i--) {
-                    strcpy(out->cur, out->opts->dump_opts.indent_str);
-                    out->cur += out->opts->dump_opts.indent_size;
+                    APPEND_CHARS(out->cur, out->opts->dump_opts.indent_str, out->opts->dump_opts.indent_size);
                 }
             }
         }

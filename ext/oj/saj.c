@@ -210,10 +210,7 @@ static void read_hash(ParseInfo pi, const char *key) {
                 pi->s++;
             } else {
                 if (pi->has_error) {
-                    call_error("invalid format, expected , or } while in an object",
-                               pi,
-                               __FILE__,
-                               __LINE__);
+                    call_error("invalid format, expected , or } while in an object", pi, __FILE__, __LINE__);
                 }
                 raise_error("invalid format, expected , or } while in an object", pi->str, pi->s);
             }
@@ -243,10 +240,7 @@ static void read_array(ParseInfo pi, const char *key) {
                 break;
             } else {
                 if (pi->has_error) {
-                    call_error("invalid format, expected , or ] while in an array",
-                               pi,
-                               __FILE__,
-                               __LINE__);
+                    call_error("invalid format, expected , or ] while in an array", pi, __FILE__, __LINE__);
                 }
                 raise_error("invalid format, expected , or ] while in an array", pi->str, pi->s);
             }
@@ -276,7 +270,7 @@ static void read_str(ParseInfo pi, const char *key) {
 #endif
 
 static void read_num(ParseInfo pi, const char *key) {
-    char *  start = pi->s;
+    char   *start = pi->s;
     int64_t n     = 0;
     long    a     = 0;
     long    div   = 1;
@@ -351,9 +345,7 @@ static void read_num(ParseInfo pi, const char *key) {
 
             *pi->s = '\0';
             if (pi->has_add_value) {
-                call_add_value(pi->handler,
-                               rb_funcall(rb_cObject, oj_bigdecimal_id, 1, rb_str_new2(start)),
-                               key);
+                call_add_value(pi->handler, rb_funcall(rb_cObject, oj_bigdecimal_id, 1, rb_str_new2(start)), key);
             }
             *pi->s = c;
         } else {
@@ -371,9 +363,7 @@ static void read_num(ParseInfo pi, const char *key) {
 
             *pi->s = '\0';
             if (pi->has_add_value) {
-                call_add_value(pi->handler,
-                               rb_funcall(rb_cObject, oj_bigdecimal_id, 1, rb_str_new2(start)),
-                               key);
+                call_add_value(pi->handler, rb_funcall(rb_cObject, oj_bigdecimal_id, 1, rb_str_new2(start)), key);
             }
             *pi->s = c;
         } else {
@@ -505,9 +495,9 @@ static char *unicode_to_chars(ParseInfo pi, char *t, uint32_t code) {
  * reached again. Do not read the character after the terminating quote.
  */
 static char *read_quoted_value(ParseInfo pi) {
-    char *   value = 0;
-    char *   h     = pi->s; /* head */
-    char *   t     = h;     /* tail */
+    char    *value = 0;
+    char    *h     = pi->s; /* head */
+    char    *t     = h;     /* tail */
     uint32_t code;
 
     h++; /* skip quote character */
@@ -588,15 +578,13 @@ static void saj_parse(VALUE handler, char *json) {
     pi.str = json;
     pi.s   = json;
 #if IS_WINDOWS
-    pi.stack_min = (void *)((char *)&obj -
-                            (512 * 1024)); /* assume a 1M stack and give half to ruby */
+    pi.stack_min = (void *)((char *)&obj - (512L * 1024L)); /* assume a 1M stack and give half to ruby */
 #else
     {
         struct rlimit lim;
 
         if (0 == getrlimit(RLIMIT_STACK, &lim) && RLIM_INFINITY != lim.rlim_cur) {
-            pi.stack_min = (void *)((char *)&obj - (lim.rlim_cur / 4 *
-                                                    3)); /* let 3/4ths of the stack be used only */
+            pi.stack_min = (void *)((char *)&obj - (lim.rlim_cur / 4 * 3)); /* let 3/4ths of the stack be used only */
         } else {
             pi.stack_min = 0; /* indicates not to check stack limit */
         }
@@ -633,7 +621,7 @@ static void saj_parse(VALUE handler, char *json) {
  */
 VALUE
 oj_saj_parse(int argc, VALUE *argv, VALUE self) {
-    char * json  = 0;
+    char  *json  = 0;
     size_t len   = 0;
     VALUE  input = argv[1];
 

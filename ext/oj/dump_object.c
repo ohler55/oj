@@ -24,12 +24,7 @@ static void dump_data(VALUE obj, int depth, Out out, bool as_ok) {
 
     if (rb_cTime == clas) {
         assure_size(out, 6);
-        *out->cur++ = '{';
-        *out->cur++ = '"';
-        *out->cur++ = '^';
-        *out->cur++ = 't';
-        *out->cur++ = '"';
-        *out->cur++ = ':';
+        APPEND_CHARS(out->cur, "{\"^t\":", 6);
         dump_time(obj, out);
         *out->cur++ = '}';
         *out->cur   = '\0';
@@ -91,12 +86,7 @@ static void dump_class(VALUE obj, int depth, Out out, bool as_ok) {
     size_t      len = strlen(s);
 
     assure_size(out, 6);
-    *out->cur++ = '{';
-    *out->cur++ = '"';
-    *out->cur++ = '^';
-    *out->cur++ = 'c';
-    *out->cur++ = '"';
-    *out->cur++ = ':';
+    APPEND_CHARS(out->cur, "{\"^c\":", 6);
     oj_dump_cstr(s, len, 0, 0, out);
     *out->cur++ = '}';
     *out->cur   = '\0';
@@ -120,9 +110,7 @@ static void dump_array_class(VALUE a, VALUE clas, int depth, Out out) {
     if (0 < id) {
         assure_size(out, d2 * out->indent + 16);
         fill_indent(out, d2);
-        *out->cur++ = '"';
-        *out->cur++ = '^';
-        *out->cur++ = 'i';
+        APPEND_CHARS(out->cur, "\"^i", 3);
         dump_ulong(id, out);
         *out->cur++ = '"';
     }
@@ -139,19 +127,17 @@ static void dump_array_class(VALUE a, VALUE clas, int depth, Out out) {
         } else {
             size = d2 * out->indent + 2;
         }
+        assure_size(out, size * cnt);
         cnt--;
         for (i = 0; i <= cnt; i++) {
-            assure_size(out, size);
             if (out->opts->dump_opts.use) {
                 if (0 < out->opts->dump_opts.array_size) {
-                    strcpy(out->cur, out->opts->dump_opts.array_nl);
-                    out->cur += out->opts->dump_opts.array_size;
+                    APPEND_CHARS(out->cur, out->opts->dump_opts.array_nl, out->opts->dump_opts.array_size);
                 }
                 if (0 < out->opts->dump_opts.indent_size) {
                     int i;
                     for (i = d2; 0 < i; i--) {
-                        strcpy(out->cur, out->opts->dump_opts.indent_str);
-                        out->cur += out->opts->dump_opts.indent_size;
+                        APPEND_CHARS(out->cur, out->opts->dump_opts.indent_str, out->opts->dump_opts.indent_size);
                     }
                 }
             } else {
@@ -168,15 +154,13 @@ static void dump_array_class(VALUE a, VALUE clas, int depth, Out out) {
             // printf("*** d2: %u  indent: %u '%s'\n", d2, out->opts->dump_opts->indent_size,
             // out->opts->dump_opts->indent);
             if (0 < out->opts->dump_opts.array_size) {
-                strcpy(out->cur, out->opts->dump_opts.array_nl);
-                out->cur += out->opts->dump_opts.array_size;
+                APPEND_CHARS(out->cur, out->opts->dump_opts.array_nl, out->opts->dump_opts.array_size);
             }
             if (0 < out->opts->dump_opts.indent_size) {
                 int i;
 
                 for (i = depth; 0 < i; i--) {
-                    strcpy(out->cur, out->opts->dump_opts.indent_str);
-                    out->cur += out->opts->dump_opts.indent_size;
+                    APPEND_CHARS(out->cur, out->opts->dump_opts.indent_str, out->opts->dump_opts.indent_size);
                 }
             }
         } else {
@@ -248,9 +232,7 @@ static int hash_cb(VALUE key, VALUE value, VALUE ov) {
             uint8_t b;
 
             assure_size(out, s2 + 15);
-            *out->cur++ = '"';
-            *out->cur++ = '^';
-            *out->cur++ = '#';
+            APPEND_CHARS(out->cur, "\"^#", 3);
             out->hash_cnt++;
             for (i = 28; 0 <= i; i -= 4) {
                 b = (uint8_t)((out->hash_cnt >> i) & 0x0000000F);
@@ -261,9 +243,7 @@ static int hash_cb(VALUE key, VALUE value, VALUE ov) {
                     *out->cur++ = hex_chars[b];
                 }
             }
-            *out->cur++ = '"';
-            *out->cur++ = ':';
-            *out->cur++ = '[';
+            APPEND_CHARS(out->cur, "\":[", 3);
             fill_indent(out, d2);
             oj_dump_obj_val(key, d2, out);
             assure_size(out, s2);
@@ -293,8 +273,7 @@ static void dump_hash_class(VALUE obj, VALUE clas, int depth, Out out) {
     size = depth * out->indent + 2;
     assure_size(out, 2);
     if (0 == cnt) {
-        *out->cur++ = '{';
-        *out->cur++ = '}';
+        APPEND_CHARS(out->cur, "{}", 2);
     } else {
         long id = oj_check_circular(obj, out);
 
@@ -305,11 +284,7 @@ static void dump_hash_class(VALUE obj, VALUE clas, int depth, Out out) {
         if (0 < id) {
             assure_size(out, size + 16);
             fill_indent(out, depth + 1);
-            *out->cur++ = '"';
-            *out->cur++ = '^';
-            *out->cur++ = 'i';
-            *out->cur++ = '"';
-            *out->cur++ = ':';
+            APPEND_CHARS(out->cur, "\"^i\":", 5);
             dump_ulong(id, out);
             *out->cur++ = ',';
         }
@@ -325,15 +300,13 @@ static void dump_hash_class(VALUE obj, VALUE clas, int depth, Out out) {
             size = depth * out->opts->dump_opts.indent_size + out->opts->dump_opts.hash_size + 1;
             assure_size(out, size);
             if (0 < out->opts->dump_opts.hash_size) {
-                strcpy(out->cur, out->opts->dump_opts.hash_nl);
-                out->cur += out->opts->dump_opts.hash_size;
+                APPEND_CHARS(out->cur, out->opts->dump_opts.hash_nl, out->opts->dump_opts.hash_size);
             }
             if (0 < out->opts->dump_opts.indent_size) {
                 int i;
 
                 for (i = depth; 0 < i; i--) {
-                    strcpy(out->cur, out->opts->dump_opts.indent_str);
-                    out->cur += out->opts->dump_opts.indent_size;
+                    APPEND_CHARS(out->cur, out->opts->dump_opts.indent_str, out->opts->dump_opts.indent_size);
                 }
             }
         }
@@ -408,11 +381,7 @@ static void dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
         size = d2 * out->indent + clen + 10;
         assure_size(out, size);
         fill_indent(out, d2);
-        *out->cur++ = '"';
-        *out->cur++ = '^';
-        *out->cur++ = 'O';
-        *out->cur++ = '"';
-        *out->cur++ = ':';
+        APPEND_CHARS(out->cur, "\"^O\":", 5);
         oj_dump_cstr(class_name, clen, 0, 0, out);
         *out->cur++ = ',';
     }
@@ -430,12 +399,9 @@ static void dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
             assure_size(out, size);
             fill_indent(out, d2);
             *out->cur++ = '"';
-            memcpy(out->cur, name, nlen);
-            out->cur += nlen;
-            *out->cur++ = '"';
-            *out->cur++ = ':';
-            memcpy(out->cur, s, len);
-            out->cur += len;
+            APPEND_CHARS(out->cur, name, nlen);
+            APPEND_CHARS(out->cur, "\":", 2);
+            APPEND_CHARS(out->cur, s, len);
             *out->cur = '\0';
         }
     } else {
@@ -446,7 +412,7 @@ static void dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
             assure_size(out, size);
             name = rb_id2name(*idp);
             nlen = strlen(name);
-            if (0 != *fp) {
+            if (NULL != *fp) {
                 v = (*fp)(obj);
             } else if (0 == strchr(name, '.')) {
                 v = rb_funcall(obj, *idp, 0);
@@ -509,22 +475,14 @@ static void dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out)
 
         assure_size(out, d2 * out->indent + clen + 10);
         fill_indent(out, d2);
-        *out->cur++ = '"';
-        *out->cur++ = '^';
-        *out->cur++ = 'o';
-        *out->cur++ = '"';
-        *out->cur++ = ':';
+        APPEND_CHARS(out->cur, "\"^o\":", 5);
         oj_dump_cstr(class_name, clen, 0, 0, out);
     }
     if (0 < id) {
         assure_size(out, d2 * out->indent + 16);
         *out->cur++ = ',';
         fill_indent(out, d2);
-        *out->cur++ = '"';
-        *out->cur++ = '^';
-        *out->cur++ = 'i';
-        *out->cur++ = '"';
-        *out->cur++ = ':';
+        APPEND_CHARS(out->cur, "\"^i\":", 5);
         dump_ulong(id, out);
     }
     switch (type) {
@@ -532,39 +490,21 @@ static void dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out)
         assure_size(out, d2 * out->indent + 14);
         *out->cur++ = ',';
         fill_indent(out, d2);
-        *out->cur++ = '"';
-        *out->cur++ = 's';
-        *out->cur++ = 'e';
-        *out->cur++ = 'l';
-        *out->cur++ = 'f';
-        *out->cur++ = '"';
-        *out->cur++ = ':';
+        APPEND_CHARS(out->cur, "\"self\":", 7);
         oj_dump_cstr(RSTRING_PTR(obj), (int)RSTRING_LEN(obj), 0, 0, out);
         break;
     case T_ARRAY:
         assure_size(out, d2 * out->indent + 14);
         *out->cur++ = ',';
         fill_indent(out, d2);
-        *out->cur++ = '"';
-        *out->cur++ = 's';
-        *out->cur++ = 'e';
-        *out->cur++ = 'l';
-        *out->cur++ = 'f';
-        *out->cur++ = '"';
-        *out->cur++ = ':';
+        APPEND_CHARS(out->cur, "\"self\":", 7);
         dump_array_class(obj, Qundef, depth + 1, out);
         break;
     case T_HASH:
         assure_size(out, d2 * out->indent + 14);
         *out->cur++ = ',';
         fill_indent(out, d2);
-        *out->cur++ = '"';
-        *out->cur++ = 's';
-        *out->cur++ = 'e';
-        *out->cur++ = 'l';
-        *out->cur++ = 'f';
-        *out->cur++ = '"';
-        *out->cur++ = ':';
+        APPEND_CHARS(out->cur, "\"self\":", 7);
         dump_hash_class(obj, Qundef, depth + 1, out);
         break;
     default: break;
@@ -688,12 +628,7 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
     assure_size(out, size);
     *out->cur++ = '{';
     fill_indent(out, d2);
-    *out->cur++ = '"';
-    *out->cur++ = '^';
-    *out->cur++ = 'u';
-    *out->cur++ = '"';
-    *out->cur++ = ':';
-    *out->cur++ = '[';
+    APPEND_CHARS(out->cur, "\"^u\":[", 6);
     if ('#' == *class_name) {
         VALUE       ma = rb_struct_s_members(clas);
         const char *name;
@@ -711,16 +646,14 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
                 *out->cur++ = ',';
             }
             *out->cur++ = '"';
-            memcpy(out->cur, name, len);
-            out->cur += len;
+            APPEND_CHARS(out->cur, name, len);
             *out->cur++ = '"';
         }
         *out->cur++ = ']';
     } else {
         fill_indent(out, d3);
         *out->cur++ = '"';
-        memcpy(out->cur, class_name, len);
-        out->cur += len;
+        APPEND_CHARS(out->cur, class_name, len);
         *out->cur++ = '"';
     }
     *out->cur++ = ',';
@@ -764,8 +697,7 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
     }
 #endif
     out->cur--;
-    *out->cur++ = ']';
-    *out->cur++ = '}';
+    APPEND_CHARS(out->cur, "]}", 2);
     *out->cur   = '\0';
 }
 

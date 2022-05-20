@@ -105,9 +105,7 @@ static void dump_float(VALUE obj, int depth, Out out, bool as_ok) {
         }
     }
     assure_size(out, cnt);
-    for (b = buf; '\0' != *b; b++) {
-        *out->cur++ = *b;
-    }
+    APPEND_CHARS(out->cur, buf, cnt);
     *out->cur = '\0';
 }
 
@@ -134,19 +132,17 @@ static void dump_array(VALUE a, int depth, Out out, bool as_ok) {
         } else {
             size = d2 * out->indent + 2;
         }
+        assure_size(out, size * cnt);
         cnt--;
         for (i = 0; i <= cnt; i++) {
-            assure_size(out, size);
             if (out->opts->dump_opts.use) {
                 if (0 < out->opts->dump_opts.array_size) {
-                    strcpy(out->cur, out->opts->dump_opts.array_nl);
-                    out->cur += out->opts->dump_opts.array_size;
+                    APPEND_CHARS(out->cur, out->opts->dump_opts.array_nl, out->opts->dump_opts.array_size);
                 }
                 if (0 < out->opts->dump_opts.indent_size) {
                     int i;
                     for (i = d2; 0 < i; i--) {
-                        strcpy(out->cur, out->opts->dump_opts.indent_str);
-                        out->cur += out->opts->dump_opts.indent_size;
+                        APPEND_CHARS(out->cur, out->opts->dump_opts.indent_str, out->opts->dump_opts.indent_size);
                     }
                 }
             } else {
@@ -167,15 +163,13 @@ static void dump_array(VALUE a, int depth, Out out, bool as_ok) {
             // printf("*** d2: %u  indent: %u '%s'\n", d2, out->opts->dump_opts->indent_size,
             // out->opts->dump_opts->indent);
             if (0 < out->opts->dump_opts.array_size) {
-                strcpy(out->cur, out->opts->dump_opts.array_nl);
-                out->cur += out->opts->dump_opts.array_size;
+                APPEND_CHARS(out->cur, out->opts->dump_opts.array_nl, out->opts->dump_opts.array_size);
             }
             if (0 < out->opts->dump_opts.indent_size) {
                 int i;
 
                 for (i = depth; 0 < i; i--) {
-                    strcpy(out->cur, out->opts->dump_opts.indent_str);
-                    out->cur += out->opts->dump_opts.indent_size;
+                    APPEND_CHARS(out->cur, out->opts->dump_opts.indent_str, out->opts->dump_opts.indent_size);
                 }
             }
         } else {
@@ -214,14 +208,12 @@ static int hash_cb(VALUE key, VALUE value, VALUE ov) {
         size = depth * out->opts->dump_opts.indent_size + out->opts->dump_opts.hash_size + 1;
         assure_size(out, size);
         if (0 < out->opts->dump_opts.hash_size) {
-            strcpy(out->cur, out->opts->dump_opts.hash_nl);
-            out->cur += out->opts->dump_opts.hash_size;
+            APPEND_CHARS(out->cur, out->opts->dump_opts.hash_nl, out->opts->dump_opts.hash_size);
         }
         if (0 < out->opts->dump_opts.indent_size) {
             int i;
             for (i = depth; 0 < i; i--) {
-                strcpy(out->cur, out->opts->dump_opts.indent_str);
-                out->cur += out->opts->dump_opts.indent_size;
+                APPEND_CHARS(out->cur, out->opts->dump_opts.indent_str, out->opts->dump_opts.indent_size);
             }
         }
         if (rtype == T_STRING) {
@@ -232,13 +224,11 @@ static int hash_cb(VALUE key, VALUE value, VALUE ov) {
         size = out->opts->dump_opts.before_size + out->opts->dump_opts.after_size + 2;
         assure_size(out, size);
         if (0 < out->opts->dump_opts.before_size) {
-            strcpy(out->cur, out->opts->dump_opts.before_sep);
-            out->cur += out->opts->dump_opts.before_size;
+            APPEND_CHARS(out->cur, out->opts->dump_opts.before_sep, out->opts->dump_opts.before_size);
         }
         *out->cur++ = ':';
         if (0 < out->opts->dump_opts.after_size) {
-            strcpy(out->cur, out->opts->dump_opts.after_sep);
-            out->cur += out->opts->dump_opts.after_size;
+            APPEND_CHARS(out->cur, out->opts->dump_opts.after_sep, out->opts->dump_opts.after_size);
         }
     }
     if (NullMode == out->opts->mode) {
@@ -281,15 +271,13 @@ static void dump_hash(VALUE obj, int depth, Out out, bool as_ok) {
             size = depth * out->opts->dump_opts.indent_size + out->opts->dump_opts.hash_size + 1;
             assure_size(out, size);
             if (0 < out->opts->dump_opts.hash_size) {
-                strcpy(out->cur, out->opts->dump_opts.hash_nl);
-                out->cur += out->opts->dump_opts.hash_size;
+                APPEND_CHARS(out->cur, out->opts->dump_opts.hash_nl, out->opts->dump_opts.hash_size);
             }
             if (0 < out->opts->dump_opts.indent_size) {
                 int i;
 
                 for (i = depth; 0 < i; i--) {
-                    strcpy(out->cur, out->opts->dump_opts.indent_str);
-                    out->cur += out->opts->dump_opts.indent_size;
+                    APPEND_CHARS(out->cur, out->opts->dump_opts.indent_str, out->opts->dump_opts.indent_size);
                 }
             }
         }
