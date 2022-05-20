@@ -951,7 +951,6 @@ void oj_grow_out(Out out, size_t len) {
     long   pos  = out->cur - out->buf;
     char  *buf  = out->buf;
 
-    printf("*** grow %ld\n", len);
     size *= 2;
     if (size <= len * 2 + pos) {
         size += len;
