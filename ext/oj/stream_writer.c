@@ -319,7 +319,6 @@ void oj_stream_writer_init(void) {
     oj_stream_writer_class = rb_define_class_under(Oj, "StreamWriter", rb_cObject);
     rb_gc_register_address(&oj_stream_writer_class);
     rb_undef_alloc_func(oj_stream_writer_class);
-
     rb_define_module_function(oj_stream_writer_class, "new", stream_writer_new, -1);
     rb_define_method(oj_stream_writer_class, "push_key", stream_writer_push_key, 1);
     rb_define_method(oj_stream_writer_class, "push_object", stream_writer_push_object, -1);

@@ -88,6 +88,7 @@ static VALUE form_attr(const char *str, size_t len) {
 
 void oj_hash_init(void) {
     VALUE cache_class = rb_define_class_under(Oj, "Cache", rb_cObject);
+    rb_undef_alloc_func(cache_class);
 
     rb_gc_register_address(&cache_class);
     rb_undef_alloc_func(cache_class);
