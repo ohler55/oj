@@ -82,6 +82,16 @@ begin
     Rake::Task[:test_all].enhance ["activesupport6"]
   end
 
+  if Rails.version =~ /7\.\d/
+    Rake::TestTask.new "activesupport7" do |t|
+      t.libs << 'test'
+      t.pattern = 'test/activesupport7/*_test.rb'
+      t.warning = true
+      t.verbose = true
+    end
+    Rake::Task[:test_all].enhance ["activesupport7"]
+  end
+
   Rake::TestTask.new "activerecord" do |t|
     t.libs << 'test'
     t.pattern = 'test/activerecord/*_test.rb'
