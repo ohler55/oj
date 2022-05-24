@@ -35,6 +35,8 @@ jobs:
         exclude:
           - os: macos
             ruby: head
+          - ruby: head
+            gemfile: rails_5
           - ruby: '3.0'
             gemfile: rails_5
           - ruby: '3.0'
