@@ -72,6 +72,8 @@ EOT
     parsed_json = JSON.parse(json)
     assert_equal({"1"=>2}, parsed_json)
     assert_equal '666', JSON.pretty_generate(666)
+    json_nil_opts = JSON.pretty_generate({1=>2}, nil)
+    assert_equal json, json_nil_opts
   end
 
   def test_generate_custom
