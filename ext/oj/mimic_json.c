@@ -460,7 +460,7 @@ oj_mimic_pretty_generate(int argc, VALUE *argv, VALUE self) {
     if (0 == argc) {
         rb_raise(rb_eArgError, "wrong number of arguments (0))");
     }
-    if (1 == argc) {
+    if (1 == argc || T_NIL == TYPE(argv[1])) {
         h = rb_hash_new();
     } else  {
         h = argv[1];
