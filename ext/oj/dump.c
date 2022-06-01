@@ -614,7 +614,6 @@ void oj_write_obj_to_file(VALUE obj, const char *path, Options copts) {
 
     oj_out_free(&out);
 
-    fclose(f);
     if (!ok) {
         int err = ferror(f);
         fclose(f);
