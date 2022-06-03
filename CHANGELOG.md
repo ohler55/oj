@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.13.14 - 2022-06-03
+
+- Double fclose() due to bad merger fixed by tonobo.
+
 ## 3.13.13 - 2022-05-20
 
 - Fixed flooding stdout with debug output when dumping.
