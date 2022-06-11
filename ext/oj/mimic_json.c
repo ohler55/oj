@@ -536,14 +536,6 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE info) {
         }
     } else if (oj_decimal_class_sym == k) {
         pi->options.compat_bigdec = (oj_bigdecimal_class == v);
-    } else if (oj_max_nesting_sym == k) {
-        if (Qtrue == v) {
-            pi->max_depth = 100;
-        } else if (Qfalse == v || Qnil == v) {
-            pi->max_depth = 0;
-        } else if (T_FIXNUM == rb_type(v)) {
-            pi->max_depth = NUM2INT(v);
-        }
     }
     return ST_CONTINUE;
 }
@@ -573,11 +565,21 @@ static VALUE mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
     pi.max_depth             = 100;
 
     if (Qnil != ropts) {
+        VALUE v;
+
         if (T_HASH != rb_type(ropts)) {
             rb_raise(rb_eArgError, "options must be a hash.");
         }
 
         rb_hash_foreach(ropts, parse_options_cb, (VALUE)&pi);
+        v = rb_hash_lookup(ropts, oj_max_nesting_sym);
+        if (Qtrue == v) {
+            pi.max_depth = 100;
+        } else if (Qfalse == v || Qnil == v) {
+            pi.max_depth = 0;
+        } else if (T_FIXNUM == rb_type(v)) {
+            pi.max_depth = NUM2INT(v);
+        }
         oj_parse_opt_match_string(&pi.options.str_rx, ropts);
         if (Yes == pi.options.create_ok && Yes == pi.options.sym_key) {
             rb_raise(rb_eArgError, ":symbolize_names and :create_additions can not both be true.");
