@@ -269,6 +269,13 @@ EOT
     assert_equal too_deep_ary, ok
     ok = JSON.parse too_deep, :max_nesting => 0
     assert_equal too_deep_ary, ok
+
+    unless ENV['REAL_JSON_GEM']
+      # max_nesting should be reset to 0 if not included in options
+      # This behavior is not compatible with Ruby standard JSON gem
+      ok = JSON.parse too_deep, {}
+      assert_equal too_deep_ary, ok
+    end
   end
 
   def test_backslash
