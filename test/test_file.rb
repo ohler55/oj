@@ -212,6 +212,24 @@ class FileJuice < Minitest::Test
     dump_and_load(DateTime.new(2012, 6, 19), false)
   end
 
+  def test_load_unicode_path
+    json =<<~JSON
+    {
+      "x":true,
+      "y":58,
+      "z": [1,2,3]
+    }
+    JSON
+
+    Tempfile.create('file_test_conceição1.json') do |f|
+      f.write(json)
+      f.close
+
+      objects = Oj.load_file(f.path)
+      assert_equal(Oj.load(json), objects)
+    end
+  end
+
   def dump_and_load(obj, trace=false)
     filename = File.join(File.dirname(__FILE__), 'file_test.json')
     File.open(filename, "w") { |f|
