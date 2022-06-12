@@ -1148,7 +1148,17 @@ static VALUE load_file(int argc, VALUE *argv, VALUE self) {
         }
     }
     path = StringValuePtr(*argv);
-    if (0 == (fd = open(path, O_RDONLY))) {
+#ifdef _WIN32
+    {
+        WCHAR *wide_path;
+        wide_path = rb_w32_mbstr_to_wstr(CP_UTF8, path, -1, NULL);
+        fd = rb_w32_wopen(wide_path, O_RDONLY);
+        free(wide_path);
+    }
+#else
+    fd = open(path, O_RDONLY);
+#endif
+    if (0 == fd) {
         rb_raise(rb_eIOError, "%s", strerror(errno));
     }
     switch (mode) {

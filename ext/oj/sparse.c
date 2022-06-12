@@ -953,7 +953,11 @@ CLEANUP:
     }
     stack_cleanup(&pi->stack);
     if (0 != fd) {
+#ifdef _WIN32
+        rb_w32_close(fd);
+#else
         close(fd);
+#endif
     }
     if (err_has(&pi->err)) {
         rb_set_errinfo(Qnil);
