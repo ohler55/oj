@@ -388,6 +388,10 @@ static VALUE mimic_generate_core(int argc, VALUE *argv, Options copts) {
         VALUE active_hack[1];
 
         if (Qundef == state_class) {
+            rb_warn(
+              "Oj::Rails.mimic_JSON was called implicitly. "
+              "Call it explicitly beforehand if you want to remove this warning."
+            );
             oj_define_mimic_json(0, NULL, Qnil);
         }
         active_hack[0] = rb_funcall(state_class, oj_new_id, 0);
@@ -481,6 +485,10 @@ oj_mimic_pretty_generate(int argc, VALUE *argv, VALUE self) {
         rb_hash_aset(h, oj_array_nl_sym, rb_str_new2("\n"));
     }
     if (Qundef == state_class) {
+        rb_warn(
+          "Oj::Rails.mimic_JSON was called implicitly. "
+          "Call it explicitly beforehand if you want to remove this warning."
+        );
         oj_define_mimic_json(0, NULL, Qnil);
     }
     rargs[1] = rb_funcall(state_class, oj_new_id, 1, h);
