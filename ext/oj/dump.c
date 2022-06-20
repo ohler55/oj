@@ -32,6 +32,7 @@ static const char nan_val[]  = NAN_VAL;
 typedef unsigned long ulong;
 
 static size_t hibit_friendly_size(const uint8_t *str, size_t len);
+static size_t slash_friendly_size(const uint8_t *str, size_t len);
 static size_t xss_friendly_size(const uint8_t *str, size_t len);
 static size_t ascii_friendly_size(const uint8_t *str, size_t len);
 
@@ -52,6 +53,17 @@ static char newline_friendly_chars[256] = "\
 static char hibit_friendly_chars[256] = "\
 66666666222622666666666666666666\
 11211111111111111111111111111111\
+11111111111111111111111111112111\
+11111111111111111111111111111111\
+11111111111111111111111111111111\
+11111111111111111111111111111111\
+11111111111111111111111111111111\
+11111111111111111111111111111111";
+
+// JSON standard but escape forward slashes `/`
+static char slash_friendly_chars[256] = "\
+66666666222622666666666666666666\
+11211111111111121111111111111111\
 11111111111111111111111111112111\
 11111111111111111111111111111111\
 11111111111111111111111111111111\
@@ -141,6 +153,10 @@ inline static size_t newline_friendly_size(const uint8_t *str, size_t len) {
 
 inline static size_t hibit_friendly_size(const uint8_t *str, size_t len) {
     return calculate_string_size(str, len, hibit_friendly_chars);
+}
+
+inline static size_t slash_friendly_size(const uint8_t *str, size_t len) {
+    return calculate_string_size(str, len, slash_friendly_chars);
 }
 
 inline static size_t ascii_friendly_size(const uint8_t *str, size_t len) {
@@ -755,6 +771,11 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
     case ASCIIEsc:
         cmap = ascii_friendly_chars;
         size = ascii_friendly_size((uint8_t *)str, cnt);
+        break;
+    case SlashEsc:
+        has_hi = true;
+        cmap = slash_friendly_chars;
+        size = slash_friendly_size((uint8_t *)str, cnt);
         break;
     case XSSEsc:
         cmap = xss_friendly_chars;
