@@ -66,6 +66,7 @@ typedef enum { UnixTime = 'u', UnixZTime = 'z', XmlTime = 'x', RubyTime = 'r' } 
 typedef enum {
     NLEsc     = 'n',
     JSONEsc   = 'j',
+    SlashEsc  = 's',
     XSSEsc    = 'x',
     ASCIIEsc  = 'a',
     JXEsc     = 'g',  // json gem

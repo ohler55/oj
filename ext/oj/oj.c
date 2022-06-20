@@ -137,6 +137,7 @@ static VALUE rails_sym;
 static VALUE raise_sym;
 static VALUE ruby_sym;
 static VALUE sec_prec_sym;
+static VALUE slash_sym;
 static VALUE strict_sym;
 static VALUE symbol_keys_sym;
 static VALUE time_format_sym;
@@ -405,6 +406,7 @@ static VALUE get_def_opts(VALUE self) {
     switch (oj_default_options.escape_mode) {
     case NLEsc: rb_hash_aset(opts, escape_mode_sym, newline_sym); break;
     case JSONEsc: rb_hash_aset(opts, escape_mode_sym, json_sym); break;
+    case SlashEsc: rb_hash_aset(opts, escape_mode_sym, slash_sym); break;
     case XSSEsc: rb_hash_aset(opts, escape_mode_sym, xss_safe_sym); break;
     case ASCIIEsc: rb_hash_aset(opts, escape_mode_sym, ascii_sym); break;
     case JXEsc: rb_hash_aset(opts, escape_mode_sym, unicode_xss_sym); break;
@@ -734,6 +736,8 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
             copts->escape_mode = NLEsc;
         } else if (json_sym == v) {
             copts->escape_mode = JSONEsc;
+        } else if (slash_sym == v) {
+            copts->escape_mode = SlashEsc;
         } else if (xss_safe_sym == v) {
             copts->escape_mode = XSSEsc;
         } else if (ascii_sym == v) {
@@ -1987,6 +1991,8 @@ void Init_oj(void) {
     rb_gc_register_address(&ruby_sym);
     sec_prec_sym = ID2SYM(rb_intern("second_precision"));
     rb_gc_register_address(&sec_prec_sym);
+    slash_sym = ID2SYM(rb_intern("slash"));
+    rb_gc_register_address(&slash_sym);
     strict_sym = ID2SYM(rb_intern("strict"));
     rb_gc_register_address(&strict_sym);
     symbol_keys_sym = ID2SYM(rb_intern("symbol_keys"));
