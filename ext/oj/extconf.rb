@@ -23,7 +23,6 @@ dflags = {
   'RSTRUCT_LEN_RETURNS_INTEGER_OBJECT' => ('ruby' == type && '2' == version[0] && '4' == version[1] && '1' >= version[2]) ? 1 : 0,
 }
 
-have_func('rb_ivar_foreach')
 # Support for compaction.
 have_func('rb_gc_mark_movable')
 have_func('stpcpy')
