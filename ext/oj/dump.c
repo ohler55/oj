@@ -381,7 +381,6 @@ void oj_dump_time(VALUE obj, Out out, int withZone) {
     long long sec;
     long long nsec;
 
-#ifdef HAVE_RB_TIME_TIMESPEC
     // rb_time_timespec as well as rb_time_timeeval have a bug that causes an
     // exception to be raised if a time is before 1970 on 32 bit systems so
     // check the timespec size and use the ruby calls if a 32 bit system.
@@ -394,10 +393,6 @@ void oj_dump_time(VALUE obj, Out out, int withZone) {
         sec  = NUM2LL(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
         nsec = NUM2LL(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
     }
-#else
-    sec  = NUM2LL(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
-    nsec = NUM2LL(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
-#endif
 
     *b-- = '\0';
     if (withZone) {
@@ -483,7 +478,6 @@ void oj_dump_xml_time(VALUE obj, Out out) {
     int              tzhour, tzmin;
     char             tzsign = '+';
 
-#ifdef HAVE_RB_TIME_TIMESPEC
     if (16 <= sizeof(struct timespec)) {
         struct timespec ts = rb_time_timespec(obj);
 
@@ -493,10 +487,6 @@ void oj_dump_xml_time(VALUE obj, Out out) {
         sec  = NUM2LL(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
         nsec = NUM2LL(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
     }
-#else
-    sec  = NUM2LL(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
-    nsec = NUM2LL(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
-#endif
 
     assure_size(out, 36);
     if (9 > out->opts->sec_prec) {

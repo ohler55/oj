@@ -444,7 +444,6 @@ time_alt(VALUE obj, int depth, Out out) {
     time_t	sec;
     long long	nsec;
 
-#ifdef HAVE_RB_TIME_TIMESPEC
     if (16 <= sizeof(struct timespec)) {
 	struct timespec	ts = rb_time_timespec(obj);
 
@@ -454,10 +453,6 @@ time_alt(VALUE obj, int depth, Out out) {
 	sec = NUM2LL(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
 	nsec = NUM2LL(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
     }
-#else
-    sec = NUM2LL(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
-    nsec = NUM2LL(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
-#endif
 
     attrs[0].num = sec;
     attrs[1].num = nsec;
