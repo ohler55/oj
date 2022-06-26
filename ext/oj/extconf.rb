@@ -27,7 +27,6 @@ dflags = {
 have_func('rb_gc_mark_movable')
 have_func('stpcpy')
 have_func('pthread_mutex_init')
-have_func('rb_enc_associate')
 have_func('rb_enc_interned_str')
 have_func('rb_ext_ractor_safe', 'ruby.h')
 # rb_hash_bulk_insert is deep down in a header not included in normal build and that seems to fool have_func.
