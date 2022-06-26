@@ -45,7 +45,6 @@ ID oj_hash_key_id;
 ID oj_hash_set_id;
 ID oj_hash_start_id;
 ID oj_iconv_id;
-ID oj_instance_variables_id;
 ID oj_json_create_id;
 ID oj_length_id;
 ID oj_new_id;
@@ -1828,7 +1827,6 @@ void Init_oj(void) {
     oj_hash_set_id           = rb_intern("hash_set");
     oj_hash_start_id         = rb_intern("hash_start");
     oj_iconv_id              = rb_intern("iconv");
-    oj_instance_variables_id = rb_intern("instance_variables");
     oj_json_create_id        = rb_intern("json_create");
     oj_length_id             = rb_intern("length");
     oj_new_id                = rb_intern("new");
