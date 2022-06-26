@@ -23,14 +23,10 @@ dflags = {
   'RSTRUCT_LEN_RETURNS_INTEGER_OBJECT' => ('ruby' == type && '2' == version[0] && '4' == version[1] && '1' >= version[2]) ? 1 : 0,
 }
 
-have_func('rb_time_timespec')
-have_func('rb_ivar_count')
-have_func('rb_ivar_foreach')
 # Support for compaction.
 have_func('rb_gc_mark_movable')
 have_func('stpcpy')
 have_func('pthread_mutex_init')
-have_func('rb_enc_associate')
 have_func('rb_enc_interned_str')
 have_func('rb_ext_ractor_safe', 'ruby.h')
 # rb_hash_bulk_insert is deep down in a header not included in normal build and that seems to fool have_func.

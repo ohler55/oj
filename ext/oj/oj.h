@@ -347,7 +347,6 @@ extern ID oj_hash_key_id;
 extern ID oj_hash_set_id;
 extern ID oj_hash_start_id;
 extern ID oj_iconv_id;
-extern ID oj_instance_variables_id;
 extern ID oj_json_create_id;
 extern ID oj_length_id;
 extern ID oj_new_id;

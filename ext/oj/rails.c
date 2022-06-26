@@ -320,7 +320,6 @@ static void dump_time(VALUE obj, int depth, Out out, bool as_ok) {
     long long sec;
     long long nsec;
 
-#ifdef HAVE_RB_TIME_TIMESPEC
     if (16 <= sizeof(struct timespec)) {
         struct timespec ts = rb_time_timespec(obj);
 
@@ -330,10 +329,6 @@ static void dump_time(VALUE obj, int depth, Out out, bool as_ok) {
         sec  = NUM2LL(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
         nsec = NUM2LL(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
     }
-#else
-    sec  = NUM2LL(rb_funcall2(obj, oj_tv_sec_id, 0, 0));
-    nsec = NUM2LL(rb_funcall2(obj, oj_tv_nsec_id, 0, 0));
-#endif
     dump_sec_nano(obj, sec, nsec, out);
 }
 

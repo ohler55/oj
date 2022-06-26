@@ -315,7 +315,6 @@ static void dump_hash_class(VALUE obj, VALUE clas, int depth, Out out) {
     *out->cur = '\0';
 }
 
-#ifdef HAVE_RB_IVAR_FOREACH
 static int dump_attr_cb(ID key, VALUE value, VALUE ov) {
     Out         out   = (Out)ov;
     int         depth = out->depth;
@@ -358,7 +357,6 @@ static int dump_attr_cb(ID key, VALUE value, VALUE ov) {
 
     return ST_CONTINUE;
 }
-#endif
 
 static void dump_hash(VALUE obj, int depth, Out out, bool as_ok) {
     dump_hash_class(obj, rb_obj_class(obj), depth, out);
@@ -510,19 +508,8 @@ static void dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out)
     default: break;
     }
     {
-        int cnt;
-#ifdef HAVE_RB_IVAR_COUNT
-        cnt = (int)rb_ivar_count(obj);
-#else
-        volatile VALUE vars = rb_funcall2(obj, oj_instance_variables_id, 0, 0);
-        VALUE *        np   = RARRAY_PTR(vars);
-        ID             vid;
-        const char *   attr;
-        int            i;
-        int            first = 1;
+        int cnt = (int)rb_ivar_count(obj);
 
-        cnt  = (int)RARRAY_LEN(vars);
-#endif
         if (Qundef != clas && 0 < cnt) {
             *out->cur++ = ',';
         }
@@ -535,52 +522,10 @@ static void dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out)
             }
         }
         out->depth = depth + 1;
-#ifdef HAVE_RB_IVAR_FOREACH
         rb_ivar_foreach(obj, dump_attr_cb, (VALUE)out);
         if (',' == *(out->cur - 1)) {
             out->cur--;  // backup to overwrite last comma
         }
-#else
-        size = d2 * out->indent + 1;
-        for (i = cnt; 0 < i; i--, np++) {
-            VALUE value;
-
-            vid  = rb_to_id(*np);
-            attr = rb_id2name(vid);
-            if (Yes == out->opts->ignore_under && '@' == *attr && '_' == attr[1]) {
-                continue;
-            }
-            value = rb_ivar_get(obj, vid);
-
-            if (dump_ignore(out->opts, value)) {
-                continue;
-            }
-            if (out->omit_nil && Qnil == value) {
-                continue;
-            }
-            if (first) {
-                first = 0;
-            } else {
-                *out->cur++ = ',';
-            }
-            assure_size(out, size);
-            fill_indent(out, d2);
-            if ('@' == *attr) {
-                attr++;
-                oj_dump_cstr(attr, strlen(attr), 0, 0, out);
-            } else {
-                char buf[32];
-
-                *buf = '~';
-                strncpy(buf + 1, attr, sizeof(buf) - 2);
-                buf[sizeof(buf) - 1] = '\0';
-                oj_dump_cstr(buf, strlen(attr) + 1, 0, 0, out);
-            }
-            *out->cur++ = ':';
-            oj_dump_obj_val(value, d2, out);
-            assure_size(out, 2);
-        }
-#endif
         if (rb_obj_is_kind_of(obj, rb_eException)) {
             volatile VALUE rv;
 
