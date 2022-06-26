@@ -510,19 +510,8 @@ static void dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out)
     default: break;
     }
     {
-        int cnt;
-#ifdef HAVE_RB_IVAR_COUNT
-        cnt = (int)rb_ivar_count(obj);
-#else
-        volatile VALUE vars = rb_funcall2(obj, oj_instance_variables_id, 0, 0);
-        VALUE *        np   = RARRAY_PTR(vars);
-        ID             vid;
-        const char *   attr;
-        int            i;
-        int            first = 1;
+        int cnt = (int)rb_ivar_count(obj);
 
-        cnt  = (int)RARRAY_LEN(vars);
-#endif
         if (Qundef != clas && 0 < cnt) {
             *out->cur++ = ',';
         }
