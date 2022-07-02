@@ -327,26 +327,61 @@ static void read_escaped_str(ParseInfo pi, const char *start) {
     buf_cleanup(&buf);
 }
 
+static inline void scan_string_noSIMD(ParseInfo pi) {
+    for (; '"' != *pi->cur; pi->cur++) {
+        if (pi->end <= pi->cur || '\0' == *pi->cur || '\\' == *pi->cur) {
+            return;
+        }
+    }
+}
+
+#if defined(OJ_USE_SSE4_2)
+#include <nmmintrin.h>
+
+static inline void scan_string_SIMD(ParseInfo pi) {
+    static const char chars[16] = "\x00\\\"";
+    const __m128i terminate = _mm_loadu_si128((const __m128i *)&chars[0]);
+    const char *end = (const char *)(pi->end - 16);
+
+    for (; pi->cur <= end; pi->cur += 16) {
+        const __m128i string = _mm_loadu_si128((const __m128i *)pi->cur);
+        const int r = _mm_cmpestri(terminate, 3, string, 16, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_LEAST_SIGNIFICANT);
+        if (r != 16) {
+            pi->cur = (const char*)(pi->cur + r);
+            return;
+        }
+    }
+
+    scan_string_noSIMD(pi);
+}
+#endif
+
 static void read_str(ParseInfo pi) {
     const char *str    = pi->cur;
     Val         parent = stack_peek(&pi->stack);
 
-    for (; '"' != *pi->cur; pi->cur++) {
-        if (pi->end <= pi->cur) {
-            oj_set_error_at(pi,
-                            oj_parse_error_class,
-                            __FILE__,
-                            __LINE__,
-                            "quoted string not terminated");
-            return;
-        } else if ('\0' == *pi->cur) {
-            oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "NULL byte in string");
-            return;
-        } else if ('\\' == *pi->cur) {
-            read_escaped_str(pi, str);
-            return;
-        }
+#if defined(OJ_USE_SSE4_2)
+    scan_string_SIMD(pi);
+#else
+    scan_string_noSIMD(pi, str);
+#endif
+    if (pi->end <= pi->cur) {
+        oj_set_error_at(pi,
+                        oj_parse_error_class,
+                        __FILE__,
+                        __LINE__,
+                        "quoted string not terminated");
+        return;
     }
+    if ('\0' == *pi->cur) {
+        oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "NULL byte in string");
+        return;
+    }
+    if ('\\' == *pi->cur) {
+        read_escaped_str(pi, str);
+        return;
+    }
+
     if (0 == parent) {  // simple add
         pi->add_cstr(pi, str, pi->cur - str, str);
     } else {
