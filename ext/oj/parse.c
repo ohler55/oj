@@ -23,7 +23,7 @@
 #define EXP_MAX 100000
 #define DEC_MAX 15
 
-static void next_non_white(ParseInfo pi) {
+static inline void next_non_white_noSIMD(ParseInfo pi) {
     for (; 1; pi->cur++) {
         switch (*pi->cur) {
         case ' ':
@@ -34,6 +34,35 @@ static void next_non_white(ParseInfo pi) {
         default: return;
         }
     }
+}
+
+#if defined(OJ_USE_SSE4_2)
+// Referred from https://github.com/Tencent/rapidjson/blob/bdc49ad80a3cff89a25839dcdcd6a68b457ec9f1/include/rapidjson/reader.h#L310-L329
+#include <nmmintrin.h>
+static inline void next_non_white_SIMD(ParseInfo pi) {
+    static const char whitespace[16] = " \t\f\n\r";
+    const __m128i w = _mm_loadu_si128((const __m128i *)&whitespace[0]);
+    const char *end = (const char *)(pi->end - 16);
+
+    for (; pi->cur <= end; pi->cur += 16) {
+        const __m128i s = _mm_loadu_si128((const __m128i *)pi->cur);
+        const int r = _mm_cmpistri(w, s, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_LEAST_SIGNIFICANT | _SIDD_NEGATIVE_POLARITY);
+        if (r != 16) {
+            pi->cur = pi->cur + r;
+            return;
+        }
+    }
+
+    next_non_white_noSIMD(pi);
+}
+#endif
+
+static inline void next_non_white(ParseInfo pi) {
+#if defined(OJ_USE_SSE4_2)
+    next_non_white_SIMD(pi);
+#else
+    next_non_white_noSIMD(pi);
+#endif
 }
 
 static void skip_comment(ParseInfo pi) {
