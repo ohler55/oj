@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.13.15 - 2022-07-03
+
+- Fixed issue dumping NaN  value in object mode.
+
 ## 3.13.14 - 2022-06-03
 
 - Double fclose() due to bad merger fixed by tonobo.

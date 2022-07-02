@@ -1141,7 +1141,7 @@ void oj_dump_float(VALUE obj, int depth, Out out, bool as_ok) {
     } else if (isnan(d)) {
         if (ObjectMode == out->opts->mode) {
             strcpy(buf, nan_val);
-            cnt = sizeof(ninf_val) - 1;
+            cnt = sizeof(nan_val) - 1;
         } else {
             NanDump nd = out->opts->dump_opts.nan_dump;
 
