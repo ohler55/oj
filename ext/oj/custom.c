@@ -959,7 +959,7 @@ static void hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, c
             break;
         default: break;
         }
-        if (Yes == pi->options.trace) {
+        if (RB_UNLIKELY(Yes == pi->options.trace)) {
             oj_trace_parse_call("set_string", pi, __FILE__, __LINE__, rstr);
         }
     }
@@ -978,7 +978,7 @@ static void end_hash(struct _parseInfo *pi) {
         }
         parent->clas = Qundef;
     }
-    if (Yes == pi->options.trace) {
+    if (RB_UNLIKELY(Yes == pi->options.trace)) {
         oj_trace_parse_hash_end(pi, __FILE__, __LINE__);
     }
 }
@@ -1032,7 +1032,7 @@ static void hash_set_num(struct _parseInfo *pi, Val kval, NumInfo ni) {
         break;
     default: break;
     }
-    if (Yes == pi->options.trace) {
+    if (RB_UNLIKELY(Yes == pi->options.trace)) {
         oj_trace_parse_call("set_string", pi, __FILE__, __LINE__, rval);
     }
 }
@@ -1045,7 +1045,7 @@ static void hash_set_value(ParseInfo pi, Val kval, VALUE value) {
     case T_HASH: rb_hash_aset(parent->val, oj_calc_hash_key(pi, kval), value); break;
     default: break;
     }
-    if (Yes == pi->options.trace) {
+    if (RB_UNLIKELY(Yes == pi->options.trace)) {
         oj_trace_parse_call("set_value", pi, __FILE__, __LINE__, value);
     }
 }
@@ -1055,7 +1055,7 @@ static void array_append_num(ParseInfo pi, NumInfo ni) {
     volatile VALUE rval   = oj_num_as_value(ni);
 
     rb_ary_push(parent->val, rval);
-    if (Yes == pi->options.trace) {
+    if (RB_UNLIKELY(Yes == pi->options.trace)) {
         oj_trace_parse_call("append_number", pi, __FILE__, __LINE__, rval);
     }
 }
@@ -1072,7 +1072,7 @@ static void array_append_cstr(ParseInfo pi, const char *str, size_t len, const c
         }
     }
     rb_ary_push(stack_peek(&pi->stack)->val, rstr);
-    if (Yes == pi->options.trace) {
+    if (RB_UNLIKELY(Yes == pi->options.trace)) {
         oj_trace_parse_call("append_string", pi, __FILE__, __LINE__, rstr);
     }
 }
