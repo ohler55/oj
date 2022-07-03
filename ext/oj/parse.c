@@ -363,7 +363,7 @@ static void read_str(ParseInfo pi) {
 #if defined(OJ_USE_SSE4_2)
     scan_string_SIMD(pi);
 #else
-    scan_string_noSIMD(pi, str);
+    scan_string_noSIMD(pi);
 #endif
     if (RB_UNLIKELY(pi->end <= pi->cur)) {
         oj_set_error_at(pi,
