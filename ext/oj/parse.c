@@ -365,7 +365,7 @@ static void read_str(ParseInfo pi) {
 #else
     scan_string_noSIMD(pi, str);
 #endif
-    if (pi->end <= pi->cur) {
+    if (RB_UNLIKELY(pi->end <= pi->cur)) {
         oj_set_error_at(pi,
                         oj_parse_error_class,
                         __FILE__,
@@ -373,7 +373,7 @@ static void read_str(ParseInfo pi) {
                         "quoted string not terminated");
         return;
     }
-    if ('\0' == *pi->cur) {
+    if (RB_UNLIKELY('\0' == *pi->cur)) {
         oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "NULL byte in string");
         return;
     }
