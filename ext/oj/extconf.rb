@@ -34,6 +34,11 @@ have_func('rb_hash_bulk_insert', 'ruby.h') unless '2' == version[0] && '6' == ve
 
 dflags['OJ_DEBUG'] = true unless ENV['OJ_DEBUG'].nil?
 
+if try_cflags('-msse4.2')
+  $CPPFLAGS += ' -msse4.2'
+  dflags['OJ_USE_SSE4_2'] = 1
+end
+
 dflags.each do |k,v|
   if v.nil?
     $CPPFLAGS += " -D#{k}"
