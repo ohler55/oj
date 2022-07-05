@@ -48,6 +48,10 @@ static void open_object(ojParser p) {
     rb_funcall(((Delegate)p->ctx)->handler, oj_hash_start_id, 1, Qnil);
 }
 
+static void open_object_loc(ojParser p) {
+    rb_funcall(((Delegate)p->ctx)->handler, oj_hash_start_id, 3, Qnil, LONG2FIX(p->line), LONG2FIX(p->cur - p->col));
+}
+
 static void open_object_key(ojParser p) {
     Delegate       d   = (Delegate)p->ctx;
     volatile VALUE key = get_key(p);
@@ -56,8 +60,20 @@ static void open_object_key(ojParser p) {
     rb_funcall(d->handler, oj_hash_start_id, 1, key);
 }
 
+static void open_object_loc_key(ojParser p) {
+    Delegate       d   = (Delegate)p->ctx;
+    volatile VALUE key = get_key(p);
+
+    push_key(d, key);
+    rb_funcall(d->handler, oj_hash_start_id, 3, key, LONG2FIX(p->line), LONG2FIX(p->cur - p->col));
+}
+
 static void open_array(ojParser p) {
     rb_funcall(((Delegate)p->ctx)->handler, oj_array_start_id, 1, Qnil);
+}
+
+static void open_array_loc(ojParser p) {
+    rb_funcall(((Delegate)p->ctx)->handler, oj_array_start_id, 3, Qnil, LONG2FIX(p->line), LONG2FIX(p->cur - p->col));
 }
 
 static void open_array_key(ojParser p) {
@@ -66,6 +82,14 @@ static void open_array_key(ojParser p) {
 
     push_key(d, key);
     rb_funcall(d->handler, oj_array_start_id, 1, key);
+}
+
+static void open_array_loc_key(ojParser p) {
+    Delegate       d   = (Delegate)p->ctx;
+    volatile VALUE key = get_key(p);
+
+    push_key(d, key);
+    rb_funcall(d->handler, oj_array_start_id, 3, key, LONG2FIX(p->line), LONG2FIX(p->cur - p->col));
 }
 
 static void close_object(ojParser p) {
@@ -210,14 +234,26 @@ static VALUE option(ojParser p, const char *key, VALUE value) {
         d->handler = value;
         reset(p);
         if (rb_respond_to(value, oj_hash_start_id)) {
-            p->funcs[TOP_FUN].open_object    = open_object;
-            p->funcs[ARRAY_FUN].open_object  = open_object;
-            p->funcs[OBJECT_FUN].open_object = open_object_key;
+	    if (1 == rb_obj_method_arity(value, oj_hash_start_id)) {
+		p->funcs[TOP_FUN].open_object    = open_object;
+		p->funcs[ARRAY_FUN].open_object  = open_object;
+		p->funcs[OBJECT_FUN].open_object = open_object_key;
+	    } else {
+		p->funcs[TOP_FUN].open_object    = open_object_loc;
+		p->funcs[ARRAY_FUN].open_object  = open_object_loc;
+		p->funcs[OBJECT_FUN].open_object = open_object_loc_key;
+	    }
         }
         if (rb_respond_to(value, oj_array_start_id)) {
-            p->funcs[TOP_FUN].open_array    = open_array;
-            p->funcs[ARRAY_FUN].open_array  = open_array;
-            p->funcs[OBJECT_FUN].open_array = open_array_key;
+	    if (1 == rb_obj_method_arity(value, oj_array_start_id)) {
+		p->funcs[TOP_FUN].open_array    = open_array;
+		p->funcs[ARRAY_FUN].open_array  = open_array;
+		p->funcs[OBJECT_FUN].open_array = open_array_key;
+	    } else {
+		p->funcs[TOP_FUN].open_array    = open_array_loc;
+		p->funcs[ARRAY_FUN].open_array  = open_array_loc;
+		p->funcs[OBJECT_FUN].open_array = open_array_loc_key;
+	    }
         }
         if (rb_respond_to(value, oj_hash_end_id)) {
             p->funcs[TOP_FUN].close_object    = close_object;

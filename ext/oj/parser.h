@@ -80,6 +80,7 @@ typedef struct _ojParser {
 
     char     token[8];
     long     line;
+    long     cur;  // only set before call to a function
     long     col;
     int      ri;
     uint32_t ucode;
