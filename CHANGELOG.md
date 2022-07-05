@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.13.16 - 2022-07-06
+
+- Added line and column as optional arguments to the Oj::Parser.saj parser.
+
 ## 3.13.15 - 2022-07-03
 
 - Fixed issue dumping NaN  value in object mode.

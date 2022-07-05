@@ -64,20 +64,20 @@ class LocSaj
     @calls << [:hash_start, key, line, column]
   end
 
-  def hash_end(key)
-    @calls << [:hash_end, key]
+  def hash_end(key, line, column)
+    @calls << [:hash_end, key, line, column]
   end
 
   def array_start(key, line, column)
     @calls << [:array_start, key, line, column]
   end
 
-  def array_end(key)
-    @calls << [:array_end, key]
+  def array_end(key, line, column)
+    @calls << [:array_end, key, line, column]
   end
 
-  def add_value(value, key)
-    @calls << [:add_value, value, key]
+  def add_value(value, key, line, column)
+    @calls << [:add_value, value, key, line, column]
   end
 
 end # LocSaj
@@ -278,21 +278,21 @@ class SajTest < Minitest::Test
     assert_equal([[:hash_start, nil, 1, 1],
                   [:array_start, 'array', 2, 12],
                   [:hash_start, nil, 3, 5],
-                  [:add_value, 3, 'num'],
-                  [:add_value, 'message', 'string'],
+                  [:add_value, 3, 'num', 4, 18],
+                  [:add_value, 'message', 'string', 5, 25],
                   [:hash_start, 'hash', 6, 17],
                   [:hash_start, 'h2', 7, 17],
                   [:array_start, 'a', 8, 17],
-                  [:add_value, 1, nil],
-                  [:add_value, 2, nil],
-                  [:add_value, 3, nil],
-                  [:array_end, 'a'],
-                  [:hash_end, 'h2'],
-                  [:hash_end, 'hash'],
-                  [:hash_end, nil],
-                  [:array_end, 'array'],
-                  [:add_value, true, 'boolean'],
-                  [:hash_end, nil]], handler.calls)
+                  [:add_value, 1, nil, 8, 20],
+                  [:add_value, 2, nil, 8, 23],
+                  [:add_value, 3, nil, 8, 26],
+                  [:array_end, 'a', 8, 27],
+                  [:hash_end, 'h2', 9, 9],
+                  [:hash_end, 'hash', 10, 7],
+                  [:hash_end, nil, 11, 5],
+                  [:array_end, 'array', 12, 3],
+                  [:add_value, true, 'boolean', 13, 18],
+                  [:hash_end, nil, 14, 1]], handler.calls)
   end
 
 end
