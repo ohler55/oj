@@ -5,7 +5,7 @@ $: << File.dirname(__FILE__)
 
 require 'helper'
 
-$json = %{{
+$json = %|{
   "array": [
     {
       "num"   : 3,
@@ -18,7 +18,7 @@ $json = %{{
     }
   ],
   "boolean" : true
-}}
+}|
 
 class AllSaj < Oj::Saj
   attr_accessor :calls
@@ -52,6 +52,35 @@ class AllSaj < Oj::Saj
   end
 
 end # AllSaj
+
+class LocSaj
+  attr_accessor :calls
+
+  def initialize()
+    @calls = []
+  end
+
+  def hash_start(key, line, column)
+    @calls << [:hash_start, key, line, column]
+  end
+
+  def hash_end(key, line, column)
+    @calls << [:hash_end, key, line, column]
+  end
+
+  def array_start(key, line, column)
+    @calls << [:array_start, key, line, column]
+  end
+
+  def array_end(key, line, column)
+    @calls << [:array_end, key, line, column]
+  end
+
+  def add_value(value, key, line, column)
+    @calls << [:add_value, value, key, line, column]
+  end
+
+end # LocSaj
 
 class SajTest < Minitest::Test
 
@@ -240,6 +269,30 @@ class SajTest < Minitest::Test
                    [:add_value, true, nil],
                    [:array_end, nil],
 		 ], handler.calls)
+  end
+
+  def test_loc
+    handler = LocSaj.new()
+    Oj::Parser.saj.handler = handler
+    Oj::Parser.saj.parse($json)
+    assert_equal([[:hash_start, nil, 1, 1],
+                  [:array_start, 'array', 2, 12],
+                  [:hash_start, nil, 3, 5],
+                  [:add_value, 3, 'num', 4, 18],
+                  [:add_value, 'message', 'string', 5, 25],
+                  [:hash_start, 'hash', 6, 17],
+                  [:hash_start, 'h2', 7, 17],
+                  [:array_start, 'a', 8, 17],
+                  [:add_value, 1, nil, 8, 20],
+                  [:add_value, 2, nil, 8, 23],
+                  [:add_value, 3, nil, 8, 26],
+                  [:array_end, 'a', 8, 27],
+                  [:hash_end, 'h2', 9, 9],
+                  [:hash_end, 'hash', 10, 7],
+                  [:hash_end, nil, 11, 5],
+                  [:array_end, 'array', 12, 3],
+                  [:add_value, true, 'boolean', 13, 18],
+                  [:hash_end, nil, 14, 1]], handler.calls)
   end
 
 end
