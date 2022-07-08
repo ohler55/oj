@@ -494,33 +494,29 @@ static void read_num(ParseInfo pi) {
         int  dec_cnt = 0;
         bool zero1   = false;
 
-        for (; '0' <= *pi->cur && *pi->cur <= '9'; pi->cur++) {
-            if (0 == ni.i && '0' == *pi->cur) {
-                zero1 = true;
-            }
-            if (0 < ni.i) {
-                dec_cnt++;
-            }
-            if (!ni.big) {
-                int d = (*pi->cur - '0');
+        // Skip leading zeros.
+        for (; '0' == *pi->cur; pi->cur++) {
+            zero1 = true;
+        }
 
-                if (0 < d) {
-                    if (zero1 && CompatMode == pi->options.mode) {
-                        oj_set_error_at(pi,
-                                        oj_parse_error_class,
-                                        __FILE__,
-                                        __LINE__,
-                                        "not a number");
-                        return;
-                    }
-                    zero1 = false;
-                }
+        for (; '0' <= *pi->cur && *pi->cur <= '9'; pi->cur++, dec_cnt++) {
+            if (!(INT64_MAX <= ni.i || DEC_MAX < dec_cnt)) {
+                int d = (*pi->cur - '0');
                 ni.i = ni.i * 10 + d;
-                if (INT64_MAX <= ni.i || DEC_MAX < dec_cnt) {
-                    ni.big = 1;
-                }
             }
         }
+        if (0 < ni.i && zero1 && CompatMode == pi->options.mode) {
+            oj_set_error_at(pi,
+                            oj_parse_error_class,
+                            __FILE__,
+                            __LINE__,
+                            "not a number");
+            return;
+        }
+        if (INT64_MAX <= ni.i || DEC_MAX < dec_cnt) {
+            ni.big = 1;
+        }
+
         if ('.' == *pi->cur) {
             pi->cur++;
             // A trailing . is not a valid decimal but if encountered allow it
