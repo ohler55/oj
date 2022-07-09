@@ -39,7 +39,7 @@ inline static const char *buf_str(Buf buf) {
 }
 
 inline static void buf_append_string(Buf buf, const char *s, size_t slen) {
-    if (0 >= slen) {
+    if (0 == slen) {
         return;
     }
 
