@@ -183,6 +183,36 @@ static void unicode_to_chars(ParseInfo pi, Buf buf, uint32_t code) {
     }
 }
 
+static inline const char *scan_string_noSIMD(const char *str, const char *end) {
+    for (; '"' != *str; str++) {
+        if (end <= str || '\0' == *str || '\\' == *str) {
+            break;
+        }
+    }
+    return str;
+}
+
+#if defined(OJ_USE_SSE4_2)
+#include <nmmintrin.h>
+
+static inline const char *scan_string_SIMD(const char *str, const char *end) {
+    static const char chars[16] = "\x00\\\"";
+    const __m128i terminate = _mm_loadu_si128((const __m128i *)&chars[0]);
+    const char *_end = (const char *)(end - 16);
+
+    for (; str <= _end; str += 16) {
+        const __m128i string = _mm_loadu_si128((const __m128i *)str);
+        const int r = _mm_cmpestri(terminate, 3, string, 16, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_LEAST_SIGNIFICANT);
+        if (r != 16) {
+            str = (char*)(str + r);
+            return str;
+        }
+    }
+
+    return scan_string_noSIMD(str, end);
+}
+#endif
+
 // entered at /
 static void read_escaped_str(ParseInfo pi, const char *start) {
     struct _buf buf;
@@ -192,11 +222,15 @@ static void read_escaped_str(ParseInfo pi, const char *start) {
     Val         parent = stack_peek(&pi->stack);
 
     buf_init(&buf);
-    if (0 < cnt) {
-        buf_append_string(&buf, start, cnt);
-    }
-    for (s = pi->cur; '"' != *s; s++) {
-        if (s >= pi->end) {
+    buf_append_string(&buf, start, cnt);
+
+    for (s = pi->cur; '"' != *s;) {
+#if defined(OJ_USE_SSE4_2)
+        const char *scanned = scan_string_SIMD(s, pi->end);
+#else
+        const char *scanned = scan_string_noSIMD(s, pi->end);
+#endif
+        if (scanned >= pi->end) {
             oj_set_error_at(pi,
                             oj_parse_error_class,
                             __FILE__,
@@ -204,7 +238,12 @@ static void read_escaped_str(ParseInfo pi, const char *start) {
                             "quoted string not terminated");
             buf_cleanup(&buf);
             return;
-        } else if ('\\' == *s) {
+        }
+
+        buf_append_string(&buf, s, (size_t)(scanned - s));
+        s = scanned;
+
+        if ('\\' == *s) {
             s++;
             switch (*s) {
             case 'n': buf_append(&buf, '\n'); break;
@@ -273,8 +312,7 @@ static void read_escaped_str(ParseInfo pi, const char *start) {
                 buf_cleanup(&buf);
                 return;
             }
-        } else {
-            buf_append(&buf, *s);
+            s++;
         }
     }
     if (0 == parent) {
@@ -327,43 +365,14 @@ static void read_escaped_str(ParseInfo pi, const char *start) {
     buf_cleanup(&buf);
 }
 
-static inline void scan_string_noSIMD(ParseInfo pi) {
-    for (; '"' != *pi->cur; pi->cur++) {
-        if (pi->end <= pi->cur || '\0' == *pi->cur || '\\' == *pi->cur) {
-            return;
-        }
-    }
-}
-
-#if defined(OJ_USE_SSE4_2)
-#include <nmmintrin.h>
-
-static inline void scan_string_SIMD(ParseInfo pi) {
-    static const char chars[16] = "\x00\\\"";
-    const __m128i terminate = _mm_loadu_si128((const __m128i *)&chars[0]);
-    const char *end = (const char *)(pi->end - 16);
-
-    for (; pi->cur <= end; pi->cur += 16) {
-        const __m128i string = _mm_loadu_si128((const __m128i *)pi->cur);
-        const int r = _mm_cmpestri(terminate, 3, string, 16, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_LEAST_SIGNIFICANT);
-        if (r != 16) {
-            pi->cur = (const char*)(pi->cur + r);
-            return;
-        }
-    }
-
-    scan_string_noSIMD(pi);
-}
-#endif
-
 static void read_str(ParseInfo pi) {
     const char *str    = pi->cur;
     Val         parent = stack_peek(&pi->stack);
 
 #if defined(OJ_USE_SSE4_2)
-    scan_string_SIMD(pi);
+    pi->cur = scan_string_SIMD(pi->cur, pi->end);
 #else
-    scan_string_noSIMD(pi);
+    pi->cur = scan_string_noSIMD(pi->cur, pi->end);
 #endif
     if (RB_UNLIKELY(pi->end <= pi->cur)) {
         oj_set_error_at(pi,
