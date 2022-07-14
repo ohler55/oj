@@ -600,7 +600,7 @@ static void parse(ojParser p, const byte *json) {
     int         i;
 
     p->line = 1;
-    p->col = -1;
+    p->col  = -1;
 #if DEBUG
     printf("*** parse - mode: %c %s\n", p->map[256], (const char *)json);
 #endif
@@ -655,7 +655,7 @@ static void parse(ojParser p, const byte *json) {
             }
             buf_append_string(&p->buf, (const char *)start, b - start);
             if ('"' == *b) {
-		p->cur = b - json;
+                p->cur = b - json;
                 p->funcs[p->stack[p->depth]].add_str(p);
                 p->map = (0 == p->depth) ? value_map : after_map;
                 break;
@@ -665,14 +665,14 @@ static void parse(ojParser p, const byte *json) {
             p->next_map = (0 == p->depth) ? value_map : after_map;
             break;
         case OPEN_OBJECT:
-	    p->cur = b - json;
+            p->cur = b - json;
             p->funcs[p->stack[p->depth]].open_object(p);
             p->depth++;
             p->stack[p->depth] = OBJECT_FUN;
             p->map             = key1_map;
             break;
         case NUM_CLOSE_OBJECT:
-	    p->cur = b - json;
+            p->cur = b - json;
             calc_num(p);
             // flow through
         case CLOSE_OBJECT:
@@ -683,18 +683,18 @@ static void parse(ojParser p, const byte *json) {
                 return;
             }
             p->depth--;
-	    p->cur = b - json;
+            p->cur = b - json;
             p->funcs[p->stack[p->depth]].close_object(p);
             break;
         case OPEN_ARRAY:
-	    p->cur = b - json;
+            p->cur = b - json;
             p->funcs[p->stack[p->depth]].open_array(p);
             p->depth++;
             p->stack[p->depth] = ARRAY_FUN;
             p->map             = value_map;
             break;
         case NUM_CLOSE_ARRAY:
-	    p->cur = b - json;
+            p->cur = b - json;
             calc_num(p);
             // flow through
         case CLOSE_ARRAY:
@@ -705,11 +705,11 @@ static void parse(ojParser p, const byte *json) {
                 return;
             }
             p->depth--;
-	    p->cur = b - json;
+            p->cur = b - json;
             p->funcs[p->stack[p->depth]].close_array(p);
             break;
         case NUM_COMMA:
-	    p->cur = b - json;
+            p->cur = b - json;
             calc_num(p);
             if (0 < p->depth && OBJECT_FUN == p->stack[p->depth]) {
                 p->map = key_map;
@@ -872,13 +872,13 @@ static void parse(ojParser p, const byte *json) {
             p->map = big_exp_map;
             break;
         case NUM_SPC:
-	    p->cur = b - json;
-	    calc_num(p);
-	    break;
+            p->cur = b - json;
+            calc_num(p);
+            break;
         case NUM_NEWLINE:
-	    p->cur = b - json;
-	    calc_num(p);
-	    b++;
+            p->cur = b - json;
+            calc_num(p);
+            b++;
 #ifdef SPACE_JUMP
             // for (uint32_t *sj = (uint32_t*)b; 0x20202020 == *sj; sj++) { b += 4; }
             for (uint16_t *sj = (uint16_t *)b; 0x2020 == *sj; sj++) {
@@ -899,7 +899,7 @@ static void parse(ojParser p, const byte *json) {
                 buf_append_string(&p->buf, (const char *)start, b - start);
             }
             if ('"' == *b) {
-		p->cur = b - json;
+                p->cur = b - json;
                 p->funcs[p->stack[p->depth]].add_str(p);
                 p->map = p->next_map;
                 break;
@@ -908,7 +908,7 @@ static void parse(ojParser p, const byte *json) {
             break;
         case STR_SLASH: p->map = esc_map; break;
         case STR_QUOTE:
-	    p->cur = b - json;
+            p->cur = b - json;
             p->funcs[p->stack[p->depth]].add_str(p);
             p->map = p->next_map;
             break;
@@ -986,7 +986,7 @@ static void parse(ojParser p, const byte *json) {
         case VAL_NULL:
             if ('u' == b[1] && 'l' == b[2] && 'l' == b[3]) {
                 b += 3;
-		p->cur = b - json;
+                p->cur = b - json;
                 p->funcs[p->stack[p->depth]].add_null(p);
                 p->map = (0 == p->depth) ? value_map : after_map;
                 break;
@@ -1012,7 +1012,7 @@ static void parse(ojParser p, const byte *json) {
         case VAL_TRUE:
             if ('r' == b[1] && 'u' == b[2] && 'e' == b[3]) {
                 b += 3;
-		p->cur = b - json;
+                p->cur = b - json;
                 p->funcs[p->stack[p->depth]].add_true(p);
                 p->map = (0 == p->depth) ? value_map : after_map;
                 break;
@@ -1038,7 +1038,7 @@ static void parse(ojParser p, const byte *json) {
         case VAL_FALSE:
             if ('a' == b[1] && 'l' == b[2] && 's' == b[3] && 'e' == b[4]) {
                 b += 4;
-		p->cur = b - json;
+                p->cur = b - json;
                 p->funcs[p->stack[p->depth]].add_false(p);
                 p->map = (0 == p->depth) ? value_map : after_map;
                 break;
@@ -1072,7 +1072,7 @@ static void parse(ojParser p, const byte *json) {
                         parse_error(p, "expected null");
                         return;
                     }
-		    p->cur = b - json;
+                    p->cur = b - json;
                     p->funcs[p->stack[p->depth]].add_null(p);
                     p->map = (0 == p->depth) ? value_map : after_map;
                 }
@@ -1084,7 +1084,7 @@ static void parse(ojParser p, const byte *json) {
                         parse_error(p, "expected false");
                         return;
                     }
-		    p->cur = b - json;
+                    p->cur = b - json;
                     p->funcs[p->stack[p->depth]].add_false(p);
                     p->map = (0 == p->depth) ? value_map : after_map;
                 }
@@ -1096,7 +1096,7 @@ static void parse(ojParser p, const byte *json) {
                         parse_error(p, "expected true");
                         return;
                     }
-		    p->cur = b - json;
+                    p->cur = b - json;
                     p->funcs[p->stack[p->depth]].add_true(p);
                     p->map = (0 == p->depth) ? value_map : after_map;
                 }
@@ -1114,6 +1114,9 @@ static void parse(ojParser p, const byte *json) {
             p->map = trail_map;
         }
     }
+    if (0 < p->depth) {
+        parse_error(p, "parse error, not closed");
+    }
     if (0 == p->depth) {
         switch (p->map[256]) {
         case '0':
@@ -1125,9 +1128,9 @@ static void parse(ojParser p, const byte *json) {
         case 'g':
         case 'B':
         case 'Y':
-	    p->cur = b - json;
-	    calc_num(p);
-	    break;
+            p->cur = b - json;
+            calc_num(p);
+            break;
         }
     }
     return;

@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.13.17 - 2022-07-15
+
+- Fixed Oj::Parser to detect unterminated arrays and objects.
+
 ## 3.13.16 - 2022-07-06
 
 - Added line and column as optional arguments to the Oj::Parser.saj parser.
