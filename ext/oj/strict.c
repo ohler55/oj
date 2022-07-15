@@ -12,6 +12,7 @@
 #include "oj.h"
 #include "parse.h"
 #include "trace.h"
+#include "util.h"
 
 VALUE oj_cstr_to_value(const char *str, size_t len, size_t cache_str) {
     volatile VALUE rstr = Qnil;
@@ -195,7 +196,7 @@ oj_strict_parse(int argc, VALUE *argv, VALUE self) {
     struct _parseInfo pi;
 
     parse_info_init(&pi);
-    pi.options   = oj_default_options;
+    oj_memcpy(&pi.options, &oj_default_options, sizeof(struct _options));
     pi.handler   = Qnil;
     pi.err_class = Qnil;
     oj_set_strict_callbacks(&pi);
@@ -212,7 +213,7 @@ oj_strict_parse_cstr(int argc, VALUE *argv, char *json, size_t len) {
     struct _parseInfo pi;
 
     parse_info_init(&pi);
-    pi.options   = oj_default_options;
+    oj_memcpy(&pi.options, &oj_default_options, sizeof(struct _options));
     pi.handler   = Qnil;
     pi.err_class = Qnil;
     oj_set_strict_callbacks(&pi);

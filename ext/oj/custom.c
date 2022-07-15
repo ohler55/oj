@@ -1092,7 +1092,7 @@ oj_custom_parse(int argc, VALUE *argv, VALUE self) {
     struct _parseInfo pi;
 
     parse_info_init(&pi);
-    pi.options           = oj_default_options;
+    oj_memcpy(&pi.options, &oj_default_options, sizeof(struct _options));
     pi.handler           = Qnil;
     pi.err_class         = Qnil;
     pi.max_depth         = 0;
@@ -1112,7 +1112,7 @@ oj_custom_parse_cstr(int argc, VALUE *argv, char *json, size_t len) {
     struct _parseInfo pi;
 
     parse_info_init(&pi);
-    pi.options           = oj_default_options;
+    oj_memcpy(&pi.options, &oj_default_options, sizeof(struct _options));
     pi.handler           = Qnil;
     pi.err_class         = Qnil;
     pi.max_depth         = 0;

@@ -5,6 +5,7 @@
 #include "encode.h"
 #include "oj.h"
 #include "parse.h"
+#include "util.h"
 
 extern const char oj_json_class[];
 
@@ -199,9 +200,11 @@ static int mimic_limit_arg(VALUE a) {
  */
 static VALUE mimic_dump(int argc, VALUE *argv, VALUE self) {
     struct _out     out;
-    struct _options copts = oj_default_options;
+    struct _options copts;
     VALUE           rstr;
     VALUE           active_hack[1];
+
+    oj_memcpy(&copts, &oj_default_options, sizeof(struct _options));
 
     copts.str_rx.head = NULL;
     copts.str_rx.tail = NULL;
@@ -435,7 +438,9 @@ static VALUE mimic_generate_core(int argc, VALUE *argv, Options copts) {
  */
 VALUE
 oj_mimic_generate(int argc, VALUE *argv, VALUE self) {
-    struct _options copts = oj_default_options;
+    struct _options copts;
+
+    oj_memcpy(&copts, &oj_default_options, sizeof(struct _options));
 
     copts.str_rx.head = NULL;
     copts.str_rx.tail = NULL;
@@ -453,9 +458,11 @@ oj_mimic_generate(int argc, VALUE *argv, VALUE self) {
  */
 VALUE
 oj_mimic_pretty_generate(int argc, VALUE *argv, VALUE self) {
-    struct _options copts = oj_default_options;
+    struct _options copts;
     VALUE           rargs[2];
     volatile VALUE  h;
+
+    oj_memcpy(&copts, &oj_default_options, sizeof(struct _options));
 
     // Some (all?) json gem to_json methods need a State instance and not just
     // a Hash. I haven't dug deep enough to find out why but using a State
@@ -560,7 +567,7 @@ static VALUE mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
     pi.err_class = oj_json_parser_error_class;
     // pi.err_class = Qnil;
 
-    pi.options               = oj_default_options;
+    oj_memcpy(&pi.options, &oj_default_options, sizeof(struct _options));
     pi.options.auto_define   = No;
     pi.options.quirks_mode   = Yes;
     pi.options.allow_invalid = Yes;
@@ -755,7 +762,9 @@ static struct _options mimic_object_to_json_options = {0,              // indent
 static VALUE mimic_object_to_json(int argc, VALUE *argv, VALUE self) {
     struct _out     out;
     VALUE           rstr;
-    struct _options copts = oj_default_options;
+    struct _options copts;
+
+    oj_memcpy(&copts, &oj_default_options, sizeof(struct _options));
 
     copts.str_rx.head = NULL;
     copts.str_rx.tail = NULL;

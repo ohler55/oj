@@ -134,3 +134,24 @@ void sec_as_time(int64_t secs, TimeInfo ti) {
     secs     = secs - (int64_t)ti->min * 60LL;
     ti->sec  = (int)secs;
 }
+
+#if defined(OJ_USE_SSE4_2)
+#include <emmintrin.h>
+void oj_memcpy(void *dest, const void *src, size_t len) {
+    char *d = dest;
+    const char *s = src;
+    const char *end = s + len - 16;
+
+    for(; s <= end; d += 16, s += 16) {
+        __m128i buf = _mm_loadu_si128((const __m128i*)s);
+        _mm_storeu_si128((__m128i*)d, buf);
+    }
+
+    len = len - (size_t)(s - (const char *)src);
+    memcpy(d, s, len);
+}
+#else
+void oj_memcpy(void *dest, const void *src, size_t len) {
+    memcpy(dest, src, len);
+}
+#endif

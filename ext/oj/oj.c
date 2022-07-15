@@ -17,6 +17,7 @@
 #include "odd.h"
 #include "parse.h"
 #include "rails.h"
+#include "util.h"
 
 typedef struct _yesNoOpt {
     VALUE sym;
@@ -1121,7 +1122,7 @@ static VALUE load_file(int argc, VALUE *argv, VALUE self) {
     }
     Check_Type(*argv, T_STRING);
     parse_info_init(&pi);
-    pi.options   = oj_default_options;
+    oj_memcpy(&pi.options, &oj_default_options, sizeof(struct _options));
     pi.handler   = Qnil;
     pi.err_class = Qnil;
     pi.max_depth = 0;
@@ -1195,9 +1196,9 @@ static VALUE safe_load(VALUE self, VALUE doc) {
     VALUE             args[1];
 
     parse_info_init(&pi);
+    oj_memcpy(&pi.options, &oj_default_options, sizeof(struct _options));
     pi.err_class           = Qnil;
     pi.max_depth           = 0;
-    pi.options             = oj_default_options;
     pi.options.auto_define = No;
     pi.options.sym_key     = No;
     pi.options.mode        = StrictMode;
@@ -1272,7 +1273,9 @@ static VALUE dump_ensure(VALUE a) {
 static VALUE dump(int argc, VALUE *argv, VALUE self) {
     struct dump_arg arg;
     struct _out     out;
-    struct _options copts = oj_default_options;
+    struct _options copts;
+
+    oj_memcpy(&copts, &oj_default_options, sizeof(struct _options));
 
     if (1 > argc) {
         rb_raise(rb_eArgError, "wrong number of arguments (0 for 1).");
@@ -1325,8 +1328,10 @@ static VALUE dump(int argc, VALUE *argv, VALUE self) {
  */
 static VALUE to_json(int argc, VALUE *argv, VALUE self) {
     struct _out     out;
-    struct _options copts = oj_default_options;
+    struct _options copts;
     VALUE           rstr;
+
+    oj_memcpy(&copts, &oj_default_options, sizeof(struct _options));
 
     if (1 > argc) {
         rb_raise(rb_eArgError, "wrong number of arguments (0 for 1).");
@@ -1368,7 +1373,9 @@ static VALUE to_json(int argc, VALUE *argv, VALUE self) {
  *   - *:circular* [_Boolean_] allow circular references, default: false
  */
 static VALUE to_file(int argc, VALUE *argv, VALUE self) {
-    struct _options copts = oj_default_options;
+    struct _options copts;
+
+    oj_memcpy(&copts, &oj_default_options, sizeof(struct _options));
 
     if (3 == argc) {
         oj_parse_options(argv[2], &copts);
@@ -1390,7 +1397,9 @@ static VALUE to_file(int argc, VALUE *argv, VALUE self) {
  *   - *:circular* [_Boolean_] allow circular references, default: false
  */
 static VALUE to_stream(int argc, VALUE *argv, VALUE self) {
-    struct _options copts = oj_default_options;
+    struct _options copts;
+
+    oj_memcpy(&copts, &oj_default_options, sizeof(struct _options));
 
     if (3 == argc) {
         oj_parse_options(argv[2], &copts);

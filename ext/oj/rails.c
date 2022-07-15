@@ -669,7 +669,7 @@ static void encoder_mark(void *ptr) {
 static VALUE encoder_new(int argc, VALUE *argv, VALUE self) {
     Encoder e = ALLOC(struct _encoder);
 
-    e->opts = oj_default_options;
+    oj_memcpy(&e->opts, &oj_default_options, sizeof(struct _options));
     e->arg  = Qnil;
     copy_opts(&ropts, &e->ropts);
 

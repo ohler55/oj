@@ -3,6 +3,7 @@
 
 #include "dump.h"
 #include "encode.h"
+#include "util.h"
 
 extern VALUE Oj;
 
@@ -41,7 +42,7 @@ static void maybe_comma(StrWriter sw) {
 
 // Used by stream writer also.
 void oj_str_writer_init(StrWriter sw, int buf_size) {
-    sw->opts       = oj_default_options;
+    oj_memcpy(&sw->opts, &oj_default_options, sizeof(struct _options));
     sw->depth      = 0;
     sw->types      = ALLOC_N(char, 256);
     sw->types_end  = sw->types + 256;

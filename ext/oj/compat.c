@@ -10,6 +10,7 @@
 #include "parse.h"
 #include "resolve.h"
 #include "trace.h"
+#include "util.h"
 
 static void hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *orig) {
     const char *   key    = kval->key;
@@ -225,7 +226,7 @@ oj_compat_parse(int argc, VALUE *argv, VALUE self) {
     struct _parseInfo pi;
 
     parse_info_init(&pi);
-    pi.options              = oj_default_options;
+    oj_memcpy(&pi.options, &oj_default_options, sizeof(struct _options));
     pi.handler              = Qnil;
     pi.err_class            = Qnil;
     pi.max_depth            = 0;
@@ -246,7 +247,7 @@ oj_compat_load(int argc, VALUE *argv, VALUE self) {
     struct _parseInfo pi;
 
     parse_info_init(&pi);
-    pi.options              = oj_default_options;
+    oj_memcpy(&pi.options, &oj_default_options, sizeof(struct _options));
     pi.handler              = Qnil;
     pi.err_class            = Qnil;
     pi.max_depth            = 0;
@@ -267,7 +268,7 @@ oj_compat_parse_cstr(int argc, VALUE *argv, char *json, size_t len) {
     struct _parseInfo pi;
 
     parse_info_init(&pi);
-    pi.options           = oj_default_options;
+    oj_memcpy(&pi.options, &oj_default_options, sizeof(struct _options));
     pi.handler           = Qnil;
     pi.err_class         = Qnil;
     pi.max_depth         = 0;

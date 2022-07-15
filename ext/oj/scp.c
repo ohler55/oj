@@ -12,6 +12,7 @@
 #include "intern.h"
 #include "oj.h"
 #include "parse.h"
+#include "util.h"
 
 static VALUE noop_start(ParseInfo pi) {
     return Qnil;
@@ -138,9 +139,9 @@ oj_sc_parse(int argc, VALUE *argv, VALUE self) {
     VALUE             input = argv[1];
 
     parse_info_init(&pi);
+    oj_memcpy(&pi.options, &oj_default_options, sizeof(struct _options));
     pi.err_class = Qnil;
     pi.max_depth = 0;
-    pi.options   = oj_default_options;
     if (3 == argc) {
         oj_parse_options(argv[2], &pi.options);
     }
