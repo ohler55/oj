@@ -484,7 +484,7 @@ static VALUE dump_common(VALUE obj, int depth, Out out) {
         const char *   s;
         int            len;
 
-        if (Yes == out->opts->trace) {
+        if (RB_UNLIKELY(Yes == out->opts->trace)) {
             oj_trace("to_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyIn);
         }
         if (0 == rb_obj_method_arity(obj, oj_to_json_id)) {
@@ -492,7 +492,7 @@ static VALUE dump_common(VALUE obj, int depth, Out out) {
         } else {
             rs = rb_funcall2(obj, oj_to_json_id, out->argc, out->argv);
         }
-        if (Yes == out->opts->trace) {
+        if (RB_UNLIKELY(Yes == out->opts->trace)) {
             oj_trace("to_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyOut);
         }
         s   = RSTRING_PTR(rs);
@@ -504,7 +504,7 @@ static VALUE dump_common(VALUE obj, int depth, Out out) {
     } else if (Yes == out->opts->as_json && rb_respond_to(obj, oj_as_json_id)) {
         volatile VALUE aj;
 
-        if (Yes == out->opts->trace) {
+        if (RB_UNLIKELY(Yes == out->opts->trace)) {
             oj_trace("as_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyIn);
         }
         // Some classes elect to not take an options argument so check the arity
@@ -514,7 +514,7 @@ static VALUE dump_common(VALUE obj, int depth, Out out) {
         } else {
             aj = rb_funcall2(obj, oj_as_json_id, out->argc, out->argv);
         }
-        if (Yes == out->opts->trace) {
+        if (RB_UNLIKELY(Yes == out->opts->trace)) {
             oj_trace("as_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyOut);
         }
         // Catch the obvious brain damaged recursive dumping.
@@ -885,7 +885,7 @@ static DumpFunc custom_funcs[] = {
 void oj_dump_custom_val(VALUE obj, int depth, Out out, bool as_ok) {
     int type = rb_type(obj);
 
-    if (Yes == out->opts->trace) {
+    if (RB_UNLIKELY(Yes == out->opts->trace)) {
         oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceIn);
     }
     if (MAX_DEPTH < depth) {
@@ -896,14 +896,14 @@ void oj_dump_custom_val(VALUE obj, int depth, Out out, bool as_ok) {
 
         if (NULL != f) {
             f(obj, depth, out, true);
-            if (Yes == out->opts->trace) {
+            if (RB_UNLIKELY(Yes == out->opts->trace)) {
                 oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceOut);
             }
             return;
         }
     }
     oj_dump_nil(Qnil, depth, out, false);
-    if (Yes == out->opts->trace) {
+    if (RB_UNLIKELY(Yes == out->opts->trace)) {
         oj_trace("dump", Qnil, __FILE__, __LINE__, depth, TraceOut);
     }
 }

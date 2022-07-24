@@ -517,7 +517,7 @@ static void dump_as_string(VALUE obj, int depth, Out out, bool as_ok) {
 static void dump_as_json(VALUE obj, int depth, Out out, bool as_ok) {
     volatile VALUE ja;
 
-    if (Yes == out->opts->trace) {
+    if (RB_UNLIKELY(Yes == out->opts->trace)) {
         oj_trace("as_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyIn);
     }
     // Some classes elect to not take an options argument so check the arity
@@ -527,7 +527,7 @@ static void dump_as_json(VALUE obj, int depth, Out out, bool as_ok) {
     } else {
         ja = rb_funcall2(obj, oj_as_json_id, out->argc, out->argv);
     }
-    if (Yes == out->opts->trace) {
+    if (RB_UNLIKELY(Yes == out->opts->trace)) {
         oj_trace("as_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyOut);
     }
 
@@ -1464,7 +1464,7 @@ static DumpFunc rails_funcs[] = {
 static void dump_rails_val(VALUE obj, int depth, Out out, bool as_ok) {
     int type = rb_type(obj);
 
-    if (Yes == out->opts->trace) {
+    if (RB_UNLIKELY(Yes == out->opts->trace)) {
         oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceIn);
     }
     if (MAX_DEPTH < depth) {
@@ -1475,14 +1475,14 @@ static void dump_rails_val(VALUE obj, int depth, Out out, bool as_ok) {
 
         if (NULL != f) {
             f(obj, depth, out, as_ok);
-            if (Yes == out->opts->trace) {
+            if (RB_UNLIKELY(Yes == out->opts->trace)) {
                 oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceOut);
             }
             return;
         }
     }
     oj_dump_nil(Qnil, depth, out, false);
-    if (Yes == out->opts->trace) {
+    if (RB_UNLIKELY(Yes == out->opts->trace)) {
         oj_trace("dump", Qnil, __FILE__, __LINE__, depth, TraceOut);
     }
 }
