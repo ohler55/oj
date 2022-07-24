@@ -266,7 +266,7 @@ static DumpFunc wab_funcs[] = {
 void oj_dump_wab_val(VALUE obj, int depth, Out out) {
     int type = rb_type(obj);
 
-    if (Yes == out->opts->trace) {
+    if (RB_UNLIKELY(Yes == out->opts->trace)) {
         oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceIn);
     }
     if (MAX_DEPTH < depth) {
@@ -277,7 +277,7 @@ void oj_dump_wab_val(VALUE obj, int depth, Out out) {
 
         if (NULL != f) {
             f(obj, depth, out, false);
-            if (Yes == out->opts->trace) {
+            if (RB_UNLIKELY(Yes == out->opts->trace)) {
                 oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceOut);
             }
             return;

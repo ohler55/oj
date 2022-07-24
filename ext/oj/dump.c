@@ -736,11 +736,11 @@ void oj_dump_raw_json(VALUE obj, int depth, Out out) {
     } else {
         volatile VALUE jv;
 
-        if (Yes == out->opts->trace) {
+        if (RB_UNLIKELY(Yes == out->opts->trace)) {
             oj_trace("raw_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyIn);
         }
         jv = rb_funcall(obj, oj_raw_json_id, 2, RB_INT2NUM(depth), RB_INT2NUM(out->indent));
-        if (Yes == out->opts->trace) {
+        if (RB_UNLIKELY(Yes == out->opts->trace)) {
             oj_trace("raw_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyOut);
         }
         oj_dump_raw(RSTRING_PTR(jv), (size_t)RSTRING_LEN(jv), out);
