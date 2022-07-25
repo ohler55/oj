@@ -36,7 +36,6 @@ dflags['OJ_DEBUG'] = true unless ENV['OJ_DEBUG'].nil?
 
 if try_cflags('-msse4.2')
   $CPPFLAGS += ' -msse4.2'
-  dflags['OJ_USE_SSE4_2'] = 1
 end
 
 dflags.each do |k,v|

@@ -192,7 +192,26 @@ static inline const char *scan_string_noSIMD(const char *str, const char *end) {
     return str;
 }
 
-#if defined(OJ_USE_SSE4_2)
+// Taken from Tensorflow:
+// https://github.com/tensorflow/tensorflow/blob/5dcfc51118817f27fad5246812d83e5dccdc5f72/tensorflow/core/lib/hash/crc32c_accelerate.cc#L21-L38
+#ifdef __SSE4_2__
+#if defined(__x86_64__) && defined(__GNUC__) && \
+    (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8))
+#define USE_SSE_DETECT 1
+#elif defined(__x86_64__) && defined(__clang__)
+#if __has_builtin(__builtin_cpu_supports)
+#define USE_SSE_DETECT 1
+#endif
+#endif
+#endif /* __SSE4_2__ */
+
+// This version of Apple clang has a bug:
+// https://llvm.org/bugs/show_bug.cgi?id=25510
+#if defined(__APPLE__) && (__clang_major__ <= 8)
+#undef USE_SSE_DETECT
+#endif
+
+#ifdef USE_SSE_DETECT
 #include <nmmintrin.h>
 
 static inline const char *scan_string_SIMD(const char *str, const char *end) {
@@ -213,6 +232,25 @@ static inline const char *scan_string_SIMD(const char *str, const char *end) {
 }
 #endif
 
+static bool cpu_supports_sse42(void) {
+#if USE_SSE_DETECT
+    __builtin_cpu_init();
+    return (__builtin_cpu_supports("sse4.2"));
+#else
+    return false;
+#endif
+}
+
+static const char *(*scan_func) (const char *str, const char *end) = scan_string_noSIMD;
+
+void oj_scanner_init(void) {
+    if (cpu_supports_sse42()) {
+#if USE_SSE_DETECT
+        scan_func = scan_string_SIMD;
+#endif
+    }
+}
+
 // entered at /
 static void read_escaped_str(ParseInfo pi, const char *start) {
     struct _buf buf;
@@ -225,11 +263,7 @@ static void read_escaped_str(ParseInfo pi, const char *start) {
     buf_append_string(&buf, start, cnt);
 
     for (s = pi->cur; '"' != *s;) {
-#if defined(OJ_USE_SSE4_2)
-        const char *scanned = scan_string_SIMD(s, pi->end);
-#else
-        const char *scanned = scan_string_noSIMD(s, pi->end);
-#endif
+        const char *scanned = scan_func(s, pi->end);
         if (scanned >= pi->end) {
             oj_set_error_at(pi,
                             oj_parse_error_class,
@@ -369,11 +403,7 @@ static void read_str(ParseInfo pi) {
     const char *str    = pi->cur;
     Val         parent = stack_peek(&pi->stack);
 
-#if defined(OJ_USE_SSE4_2)
-    pi->cur = scan_string_SIMD(pi->cur, pi->end);
-#else
-    pi->cur = scan_string_noSIMD(pi->cur, pi->end);
-#endif
+    pi->cur = scan_func(pi->cur, pi->end);
     if (RB_UNLIKELY(pi->end <= pi->cur)) {
         oj_set_error_at(pi,
                         oj_parse_error_class,
