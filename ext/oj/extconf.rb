@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
 }
 SRC
 
-if try_run(src, '-msse4.2')
+if ENV['OJ_NO_SSE4_2'].nil? && try_run(src, '-msse4.2')
   $CPPFLAGS += ' -msse4.2'
   dflags['OJ_USE_SSE4_2'] = 1
 end
