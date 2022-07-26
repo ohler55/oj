@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.13.18 - 2022-07-25
+
+- Fixed SSE detection at run time.
+
 ## 3.13.17 - 2022-07-15
 
 - Fixed Oj::Parser to detect unterminated arrays and objects.
