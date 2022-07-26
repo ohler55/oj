@@ -2043,4 +2043,5 @@ void Init_oj(void) {
     oj_init_doc();
 
     oj_parser_init();
+    oj_scanner_init();
 }

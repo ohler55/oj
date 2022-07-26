@@ -49,7 +49,6 @@ SRC
 
 if try_run(src, '-msse4.2')
   $CPPFLAGS += ' -msse4.2'
-  dflags['OJ_USE_SSE4_2'] = 1
 end
 
 dflags.each do |k,v|

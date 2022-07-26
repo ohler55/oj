@@ -97,6 +97,8 @@ static inline void parse_info_init(ParseInfo pi) {
     memset(pi, 0, sizeof(struct _parseInfo));
 }
 
+extern void oj_scanner_init();
+
 static inline bool empty_ok(Options options) {
     switch (options->mode) {
     case ObjectMode:
