@@ -211,6 +211,10 @@ static inline const char *scan_string_noSIMD(const char *str, const char *end) {
 #undef USE_SSE_DETECT
 #endif
 
+#if defined(TRUFFLERUBY)
+#undef USE_SSE_DETECT
+#endif
+
 #ifdef USE_SSE_DETECT
 #include <nmmintrin.h>
 
