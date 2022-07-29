@@ -19,10 +19,16 @@ require 'pp'
 require 'oj'
 
 
-if defined?(GC.verify_compaction_references) == 'method'
+def verify_gc_compaction
   # This method was added in Ruby 3.0.0. Calling it this way asks the GC to
   # move objects around, helping to find object movement bugs.
-  GC.verify_compaction_references(double_heap: true, toward: :empty)
+  if defined?(GC.verify_compaction_references) == 'method' && !(RbConfig::CONFIG['host_os'] =~ /(mingw|mswin)/)
+    if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new("3.2.0")
+      GC.verify_compaction_references(expand_heap: true, toward: :empty)
+    else
+      GC.verify_compaction_references(double_heap: true, toward: :empty)
+    end
+  end
 end
 
 
