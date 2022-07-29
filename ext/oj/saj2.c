@@ -289,7 +289,7 @@ static void add_float_key_loc(ojParser p) {
 }
 
 static void add_big(ojParser p) {
-    rb_funcall((VALUE)p->ctx,
+    rb_funcall(((Delegate)p->ctx)->handler,
                oj_add_value_id,
                2,
                rb_funcall(rb_cObject, oj_bigdecimal_id, 1, rb_str_new(buf_str(&p->buf), buf_len(&p->buf))),
@@ -297,7 +297,7 @@ static void add_big(ojParser p) {
 }
 
 static void add_big_loc(ojParser p) {
-    rb_funcall((VALUE)p->ctx,
+    rb_funcall(((Delegate)p->ctx)->handler,
                oj_add_value_id,
                4,
                rb_funcall(rb_cObject, oj_bigdecimal_id, 1, rb_str_new(buf_str(&p->buf), buf_len(&p->buf))),
@@ -307,7 +307,7 @@ static void add_big_loc(ojParser p) {
 }
 
 static void add_big_key(ojParser p) {
-    rb_funcall((VALUE)p->ctx,
+    rb_funcall(((Delegate)p->ctx)->handler,
                oj_add_value_id,
                2,
                rb_funcall(rb_cObject, oj_bigdecimal_id, 1, rb_str_new(buf_str(&p->buf), buf_len(&p->buf))),
