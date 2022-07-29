@@ -224,7 +224,7 @@ class ObjectJuice < Minitest::Test
 #=begin
     if '3.1.0' <= RUBY_VERSION && !(RbConfig::CONFIG['host_os'] =~ /(mingw|mswin)/)
       #Oj::debug_odd("teardown before GC.verify_compaction_references")
-      GC.verify_compaction_references(double_heap: true, toward: :empty)
+      verify_gc_compaction
       #Oj::debug_odd("teardown after GC.verify_compaction_references")
     end
 #=end
