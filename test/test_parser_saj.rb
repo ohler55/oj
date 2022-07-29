@@ -149,6 +149,17 @@ class SajTest < Minitest::Test
     assert_equal((12345.6789e7 * 10000).to_i, (handler.calls[0][1] * 10000).to_i)
   end
 
+  def test_bignum
+    handler = AllSaj.new()
+    json = %{-11.899999999999999}
+    p = Oj::Parser.new(:saj)
+    p.handler = handler
+    p.parse(json)
+    assert_equal(1, handler.calls.size)
+    assert_equal(:add_value, handler.calls[0][0])
+    assert_equal(-118999, (handler.calls[0][1] * 10000).to_i)
+  end
+
   def test_array_empty
     handler = AllSaj.new()
     json = %{[]}
