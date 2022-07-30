@@ -237,7 +237,7 @@ static inline const char *scan_string_SIMD(const char *str, const char *end) {
 #endif
 
 static bool cpu_supports_sse42(void) {
-#if USE_SSE_DETECT
+#ifdef USE_SSE_DETECT
     __builtin_cpu_init();
     return (__builtin_cpu_supports("sse4.2"));
 #else
@@ -249,7 +249,7 @@ static const char *(*scan_func) (const char *str, const char *end) = scan_string
 
 void oj_scanner_init(void) {
     if (cpu_supports_sse42()) {
-#if USE_SSE_DETECT
+#ifdef USE_SSE_DETECT
         scan_func = scan_string_SIMD;
 #endif
     }
