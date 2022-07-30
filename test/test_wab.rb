@@ -105,6 +105,8 @@ class WabJuice < Minitest::Test
   end
 
   def test_deep_nest
+    skip 'TruffleRuby causes SEGV' if RUBY_ENGINE == 'truffleruby'
+
     begin
       n = 10000
       Oj.wab_load('[' * n + ']' * n)
