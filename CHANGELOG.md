@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.13.19 - 2022-07-29
+
+- TruffleRuby issues resolved.
+
 ## 3.13.18 - 2022-07-25
 
 - Fixed SSE detection at run time.
