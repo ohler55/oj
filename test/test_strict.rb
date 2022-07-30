@@ -156,6 +156,8 @@ class StrictJuice < Minitest::Test
   end
 
   def test_deep_nest
+    skip 'TruffleRuby causes SEGV' if RUBY_ENGINE == 'truffleruby'
+
     begin
       n = 10000
       Oj.strict_load('[' * n + ']' * n)

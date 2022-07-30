@@ -78,3 +78,22 @@ jobs:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true
       - run: bundle exec rake
+
+  TruffleRuby:
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby: [ '22.2.0' ]
+
+    env:
+      BUNDLE_GEMFILE: gemfiles/no_rails.gemfile
+      MAKE: make -j 2
+    runs-on: ubuntu-latest
+    name: TruffleRuby ${{ matrix.ruby }} (ubuntu)
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: truffleruby-${{ matrix.ruby }}
+          bundler-cache: true
+      - run: bundle exec rake

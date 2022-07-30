@@ -200,6 +200,8 @@ class CustomJuice < Minitest::Test
   end
 
   def test_deep_nest
+    skip 'TruffleRuby causes SEGV' if RUBY_ENGINE == 'truffleruby'
+
     begin
       n = 10000
       Oj.strict_load('[' * n + ']' * n)
@@ -258,6 +260,8 @@ class CustomJuice < Minitest::Test
   end
 
   def test_object
+    skip 'TruffleRuby fails this spec with `RuntimeError: rb_ivar_foreach not implemented`' if RUBY_ENGINE == 'truffleruby'
+
     obj = Jeez.new(true, 58)
     json = Oj.dump(obj, create_id: "^o", use_to_json: false, use_as_json: false, use_to_hash: false)
     assert_equal(%|{"x":true,"y":58,"_z":"true"}|, json)
@@ -403,11 +407,15 @@ class CustomJuice < Minitest::Test
   end
 
   def test_range
+    skip 'TruffleRuby fails this spec' if RUBY_ENGINE == 'truffleruby'
+
     obj = 3..8
     dump_and_load(obj, false, :create_id => "^o", :create_additions => true)
   end
 
   def test_date
+    skip 'TruffleRuby causes SEGV' if RUBY_ENGINE == 'truffleruby'
+
     obj = Date.new(2017, 1, 5)
     dump_and_load(obj, false, :create_id => "^o", :create_additions => true)
   end
@@ -437,6 +445,8 @@ class CustomJuice < Minitest::Test
   end
 
   def test_datetime
+    skip 'TruffleRuby causes SEGV' if RUBY_ENGINE == 'truffleruby'
+
     obj = DateTime.new(2017, 1, 5, 10, 20, 30)
     dump_and_load(obj, false, :create_id => "^o", :create_additions => true)
   end
@@ -480,6 +490,8 @@ class CustomJuice < Minitest::Test
   end
 
   def test_time
+    skip 'TruffleRuby fails this spec' if RUBY_ENGINE == 'truffleruby'
+
     obj = Time.now()
     dump_load_dump(obj, false, :time_format => :unix, :create_id => "^o", :create_additions => true)
     dump_load_dump(obj, false, :time_format => :unix_zone, :create_id => "^o", :create_additions => true)

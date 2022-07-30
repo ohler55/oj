@@ -41,6 +41,8 @@ class GCTest < Minitest::Test
   end
 
   def test_parse_object_gc
+    skip 'TruffleRuby fails this spec with `RuntimeError: rb_ivar_foreach not implemented`' if RUBY_ENGINE == 'truffleruby'
+
     g = Goo.new(0, nil)
     100.times { |i| g = Goo.new(i, g) }
     json = Oj.dump(g, :mode => :object)
