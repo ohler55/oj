@@ -26,10 +26,12 @@ class GCTest < Minitest::Test
 
   def setup
     @default_options = Oj.default_options
+    GC.stress = true
   end
 
   def teardown
     Oj.default_options = @default_options
+    GC.stress = false
   end
 
   # if no crash then the GC marking is working
@@ -47,5 +49,14 @@ class GCTest < Minitest::Test
     100.times { |i| g = Goo.new(i, g) }
     json = Oj.dump(g, :mode => :object)
     Oj.object_load(json)
+  end
+
+  def test_parse_gc
+    json = '{"a":"Alpha","b":true,"c":12345,"d":[true,[false,[-123456789,null],3.9676,["Something else.",false],null]],"e":{"zero":null,"one":1,"two":2,"three":[3],"four":[0,1,2,3,4]},"f":null,"h":{"a":{"b":{"c":{"d":{"e":{"f":{"g":null}}}}}}},"i":[[[[[[[null]]]]]]]}'
+
+    50.times do
+      data = Oj.load(json)
+      assert_equal(json, Oj.dump(data))
+    end
   end
 end

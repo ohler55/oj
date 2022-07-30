@@ -667,7 +667,7 @@ static void read_num(ParseInfo pi) {
 }
 
 static void array_start(ParseInfo pi) {
-    volatile VALUE v = pi->start_array(pi);
+    VALUE v = pi->start_array(pi);
 
     stack_push(&pi->stack, v, NEXT_ARRAY_NEW);
 }
@@ -691,13 +691,13 @@ static void array_end(ParseInfo pi) {
 }
 
 static void hash_start(ParseInfo pi) {
-    volatile VALUE v = pi->start_hash(pi);
+    VALUE v = pi->start_hash(pi);
 
     stack_push(&pi->stack, v, NEXT_HASH_NEW);
 }
 
 static void hash_end(ParseInfo pi) {
-    volatile Val hash = stack_peek(&pi->stack);
+    Val hash = stack_peek(&pi->stack);
 
     // leave hash on stack until just before
     if (0 == hash) {
@@ -884,7 +884,7 @@ static long double exp_plus[] = {
 
 VALUE
 oj_num_as_value(NumInfo ni) {
-    volatile VALUE rnum = Qnil;
+    VALUE rnum = Qnil;
 
     if (ni->infinity) {
         if (ni->neg) {
@@ -919,7 +919,7 @@ oj_num_as_value(NumInfo ni) {
         }
     } else {  // decimal
         if (ni->big) {
-            volatile VALUE bd = rb_str_new(ni->str, ni->len);
+            VALUE bd = rb_str_new(ni->str, ni->len);
 
             rnum = rb_rescue2(parse_big_decimal, bd, rescue_big_decimal, bd, rb_eException, 0);
             if (ni->no_big) {
@@ -947,7 +947,7 @@ oj_num_as_value(NumInfo ni) {
             }
             rnum = rb_float_new((double)ld);
         } else if (RubyDec == ni->bigdec_load) {
-            volatile VALUE sv = rb_str_new(ni->str, ni->len);
+            VALUE sv = rb_str_new(ni->str, ni->len);
 
             rnum = rb_funcall(sv, rb_intern("to_f"), 0);
         } else {
@@ -1042,7 +1042,7 @@ static VALUE protect_parse(VALUE pip) {
 
 extern int oj_utf8_index;
 
-static void oj_pi_set_input_str(ParseInfo pi, volatile VALUE *inputp) {
+static void oj_pi_set_input_str(ParseInfo pi, VALUE *inputp) {
     int idx = RB_ENCODING_GET(*inputp);
 
     if (oj_utf8_encoding_index != idx) {
@@ -1055,12 +1055,12 @@ static void oj_pi_set_input_str(ParseInfo pi, volatile VALUE *inputp) {
 
 VALUE
 oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yieldOk) {
-    char *         buf = 0;
-    volatile VALUE input;
-    volatile VALUE wrapped_stack;
-    volatile VALUE result    = Qnil;
-    int            line      = 0;
-    int            free_json = 0;
+    char * buf = 0;
+    VALUE  input;
+    VALUE  wrapped_stack;
+    VALUE  result    = Qnil;
+    int    line      = 0;
+    int    free_json = 0;
 
     if (argc < 1) {
         rb_raise(rb_eArgError, "Wrong number of arguments to parse.");
@@ -1096,8 +1096,8 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
             rb_raise(rb_eTypeError, "Nil is not a valid JSON source.");
         }
     } else {
-        VALUE          clas = rb_obj_class(input);
-        volatile VALUE s;
+        VALUE clas = rb_obj_class(input);
+        VALUE s;
 
         if (oj_stringio_class == clas) {
             s = rb_funcall2(input, oj_string_id, 0, 0);
