@@ -22,6 +22,7 @@ jobs:
           - '2.7'
           - '2.6'
           - '2.5'
+          - truffleruby+graalvm
         os:
           - ubuntu
           - macos
@@ -35,6 +36,8 @@ jobs:
         exclude:
           - os: macos
             ruby: head
+          - os: macos
+            ruby: truffleruby+graalvm
           - ruby: head
             gemfile: rails_5
           - ruby: '3.0'
@@ -45,6 +48,8 @@ jobs:
             gemfile: rails_7
           - ruby: '2.6'
             gemfile: rails_7
+          - ruby: truffleruby
+            gemfile: rails_5
 
     env:
       BUNDLE_GEMFILE: gemfiles/${{ matrix.gemfile }}.gemfile
