@@ -192,32 +192,7 @@ static inline const char *scan_string_noSIMD(const char *str, const char *end) {
     return str;
 }
 
-// Taken from Tensorflow:
-// https://github.com/tensorflow/tensorflow/blob/5dcfc51118817f27fad5246812d83e5dccdc5f72/tensorflow/core/lib/hash/crc32c_accelerate.cc#L21-L38
-#ifdef __SSE4_2__
-#if defined(__x86_64__) && defined(__GNUC__) && \
-    (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8))
-#define USE_SSE_DETECT 1
-#elif defined(__x86_64__) && defined(__clang__)
-#if __has_builtin(__builtin_cpu_supports)
-#define USE_SSE_DETECT 1
-#endif
-#endif
-#endif /* __SSE4_2__ */
-
-// This version of Apple clang has a bug:
-// https://llvm.org/bugs/show_bug.cgi?id=25510
-#if defined(__APPLE__) && (__clang_major__ <= 8)
-#undef USE_SSE_DETECT
-#endif
-
-#if defined(TRUFFLERUBY)
-#undef USE_SSE_DETECT
-#endif
-
-#ifdef USE_SSE_DETECT
-#include <nmmintrin.h>
-
+#ifdef OJ_USE_SSE4_2
 static inline const char *scan_string_SIMD(const char *str, const char *end) {
     static const char chars[16] = "\x00\\\"";
     const __m128i terminate = _mm_loadu_si128((const __m128i *)&chars[0]);
@@ -236,23 +211,12 @@ static inline const char *scan_string_SIMD(const char *str, const char *end) {
 }
 #endif
 
-static bool cpu_supports_sse42(void) {
-#ifdef USE_SSE_DETECT
-    __builtin_cpu_init();
-    return (__builtin_cpu_supports("sse4.2"));
-#else
-    return false;
-#endif
-}
-
 static const char *(*scan_func) (const char *str, const char *end) = scan_string_noSIMD;
 
 void oj_scanner_init(void) {
-    if (cpu_supports_sse42()) {
-#ifdef USE_SSE_DETECT
-        scan_func = scan_string_SIMD;
+#ifdef OJ_USE_SSE4_2
+    scan_func = scan_string_SIMD;
 #endif
-    }
 }
 
 // entered at /
