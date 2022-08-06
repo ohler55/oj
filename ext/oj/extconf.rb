@@ -34,21 +34,9 @@ have_func('rb_hash_bulk_insert', 'ruby.h') unless '2' == version[0] && '6' == ve
 
 dflags['OJ_DEBUG'] = true unless ENV['OJ_DEBUG'].nil?
 
-src =<<~SRC
-#include <string.h>
-#include <nmmintrin.h>
-int main(int argc, char **argv) {
-    const char *str = "hello               ";
-    const char chars[16] = "\x00\\\"";
-    const __m128i terminate = _mm_loadu_si128((const __m128i *)&chars[0]);
-    const __m128i string = _mm_loadu_si128((const __m128i *)str);
-    int r = _mm_cmpestri(terminate, 3, string, 16, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_LEAST_SIGNIFICANT);
-    return r == 16 ? 0 : 1;
-}
-SRC
-
-if try_run(src, '-msse4.2')
+if with_config('--with-sse42')
   $CPPFLAGS += ' -msse4.2'
+  dflags['OJ_USE_SSE4_2'] = 1
 end
 
 dflags.each do |k,v|
