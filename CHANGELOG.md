@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.13.20 - 2022-08-07
+
+- SSE4 made optional with a `--with-sse42` flag to the compile.
+
 ## 3.13.19 - 2022-07-29
 
 - TruffleRuby issues resolved.
