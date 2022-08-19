@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.13.21 - 2022-08-19
+
+- Bug parsing big numbers fixed in the SAJ parser.
+
 ## 3.13.20 - 2022-08-07
 
 - SSE4 made optional with a `--with-sse42` flag to the compile.
