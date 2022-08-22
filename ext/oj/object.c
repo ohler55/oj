@@ -374,7 +374,15 @@ static int hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, vol
 }
 
 void oj_set_obj_ivar(Val parent, Val kval, VALUE value) {
-    rb_ivar_set(parent->val, oj_attr_intern(kval->key, kval->klen), value);
+    if (kval->klen == 5 && strncmp("~mesg", kval->key, 5) == 0 &&
+        rb_obj_is_kind_of(parent->val, rb_eException)) {
+        parent->val = rb_funcall(parent->val, rb_intern("exception"), 1, value);
+    } else if (kval->klen == 3 && strncmp("~bt", kval->key, 3) == 0 &&
+               rb_obj_is_kind_of(parent->val, rb_eException)) {
+        rb_funcall(parent->val, rb_intern("set_backtrace"), 1, value);
+    } else {
+        rb_ivar_set(parent->val, oj_attr_intern(kval->key, kval->klen), value);
+    }
 }
 
 static void hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *orig) {
