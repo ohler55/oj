@@ -677,21 +677,23 @@ static void free_doc_cb(void *x) {
 }
 
 static void mark_leaf(Leaf leaf) {
-    switch (leaf->value_type) {
-    case COL_VAL:
-        if (NULL != leaf->elements) {
-            Leaf first = leaf->elements->next;
-            Leaf e     = first;
+    if (NULL != leaf) {
+        switch (leaf->value_type) {
+        case COL_VAL:
+            if (NULL != leaf->elements) {
+                Leaf first = leaf->elements->next;
+                Leaf e     = first;
 
-            do {
-                mark_leaf(e);
-                e = e->next;
-            } while (e != first);
+                do {
+                    mark_leaf(e);
+                    e = e->next;
+                } while (e != first);
+            }
+            break;
+        case RUBY_VAL: mark(leaf->value); break;
+
+        default: break;
         }
-        break;
-    case RUBY_VAL: mark(leaf->value); break;
-
-    default: break;
     }
 }
 

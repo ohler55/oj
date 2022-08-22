@@ -563,7 +563,7 @@ static void dfree(ojParser p) {
 }
 
 static void mark(ojParser p) {
-    if (NULL == p->ctx) {
+    if (NULL == p || NULL == p->ctx) {
         return;
     }
     Delegate d = (Delegate)p->ctx;
