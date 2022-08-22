@@ -12,7 +12,7 @@ static void mark(void *ptr) {
     ValStack stack = (ValStack)ptr;
     Val      v;
 
-    if (0 == ptr) {
+    if (NULL == ptr) {
         return;
     }
 #ifdef HAVE_PTHREAD_MUTEX_INIT

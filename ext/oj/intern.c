@@ -37,13 +37,10 @@ typedef struct _hash {
 struct _hash class_hash;
 struct _hash attr_hash;
 
-static struct _cache *str_cache = NULL;
 static VALUE          str_cache_obj;
 
-static struct _cache *sym_cache = NULL;
 static VALUE          sym_cache_obj;
 
-static struct _cache *attr_cache = NULL;
 static VALUE          attr_cache_obj;
 
 static VALUE form_str(const char *str, size_t len) {
@@ -93,15 +90,15 @@ void oj_hash_init(void) {
     rb_gc_register_address(&cache_class);
     rb_undef_alloc_func(cache_class);
 
-    str_cache     = cache_create(0, form_str, true, true);
+    struct _cache *str_cache     = cache_create(0, form_str, true, true);
     str_cache_obj = Data_Wrap_Struct(cache_class, cache_mark, cache_free, str_cache);
     rb_gc_register_address(&str_cache_obj);
 
-    sym_cache     = cache_create(0, form_sym, true, true);
+    struct _cache *sym_cache     = cache_create(0, form_sym, true, true);
     sym_cache_obj = Data_Wrap_Struct(cache_class, cache_mark, cache_free, sym_cache);
     rb_gc_register_address(&sym_cache_obj);
 
-    attr_cache     = cache_create(0, form_attr, false, true);
+    struct _cache *attr_cache = cache_create(0, form_attr, false, true);
     attr_cache_obj = Data_Wrap_Struct(cache_class, cache_mark, cache_free, attr_cache);
     rb_gc_register_address(&attr_cache_obj);
 
@@ -122,18 +119,18 @@ oj_str_intern(const char *key, size_t len) {
 #if HAVE_RB_ENC_INTERNED_STR && 0
     return rb_enc_interned_str(key, len, rb_utf8_encoding());
 #else
-    return cache_intern(str_cache, key, len);
+    return cache_intern(DATA_PTR(str_cache_obj), key, len);
 #endif
 }
 
 VALUE
 oj_sym_intern(const char *key, size_t len) {
-    return cache_intern(sym_cache, key, len);
+  return cache_intern(DATA_PTR(sym_cache_obj), key, len);
 }
 
 ID
 oj_attr_intern(const char *key, size_t len) {
-    return cache_intern(attr_cache, key, len);
+  return cache_intern(DATA_PTR(attr_cache_obj), key, len);
 }
 
 static uint64_t hash_calc(const uint8_t *key, size_t len) {
