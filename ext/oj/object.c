@@ -269,19 +269,10 @@ static int hat_num(ParseInfo pi, Val parent, Val kval, NumInfo ni) {
                     // match the expected value.
                     parent->val = rb_funcall2(parent->val, oj_utc_id, 0, 0);
                 } else if (ni->has_exp) {
-                    int64_t          t = (int64_t)(ni->i + ni->exp);
-                    struct _timeInfo ti;
-                    VALUE            args[8];
-
-                    sec_as_time(t, &ti);
-                    args[0]     = LONG2NUM((long)(ti.year));
-                    args[1]     = LONG2NUM(ti.mon);
-                    args[2]     = LONG2NUM(ti.day);
-                    args[3]     = LONG2NUM(ti.hour);
-                    args[4]     = LONG2NUM(ti.min);
-                    args[5]     = rb_float_new((double)ti.sec + ((double)nsec + 0.5) / 1000000000.0);
-                    args[6]     = LONG2NUM(ni->exp);
-                    parent->val = rb_funcall2(rb_cTime, oj_new_id, 7, args);
+                    struct timespec ts;
+                    ts.tv_sec = ni->i;
+                    ts.tv_nsec = nsec;
+                    parent->val = rb_time_timespec_new(&ts, ni->exp);
                 } else {
                     parent->val = rb_time_nano_new(ni->i, (long)nsec);
                 }

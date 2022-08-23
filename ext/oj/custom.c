@@ -31,14 +31,14 @@ static void dump_obj_str(VALUE obj, int depth, Out out) {
 
 static void dump_obj_as_str(VALUE obj, int depth, Out out) {
     volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
-    const char *   str  = RSTRING_PTR(rstr);
+    const char    *str  = RSTRING_PTR(rstr);
 
     oj_dump_cstr(str, RSTRING_LEN(rstr), 0, 0, out);
 }
 
 static void bigdecimal_dump(VALUE obj, int depth, Out out) {
     volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
-    const char *   str  = RSTRING_PTR(rstr);
+    const char    *str  = RSTRING_PTR(rstr);
     int            len  = (int)RSTRING_LEN(rstr);
 
     if (0 == strcasecmp("Infinity", str)) {
@@ -82,8 +82,7 @@ static VALUE complex_load(VALUE clas, VALUE args) {
         real_id = rb_intern("real");
         imag_id = rb_intern("imag");
     }
-    return rb_complex_new(rb_hash_aref(args, rb_id2str(real_id)),
-                          rb_hash_aref(args, rb_id2str(imag_id)));
+    return rb_complex_new(rb_hash_aref(args, rb_id2str(real_id)), rb_hash_aref(args, rb_id2str(imag_id)));
 }
 
 static void time_dump(VALUE obj, int depth, Out out) {
@@ -246,8 +245,7 @@ static VALUE rational_load(VALUE clas, VALUE args) {
         numerator_id   = rb_intern("numerator");
         denominator_id = rb_intern("denominator");
     }
-    return rb_rational_new(rb_hash_aref(args, rb_id2str(numerator_id)),
-                           rb_hash_aref(args, rb_id2str(denominator_id)));
+    return rb_rational_new(rb_hash_aref(args, rb_id2str(numerator_id)), rb_hash_aref(args, rb_id2str(denominator_id)));
 }
 
 static VALUE regexp_load(VALUE clas, VALUE args) {
@@ -292,8 +290,7 @@ static int hash_cb(VALUE key, VALUE value, VALUE ov) {
         assure_size(out, depth * out->indent + 1);
         fill_indent(out, depth);
     } else {
-        assure_size(out,
-                    depth * out->opts->dump_opts.indent_size + out->opts->dump_opts.hash_size + 1);
+        assure_size(out, depth * out->opts->dump_opts.indent_size + out->opts->dump_opts.hash_size + 1);
         if (0 < out->opts->dump_opts.hash_size) {
             APPEND_CHARS(out->cur, out->opts->dump_opts.hash_nl, out->opts->dump_opts.hash_size);
         }
@@ -352,9 +349,7 @@ static void dump_hash(VALUE obj, int depth, Out out, bool as_ok) {
             assure_size(out, depth * out->indent + 2);
             fill_indent(out, depth);
         } else {
-            assure_size(
-                out,
-                depth * out->opts->dump_opts.indent_size + out->opts->dump_opts.hash_size + 1);
+            assure_size(out, depth * out->opts->dump_opts.indent_size + out->opts->dump_opts.hash_size + 1);
             if (0 < out->opts->dump_opts.hash_size) {
                 APPEND_CHARS(out->cur, out->opts->dump_opts.hash_nl, out->opts->dump_opts.hash_size);
             }
@@ -372,10 +367,10 @@ static void dump_hash(VALUE obj, int depth, Out out, bool as_ok) {
 }
 
 static void dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
-    ID *           idp;
-    AttrGetFunc *  fp;
+    ID            *idp;
+    AttrGetFunc   *fp;
     volatile VALUE v;
-    const char *   name;
+    const char    *name;
     size_t         size;
     int            d2 = depth + 1;
 
@@ -384,7 +379,7 @@ static void dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
     if (NULL != out->opts->create_id && Yes == out->opts->create_ok) {
         const char *classname = rb_class2name(clas);
         int         clen      = (int)strlen(classname);
-        size_t sep_len = out->opts->dump_opts.before_size + out->opts->dump_opts.after_size + 2;
+        size_t      sep_len   = out->opts->dump_opts.before_size + out->opts->dump_opts.after_size + 2;
 
         size = d2 * out->indent + 10 + clen + out->opts->create_id_len + sep_len;
         assure_size(out, size);
@@ -481,7 +476,7 @@ static VALUE dump_common(VALUE obj, int depth, Out out) {
         oj_dump_raw_json(obj, depth, out);
     } else if (Yes == out->opts->to_json && rb_respond_to(obj, oj_to_json_id)) {
         volatile VALUE rs;
-        const char *   s;
+        const char    *s;
         int            len;
 
         if (RB_UNLIKELY(Yes == out->opts->trace)) {
@@ -521,11 +516,7 @@ static VALUE dump_common(VALUE obj, int depth, Out out) {
         if (aj == obj) {
             volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
 
-            oj_dump_cstr(RSTRING_PTR(rstr),
-                         (int)RSTRING_LEN(rstr),
-                         false,
-                         false,
-                         out);
+            oj_dump_cstr(RSTRING_PTR(rstr), (int)RSTRING_LEN(rstr), false, false, out);
         } else {
             oj_dump_custom_val(aj, depth, out, true);
         }
@@ -609,7 +600,7 @@ static void dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out)
     assure_size(out, 2);
     *out->cur++ = '{';
     if (Qundef != clas && NULL != out->opts->create_id && Yes == out->opts->create_ok) {
-        size_t sep_len = out->opts->dump_opts.before_size + out->opts->dump_opts.after_size + 2;
+        size_t      sep_len   = out->opts->dump_opts.before_size + out->opts->dump_opts.after_size + 2;
         const char *classname = rb_obj_classname(obj);
         size_t      len       = strlen(classname);
 
@@ -911,7 +902,7 @@ void oj_dump_custom_val(VALUE obj, int depth, Out out, bool as_ok) {
 ///// load functions /////
 
 static void hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *orig) {
-    const char *   key    = kval->key;
+    const char    *key    = kval->key;
     int            klen   = kval->klen;
     Val            parent = stack_peek(&pi->stack);
     volatile VALUE rkey   = kval->key_val;
@@ -928,14 +919,14 @@ static void hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, c
             }
         }
     } else {
-	volatile VALUE rstr = oj_cstr_to_value(str, len, (size_t)pi->options.cache_str);
-        //volatile VALUE rstr = rb_utf8_str_new(str, len);
+        volatile VALUE rstr = oj_cstr_to_value(str, len, (size_t)pi->options.cache_str);
+        // volatile VALUE rstr = rb_utf8_str_new(str, len);
 
         if (Qundef == rkey) {
             if (Yes == pi->options.sym_key) {
                 rkey = ID2SYM(rb_intern3(key, klen, oj_utf8_encoding));
             } else {
-		rkey = rb_utf8_str_new(key, klen);
+                rkey = rb_utf8_str_new(key, klen);
             }
         }
         if (Yes == pi->options.create_ok && NULL != pi->options.str_rx.head) {
@@ -1008,20 +999,10 @@ static void hash_set_num(struct _parseInfo *pi, Val kval, NumInfo ni) {
                 // match the expected value.
                 parent->val = rb_funcall2(parent->val, oj_utc_id, 0, 0);
             } else if (ni->has_exp) {
-                int64_t          t = (int64_t)(ni->i + ni->exp);
-                struct _timeInfo ti;
-                VALUE            args[8];
-
-                sec_as_time(t, &ti);
-
-                args[0]     = LONG2NUM(ti.year);
-                args[1]     = LONG2NUM(ti.mon);
-                args[2]     = LONG2NUM(ti.day);
-                args[3]     = LONG2NUM(ti.hour);
-                args[4]     = LONG2NUM(ti.min);
-                args[5]     = rb_float_new((double)ti.sec + ((double)nsec + 0.5) / 1000000000.0);
-                args[6]     = LONG2NUM(ni->exp);
-                parent->val = rb_funcall2(rb_cTime, oj_new_id, 7, args);
+                struct timespec ts;
+                ts.tv_sec   = ni->i;
+                ts.tv_nsec  = nsec;
+                parent->val = rb_time_timespec_new(&ts, ni->exp);
             } else {
                 parent->val = rb_time_nano_new(ni->i, (long)nsec);
             }

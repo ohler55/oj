@@ -493,8 +493,15 @@ class CustomJuice < Minitest::Test
     skip 'TruffleRuby fails this spec' if RUBY_ENGINE == 'truffleruby'
 
     obj = Time.now()
-    dump_load_dump(obj, false, :time_format => :unix, :create_id => "^o", :create_additions => true)
-    dump_load_dump(obj, false, :time_format => :unix_zone, :create_id => "^o", :create_additions => true)
+    # These two forms should be able to recreate the time precisely,
+    # so we check they can load a dumped version and recreate the
+    # original object correctly.
+    dump_and_load(obj, false, :time_format => :unix, :create_id => "^o", :create_additions => true)
+    dump_and_load(obj, false, :time_format => :unix_zone, :create_id => "^o", :create_additions => true)
+    # These two forms will lose precision while dumping as they don't
+    # preserve full precision. We check that a dumped version is equal
+    # to that version loaded and dumped a second time, but don't check
+    # that the loaded Ruby objects is still the same as the original.
     dump_load_dump(obj, false, :time_format => :xmlschema, :create_id => "^o", :create_additions => true)
     dump_load_dump(obj, false, :time_format => :ruby, :create_id => "^o", :create_additions => true)
   end
