@@ -67,9 +67,9 @@ static VALUE str_to_value(ParseInfo pi, const char *str, size_t len, const char 
 
 // The much faster approach (4x faster)
 static int parse_num(const char *str, const char *end, int cnt) {
-    int n = 0;
+    int  n = 0;
     char c;
-    int i;
+    int  i;
 
     for (i = cnt; 0 < i; i--, str++) {
         c = *str;
@@ -83,9 +83,9 @@ static int parse_num(const char *str, const char *end, int cnt) {
 
 VALUE
 oj_parse_xml_time(const char *str, int len) {
-    VALUE args[8];
+    VALUE       args[8];
     const char *end = str + len;
-    int n;
+    int         n;
 
     // year
     if (0 > (n = parse_num(str, end, 4))) {
@@ -369,11 +369,17 @@ static int hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, vol
 }
 
 void oj_set_obj_ivar(Val parent, Val kval, VALUE value) {
-    rb_ivar_set(parent->val, oj_attr_intern(kval->key, kval->klen), value);
+    if (kval->klen == 5 && strncmp("~mesg", kval->key, 5) == 0 && rb_obj_is_kind_of(parent->val, rb_eException)) {
+        parent->val = rb_funcall(parent->val, rb_intern("exception"), 1, value);
+    } else if (kval->klen == 3 && strncmp("~bt", kval->key, 3) == 0 && rb_obj_is_kind_of(parent->val, rb_eException)) {
+        rb_funcall(parent->val, rb_intern("set_backtrace"), 1, value);
+    } else {
+        rb_ivar_set(parent->val, oj_attr_intern(kval->key, kval->klen), value);
+    }
 }
 
 static void hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *orig) {
-    const char *   key    = kval->key;
+    const char    *key    = kval->key;
     int            klen   = kval->klen;
     Val            parent = stack_peek(&pi->stack);
     volatile VALUE rval   = Qnil;
@@ -446,7 +452,7 @@ WHICH_TYPE:
 }
 
 static void hash_set_num(ParseInfo pi, Val kval, NumInfo ni) {
-    const char *   key    = kval->key;
+    const char    *key    = kval->key;
     int            klen   = kval->klen;
     Val            parent = stack_peek(&pi->stack);
     volatile VALUE rval   = Qnil;
