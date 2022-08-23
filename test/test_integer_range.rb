@@ -23,24 +23,18 @@ class IntegerRangeTest < Minitest::Test
   end
 
   def test_range
-    skip 'TruffleRuby fails this spec with `ArgumentError: :integer_range must be a range of Fixnum.`' if RUBY_ENGINE == 'truffleruby'
-
     test = {s: 0, s2: -1, s3: 1, u: -2, u2: 2, u3: 9007199254740993}
     exp = '{"s":0,"s2":-1,"s3":1,"u":"-2","u2":"2","u3":"9007199254740993"}'
     assert_equal(exp, Oj.dump(test, integer_range: (-1..1)))
   end
 
   def test_bignum
-    skip 'TruffleRuby fails this spec with `ArgumentError: :integer_range must be a range of Fixnum.`' if RUBY_ENGINE == 'truffleruby'
-
     test = {u: -10000000000000000000, u2: 10000000000000000000}
     exp = '{"u":"-10000000000000000000","u2":"10000000000000000000"}'
     assert_equal(exp, Oj.dump(test, integer_range: (-1..1)))
   end
 
   def test_valid_modes
-    skip 'TruffleRuby fails this spec with `ArgumentError: :integer_range must be a range of Fixnum.`' if RUBY_ENGINE == 'truffleruby'
-
     test = {safe: 0, unsafe: 9007199254740993}
     exp  = '{"safe":0,"unsafe":"9007199254740993"}'
 

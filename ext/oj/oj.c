@@ -932,7 +932,7 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
         if (Qnil == v) {
             return ST_CONTINUE;
         }
-        if (TYPE(v) == T_STRUCT && rb_obj_class(v) == rb_cRange) {
+        if (rb_obj_class(v) == rb_cRange) {
             VALUE min = rb_funcall(v, oj_begin_id, 0);
             VALUE max = rb_funcall(v, oj_end_id, 0);
 

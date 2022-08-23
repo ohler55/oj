@@ -324,26 +324,30 @@ static int hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, vol
                 // If struct is not defined then we let this fail and raise an exception.
                 sc = oj_name2struct(pi, *RARRAY_PTR(value), rb_eArgError);
             }
-            // Create a properly initialized struct instance without calling the initialize method.
-            parent->val = rb_obj_alloc(sc);
-            // If the JSON array has more entries than the struct class allows, we record an error.
+            if (sc == rb_cRange) {
+              parent->val = rb_class_new_instance(len - 1, RARRAY_PTR(value) + 1, rb_cRange);
+            } else {
+                // Create a properly initialized struct instance without calling the initialize method.
+                parent->val = rb_obj_alloc(sc);
+                // If the JSON array has more entries than the struct class allows, we record an error.
 #ifdef RSTRUCT_LEN
 #if RSTRUCT_LEN_RETURNS_INTEGER_OBJECT
             slen = (int)NUM2LONG(RSTRUCT_LEN(parent->val));
 #else   // RSTRUCT_LEN_RETURNS_INTEGER_OBJECT
-            slen = (int)RSTRUCT_LEN(parent->val);
+                slen = (int)RSTRUCT_LEN(parent->val);
 #endif  // RSTRUCT_LEN_RETURNS_INTEGER_OBJECT
 #else
-            slen = FIX2INT(rb_funcall2(parent->val, oj_length_id, 0, 0));
+                slen = FIX2INT(rb_funcall2(parent->val, oj_length_id, 0, 0));
 #endif
-            // MRI >= 1.9
-            if (len - 1 > slen) {
-                oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "Invalid struct data");
-            } else {
-                int i;
+                // MRI >= 1.9
+                if (len - 1 > slen) {
+                    oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "Invalid struct data");
+                } else {
+                    int i;
 
-                for (i = 0; i < len - 1; i++) {
-                    rb_struct_aset(parent->val, INT2FIX(i), RARRAY_PTR(value)[i + 1]);
+                    for (i = 0; i < len - 1; i++) {
+                        rb_struct_aset(parent->val, INT2FIX(i), RARRAY_PTR(value)[i + 1]);
+                    }
                 }
             }
             return 1;
