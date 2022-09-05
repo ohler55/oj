@@ -672,8 +672,6 @@ class ObjectJuice < Minitest::Test
   end
 
   def test_json_anonymous_struct
-    skip 'TruffleRuby fails this spec with `TypeError: allocator undefined for Class`' if RUBY_ENGINE == 'truffleruby'
-
     s = Struct.new(:x, :y)
     obj = s.new(1, 2)
     json = Oj.dump(obj, :indent => 2, :mode => :object)
@@ -830,12 +828,10 @@ class ObjectJuice < Minitest::Test
   def test_range_object
     Oj.default_options = { :mode => :object }
     json = Oj.dump(1..7, :mode => :object, :indent => 0)
-    if 'rubinius' == $ruby
-      assert(%{{"^O":"Range","begin":1,"end":7,"exclude_end?":false}} == json)
-    elsif 'truffleruby' == $ruby
-      assert(%{{"^O":"Range","begin":1,"end":7,"exclude_end?":false}} == json)
-    else
+    if 'ruby' == $ruby
       assert_equal(%{{"^u":["Range",1,7,false]}}, json)
+    else
+      assert(%{{"^O":"Range","begin":1,"end":7,"exclude_end?":false}} == json)
     end
     dump_and_load(1..7, false)
     dump_and_load(1..1, false)

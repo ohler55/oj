@@ -405,15 +405,11 @@ class CustomJuice < Minitest::Test
   end
 
   def test_range
-    skip 'TruffleRuby fails this spec' if RUBY_ENGINE == 'truffleruby'
-
     obj = 3..8
     dump_and_load(obj, false, :create_id => "^o", :create_additions => true)
   end
 
   def test_date
-    skip 'TruffleRuby causes SEGV' if RUBY_ENGINE == 'truffleruby'
-
     obj = Date.new(2017, 1, 5)
     dump_and_load(obj, false, :create_id => "^o", :create_additions => true)
   end
@@ -443,8 +439,6 @@ class CustomJuice < Minitest::Test
   end
 
   def test_datetime
-    skip 'TruffleRuby causes SEGV' if RUBY_ENGINE == 'truffleruby'
-
     obj = DateTime.new(2017, 1, 5, 10, 20, 30)
     dump_and_load(obj, false, :create_id => "^o", :create_additions => true)
   end
