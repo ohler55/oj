@@ -260,8 +260,6 @@ class CustomJuice < Minitest::Test
   end
 
   def test_object
-    skip 'TruffleRuby fails this spec with `RuntimeError: rb_ivar_foreach not implemented`' if RUBY_ENGINE == 'truffleruby'
-
     obj = Jeez.new(true, 58)
     json = Oj.dump(obj, create_id: "^o", use_to_json: false, use_as_json: false, use_to_hash: false)
     assert_equal(%|{"x":true,"y":58,"_z":"true"}|, json)
