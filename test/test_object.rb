@@ -461,8 +461,6 @@ class ObjectJuice < Minitest::Test
   end
 
   def test_json_module_object
-    skip 'TruffleRuby fails this spec with `RuntimeError: rb_ivar_foreach not implemented`' if RUBY_ENGINE == 'truffleruby'
-
     obj = One::Two::Three::Deep.new()
     dump_and_load(obj, false)
   end
@@ -633,15 +631,11 @@ class ObjectJuice < Minitest::Test
   end
 
   def test_json_object
-    skip 'TruffleRuby fails this spec with `RuntimeError: rb_ivar_foreach not implemented`' if RUBY_ENGINE == 'truffleruby'
-
     obj = Jeez.new(true, 58)
     dump_and_load(obj, false)
   end
 
   def test_json_object_create_deep
-    skip 'TruffleRuby fails this spec with `RuntimeError: rb_ivar_foreach not implemented`' if RUBY_ENGINE == 'truffleruby'
-
     obj = One::Two::Three::Deep.new()
     dump_and_load(obj, false)
   end
@@ -678,8 +672,6 @@ class ObjectJuice < Minitest::Test
   end
 
   def test_json_anonymous_struct
-    skip 'TruffleRuby fails this spec with `TypeError: allocator undefined for Class`' if RUBY_ENGINE == 'truffleruby'
-
     s = Struct.new(:x, :y)
     obj = s.new(1, 2)
     json = Oj.dump(obj, :indent => 2, :mode => :object)
@@ -702,8 +694,6 @@ class ObjectJuice < Minitest::Test
   end
 
   def test_json_object_object
-    skip 'TruffleRuby fails this spec with `RuntimeError: rb_ivar_foreach not implemented`' if RUBY_ENGINE == 'truffleruby'
-
     obj = Jeez.new(true, 58)
     json = Oj.dump(obj, mode: :object, indent: 2, ignore_under: true)
     assert(%{{
@@ -723,8 +713,6 @@ class ObjectJuice < Minitest::Test
   end
 
   def test_to_hash_object_object
-    skip 'TruffleRuby fails this spec with `RuntimeError: rb_ivar_foreach not implemented`' if RUBY_ENGINE == 'truffleruby'
-
     obj = Jazz.new(true, 58)
     json = Oj.dump(obj, :mode => :object, :indent => 2)
     assert(%{{
@@ -744,8 +732,6 @@ class ObjectJuice < Minitest::Test
   end
 
   def test_as_json_object_object
-    skip 'TruffleRuby fails this spec with `RuntimeError: rb_ivar_foreach not implemented`' if RUBY_ENGINE == 'truffleruby'
-
     obj = Orange.new(true, 58)
     json = Oj.dump(obj, :mode => :object, :indent => 2)
     assert(%{{
@@ -765,8 +751,6 @@ class ObjectJuice < Minitest::Test
   end
 
   def test_object_object_no_cache
-    skip 'TruffleRuby fails this spec with `RuntimeError: rb_ivar_foreach not implemented`' if RUBY_ENGINE == 'truffleruby'
-
     obj = Jam.new(true, 58)
     json = Oj.dump(obj, :mode => :object, :indent => 2)
     assert(%{{
@@ -795,8 +779,6 @@ class ObjectJuice < Minitest::Test
   end
 
   def test_exception
-    skip 'TruffleRuby fails this spec with `RuntimeError: rb_ivar_foreach not implemented`' if RUBY_ENGINE == 'truffleruby'
-
     err = nil
     begin
       raise StandardError.new('A Message')
@@ -827,8 +809,6 @@ class ObjectJuice < Minitest::Test
   end
 
   def test_exception_subclass
-    skip 'TruffleRuby fails this spec with `RuntimeError: rb_ivar_foreach not implemented`' if RUBY_ENGINE == 'truffleruby'
-
     err = nil
     begin
       raise SubX.new
@@ -848,12 +828,10 @@ class ObjectJuice < Minitest::Test
   def test_range_object
     Oj.default_options = { :mode => :object }
     json = Oj.dump(1..7, :mode => :object, :indent => 0)
-    if 'rubinius' == $ruby
-      assert(%{{"^O":"Range","begin":1,"end":7,"exclude_end?":false}} == json)
-    elsif 'truffleruby' == $ruby
-      assert(%{{"^O":"Range","begin":1,"end":7,"exclude_end?":false}} == json)
-    else
+    if 'ruby' == $ruby
       assert_equal(%{{"^u":["Range",1,7,false]}}, json)
+    else
+      assert(%{{"^O":"Range","begin":1,"end":7,"exclude_end?":false}} == json)
     end
     dump_and_load(1..7, false)
     dump_and_load(1..1, false)
@@ -917,8 +895,6 @@ class ObjectJuice < Minitest::Test
   end
 
   def test_circular_object
-    skip 'TruffleRuby fails this spec with `RuntimeError: rb_ivar_foreach not implemented`' if RUBY_ENGINE == 'truffleruby'
-
     obj = Jeez.new(nil, 58)
     obj.x = obj
     json = Oj.dump(obj, :mode => :object, :indent => 2, :circular => true)
@@ -927,8 +903,6 @@ class ObjectJuice < Minitest::Test
   end
 
   def test_circular_object2
-    skip 'TruffleRuby fails this spec with `RuntimeError: rb_ivar_foreach not implemented`' if RUBY_ENGINE == 'truffleruby'
-
     obj = Jam.new(nil, 58)
     obj.x = obj
     json = Oj.dump(obj, :mode => :object, :indent => 2, :circular => true)
@@ -951,8 +925,6 @@ class ObjectJuice < Minitest::Test
   end
 
   def test_circular
-    skip 'TruffleRuby fails this spec with `RuntimeError: rb_ivar_foreach not implemented`' if RUBY_ENGINE == 'truffleruby'
-
     h = { 'a' => 7 }
     obj = Jeez.new(h, 58)
     obj.x['b'] = obj
@@ -963,8 +935,6 @@ class ObjectJuice < Minitest::Test
   end
 
   def test_circular2
-    skip 'TruffleRuby fails this spec with `RuntimeError: rb_ivar_foreach not implemented`' if RUBY_ENGINE == 'truffleruby'
-
     h = { 'a' => 7 }
     obj = Jam.new(h, 58)
     obj.x['b'] = obj
@@ -977,8 +947,6 @@ class ObjectJuice < Minitest::Test
   end
 
   def test_omit_nil
-    skip 'TruffleRuby fails this spec with `RuntimeError: rb_ivar_foreach not implemented`' if RUBY_ENGINE == 'truffleruby'
-
     jam = Jam.new({'a' => 1, 'b' => nil }, nil)
 
     json = Oj.dump(jam, :omit_nil => true, :mode => :object)
@@ -1033,22 +1001,16 @@ class ObjectJuice < Minitest::Test
   end
 
   def test_auto_string
-    skip 'TruffleRuby fails this spec with `RuntimeError: rb_ivar_foreach not implemented`' if RUBY_ENGINE == 'truffleruby'
-
     s = AutoStrung.new("Pete", true)
     dump_and_load(s, false)
   end
 
   def test_auto_array
-    skip 'TruffleRuby fails this spec with `RuntimeError: rb_ivar_foreach not implemented`' if RUBY_ENGINE == 'truffleruby'
-
     a = AutoArray.new([1, 'abc', nil], true)
     dump_and_load(a, false)
   end
 
   def test_auto_hash
-    skip 'TruffleRuby fails this spec with `RuntimeError: rb_ivar_foreach not implemented`' if RUBY_ENGINE == 'truffleruby'
-
     h = AutoHash.new(nil, true)
     h['a'] = 1
     h['b'] = 2

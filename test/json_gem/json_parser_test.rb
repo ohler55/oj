@@ -24,8 +24,6 @@ class JSONParserTest < Test::Unit::TestCase
   end if defined?(Encoding::UTF_16)
 
   def test_error_message_encoding
-    omit 'TruffleRuby causes NameError(<uninitialized constant JSON::Ext>)' if RUBY_ENGINE == 'truffleruby'
-
     bug10705 = '[ruby-core:67386] [Bug #10705]'
     json = ".\"\xE2\x88\x9A\"".force_encoding(Encoding::UTF_8)
     e = assert_raise(JSON::ParserError) {
@@ -33,7 +31,7 @@ class JSONParserTest < Test::Unit::TestCase
     }
     assert_equal(Encoding::UTF_8, e.message.encoding, bug10705)
     assert_include(e.message, json, bug10705)
-  end if defined?(Encoding::UTF_8)
+  end if defined?(Encoding::UTF_8) and defined?(JSON::Ext::Parser)
 
   def test_parsing
     parser = JSON::Parser.new('"test"')

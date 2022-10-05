@@ -125,15 +125,12 @@ class FileJuice < Minitest::Test
 
   # Time
   def test_time_object
-    skip 'TruffleRuby fails this spec' if RUBY_ENGINE == 'truffleruby'
-
     t = Time.now()
     Oj.default_options = { :mode => :object, :time_format => :unix_zone }
     dump_and_load(t, false)
   end
   def test_time_object_early
     skip 'Windows does not support dates before 1970.' if RbConfig::CONFIG['host_os'] =~ /(mingw|mswin)/
-    skip 'TruffleRuby fails this spec' if RUBY_ENGINE == 'truffleruby'
 
     t = Time.xmlschema("1954-01-05T00:00:00.123456")
     Oj.default_options = { :mode => :object, :time_format => :unix_zone }
@@ -165,14 +162,10 @@ class FileJuice < Minitest::Test
   def test_range_object
     Oj.default_options = { :mode => :object }
     json = Oj.dump(1..7, :mode => :object, :indent => 0)
-    if 'rubinius' == $ruby
-      assert(%{{"^O":"Range","begin":1,"end":7,"exclude_end?":false}} == json)
-    elsif 'jruby' == $ruby
-      assert(%{{"^O":"Range","begin":1,"end":7,"exclude_end?":false}} == json)
-    elsif 'truffleruby' == $ruby
-      assert(%{{"^O":"Range","begin":1,"end":7,"exclude_end?":false}} == json)
-    else
+    if $ruby == 'ruby'
       assert_equal(%{{"^u":["Range",1,7,false]}}, json)
+    else
+      assert(%{{"^O":"Range","begin":1,"end":7,"exclude_end?":false}} == json)
     end
     dump_and_load(1..7, false)
     dump_and_load(1..1, false)

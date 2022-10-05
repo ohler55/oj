@@ -294,7 +294,9 @@ EOT
     assert_equal '2', state.indent
   end
 
-  if defined?(JSON::Ext::Generator)
+  if defined?(JSON::Ext::Generator) && Process.respond_to?(:fork)
+    # forking to avoid modifying core class of a parent process and
+    # introducing race conditions of tests are run in parallel
     def test_broken_bignum # [ruby-core:38867]
       pid = fork do
         x = 1 << 64
@@ -311,9 +313,6 @@ EOT
       end
       _, status = Process.waitpid2(pid)
       assert status.success?
-    rescue NotImplementedError
-      # forking to avoid modifying core class of a parent process and
-      # introducing race conditions of tests are run in parallel
     end
   end
 

@@ -83,7 +83,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ruby: [ '22.2.0' ]
+        ruby: [ 'head' ]
 
     env:
       BUNDLE_GEMFILE: gemfiles/no_rails.gemfile

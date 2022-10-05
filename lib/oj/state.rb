@@ -80,7 +80,7 @@ module JSON
           # @param [Symbol] m method symbol
           # @return [Boolean] true for any method that matches an instance
           #                   variable reader, otherwise false.
-          def respond_to?(m)
+          def respond_to?(m, include_all = false)
             return true if super
             return true if has_key?(key)
             return true if has_key?(key.to_s)
