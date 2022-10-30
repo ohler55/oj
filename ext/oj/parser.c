@@ -1254,6 +1254,32 @@ static VALUE parser_new(int argc, VALUE *argv, VALUE self) {
     return Data_Wrap_Struct(parser_class, parser_mark, parser_free, p);
 }
 
+// Create a new parser without setting the delegate. The parser is
+// wrapped. The parser is (ojParser)DATA_PTR(value) where value is the return
+// from this function. A delegate must be added before the parser can be
+// used. Optionally oj_parser_set_options can be called if the options are not
+// set directly.
+VALUE oj_parser_new() {
+    ojParser p = ALLOC(struct _ojParser);
+
+#if HAVE_RB_EXT_RACTOR_SAFE
+    // This doesn't seem to do anything.
+    rb_ext_ractor_safe(true);
+#endif
+    memset(p, 0, sizeof(struct _ojParser));
+    buf_init(&p->key);
+    buf_init(&p->buf);
+    p->map = value_map;
+
+    return Data_Wrap_Struct(parser_class, parser_mark, parser_free, p);
+}
+
+// Set set the options from a hash (ropts).
+void oj_parser_set_option(ojParser p, VALUE ropts) {
+    Check_Type(ropts, T_HASH);
+    rb_hash_foreach(ropts, opt_cb, (VALUE)p);
+}
+
 /* Document-method: method_missing(value)
  * call-seq: method_missing(value)
  *

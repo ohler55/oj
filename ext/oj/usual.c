@@ -1108,7 +1108,7 @@ static VALUE option(ojParser p, const char *key, VALUE value) {
 
 ///// the set up //////////////////////////////////////////////////////////////
 
-void oj_init_usual_usual(ojParser p, Usual d) {
+void oj_init_usual(ojParser p, Usual d) {
     int      cap = 4096;
 
     d->vhead = ALLOC_N(VALUE, cap);
@@ -1203,5 +1203,5 @@ void oj_init_usual_usual(ojParser p, Usual d) {
 void oj_set_parser_usual(ojParser p) {
     Usual d = ALLOC(struct _usual);
 
-    oj_init_usual_usual(p, d);
+    oj_init_usual(p, d);
 }

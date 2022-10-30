@@ -54,3 +54,8 @@ typedef struct _usual {
     bool    cache_keys;
     bool    ignore_json_create;
 } * Usual;
+
+// Initialize the parser with the usual delegate. If the usual delegate is
+// wrapped then this function is called first and then the parser functions
+// can be replaced.
+extern void oj_init_usual(ojParser p, Usual d);

@@ -4,9 +4,7 @@
 ^c^s show subtree
 
 - open up new parser (parser-extensions)
- - register delegate create functions
- - create functions take delegate or if null create
-  - or maybe a second function to call
+
 
 - stream writes
  - dump.c:685
