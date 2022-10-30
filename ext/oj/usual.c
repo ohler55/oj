@@ -43,7 +43,7 @@ typedef union _key {
     };
     struct {
         int16_t xlen;  // should be the same as len
-        char *  key;
+        char   *key;
     };
 } * Key;
 
@@ -54,9 +54,9 @@ typedef union _key {
 #define BYTE_OFFSETS_STACK_INC_SIZE 256
 
 // Holds the start byte offsets of each JSON object encountered
-typedef struct byte_offsets_S{
-    int length;
-    int current;
+typedef struct _byte_offsets {
+    int   length;
+    int   current;
     long *stack;
 } ByteOffsets;
 
@@ -83,7 +83,7 @@ typedef struct _delegate {
     VALUE array_class;
     VALUE hash_class;
 
-    char *  create_id;
+    char   *create_id;
     uint8_t create_id_len;
     uint8_t cache_str;
     uint8_t cache_xrate;
@@ -154,8 +154,8 @@ static VALUE resolve_classname(VALUE mod, const char *classname, bool auto_defin
 static VALUE resolve_classpath(const char *name, size_t len, bool auto_define) {
     char        class_name[1024];
     VALUE       clas;
-    char *      end = class_name + sizeof(class_name) - 1;
-    char *      s;
+    char       *end = class_name + sizeof(class_name) - 1;
+    char       *s;
     const char *n = name;
 
     clas = rb_cObject;
@@ -334,14 +334,14 @@ static void open_array_key(ojParser p) {
 }
 
 static void close_object(ojParser p) {
-    VALUE *  vp;
+    VALUE   *vp;
     Delegate d = (Delegate)p->ctx;
 
     d->ctail--;
 
     Col            c    = d->ctail;
     Key            kp   = d->khead + c->ki;
-    VALUE *        head = d->vhead + c->vi + 1;
+    VALUE         *head = d->vhead + c->vi + 1;
     volatile VALUE obj  = rb_hash_new();
 
 #if HAVE_RB_HASH_BULK_INSERT
@@ -367,14 +367,14 @@ static void close_object(ojParser p) {
 }
 
 static void close_object_class(ojParser p) {
-    VALUE *  vp;
+    VALUE   *vp;
     Delegate d = (Delegate)p->ctx;
 
     d->ctail--;
 
     Col            c    = d->ctail;
     Key            kp   = d->khead + c->ki;
-    VALUE *        head = d->vhead + c->vi + 1;
+    VALUE         *head = d->vhead + c->vi + 1;
     volatile VALUE obj  = rb_class_new_instance(0, NULL, d->hash_class);
 
     for (vp = head; kp < d->ktail; kp++, vp += 2) {
@@ -390,14 +390,14 @@ static void close_object_class(ojParser p) {
 }
 
 static void close_object_create(ojParser p) {
-    VALUE *  vp;
+    VALUE   *vp;
     Delegate d = (Delegate)p->ctx;
 
     d->ctail--;
 
     Col            c    = d->ctail;
     Key            kp   = d->khead + c->ki;
-    VALUE *        head = d->vhead + c->vi;
+    VALUE         *head = d->vhead + c->vi;
     volatile VALUE obj;
 
     if (Qundef == *head) {
@@ -473,7 +473,7 @@ static void close_array(ojParser p) {
     Delegate d = (Delegate)p->ctx;
 
     d->ctail--;
-    VALUE *        head = d->vhead + d->ctail->vi + 1;
+    VALUE         *head = d->vhead + d->ctail->vi + 1;
     volatile VALUE a    = rb_ary_new_from_values(d->vtail - head, head);
 
     d->vtail = head;
@@ -482,11 +482,11 @@ static void close_array(ojParser p) {
 }
 
 static void close_array_class(ojParser p) {
-    VALUE *  vp;
+    VALUE   *vp;
     Delegate d = (Delegate)p->ctx;
 
     d->ctail--;
-    VALUE *        head = d->vhead + d->ctail->vi + 1;
+    VALUE         *head = d->vhead + d->ctail->vi + 1;
     volatile VALUE a    = rb_class_new_instance(0, NULL, d->array_class);
 
     for (vp = head; vp < d->vtail; vp++) {
@@ -598,7 +598,7 @@ static void add_big_as_ruby_key(ojParser p) {
 static void add_str(ojParser p) {
     Delegate       d = (Delegate)p->ctx;
     volatile VALUE rstr;
-    const char *   str = buf_str(&p->buf);
+    const char    *str = buf_str(&p->buf);
     size_t         len = buf_len(&p->buf);
 
     if (len < d->cache_str) {
@@ -612,7 +612,7 @@ static void add_str(ojParser p) {
 static void add_str_key(ojParser p) {
     Delegate       d = (Delegate)p->ctx;
     volatile VALUE rstr;
-    const char *   str = buf_str(&p->buf);
+    const char    *str = buf_str(&p->buf);
     size_t         len = buf_len(&p->buf);
 
     if (len < d->cache_str) {
@@ -627,9 +627,9 @@ static void add_str_key(ojParser p) {
 static void add_str_key_create(ojParser p) {
     Delegate       d = (Delegate)p->ctx;
     volatile VALUE rstr;
-    const char *   str  = buf_str(&p->buf);
+    const char    *str  = buf_str(&p->buf);
     size_t         len  = buf_len(&p->buf);
-    const char *   key  = buf_str(&p->key);
+    const char    *key  = buf_str(&p->key);
     size_t         klen = buf_len(&p->key);
 
     if (klen == (size_t)d->create_id_len && 0 == strncmp(d->create_id, key, klen)) {
@@ -703,7 +703,7 @@ static void mark(ojParser p) {
         return;
     }
     Delegate d = (Delegate)p->ctx;
-    VALUE *  vp;
+    VALUE   *vp;
 
     if (NULL == d) {
         return;
@@ -939,7 +939,7 @@ static VALUE opt_decimal(ojParser p, VALUE value) {
 }
 
 static VALUE opt_decimal_set(ojParser p, VALUE value) {
-    const char *   mode;
+    const char    *mode;
     volatile VALUE s;
 
     switch (rb_type(value)) {
@@ -1056,7 +1056,7 @@ static VALUE opt_missing_class(ojParser p, VALUE value) {
 
 static VALUE opt_missing_class_set(ojParser p, VALUE value) {
     Delegate       d = (Delegate)p->ctx;
-    const char *   mode;
+    const char    *mode;
     volatile VALUE s;
 
     switch (rb_type(value)) {
@@ -1136,33 +1136,33 @@ static VALUE opt_symbol_keys_set(ojParser p, VALUE value) {
 static VALUE option(ojParser p, const char *key, VALUE value) {
     struct opt *op;
     struct opt  opts[] = {
-        {.name = "array_class", .func = opt_array_class},
-        {.name = "array_class=", .func = opt_array_class_set},
-        {.name = "cache_keys", .func = opt_cache_keys},
-        {.name = "cache_keys=", .func = opt_cache_keys_set},
-        {.name = "cache_strings", .func = opt_cache_strings},
-        {.name = "cache_strings=", .func = opt_cache_strings_set},
-        {.name = "cache_expunge", .func = opt_cache_expunge},
-        {.name = "cache_expunge=", .func = opt_cache_expunge_set},
-        {.name = "capacity", .func = opt_capacity},
-        {.name = "capacity=", .func = opt_capacity_set},
-        {.name = "class_cache", .func = opt_class_cache},
-        {.name = "class_cache=", .func = opt_class_cache_set},
-        {.name = "create_id", .func = opt_create_id},
-        {.name = "create_id=", .func = opt_create_id_set},
-        {.name = "decimal", .func = opt_decimal},
-        {.name = "decimal=", .func = opt_decimal_set},
-        {.name = "hash_class", .func = opt_hash_class},
-        {.name = "hash_class=", .func = opt_hash_class_set},
-        {.name = "ignore_json_create", .func = opt_ignore_json_create},
-        {.name = "ignore_json_create=", .func = opt_ignore_json_create_set},
-        {.name = "missing_class", .func = opt_missing_class},
-        {.name = "missing_class=", .func = opt_missing_class_set},
-        {.name = "omit_null", .func = opt_omit_null},
-        {.name = "omit_null=", .func = opt_omit_null_set},
-        {.name = "symbol_keys", .func = opt_symbol_keys},
-        {.name = "symbol_keys=", .func = opt_symbol_keys_set},
-        {.name = NULL},
+         {.name = "array_class", .func = opt_array_class},
+         {.name = "array_class=", .func = opt_array_class_set},
+         {.name = "cache_keys", .func = opt_cache_keys},
+         {.name = "cache_keys=", .func = opt_cache_keys_set},
+         {.name = "cache_strings", .func = opt_cache_strings},
+         {.name = "cache_strings=", .func = opt_cache_strings_set},
+         {.name = "cache_expunge", .func = opt_cache_expunge},
+         {.name = "cache_expunge=", .func = opt_cache_expunge_set},
+         {.name = "capacity", .func = opt_capacity},
+         {.name = "capacity=", .func = opt_capacity_set},
+         {.name = "class_cache", .func = opt_class_cache},
+         {.name = "class_cache=", .func = opt_class_cache_set},
+         {.name = "create_id", .func = opt_create_id},
+         {.name = "create_id=", .func = opt_create_id_set},
+         {.name = "decimal", .func = opt_decimal},
+         {.name = "decimal=", .func = opt_decimal_set},
+         {.name = "hash_class", .func = opt_hash_class},
+         {.name = "hash_class=", .func = opt_hash_class_set},
+         {.name = "ignore_json_create", .func = opt_ignore_json_create},
+         {.name = "ignore_json_create=", .func = opt_ignore_json_create_set},
+         {.name = "missing_class", .func = opt_missing_class},
+         {.name = "missing_class=", .func = opt_missing_class_set},
+         {.name = "omit_null", .func = opt_omit_null},
+         {.name = "omit_null=", .func = opt_omit_null_set},
+         {.name = "symbol_keys", .func = opt_symbol_keys},
+         {.name = "symbol_keys=", .func = opt_symbol_keys_set},
+         {.name = NULL},
     };
 
     for (op = opts; NULL != op->name; op++) {
@@ -1178,7 +1178,7 @@ static VALUE option(ojParser p, const char *key, VALUE value) {
 // Introspection functions
 
 static void ensure_byte_offsets_stack(Delegate d) {
-    if(RB_UNLIKELY(d->byte_offsets->current == (d->byte_offsets->length - 1))) {
+    if (RB_UNLIKELY(d->byte_offsets->current == (d->byte_offsets->length - 1))) {
         d->byte_offsets->length += BYTE_OFFSETS_STACK_INC_SIZE;
         REALLOC_N(d->byte_offsets->stack, long, d->byte_offsets->length + BYTE_OFFSETS_STACK_INC_SIZE);
     }
@@ -1214,7 +1214,7 @@ static VALUE introspection_key_sym;
 static void set_introspection_values(ojParser p) {
     Delegate d = (Delegate)p->ctx;
 
-    volatile VALUE obj  = rb_hash_new();
+    volatile VALUE obj = rb_hash_new();
     rb_hash_aset(obj, start_byte_sym, INT2FIX(pop_from_byte_stack(p)));
     rb_hash_aset(obj, end_byte_sym, INT2FIX(p->cur));
     rb_hash_aset(*(d->vtail - 1), introspection_key_sym, obj);
@@ -1225,19 +1225,20 @@ static void close_object_introspected(ojParser p) {
     set_introspection_values(p);
 }
 
-static void init_introspected(Delegate d, void **open_object_func, void **close_object_func, void **open_object_key_func) {
-    start_byte_sym = ID2SYM(rb_intern("start_byte"));
-    end_byte_sym = ID2SYM(rb_intern("end_byte"));
+static void
+init_introspected(Delegate d, void **open_object_func, void **close_object_func, void **open_object_key_func) {
+    start_byte_sym        = ID2SYM(rb_intern("start_byte"));
+    end_byte_sym          = ID2SYM(rb_intern("end_byte"));
     introspection_key_sym = ID2SYM(rb_intern("__oj_introspection"));
 
-    *open_object_func = &open_object_introspected;
-    *close_object_func = &close_object_introspected;
+    *open_object_func     = &open_object_introspected;
+    *close_object_func    = &close_object_introspected;
     *open_object_key_func = &open_object_key_introspected;
 
-    d->byte_offsets = ALLOC(ByteOffsets);
+    d->byte_offsets          = ALLOC(ByteOffsets);
     d->byte_offsets->current = 0;
-    d->byte_offsets->stack = ALLOC_N(long, BYTE_OFFSETS_STACK_INC_SIZE);
-    d->byte_offsets->length = BYTE_OFFSETS_STACK_INC_SIZE;
+    d->byte_offsets->stack   = ALLOC_N(long, BYTE_OFFSETS_STACK_INC_SIZE);
+    d->byte_offsets->length  = BYTE_OFFSETS_STACK_INC_SIZE;
 }
 
 ///// the set up //////////////////////////////////////////////////////////////
@@ -1246,13 +1247,14 @@ static void init_parser_usual(ojParser p, bool introspected) {
     Delegate d   = ALLOC(struct _delegate);
     int      cap = 4096;
 
-    void *open_object_func = &open_object;
+    void *open_object_func     = &open_object;
     void *open_object_key_func = &open_object_key;
-    void *close_object_func = &close_object;
+    void *close_object_func    = &close_object;
 
     d->byte_offsets = NULL;
 
-    if(introspected) init_introspected(d, &open_object_func, &close_object_func, &open_object_key_func);
+    if (introspected)
+        init_introspected(d, &open_object_func, &close_object_func, &open_object_key_func);
 
     d->vhead = ALLOC_N(VALUE, cap);
     d->vend  = d->vhead + cap;
