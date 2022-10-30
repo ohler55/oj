@@ -51,6 +51,15 @@ typedef union _key {
 #define MISS_RAISE 'R'
 #define MISS_IGNORE 'I'
 
+#define BYTE_OFFSETS_STACK_INC_SIZE 256
+
+// Holds the start byte offsets of each JSON object encountered
+typedef struct byte_offsets_S{
+    int length;
+    int current;
+    long *stack;
+} ByteOffsets;
+
 typedef struct _delegate {
     VALUE *vhead;
     VALUE *vtail;
@@ -81,6 +90,8 @@ typedef struct _delegate {
     uint8_t miss_class;
     bool    cache_keys;
     bool    ignore_json_create;
+
+    ByteOffsets *byte_offsets;
 } * Delegate;
 
 static ID to_f_id = 0;
@@ -679,6 +690,10 @@ static void dfree(ojParser p) {
     xfree(d->chead);
     xfree(d->khead);
     xfree(d->create_id);
+    if (NULL != d->byte_offsets) {
+        xfree(d->byte_offsets->stack);
+        xfree(d->byte_offsets);
+    }
     xfree(p->ctx);
     p->ctx = NULL;
 }
@@ -1160,11 +1175,84 @@ static VALUE option(ojParser p, const char *key, VALUE value) {
     return Qnil;  // Never reached due to the raise but required by the compiler.
 }
 
+// Introspection functions
+
+static void ensure_byte_offsets_stack(Delegate d) {
+    if(RB_UNLIKELY(d->byte_offsets->current == (d->byte_offsets->length - 1))) {
+        d->byte_offsets->length += BYTE_OFFSETS_STACK_INC_SIZE;
+        REALLOC_N(d->byte_offsets->stack, long, d->byte_offsets->length + BYTE_OFFSETS_STACK_INC_SIZE);
+    }
+}
+
+static long pop_from_byte_stack(ojParser p) {
+    Delegate d = (Delegate)p->ctx;
+
+    return d->byte_offsets->stack[--d->byte_offsets->current];
+}
+
+static void push_into_byte_stack(ojParser p) {
+    Delegate d = (Delegate)p->ctx;
+    ensure_byte_offsets_stack(d);
+
+    d->byte_offsets->stack[d->byte_offsets->current++] = p->cur;
+}
+
+static void open_object_introspected(ojParser p) {
+    push_into_byte_stack(p);
+    open_object(p);
+}
+
+static void open_object_key_introspected(ojParser p) {
+    push_into_byte_stack(p);
+    open_object_key(p);
+}
+
+static VALUE start_byte_sym;
+static VALUE end_byte_sym;
+static VALUE introspection_key_sym;
+
+static void set_introspection_values(ojParser p) {
+    Delegate d = (Delegate)p->ctx;
+
+    volatile VALUE obj  = rb_hash_new();
+    rb_hash_aset(obj, start_byte_sym, INT2FIX(pop_from_byte_stack(p)));
+    rb_hash_aset(obj, end_byte_sym, INT2FIX(p->cur));
+    rb_hash_aset(*(d->vtail - 1), introspection_key_sym, obj);
+}
+
+static void close_object_introspected(ojParser p) {
+    close_object(p);
+    set_introspection_values(p);
+}
+
+static void init_introspected(Delegate d, void **open_object_func, void **close_object_func, void **open_object_key_func) {
+    start_byte_sym = ID2SYM(rb_intern("start_byte"));
+    end_byte_sym = ID2SYM(rb_intern("end_byte"));
+    introspection_key_sym = ID2SYM(rb_intern("__oj_introspection"));
+
+    *open_object_func = &open_object_introspected;
+    *close_object_func = &close_object_introspected;
+    *open_object_key_func = &open_object_key_introspected;
+
+    d->byte_offsets = ALLOC(ByteOffsets);
+    d->byte_offsets->current = 0;
+    d->byte_offsets->stack = ALLOC_N(long, BYTE_OFFSETS_STACK_INC_SIZE);
+    d->byte_offsets->length = BYTE_OFFSETS_STACK_INC_SIZE;
+}
+
 ///// the set up //////////////////////////////////////////////////////////////
 
-void oj_set_parser_usual(ojParser p) {
+static void init_parser_usual(ojParser p, bool introspected) {
     Delegate d   = ALLOC(struct _delegate);
     int      cap = 4096;
+
+    void *open_object_func = &open_object;
+    void *open_object_key_func = &open_object_key;
+    void *close_object_func = &close_object;
+
+    d->byte_offsets = NULL;
+
+    if(introspected) init_introspected(d, &open_object_func, &close_object_func, &open_object_key_func);
 
     d->vhead = ALLOC_N(VALUE, cap);
     d->vend  = d->vhead + cap;
@@ -1200,8 +1288,8 @@ void oj_set_parser_usual(ojParser p) {
     f->add_str      = add_str;
     f->open_array   = open_array;
     f->close_array  = close_array;
-    f->open_object  = open_object;
-    f->close_object = close_object;
+    f->open_object  = open_object_func;
+    f->close_object = close_object_func;
 
     f               = &p->funcs[ARRAY_FUN];
     f->add_null     = add_null;
@@ -1213,8 +1301,8 @@ void oj_set_parser_usual(ojParser p) {
     f->add_str      = add_str;
     f->open_array   = open_array;
     f->close_array  = close_array;
-    f->open_object  = open_object;
-    f->close_object = close_object;
+    f->open_object  = open_object_func;
+    f->close_object = close_object_func;
 
     f               = &p->funcs[OBJECT_FUN];
     f->add_null     = add_null_key;
@@ -1226,8 +1314,8 @@ void oj_set_parser_usual(ojParser p) {
     f->add_str      = add_str_key;
     f->open_array   = open_array_key;
     f->close_array  = close_array;
-    f->open_object  = open_object_key;
-    f->close_object = close_object;
+    f->open_object  = open_object_key_func;
+    f->close_object = close_object_func;
 
     d->str_cache   = cache_create(0, form_str, true, false);
     d->attr_cache  = cache_create(0, form_attr, false, false);
@@ -1251,4 +1339,12 @@ void oj_set_parser_usual(ojParser p) {
     if (0 == hset_id) {
         hset_id = rb_intern("[]=");
     }
+}
+
+void oj_set_parser_introspected(ojParser p) {
+    init_parser_usual(p, true);
+}
+
+void oj_set_parser_usual(ojParser p) {
+    init_parser_usual(p, false);
 }

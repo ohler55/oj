@@ -1163,6 +1163,7 @@ static void parser_mark(void *ptr) {
 extern void oj_set_parser_validator(ojParser p);
 extern void oj_set_parser_saj(ojParser p);
 extern void oj_set_parser_usual(ojParser p);
+extern void oj_set_parser_introspected(ojParser p);
 extern void oj_set_parser_debug(ojParser p);
 
 static int opt_cb(VALUE rkey, VALUE value, VALUE ptr) {
@@ -1240,8 +1241,10 @@ static VALUE parser_new(int argc, VALUE *argv, VALUE self) {
                 oj_set_parser_validator(p);
             } else if (0 == strcmp("debug", ms)) {
                 oj_set_parser_debug(p);
+            } else if (0 == strcmp("introspected", ms)) {
+                oj_set_parser_introspected(p);
             } else {
-                rb_raise(rb_eArgError, "mode must be :validate, :usual, :saj, or :object");
+                rb_raise(rb_eArgError, "mode must be :validate, :usual, :saj, :object, :debug, or :introspected");
             }
         }
         if (1 < argc) {
@@ -1482,6 +1485,29 @@ static VALUE parser_usual(VALUE self) {
     return usual_parser;
 }
 
+static VALUE introspected_parser = Qundef;
+
+/* Document-method: introspected
+ * call-seq: introspected
+ *
+ * Returns the default introspected parser. Note the default introspected parser can not be
+ * used concurrently in more than one thread.
+ */
+static VALUE parser_introspected(VALUE self) {
+    if (Qundef == introspected_parser) {
+        ojParser p = ALLOC(struct _ojParser);
+
+        memset(p, 0, sizeof(struct _ojParser));
+        buf_init(&p->key);
+        buf_init(&p->buf);
+        p->map = value_map;
+        oj_set_parser_introspected(p);
+        introspected_parser = Data_Wrap_Struct(parser_class, parser_mark, parser_free, p);
+        rb_gc_register_address(&introspected_parser);
+    }
+    return introspected_parser;
+}
+
 static VALUE saj_parser = Qundef;
 
 /* Document-method: saj
@@ -1552,6 +1578,7 @@ void oj_parser_init(void) {
     rb_define_method(parser_class, "method_missing", parser_missing, -1);
 
     rb_define_module_function(parser_class, "usual", parser_usual, 0);
+    rb_define_module_function(parser_class, "introspected", parser_introspected, 0);
     rb_define_module_function(parser_class, "saj", parser_saj, 0);
     rb_define_module_function(parser_class, "validate", parser_validate, 0);
 }
