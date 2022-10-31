@@ -1,5 +1,12 @@
 // Copyright (c) 2022, Peter Ohler, All rights reserved.
 
+#include <ruby.h>
+#include <stdbool.h>
+#include <stdint.h>
+
+struct _cache;
+struct _ojParser;
+
 // Used to mark the start of each Hash, Array, or Object. The members point at
 // positions of the start in the value stack and if not an Array into the key
 // stack.
@@ -58,4 +65,4 @@ typedef struct _usual {
 // Initialize the parser with the usual delegate. If the usual delegate is
 // wrapped then this function is called first and then the parser functions
 // can be replaced.
-extern void oj_init_usual(ojParser p, Usual d);
+extern void oj_init_usual(struct _ojParser *p, Usual d);
