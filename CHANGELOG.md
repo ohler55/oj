@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.13.22 - 2022-11-01
+
+- Reorganized Oj::Parser code to allow for parser extensions in C.
+
 ## 3.13.21 - 2022-08-19
 
 - Bug parsing big numbers fixed in the SAJ parser.
