@@ -1002,7 +1002,7 @@ static void hash_set_num(struct _parseInfo *pi, Val kval, NumInfo ni) {
                 struct timespec ts;
                 ts.tv_sec   = ni->i;
                 ts.tv_nsec  = nsec;
-                parent->val = rb_time_timespec_new(&ts, ni->exp);
+                parent->val = rb_time_timespec_new(&ts, (int)ni->exp);
             } else {
                 parent->val = rb_time_nano_new(ni->i, (long)nsec);
             }

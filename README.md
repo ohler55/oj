@@ -109,6 +109,8 @@ Follow [@peterohler on Twitter](http://twitter.com/peterohler) for announcements
 
  - *Agoo-C, a high performance C web server supporting GraphQL on GitHub*: https://github.com/ohler55/agoo-c
 
+ - *oj-introspect, an example of creating an Oj parser extension in C*: https://github.com/meinac/oj-introspect
+
 #### Contributing
 
 + Provide a Pull Request off the `develop` branch.

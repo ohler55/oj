@@ -3,6 +3,7 @@
 #include "cache.h"
 #include "oj.h"
 #include "parser.h"
+#include "usual.h"
 
 // The Usual delegate builds Ruby objects during parsing. It makes use of
 // three stacks. The first is the value stack. This is where parsed values are
@@ -27,61 +28,6 @@
 // option.
 
 #define DEBUG 0
-
-// Used to mark the start of each Hash, Array, or Object. The members point at
-// positions of the start in the value stack and if not an Array into the key
-// stack.
-typedef struct _col {
-    long vi;  // value stack index
-    long ki;  // key stack index if an hash else -1 for an array
-} * Col;
-
-typedef union _key {
-    struct {
-        int16_t len;
-        char    buf[30];
-    };
-    struct {
-        int16_t xlen;  // should be the same as len
-        char *  key;
-    };
-} * Key;
-
-#define MISS_AUTO 'A'
-#define MISS_RAISE 'R'
-#define MISS_IGNORE 'I'
-
-typedef struct _delegate {
-    VALUE *vhead;
-    VALUE *vtail;
-    VALUE *vend;
-
-    Col chead;
-    Col ctail;
-    Col cend;
-
-    Key khead;
-    Key ktail;
-    Key kend;
-
-    VALUE (*get_key)(ojParser p, Key kp);
-    struct _cache *key_cache;  // same as str_cache or sym_cache
-    struct _cache *str_cache;
-    struct _cache *sym_cache;
-    struct _cache *class_cache;
-    struct _cache *attr_cache;
-
-    VALUE array_class;
-    VALUE hash_class;
-
-    char *  create_id;
-    uint8_t create_id_len;
-    uint8_t cache_str;
-    uint8_t cache_xrate;
-    uint8_t miss_class;
-    bool    cache_keys;
-    bool    ignore_json_create;
-} * Delegate;
 
 static ID to_f_id = 0;
 static ID ltlt_id = 0;
@@ -178,7 +124,7 @@ static VALUE form_class_auto(const char *str, size_t len) {
     return resolve_classpath(str, len, true);
 }
 
-static void assure_cstack(Delegate d) {
+static void assure_cstack(Usual d) {
     if (d->cend <= d->ctail + 1) {
         size_t cap = d->cend - d->chead;
         long   pos = d->ctail - d->chead;
@@ -191,7 +137,7 @@ static void assure_cstack(Delegate d) {
 }
 
 static void push(ojParser p, VALUE v) {
-    Delegate d = (Delegate)p->ctx;
+    Usual d = (Usual)p->ctx;
 
     if (d->vend <= d->vtail) {
         size_t cap = d->vend - d->vhead;
@@ -207,7 +153,7 @@ static void push(ojParser p, VALUE v) {
 }
 
 static VALUE cache_key(ojParser p, Key kp) {
-    Delegate d = (Delegate)p->ctx;
+    Usual d = (Usual)p->ctx;
 
     if ((size_t)kp->len < sizeof(kp->buf)) {
         return cache_intern(d->key_cache, kp->buf, kp->len);
@@ -230,7 +176,7 @@ static VALUE sym_key(ojParser p, Key kp) {
 }
 
 static ID get_attr_id(ojParser p, Key kp) {
-    Delegate d = (Delegate)p->ctx;
+    Usual d = (Usual)p->ctx;
 
     if ((size_t)kp->len < sizeof(kp->buf)) {
         return (ID)cache_intern(d->attr_cache, kp->buf, kp->len);
@@ -239,7 +185,7 @@ static ID get_attr_id(ojParser p, Key kp) {
 }
 
 static void push_key(ojParser p) {
-    Delegate    d    = (Delegate)p->ctx;
+    Usual    d    = (Usual)p->ctx;
     size_t      klen = buf_len(&p->key);
     const char *key  = buf_str(&p->key);
 
@@ -263,7 +209,7 @@ static void push_key(ojParser p) {
 }
 
 static void push2(ojParser p, VALUE v) {
-    Delegate d = (Delegate)p->ctx;
+    Usual d = (Usual)p->ctx;
 
     if (d->vend <= d->vtail + 1) {
         size_t cap = d->vend - d->vhead;
@@ -281,7 +227,7 @@ static void push2(ojParser p, VALUE v) {
 }
 
 static void open_object(ojParser p) {
-    Delegate d = (Delegate)p->ctx;
+    Usual d = (Usual)p->ctx;
 
     assure_cstack(d);
     d->ctail->vi = d->vtail - d->vhead;
@@ -291,7 +237,7 @@ static void open_object(ojParser p) {
 }
 
 static void open_object_key(ojParser p) {
-    Delegate d = (Delegate)p->ctx;
+    Usual d = (Usual)p->ctx;
 
     push_key(p);
     assure_cstack(d);
@@ -302,7 +248,7 @@ static void open_object_key(ojParser p) {
 }
 
 static void open_array(ojParser p) {
-    Delegate d = (Delegate)p->ctx;
+    Usual d = (Usual)p->ctx;
 
     assure_cstack(d);
     d->ctail->vi = d->vtail - d->vhead;
@@ -312,7 +258,7 @@ static void open_array(ojParser p) {
 }
 
 static void open_array_key(ojParser p) {
-    Delegate d = (Delegate)p->ctx;
+    Usual d = (Usual)p->ctx;
 
     push_key(p);
     assure_cstack(d);
@@ -324,7 +270,7 @@ static void open_array_key(ojParser p) {
 
 static void close_object(ojParser p) {
     VALUE *  vp;
-    Delegate d = (Delegate)p->ctx;
+    Usual d = (Usual)p->ctx;
 
     d->ctail--;
 
@@ -357,7 +303,7 @@ static void close_object(ojParser p) {
 
 static void close_object_class(ojParser p) {
     VALUE *  vp;
-    Delegate d = (Delegate)p->ctx;
+    Usual d = (Usual)p->ctx;
 
     d->ctail--;
 
@@ -380,7 +326,7 @@ static void close_object_class(ojParser p) {
 
 static void close_object_create(ojParser p) {
     VALUE *  vp;
-    Delegate d = (Delegate)p->ctx;
+    Usual d = (Usual)p->ctx;
 
     d->ctail--;
 
@@ -459,7 +405,7 @@ static void close_object_create(ojParser p) {
 }
 
 static void close_array(ojParser p) {
-    Delegate d = (Delegate)p->ctx;
+    Usual d = (Usual)p->ctx;
 
     d->ctail--;
     VALUE *        head = d->vhead + d->ctail->vi + 1;
@@ -472,7 +418,7 @@ static void close_array(ojParser p) {
 
 static void close_array_class(ojParser p) {
     VALUE *  vp;
-    Delegate d = (Delegate)p->ctx;
+    Usual d = (Usual)p->ctx;
 
     d->ctail--;
     VALUE *        head = d->vhead + d->ctail->vi + 1;
@@ -585,7 +531,7 @@ static void add_big_as_ruby_key(ojParser p) {
 }
 
 static void add_str(ojParser p) {
-    Delegate       d = (Delegate)p->ctx;
+    Usual       d = (Usual)p->ctx;
     volatile VALUE rstr;
     const char *   str = buf_str(&p->buf);
     size_t         len = buf_len(&p->buf);
@@ -599,7 +545,7 @@ static void add_str(ojParser p) {
 }
 
 static void add_str_key(ojParser p) {
-    Delegate       d = (Delegate)p->ctx;
+    Usual       d = (Usual)p->ctx;
     volatile VALUE rstr;
     const char *   str = buf_str(&p->buf);
     size_t         len = buf_len(&p->buf);
@@ -614,7 +560,7 @@ static void add_str_key(ojParser p) {
 }
 
 static void add_str_key_create(ojParser p) {
-    Delegate       d = (Delegate)p->ctx;
+    Usual       d = (Usual)p->ctx;
     volatile VALUE rstr;
     const char *   str  = buf_str(&p->buf);
     size_t         len  = buf_len(&p->buf);
@@ -648,7 +594,7 @@ static void add_str_key_create(ojParser p) {
 }
 
 static VALUE result(ojParser p) {
-    Delegate d = (Delegate)p->ctx;
+    Usual d = (Usual)p->ctx;
 
     if (d->vhead < d->vtail) {
         return *d->vhead;
@@ -657,7 +603,7 @@ static VALUE result(ojParser p) {
 }
 
 static void start(ojParser p) {
-    Delegate d = (Delegate)p->ctx;
+    Usual d = (Usual)p->ctx;
 
     d->vtail = d->vhead;
     d->ctail = d->chead;
@@ -665,7 +611,7 @@ static void start(ojParser p) {
 }
 
 static void dfree(ojParser p) {
-    Delegate d = (Delegate)p->ctx;
+    Usual d = (Usual)p->ctx;
 
     cache_free(d->str_cache);
     cache_free(d->attr_cache);
@@ -687,7 +633,7 @@ static void mark(ojParser p) {
     if (NULL == p || NULL == p->ctx) {
         return;
     }
-    Delegate d = (Delegate)p->ctx;
+    Usual d = (Usual)p->ctx;
     VALUE *  vp;
 
     if (NULL == d) {
@@ -720,13 +666,13 @@ struct opt {
 };
 
 static VALUE opt_array_class(ojParser p, VALUE value) {
-    Delegate d = (Delegate)p->ctx;
+    Usual d = (Usual)p->ctx;
 
     return d->array_class;
 }
 
 static VALUE opt_array_class_set(ojParser p, VALUE value) {
-    Delegate d = (Delegate)p->ctx;
+    Usual d = (Usual)p->ctx;
 
     if (Qnil == value) {
         p->funcs[TOP_FUN].close_array    = close_array;
@@ -747,13 +693,13 @@ static VALUE opt_array_class_set(ojParser p, VALUE value) {
 }
 
 static VALUE opt_cache_keys(ojParser p, VALUE value) {
-    Delegate d = (Delegate)p->ctx;
+    Usual d = (Usual)p->ctx;
 
     return d->cache_keys ? Qtrue : Qfalse;
 }
 
 static VALUE opt_cache_keys_set(ojParser p, VALUE value) {
-    Delegate d = (Delegate)p->ctx;
+    Usual d = (Usual)p->ctx;
 
     if (Qtrue == value) {
         d->cache_keys = true;
@@ -775,13 +721,13 @@ static VALUE opt_cache_keys_set(ojParser p, VALUE value) {
 }
 
 static VALUE opt_cache_strings(ojParser p, VALUE value) {
-    Delegate d = (Delegate)p->ctx;
+    Usual d = (Usual)p->ctx;
 
     return INT2NUM((int)d->cache_str);
 }
 
 static VALUE opt_cache_strings_set(ojParser p, VALUE value) {
-    Delegate d     = (Delegate)p->ctx;
+    Usual d     = (Usual)p->ctx;
     int      limit = NUM2INT(value);
 
     if (CACHE_MAX_KEY < limit) {
@@ -795,13 +741,13 @@ static VALUE opt_cache_strings_set(ojParser p, VALUE value) {
 }
 
 static VALUE opt_cache_expunge(ojParser p, VALUE value) {
-    Delegate d = (Delegate)p->ctx;
+    Usual d = (Usual)p->ctx;
 
     return INT2NUM((int)d->cache_xrate);
 }
 
 static VALUE opt_cache_expunge_set(ojParser p, VALUE value) {
-    Delegate d    = (Delegate)p->ctx;
+    Usual d    = (Usual)p->ctx;
     int      rate = NUM2INT(value);
 
     if (rate < 0) {
@@ -819,13 +765,13 @@ static VALUE opt_cache_expunge_set(ojParser p, VALUE value) {
 }
 
 static VALUE opt_capacity(ojParser p, VALUE value) {
-    Delegate d = (Delegate)p->ctx;
+    Usual d = (Usual)p->ctx;
 
     return ULONG2NUM(d->vend - d->vhead);
 }
 
 static VALUE opt_capacity_set(ojParser p, VALUE value) {
-    Delegate d   = (Delegate)p->ctx;
+    Usual d   = (Usual)p->ctx;
     long     cap = NUM2LONG(value);
 
     if (d->vend - d->vhead < cap) {
@@ -846,13 +792,13 @@ static VALUE opt_capacity_set(ojParser p, VALUE value) {
 }
 
 static VALUE opt_class_cache(ojParser p, VALUE value) {
-    Delegate d = (Delegate)p->ctx;
+    Usual d = (Usual)p->ctx;
 
     return (NULL != d->class_cache) ? Qtrue : Qfalse;
 }
 
 static VALUE opt_class_cache_set(ojParser p, VALUE value) {
-    Delegate d = (Delegate)p->ctx;
+    Usual d = (Usual)p->ctx;
 
     if (Qtrue == value) {
         if (NULL == d->class_cache) {
@@ -866,7 +812,7 @@ static VALUE opt_class_cache_set(ojParser p, VALUE value) {
 }
 
 static VALUE opt_create_id(ojParser p, VALUE value) {
-    Delegate d = (Delegate)p->ctx;
+    Usual d = (Usual)p->ctx;
 
     if (NULL == d->create_id) {
         return Qnil;
@@ -875,7 +821,7 @@ static VALUE opt_create_id(ojParser p, VALUE value) {
 }
 
 static VALUE opt_create_id_set(ojParser p, VALUE value) {
-    Delegate d = (Delegate)p->ctx;
+    Usual d = (Usual)p->ctx;
 
     if (Qnil == value) {
         d->create_id                 = NULL;
@@ -985,13 +931,13 @@ static VALUE opt_decimal_set(ojParser p, VALUE value) {
 }
 
 static VALUE opt_hash_class(ojParser p, VALUE value) {
-    Delegate d = (Delegate)p->ctx;
+    Usual d = (Usual)p->ctx;
 
     return d->hash_class;
 }
 
 static VALUE opt_hash_class_set(ojParser p, VALUE value) {
-    Delegate d = (Delegate)p->ctx;
+    Usual d = (Usual)p->ctx;
 
     if (Qnil != value) {
         rb_check_type(value, T_CLASS);
@@ -1015,13 +961,13 @@ static VALUE opt_hash_class_set(ojParser p, VALUE value) {
 }
 
 static VALUE opt_ignore_json_create(ojParser p, VALUE value) {
-    Delegate d = (Delegate)p->ctx;
+    Usual d = (Usual)p->ctx;
 
     return d->ignore_json_create ? Qtrue : Qfalse;
 }
 
 static VALUE opt_ignore_json_create_set(ojParser p, VALUE value) {
-    Delegate d = (Delegate)p->ctx;
+    Usual d = (Usual)p->ctx;
 
     d->ignore_json_create = (Qtrue == value);
 
@@ -1029,7 +975,7 @@ static VALUE opt_ignore_json_create_set(ojParser p, VALUE value) {
 }
 
 static VALUE opt_missing_class(ojParser p, VALUE value) {
-    Delegate d = (Delegate)p->ctx;
+    Usual d = (Usual)p->ctx;
 
     switch (d->miss_class) {
     case MISS_AUTO: return ID2SYM(rb_intern("auto"));
@@ -1040,7 +986,7 @@ static VALUE opt_missing_class(ojParser p, VALUE value) {
 }
 
 static VALUE opt_missing_class_set(ojParser p, VALUE value) {
-    Delegate       d = (Delegate)p->ctx;
+    Usual       d = (Usual)p->ctx;
     const char *   mode;
     volatile VALUE s;
 
@@ -1091,13 +1037,13 @@ static VALUE opt_omit_null_set(ojParser p, VALUE value) {
 }
 
 static VALUE opt_symbol_keys(ojParser p, VALUE value) {
-    Delegate d = (Delegate)p->ctx;
+    Usual d = (Usual)p->ctx;
 
     return (NULL != d->sym_cache) ? Qtrue : Qfalse;
 }
 
 static VALUE opt_symbol_keys_set(ojParser p, VALUE value) {
-    Delegate d = (Delegate)p->ctx;
+    Usual d = (Usual)p->ctx;
 
     if (Qtrue == value) {
         d->sym_cache = cache_create(0, form_sym, true, false);
@@ -1121,33 +1067,33 @@ static VALUE opt_symbol_keys_set(ojParser p, VALUE value) {
 static VALUE option(ojParser p, const char *key, VALUE value) {
     struct opt *op;
     struct opt  opts[] = {
-        {.name = "array_class", .func = opt_array_class},
-        {.name = "array_class=", .func = opt_array_class_set},
-        {.name = "cache_keys", .func = opt_cache_keys},
-        {.name = "cache_keys=", .func = opt_cache_keys_set},
-        {.name = "cache_strings", .func = opt_cache_strings},
-        {.name = "cache_strings=", .func = opt_cache_strings_set},
-        {.name = "cache_expunge", .func = opt_cache_expunge},
-        {.name = "cache_expunge=", .func = opt_cache_expunge_set},
-        {.name = "capacity", .func = opt_capacity},
-        {.name = "capacity=", .func = opt_capacity_set},
-        {.name = "class_cache", .func = opt_class_cache},
-        {.name = "class_cache=", .func = opt_class_cache_set},
-        {.name = "create_id", .func = opt_create_id},
-        {.name = "create_id=", .func = opt_create_id_set},
-        {.name = "decimal", .func = opt_decimal},
-        {.name = "decimal=", .func = opt_decimal_set},
-        {.name = "hash_class", .func = opt_hash_class},
-        {.name = "hash_class=", .func = opt_hash_class_set},
-        {.name = "ignore_json_create", .func = opt_ignore_json_create},
-        {.name = "ignore_json_create=", .func = opt_ignore_json_create_set},
-        {.name = "missing_class", .func = opt_missing_class},
-        {.name = "missing_class=", .func = opt_missing_class_set},
-        {.name = "omit_null", .func = opt_omit_null},
-        {.name = "omit_null=", .func = opt_omit_null_set},
-        {.name = "symbol_keys", .func = opt_symbol_keys},
-        {.name = "symbol_keys=", .func = opt_symbol_keys_set},
-        {.name = NULL},
+         {.name = "array_class", .func = opt_array_class},
+         {.name = "array_class=", .func = opt_array_class_set},
+         {.name = "cache_keys", .func = opt_cache_keys},
+         {.name = "cache_keys=", .func = opt_cache_keys_set},
+         {.name = "cache_strings", .func = opt_cache_strings},
+         {.name = "cache_strings=", .func = opt_cache_strings_set},
+         {.name = "cache_expunge", .func = opt_cache_expunge},
+         {.name = "cache_expunge=", .func = opt_cache_expunge_set},
+         {.name = "capacity", .func = opt_capacity},
+         {.name = "capacity=", .func = opt_capacity_set},
+         {.name = "class_cache", .func = opt_class_cache},
+         {.name = "class_cache=", .func = opt_class_cache_set},
+         {.name = "create_id", .func = opt_create_id},
+         {.name = "create_id=", .func = opt_create_id_set},
+         {.name = "decimal", .func = opt_decimal},
+         {.name = "decimal=", .func = opt_decimal_set},
+         {.name = "hash_class", .func = opt_hash_class},
+         {.name = "hash_class=", .func = opt_hash_class_set},
+         {.name = "ignore_json_create", .func = opt_ignore_json_create},
+         {.name = "ignore_json_create=", .func = opt_ignore_json_create_set},
+         {.name = "missing_class", .func = opt_missing_class},
+         {.name = "missing_class=", .func = opt_missing_class_set},
+         {.name = "omit_null", .func = opt_omit_null},
+         {.name = "omit_null=", .func = opt_omit_null_set},
+         {.name = "symbol_keys", .func = opt_symbol_keys},
+         {.name = "symbol_keys=", .func = opt_symbol_keys_set},
+         {.name = NULL},
     };
 
     for (op = opts; NULL != op->name; op++) {
@@ -1162,8 +1108,7 @@ static VALUE option(ojParser p, const char *key, VALUE value) {
 
 ///// the set up //////////////////////////////////////////////////////////////
 
-void oj_set_parser_usual(ojParser p) {
-    Delegate d   = ALLOC(struct _delegate);
+void oj_init_usual(ojParser p, Usual d) {
     int      cap = 4096;
 
     d->vhead = ALLOC_N(VALUE, cap);
@@ -1235,6 +1180,8 @@ void oj_set_parser_usual(ojParser p) {
     d->class_cache = NULL;
     d->key_cache   = d->str_cache;
 
+    // The parser fields are set but the functions can be replaced by a
+    // delegate that wraps the usual delegate.
     p->ctx    = (void *)d;
     p->option = option;
     p->result = result;
@@ -1251,4 +1198,10 @@ void oj_set_parser_usual(ojParser p) {
     if (0 == hset_id) {
         hset_id = rb_intern("[]=");
     }
+}
+
+void oj_set_parser_usual(ojParser p) {
+    Usual d = ALLOC(struct _usual);
+
+    oj_init_usual(p, d);
 }

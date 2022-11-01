@@ -3,15 +3,8 @@
 ^c^d hide subtree
 ^c^s show subtree
 
-- plan
- - replace intern calls with cache
-  - option for expiration
-  + str
-  + sym
-  + attr
-  - class
-   - need to handle auto create
-    - return Qundef does not store
+- open up new parser (parser-extensions)
+
 
 - stream writes
  - dump.c:685
