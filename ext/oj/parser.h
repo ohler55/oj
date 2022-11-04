@@ -93,7 +93,7 @@ typedef struct _ojParser {
 // from this function. A delegate must be added before the parser can be
 // used. Optionally oj_parser_set_options can be called if the options are not
 // set directly.
-extern VALUE oj_parser_new();
+extern VALUE oj_parser_new(void(*init_function)(ojParser parser));
 
 // Set set the options from a hash (ropts).
 extern void oj_parser_set_option(ojParser p, VALUE ropts);
