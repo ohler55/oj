@@ -68,6 +68,8 @@ Determines how to load decimals.
 
  - `:fast` faster conversion to Float.
 
+ - `:ruby` convert to Float using the Ruby `to_f` conversion.
+
 This can also be set with `:decimal_class` when used as a load or
 parse option to match the JSON gem. In that case either `Float`,
 `BigDecimal`, or `nil` can be provided.

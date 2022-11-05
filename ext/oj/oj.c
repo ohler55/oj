@@ -251,7 +251,7 @@ struct _options oj_default_options = {
  *to use for JSON
  * - *:time_format* [_:unix_|_:unix_zone_|_:xmlschema_|_:ruby_] time format when dumping
  * - *:bigdecimal_as_decimal* [_Boolean_|_nil_] dump BigDecimal as a decimal number or as a String
- * - *:bigdecimal_load* [_:bigdecimal_|_:float_|_:auto_|_:fast_] load decimals as BigDecimal instead
+ * - *:bigdecimal_load* [_:bigdecimal_|_:float_|_:auto_|_:fast_|_:ruby_] load decimals as BigDecimal instead
  *of as a Float. :auto pick the most precise for the number of digits. :float should be the same as
  *ruby. :fast may require rounding but is must faster.
  * - *:compat_bigdecimal* [_true_|_false_] load decimals as BigDecimal instead of as a Float when in
