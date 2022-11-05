@@ -66,6 +66,8 @@ Determines how to load decimals.
 
  - `:auto` the most precise for the number of digits is used.
 
+ - `:fast` faster conversion to Float.
+
 This can also be set with `:decimal_class` when used as a load or
 parse option to match the JSON gem. In that case either `Float`,
 `BigDecimal`, or `nil` can be provided.
