@@ -158,6 +158,8 @@ Determines the characters to escape when dumping. Only the :ascii and
 
  - `:json` follows the JSON specification. This is the default mode.
 
+ - `:slash` escapes `/` characters.
+
  - `:xss_safe` escapes HTML and XML characters such as `&` and `<`.
 
  - `:ascii` escapes all non-ascii or characters with the hi-bit set.

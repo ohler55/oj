@@ -243,7 +243,7 @@ struct _options oj_default_options = {
  *references
  * - *:auto_define* [_Boolean_|_nil_] automatically define classes if they do not exist
  * - *:symbol_keys* [_Boolean_|_nil_] use symbols instead of strings for hash keys
- * - *:escape_mode* [_:newline_|_:json_|_:xss_safe_|_:ascii_|_unicode_xss_|_nil_] determines the
+ * - *:escape_mode* [_:newline_|_:json_|_:slash_|_:xss_safe_|_:ascii_|_unicode_xss_|_nil_] determines the
  *characters to escape
  * - *:class_cache* [_Boolean_|_nil_] cache classes for faster parsing (if dynamically modifying
  *classes or reloading classes then don't use this)
