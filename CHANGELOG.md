@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.13.23 - 2022-11-06
+
+- Fixed issue with Oj::Parser extension regarding GC timeing.
+
 ## 3.13.22 - 2022-11-01
 
 - Reorganized Oj::Parser code to allow for parser extensions in C.
