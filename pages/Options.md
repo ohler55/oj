@@ -66,6 +66,10 @@ Determines how to load decimals.
 
  - `:auto` the most precise for the number of digits is used.
 
+ - `:fast` faster conversion to Float.
+
+ - `:ruby` convert to Float using the Ruby `to_f` conversion.
+
 This can also be set with `:decimal_class` when used as a load or
 parse option to match the JSON gem. In that case either `Float`,
 `BigDecimal`, or `nil` can be provided.
@@ -153,6 +157,8 @@ Determines the characters to escape when dumping. Only the :ascii and
  - `:newline` allows unescaped newlines in the output.
 
  - `:json` follows the JSON specification. This is the default mode.
+
+ - `:slash` escapes `/` characters.
 
  - `:xss_safe` escapes HTML and XML characters such as `&` and `<`.
 
