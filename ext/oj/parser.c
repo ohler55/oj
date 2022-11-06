@@ -1145,7 +1145,9 @@ static void parser_free(void *ptr) {
     p = (ojParser)ptr;
     buf_cleanup(&p->key);
     buf_cleanup(&p->buf);
-    p->free(p);
+    if (NULL != p->free) {
+        p->free(p);
+    }
     xfree(ptr);
 }
 
@@ -1156,7 +1158,9 @@ static void parser_mark(void *ptr) {
         if (0 != p->reader) {
             rb_gc_mark(p->reader);
         }
-        p->mark(p);
+        if (NULL != p->mark) {
+            p->mark(p);
+        }
     }
 }
 
