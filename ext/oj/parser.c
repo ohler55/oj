@@ -1263,7 +1263,7 @@ static VALUE parser_new(int argc, VALUE *argv, VALUE self) {
 // from this function. A delegate must be added before the parser can be
 // used. Optionally oj_parser_set_options can be called if the options are not
 // set directly.
-VALUE oj_parser_new() {
+VALUE oj_parser_new(void) {
     ojParser p = ALLOC(struct _ojParser);
 
 #if HAVE_RB_EXT_RACTOR_SAFE
