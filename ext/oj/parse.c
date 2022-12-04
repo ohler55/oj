@@ -16,6 +16,10 @@
 #include "rxclass.h"
 #include "val_stack.h"
 
+#ifdef OJ_USE_SSE4_2
+#include <nmmintrin.h>
+#endif
+
 // Workaround in case INFINITY is not defined in math.h or if the OS is CentOS
 #define OJ_INFINITY (1.0 / 0.0)
 
