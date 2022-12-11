@@ -74,7 +74,7 @@ static char *read_quoted_value(ParseInfo pi);
 static void  skip_comment(ParseInfo pi);
 
 static VALUE protect_open_proc(VALUE x);
-static VALUE parse_json(VALUE clas, char *json, bool given, bool allocated);
+static VALUE parse_json(VALUE clas, char *json, bool given);
 static void  each_leaf(Doc doc, VALUE self);
 static int   move_step(Doc doc, const char *path, int loc);
 static Leaf  get_doc_leaf(Doc doc, const char *path);
@@ -651,7 +651,8 @@ static void doc_free(Doc doc) {
                 xfree(b);
             }
         }
-        // xfree(f);
+        ruby_xfree(doc->json);
+        ruby_xfree(doc);
     }
 }
 
@@ -671,7 +672,6 @@ static void free_doc_cb(void *x) {
     Doc doc = (Doc)x;
 
     if (0 != doc) {
-        xfree(doc->json);
         doc_free(doc);
     }
 }
@@ -749,20 +749,12 @@ static const rb_data_type_t oj_doc_type = {
     0,
 };
 
-static VALUE parse_json(VALUE clas, char *json, bool given, bool allocated) {
+static VALUE parse_json(VALUE clas, char *json, bool given) {
     struct _parseInfo pi;
     volatile VALUE    result = Qnil;
-    Doc               doc;
     int               ex = 0;
     volatile VALUE    self;
-
-    // TBD are both needed? is stack allocation ever needed?
-
-    if (given) {
-        doc = ALLOCA_N(struct _doc, 1);
-    } else {
-        doc = ALLOC(struct _doc);
-    }
+    Doc               doc = RB_ALLOC_N(struct _doc, 1);
     // skip UTF-8 BOM if present
     if (0xEF == (uint8_t)*json && 0xBB == (uint8_t)json[1] && 0xBF == (uint8_t)json[2]) {
         pi.str = json + 3;
@@ -787,18 +779,16 @@ static VALUE parse_json(VALUE clas, char *json, bool given, bool allocated) {
         }
     }
 #endif
+
+    doc->json           = json;
     self                = TypedData_Wrap_Struct(clas, &oj_doc_type, doc);
     doc->self           = self;
-    doc->json           = json;
     DATA_PTR(doc->self) = doc;
     result              = rb_protect(protect_open_proc, (VALUE)&pi, &ex);
+
+    // error or in a block, so remove the reference to the self
     if (given || 0 != ex) {
         DATA_PTR(doc->self) = NULL;
-        doc_free(pi.doc);
-        if (allocated && 0 != ex) {  // will jump so caller will not free
-            xfree(json);
-        }
-        rb_gc_enable();
     } else {
         result = doc->self;
     }
@@ -1092,27 +1082,13 @@ static VALUE doc_open(VALUE clas, VALUE str) {
     size_t         len;
     volatile VALUE obj;
     int            given = rb_block_given_p();
-    int            allocate;
 
     Check_Type(str, T_STRING);
-    len      = (int)RSTRING_LEN(str) + 1;
-    allocate = (SMALL_JSON < len || !given);
-    if (allocate) {
-        json = ALLOC_N(char, len);
-    } else {
-        json = ALLOCA_N(char, len);
-    }
-    // It should not be necessaary to stop GC but if it is not stopped and a
-    // large string is parsed that string is corrupted or freed during
-    // parsing. I'm not sure what is going on exactly but disabling GC avoids
-    // the issue.
-    rb_gc_disable();
+    len  = (int)RSTRING_LEN(str) + 1;
+    json = RB_ALLOC_N(char, len); // Doc is in charge of freeing this up
+
     memcpy(json, StringValuePtr(str), len);
-    obj = parse_json(clas, json, given, allocate);
-    rb_gc_enable();
-    if (given && allocate) {
-        xfree(json);
-    }
+    obj = parse_json(clas, json, given);
     return obj;
 }
 
@@ -1142,7 +1118,6 @@ static VALUE doc_open_file(VALUE clas, VALUE filename) {
     size_t         len;
     volatile VALUE obj;
     int            given = rb_block_given_p();
-    int            allocate;
 
     Check_Type(filename, T_STRING);
     path = StringValuePtr(filename);
@@ -1151,12 +1126,7 @@ static VALUE doc_open_file(VALUE clas, VALUE filename) {
     }
     fseek(f, 0, SEEK_END);
     len      = ftell(f);
-    allocate = (SMALL_JSON < len || !given);
-    if (allocate) {
-        json = ALLOC_N(char, len + 1);
-    } else {
-        json = ALLOCA_N(char, len + 1);
-    }
+    json     = RB_ALLOC_N(char, len);
     fseek(f, 0, SEEK_SET);
     if (len != fread(json, 1, len, f)) {
         fclose(f);
@@ -1167,12 +1137,7 @@ static VALUE doc_open_file(VALUE clas, VALUE filename) {
     }
     fclose(f);
     json[len] = '\0';
-    rb_gc_disable();
-    obj = parse_json(clas, json, given, allocate);
-    rb_gc_enable();
-    if (given && allocate) {
-        xfree(json);
-    }
+    obj = parse_json(clas, json, given);
     return obj;
 }
 
@@ -1656,11 +1621,9 @@ static VALUE doc_close(VALUE self) {
     Doc doc = self_doc(self);
 
     rb_gc_unregister_address(&doc->self);
-    DATA_PTR(doc->self) = 0;
+    DATA_PTR(doc->self) = NULL;
     if (0 != doc) {
-        xfree(doc->json);
         doc_free(doc);
-        xfree(doc);
     }
     return Qnil;
 }
