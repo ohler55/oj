@@ -31,4 +31,5 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'rake-compiler', '>= 0.9', '< 2.0'
   s.add_development_dependency 'minitest', '~> 5'
   s.add_development_dependency 'test-unit', '~> 3.0'
+  s.add_development_dependency 'parallel', '= 1.19.1'
 end
