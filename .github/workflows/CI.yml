@@ -17,6 +17,7 @@ jobs:
         # Due to https://github.com/actions/runner/issues/849, we have to use quotes for '3.0'
         ruby:
           - head
+          - '3.2'
           - '3.1'
           - '3.0'
           - '2.7'
@@ -64,7 +65,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ruby: [ ucrt, '3.1', '3.0', '2.7', '2.6' ]
+        ruby: [ ucrt, '3.2', '3.1', '3.0', '2.7', '2.6' ]
 
     env:
       BUNDLE_GEMFILE: gemfiles/no_rails.gemfile
