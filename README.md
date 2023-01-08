@@ -70,6 +70,7 @@ links.
  - [{file:Compatibility.md}](pages/Compatibility.md) lists current compatibility with Rubys and Rails.
  - [{file:Advanced.md}](pages/Advanced.md) for fast parser and marshalling features.
  - [{file:Security.md}](pages/Security.md) for security considerations.
+ - [{file:InstallOptions.md}](pages/InstallOptions.md) for install option.
 
 ## Releases
 

@@ -109,17 +109,13 @@ dump_to_json(VALUE obj, Out out) {
     const char		*s;
     int			len;
 
-    if (RB_UNLIKELY(Yes == out->opts->trace)) {
-	oj_trace("to_json", obj, __FILE__, __LINE__, 0, TraceRubyIn);
-    }
+    TRACE(out->opts->trace, "to_json", obj, 0, TraceRubyIn);
     if (0 == rb_obj_method_arity(obj, oj_to_json_id)) {
 	rs = rb_funcall(obj, oj_to_json_id, 0);
     } else {
 	rs = rb_funcall2(obj, oj_to_json_id, out->argc, out->argv);
     }
-    if (RB_UNLIKELY(Yes == out->opts->trace)) {
-	oj_trace("to_json", obj, __FILE__, __LINE__, 0, TraceRubyOut);
-    }
+    TRACE(out->opts->trace, "to_json", obj, 0, TraceRubyOut);
 
     s = RSTRING_PTR(rs);
     len = (int)RSTRING_LEN(rs);
@@ -893,9 +889,7 @@ void
 oj_dump_compat_val(VALUE obj, int depth, Out out, bool as_ok) {
     int	type = rb_type(obj);
 
-    if (RB_UNLIKELY(Yes == out->opts->trace)) {
-	oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceIn);
-    }
+    TRACE(out->opts->trace, "dump", obj, depth, TraceIn);
     if (out->opts->dump_opts.max_depth <= depth) {
 	// When JSON.dump is called then an ArgumentError is expected and the
 	// limit is the depth inclusive. If JSON.generate is called then a
@@ -918,14 +912,10 @@ oj_dump_compat_val(VALUE obj, int depth, Out out, bool as_ok) {
 
 	if (NULL != f) {
 	    f(obj, depth, out, as_ok);
-	    if (RB_UNLIKELY(Yes == out->opts->trace)) {
-		oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceOut);
-	    }
+	    TRACE(out->opts->trace, "dump", obj, depth, TraceOut);
 	    return;
 	}
     }
     oj_dump_nil(Qnil, depth, out, false);
-    if (RB_UNLIKELY(Yes == out->opts->trace)) {
-	oj_trace("dump", Qnil, __FILE__, __LINE__, depth, TraceOut);
-    }
+    TRACE(out->opts->trace, "dump", Qnil, depth, TraceOut);
 }
