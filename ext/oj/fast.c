@@ -1151,7 +1151,7 @@ static VALUE doc_open_file(VALUE clas, VALUE filename) {
     }
     fclose(f);
     json[len] = '\0';
-    obj = parse_json(clas, json, given, allocate);
+    obj = parse_json(clas, json, given);
     // TBD is this needed
     /*
     if (given) {
