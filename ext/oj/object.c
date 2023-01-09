@@ -609,9 +609,7 @@ WHICH_TYPE:
 }
 
 static VALUE start_hash(ParseInfo pi) {
-    if (RB_UNLIKELY(Yes == pi->options.trace)) {
-        oj_trace_parse_in("start_hash", pi, __FILE__, __LINE__);
-    }
+    TRACE_PARSE_IN(pi->options.trace, "start_hash", pi);
     return Qnil;
 }
 
@@ -627,9 +625,7 @@ static void end_hash(ParseInfo pi) {
         oj_odd_free(oa);
         parent->odd_args = NULL;
     }
-    if (RB_UNLIKELY(Yes == pi->options.trace)) {
-        oj_trace_parse_hash_end(pi, __FILE__, __LINE__);
-    }
+    TRACE_PARSE_HASH_END(pi->options.trace, pi);
 }
 
 static void array_append_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {

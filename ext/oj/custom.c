@@ -479,17 +479,13 @@ static VALUE dump_common(VALUE obj, int depth, Out out) {
         const char    *s;
         int            len;
 
-        if (RB_UNLIKELY(Yes == out->opts->trace)) {
-            oj_trace("to_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyIn);
-        }
+        TRACE(out->opts->trace, "to_json", obj, depth + 1, TraceRubyIn);
         if (0 == rb_obj_method_arity(obj, oj_to_json_id)) {
             rs = rb_funcall(obj, oj_to_json_id, 0);
         } else {
             rs = rb_funcall2(obj, oj_to_json_id, out->argc, out->argv);
         }
-        if (RB_UNLIKELY(Yes == out->opts->trace)) {
-            oj_trace("to_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyOut);
-        }
+        TRACE(out->opts->trace, "to_json", obj, depth + 1, TraceRubyOut);
         s   = RSTRING_PTR(rs);
         len = (int)RSTRING_LEN(rs);
 
@@ -499,9 +495,7 @@ static VALUE dump_common(VALUE obj, int depth, Out out) {
     } else if (Yes == out->opts->as_json && rb_respond_to(obj, oj_as_json_id)) {
         volatile VALUE aj;
 
-        if (RB_UNLIKELY(Yes == out->opts->trace)) {
-            oj_trace("as_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyIn);
-        }
+        TRACE(out->opts->trace, "as_json", obj, depth + 1, TraceRubyIn);
         // Some classes elect to not take an options argument so check the arity
         // of as_json.
         if (0 == rb_obj_method_arity(obj, oj_as_json_id)) {
@@ -509,9 +503,7 @@ static VALUE dump_common(VALUE obj, int depth, Out out) {
         } else {
             aj = rb_funcall2(obj, oj_as_json_id, out->argc, out->argv);
         }
-        if (RB_UNLIKELY(Yes == out->opts->trace)) {
-            oj_trace("as_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyOut);
-        }
+        TRACE(out->opts->trace, "as_json", obj, depth + 1, TraceRubyOut);
         // Catch the obvious brain damaged recursive dumping.
         if (aj == obj) {
             volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
@@ -876,9 +868,7 @@ static DumpFunc custom_funcs[] = {
 void oj_dump_custom_val(VALUE obj, int depth, Out out, bool as_ok) {
     int type = rb_type(obj);
 
-    if (RB_UNLIKELY(Yes == out->opts->trace)) {
-        oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceIn);
-    }
+    TRACE(out->opts->trace, "dump", obj, depth, TraceIn);
     if (MAX_DEPTH < depth) {
         rb_raise(rb_eNoMemError, "Too deeply nested.\n");
     }
@@ -887,16 +877,12 @@ void oj_dump_custom_val(VALUE obj, int depth, Out out, bool as_ok) {
 
         if (NULL != f) {
             f(obj, depth, out, true);
-            if (RB_UNLIKELY(Yes == out->opts->trace)) {
-                oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceOut);
-            }
+            TRACE(out->opts->trace, "dump", obj, depth, TraceOut);
             return;
         }
     }
     oj_dump_nil(Qnil, depth, out, false);
-    if (RB_UNLIKELY(Yes == out->opts->trace)) {
-        oj_trace("dump", Qnil, __FILE__, __LINE__, depth, TraceOut);
-    }
+    TRACE(out->opts->trace, "dump", Qnil, depth, TraceOut);
 }
 
 ///// load functions /////
@@ -969,9 +955,7 @@ static void end_hash(struct _parseInfo *pi) {
         }
         parent->clas = Qundef;
     }
-    if (RB_UNLIKELY(Yes == pi->options.trace)) {
-        oj_trace_parse_hash_end(pi, __FILE__, __LINE__);
-    }
+    TRACE_PARSE_HASH_END(pi->options.trace, pi);
 }
 
 static void hash_set_num(struct _parseInfo *pi, Val kval, NumInfo ni) {

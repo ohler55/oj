@@ -50,15 +50,11 @@ VALUE oj_calc_hash_key(ParseInfo pi, Val parent) {
 }
 
 static void hash_end(ParseInfo pi) {
-    if (RB_UNLIKELY(Yes == pi->options.trace)) {
-        oj_trace_parse_hash_end(pi, __FILE__, __LINE__);
-    }
+    TRACE_PARSE_HASH_END(pi->options.trace, pi);
 }
 
 static void array_end(ParseInfo pi) {
-    if (RB_UNLIKELY(Yes == pi->options.trace)) {
-        oj_trace_parse_array_end(pi, __FILE__, __LINE__);
-    }
+    TRACE_PARSE_ARRAY_END(pi->options.trace, pi);
 }
 
 static VALUE noop_hash_key(ParseInfo pi, const char *key, size_t klen) {
@@ -95,9 +91,7 @@ static VALUE start_hash(ParseInfo pi) {
     if (Qnil != pi->options.hash_class) {
         return rb_class_new_instance(0, NULL, pi->options.hash_class);
     }
-    if (RB_UNLIKELY(Yes == pi->options.trace)) {
-        oj_trace_parse_in("start_hash", pi, __FILE__, __LINE__);
-    }
+    TRACE_PARSE_IN(pi->options.trace, "start_hash", pi);
     return rb_hash_new();
 }
 
@@ -137,9 +131,7 @@ static void hash_set_value(ParseInfo pi, Val parent, VALUE value) {
 }
 
 static VALUE start_array(ParseInfo pi) {
-    if (RB_UNLIKELY(Yes == pi->options.trace)) {
-        oj_trace_parse_in("start_array", pi, __FILE__, __LINE__);
-    }
+    TRACE_PARSE_IN(pi->options.trace, "start_array", pi);
     return rb_ary_new();
 }
 

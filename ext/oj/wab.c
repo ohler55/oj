@@ -266,9 +266,7 @@ static DumpFunc wab_funcs[] = {
 void oj_dump_wab_val(VALUE obj, int depth, Out out) {
     int type = rb_type(obj);
 
-    if (RB_UNLIKELY(Yes == out->opts->trace)) {
-        oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceIn);
-    }
+    TRACE(out->opts->trace, "dump", obj, depth, TraceIn);
     if (MAX_DEPTH < depth) {
         rb_raise(rb_eNoMemError, "Too deeply nested.\n");
     }
@@ -277,9 +275,7 @@ void oj_dump_wab_val(VALUE obj, int depth, Out out) {
 
         if (NULL != f) {
             f(obj, depth, out, false);
-            if (RB_UNLIKELY(Yes == out->opts->trace)) {
-                oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceOut);
-            }
+            TRACE(out->opts->trace, "dump", obj, depth, TraceOut);
             return;
         }
     }
@@ -312,15 +308,11 @@ static VALUE calc_hash_key(ParseInfo pi, Val parent) {
 }
 
 static void hash_end(ParseInfo pi) {
-    if (RB_UNLIKELY(Yes == pi->options.trace)) {
-        oj_trace_parse_hash_end(pi, __FILE__, __LINE__);
-    }
+    TRACE_PARSE_HASH_END(pi->options.trace, pi);
 }
 
 static void array_end(ParseInfo pi) {
-    if (RB_UNLIKELY(Yes == pi->options.trace)) {
-        oj_trace_parse_array_end(pi, __FILE__, __LINE__);
-    }
+    TRACE_PARSE_ARRAY_END(pi->options.trace, pi);
 }
 
 static VALUE noop_hash_key(ParseInfo pi, const char *key, size_t klen) {
@@ -494,9 +486,7 @@ static void add_num(ParseInfo pi, NumInfo ni) {
 }
 
 static VALUE start_hash(ParseInfo pi) {
-    if (RB_UNLIKELY(Yes == pi->options.trace)) {
-        oj_trace_parse_in("start_hash", pi, __FILE__, __LINE__);
-    }
+    TRACE_PARSE_IN(pi->options.trace, "start_hash", pi);
     if (Qnil != pi->options.hash_class) {
         return rb_class_new_instance(0, NULL, pi->options.hash_class);
     }
@@ -533,9 +523,7 @@ static void hash_set_value(ParseInfo pi, Val parent, VALUE value) {
 }
 
 static VALUE start_array(ParseInfo pi) {
-    if (RB_UNLIKELY(Yes == pi->options.trace)) {
-        oj_trace_parse_in("start_array", pi, __FILE__, __LINE__);
-    }
+    TRACE_PARSE_IN(pi->options.trace, "start_array", pi);
     return rb_ary_new();
 }
 

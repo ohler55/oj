@@ -517,9 +517,7 @@ static void dump_as_string(VALUE obj, int depth, Out out, bool as_ok) {
 static void dump_as_json(VALUE obj, int depth, Out out, bool as_ok) {
     volatile VALUE ja;
 
-    if (RB_UNLIKELY(Yes == out->opts->trace)) {
-        oj_trace("as_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyIn);
-    }
+    TRACE(out->opts->trace, "as_json", obj, depth + 1, TraceRubyIn);
     // Some classes elect to not take an options argument so check the arity
     // of as_json.
     if (0 == rb_obj_method_arity(obj, oj_as_json_id)) {
@@ -527,9 +525,7 @@ static void dump_as_json(VALUE obj, int depth, Out out, bool as_ok) {
     } else {
         ja = rb_funcall2(obj, oj_as_json_id, out->argc, out->argv);
     }
-    if (RB_UNLIKELY(Yes == out->opts->trace)) {
-        oj_trace("as_json", obj, __FILE__, __LINE__, depth + 1, TraceRubyOut);
-    }
+    TRACE(out->opts->trace, "as_json", obj, depth + 1, TraceRubyOut);
 
     out->argc = 0;
     if (ja == obj || !as_ok) {
@@ -1464,9 +1460,7 @@ static DumpFunc rails_funcs[] = {
 static void dump_rails_val(VALUE obj, int depth, Out out, bool as_ok) {
     int type = rb_type(obj);
 
-    if (RB_UNLIKELY(Yes == out->opts->trace)) {
-        oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceIn);
-    }
+    TRACE(out->opts->trace, "dump", obj, depth, TraceIn);
     if (MAX_DEPTH < depth) {
         rb_raise(rb_eNoMemError, "Too deeply nested.\n");
     }
@@ -1475,16 +1469,12 @@ static void dump_rails_val(VALUE obj, int depth, Out out, bool as_ok) {
 
         if (NULL != f) {
             f(obj, depth, out, as_ok);
-            if (RB_UNLIKELY(Yes == out->opts->trace)) {
-                oj_trace("dump", obj, __FILE__, __LINE__, depth, TraceOut);
-            }
+            TRACE(out->opts->trace, "dump", obj, depth, TraceOut);
             return;
         }
     }
     oj_dump_nil(Qnil, depth, out, false);
-    if (RB_UNLIKELY(Yes == out->opts->trace)) {
-        oj_trace("dump", Qnil, __FILE__, __LINE__, depth, TraceOut);
-    }
+    TRACE(out->opts->trace, "dump", Qnil, depth, TraceOut);
 }
 
 void oj_dump_rails_val(VALUE obj, int depth, Out out) {
