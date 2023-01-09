@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.14.0 - unreleased
+
+- Tracing is now a compile time option giving a 15 to 20% performance boost.
+
 ## 3.13.23 - 2022-11-06
 
 - Fixed issue with Oj::Parser extension regarding GC timeing.
