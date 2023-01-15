@@ -91,6 +91,13 @@ class FileJuice < Minitest::Test
     dump_and_load(2.48e100 * 1.0e10, false)
     dump_and_load(-2.48e100 * 1.0e10, false)
     dump_and_load(1/0.0, false)
+
+    Oj.default_options = {:mode => :compat}
+    dump_and_load(43.418052999999986, false)
+    dump_and_load(-59.879722999999956, false)
+    dump_and_load(129.51779199999993, false)
+    dump_and_load(-124.65611299999989, false)
+
     Oj.default_options = {:mode => mode}
   end
 

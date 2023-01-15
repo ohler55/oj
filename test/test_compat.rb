@@ -136,6 +136,10 @@ class CompatJuice < Minitest::Test
     dump_and_load(73.4, false)
     dump_and_load(80.6, false)
     dump_and_load(-95.640172, false)
+    dump_and_load(43.418052999999986, false)
+    dump_and_load(-59.879722999999956, false)
+    dump_and_load(129.51779199999993, false)
+    dump_and_load(-124.65611299999989, false)
   end
 
   def test_string

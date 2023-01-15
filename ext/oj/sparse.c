@@ -23,7 +23,7 @@
 #define NUM_MAX (FIXNUM_MAX >> 8)
 #endif
 #define EXP_MAX 100000
-#define DEC_MAX 15
+#define DEC_MAX 16
 
 static void skip_comment(ParseInfo pi) {
     char c = reader_get(&pi->rd);

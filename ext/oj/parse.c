@@ -25,7 +25,7 @@
 
 //#define EXP_MAX		1023
 #define EXP_MAX 100000
-#define DEC_MAX 15
+#define DEC_MAX 16
 
 static void next_non_white(ParseInfo pi) {
     for (; 1; pi->cur++) {
