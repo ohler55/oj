@@ -24,20 +24,20 @@ static void dump_obj_str(VALUE obj, int depth, Out out) {
         {"s", 1, Qnil},
         {NULL, 0, Qnil},
     };
-    attrs->value = rb_funcall(obj, oj_to_s_id, 0);
+    attrs->value = oj_safe_string_convert(obj);
 
     oj_code_attrs(obj, attrs, depth, out, Yes == out->opts->create_ok);
 }
 
 static void dump_obj_as_str(VALUE obj, int depth, Out out) {
-    volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
+    volatile VALUE rstr = oj_safe_string_convert(obj);
     const char    *str  = RSTRING_PTR(rstr);
 
     oj_dump_cstr(str, RSTRING_LEN(rstr), 0, 0, out);
 }
 
 static void bigdecimal_dump(VALUE obj, int depth, Out out) {
-    volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
+    volatile VALUE rstr = oj_safe_string_convert(obj);
     const char    *str  = RSTRING_PTR(rstr);
     int            len  = (int)RSTRING_LEN(rstr);
 
@@ -305,7 +305,7 @@ static int hash_cb(VALUE key, VALUE value, VALUE ov) {
     switch (rb_type(key)) {
     case T_STRING: oj_dump_str(key, 0, out, false); break;
     case T_SYMBOL: oj_dump_sym(key, 0, out, false); break;
-    default: oj_dump_str(rb_funcall(key, oj_to_s_id, 0), 0, out, false); break;
+    default: oj_dump_str(oj_safe_string_convert(key), 0, out, false); break;
     }
     if (!out->opts->dump_opts.use) {
         *out->cur++ = ':';
@@ -506,7 +506,7 @@ static VALUE dump_common(VALUE obj, int depth, Out out) {
         TRACE(out->opts->trace, "as_json", obj, depth + 1, TraceRubyOut);
         // Catch the obvious brain damaged recursive dumping.
         if (aj == obj) {
-            volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
+            volatile VALUE rstr = oj_safe_string_convert(obj);
 
             oj_dump_cstr(RSTRING_PTR(rstr), (int)RSTRING_LEN(rstr), false, false, out);
         } else {

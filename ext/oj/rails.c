@@ -198,7 +198,7 @@ static void dump_enumerable(VALUE obj, int depth, Out out, bool as_ok) {
 }
 
 static void dump_bigdecimal(VALUE obj, int depth, Out out, bool as_ok) {
-    volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
+    volatile VALUE rstr = oj_safe_string_convert(obj);
     const char *   str  = RSTRING_PTR(rstr);
 
     if ('I' == *str || 'N' == *str || ('-' == *str && 'I' == str[1])) {
@@ -345,7 +345,7 @@ static void dump_timewithzone(VALUE obj, int depth, Out out, bool as_ok) {
 }
 
 static void dump_to_s(VALUE obj, int depth, Out out, bool as_ok) {
-    volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
+    volatile VALUE rstr = oj_safe_string_convert(obj);
 
     oj_dump_cstr(RSTRING_PTR(rstr), (int)RSTRING_LEN(rstr), 0, 0, out);
 }
@@ -377,7 +377,7 @@ static StrLen columns_array(VALUE rcols, int *ccnt) {
     for (i = 0, cp = cols; i < cnt; i++, cp++) {
         v = RARRAY_AREF(rcols, i);
         if (T_STRING != rb_type(v)) {
-            v = rb_funcall(v, oj_to_s_id, 0);
+            v = oj_safe_string_convert(v);
         }
         cp->str = StringValuePtr(v);
         cp->len = (int)RSTRING_LEN(v);
@@ -1204,7 +1204,7 @@ static void dump_float(VALUE obj, int depth, Out out, bool as_ok) {
         } else if (oj_rails_float_opt) {
             cnt = oj_dump_float_printf(buf, sizeof(buf), obj, d, "%0.16g");
         } else {
-            volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
+            volatile VALUE rstr = oj_safe_string_convert(obj);
 
             strcpy(buf, RSTRING_PTR(rstr));
             cnt = (int)RSTRING_LEN(rstr);
@@ -1297,7 +1297,7 @@ static int hash_cb(VALUE key, VALUE value, VALUE ov) {
         return ST_CONTINUE;
     }
     if (rtype != T_STRING && rtype != T_SYMBOL) {
-        key   = rb_funcall(key, oj_to_s_id, 0);
+        key   = oj_safe_string_convert(key);
         rtype = rb_type(key);
     }
     if (!out->opts->dump_opts.use) {

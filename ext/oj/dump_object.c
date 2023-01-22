@@ -30,7 +30,7 @@ static void dump_data(VALUE obj, int depth, Out out, bool as_ok) {
         *out->cur   = '\0';
     } else {
         if (oj_bigdecimal_class == clas) {
-            volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
+            volatile VALUE rstr = oj_safe_string_convert(obj);
             const char *   str  = RSTRING_PTR(rstr);
             int            len  = (int)RSTRING_LEN(rstr);
 
@@ -59,7 +59,7 @@ static void dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
     VALUE clas = rb_obj_class(obj);
 
     if (oj_bigdecimal_class == clas) {
-        volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
+        volatile VALUE rstr = oj_safe_string_convert(obj);
         const char *   str  = RSTRING_PTR(rstr);
         int            len  = (int)RSTRING_LEN(rstr);
 

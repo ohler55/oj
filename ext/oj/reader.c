@@ -75,7 +75,7 @@ void oj_reader_init(Reader reader, VALUE io, int fd, bool to_s) {
         reader->read_func = read_from_io;
         reader->io        = io;
     } else if (to_s) {
-        volatile VALUE rstr = rb_funcall(io, oj_to_s_id, 0);
+        volatile VALUE rstr = oj_safe_string_convert(io);
 
         reader->read_func = 0;
         reader->in_str    = StringValuePtr(rstr);
