@@ -35,8 +35,12 @@ have_func('rb_hash_bulk_insert', 'ruby.h') unless '2' == version[0] && '6' == ve
 dflags['OJ_DEBUG'] = true unless ENV['OJ_DEBUG'].nil?
 
 if with_config('--with-sse42')
-  $CPPFLAGS += ' -msse4.2'
-  dflags['OJ_USE_SSE4_2'] = 1
+  if try_cflags('-msse4.2')
+    $CPPFLAGS += ' -msse4.2'
+    dflags['OJ_USE_SSE4_2'] = 1
+  else
+    warn 'SSE 4.2 is not supported on this platform.'
+  end
 end
 
 if enable_config('trace-log', false)
