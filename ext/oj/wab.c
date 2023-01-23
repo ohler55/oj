@@ -226,13 +226,13 @@ static void dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
     if (rb_cTime == clas) {
         dump_time(obj, out);
     } else if (oj_bigdecimal_class == clas) {
-        volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
+        volatile VALUE rstr = oj_safe_string_convert(obj);
 
         oj_dump_raw(RSTRING_PTR(rstr), (int)RSTRING_LEN(rstr), out);
     } else if (resolve_wab_uuid_class() == clas) {
-        oj_dump_str(rb_funcall(obj, oj_to_s_id, 0), depth, out, false);
+        oj_dump_str(oj_safe_string_convert(obj), depth, out, false);
     } else if (resolve_uri_http_class() == clas) {
-        oj_dump_str(rb_funcall(obj, oj_to_s_id, 0), depth, out, false);
+        oj_dump_str(oj_safe_string_convert(obj), depth, out, false);
     } else {
         raise_wab(obj);
     }

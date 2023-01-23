@@ -513,6 +513,15 @@ class CompatJuice < Minitest::Test
     assert_equal("aaaa\nbbbb\rcccc\tddd\feee\bf/\\ぴーたー             ", Oj.load(json))
   end
 
+  def test_invalid_to_s
+    obj = Object.new
+    def obj.to_s
+      nil
+    end
+
+    assert_raises(TypeError) { Oj.dump(obj, mode: :compat) }
+  end
+
   def dump_and_load(obj, trace=false)
     json = Oj.dump(obj)
     puts json if trace

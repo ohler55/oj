@@ -463,7 +463,7 @@ void oj_dump_time(VALUE obj, Out out, int withZone) {
 }
 
 void oj_dump_ruby_time(VALUE obj, Out out) {
-    volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
+    volatile VALUE rstr = oj_safe_string_convert(obj);
 
     oj_dump_cstr(RSTRING_PTR(rstr), (int)RSTRING_LEN(rstr), 0, 0, out);
 }
@@ -928,7 +928,7 @@ void oj_dump_class(VALUE obj, int depth, Out out, bool as_ok) {
 }
 
 void oj_dump_obj_to_s(VALUE obj, Out out) {
-    volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
+    volatile VALUE rstr = oj_safe_string_convert(obj);
 
     oj_dump_cstr(RSTRING_PTR(rstr), (int)RSTRING_LEN(rstr), 0, 0, out);
 }
@@ -1169,7 +1169,7 @@ void oj_dump_float(VALUE obj, int depth, Out out, bool as_ok) {
     } else if (d == (double)(long long int)d) {
         cnt = snprintf(buf, sizeof(buf), "%.1f", d);
     } else if (0 == out->opts->float_prec) {
-        volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
+        volatile VALUE rstr = oj_safe_string_convert(obj);
 
         cnt = (int)RSTRING_LEN(rstr);
         if ((int)sizeof(buf) <= cnt) {
@@ -1191,7 +1191,7 @@ int oj_dump_float_printf(char *buf, size_t blen, VALUE obj, double d, const char
     // Round off issues at 16 significant digits so check for obvious ones of
     // 0001 and 9999.
     if (17 <= cnt && (0 == strcmp("0001", buf + cnt - 4) || 0 == strcmp("9999", buf + cnt - 4))) {
-        volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
+        volatile VALUE rstr = oj_safe_string_convert(obj);
 
         strcpy(buf, RSTRING_PTR(rstr));
         cnt = (int)RSTRING_LEN(rstr);

@@ -295,7 +295,7 @@ datetime_alt(VALUE obj, int depth, Out out) {
     attrs[3].value = rb_funcall(obj, hour_id, 0);
     attrs[4].value = rb_funcall(obj, min_id, 0);
     attrs[5].value = rb_funcall(obj, sec_id, 0);
-    attrs[6].value = rb_funcall(rb_funcall(obj, offset_id, 0), oj_to_s_id, 0);
+    attrs[6].value = oj_safe_string_convert(rb_funcall(obj, offset_id, 0));
     attrs[7].value = rb_funcall(obj, start_id, 0);
 
     oj_code_attrs(obj, attrs, depth, out, true);
@@ -602,7 +602,7 @@ dump_float(VALUE obj, int depth, Out out, bool as_ok) {
     } else if (oj_rails_float_opt) {
 	cnt = oj_dump_float_printf(buf, sizeof(buf), obj, d, "%0.16g");
     } else {
-	volatile VALUE	rstr = rb_funcall(obj, oj_to_s_id, 0);
+	volatile VALUE	rstr = oj_safe_string_convert(obj);
 
 	strcpy(buf, RSTRING_PTR(rstr));
 	cnt = (int)RSTRING_LEN(rstr);
@@ -644,7 +644,7 @@ hash_cb(VALUE key, VALUE value, VALUE ov) {
 	break;
     default:
 	/*rb_raise(rb_eTypeError, "In :compat mode all Hash keys must be Strings or Symbols, not %s.\n", rb_class2name(rb_obj_class(key)));*/
-	oj_dump_str(rb_funcall(key, oj_to_s_id, 0), 0, out, false);
+	oj_dump_str(oj_safe_string_convert(key), 0, out, false);
 	break;
     }
     if (!out->opts->dump_opts.use) {
@@ -829,7 +829,7 @@ dump_bignum(VALUE obj, int depth, Out out, bool as_ok) {
     if (use_bignum_alt) {
 	rs = rb_big2str(obj, 10);
     } else {
-	rs = rb_funcall(obj, oj_to_s_id, 0);
+	rs = oj_safe_string_convert(obj);
     }
     rb_check_type(rs, T_STRING);
     cnt = (int)RSTRING_LEN(rs);

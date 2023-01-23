@@ -379,6 +379,12 @@ extern bool oj_use_hash_alt;
 extern bool oj_use_array_alt;
 extern bool string_writer_optimized;
 
+static inline VALUE oj_safe_string_convert(VALUE obj) {
+    VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
+    StringValue(rstr);
+    return rstr;
+}
+
 #define APPEND_CHARS(buffer, chars, size) \
     { \
         memcpy(buffer, chars, size); \

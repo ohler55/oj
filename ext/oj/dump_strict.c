@@ -92,7 +92,7 @@ static void dump_float(VALUE obj, int depth, Out out, bool as_ok) {
         } else if (d == (double)(long long int)d) {
             cnt = snprintf(buf, sizeof(buf), "%.1f", d);
         } else if (0 == out->opts->float_prec) {
-            volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
+            volatile VALUE rstr = oj_safe_string_convert(obj);
 
             cnt = (int)RSTRING_LEN(rstr);
             if ((int)sizeof(buf) <= cnt) {
@@ -290,7 +290,7 @@ static void dump_data_strict(VALUE obj, int depth, Out out, bool as_ok) {
     VALUE clas = rb_obj_class(obj);
 
     if (oj_bigdecimal_class == clas) {
-        volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
+        volatile VALUE rstr = oj_safe_string_convert(obj);
 
         oj_dump_raw(RSTRING_PTR(rstr), (int)RSTRING_LEN(rstr), out);
     } else {
@@ -302,7 +302,7 @@ static void dump_data_null(VALUE obj, int depth, Out out, bool as_ok) {
     VALUE clas = rb_obj_class(obj);
 
     if (oj_bigdecimal_class == clas) {
-        volatile VALUE rstr = rb_funcall(obj, oj_to_s_id, 0);
+        volatile VALUE rstr = oj_safe_string_convert(obj);
 
         oj_dump_raw(RSTRING_PTR(rstr), (int)RSTRING_LEN(rstr), out);
     } else {
