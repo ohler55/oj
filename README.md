@@ -1,6 +1,6 @@
 # [![{}j](http://www.ohler.com/dev/images/oj_comet_64.svg)](http://www.ohler.com/oj) gem
 
-[![Build Status](https://img.shields.io/github/workflow/status/ohler55/oj/CI?logo=github)](https://github.com/ohler55/oj/actions/workflows/CI.yml)
+[![CI](https://github.com/ohler55/oj/actions/workflows/CI.yml/badge.svg)](https://github.com/ohler55/oj/actions/workflows/CI.yml)
 ![Gem](https://img.shields.io/gem/v/oj.svg)
 ![Gem](https://img.shields.io/gem/dt/oj.svg)
 [![SemVer compatibility](https://api.dependabot.com/badges/compatibility_score?dependency-name=oj&package-manager=bundler&version-scheme=semver)](https://dependabot.com/compatibility-score.html?dependency-name=oj&package-manager=bundler&version-scheme=semver)
