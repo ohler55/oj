@@ -1,8 +1,10 @@
 # CHANGELOG
 
-## 3.14.0 - unreleased
+## 3.14.0 - 2022-01-30
 
 - Tracing is now a compile time option giving a 15 to 20% performance boost.
+
+- Some cleanup in teh fast parser.
 
 ## 3.13.23 - 2022-11-06
 
