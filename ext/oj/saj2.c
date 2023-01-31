@@ -578,7 +578,11 @@ void oj_init_saj(ojParser p, Saj d) {
     d->klen      = 256;
     d->keys      = ALLOC_N(VALUE, d->klen);
     d->tail      = d->keys;
+    d->handler   = Qnil;
     d->str_cache = cache_create(0, form_str, true, false);
+    d->cache_str = 16;
+    d->cache_keys = true;
+    d->thread_safe = false;
 
     p->ctx = (void *)d;
     reset(p);

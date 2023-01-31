@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.14.1 - unreleased
+
+- Fixed issue with uninitialized handler for Oj::Parser::Saj.
+
 ## 3.14.0 - 2022-01-30
 
 - Tracing is now a compile time option giving a 15 to 20% performance boost.
