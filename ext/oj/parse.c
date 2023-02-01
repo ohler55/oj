@@ -236,7 +236,7 @@ static void read_escaped_str(ParseInfo pi, const char *start) {
 
     for (s = pi->cur; '"' != *s;) {
         const char *scanned = scan_func(s, pi->end);
-        if (scanned >= pi->end) {
+        if (scanned >= pi->end || '\0' == *s) {
             oj_set_error_at(pi,
                             oj_parse_error_class,
                             __FILE__,
@@ -245,7 +245,6 @@ static void read_escaped_str(ParseInfo pi, const char *start) {
             buf_cleanup(&buf);
             return;
         }
-
         buf_append_string(&buf, s, (size_t)(scanned - s));
         s = scanned;
 
