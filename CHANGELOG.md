@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 3.14.1 - unreleased
+## 3.14.1 - 2023-02-01
 
 - Fixed issue with uninitialized handler for Oj::Parser::Saj.
 
