@@ -308,7 +308,7 @@ static int hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, vol
                 oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "Invalid struct data");
                 return 1;
             }
-            e1 = *RARRAY_PTR(value);
+            e1 = *RARRAY_CONST_PTR(value);
             // check for anonymous Struct
             if (T_ARRAY == rb_type(e1)) {
                 VALUE          args[1024];
@@ -322,10 +322,10 @@ static int hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, vol
                 sc = rb_funcall2(rb_cStruct, oj_new_id, cnt, args);
             } else {
                 // If struct is not defined then we let this fail and raise an exception.
-                sc = oj_name2struct(pi, *RARRAY_PTR(value), rb_eArgError);
+                sc = oj_name2struct(pi, *RARRAY_CONST_PTR(value), rb_eArgError);
             }
             if (sc == rb_cRange) {
-              parent->val = rb_class_new_instance(len - 1, RARRAY_PTR(value) + 1, rb_cRange);
+              parent->val = rb_class_new_instance(len - 1, RARRAY_CONST_PTR(value) + 1, rb_cRange);
             } else {
                 // Create a properly initialized struct instance without calling the initialize method.
                 parent->val = rb_obj_alloc(sc);
@@ -346,7 +346,7 @@ static int hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, vol
                     int i;
 
                     for (i = 0; i < len - 1; i++) {
-                        rb_struct_aset(parent->val, INT2FIX(i), RARRAY_PTR(value)[i + 1]);
+                        rb_struct_aset(parent->val, INT2FIX(i), RARRAY_CONST_PTR(value)[i + 1]);
                     }
                 }
             }
@@ -359,7 +359,7 @@ static int hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, vol
                 return 1;
             }
             parent->val = rb_hash_new();
-            a           = RARRAY_PTR(value);
+            a           = RARRAY_CONST_PTR(value);
             rb_hash_aset(parent->val, *a, a[1]);
 
             return 1;
@@ -546,7 +546,7 @@ WHICH_TYPE:
         } else {
             if (3 <= klen && '^' == *key && '#' == key[1] && T_ARRAY == rb_type(value)) {
                 long            len = RARRAY_LEN(value);
-                volatile VALUE *a   = RARRAY_PTR(value);
+                volatile VALUE *a   = RARRAY_CONST_PTR(value);
 
                 if (2 != len) {
                     oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "invalid hash pair");
