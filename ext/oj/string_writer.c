@@ -1,6 +1,7 @@
 // Copyright (c) 2012, 2017 Peter Ohler. All rights reserved.
 // Licensed under the MIT License. See LICENSE file in the project root for license details.
 
+#include "mem.h"
 #include "dump.h"
 #include "encode.h"
 
@@ -20,7 +21,7 @@ static void push_type(StrWriter sw, DumpType type) {
     if (sw->types_end <= sw->types + sw->depth + 1) {
         size_t size = (sw->types_end - sw->types) * 2;
 
-        REALLOC_N(sw->types, char, size);
+        OJ_R_REALLOC_N(sw->types, char, size);
         sw->types_end = sw->types + size;
     }
     sw->depth++;
@@ -43,7 +44,7 @@ static void maybe_comma(StrWriter sw) {
 void oj_str_writer_init(StrWriter sw, int buf_size) {
     sw->opts       = oj_default_options;
     sw->depth      = 0;
-    sw->types      = ALLOC_N(char, 256);
+    sw->types      = OJ_R_ALLOC_N(char, 256);
     sw->types_end  = sw->types + 256;
     *sw->types     = '\0';
     sw->keyWritten = 0;
@@ -55,7 +56,7 @@ void oj_str_writer_init(StrWriter sw, int buf_size) {
     }
     // Must be allocated. Using the out.stack_buffer results in double frees
     // and I haven't figured out why yet.
-    sw->out.buf        = ALLOC_N(char, buf_size);
+    sw->out.buf        = OJ_R_ALLOC_N(char, buf_size);
     sw->out.cur        = sw->out.buf;
     sw->out.end        = sw->out.buf + buf_size - BUFFER_EXTRA;
     sw->out.allocated  = true;
@@ -256,7 +257,7 @@ static void str_writer_free(void *ptr) {
  * - *options* [_Hash_] formatting options
  */
 static VALUE str_writer_new(int argc, VALUE *argv, VALUE self) {
-    StrWriter sw = ALLOC(struct _strWriter);
+    StrWriter sw = OJ_R_ALLOC(struct _strWriter);
 
     oj_str_writer_init(sw, 0);
     if (1 == argc) {

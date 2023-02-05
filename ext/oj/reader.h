@@ -4,6 +4,8 @@
 #ifndef OJ_READER_H
 #define OJ_READER_H
 
+#include "mem.h"
+
 typedef struct _reader {
     char  base[0x00001000];
     char *head;
@@ -114,7 +116,7 @@ static inline int reader_expect(Reader reader, const char *s) {
 
 static inline void reader_cleanup(Reader reader) {
     if (reader->free_head && 0 != reader->head) {
-        xfree((char *)reader->head);
+        OJ_R_FREE((char *)reader->head);
         reader->head      = 0;
         reader->free_head = 0;
     }

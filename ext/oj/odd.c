@@ -1,6 +1,7 @@
 // Copyright (c) 2011 Peter Ohler. All rights reserved.
 // Licensed under the MIT License. See LICENSE file in the project root for license details.
 
+#include "mem.h"
 #include "odd.h"
 
 #include <string.h>
@@ -68,7 +69,7 @@ void print_all_odds(const char *label) {
 }
 
 static Odd odd_create(void) {
-    Odd odd = ALLOC(struct _odd);
+    Odd odd = OJ_R_ALLOC(struct _odd);
 
     memset(odd, 0, sizeof(struct _odd));
     odd->next = odds;
@@ -172,7 +173,7 @@ Odd oj_get_oddc(const char *classname, size_t len) {
 }
 
 OddArgs oj_odd_alloc_args(Odd odd) {
-    OddArgs oa = ALLOC_N(struct _oddArgs, 1);
+    OddArgs oa = OJ_R_ALLOC_N(struct _oddArgs, 1);
     VALUE  *a;
     int     i;
 
@@ -184,7 +185,7 @@ OddArgs oj_odd_alloc_args(Odd odd) {
 }
 
 void oj_odd_free(OddArgs args) {
-    xfree(args);
+    OJ_R_FREE(args);
 }
 
 int oj_odd_set_arg(OddArgs args, const char *key, size_t klen, VALUE value) {

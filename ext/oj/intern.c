@@ -8,6 +8,8 @@
 #if HAVE_PTHREAD_MUTEX_INIT
 #include <pthread.h>
 #endif
+
+#include "mem.h"
 #include "cache.h"
 #include "parse.h"
 
@@ -55,7 +57,7 @@ static VALUE form_attr(const char *str, size_t len) {
     char buf[256];
 
     if (sizeof(buf) - 2 <= len) {
-        char *b = ALLOC_N(char, len + 2);
+        char *b = OJ_R_ALLOC_N(char, len + 2);
         ID    id;
 
         if ('~' == *str) {
@@ -68,7 +70,7 @@ static VALUE form_attr(const char *str, size_t len) {
 	    b[len + 1] = '\0';
 	}
         id = rb_intern3(buf, len + 1, oj_utf8_encoding);
-        xfree(b);
+        OJ_R_FREE(b);
         return id;
     }
     if ('~' == *str) {
@@ -246,7 +248,7 @@ VALUE oj_class_intern(const char *key, size_t len, bool safe, ParseInfo pi, int 
                 }
                 bucket = b;
             }
-            b            = ALLOC(struct _keyVal);
+            b            = OJ_R_ALLOC(struct _keyVal);
             b->next      = NULL;
             bucket->next = b;
             bucket       = b;
@@ -267,7 +269,7 @@ VALUE oj_class_intern(const char *key, size_t len, bool safe, ParseInfo pi, int 
                 }
                 bucket = b;
             }
-            b            = ALLOC(struct _keyVal);
+            b            = OJ_R_ALLOC(struct _keyVal);
             b->next      = NULL;
             bucket->next = b;
             bucket       = b;
@@ -281,7 +283,7 @@ VALUE oj_class_intern(const char *key, size_t len, bool safe, ParseInfo pi, int 
 }
 
 char *oj_strndup(const char *s, size_t len) {
-    char *d = ALLOC_N(char, len + 1);
+    char *d = OJ_R_ALLOC_N(char, len + 1);
 
     memcpy(d, s, len);
     d[len] = '\0';

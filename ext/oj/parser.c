@@ -1205,7 +1205,7 @@ static int opt_cb(VALUE rkey, VALUE value, VALUE ptr) {
  * Oj::Parser.new(:usual, cache_keys: true).
  */
 static VALUE parser_new(int argc, VALUE *argv, VALUE self) {
-    ojParser p = ALLOC(struct _ojParser);
+    ojParser p = OJ_R_ALLOC(struct _ojParser);
 
 #if HAVE_RB_EXT_RACTOR_SAFE
     // This doesn't seem to do anything.
@@ -1264,7 +1264,7 @@ static VALUE parser_new(int argc, VALUE *argv, VALUE self) {
 // used. Optionally oj_parser_set_options can be called if the options are not
 // set directly.
 VALUE oj_parser_new(void) {
-    ojParser p = ALLOC(struct _ojParser);
+    ojParser p = OJ_R_ALLOC(struct _ojParser);
 
 #if HAVE_RB_EXT_RACTOR_SAFE
     // This doesn't seem to do anything.
@@ -1499,7 +1499,7 @@ static VALUE usual_parser = Qundef;
  */
 static VALUE parser_usual(VALUE self) {
     if (Qundef == usual_parser) {
-        ojParser p = ALLOC(struct _ojParser);
+        ojParser p = OJ_R_ALLOC(struct _ojParser);
 
         memset(p, 0, sizeof(struct _ojParser));
         buf_init(&p->key);
@@ -1522,7 +1522,7 @@ static VALUE saj_parser = Qundef;
  */
 static VALUE parser_saj(VALUE self) {
     if (Qundef == saj_parser) {
-        ojParser p = ALLOC(struct _ojParser);
+        ojParser p = OJ_R_ALLOC(struct _ojParser);
 
         memset(p, 0, sizeof(struct _ojParser));
         buf_init(&p->key);
@@ -1544,7 +1544,7 @@ static VALUE validate_parser = Qundef;
  */
 static VALUE parser_validate(VALUE self) {
     if (Qundef == validate_parser) {
-        ojParser p = ALLOC(struct _ojParser);
+        ojParser p = OJ_R_ALLOC(struct _ojParser);
 
         memset(p, 0, sizeof(struct _ojParser));
         buf_init(&p->key);

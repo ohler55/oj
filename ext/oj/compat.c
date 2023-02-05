@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 
+#include "mem.h"
 #include "encode.h"
 #include "err.h"
 #include "intern.h"
@@ -85,7 +86,7 @@ static void end_hash(struct _parseInfo *pi) {
             }
         }
         if (0 != parent->classname) {
-            xfree((char *)parent->classname);
+            OJ_R_FREE((char *)parent->classname);
             parent->classname = 0;
         }
     }

@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "mem.h"
 #include "ruby.h"
 
 #define BITS 4
@@ -32,7 +33,7 @@ void oj_cache8_new(Cache8 *cache) {
     Bucket *b;
     int     i;
 
-    *cache = ALLOC(struct _cache8);
+    *cache = OJ_R_ALLOC(struct _cache8);
     for (i = SLOT_CNT, b = (*cache)->buckets; 0 < i; i--, b++) {
         b->value = 0;
     }
@@ -51,7 +52,7 @@ static void cache8_delete(Cache8 cache, int depth) {
             }
         }
     }
-    xfree(cache);
+    OJ_R_FREE(cache);
 }
 
 slot_t oj_cache8_get(Cache8 cache, sid_t key, slot_t **slot) {

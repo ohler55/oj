@@ -352,7 +352,7 @@ static int hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, vol
             }
             return 1;
         } else if (3 <= klen && '#' == key[1]) {
-            volatile VALUE *a;
+            volatile const VALUE *a;
 
             if (2 != len) {
                 oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "invalid hash pair");
@@ -546,7 +546,7 @@ WHICH_TYPE:
         } else {
             if (3 <= klen && '^' == *key && '#' == key[1] && T_ARRAY == rb_type(value)) {
                 long            len = RARRAY_LEN(value);
-                volatile VALUE *a   = RARRAY_CONST_PTR(value);
+                volatile const VALUE *a   = RARRAY_CONST_PTR(value);
 
                 if (2 != len) {
                     oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "invalid hash pair");

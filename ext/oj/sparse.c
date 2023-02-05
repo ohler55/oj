@@ -7,6 +7,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "mem.h"
 #include "buf.h"
 #include "encode.h"
 #include "intern.h"  // for oj_strndup()
@@ -71,7 +72,7 @@ static void add_value(ParseInfo pi, VALUE rval) {
         case NEXT_HASH_VALUE:
             pi->hash_set_value(pi, parent, rval);
             if (parent->kalloc) {
-                xfree((char *)parent->key);
+                OJ_R_FREE((char *)parent->key);
             }
             parent->key    = 0;
             parent->kalloc = 0;
@@ -110,7 +111,7 @@ static void add_num_value(ParseInfo pi, NumInfo ni) {
         case NEXT_HASH_VALUE:
             pi->hash_set_num(pi, parent, ni);
             if (parent->kalloc) {
-                xfree((char *)parent->key);
+                OJ_R_FREE((char *)parent->key);
             }
             parent->key    = 0;
             parent->kalloc = 0;
@@ -315,7 +316,7 @@ static void read_escaped_str(ParseInfo pi) {
         case NEXT_HASH_VALUE:
             pi->hash_set_cstr(pi, parent, buf.head, buf_len(&buf), pi->rd.str);
             if (parent->kalloc) {
-                xfree((char *)parent->key);
+                OJ_R_FREE((char *)parent->key);
             }
             parent->key    = 0;
             parent->kalloc = 0;
@@ -386,7 +387,7 @@ static void read_str(ParseInfo pi) {
         case NEXT_HASH_VALUE:
             pi->hash_set_cstr(pi, parent, pi->rd.str, pi->rd.tail - pi->rd.str - 1, pi->rd.str);
             if (parent->kalloc) {
-                xfree((char *)parent->key);
+                OJ_R_FREE((char *)parent->key);
             }
             parent->key    = 0;
             parent->kalloc = 0;

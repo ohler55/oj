@@ -14,6 +14,7 @@
 // Workaround in case INFINITY is not defined in math.h or if the OS is CentOS
 #define OJ_INFINITY (1.0 / 0.0)
 
+#include "mem.h"
 #include "encode.h"
 #include "oj.h"
 
@@ -631,7 +632,7 @@ oj_saj_parse(int argc, VALUE *argv, VALUE self) {
     if (rb_type(input) == T_STRING) {
         // the json string gets modified so make a copy of it
         len  = RSTRING_LEN(input) + 1;
-        json = ALLOC_N(char, len);
+        json = OJ_R_ALLOC_N(char, len);
         strcpy(json, StringValuePtr(input));
     } else {
         VALUE          clas = rb_obj_class(input);
@@ -640,7 +641,7 @@ oj_saj_parse(int argc, VALUE *argv, VALUE self) {
         if (oj_stringio_class == clas) {
             s    = rb_funcall2(input, oj_string_id, 0, 0);
             len  = RSTRING_LEN(s) + 1;
-            json = ALLOC_N(char, len);
+            json = OJ_R_ALLOC_N(char, len);
             strcpy(json, rb_string_value_cstr((VALUE *)&s));
 #if !IS_WINDOWS
         } else if (rb_cFile == clas && 0 == FIX2INT(rb_funcall(input, oj_pos_id, 0))) {
@@ -649,7 +650,7 @@ oj_saj_parse(int argc, VALUE *argv, VALUE self) {
 
             len = lseek(fd, 0, SEEK_END);
             lseek(fd, 0, SEEK_SET);
-            json = ALLOC_N(char, len + 1);
+            json = OJ_R_ALLOC_N(char, len + 1);
             if (0 >= (cnt = read(fd, json, len)) || cnt != (ssize_t)len) {
                 rb_raise(rb_eIOError, "failed to read from IO Object.");
             }
@@ -658,14 +659,14 @@ oj_saj_parse(int argc, VALUE *argv, VALUE self) {
         } else if (rb_respond_to(input, oj_read_id)) {
             s    = rb_funcall2(input, oj_read_id, 0, 0);
             len  = RSTRING_LEN(s) + 1;
-            json = ALLOC_N(char, len);
+            json = OJ_R_ALLOC_N(char, len);
             strcpy(json, rb_string_value_cstr((VALUE *)&s));
         } else {
             rb_raise(rb_eArgError, "saj_parse() expected a String or IO Object.");
         }
     }
     saj_parse(*argv, json);
-    xfree(json);
+    OJ_R_FREE(json);
 
     return Qnil;
 }
