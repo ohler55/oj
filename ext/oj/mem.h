@@ -44,7 +44,7 @@ extern char*	oj_mem_strdup(const char *str, const char *file, int line);
 #define OJ_R_REALLOC_N(ptr, type, n) RB_REALLOC_N(ptr, type, n)
 #define OJ_R_FREE(ptr) xfree(ptr)
 
-#define OJ_STRDUP(str) oj_strdup(str)
+#define OJ_STRDUP(str) strdup(str)
 
 #endif
 
