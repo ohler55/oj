@@ -1160,7 +1160,7 @@ static VALUE load_file(int argc, VALUE *argv, VALUE self) {
         WCHAR *wide_path;
         wide_path = rb_w32_mbstr_to_wstr(CP_UTF8, path, -1, NULL);
         fd = rb_w32_wopen(wide_path, O_RDONLY);
-        free(wide_path);
+        OJ_FREE(wide_path);
     }
 #else
     fd = open(path, O_RDONLY);

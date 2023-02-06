@@ -1148,7 +1148,7 @@ static void parser_free(void *ptr) {
     if (NULL != p->free) {
         p->free(p);
     }
-    xfree(ptr);
+    OJ_R_FREE(ptr);
 }
 
 static void parser_mark(void *ptr) {

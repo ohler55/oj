@@ -81,7 +81,7 @@ int oj_rxclass_append(RxClass rc, const char *expr, VALUE clas) {
     rxc->rrx = Qnil;
     if (0 != (err = regcomp(&rxc->rx, expr, flags))) {
         regerror(err, &rxc->rx, rc->err, sizeof(rc->err));
-        free(rxc);
+        OJ_FREE(rxc);
         return err;
     }
 #endif

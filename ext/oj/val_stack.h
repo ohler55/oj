@@ -63,7 +63,7 @@ inline static int stack_empty(ValStack stack) {
 
 inline static void stack_cleanup(ValStack stack) {
     if (stack->base != stack->head) {
-        xfree(stack->head);
+        OJ_R_FREE(stack->head);
         stack->head = NULL;
     }
 }

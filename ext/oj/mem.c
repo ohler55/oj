@@ -61,6 +61,60 @@ oj_malloc(size_t size, const char *file, int line) {
 }
 
 void*
+oj_realloc(void *orig, size_t size, const char *file, int line) {
+    void	*ptr = realloc(orig, size + sizeof(mem_pad));
+    Rec		r;
+
+    if (NULL != ptr) {
+	strcpy(((char*)ptr) + size, mem_pad);
+	pthread_mutex_lock(&lock);
+	for (r = recs; NULL != r; r = r->next) {
+	    if (orig == r->ptr) {
+		r->ptr = ptr;
+		r->size = size;
+		r->file = file;
+		r->line = line;
+                r->ruby = false;
+		break;
+	    }
+	}
+	pthread_mutex_unlock(&lock);
+	if (NULL == r) {
+	    printf("Realloc at %s:%d (%p) not allocated.\n", file, line, orig);
+	}
+    }
+    return ptr;
+}
+
+void*
+oj_calloc(size_t count, size_t size, const char *file, int line) {
+    void	*ptr;
+
+    size *= count;
+    if (NULL != (ptr = malloc(size + sizeof(mem_pad)))) {
+	Rec	r = (Rec)malloc(sizeof(struct _rec));
+
+	if (NULL != r) {
+	    memset(ptr, 0, size);
+	    strcpy(((char*)ptr) + size, mem_pad);
+	    r->ptr = ptr;
+	    r->size = size;
+	    r->file = file;
+	    r->line = line;
+            r->ruby = false;
+	    pthread_mutex_lock(&lock);
+	    r->next = recs;
+	    recs = r;
+	    pthread_mutex_unlock(&lock);
+	} else {
+	    free(ptr);
+	    ptr = NULL;
+	}
+    }
+    return ptr;
+}
+
+void*
 oj_r_alloc(size_t size, const char *file, int line) {
     void	*ptr = ruby_xmalloc(size + sizeof(mem_pad));
 
@@ -100,6 +154,7 @@ oj_r_realloc(void *orig, size_t size, const char *file, int line) {
 		r->size = size;
 		r->file = file;
 		r->line = line;
+                r->ruby = true;
 		break;
 	    }
 	}
@@ -175,36 +230,8 @@ oj_free(void *ptr, const char *file, int line) {
     free(ptr);
 }
 
-#if 0
-void*
-oj_calloc(size_t count, size_t size, const char *file, int line) {
-    void	*ptr;
-
-    size *= count;
-    if (NULL != (ptr = malloc(size + sizeof(mem_pad)))) {
-	Rec	r = (Rec)malloc(sizeof(struct _rec));
-
-	if (NULL != r) {
-	    memset(ptr, 0, size);
-	    strcpy(((char*)ptr) + size, mem_pad);
-	    r->ptr = ptr;
-	    r->size = size;
-	    r->file = file;
-	    r->line = line;
-	    pthread_mutex_lock(&lock);
-	    r->next = recs;
-	    recs = r;
-	    pthread_mutex_unlock(&lock);
-	} else {
-	    free(ptr);
-	    ptr = NULL;
-	}
-    }
-    return ptr;
-}
-
 char*
-oj_strdup(const char *str, const char *file, int line) {
+oj_mem_strdup(const char *str, const char *file, int line) {
     size_t	size = strlen(str) + 1;
     char	*ptr = (char*)malloc(size + sizeof(mem_pad));
 
@@ -218,6 +245,7 @@ oj_strdup(const char *str, const char *file, int line) {
 	    r->size = size;
 	    r->file = file;
 	    r->line = line;
+            r->ruby = false;
 	    pthread_mutex_lock(&lock);
 	    r->next = recs;
 	    recs = r;
@@ -230,70 +258,6 @@ oj_strdup(const char *str, const char *file, int line) {
     return ptr;
 }
 
-char*
-oj_strndup(const char *str, size_t len, const char *file, int line) {
-    size_t	size = len + 1;
-    char	*ptr = (char*)malloc(size + sizeof(mem_pad));
-
-    if (NULL != ptr) {
-	Rec	r = (Rec)malloc(sizeof(struct _rec));
-
-	if (NULL != r) {
-	    memcpy(ptr, str, len);
-	    ptr[len] = '\0';
-	    strcpy(((char*)ptr) + size, mem_pad);
-	    r->ptr = (void*)ptr;
-	    r->size = size;
-	    r->file = file;
-	    r->line = line;
-	    pthread_mutex_lock(&lock);
-	    r->next = recs;
-	    recs = r;
-	    pthread_mutex_unlock(&lock);
-	} else {
-	    free(ptr);
-	    ptr = NULL;
-	}
-    }
-    return ptr;
-}
-
-void
-oj_mem_check(void *ptr, const char *file, int line) {
-    if (NULL != ptr) {
-	Rec	r = NULL;
-
-	pthread_mutex_lock(&lock);
-	for (r = recs; NULL != r; r = r->next) {
-	    if (ptr == r->ptr) {
-		break;
-	    }
-	}
-	pthread_mutex_unlock(&lock);
-	if (NULL == r) {
-	    printf("Memory check at %s:%d (%p) not allocated or already freed.\n", file, line, ptr);
-	} else {
-	    char	*pad = (char*)r->ptr + r->size;
-
-	    if (0 != strcmp(mem_pad, pad)) {
-		uint8_t	*p;
-		uint8_t	*end = (uint8_t*)pad + sizeof(mem_pad);
-
-		printf("Check - Memory at %s:%d (%p) write outside allocated.\n", file, line, ptr);
-		for (p = (uint8_t*)pad; p < end; p++) {
-		    if (0x20 < *p && *p < 0x7f) {
-			printf("%c  ", *p);
-		    } else {
-			printf("%02x ", *(uint8_t*)p);
-		    }
-		}
-		printf("\n");
-	    }
-	}
-    }
-}
-
-#endif // 0
 #endif
 
 #ifdef MEM_DEBUG
@@ -348,12 +312,13 @@ print_stats() {
     pthread_mutex_unlock(&lock);
     printf("--------------------------------------------------------------------------------\n");
 }
+
 #endif
 
 void
 oj_mem_report() {
 #ifdef MEM_DEBUG
-    rb_gc_start();
+    rb_gc();
     print_stats();
 #endif
 }

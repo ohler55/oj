@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "mem.h"
 #include "code.h"
 #include "dump.h"
 #include "encode.h"
@@ -437,7 +438,7 @@ static void dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
                 ID    i;
 
                 if (sizeof(nbuf) <= nlen) {
-                    if (NULL == (n2 = strdup(name))) {
+                    if (NULL == (n2 = OJ_STRDUP(name))) {
                         rb_raise(rb_eNoMemError, "for attribute name.");
                     }
                 } else {
@@ -454,7 +455,7 @@ static void dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
                 i = rb_intern(n);
                 v = rb_funcall(v, i, 0);
                 if (nbuf != n2) {
-                    free(n2);
+                    OJ_FREE(n2);
                 }
             }
             fill_indent(out, d2);

@@ -236,8 +236,8 @@ static void str_writer_free(void *ptr) {
 
     oj_out_free(&sw->out);
 
-    xfree(sw->types);
-    xfree(ptr);
+    OJ_R_FREE(sw->types);
+    OJ_R_FREE(ptr);
 }
 
 /* Document-method: new
