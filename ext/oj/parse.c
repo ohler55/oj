@@ -237,8 +237,8 @@ static void read_escaped_str(ParseInfo pi, const char *start) {
 
     for (s = pi->cur; '"' != *s;) {
         const char *scanned = scan_func(s, pi->end);
-        // TBD if (scanned >= pi->end || '\0' == *s) {
-        if (scanned >= pi->end) {
+        if (scanned >= pi->end || '\0' == *scanned) {
+            //if (scanned >= pi->end) {
             oj_set_error_at(pi,
                             oj_parse_error_class,
                             __FILE__,
