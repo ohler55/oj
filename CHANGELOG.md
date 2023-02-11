@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.14.2 - 2023-02-10
+
+- Fixed check for \0 in strings.
+
 ## 3.14.1 - 2023-02-01
 
 - Fixed issue with uninitialized handler for Oj::Parser::Saj.
