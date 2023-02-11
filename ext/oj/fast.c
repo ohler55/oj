@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "mem.h"
 #include "encode.h"
 #include "oj.h"
 #include "dump.h"
@@ -160,7 +161,7 @@ inline static Leaf leaf_new(Doc doc, int type) {
     Leaf leaf;
 
     if (0 == doc->batches || BATCH_SIZE == doc->batches->next_avail) {
-        Batch b = ALLOC(struct _batch);
+        Batch b = OJ_R_ALLOC(struct _batch);
 
         // Initializes all leaves with a NO_VAL value_type
         memset(b, 0, sizeof(struct _batch));
@@ -648,11 +649,11 @@ static void doc_free(Doc doc) {
         while (0 != (b = doc->batches)) {
             doc->batches = doc->batches->next;
             if (&doc->batch0 != b) {
-                xfree(b);
+                OJ_R_FREE(b);
             }
         }
-        xfree(doc->json);
-        xfree(doc);
+        OJ_R_FREE(doc->json);
+        OJ_R_FREE(doc);
     }
 }
 
@@ -756,7 +757,7 @@ static VALUE parse_json(VALUE clas, char *json, bool given) {
     int               ex = 0;
     volatile VALUE    self;
 
-    doc = RB_ALLOC_N(struct _doc, 1);
+    doc = OJ_R_ALLOC_N(struct _doc, 1);
 
     // skip UTF-8 BOM if present
     if (0xEF == (uint8_t)*json && 0xBB == (uint8_t)json[1] && 0xBF == (uint8_t)json[2]) {
@@ -793,7 +794,7 @@ static VALUE parse_json(VALUE clas, char *json, bool given) {
         /*
         doc_free(pi.doc);
         if (0 != ex) {  // will jump so caller will not free
-            xfree(json);
+            OJ_R_FREE(json);
         }
         */
     } else {
@@ -1092,14 +1093,14 @@ static VALUE doc_open(VALUE clas, VALUE str) {
 
     Check_Type(str, T_STRING);
     len      = (int)RSTRING_LEN(str) + 1;
-    json     = RB_ALLOC_N(char, len);
+    json     = OJ_R_ALLOC_N(char, len);
 
     memcpy(json, StringValuePtr(str), len);
     obj = parse_json(clas, json, given);
     // TBD is this needed
     /*
     if (given) {
-        xfree(json);
+        OJ_R_FREE(json);
     }
     */
     return obj;
@@ -1139,7 +1140,7 @@ static VALUE doc_open_file(VALUE clas, VALUE filename) {
     }
     fseek(f, 0, SEEK_END);
     len      = ftell(f);
-    json = RB_ALLOC_N(char, len + 1);
+    json = OJ_R_ALLOC_N(char, len + 1);
 
     fseek(f, 0, SEEK_SET);
     if (len != fread(json, 1, len, f)) {
@@ -1155,7 +1156,7 @@ static VALUE doc_open_file(VALUE clas, VALUE filename) {
     // TBD is this needed
     /*
     if (given) {
-        xfree(json);
+        OJ_R_FREE(json);
     }
     */
     return obj;

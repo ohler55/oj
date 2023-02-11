@@ -1,12 +1,13 @@
 // Copyright (c) 2012 Peter Ohler. All rights reserved.
 // Licensed under the MIT License. See LICENSE file in the project root for license details.
 
+#include "mem.h"
 #include "circarray.h"
 
 CircArray oj_circ_array_new(void) {
     CircArray ca;
 
-    if (0 == (ca = ALLOC(struct _circArray))) {
+    if (0 == (ca = OJ_R_ALLOC(struct _circArray))) {
         rb_raise(rb_eNoMemError, "not enough memory\n");
     }
     ca->objs = ca->obj_array;
@@ -18,9 +19,9 @@ CircArray oj_circ_array_new(void) {
 
 void oj_circ_array_free(CircArray ca) {
     if (ca->objs != ca->obj_array) {
-        xfree(ca->objs);
+        OJ_R_FREE(ca->objs);
     }
-    xfree(ca);
+    OJ_R_FREE(ca);
 }
 
 void oj_circ_array_set(CircArray ca, VALUE obj, unsigned long id) {
@@ -31,12 +32,12 @@ void oj_circ_array_set(CircArray ca, VALUE obj, unsigned long id) {
             unsigned long cnt = id + 512;
 
             if (ca->objs == ca->obj_array) {
-                if (0 == (ca->objs = ALLOC_N(VALUE, cnt))) {
+                if (0 == (ca->objs = OJ_R_ALLOC_N(VALUE, cnt))) {
                     rb_raise(rb_eNoMemError, "not enough memory\n");
                 }
                 memcpy(ca->objs, ca->obj_array, sizeof(VALUE) * ca->cnt);
             } else {
-                REALLOC_N(ca->objs, VALUE, cnt);
+                OJ_R_REALLOC_N(ca->objs, VALUE, cnt);
             }
             ca->size = cnt;
         }

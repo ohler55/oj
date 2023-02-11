@@ -181,6 +181,7 @@ perf = Perf.new()
 perf.add('Oj::Parser.usual', '') { p_usual.parse($obj_json) }
 perf.add('Oj::compat_load', '') { Oj.compat_load($obj_json) }
 perf.add('JSON::Ext', 'parse') { JSON.load($obj_json) }
+
 perf.run($iter)
 
 unless $failed.empty?

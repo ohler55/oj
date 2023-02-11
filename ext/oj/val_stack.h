@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 
+#include "mem.h"
 #include "odd.h"
 #include "ruby.h"
 #ifdef HAVE_PTHREAD_MUTEX_INIT
@@ -62,7 +63,7 @@ inline static int stack_empty(ValStack stack) {
 
 inline static void stack_cleanup(ValStack stack) {
     if (stack->base != stack->head) {
-        xfree(stack->head);
+        OJ_R_FREE(stack->head);
         stack->head = NULL;
     }
 }
@@ -76,10 +77,10 @@ inline static void stack_push(ValStack stack, VALUE val, ValNext next) {
         // A realloc can trigger a GC so make sure it happens outside the lock
         // but lock before changing pointers.
         if (stack->base == stack->head) {
-            head = ALLOC_N(struct _val, len + STACK_INC);
+            head = OJ_R_ALLOC_N(struct _val, len + STACK_INC);
             memcpy(head, stack->base, sizeof(struct _val) * len);
         } else {
-            REALLOC_N(head, struct _val, len + STACK_INC);
+            OJ_R_REALLOC_N(head, struct _val, len + STACK_INC);
         }
 #ifdef HAVE_PTHREAD_MUTEX_INIT
         pthread_mutex_lock(&stack->mutex);

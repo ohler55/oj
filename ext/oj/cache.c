@@ -6,6 +6,7 @@
 #endif
 #include <stdlib.h>
 
+#include "mem.h"
 #include "cache.h"
 
 // The stdlib calloc, realloc, and free are used instead of the Ruby ALLOC,
@@ -100,7 +101,7 @@ static void rehash(Cache c) {
     osize    = c->size;
     c->size  = osize * 4;
     c->mask  = c->size - 1;
-    c->slots = realloc((void *)c->slots, sizeof(Slot) * c->size);
+    c->slots = OJ_REALLOC((void *)c->slots, sizeof(Slot) * c->size);
     memset((Slot *)c->slots + osize, 0, sizeof(Slot) * osize * 3);
     end = (Slot *)c->slots + osize;
     for (sp = (Slot *)c->slots; sp < end; sp++) {
@@ -128,7 +129,7 @@ static VALUE lockless_intern(Cache c, const char *key, size_t len) {
     while (REUSE_MAX < c->rcnt) {
         if (NULL != (b = c->reuse)) {
             c->reuse = b->next;
-            free(b);
+            OJ_FREE(b);
             c->rcnt--;
         } else {
             // An accounting error occured somewhere so correct it.
@@ -143,7 +144,7 @@ static VALUE lockless_intern(Cache c, const char *key, size_t len) {
     }
     rkey = c->form(key, len);
     if (NULL == (b = c->reuse)) {
-        b = calloc(1, sizeof(struct _slot));
+        b = OJ_CALLOC(1, sizeof(struct _slot));
     } else {
         c->reuse = b->next;
         c->rcnt--;
@@ -174,7 +175,7 @@ static VALUE locking_intern(Cache c, const char *key, size_t len) {
     while (REUSE_MAX < c->rcnt) {
         if (NULL != (b = c->reuse)) {
             c->reuse = b->next;
-            free(b);
+            OJ_FREE(b);
             c->rcnt--;
         } else {
             // An accounting error occured somewhere so correct it.
@@ -200,7 +201,7 @@ static VALUE locking_intern(Cache c, const char *key, size_t len) {
     }
     CACHE_UNLOCK(c);
     if (NULL == b) {
-        b = calloc(1, sizeof(struct _slot));
+        b = OJ_CALLOC(1, sizeof(struct _slot));
     }
     rkey    = c->form(key, len);
     b->hash = h;
@@ -228,7 +229,7 @@ static VALUE locking_intern(Cache c, const char *key, size_t len) {
 }
 
 Cache cache_create(size_t size, VALUE (*form)(const char *str, size_t len), bool mark, bool locking) {
-    Cache c     = calloc(1, sizeof(struct _cache));
+    Cache c     = OJ_CALLOC(1, sizeof(struct _cache));
     int   shift = 0;
 
     for (; REHASH_LIMIT < size; size /= 2, shift++) {
@@ -243,7 +244,7 @@ Cache cache_create(size_t size, VALUE (*form)(const char *str, size_t len), bool
 #endif
     c->size    = 1 << shift;
     c->mask    = c->size - 1;
-    c->slots   = calloc(c->size, sizeof(Slot));
+    c->slots   = OJ_CALLOC(c->size, sizeof(Slot));
     c->form    = form;
     c->xrate   = 1;  // low
     c->mark    = mark;
@@ -268,11 +269,11 @@ void cache_free(Cache c) {
 
         for (s = c->slots[i]; NULL != s; s = next) {
             next = s->next;
-            free(s);
+            OJ_FREE(s);
         }
     }
-    free((void *)c->slots);
-    free(c);
+    OJ_FREE((void *)c->slots);
+    OJ_FREE(c);
 }
 
 void cache_mark(Cache c) {

@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "mem.h"
 #include "dump.h"
 #include "encode.h"
 #include "intern.h"
@@ -782,7 +783,7 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
     } else if (create_id_sym == k) {
         if (Qnil == v) {
             if (oj_json_class != oj_default_options.create_id && NULL != copts->create_id) {
-                xfree((char *)oj_default_options.create_id);
+                OJ_R_FREE((char *)oj_default_options.create_id);
             }
             copts->create_id     = NULL;
             copts->create_id_len = 0;
@@ -791,7 +792,7 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
 
             len = RSTRING_LEN(v);
             if (len != copts->create_id_len || 0 != strcmp(copts->create_id, str)) {
-                copts->create_id = ALLOC_N(char, len + 1);
+                copts->create_id = OJ_R_ALLOC_N(char, len + 1);
                 strcpy((char *)copts->create_id, str);
                 copts->create_id_len = len;
             }
@@ -911,7 +912,7 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
             copts->array_class = v;
         }
     } else if (ignore_sym == k) {
-        xfree(copts->ignore);
+        OJ_R_FREE(copts->ignore);
         copts->ignore = NULL;
         if (Qnil != v) {
             int cnt;
@@ -921,7 +922,7 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
             if (0 < cnt) {
                 int i;
 
-                copts->ignore = ALLOC_N(VALUE, cnt + 1);
+                copts->ignore = OJ_R_ALLOC_N(VALUE, cnt + 1);
                 for (i = 0; i < cnt; i++) {
                     copts->ignore[i] = RARRAY_AREF(v, i);
                 }
@@ -1159,7 +1160,7 @@ static VALUE load_file(int argc, VALUE *argv, VALUE self) {
         WCHAR *wide_path;
         wide_path = rb_w32_mbstr_to_wstr(CP_UTF8, path, -1, NULL);
         fd = rb_w32_wopen(wide_path, O_RDONLY);
-        free(wide_path);
+        OJ_FREE(wide_path);
     }
 #else
     fd = open(path, O_RDONLY);
@@ -1724,6 +1725,10 @@ debug_odd(VALUE self, VALUE label) {
     return Qnil;
 }
 
+static VALUE mem_report(VALUE self) {
+    oj_mem_report();
+    return Qnil;
+}
 
 /* Document-module: Oj
  *
@@ -1811,6 +1816,8 @@ void Init_oj(void) {
     rb_define_module_function(Oj, "sc_parse", oj_sc_parse, -1);
 
     rb_define_module_function(Oj, "optimize_rails", oj_optimize_rails, 0);
+
+    rb_define_module_function(Oj, "mem_report", mem_report, 0);
 
     oj_add_value_id          = rb_intern("add_value");
     oj_array_append_id       = rb_intern("array_append");

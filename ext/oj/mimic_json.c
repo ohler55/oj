@@ -1,6 +1,7 @@
 // Copyright (c) 2012, 2017 Peter Ohler. All rights reserved.
 // Licensed under the MIT License. See LICENSE file in the project root for license details.
 
+#include "mem.h"
 #include "dump.h"
 #include "encode.h"
 #include "oj.h"
@@ -664,7 +665,7 @@ static VALUE mimic_set_create_id(VALUE self, VALUE id) {
 
     if (NULL != oj_default_options.create_id) {
         if (oj_json_class != oj_default_options.create_id) {
-            xfree((char *)oj_default_options.create_id);
+            OJ_R_FREE((char *)oj_default_options.create_id);
         }
         oj_default_options.create_id     = NULL;
         oj_default_options.create_id_len = 0;
@@ -672,7 +673,7 @@ static VALUE mimic_set_create_id(VALUE self, VALUE id) {
     if (Qnil != id) {
         size_t len = RSTRING_LEN(id) + 1;
 
-        oj_default_options.create_id = ALLOC_N(char, len);
+        oj_default_options.create_id = OJ_R_ALLOC_N(char, len);
         strcpy((char *)oj_default_options.create_id, StringValuePtr(id));
         oj_default_options.create_id_len = len - 1;
     }

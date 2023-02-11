@@ -10,6 +10,7 @@
 #include <regex.h>
 #endif
 
+#include "mem.h"
 #include "rxclass.h"
 
 typedef struct _rxC {
@@ -37,13 +38,13 @@ void oj_rxclass_cleanup(RxClass rc) {
         if (Qnil == rxc->rrx) {
             regfree(&rxc->rx);
         }
-        xfree(rxc);
+        OJ_R_FREE(rxc);
 #endif
     }
 }
 
 void oj_rxclass_rappend(RxClass rc, VALUE rx, VALUE clas) {
-    RxC rxc = ALLOC_N(struct _rxC, 1);
+    RxC rxc = OJ_R_ALLOC_N(struct _rxC, 1);
 
     memset(rxc, 0, sizeof(struct _rxC));
     rxc->rrx  = rx;
@@ -70,7 +71,7 @@ int oj_rxclass_append(RxClass rc, const char *expr, VALUE clas) {
                  (unsigned long)sizeof(rxc->src));
         return EINVAL;
     }
-    rxc       = ALLOC_N(struct _rxC, 1);
+    rxc       = OJ_R_ALLOC_N(struct _rxC, 1);
     rxc->next = 0;
     rxc->clas = clas;
 
@@ -80,7 +81,7 @@ int oj_rxclass_append(RxClass rc, const char *expr, VALUE clas) {
     rxc->rrx = Qnil;
     if (0 != (err = regcomp(&rxc->rx, expr, flags))) {
         regerror(err, &rxc->rx, rc->err, sizeof(rc->err));
-        free(rxc);
+        OJ_FREE(rxc);
         return err;
     }
 #endif

@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <ruby.h>
 
+#include "mem.h"
 #include "encode.h"
 
 extern VALUE Oj;
@@ -15,9 +16,9 @@ static void stream_writer_free(void *ptr) {
         return;
     }
     sw = (StreamWriter)ptr;
-    xfree(sw->sw.out.buf);
-    xfree(sw->sw.types);
-    xfree(ptr);
+    OJ_R_FREE(sw->sw.out.buf);
+    OJ_R_FREE(sw->sw.types);
+    OJ_R_FREE(ptr);
 }
 
 static void stream_writer_reset_buf(StreamWriter sw) {
@@ -91,7 +92,7 @@ static VALUE stream_writer_new(int argc, VALUE *argv, VALUE self) {
     } else {
         rb_raise(rb_eArgError, "expected an IO Object.");
     }
-    sw = ALLOC(struct _streamWriter);
+    sw = OJ_R_ALLOC(struct _streamWriter);
     if (2 == argc && T_HASH == rb_type(argv[1])) {
         volatile VALUE v;
         int            buf_size = 0;

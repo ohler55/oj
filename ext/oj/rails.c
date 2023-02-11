@@ -3,6 +3,7 @@
 
 #include "rails.h"
 
+#include "mem.h"
 #include "code.h"
 #include "encode.h"
 #include "trace.h"
@@ -76,7 +77,7 @@ static ROptTable copy_opts(ROptTable src, ROptTable dest) {
     if (NULL == src->table) {
         dest->table = NULL;
     } else {
-        dest->table = ALLOC_N(struct _rOpt, dest->alen);
+        dest->table = OJ_R_ALLOC_N(struct _rOpt, dest->alen);
         memcpy(dest->table, src->table, sizeof(struct _rOpt) * dest->alen);
     }
     return NULL;
@@ -373,7 +374,7 @@ static StrLen columns_array(VALUE rcols, int *ccnt) {
     int            cnt = (int)RARRAY_LEN(rcols);
 
     *ccnt = cnt;
-    cols  = ALLOC_N(struct _strLen, cnt);
+    cols  = OJ_R_ALLOC_N(struct _strLen, cnt);
     for (i = 0, cp = cols; i < cnt; i++, cp++) {
         v = RARRAY_AREF(rcols, i);
         if (T_STRING != rb_type(v)) {
@@ -481,7 +482,7 @@ static void dump_activerecord_result(VALUE obj, int depth, Out out, bool as_ok) 
             *out->cur++ = ',';
         }
     }
-    xfree(cols);
+    OJ_R_FREE(cols);
     size = depth * out->indent + 1;
     assure_size(out, size);
     if (out->opts->dump_opts.use) {
@@ -583,11 +584,11 @@ static ROpt create_opt(ROptTable rot, VALUE clas) {
     rot->len++;
     if (NULL == rot->table) {
         rot->alen  = 256;
-        rot->table = ALLOC_N(struct _rOpt, rot->alen);
+        rot->table = OJ_R_ALLOC_N(struct _rOpt, rot->alen);
         memset(rot->table, 0, sizeof(struct _rOpt) * rot->alen);
     } else if (rot->alen <= rot->len) {
         rot->alen *= 2;
-        REALLOC_N(rot->table, struct _rOpt, rot->alen);
+        OJ_R_REALLOC_N(rot->table, struct _rOpt, rot->alen);
         memset(rot->table + olen, 0, sizeof(struct _rOpt) * olen);
     }
     if (0 == olen) {
@@ -640,9 +641,9 @@ static void encoder_free(void *ptr) {
         Encoder e = (Encoder)ptr;
 
         if (NULL != e->ropts.table) {
-            xfree(e->ropts.table);
+            OJ_R_FREE(e->ropts.table);
         }
-        xfree(ptr);
+        OJ_R_FREE(ptr);
     }
 }
 
@@ -663,7 +664,7 @@ static void encoder_mark(void *ptr) {
  * - *options* [_Hash_] formatting options
  */
 static VALUE encoder_new(int argc, VALUE *argv, VALUE self) {
-    Encoder e = ALLOC(struct _encoder);
+    Encoder e = OJ_R_ALLOC(struct _encoder);
 
     e->opts = oj_default_options;
     e->arg  = Qnil;

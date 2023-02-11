@@ -5,6 +5,7 @@
 #define OJ_BUF_H
 
 #include "ruby.h"
+#include "mem.h"
 
 typedef struct _buf {
     char *head;
@@ -25,7 +26,7 @@ inline static void buf_reset(Buf buf) {
 
 inline static void buf_cleanup(Buf buf) {
     if (buf->base != buf->head) {
-        xfree(buf->head);
+        OJ_R_FREE(buf->head);
     }
 }
 
@@ -49,10 +50,10 @@ inline static void buf_append_string(Buf buf, const char *s, size_t slen) {
         size_t new_len = len + slen + len / 2;
 
         if (buf->base == buf->head) {
-            buf->head = ALLOC_N(char, new_len);
+            buf->head = OJ_R_ALLOC_N(char, new_len);
             memcpy(buf->head, buf->base, len);
         } else {
-            REALLOC_N(buf->head, char, new_len);
+            OJ_R_REALLOC_N(buf->head, char, new_len);
         }
         buf->tail = buf->head + toff;
         buf->end  = buf->head + new_len - 1;
@@ -68,10 +69,10 @@ inline static void buf_append(Buf buf, char c) {
         size_t new_len = len + len / 2;
 
         if (buf->base == buf->head) {
-            buf->head = ALLOC_N(char, new_len);
+            buf->head = OJ_R_ALLOC_N(char, new_len);
             memcpy(buf->head, buf->base, len);
         } else {
-            REALLOC_N(buf->head, char, new_len);
+            OJ_R_REALLOC_N(buf->head, char, new_len);
         }
         buf->tail = buf->head + toff;
         buf->end  = buf->head + new_len - 1;

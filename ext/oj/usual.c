@@ -1,5 +1,6 @@
 // Copyright (c) 2021, Peter Ohler, All rights reserved.
 
+#include "mem.h"
 #include "cache.h"
 #include "oj.h"
 #include "parser.h"
@@ -34,7 +35,7 @@ static ID ltlt_id = 0;
 static ID hset_id = 0;
 
 static char *str_dup(const char *s, size_t len) {
-    char *d = ALLOC_N(char, len + 1);
+    char *d = OJ_R_ALLOC_N(char, len + 1);
 
     memcpy(d, s, len);
     d[len] = '\0';
@@ -54,7 +55,7 @@ static VALUE form_attr(const char *str, size_t len) {
     char buf[256];
 
     if (sizeof(buf) - 2 <= len) {
-        char *b = ALLOC_N(char, len + 2);
+        char *b = OJ_R_ALLOC_N(char, len + 2);
         ID    id;
 
         *b = '@';
@@ -62,7 +63,7 @@ static VALUE form_attr(const char *str, size_t len) {
         b[len + 1] = '\0';
 
         id = rb_intern3(buf, len + 1, oj_utf8_encoding);
-        xfree(b);
+        OJ_R_FREE(b);
         return id;
     }
     *buf = '@';
@@ -130,7 +131,7 @@ static void assure_cstack(Usual d) {
         long   pos = d->ctail - d->chead;
 
         cap *= 2;
-        REALLOC_N(d->chead, struct _col, cap);
+        OJ_R_REALLOC_N(d->chead, struct _col, cap);
         d->ctail = d->chead + pos;
         d->cend  = d->chead + cap;
     }
@@ -144,7 +145,7 @@ static void push(ojParser p, VALUE v) {
         long   pos = d->vtail - d->vhead;
 
         cap *= 2;
-        REALLOC_N(d->vhead, VALUE, cap);
+        OJ_R_REALLOC_N(d->vhead, VALUE, cap);
         d->vtail = d->vhead + pos;
         d->vend  = d->vhead + cap;
     }
@@ -194,7 +195,7 @@ static void push_key(ojParser p) {
         long   pos = d->ktail - d->khead;
 
         cap *= 2;
-        REALLOC_N(d->khead, union _key, cap);
+        OJ_R_REALLOC_N(d->khead, union _key, cap);
         d->ktail = d->khead + pos;
         d->kend  = d->khead + cap;
     }
@@ -216,7 +217,7 @@ static void push2(ojParser p, VALUE v) {
         long   pos = d->vtail - d->vhead;
 
         cap *= 2;
-        REALLOC_N(d->vhead, VALUE, cap);
+        OJ_R_REALLOC_N(d->vhead, VALUE, cap);
         d->vtail = d->vhead + pos;
         d->vend  = d->vhead + cap;
     }
@@ -283,7 +284,7 @@ static void close_object(ojParser p) {
     for (vp = head; kp < d->ktail; kp++, vp += 2) {
         *vp = d->get_key(p, kp);
         if (sizeof(kp->buf) <= (size_t)kp->len) {
-            xfree(kp->key);
+            OJ_R_FREE(kp->key);
         }
     }
     rb_hash_bulk_insert(d->vtail - head, head, obj);
@@ -291,7 +292,7 @@ static void close_object(ojParser p) {
     for (vp = head; kp < d->ktail; kp++, vp += 2) {
         rb_hash_aset(obj, d->get_key(p, kp), *(vp + 1));
         if (sizeof(kp->buf) <= (size_t)kp->len) {
-            xfree(kp->key);
+            OJ_R_FREE(kp->key);
         }
     }
 #endif
@@ -315,7 +316,7 @@ static void close_object_class(ojParser p) {
     for (vp = head; kp < d->ktail; kp++, vp += 2) {
         rb_funcall(obj, hset_id, 2, d->get_key(p, kp), *(vp + 1));
         if (sizeof(kp->buf) <= (size_t)kp->len) {
-            xfree(kp->key);
+            OJ_R_FREE(kp->key);
         }
     }
     d->ktail = d->khead + c->ki;
@@ -343,7 +344,7 @@ static void close_object_create(ojParser p) {
             for (vp = head; kp < d->ktail; kp++, vp += 2) {
                 *vp = d->get_key(p, kp);
                 if (sizeof(kp->buf) <= (size_t)kp->len) {
-                    xfree(kp->key);
+                    OJ_R_FREE(kp->key);
                 }
             }
             rb_hash_bulk_insert(d->vtail - head, head, obj);
@@ -351,7 +352,7 @@ static void close_object_create(ojParser p) {
             for (vp = head; kp < d->ktail; kp++, vp += 2) {
                 rb_hash_aset(obj, d->get_key(p, kp), *(vp + 1));
                 if (sizeof(kp->buf) <= (size_t)kp->len) {
-                    xfree(kp->key);
+                    OJ_R_FREE(kp->key);
                 }
             }
 #endif
@@ -360,7 +361,7 @@ static void close_object_create(ojParser p) {
             for (vp = head; kp < d->ktail; kp++, vp += 2) {
                 rb_funcall(obj, hset_id, 2, d->get_key(p, kp), *(vp + 1));
                 if (sizeof(kp->buf) <= (size_t)kp->len) {
-                    xfree(kp->key);
+                    OJ_R_FREE(kp->key);
                 }
             }
         }
@@ -375,7 +376,7 @@ static void close_object_create(ojParser p) {
             for (vp = head; kp < d->ktail; kp++, vp += 2) {
                 *vp = d->get_key(p, kp);
                 if (sizeof(kp->buf) <= (size_t)kp->len) {
-                    xfree(kp->key);
+                    OJ_R_FREE(kp->key);
                 }
             }
             rb_hash_bulk_insert(d->vtail - head, head, arg);
@@ -383,7 +384,7 @@ static void close_object_create(ojParser p) {
             for (vp = head; kp < d->ktail; kp++, vp += 2) {
                 rb_hash_aset(arg, d->get_key(p, kp), *(vp + 1));
                 if (sizeof(kp->buf) <= (size_t)kp->len) {
-                    xfree(kp->key);
+                    OJ_R_FREE(kp->key);
                 }
             }
 #endif
@@ -393,7 +394,7 @@ static void close_object_create(ojParser p) {
             for (vp = head; kp < d->ktail; kp++, vp += 2) {
                 rb_ivar_set(obj, get_attr_id(p, kp), *(vp + 1));
                 if (sizeof(kp->buf) <= (size_t)kp->len) {
-                    xfree(kp->key);
+                    OJ_R_FREE(kp->key);
                 }
             }
         }
@@ -621,11 +622,11 @@ static void dfree(ojParser p) {
     if (NULL != d->class_cache) {
         cache_free(d->class_cache);
     }
-    xfree(d->vhead);
-    xfree(d->chead);
-    xfree(d->khead);
-    xfree(d->create_id);
-    xfree(p->ctx);
+    OJ_R_FREE(d->vhead);
+    OJ_R_FREE(d->chead);
+    OJ_R_FREE(d->khead);
+    OJ_R_FREE(d->create_id);
+    OJ_R_FREE(p->ctx);
     p->ctx = NULL;
 }
 
@@ -777,14 +778,14 @@ static VALUE opt_capacity_set(ojParser p, VALUE value) {
     if (d->vend - d->vhead < cap) {
         long pos = d->vtail - d->vhead;
 
-        REALLOC_N(d->vhead, VALUE, cap);
+        OJ_R_REALLOC_N(d->vhead, VALUE, cap);
         d->vtail = d->vhead + pos;
         d->vend  = d->vhead + cap;
     }
     if (d->kend - d->khead < cap) {
         long pos = d->ktail - d->khead;
 
-        REALLOC_N(d->khead, union _key, cap);
+        OJ_R_REALLOC_N(d->khead, union _key, cap);
         d->ktail = d->khead + pos;
         d->kend  = d->khead + cap;
     }
@@ -1111,16 +1112,16 @@ static VALUE option(ojParser p, const char *key, VALUE value) {
 void oj_init_usual(ojParser p, Usual d) {
     int      cap = 4096;
 
-    d->vhead = ALLOC_N(VALUE, cap);
+    d->vhead = OJ_R_ALLOC_N(VALUE, cap);
     d->vend  = d->vhead + cap;
     d->vtail = d->vhead;
 
-    d->khead = ALLOC_N(union _key, cap);
+    d->khead = OJ_R_ALLOC_N(union _key, cap);
     d->kend  = d->khead + cap;
     d->ktail = d->khead;
 
     cap      = 256;
-    d->chead = ALLOC_N(struct _col, cap);
+    d->chead = OJ_R_ALLOC_N(struct _col, cap);
     d->cend  = d->chead + cap;
     d->ctail = d->chead;
 
@@ -1201,7 +1202,7 @@ void oj_init_usual(ojParser p, Usual d) {
 }
 
 void oj_set_parser_usual(ojParser p) {
-    Usual d = ALLOC(struct _usual);
+    Usual d = OJ_R_ALLOC(struct _usual);
 
     oj_init_usual(p, d);
 }

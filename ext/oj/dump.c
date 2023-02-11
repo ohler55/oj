@@ -14,6 +14,7 @@
 #include <poll.h>
 #endif
 
+#include "mem.h"
 #include "cache8.h"
 #include "odd.h"
 #include "oj.h"
@@ -948,7 +949,7 @@ void oj_out_init(Out out) {
 
 void oj_out_free(Out out) {
     if (out->allocated) {
-        xfree(out->buf); // TBD
+        OJ_R_FREE(out->buf); // TBD
     }
 }
 
@@ -962,9 +963,9 @@ void oj_grow_out(Out out, size_t len) {
         size += len;
     }
     if (out->allocated) {
-        REALLOC_N(buf, char, (size + BUFFER_EXTRA));
+        OJ_R_REALLOC_N(buf, char, (size + BUFFER_EXTRA));
     } else {
-        buf            = ALLOC_N(char, (size + BUFFER_EXTRA));
+        buf            = OJ_R_ALLOC_N(char, (size + BUFFER_EXTRA));
         out->allocated = true;
         memcpy(buf, out->buf, out->end - out->buf + BUFFER_EXTRA);
     }

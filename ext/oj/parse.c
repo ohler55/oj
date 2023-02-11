@@ -10,6 +10,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "mem.h"
 #include "buf.h"
 #include "encode.h"
 #include "oj.h"
@@ -87,7 +88,7 @@ static void add_value(ParseInfo pi, VALUE rval) {
             pi->hash_set_value(pi, parent, rval);
             if (0 != parent->key && 0 < parent->klen &&
                 (parent->key < pi->json || pi->cur < parent->key)) {
-                xfree((char *)parent->key);
+                OJ_R_FREE((char *)parent->key);
                 parent->key = 0;
             }
             parent->next = NEXT_HASH_COMMA;
@@ -236,7 +237,8 @@ static void read_escaped_str(ParseInfo pi, const char *start) {
 
     for (s = pi->cur; '"' != *s;) {
         const char *scanned = scan_func(s, pi->end);
-        if (scanned >= pi->end || '\0' == *s) {
+        if (scanned >= pi->end || '\0' == *scanned) {
+            //if (scanned >= pi->end) {
             oj_set_error_at(pi,
                             oj_parse_error_class,
                             __FILE__,
@@ -333,7 +335,7 @@ static void read_escaped_str(ParseInfo pi, const char *start) {
         case NEXT_HASH_KEY:
             if (Qundef == (parent->key_val = pi->hash_key(pi, buf.head, buf_len(&buf)))) {
                 parent->klen = buf_len(&buf);
-                parent->key  = malloc(parent->klen + 1);
+                parent->key  = OJ_MALLOC(parent->klen + 1);
                 memcpy((char *)parent->key, buf.head, parent->klen);
                 *(char *)(parent->key + parent->klen) = '\0';
             } else {
@@ -347,7 +349,7 @@ static void read_escaped_str(ParseInfo pi, const char *start) {
             pi->hash_set_cstr(pi, parent, buf.head, buf_len(&buf), start);
             if (0 != parent->key && 0 < parent->klen &&
                 (parent->key < pi->json || pi->cur < parent->key)) {
-                xfree((char *)parent->key);
+                OJ_R_FREE((char *)parent->key);
                 parent->key = 0;
             }
             parent->next = NEXT_HASH_COMMA;
@@ -417,7 +419,7 @@ static void read_str(ParseInfo pi) {
             pi->hash_set_cstr(pi, parent, str, pi->cur - str, str);
             if (0 != parent->key && 0 < parent->klen &&
                 (parent->key < pi->json || pi->cur < parent->key)) {
-                xfree((char *)parent->key);
+                OJ_R_FREE((char *)parent->key);
                 parent->key = 0;
             }
             parent->next = NEXT_HASH_COMMA;
@@ -616,7 +618,7 @@ static void read_num(ParseInfo pi) {
             pi->hash_set_num(pi, parent, &ni);
             if (0 != parent->key && 0 < parent->klen &&
                 (parent->key < pi->json || pi->cur < parent->key)) {
-                xfree((char *)parent->key);
+                OJ_R_FREE((char *)parent->key);
                 parent->key = 0;
             }
             parent->next = NEXT_HASH_COMMA;
@@ -870,12 +872,12 @@ oj_num_as_value(NumInfo ni) {
                 buf[ni->len] = '\0';
                 rnum         = rb_cstr_to_inum(buf, 10, 0);
             } else {
-                char *buf = ALLOC_N(char, ni->len + 1);
+                char *buf = OJ_R_ALLOC_N(char, ni->len + 1);
 
                 memcpy(buf, ni->str, ni->len);
                 buf[ni->len] = '\0';
                 rnum         = rb_cstr_to_inum(buf, 10, 0);
-                xfree(buf);
+                OJ_R_FREE(buf);
             }
         } else {
             if (ni->neg) {
@@ -1076,12 +1078,12 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
             size_t  len = lseek(fd, 0, SEEK_END);
 
             lseek(fd, 0, SEEK_SET);
-            buf      = ALLOC_N(char, len + 1);
+            buf      = OJ_R_ALLOC_N(char, len + 1);
             pi->json = buf;
             pi->end  = buf + len;
             if (0 >= (cnt = read(fd, (char *)pi->json, len)) || cnt != (ssize_t)len) {
                 if (0 != buf) {
-                    xfree(buf);
+                    OJ_R_FREE(buf);
                 }
                 rb_raise(rb_eIOError, "failed to read from IO Object.");
             }
@@ -1163,9 +1165,9 @@ CLEANUP:
         oj_circ_array_free(pi->circ_array);
     }
     if (0 != buf) {
-        xfree(buf);
+        OJ_R_FREE(buf);
     } else if (free_json) {
-        xfree(json);
+        OJ_R_FREE(json);
     }
     stack_cleanup(&pi->stack);
     if (pi->str_rx.head != oj_default_options.str_rx.head) {

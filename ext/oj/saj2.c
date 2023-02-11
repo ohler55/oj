@@ -1,5 +1,6 @@
 // Copyright (c) 2021, Peter Ohler, All rights reserved.
 
+#include "mem.h"
 #include "cache.h"
 #include "oj.h"
 #include "parser.h"
@@ -24,7 +25,7 @@ static void push_key(Saj d, VALUE key) {
         size_t off = d->tail - d->keys;
 
         d->klen += d->klen / 2;
-        REALLOC_N(d->keys, VALUE, d->klen);
+        OJ_R_REALLOC_N(d->keys, VALUE, d->klen);
         d->tail = d->keys + off;
     }
     *d->tail = key;
@@ -546,10 +547,10 @@ static void dfree(ojParser p) {
     Saj d = (Saj)p->ctx;
 
     if (NULL != d->keys) {
-        xfree(d->keys);
+        OJ_R_FREE(d->keys);
     }
     cache_free(d->str_cache);
-    xfree(p->ctx);
+    OJ_R_FREE(p->ctx);
 }
 
 static void mark(ojParser p) {
@@ -576,7 +577,7 @@ static VALUE form_str(const char *str, size_t len) {
 
 void oj_init_saj(ojParser p, Saj d) {
     d->klen      = 256;
-    d->keys      = ALLOC_N(VALUE, d->klen);
+    d->keys      = OJ_R_ALLOC_N(VALUE, d->klen);
     d->tail      = d->keys;
     d->handler   = Qnil;
     d->str_cache = cache_create(0, form_str, true, false);
@@ -594,7 +595,7 @@ void oj_init_saj(ojParser p, Saj d) {
 }
 
 void oj_set_parser_saj(ojParser p) {
-    Saj d = ALLOC(struct _saj);
+    Saj d = OJ_R_ALLOC(struct _saj);
 
     oj_init_saj(p, d);
 }

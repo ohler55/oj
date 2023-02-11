@@ -14,6 +14,7 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "mem.h"
 #include "oj.h"
 #include "reader.h"
 #include "ruby.h"
@@ -107,10 +108,10 @@ int oj_reader_read(Reader reader) {
             size_t      size = reader->end - reader->head + BUF_PAD;
 
             if (reader->head == reader->base) {
-                reader->head = ALLOC_N(char, size * 2);
+                reader->head = OJ_R_ALLOC_N(char, size * 2);
                 memcpy((char *)reader->head, old, size);
             } else {
-                REALLOC_N(reader->head, char, size * 2);
+                OJ_R_REALLOC_N(reader->head, char, size * 2);
             }
             reader->free_head = 1;
             reader->end       = reader->head + size * 2 - BUF_PAD;
