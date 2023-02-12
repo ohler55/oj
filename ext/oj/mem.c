@@ -316,7 +316,7 @@ print_stats() {
 #endif
 
 void
-oj_mem_report() {
+oj_mem_report(void) {
 #ifdef MEM_DEBUG
     rb_gc();
     print_stats();
