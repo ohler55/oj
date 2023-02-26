@@ -117,6 +117,7 @@ dump_to_json(VALUE obj, Out out) {
     }
     TRACE(out->opts->trace, "to_json", obj, 0, TraceRubyOut);
 
+    StringValue(rs);
     s = RSTRING_PTR(rs);
     len = (int)RSTRING_LEN(rs);
 

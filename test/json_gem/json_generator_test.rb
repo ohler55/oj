@@ -393,4 +393,15 @@ EOT
       assert_equal '["foo"]', JSON.generate([s.new('foo')])
     end
   end
+
+  def test_invalid_to_json
+    omit if REAL_JSON_GEM
+
+    data = Object.new
+    def data.to_json(*)
+      nil
+    end
+
+    assert_raises(TypeError) { JSON.generate(data) }
+  end
 end
