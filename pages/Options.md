@@ -60,15 +60,15 @@ If true dump BigDecimal as a decimal number otherwise as a String
 
 Determines how to load decimals.
 
- - `:bigdecimal` convert all decimal numbers to BigDecimal.
+- `:bigdecimal` convert all decimal numbers to BigDecimal.
 
- - `:float` convert all decimal numbers to Float.
+- `:float` convert all decimal numbers to Float.
 
- - `:auto` the most precise for the number of digits is used.
+- `:auto` the most precise for the number of digits is used.
 
- - `:fast` faster conversion to Float.
+- `:fast` faster conversion to Float.
 
- - `:ruby` convert to Float using the Ruby `to_f` conversion.
+- `:ruby` convert to Float using the Ruby `to_f` conversion.
 
 This can also be set with `:decimal_class` when used as a load or
 parse option to match the JSON gem. In that case either `Float`,
@@ -112,9 +112,9 @@ dynamically modifying classes or reloading classes then don't use this.
 
 Determines how to load decimals when in `:compat` mode.
 
- - `true` convert all decimal numbers to BigDecimal.
+- `true` convert all decimal numbers to BigDecimal.
 
- - `false` convert all decimal numbers to Float.
+- `false` convert all decimal numbers to Float.
 
 ### :create_additions
 
@@ -154,17 +154,17 @@ JSON.load(' ', nil, allow_blank: true) => raise
 Determines the characters to escape when dumping. Only the :ascii and
 :json modes are supported in :compat mode.
 
- - `:newline` allows unescaped newlines in the output.
+- `:newline` allows unescaped newlines in the output.
 
- - `:json` follows the JSON specification. This is the default mode.
+- `:json` follows the JSON specification. This is the default mode.
 
- - `:slash` escapes `/` characters.
+- `:slash` escapes `/` characters.
 
- - `:xss_safe` escapes HTML and XML characters such as `&` and `<`.
+- `:xss_safe` escapes HTML and XML characters such as `&` and `<`.
 
- - `:ascii` escapes all non-ascii or characters with the hi-bit set.
+- `:ascii` escapes all non-ascii or characters with the hi-bit set.
 
- - `:unicode_xss` escapes a special unicodes and is xss safe.
+- `:unicode_xss` escapes a special unicodes and is xss safe.
 
 ### :float_precision [Fixnum]
 
@@ -221,15 +221,15 @@ customization.
 How to dump Infinity, -Infinity, and NaN in :null, :strict, and :compat
 mode. Default is :auto but is ignored in the :compat and :rails modes.
 
- - `:null` places a null
+- `:null` places a null
 
- - `:huge` places a huge number
+- `:huge` places a huge number
 
- - `:word` places Infinity or NaN
+- `:word` places Infinity or NaN
 
- - `:raise` raises and exception
+- `:raise` raises and exception
 
- - `:auto` uses default for each mode which are `:raise` for `:strict`, `:null` for `:null`, and `:word` for `:compat`.
+- `:auto` uses default for each mode which are `:raise` for `:strict`, `:null` for `:null`, and `:word` for `:compat`.
 
 ### :nilnil [Boolean]
 
@@ -296,20 +296,19 @@ of blocks and of specific calls.
 
 The :time_format when dumping.
 
- - `:unix` time is output as a decimal number in seconds since epoch including fractions of a second.
+- `:unix` time is output as a decimal number in seconds since epoch including fractions of a second.
 
- - `:unix_zone` is similar to the `:unix` format but with the timezone encoded in
+- `:unix_zone` is similar to the `:unix` format but with the timezone encoded in
    the exponent of the decimal number of seconds since epoch.
 
- - `:xmlschema` time is output as a string that follows the XML schema definition.
+- `:xmlschema` time is output as a string that follows the XML schema definition.
 
- - `:ruby` time is output as a string formatted using the Ruby `to_s` conversion.
+- `:ruby` time is output as a string formatted using the Ruby `to_s` conversion.
 
 ### :use_as_json [Boolean]
 
 Call `as_json()` methods on dump, default is false. The option is ignored in
 the :compat and :rails modes.
-
 
 ### :use_raw_json [Boolean]
 

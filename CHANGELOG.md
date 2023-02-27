@@ -82,6 +82,7 @@
 ## 3.13.8 - 2021-09-27
 
 - Fix `Oj::Doc` behaviour for inexisting path.
+
   ```ruby
   Oj::Doc.open('{"foo":1}') do |doc|
     doc.fetch('/foo/bar') # used to give `1`, now gives `nil`
@@ -364,153 +365,153 @@ Remove license from code.
 
 ## 3.7.7 - 2019-01-14
 
-  - Exception with other than a single argument initializer can now be decoded.
+- Exception with other than a single argument initializer can now be decoded.
 
-  - StreamWriter bug fixed that forces UTF-8 when appending to a stream. Ruby likes to convert to ASCII-8BIT but forcing the append to be UTF-8 avoids that issue.
+- StreamWriter bug fixed that forces UTF-8 when appending to a stream. Ruby likes to convert to ASCII-8BIT but forcing the append to be UTF-8 avoids that issue.
 
 ## 3.7.6 - 2018-12-30
 
-  - Changed time encoding for 32 bit to work around a Ruby bug in `rb_time_timespec()` that fails for times before 1970.
+- Changed time encoding for 32 bit to work around a Ruby bug in `rb_time_timespec()` that fails for times before 1970.
 
-  - Addressed issue #514 by changing reserved identifiers.
+- Addressed issue #514 by changing reserved identifiers.
 
-  - Addressed issue #515 by adding return value checks on `strdup()` and `pthread_mutex_init()`.
+- Addressed issue #515 by adding return value checks on `strdup()` and `pthread_mutex_init()`.
 
 ## 3.7.5 - 2018-12-27
 
-  - Address issue #517 with a special escape table for mimicking the JSON gem.
+- Address issue #517 with a special escape table for mimicking the JSON gem.
 
 ## 3.7.4 - 2018-11-29
 
-  - Allow `+` in front of numbers in parse as well as stream parse **EXCEPT** when mimicking the JSON gem.
+- Allow `+` in front of numbers in parse as well as stream parse **EXCEPT** when mimicking the JSON gem.
 
 ## 3.7.3 - 2018-11-29
 
-  - Allow `+` in front of numbers in parse as well as stream parse.
+- Allow `+` in front of numbers in parse as well as stream parse.
 
 ## 3.7.2 - 2018-11-29
 
-  - More tolerant float parsing to allow `123.`.
+- More tolerant float parsing to allow `123.`.
 
-  - Parse exceptions raised by user code now preserve the message content of the exception.
+- Parse exceptions raised by user code now preserve the message content of the exception.
 
 ## 3.7.1 - 2018-11-09
 
-  - Updated to support TruffleRuby.
+- Updated to support TruffleRuby.
 
 ## 3.7.0 - 2018-10-29
 
-  - Thanks to Ziaw for adding a integer range where integers outside that range are written as strings.
+- Thanks to Ziaw for adding a integer range where integers outside that range are written as strings.
 
 ## 3.6.13 - 2018-10-25
 
-  - Fixed issue where exceptions were not being cleared on parsing.
+- Fixed issue where exceptions were not being cleared on parsing.
 
-  - Added addition unicode dump error information.
+- Added addition unicode dump error information.
 
 ## 3.6.12 - 2018-10-16
 
-  - Fixed random `:omit_nil` setting with StringWriter and StreamWriter.
+- Fixed random `:omit_nil` setting with StringWriter and StreamWriter.
 
 ## 3.6.11 - 2018-09-26
 
-  - Added the JSON path to parse error messages.
+- Added the JSON path to parse error messages.
 
-  - BigDecimal parse errors now return Oj::ParseError instead of ArgumentError.
+- BigDecimal parse errors now return Oj::ParseError instead of ArgumentError.
 
 ## 3.6.10 - 2018-09-13
 
-  - Additional occurrences of `SYM2ID(sym)` replaced.
+- Additional occurrences of `SYM2ID(sym)` replaced.
 
 ## 3.6.9 - 2018-09-12
 
-  - `SYM2ID(sym)` causes a memory leak. A work around is now used.
+- `SYM2ID(sym)` causes a memory leak. A work around is now used.
 
 ## 3.6.8 - 2018-09-08
 
-  - Stopped setting the default options when optimize rails is called as the documentation has indicated.
+- Stopped setting the default options when optimize rails is called as the documentation has indicated.
 
-  - In custom mode `Date` and `DateTime` instances default to use the `:time_format` option is the `:create_additions` option is false.
+- In custom mode `Date` and `DateTime` instances default to use the `:time_format` option is the `:create_additions` option is false.
 
 ## 3.6.7 - 2018-08-26
 
-  - Fixed incorrect check in StreamWriter when adding raw JSON.
+- Fixed incorrect check in StreamWriter when adding raw JSON.
 
 ## 3.6.6 - 2018-08-16
 
-  - Fixed Debian build issues on several platforms.
+- Fixed Debian build issues on several platforms.
 
-  - `oj_slash_string` is now frozen.
+- `oj_slash_string` is now frozen.
 
 ## 3.6.5 - 2018-07-26
 
-  - Fixed GC issue with Oj::Doc.
+- Fixed GC issue with Oj::Doc.
 
-  - Fixed issue with time encoding with Windows.
+- Fixed issue with time encoding with Windows.
 
 ## 3.6.4 - 2018-07-10
 
-  - JSON.generate() now sets the `to_json` option as expected.
+- JSON.generate() now sets the `to_json` option as expected.
 
-  - Show `:create_additions` in the default options. It did not appear before.
+- Show `:create_additions` in the default options. It did not appear before.
 
 ## 3.6.3 - 2018-06-21
 
-  - Fixed compat dump compilation error on Windows.
+- Fixed compat dump compilation error on Windows.
 
 ## 3.6.2 - 2018-05-30
 
-  - Regex encoded correctly for rails when using `to_json`.
+- Regex encoded correctly for rails when using `to_json`.
 
-  - ActiveSupport::TimeWithZone optimization fixed.
+- ActiveSupport::TimeWithZone optimization fixed.
 
 ## 3.6.1 - 2018-05-16
 
-  - Fixed realloc bug in rails dump.
+- Fixed realloc bug in rails dump.
 
 ## 3.6.0 - 2018-05-01
 
-  - Add optimization for Rails ActiveRecord::Result encoding.
+- Add optimization for Rails ActiveRecord::Result encoding.
 
 ## 3.5.1 - 2018-04-14
 
-  - Fixed issue with \u0000 terminating keys early.
+- Fixed issue with \u0000 terminating keys early.
 
-  - Add trace for calls to `to_json` and 'as_json`.
+- Add trace for calls to `to_json` and 'as_json`.
 
 ## 3.5.0 - 2018-03-04
 
-  - A trace option is now available in all modes. The format roughly follows the Ruby trace format.
+- A trace option is now available in all modes. The format roughly follows the Ruby trace format.
 
 ## 3.4.0 - 2018-01-24
 
-  - Option to ignore specific classes in :object and :custom mode added.
+- Option to ignore specific classes in :object and :custom mode added.
 
 ## 3.3.10 - 2017-12-30
 
-  - Re-activated the bigdecimal_as_decimal option in custom mode and made the selection active for Rails mode.
+- Re-activated the bigdecimal_as_decimal option in custom mode and made the selection active for Rails mode.
 
-  - Fixed bug in optimize_rails that did not optimize all classes as expected.
+- Fixed bug in optimize_rails that did not optimize all classes as expected.
 
-  - Fixed warnings for Ruby 2.5.0.
+- Fixed warnings for Ruby 2.5.0.
 
 ## 3.3.9 - 2017-10-27
 
-  - Fixed bug where empty strings were sometimes marked as invalid.
+- Fixed bug where empty strings were sometimes marked as invalid.
 
 ## 3.3.8 - 2017-10-04
 
-  - Fixed Rail mimic precision bug.
+- Fixed Rail mimic precision bug.
 
 ## 3.3.7 - 2017-10-02
 
-  - Handle invalid unicode characters better for single byte strings.
+- Handle invalid unicode characters better for single byte strings.
 
-  - Parsers for empty strings handle errors more consistently.
+- Parsers for empty strings handle errors more consistently.
 
 ## 3.3.6 - 2017-09-22
 
-  - Numerous fixes and cleanup to support Ruby 2.4.2.
+- Numerous fixes and cleanup to support Ruby 2.4.2.
 
 ## 3.3.5 - 2017-08-11
 
@@ -1256,7 +1257,6 @@ Remove license from code.
 
 ## 1.2.9 - 2012-05-29
 
-
 ## 1.2.8 - 2012-05-03
 
 - Included a contribution by nevans to fix a math.h issue with an old fedora linux machine.
@@ -1369,7 +1369,6 @@ Remove license from code.
 - This is the first release sith a version of 0.5 indicating it is only half done. Basic load() and dump() is supported for Hash, Array, NilClass, TrueClass, FalseClass, Fixnum, Float, Symbol, and String Objects.
 
 ## 0.5.1 - 2012-02-19
-
 
 ## 0.5 - 2012-02-19
 

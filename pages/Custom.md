@@ -20,4 +20,3 @@ encoding and decoding is used. These are more efficient than calling out to a
 have to exist for the `"^o"` behavior to be utilized. Any other `:create_id`
 value behaves similar to the json gem by calling `to_json` and `create_json`
 as appropriate.
-

@@ -46,10 +46,10 @@ instance of the Encoder class and provide options in the initializer.
 
 The globals that ActiveSupport uses for encoding are:
 
- * `ActiveSupport::JSON::Encoding.use_standard_json_time_format`
- * `ActiveSupport::JSON::Encoding.escape_html_entities_in_json`
- * `ActiveSupport::JSON::Encoding.time_precision`
- * `ActiveSupport::JSON::Encoding.json_encoder`
+* `ActiveSupport::JSON::Encoding.use_standard_json_time_format`
+* `ActiveSupport::JSON::Encoding.escape_html_entities_in_json`
+* `ActiveSupport::JSON::Encoding.time_precision`
+* `ActiveSupport::JSON::Encoding.json_encoder`
 
 Those globals are aliased to also be accessed from the ActiveSupport module
 directly so `ActiveSupport::JSON::Encoding.time_precision` can also be accessed
@@ -77,17 +77,17 @@ listed here.
 The classes that can be put in optimized mode and are optimized when
 `Oj::Rails.optimize` is called with no arguments are:
 
- * Array
- * BigDecimal
- * Float
- * Hash
- * Range
- * Regexp
- * Time
- * ActiveSupport::TimeWithZone
- * ActionController::Parameters
- * any class inheriting from ActiveRecord::Base
- * any other class where all attributes should be dumped
+* Array
+* BigDecimal
+* Float
+* Hash
+* Range
+* Regexp
+* Time
+* ActiveSupport::TimeWithZone
+* ActionController::Parameters
+* any class inheriting from ActiveRecord::Base
+* any other class where all attributes should be dumped
 
 The ActiveSupport decoder is the `JSON.parse()` method. Calling the
 `Oj::Rails.set_decoder()` method replaces that method with the Oj equivalent.
@@ -131,7 +131,7 @@ If you are using an older version of Ruby, you can pin `oj` to an earlier versio
 gem 'oj', '3.7.12'
 ```
 
-### Notes:
+### Notes
 
 1. Optimized Floats set the significant digits to 16. This is different than
    Ruby which is used by the json gem and by Rails. Ruby varies the

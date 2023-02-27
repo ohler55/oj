@@ -74,20 +74,20 @@ Oj.remove_to_json(Rational)
 
 The classes that can be added are:
 
- * Array
- * BigDecimal
- * Complex
- * Date
- * DateTime
- * Exception
- * Hash
- * Integer
- * OpenStruct
- * Range
- * Rational
- * Regexp
- * Struct
- * Time
+* Array
+* BigDecimal
+* Complex
+* Date
+* DateTime
+* Exception
+* Hash
+* Integer
+* OpenStruct
+* Range
+* Rational
+* Regexp
+* Struct
+* Time
 
 The compatibility target version is 2.0.3. The json gem unit tests were used
 to verify compatibility with a few changes to use Oj instead of the original
