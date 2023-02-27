@@ -1,17 +1,17 @@
 # Oj Install Options
 
-### Enable trace log
+## Enable trace log
 
-```
+```bash
 gem install oj -- --enable-trace-log
 ```
 
 To enable Oj trace feature, it uses `--enable-trace-log` option when installing the gem.
 Then, the trace logs will be displayed when `:trace` option is set to `true`.
 
-### Enable SIMD instructions
+## Enable SIMD instructions
 
-```
+```bash
 gem install oj -- --with-sse42
 ```
 

@@ -10,7 +10,7 @@ Oj.optimize_rails()
 
 For more details and options, read on...
 
-# Oj Rails Compatibility
+## Oj Rails Compatibility
 
 The `:rails` mode mimics the ActiveSupport version 5 encoder. Rails and
 ActiveSupport are built around the use of the `as_json(*)` method defined for
@@ -152,13 +152,17 @@ gem 'oj', '3.7.12'
 
    For example:
 
-     ```
+     ```ruby
      require 'active_support/core_ext'
      require 'active_support/json'
      require 'oj'
      Oj.optimize_rails
      tracer.enable { Time.now.to_json }
-     # prints output including
+     ```
+
+     Prints output including:
+
+     ```console
      ....
      [20, :c_call, #<Class:Oj::Rails::Encoder>, :new]
      [20, :c_call, Oj::Rails::Encoder, :encode]

@@ -13,7 +13,7 @@ json gem has been required.
 
 For more details and options, read on...
 
-# Oj JSON Gem Compatibility
+## Oj JSON Gem Compatibility
 
 The `:compat` mode mimics the json gem. The json gem is built around the use
 of the `to_json(*)` method defined for a class. Oj attempts to provide the

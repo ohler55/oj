@@ -14,7 +14,7 @@ efficient than setting the globals for many smaller JSON documents but does
 provide a more thread safe approach to using custom options for loading and
 dumping.
 
-### Options for serializer and parser
+## Options for serializer and parser
 
 ### :allow_blank [Boolean]
 
@@ -138,7 +138,7 @@ default_options will be honored for :null, :strict, and :custom modes. Ignored
 for :custom and :wab. The :compat has a more complex set of rules. The JSON
 gem compatibility is best described by examples.
 
-```
+```ruby
 JSON.parse('') => raise
 JSON.parse(' ') => raise
 JSON.load('') => nil

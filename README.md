@@ -34,13 +34,13 @@ puts "Same? #{h == h2}"
 
 ## Installation
 
-```
+```bash
 gem install oj
 ```
 
 or in Bundler:
 
-```
+```Gemfile
 gem 'oj'
 ```
 
@@ -87,7 +87,7 @@ See [{file:CHANGELOG.md}](CHANGELOG.md) and [{file:RELEASE_NOTES.md}](RELEASE_NO
 
 Follow [@peterohler on Twitter](http://twitter.com/peterohler) for announcements and news about the Oj gem.
 
-#### Performance Comparisons
+## Performance Comparisons
 
 - [Oj Strict Mode Performance](http://www.ohler.com/dev/oj_misc/performance_strict.html) compares Oj strict mode parser performance to other JSON parsers.
 
@@ -97,7 +97,7 @@ Follow [@peterohler on Twitter](http://twitter.com/peterohler) for announcements
 
 - [Oj Callback Performance](http://www.ohler.com/dev/oj_misc/performance_callback.html) compares Oj callback parser performance to other JSON parsers.
 
-#### Links of Interest
+## Links of Interest
 
 - *Fast XML parser and marshaller on RubyGems*: <https://rubygems.org/gems/ox>
 
@@ -113,7 +113,7 @@ Follow [@peterohler on Twitter](http://twitter.com/peterohler) for announcements
 
 - *oj-introspect, an example of creating an Oj parser extension in C*: <https://github.com/meinac/oj-introspect>
 
-#### Contributing
+## Contributing
 
 - Provide a Pull Request off the `develop` branch.
 - Report a bug

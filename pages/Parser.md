@@ -240,7 +240,7 @@ Without a comparible parser that just validates a JSON document the
 comparison to the new `Oj::Parser.new(:validate)`. In that case the
 comparison is:
 
-```
+```console
              System  time (secs)  rate (ops/sec)
 -------------------  -----------  --------------
 Oj::Parser.validate       0.101      494369.136
@@ -257,7 +257,7 @@ processing the various element types in a JSON document. Comparing
 `Oj.saj_parse` to `Oj::Parser.new(:saj)` with a all callback methods
 implemented handler gives the following raw results:
 
-```
+```console
         System  time (secs)  rate (ops/sec)
 --------------  -----------  --------------
 Oj::Parser.saj       0.783       63836.986
@@ -272,7 +272,7 @@ Parsing to Ruby primitives and Array and Hash is possible with most
 parsers including the JSON gem parser. The raw results comparing
 `Oj.strict_load`, `Oj::Parser.new(:usual)`, and the JSON gem are:
 
-```
+```console
           System  time (secs)  rate (ops/sec)
 ----------------  -----------  --------------
 Oj::Parser.usual       0.452      110544.876
@@ -290,7 +290,7 @@ deserialization. Comparing to the JSON gem compatible mode
 `Oj.compat_load`, `Oj::Parser.new(:usual)`, and the JSON gem yields
 the following raw results:
 
-```
+```console
           System  time (secs)  rate (ops/sec)
 ----------------  -----------  --------------
 Oj::Parser.usual       0.071      703502.033
