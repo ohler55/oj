@@ -3,7 +3,6 @@
 [![CI](https://github.com/ohler55/oj/actions/workflows/CI.yml/badge.svg)](https://github.com/ohler55/oj/actions/workflows/CI.yml)
 ![Gem](https://img.shields.io/gem/v/oj.svg)
 ![Gem](https://img.shields.io/gem/dt/oj.svg)
-[![SemVer compatibility](https://api.dependabot.com/badges/compatibility_score?dependency-name=oj&package-manager=bundler&version-scheme=semver)](https://dependabot.com/compatibility-score.html?dependency-name=oj&package-manager=bundler&version-scheme=semver)
 [![TideLift](https://tidelift.com/badges/github/ohler55/oj)](https://tidelift.com/subscription/pkg/rubygems-oj?utm_source=rubygems-oj&utm_medium=referral&utm_campaign=readme)
 
 A *fast* JSON parser and Object marshaller as a Ruby gem.
