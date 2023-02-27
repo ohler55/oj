@@ -1,0 +1,39 @@
+name: Rubocop Check
+
+on:
+  push:
+    branches:
+      - develop
+      - master
+    paths:
+      - ".rubocop*.yml"
+      - ".github/workflows/rubocop.yml"
+      - "**/*.rb"
+  pull_request:
+    paths:
+      - ".rubocop*.yml"
+      - ".github/workflows/rubocop.yml"
+      - "**/*.rb"
+
+jobs:
+  formatting-check:
+    name: Formatting Check
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "2.7"
+
+      - name: Install rubocop
+        run: gem install rubocop --no-doc
+
+      - name: Set-up RuboCop Problem Matcher
+        uses: r7kamura/rubocop-problem-matchers-action@v1
+
+      - name: Run rubocop
+        run: rubocop
