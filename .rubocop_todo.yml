@@ -2629,3 +2629,19 @@ Style/ZeroLengthPredicate:
 # URISchemes: http, https
 Layout/LineLength:
   Max: 949
+
+Lint/ScriptPermission:
+  Exclude:
+    - 'Rakefile'
+    - 'samples/wrapexception.rb'
+    - 'test/json_gem/json_addition_test.rb'
+    - 'test/json_gem/json_common_interface_test.rb'
+    - 'test/json_gem/json_encoding_test.rb'
+    - 'test/json_gem/json_ext_parser_test.rb'
+    - 'test/json_gem/json_fixtures_test.rb'
+    - 'test/json_gem/json_generator_test.rb'
+    - 'test/json_gem/json_generic_object_test.rb'
+    - 'test/json_gem/json_parser_test.rb'
+    - 'test/json_gem/json_string_matching_test.rb'
+    - 'test/perf_simple.rb'
+    - 'test/sample.rb'
