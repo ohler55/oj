@@ -20,7 +20,7 @@ Gem::Specification.new do |s|
   s.summary = "A fast JSON parser and serializer."
   s.description = "The fastest JSON parser and object serializer."
   s.licenses = ['MIT']
-  s.required_ruby_version = ">= 2.4"
+  s.required_ruby_version = ">= 2.7"
 
   s.files = Dir["{lib,ext,test}/**/*.{rb,h,c}"] + ['LICENSE', 'README.md', 'CHANGELOG.md', 'RELEASE_NOTES.md'] + Dir["pages/*.md"]
   s.extensions = ["ext/oj/extconf.rb"]
