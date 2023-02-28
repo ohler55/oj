@@ -29,7 +29,7 @@ class JSONCommonInterfaceTest < Test::Unit::TestCase
     #@json = '{"a":2,"b":5.23683071,"c":"c","d":[1,"b",3.14],"e":{"foo":"bar"},'\
     #'"g":"\\"\\u0000\\u001f","h":1000.0,"i":0.001}'
     @json = '{"a":2,"c":"c","d":[1,"b",3.14],"e":{"foo":"bar"},'\
-	    '"g":"\\"\\u0000\\u001f","h":1000.0,"i":0.001}'
+            '"g":"\\"\\u0000\\u001f","h":1000.0,"i":0.001}'
   end
 
   def test_index

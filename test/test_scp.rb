@@ -350,7 +350,7 @@ class ScpTest < Minitest::Test
       handler = AllHandler.new()
       json = %|{"big":-e123456789}|
       assert_raises Exception do # Can be either Oj::ParseError or ArgumentError depending on Ruby version
-	Oj.sc_parse(handler, json)
+        Oj.sc_parse(handler, json)
       end
     end
   end

@@ -14,10 +14,10 @@ File.open(filename, "w") { |f|
   ('a'..'z').each { |a|
     ('a'..'z').each { |b|
       ('a'..'z').each { |c|
-	('a'..'z').each { |d|
-	  f.puts(%|"#{a}#{b}#{c}#{d}":#{cnt},|)
-	  cnt += 1
-	}
+        ('a'..'z').each { |d|
+          f.puts(%|"#{a}#{b}#{c}#{d}":#{cnt},|)
+          cnt += 1
+        }
       }
     }
   }

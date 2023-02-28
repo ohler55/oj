@@ -279,21 +279,6 @@ Layout/IndentationConsistency:
   Exclude:
     - 'lib/oj/state.rb'
 
-# Offense count: 55
-# This cop supports safe autocorrection (--autocorrect).
-# Configuration parameters: IndentationWidth, EnforcedStyle.
-# SupportedStyles: spaces, tabs
-Layout/IndentationStyle:
-  Exclude:
-    - 'lib/oj/state.rb'
-    - 'test/activerecord/result_test.rb'
-    - 'test/json_gem/json_common_interface_test.rb'
-    - 'test/mem.rb'
-    - 'test/perf_once.rb'
-    - 'test/test_parser_saj.rb'
-    - 'test/test_scp.rb'
-    - 'test/test_various.rb'
-
 # Offense count: 12
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: Width, AllowedPatterns.

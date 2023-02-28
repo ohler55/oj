@@ -260,13 +260,13 @@ class SajTest < Minitest::Test
     p.handler = handler
     p.parse(json)
     assert_equal([
-		   [:array_start, nil],
-     [:add_value, true, nil],
-     [:array_end, nil],
-		   [:array_start, nil],
-     [:add_value, false, nil],
-     [:array_end, nil],
-		 ], handler.calls)
+      [:array_start, nil],
+      [:add_value, true, nil],
+      [:array_end, nil],
+      [:array_start, nil],
+      [:add_value, false, nil],
+      [:array_end, nil],
+    ], handler.calls)
   end
 
   def test_io
@@ -276,11 +276,11 @@ class SajTest < Minitest::Test
     p.handler = handler
     p.load(StringIO.new(json))
     assert_equal([
-		   [:array_start, nil],
-		   [:add_value, true, nil],
-		   [:add_value, false, nil],
-		   [:array_end, nil],
-		 ], handler.calls)
+      [:array_start, nil],
+      [:add_value, true, nil],
+      [:add_value, false, nil],
+      [:array_end, nil],
+    ], handler.calls)
   end
 
   def test_file
@@ -289,11 +289,11 @@ class SajTest < Minitest::Test
     p.handler = handler
     p.file('saj_test.json')
     assert_equal([
-		   [:array_start, nil],
-		   [:add_value, true, nil],
-		   [:add_value, false, nil],
-		   [:array_end, nil],
-		 ], handler.calls)
+       [:array_start, nil],
+       [:add_value, true, nil],
+       [:add_value, false, nil],
+       [:array_end, nil],
+     ], handler.calls)
   end
 
   def test_default
@@ -302,10 +302,10 @@ class SajTest < Minitest::Test
     Oj::Parser.saj.handler = handler
     Oj::Parser.saj.parse(json)
     assert_equal([
-		 [:array_start, nil],
-     [:add_value, true, nil],
-     [:array_end, nil],
-		 ], handler.calls)
+      [:array_start, nil],
+      [:add_value, true, nil],
+      [:array_end, nil],
+    ], handler.calls)
   end
 
   def test_loc
