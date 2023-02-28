@@ -39,10 +39,10 @@ class JSONGenericObjectTest < Test::Unit::TestCase
                    )
     switch_json_creatable do
       assert_equal @go, l =
-        JSON(
-          '{ "json_class": "JSON::GenericObject", "a": 1, "b": 2 }',
-          :create_additions => true
-        )
+                          JSON(
+                            '{ "json_class": "JSON::GenericObject", "a": 1, "b": 2 }',
+                            :create_additions => true
+                          )
       assert_equal 1, l.a
       assert_equal @go,
                    l = JSON('{ "a": 1, "b": 2 }', :object_class => JSON::GenericObject)
