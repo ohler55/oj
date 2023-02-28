@@ -6,7 +6,6 @@ Gem::Specification.new do |s|
   s.name = "oj"
   s.version = ::Oj::VERSION
   s.authors = "Peter Ohler"
-  s.date = Date.today.to_s
   s.email = "peter@ohler.com"
   s.homepage = "http://www.ohler.com/oj"
   s.metadata = {
