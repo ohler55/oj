@@ -31,7 +31,7 @@ class JSONGenericObjectTest < Test::Unit::TestCase
     x = JSON(
         '{ "json_class": "JSON::GenericObject", "a": 1, "b": 2 }',
         :create_additions => true
-             )
+      )
     assert_kind_of Hash,
                    JSON(
                      '{ "json_class": "JSON::GenericObject", "a": 1, "b": 2 }',
