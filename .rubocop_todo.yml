@@ -14,18 +14,6 @@ Gemspec/RequireMFA:
   Exclude:
     - 'oj.gemspec'
 
-# Offense count: 13
-# This cop supports safe autocorrection (--autocorrect).
-# Configuration parameters: EnforcedStyle, IndentationWidth.
-# SupportedStyles: with_first_argument, with_fixed_indentation
-Layout/ArgumentAlignment:
-  Exclude:
-    - 'test/activerecord/result_test.rb'
-    - 'test/json_gem/json_fixtures_test.rb'
-    - 'test/json_gem/json_generic_object_test.rb'
-    - 'test/json_gem/json_parser_test.rb'
-    - 'test/json_gem/json_string_matching_test.rb'
-
 # Offense count: 7
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: EnforcedStyle, IndentationWidth.
