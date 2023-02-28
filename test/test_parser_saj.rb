@@ -261,11 +261,11 @@ class SajTest < Minitest::Test
     p.parse(json)
     assert_equal([
 		   [:array_start, nil],
-                   [:add_value, true, nil],
-                   [:array_end, nil],
+       [:add_value, true, nil],
+       [:array_end, nil],
 		   [:array_start, nil],
-                   [:add_value, false, nil],
-                   [:array_end, nil],
+       [:add_value, false, nil],
+       [:array_end, nil],
 		 ], handler.calls)
   end
 
@@ -303,8 +303,8 @@ class SajTest < Minitest::Test
     Oj::Parser.saj.parse(json)
     assert_equal([
 		   [:array_start, nil],
-                   [:add_value, true, nil],
-                   [:array_end, nil],
+       [:add_value, true, nil],
+       [:array_end, nil],
 		 ], handler.calls)
   end
 

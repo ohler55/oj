@@ -141,7 +141,7 @@ class JSONParserTest < Test::Unit::TestCase
     assert_equal([1], JSON.parse('[1]'))
     assert_equal([1], JSON.parse('  [ 1  ]  '))
     ary = [[1], ["foo"], [3.14], [4711.0], [2.718], [nil],
-      [[1, -2, 3]], [false], [true]]
+           [[1, -2, 3]], [false], [true]]
     assert_equal(ary,
                  JSON.parse('[[1],["foo"],[3.14],[47.11e+2],[2718.0E-3],[null],[[1,-2,3]],[false],[true]]'))
     assert_equal(ary, JSON.parse(%Q{   [   [1] , ["foo"]  ,  [3.14] \t ,  [47.11e+2]\s
