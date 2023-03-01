@@ -39,6 +39,9 @@ jobs:
           - ruby: '2.7'
             gemfile: rails_6 # End of life June 1, 2023
             os: macos
+          - ruby: 'truffleruby'
+            gemfile: no_rails
+            os: ubuntu
 
     env:
       BUNDLE_GEMFILE: gemfiles/${{ matrix.gemfile }}.gemfile
@@ -75,24 +78,5 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby }}
-          bundler-cache: true
-      - run: bundle exec rake
-
-  TruffleRuby:
-    strategy:
-      fail-fast: false
-      matrix:
-        ruby: [ 'head' ]
-
-    env:
-      BUNDLE_GEMFILE: gemfiles/no_rails.gemfile
-      MAKE: make -j 2
-    runs-on: ubuntu-latest
-    name: TruffleRuby ${{ matrix.ruby }} (ubuntu)
-    steps:
-      - uses: actions/checkout@v3
-      - uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: truffleruby-${{ matrix.ruby }}
           bundler-cache: true
       - run: bundle exec rake
