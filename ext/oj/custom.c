@@ -4,12 +4,12 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "mem.h"
 #include "code.h"
 #include "dump.h"
 #include "encode.h"
 #include "err.h"
 #include "intern.h"
+#include "mem.h"
 #include "odd.h"
 #include "oj.h"
 #include "parse.h"

@@ -15,7 +15,7 @@ typedef struct _saj {
     uint8_t        cache_str;
     bool           cache_keys;
     bool           thread_safe;
-} * Saj;
+} *Saj;
 
 // Initialize the parser with the SAJ delegate. If the SAJ delegate is wrapped
 // then this function is called first and then the parser functions can be

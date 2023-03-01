@@ -9,8 +9,8 @@
 #include <pthread.h>
 #endif
 
-#include "mem.h"
 #include "cache.h"
+#include "mem.h"
 #include "parse.h"
 
 // Only used for the class cache so 256 should be sufficient.
@@ -22,10 +22,10 @@
 
 typedef struct _keyVal {
     struct _keyVal *next;
-    const char *    key;
+    const char     *key;
     size_t          len;
     VALUE           val;
-} * KeyVal;
+} *KeyVal;
 
 typedef struct _hash {
     struct _keyVal slots[HASH_SLOT_CNT];
@@ -34,16 +34,16 @@ typedef struct _hash {
 #else
     VALUE mutex;
 #endif
-} * Hash;
+} *Hash;
 
 struct _hash class_hash;
 struct _hash attr_hash;
 
-static VALUE          str_cache_obj;
+static VALUE str_cache_obj;
 
-static VALUE          sym_cache_obj;
+static VALUE sym_cache_obj;
 
-static VALUE          attr_cache_obj;
+static VALUE attr_cache_obj;
 
 static VALUE form_str(const char *str, size_t len) {
     return rb_str_freeze(rb_utf8_str_new(str, len));
@@ -61,26 +61,26 @@ static VALUE form_attr(const char *str, size_t len) {
         ID    id;
 
         if ('~' == *str) {
-	    memcpy(b, str + 1, len - 1);
-	    b[len - 1] = '\0';
-	    len -= 2;
-	} else {
-	    *b = '@';
-	    memcpy(b + 1, str, len);
-	    b[len + 1] = '\0';
-	}
+            memcpy(b, str + 1, len - 1);
+            b[len - 1] = '\0';
+            len -= 2;
+        } else {
+            *b = '@';
+            memcpy(b + 1, str, len);
+            b[len + 1] = '\0';
+        }
         id = rb_intern3(buf, len + 1, oj_utf8_encoding);
         OJ_R_FREE(b);
         return id;
     }
     if ('~' == *str) {
-	memcpy(buf, str + 1, len - 1);
-	buf[len - 1] = '\0';
-	len -= 2;
+        memcpy(buf, str + 1, len - 1);
+        buf[len - 1] = '\0';
+        len -= 2;
     } else {
-	*buf = '@';
-	memcpy(buf + 1, str, len);
-	buf[len + 1] = '\0';
+        *buf = '@';
+        memcpy(buf + 1, str, len);
+        buf[len + 1] = '\0';
     }
     return (VALUE)rb_intern3(buf, len + 1, oj_utf8_encoding);
 }
@@ -92,16 +92,16 @@ void oj_hash_init(void) {
     rb_gc_register_address(&cache_class);
     rb_undef_alloc_func(cache_class);
 
-    struct _cache *str_cache     = cache_create(0, form_str, true, true);
-    str_cache_obj = Data_Wrap_Struct(cache_class, cache_mark, cache_free, str_cache);
+    struct _cache *str_cache = cache_create(0, form_str, true, true);
+    str_cache_obj            = Data_Wrap_Struct(cache_class, cache_mark, cache_free, str_cache);
     rb_gc_register_address(&str_cache_obj);
 
-    struct _cache *sym_cache     = cache_create(0, form_sym, true, true);
-    sym_cache_obj = Data_Wrap_Struct(cache_class, cache_mark, cache_free, sym_cache);
+    struct _cache *sym_cache = cache_create(0, form_sym, true, true);
+    sym_cache_obj            = Data_Wrap_Struct(cache_class, cache_mark, cache_free, sym_cache);
     rb_gc_register_address(&sym_cache_obj);
 
     struct _cache *attr_cache = cache_create(0, form_attr, false, true);
-    attr_cache_obj = Data_Wrap_Struct(cache_class, cache_mark, cache_free, attr_cache);
+    attr_cache_obj            = Data_Wrap_Struct(cache_class, cache_mark, cache_free, attr_cache);
     rb_gc_register_address(&attr_cache_obj);
 
     memset(class_hash.slots, 0, sizeof(class_hash.slots));
@@ -127,12 +127,11 @@ oj_str_intern(const char *key, size_t len) {
 
 VALUE
 oj_sym_intern(const char *key, size_t len) {
-  return cache_intern(DATA_PTR(sym_cache_obj), key, len);
+    return cache_intern(DATA_PTR(sym_cache_obj), key, len);
 }
 
-ID
-oj_attr_intern(const char *key, size_t len) {
-  return cache_intern(DATA_PTR(attr_cache_obj), key, len);
+ID oj_attr_intern(const char *key, size_t len) {
+    return cache_intern(DATA_PTR(attr_cache_obj), key, len);
 }
 
 static uint64_t hash_calc(const uint8_t *key, size_t len) {
@@ -186,10 +185,10 @@ static VALUE resolve_classname(VALUE mod, const char *classname, int auto_define
 static VALUE resolve_classpath(ParseInfo pi, const char *name, size_t len, int auto_define, VALUE error_class) {
     char        class_name[1024];
     VALUE       clas;
-    char *      end = class_name + sizeof(class_name) - 1;
-    char *      s;
-    const char *n = name;
-    size_t	nlen = len;
+    char       *end = class_name + sizeof(class_name) - 1;
+    char       *s;
+    const char *n    = name;
+    size_t      nlen = len;
 
     clas = rb_cObject;
     for (s = class_name; 0 < len; n++, len--) {
@@ -212,11 +211,11 @@ static VALUE resolve_classpath(ParseInfo pi, const char *name, size_t len, int a
     }
     *s = '\0';
     if (Qundef == (clas = resolve_classname(clas, class_name, auto_define))) {
-	if (sizeof(class_name) <= nlen) {
-	    nlen = sizeof(class_name) - 1;
-	}
-	strncpy(class_name, name, nlen);
-	class_name[nlen] = '\0';
+        if (sizeof(class_name) <= nlen) {
+            nlen = sizeof(class_name) - 1;
+        }
+        strncpy(class_name, name, nlen);
+        class_name[nlen] = '\0';
         oj_set_error_at(pi, error_class, __FILE__, __LINE__, "class '%s' is not defined", class_name);
         if (Qnil != error_class) {
             pi->err_class = error_class;

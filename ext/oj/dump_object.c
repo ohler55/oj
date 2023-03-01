@@ -1,8 +1,8 @@
 // Copyright (c) 2012, 2017 Peter Ohler. All rights reserved.
 // Licensed under the MIT License. See LICENSE file in the project root for license details.
 
-#include "mem.h"
 #include "dump.h"
+#include "mem.h"
 #include "odd.h"
 #include "trace.h"
 
@@ -32,7 +32,7 @@ static void dump_data(VALUE obj, int depth, Out out, bool as_ok) {
     } else {
         if (oj_bigdecimal_class == clas) {
             volatile VALUE rstr = oj_safe_string_convert(obj);
-            const char *   str  = RSTRING_PTR(rstr);
+            const char    *str  = RSTRING_PTR(rstr);
             int            len  = (int)RSTRING_LEN(rstr);
 
             if (No != out->opts->bigdec_as_num) {
@@ -61,7 +61,7 @@ static void dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
 
     if (oj_bigdecimal_class == clas) {
         volatile VALUE rstr = oj_safe_string_convert(obj);
-        const char *   str  = RSTRING_PTR(rstr);
+        const char    *str  = RSTRING_PTR(rstr);
         int            len  = (int)RSTRING_LEN(rstr);
 
         if (0 == strcasecmp("Infinity", str)) {
@@ -224,37 +224,36 @@ static int hash_cb(VALUE key, VALUE value, VALUE ov) {
         oj_dump_obj_val(value, depth, out);
         break;
 
-    default:
-        {
-            int     d2 = depth + 1;
-            long    s2 = size + out->indent + 1;
-            int     i;
-            int     started = 0;
-            uint8_t b;
+    default: {
+        int     d2 = depth + 1;
+        long    s2 = size + out->indent + 1;
+        int     i;
+        int     started = 0;
+        uint8_t b;
 
-            assure_size(out, s2 + 15);
-            APPEND_CHARS(out->cur, "\"^#", 3);
-            out->hash_cnt++;
-            for (i = 28; 0 <= i; i -= 4) {
-                b = (uint8_t)((out->hash_cnt >> i) & 0x0000000F);
-                if ('\0' != b) {
-                    started = 1;
-                }
-                if (started) {
-                    *out->cur++ = hex_chars[b];
-                }
+        assure_size(out, s2 + 15);
+        APPEND_CHARS(out->cur, "\"^#", 3);
+        out->hash_cnt++;
+        for (i = 28; 0 <= i; i -= 4) {
+            b = (uint8_t)((out->hash_cnt >> i) & 0x0000000F);
+            if ('\0' != b) {
+                started = 1;
             }
-            APPEND_CHARS(out->cur, "\":[", 3);
-            fill_indent(out, d2);
-            oj_dump_obj_val(key, d2, out);
-            assure_size(out, s2);
-            *out->cur++ = ',';
-            fill_indent(out, d2);
-            oj_dump_obj_val(value, d2, out);
-            assure_size(out, size);
-            fill_indent(out, depth);
-            *out->cur++ = ']';
+            if (started) {
+                *out->cur++ = hex_chars[b];
+            }
         }
+        APPEND_CHARS(out->cur, "\":[", 3);
+        fill_indent(out, d2);
+        oj_dump_obj_val(key, d2, out);
+        assure_size(out, s2);
+        *out->cur++ = ',';
+        fill_indent(out, d2);
+        oj_dump_obj_val(value, d2, out);
+        assure_size(out, size);
+        fill_indent(out, depth);
+        *out->cur++ = ']';
+    }
     }
     out->depth  = depth;
     *out->cur++ = ',';
@@ -364,10 +363,10 @@ static void dump_hash(VALUE obj, int depth, Out out, bool as_ok) {
 }
 
 static void dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
-    ID *           idp;
-    AttrGetFunc *  fp;
+    ID            *idp;
+    AttrGetFunc   *fp;
     volatile VALUE v;
-    const char *   name;
+    const char    *name;
     size_t         size;
     int            d2 = depth + 1;
 
@@ -644,7 +643,7 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
 #endif
     out->cur--;
     APPEND_CHARS(out->cur, "]}", 2);
-    *out->cur   = '\0';
+    *out->cur = '\0';
 }
 
 static void dump_complex(VALUE obj, int depth, Out out, bool as_ok) {

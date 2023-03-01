@@ -30,9 +30,7 @@ static void add_int(struct _ojParser *p) {
     switch (p->stack[p->depth]) {
     case TOP_FUN: printf("*** add_int %lld at top\n", (long long)p->num.fixnum); break;
     case ARRAY_FUN: printf("*** add_int %lld to array\n", (long long)p->num.fixnum); break;
-    case OBJECT_FUN:
-        printf("*** add_int %lld with '%s'\n", (long long)p->num.fixnum, buf_str(&p->key));
-        break;
+    case OBJECT_FUN: printf("*** add_int %lld with '%s'\n", (long long)p->num.fixnum, buf_str(&p->key)); break;
     }
 }
 
@@ -48,9 +46,7 @@ static void add_big(struct _ojParser *p) {
     switch (p->stack[p->depth]) {
     case TOP_FUN: printf("*** add_big %s at top\n", buf_str(&p->buf)); break;
     case ARRAY_FUN: printf("*** add_big %s to array\n", buf_str(&p->buf)); break;
-    case OBJECT_FUN:
-        printf("*** add_big %s with '%s'\n", buf_str(&p->buf), buf_str(&p->key));
-        break;
+    case OBJECT_FUN: printf("*** add_big %s with '%s'\n", buf_str(&p->buf), buf_str(&p->key)); break;
     }
 }
 
@@ -58,9 +54,7 @@ static void add_str(struct _ojParser *p) {
     switch (p->stack[p->depth]) {
     case TOP_FUN: printf("*** add_str '%s' at top\n", buf_str(&p->buf)); break;
     case ARRAY_FUN: printf("*** add_str '%s' to array\n", buf_str(&p->buf)); break;
-    case OBJECT_FUN:
-        printf("*** add_str '%s' with '%s'\n", buf_str(&p->buf), buf_str(&p->key));
-        break;
+    case OBJECT_FUN: printf("*** add_str '%s' with '%s'\n", buf_str(&p->buf), buf_str(&p->key)); break;
     }
 }
 

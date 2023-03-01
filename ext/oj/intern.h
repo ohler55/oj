@@ -4,8 +4,8 @@
 #ifndef OJ_INTERN_H
 #define OJ_INTERN_H
 
-#include <stdbool.h>
 #include <ruby.h>
+#include <stdbool.h>
 
 struct _parseInfo;
 
@@ -14,12 +14,8 @@ extern void oj_hash_init(void);
 extern VALUE oj_str_intern(const char *key, size_t len);
 extern VALUE oj_sym_intern(const char *key, size_t len);
 extern ID    oj_attr_intern(const char *key, size_t len);
-extern VALUE oj_class_intern(const char *       key,
-                             size_t             len,
-                             bool               safe,
-                             struct _parseInfo *pi,
-                             int                auto_define,
-                             VALUE              error_class);
+extern VALUE
+oj_class_intern(const char *key, size_t len, bool safe, struct _parseInfo *pi, int auto_define, VALUE error_class);
 
 extern char *oj_strndup(const char *s, size_t len);
 

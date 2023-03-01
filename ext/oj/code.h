@@ -17,7 +17,7 @@ typedef struct _code {
     EncodeFunc  encode;
     DecodeFunc  decode;
     bool        active;  // For compat mode.
-} * Code;
+} *Code;
 
 // Used by encode functions.
 typedef struct _attr {
@@ -26,7 +26,7 @@ typedef struct _attr {
     VALUE       value;
     long        num;
     VALUE       time;
-} * Attr;
+} *Attr;
 
 extern bool  oj_code_dump(Code codes, VALUE obj, int depth, Out out);
 extern VALUE oj_code_load(Code codes, VALUE clas, VALUE args);

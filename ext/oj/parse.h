@@ -32,7 +32,7 @@ typedef struct _numInfo {
     int         has_exp;
     int         no_big;
     int         bigdec_load;
-} * NumInfo;
+} *NumInfo;
 
 typedef struct _parseInfo {
     // used for the string parser
@@ -54,11 +54,7 @@ typedef struct _parseInfo {
     VALUE (*start_hash)(struct _parseInfo *pi);
     void (*end_hash)(struct _parseInfo *pi);
     VALUE (*hash_key)(struct _parseInfo *pi, const char *key, size_t klen);
-    void (*hash_set_cstr)(struct _parseInfo *pi,
-                          Val                kval,
-                          const char *       str,
-                          size_t             len,
-                          const char *       orig);
+    void (*hash_set_cstr)(struct _parseInfo *pi, Val kval, const char *str, size_t len, const char *orig);
     void (*hash_set_num)(struct _parseInfo *pi, Val kval, NumInfo ni);
     void (*hash_set_value)(struct _parseInfo *pi, Val kval, VALUE value);
 
@@ -73,11 +69,10 @@ typedef struct _parseInfo {
     void (*add_value)(struct _parseInfo *pi, VALUE val);
     VALUE err_class;
     bool  has_callbacks;
-} * ParseInfo;
+} *ParseInfo;
 
-extern void oj_parse2(ParseInfo pi);
-extern void
-             oj_set_error_at(ParseInfo pi, VALUE err_clas, const char *file, int line, const char *format, ...);
+extern void  oj_parse2(ParseInfo pi);
+extern void  oj_set_error_at(ParseInfo pi, VALUE err_clas, const char *file, int line, const char *format, ...);
 extern VALUE oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yieldOk);
 extern VALUE oj_num_as_value(NumInfo ni);
 

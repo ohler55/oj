@@ -14,7 +14,7 @@ typedef struct _rxClass {
     struct _rxC *head;
     struct _rxC *tail;
     char         err[128];
-} * RxClass;
+} *RxClass;
 
 extern void  oj_rxclass_init(RxClass rc);
 extern void  oj_rxclass_cleanup(RxClass rc);

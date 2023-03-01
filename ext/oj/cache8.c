@@ -39,10 +39,12 @@ void oj_cache8_new(Cache8 *cache) {
     }
 }
 
-void oj_cache8_delete(Cache8 cache) { cache8_delete(cache, 0); }
+void oj_cache8_delete(Cache8 cache) {
+    cache8_delete(cache, 0);
+}
 
 static void cache8_delete(Cache8 cache, int depth) {
-    Bucket *     b;
+    Bucket      *b;
     unsigned int i;
 
     for (i = 0, b = cache->buckets; i < SLOT_CNT; i++, b++) {
@@ -80,7 +82,7 @@ void oj_cache8_print(Cache8 cache) {
 }
 
 static void slot_print(Cache8 c, sid_t key, unsigned int depth) {
-    Bucket *     b;
+    Bucket      *b;
     unsigned int i;
     sid_t        k8 = (sid_t)key;
     sid_t        k;
@@ -91,11 +93,9 @@ static void slot_print(Cache8 c, sid_t key, unsigned int depth) {
             /*printf("*** key: 0x%016llx  depth: %u  i: %u\n", k, depth, i); */
             if (DEPTH - 1 == depth) {
 #if IS_WINDOWS
-                printf("0x%016lx: %4lu\n", (long unsigned int)k,
-                       (long unsigned int)b->value);
+                printf("0x%016lx: %4lu\n", (long unsigned int)k, (long unsigned int)b->value);
 #else
-                printf("0x%016llx: %4llu\n", (long long unsigned int)k,
-                       (long long unsigned int)b->value);
+                printf("0x%016llx: %4llu\n", (long long unsigned int)k, (long long unsigned int)b->value);
 #endif
             } else {
                 slot_print(b->child, k, depth + 1);

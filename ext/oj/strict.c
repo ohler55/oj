@@ -17,7 +17,7 @@ VALUE oj_cstr_to_value(const char *str, size_t len, size_t cache_str) {
     volatile VALUE rstr = Qnil;
 
     if (len < cache_str) {
-	rstr = oj_str_intern(str, len);
+        rstr = oj_str_intern(str, len);
     } else {
         rstr = rb_str_new(str, len);
         rstr = oj_encode(rstr);
@@ -37,14 +37,14 @@ VALUE oj_calc_hash_key(ParseInfo pi, Val parent) {
         } else {
             rkey = rb_str_new(parent->key, parent->klen);
             rkey = oj_encode(rkey);
-	    OBJ_FREEZE(rkey); // frozen when used as a Hash key anyway
+            OBJ_FREEZE(rkey);  // frozen when used as a Hash key anyway
         }
         return rkey;
     }
     if (Yes == pi->options.sym_key) {
-	rkey = oj_sym_intern(parent->key, parent->klen);
+        rkey = oj_sym_intern(parent->key, parent->klen);
     } else {
-	rkey = oj_str_intern(parent->key, parent->klen);
+        rkey = oj_str_intern(parent->key, parent->klen);
     }
     return rkey;
 }
@@ -98,9 +98,7 @@ static VALUE start_hash(ParseInfo pi) {
 static void hash_set_cstr(ParseInfo pi, Val parent, const char *str, size_t len, const char *orig) {
     volatile VALUE rstr = oj_cstr_to_value(str, len, (size_t)pi->options.cache_str);
 
-    rb_hash_aset(stack_peek(&pi->stack)->val,
-                 oj_calc_hash_key(pi, parent),
-                 rstr);
+    rb_hash_aset(stack_peek(&pi->stack)->val, oj_calc_hash_key(pi, parent), rstr);
     if (RB_UNLIKELY(Yes == pi->options.trace)) {
         oj_trace_parse_call("set_string", pi, __FILE__, __LINE__, rstr);
     }
@@ -113,18 +111,14 @@ static void hash_set_num(ParseInfo pi, Val parent, NumInfo ni) {
         oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number or other value");
     }
     v = oj_num_as_value(ni);
-    rb_hash_aset(stack_peek(&pi->stack)->val,
-                 oj_calc_hash_key(pi, parent),
-                 v);
+    rb_hash_aset(stack_peek(&pi->stack)->val, oj_calc_hash_key(pi, parent), v);
     if (RB_UNLIKELY(Yes == pi->options.trace)) {
         oj_trace_parse_call("set_number", pi, __FILE__, __LINE__, v);
     }
 }
 
 static void hash_set_value(ParseInfo pi, Val parent, VALUE value) {
-    rb_hash_aset(stack_peek(&pi->stack)->val,
-                 oj_calc_hash_key(pi, parent),
-                 value);
+    rb_hash_aset(stack_peek(&pi->stack)->val, oj_calc_hash_key(pi, parent), value);
     if (RB_UNLIKELY(Yes == pi->options.trace)) {
         oj_trace_parse_call("set_value", pi, __FILE__, __LINE__, value);
     }

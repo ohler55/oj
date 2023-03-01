@@ -1,9 +1,9 @@
 // Copyright (c) 2012, 2017 Peter Ohler. All rights reserved.
 // Licensed under the MIT License. See LICENSE file in the project root for license details.
 
-#include "mem.h"
 #include "dump.h"
 #include "encode.h"
+#include "mem.h"
 #include "oj.h"
 #include "parse.h"
 
@@ -368,8 +368,8 @@ static VALUE mimic_generate_core(int argc, VALUE *argv, Options copts) {
 
     oj_out_init(&out);
 
-    out.omit_nil  = copts->dump_opts.omit_nil;
-    out.caller    = CALLER_GENERATE;
+    out.omit_nil = copts->dump_opts.omit_nil;
+    out.caller   = CALLER_GENERATE;
     // For obj.to_json or generate nan is not allowed but if called from dump
     // it is.
     copts->dump_opts.nan_dump = RaiseNan;
@@ -389,10 +389,8 @@ static VALUE mimic_generate_core(int argc, VALUE *argv, Options copts) {
         VALUE active_hack[1];
 
         if (Qundef == state_class) {
-            rb_warn(
-              "Oj::Rails.mimic_JSON was called implicitly. "
-              "Call it explicitly beforehand if you want to remove this warning."
-            );
+            rb_warn("Oj::Rails.mimic_JSON was called implicitly. "
+                    "Call it explicitly beforehand if you want to remove this warning.");
             oj_define_mimic_json(0, NULL, Qnil);
         }
         active_hack[0] = rb_funcall(state_class, oj_new_id, 0);
@@ -467,7 +465,7 @@ oj_mimic_pretty_generate(int argc, VALUE *argv, VALUE self) {
     }
     if (1 == argc || Qnil == argv[1]) {
         h = rb_hash_new();
-    } else  {
+    } else {
         h = argv[1];
     }
     if (!oj_hash_has_key(h, oj_indent_sym)) {
@@ -486,10 +484,8 @@ oj_mimic_pretty_generate(int argc, VALUE *argv, VALUE self) {
         rb_hash_aset(h, oj_array_nl_sym, rb_str_new2("\n"));
     }
     if (Qundef == state_class) {
-        rb_warn(
-          "Oj::Rails.mimic_JSON was called implicitly. "
-          "Call it explicitly beforehand if you want to remove this warning."
-        );
+        rb_warn("Oj::Rails.mimic_JSON was called implicitly. "
+                "Call it explicitly beforehand if you want to remove this warning.");
         oj_define_mimic_json(0, NULL, Qnil);
     }
     rargs[1] = rb_funcall(state_class, oj_new_id, 1, h);
@@ -763,9 +759,9 @@ static VALUE mimic_object_to_json(int argc, VALUE *argv, VALUE self) {
 
     oj_out_init(&out);
 
-    out.omit_nil      = copts.dump_opts.omit_nil;
-    copts.mode        = CompatMode;
-    copts.to_json     = No;
+    out.omit_nil  = copts.dump_opts.omit_nil;
+    copts.mode    = CompatMode;
+    copts.to_json = No;
     if (1 <= argc && Qnil != argv[0]) {
         oj_parse_mimic_dump_options(argv[0], &copts);
     }

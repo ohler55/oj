@@ -33,8 +33,7 @@ static VALUE noop_hash_key(ParseInfo pi, const char *key, size_t klen) {
     return Qundef;
 }
 
-static void
-noop_hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *orig) {
+static void noop_hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *orig) {
 }
 
 static void noop_hash_set_num(ParseInfo pi, Val kval, NumInfo ni) {
@@ -91,12 +90,7 @@ static void hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, c
     volatile VALUE rstr = rb_str_new(str, len);
 
     rstr = oj_encode(rstr);
-    rb_funcall(pi->handler,
-               oj_hash_set_id,
-               3,
-               stack_peek(&pi->stack)->val,
-               oj_calc_hash_key(pi, kval),
-               rstr);
+    rb_funcall(pi->handler, oj_hash_set_id, 3, stack_peek(&pi->stack)->val, oj_calc_hash_key(pi, kval), rstr);
 }
 
 static void hash_set_num(ParseInfo pi, Val kval, NumInfo ni) {
@@ -109,12 +103,7 @@ static void hash_set_num(ParseInfo pi, Val kval, NumInfo ni) {
 }
 
 static void hash_set_value(ParseInfo pi, Val kval, VALUE value) {
-    rb_funcall(pi->handler,
-               oj_hash_set_id,
-               3,
-               stack_peek(&pi->stack)->val,
-               oj_calc_hash_key(pi, kval),
-               value);
+    rb_funcall(pi->handler, oj_hash_set_id, 3, stack_peek(&pi->stack)->val, oj_calc_hash_key(pi, kval), value);
 }
 
 static void array_append_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {

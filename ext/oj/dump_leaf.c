@@ -17,9 +17,7 @@ inline static void dump_chars(const char *s, size_t size, Out out) {
 static void dump_leaf_str(Leaf leaf, Out out) {
     switch (leaf->value_type) {
     case STR_VAL: oj_dump_cstr(leaf->str, strlen(leaf->str), 0, 0, out); break;
-    case RUBY_VAL:
-        oj_dump_cstr(rb_string_value_cstr(&leaf->value), (int)RSTRING_LEN(leaf->value), 0, 0, out);
-        break;
+    case RUBY_VAL: oj_dump_cstr(rb_string_value_cstr(&leaf->value), (int)RSTRING_LEN(leaf->value), 0, 0, out); break;
     case COL_VAL:
     default: rb_raise(rb_eTypeError, "Unexpected value type %02x.\n", leaf->value_type); break;
     }
@@ -142,11 +140,11 @@ void oj_dump_leaf_to_json(Leaf leaf, Options copts, Out out) {
 void oj_write_leaf_to_file(Leaf leaf, const char *path, Options copts) {
     struct _out out;
     size_t      size;
-    FILE *      f;
+    FILE       *f;
 
     oj_out_init(&out);
 
-    out.omit_nil  = copts->dump_opts.omit_nil;
+    out.omit_nil = copts->dump_opts.omit_nil;
     oj_dump_leaf_to_json(leaf, copts, &out);
     size = out.cur - out.buf;
     if (0 == (f = fopen(path, "w"))) {

@@ -3,9 +3,9 @@
 
 #include "rails.h"
 
-#include "mem.h"
 #include "code.h"
 #include "encode.h"
+#include "mem.h"
 #include "trace.h"
 #include "util.h"
 
@@ -16,7 +16,7 @@ typedef struct _encoder {
     struct _rOptTable ropts;
     struct _options   opts;
     VALUE             arg;
-} * Encoder;
+} *Encoder;
 
 bool oj_rails_hash_opt  = false;
 bool oj_rails_array_opt = false;
@@ -141,7 +141,7 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
     int            cnt;
     int            i;
     int            len;
-    const char *   name;
+    const char    *name;
 
 #ifdef RSTRUCT_LEN
 #if RSTRUCT_LEN_RETURNS_INTEGER_OBJECT
@@ -200,7 +200,7 @@ static void dump_enumerable(VALUE obj, int depth, Out out, bool as_ok) {
 
 static void dump_bigdecimal(VALUE obj, int depth, Out out, bool as_ok) {
     volatile VALUE rstr = oj_safe_string_convert(obj);
-    const char *   str  = RSTRING_PTR(rstr);
+    const char    *str  = RSTRING_PTR(rstr);
 
     if ('I' == *str || 'N' == *str || ('-' == *str && 'I' == str[1])) {
         oj_dump_nil(Qnil, depth, out, false);
@@ -263,14 +263,7 @@ static void dump_sec_nano(VALUE obj, int64_t sec, long nsec, Out out) {
                       tzmin);
     } else if (0 == out->opts->sec_prec) {
         if (0 == tzsecs && rb_funcall2(obj, oj_utcq_id, 0, 0)) {
-            len = sprintf(buf,
-                          "%04d-%02d-%02dT%02d:%02d:%02dZ",
-                          ti.year,
-                          ti.mon,
-                          ti.day,
-                          ti.hour,
-                          ti.min,
-                          ti.sec);
+            len = sprintf(buf, "%04d-%02d-%02dT%02d:%02d:%02dZ", ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec);
         } else {
             len = sprintf(buf,
                           "%04d-%02d-%02dT%02d:%02d:%02d%c%02d:%02d",
@@ -301,18 +294,7 @@ static void dump_sec_nano(VALUE obj, int64_t sec, long nsec, Out out) {
             format[32] = '0' + out->opts->sec_prec;
             len -= 9 - out->opts->sec_prec;
         }
-        len = sprintf(buf,
-                      format,
-                      ti.year,
-                      ti.mon,
-                      ti.day,
-                      ti.hour,
-                      ti.min,
-                      ti.sec,
-                      nsec,
-                      tzsign,
-                      tzhour,
-                      tzmin);
+        len = sprintf(buf, format, ti.year, ti.mon, ti.day, ti.hour, ti.min, ti.sec, nsec, tzsign, tzhour, tzmin);
     }
     oj_dump_cstr(buf, len, 0, 0, out);
 }
@@ -356,7 +338,7 @@ static ID parameters_id = 0;
 typedef struct _strLen {
     const char *str;
     int         len;
-} * StrLen;
+} *StrLen;
 
 static void dump_actioncontroller_parameters(VALUE obj, int depth, Out out, bool as_ok) {
     if (0 == parameters_id) {
@@ -505,7 +487,7 @@ static void dump_activerecord_result(VALUE obj, int depth, Out out, bool as_ok) 
 typedef struct _namedFunc {
     const char *name;
     DumpFunc    func;
-} * NamedFunc;
+} *NamedFunc;
 
 static void dump_as_string(VALUE obj, int depth, Out out, bool as_ok) {
     if (oj_code_dump(oj_compat_codes, obj, depth, out)) {
@@ -680,8 +662,8 @@ static VALUE encoder_new(int argc, VALUE *argv, VALUE self) {
 static VALUE resolve_classpath(const char *name) {
     char        class_name[1024];
     VALUE       clas;
-    char *      end = class_name + sizeof(class_name) - 1;
-    char *      s;
+    char       *end = class_name + sizeof(class_name) - 1;
+    char       *s;
     const char *n = name;
     ID          cid;
 
@@ -747,8 +729,7 @@ static void optimize(int argc, VALUE *argv, ROptTable rot, bool on) {
             oj_rails_float_opt = on;
         } else if (oj_string_writer_class == *argv) {
             string_writer_optimized = on;
-        } else if (NULL != (ro = oj_rails_get_opt(rot, *argv)) ||
-                   NULL != (ro = create_opt(rot, *argv))) {
+        } else if (NULL != (ro = oj_rails_get_opt(rot, *argv)) || NULL != (ro = create_opt(rot, *argv))) {
             ro->on = on;
         }
     }
@@ -810,7 +791,7 @@ rails_mimic_json(VALUE self) {
     }
     oj_mimic_json_methods(json);
     // Setting the default mode breaks the prmoise in the docs not to.
-    //oj_default_options.mode = RailsMode;
+    // oj_default_options.mode = RailsMode;
 
     return Qnil;
 }
@@ -878,7 +859,7 @@ static VALUE rails_optimized(VALUE self, VALUE clas) {
 typedef struct _oo {
     Out   out;
     VALUE obj;
-} * OO;
+} *OO;
 
 static VALUE protect_dump(VALUE ov) {
     OO oo = (OO)ov;
@@ -908,16 +889,16 @@ static VALUE encode(VALUE obj, ROptTable ropts, Options opts, int argc, VALUE *a
 
     oj_out_init(&out);
 
-    out.omit_nil  = copts.dump_opts.omit_nil;
-    out.caller    = 0;
-    out.cur       = out.buf;
-    out.circ_cnt  = 0;
-    out.opts      = &copts;
-    out.hash_cnt  = 0;
-    out.indent    = copts.indent;
-    out.argc      = argc;
-    out.argv      = argv;
-    out.ropts     = ropts;
+    out.omit_nil = copts.dump_opts.omit_nil;
+    out.caller   = 0;
+    out.cur      = out.buf;
+    out.circ_cnt = 0;
+    out.opts     = &copts;
+    out.hash_cnt = 0;
+    out.indent   = copts.indent;
+    out.argc     = argc;
+    out.argv     = argv;
+    out.ropts    = ropts;
     if (Yes == copts.circular) {
         oj_cache8_new(&out.circ_cache);
     }
@@ -1062,28 +1043,16 @@ static VALUE rails_set_encoder(VALUE self) {
     verbose = rb_gv_get("$VERBOSE");
     rb_gv_set("$VERBOSE", Qfalse);
     rb_undef_method(encoding, "use_standard_json_time_format=");
-    rb_define_module_function(encoding,
-                              "use_standard_json_time_format=",
-                              rails_use_standard_json_time_format,
-                              1);
+    rb_define_module_function(encoding, "use_standard_json_time_format=", rails_use_standard_json_time_format, 1);
     rb_undef_method(encoding, "use_standard_json_time_format");
-    rb_define_module_function(encoding,
-                              "use_standard_json_time_format",
-                              rails_use_standard_json_time_format_get,
-                              0);
+    rb_define_module_function(encoding, "use_standard_json_time_format", rails_use_standard_json_time_format_get, 0);
 
     pv          = rb_iv_get(encoding, "@escape_html_entities_in_json");
     escape_html = Qtrue == pv;
     rb_undef_method(encoding, "escape_html_entities_in_json=");
-    rb_define_module_function(encoding,
-                              "escape_html_entities_in_json=",
-                              rails_escape_html_entities_in_json,
-                              1);
+    rb_define_module_function(encoding, "escape_html_entities_in_json=", rails_escape_html_entities_in_json, 1);
     rb_undef_method(encoding, "escape_html_entities_in_json");
-    rb_define_module_function(encoding,
-                              "escape_html_entities_in_json",
-                              rails_escape_html_entities_in_json_get,
-                              0);
+    rb_define_module_function(encoding, "escape_html_entities_in_json", rails_escape_html_entities_in_json_get, 0);
 
     pv                              = rb_iv_get(encoding, "@time_precision");
     oj_default_options.sec_prec     = NUM2INT(pv);
@@ -1185,7 +1154,7 @@ static void dump_to_hash(VALUE obj, int depth, Out out) {
 
 static void dump_float(VALUE obj, int depth, Out out, bool as_ok) {
     char   buf[64];
-    char * b;
+    char  *b;
     double d   = rb_num2dbl(obj);
     int    cnt = 0;
 

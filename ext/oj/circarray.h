@@ -9,10 +9,10 @@
 
 typedef struct _circArray {
     VALUE         obj_array[1024];
-    VALUE *       objs;
+    VALUE*        objs;
     unsigned long size;  // allocated size or initial array size
     unsigned long cnt;
-} * CircArray;
+}* CircArray;
 
 extern CircArray oj_circ_array_new(void);
 extern void      oj_circ_array_free(CircArray ca);

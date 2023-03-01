@@ -1,8 +1,9 @@
 // Copyright (c) 2012 Peter Ohler. All rights reserved.
 // Licensed under the MIT License. See LICENSE file in the project root for license details.
 
-#include "mem.h"
 #include "circarray.h"
+
+#include "mem.h"
 
 CircArray oj_circ_array_new(void) {
     CircArray ca;

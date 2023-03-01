@@ -64,8 +64,7 @@ void oj_reader_init(Reader reader, VALUE io, int fd, bool to_s) {
         reader->tail      = reader->head;
         reader->read_end  = reader->head + RSTRING_LEN(s);
     } else if (rb_cFile == io_class && Qnil != (stat = rb_funcall(io, oj_stat_id, 0)) &&
-               Qnil != (ftype = rb_funcall(stat, oj_ftype_id, 0)) &&
-               0 == strcmp("file", StringValuePtr(ftype)) &&
+               Qnil != (ftype = rb_funcall(stat, oj_ftype_id, 0)) && 0 == strcmp("file", StringValuePtr(ftype)) &&
                0 == FIX2INT(rb_funcall(io, oj_pos_id, 0))) {
         reader->read_func = read_from_fd;
         reader->fd        = FIX2INT(rb_funcall(io, oj_fileno_id, 0));
@@ -84,8 +83,7 @@ void oj_reader_init(Reader reader, VALUE io, int fd, bool to_s) {
         reader->tail      = reader->head;
         reader->read_end  = reader->head + RSTRING_LEN(rstr);
     } else {
-        rb_raise(rb_eArgError,
-                 "parser io argument must be a String or respond to readpartial() or read().\n");
+        rb_raise(rb_eArgError, "parser io argument must be a String or respond to readpartial() or read().\n");
     }
 }
 
@@ -124,9 +122,7 @@ int oj_reader_read(Reader reader) {
                 reader->str = reader->head + (reader->str - old);
             }
         } else {
-            memmove((char *)reader->head,
-                    reader->head + shift,
-                    reader->read_end - (reader->head + shift));
+            memmove((char *)reader->head, reader->head + shift, reader->read_end - (reader->head + shift));
             reader->tail -= shift;
             reader->read_end -= shift;
             if (0 != reader->pro) {
@@ -158,7 +154,7 @@ static VALUE partial_io_cb(VALUE rbuf) {
     Reader reader = (Reader)rbuf;
     VALUE  args[1];
     VALUE  rstr;
-    char * str;
+    char  *str;
     size_t cnt;
 
     args[0] = ULONG2NUM(reader->end - reader->tail);
@@ -179,7 +175,7 @@ static VALUE io_cb(VALUE rbuf) {
     Reader reader = (Reader)rbuf;
     VALUE  args[1];
     VALUE  rstr;
-    char * str;
+    char  *str;
     size_t cnt;
 
     args[0] = ULONG2NUM(reader->end - reader->tail);

@@ -14,7 +14,7 @@ typedef VALUE (*AttrGetFunc)(VALUE obj);
 
 typedef struct _odd {
     struct _odd *next;
-    const char * classname;
+    const char  *classname;
     size_t       clen;
     VALUE        clas;  // Ruby class or module
     VALUE        create_obj;
@@ -22,15 +22,15 @@ typedef struct _odd {
     int          attr_cnt;
     bool         is_module;
     bool         raw;
-    const char * attr_names[MAX_ODD_ARGS];  // NULL terminated attr names
+    const char  *attr_names[MAX_ODD_ARGS];  // NULL terminated attr names
     ID           attrs[MAX_ODD_ARGS];       // 0 terminated attr IDs
     AttrGetFunc  attrFuncs[MAX_ODD_ARGS];
-} * Odd;
+} *Odd;
 
 typedef struct _oddArgs {
     Odd   odd;
     VALUE args[MAX_ODD_ARGS];
-} * OddArgs;
+} *OddArgs;
 
 extern void    oj_odd_init(void);
 extern Odd     oj_get_odd(VALUE clas);

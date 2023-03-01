@@ -40,9 +40,9 @@ enum st_retval { ST_CONTINUE = 0, ST_STOP = 1, ST_DELETE = 2, ST_CHECK };
 #define NAN_VAL "3.3e14159265358979323846"
 
 #if __STDC_VERSION__ >= 199901L
-    // To avoid using ruby_snprintf with C99.
-    #undef snprintf
-    #include <stdio.h>
+// To avoid using ruby_snprintf with C99.
+#undef snprintf
+#include <stdio.h>
 #endif
 
 // To avoid using ruby_nonempty_memcpy().
@@ -125,40 +125,40 @@ typedef struct _dumpOpts {
     char    nan_dump;  // NanDump
     bool    omit_nil;
     int     max_depth;
-} * DumpOpts;
+} *DumpOpts;
 
 typedef struct _options {
-    int  indent;         // indention for dump, default 2
-    char circular;       // YesNo
-    char auto_define;    // YesNo
-    char sym_key;        // YesNo
-    char escape_mode;    // Escape_Mode
-    char mode;           // Mode
-    char class_cache;    // YesNo
-    char time_format;    // TimeFormat
-    char bigdec_as_num;  // YesNo
-    char bigdec_load;    // BigLoad
-    char compat_bigdec;  // boolean (0 or 1)
-    char to_hash;        // YesNo
-    char to_json;        // YesNo
-    char as_json;        // YesNo
-    char raw_json;       // YesNo
-    char nilnil;         // YesNo
-    char empty_string;   // YesNo
-    char allow_gc;       // allow GC during parse
-    char quirks_mode;    // allow single JSON values instead of documents
-    char allow_invalid;  // YesNo - allow invalid unicode
-    char create_ok;      // YesNo allow create_id
-    char allow_nan;      // YEsyNo for parsing only
-    char trace;          // YesNo
-    char safe;           // YesNo
-    char sec_prec_set;   // boolean (0 or 1)
-    char ignore_under;   // YesNo - ignore attrs starting with _ if true in object and custom modes
-    char cache_keys;     // YesNo
-    char cache_str;      // string short than or equal to this are cache
+    int              indent;         // indention for dump, default 2
+    char             circular;       // YesNo
+    char             auto_define;    // YesNo
+    char             sym_key;        // YesNo
+    char             escape_mode;    // Escape_Mode
+    char             mode;           // Mode
+    char             class_cache;    // YesNo
+    char             time_format;    // TimeFormat
+    char             bigdec_as_num;  // YesNo
+    char             bigdec_load;    // BigLoad
+    char             compat_bigdec;  // boolean (0 or 1)
+    char             to_hash;        // YesNo
+    char             to_json;        // YesNo
+    char             as_json;        // YesNo
+    char             raw_json;       // YesNo
+    char             nilnil;         // YesNo
+    char             empty_string;   // YesNo
+    char             allow_gc;       // allow GC during parse
+    char             quirks_mode;    // allow single JSON values instead of documents
+    char             allow_invalid;  // YesNo - allow invalid unicode
+    char             create_ok;      // YesNo allow create_id
+    char             allow_nan;      // YEsyNo for parsing only
+    char             trace;          // YesNo
+    char             safe;           // YesNo
+    char             sec_prec_set;   // boolean (0 or 1)
+    char             ignore_under;   // YesNo - ignore attrs starting with _ if true in object and custom modes
+    char             cache_keys;     // YesNo
+    char             cache_str;      // string short than or equal to this are cache
     int64_t          int_range_min;  // dump numbers below as string
     int64_t          int_range_max;  // dump numbers above as string
-    const char *     create_id;      // 0 or string
+    const char      *create_id;      // 0 or string
     size_t           create_id_len;  // length of create_id
     int              sec_prec;       // second precision when dumping time
     char             float_prec;     // float precision, linked to float_fmt
@@ -167,8 +167,8 @@ typedef struct _options {
     VALUE            array_class;    // class to use in place of Array on load
     struct _dumpOpts dump_opts;
     struct _rxClass  str_rx;
-    VALUE *          ignore;  // Qnil terminated array of classes or NULL
-} * Options;
+    VALUE           *ignore;  // Qnil terminated array of classes or NULL
+} *Options;
 
 struct _out;
 typedef void (*DumpFunc)(VALUE obj, int depth, struct _out *out, bool as_ok);
@@ -178,19 +178,19 @@ typedef struct _rOpt {
     VALUE    clas;
     bool     on;
     DumpFunc dump;
-} * ROpt;
+} *ROpt;
 
 typedef struct _rOptTable {
     int  len;
     int  alen;
     ROpt table;
-} * ROptTable;
+} *ROptTable;
 
 typedef struct _out {
     char       stack_buffer[4096];
-    char *     buf;
-    char *     end;
-    char *     cur;
+    char      *buf;
+    char      *end;
+    char      *cur;
     Cache8     circ_cache;
     slot_t     circ_cnt;
     int        indent;
@@ -200,20 +200,20 @@ typedef struct _out {
     bool       allocated;
     bool       omit_nil;
     int        argc;
-    VALUE *    argv;
+    VALUE     *argv;
     DumpCaller caller;  // used for the mimic json only
     ROptTable  ropts;
-} * Out;
+} *Out;
 
 typedef struct _strWriter {
     struct _out     out;
     struct _options opts;
     int             depth;
-    char *          types;  // DumpType
-    char *          types_end;
+    char           *types;  // DumpType
+    char           *types_end;
     int             keyWritten;
 
-} * StrWriter;
+} *StrWriter;
 
 typedef struct _streamWriter {
     struct _strWriter sw;
@@ -221,7 +221,7 @@ typedef struct _streamWriter {
     VALUE             stream;
     int               fd;
     int               flush_limit;  // indicator of when to flush
-} * StreamWriter;
+} *StreamWriter;
 
 enum { NO_VAL = 0x00, STR_VAL = 0x01, COL_VAL = 0x02, RUBY_VAL = 0x03 };
 
@@ -232,14 +232,14 @@ typedef struct _leaf {
         size_t      index;  // array index, 0 is not set
     };
     union {
-        char *        str;       // pointer to location in json string or allocated
+        char         *str;       // pointer to location in json string or allocated
         struct _leaf *elements;  // array and hash elements
         VALUE         value;
     };
     uint8_t rtype;
     uint8_t parent_type;
     uint8_t value_type;
-} * Leaf;
+} *Leaf;
 
 extern VALUE oj_saj_parse(int argc, VALUE *argv, VALUE self);
 extern VALUE oj_sc_parse(int argc, VALUE *argv, VALUE self);
@@ -261,8 +261,7 @@ extern bool oj_hash_has_key(VALUE hash, VALUE key);
 extern void oj_parse_options(VALUE ropts, Options copts);
 
 extern void oj_dump_obj_to_json(VALUE obj, Options copts, Out out);
-extern void
-oj_dump_obj_to_json_using_params(VALUE obj, Options copts, Out out, int argc, VALUE *argv);
+extern void oj_dump_obj_to_json_using_params(VALUE obj, Options copts, Out out, int argc, VALUE *argv);
 extern void oj_write_obj_to_file(VALUE obj, const char *path, Options copts);
 extern void oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts);
 extern void oj_dump_leaf_to_json(Leaf leaf, Options copts, Out out);
@@ -293,7 +292,7 @@ extern VALUE oj_rails_encode(int argc, VALUE *argv, VALUE self);
 
 extern VALUE           Oj;
 extern struct _options oj_default_options;
-extern rb_encoding *   oj_utf8_encoding;
+extern rb_encoding    *oj_utf8_encoding;
 extern int             oj_utf8_encoding_index;
 
 extern VALUE oj_bag_class;
@@ -386,9 +385,9 @@ static inline VALUE oj_safe_string_convert(VALUE obj) {
 }
 
 #define APPEND_CHARS(buffer, chars, size) \
-    { \
-        memcpy(buffer, chars, size); \
-        buffer += size; \
+    {                                     \
+        memcpy(buffer, chars, size);      \
+        buffer += size;                   \
     }
 
 #ifdef HAVE_PTHREAD_MUTEX_INIT

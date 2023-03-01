@@ -14,8 +14,8 @@
 // Workaround in case INFINITY is not defined in math.h or if the OS is CentOS
 #define OJ_INFINITY (1.0 / 0.0)
 
-#include "mem.h"
 #include "encode.h"
+#include "mem.h"
 #include "oj.h"
 
 typedef struct _parseInfo {
@@ -29,7 +29,7 @@ typedef struct _parseInfo {
     int   has_array_end;
     int   has_add_value;
     int   has_error;
-} * ParseInfo;
+} *ParseInfo;
 
 static void  read_next(ParseInfo pi, const char *key);
 static void  read_hash(ParseInfo pi, const char *key);

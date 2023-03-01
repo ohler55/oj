@@ -6,8 +6,8 @@
 #endif
 #include <stdlib.h>
 
-#include "mem.h"
 #include "cache.h"
+#include "mem.h"
 
 // The stdlib calloc, realloc, and free are used instead of the Ruby ALLOC,
 // ALLOC_N, REALLOC, and xfree since the later could trigger a GC which will
@@ -29,16 +29,16 @@
 #define M 0x5bd1e995
 
 typedef struct _slot {
-    struct _slot *    next;
+    struct _slot     *next;
     VALUE             val;
     uint64_t          hash;
     volatile uint32_t use_cnt;
     uint8_t           klen;
     char              key[CACHE_MAX_KEY];
-} * Slot;
+} *Slot;
 
 typedef struct _cache {
-    volatile Slot * slots;
+    volatile Slot  *slots;
     volatile size_t cnt;
     VALUE (*form)(const char *str, size_t len);
     uint64_t size;
@@ -53,7 +53,7 @@ typedef struct _cache {
 #endif
     uint8_t xrate;
     bool    mark;
-} * Cache;
+} *Cache;
 
 void cache_set_form(Cache c, VALUE (*form)(const char *str, size_t len)) {
     c->form = form;
@@ -95,8 +95,8 @@ static uint64_t hash_calc(const uint8_t *key, size_t len) {
 
 static void rehash(Cache c) {
     uint64_t osize;
-    Slot *   end;
-    Slot *   sp;
+    Slot    *end;
+    Slot    *sp;
 
     osize    = c->size;
     c->size  = osize * 4;
@@ -111,7 +111,7 @@ static void rehash(Cache c) {
         *sp = NULL;
         for (; NULL != s; s = next) {
             uint64_t h      = s->hash & c->mask;
-            Slot *   bucket = (Slot *)c->slots + h;
+            Slot    *bucket = (Slot *)c->slots + h;
 
             next    = s->next;
             s->next = *bucket;
@@ -122,7 +122,7 @@ static void rehash(Cache c) {
 
 static VALUE lockless_intern(Cache c, const char *key, size_t len) {
     uint64_t       h      = hash_calc((const uint8_t *)key, len);
-    Slot *         bucket = (Slot *)c->slots + (h & c->mask);
+    Slot          *bucket = (Slot *)c->slots + (h & c->mask);
     Slot           b;
     volatile VALUE rkey;
 
@@ -166,7 +166,7 @@ static VALUE lockless_intern(Cache c, const char *key, size_t len) {
 
 static VALUE locking_intern(Cache c, const char *key, size_t len) {
     uint64_t       h;
-    Slot *         bucket;
+    Slot          *bucket;
     Slot           b;
     uint64_t       old_size;
     volatile VALUE rkey;
@@ -242,12 +242,12 @@ Cache cache_create(size_t size, VALUE (*form)(const char *str, size_t len), bool
 #else
     c->mutex = rb_mutex_new();
 #endif
-    c->size    = 1 << shift;
-    c->mask    = c->size - 1;
-    c->slots   = OJ_CALLOC(c->size, sizeof(Slot));
-    c->form    = form;
-    c->xrate   = 1;  // low
-    c->mark    = mark;
+    c->size  = 1 << shift;
+    c->mask  = c->size - 1;
+    c->slots = OJ_CALLOC(c->size, sizeof(Slot));
+    c->form  = form;
+    c->xrate = 1;  // low
+    c->mark  = mark;
     if (locking) {
         c->intern = locking_intern;
     } else {

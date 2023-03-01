@@ -10,9 +10,9 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "mem.h"
 #include "buf.h"
 #include "encode.h"
+#include "mem.h"
 #include "oj.h"
 #include "rxclass.h"
 #include "val_stack.h"
@@ -24,7 +24,7 @@
 // Workaround in case INFINITY is not defined in math.h or if the OS is CentOS
 #define OJ_INFINITY (1.0 / 0.0)
 
-//#define EXP_MAX		1023
+// #define EXP_MAX		1023
 #define EXP_MAX 100000
 #define DEC_MAX 15
 
@@ -49,11 +49,7 @@ static void skip_comment(ParseInfo pi) {
                 pi->cur += 2;
                 return;
             } else if (pi->end <= pi->cur) {
-                oj_set_error_at(pi,
-                                oj_parse_error_class,
-                                __FILE__,
-                                __LINE__,
-                                "comment not terminated");
+                oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "comment not terminated");
                 return;
             }
         }
@@ -86,8 +82,7 @@ static void add_value(ParseInfo pi, VALUE rval) {
             break;
         case NEXT_HASH_VALUE:
             pi->hash_set_value(pi, parent, rval);
-            if (0 != parent->key && 0 < parent->klen &&
-                (parent->key < pi->json || pi->cur < parent->key)) {
+            if (0 != parent->key && 0 < parent->klen && (parent->key < pi->json || pi->cur < parent->key)) {
                 OJ_R_FREE((char *)parent->key);
                 parent->key = 0;
             }
@@ -200,14 +195,18 @@ static inline const char *scan_string_noSIMD(const char *str, const char *end) {
 #ifdef OJ_USE_SSE4_2
 static inline const char *scan_string_SIMD(const char *str, const char *end) {
     static const char chars[16] = "\x00\\\"";
-    const __m128i terminate = _mm_loadu_si128((const __m128i *)&chars[0]);
-    const char *_end = (const char *)(end - 16);
+    const __m128i     terminate = _mm_loadu_si128((const __m128i *)&chars[0]);
+    const char       *_end      = (const char *)(end - 16);
 
     for (; str <= _end; str += 16) {
         const __m128i string = _mm_loadu_si128((const __m128i *)str);
-        const int r = _mm_cmpestri(terminate, 3, string, 16, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_LEAST_SIGNIFICANT);
+        const int     r      = _mm_cmpestri(terminate,
+                                   3,
+                                   string,
+                                   16,
+                                   _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_LEAST_SIGNIFICANT);
         if (r != 16) {
-            str = (char*)(str + r);
+            str = (char *)(str + r);
             return str;
         }
     }
@@ -216,7 +215,7 @@ static inline const char *scan_string_SIMD(const char *str, const char *end) {
 }
 #endif
 
-static const char *(*scan_func) (const char *str, const char *end) = scan_string_noSIMD;
+static const char *(*scan_func)(const char *str, const char *end) = scan_string_noSIMD;
 
 void oj_scanner_init(void) {
 #ifdef OJ_USE_SSE4_2
@@ -238,12 +237,8 @@ static void read_escaped_str(ParseInfo pi, const char *start) {
     for (s = pi->cur; '"' != *s;) {
         const char *scanned = scan_func(s, pi->end);
         if (scanned >= pi->end || '\0' == *scanned) {
-            //if (scanned >= pi->end) {
-            oj_set_error_at(pi,
-                            oj_parse_error_class,
-                            __FILE__,
-                            __LINE__,
-                            "quoted string not terminated");
+            // if (scanned >= pi->end) {
+            oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "quoted string not terminated");
             buf_cleanup(&buf);
             return;
         }
@@ -280,11 +275,7 @@ static void read_escaped_str(ParseInfo pi, const char *start) {
                             break;
                         }
                         pi->cur = s;
-                        oj_set_error_at(pi,
-                                        oj_parse_error_class,
-                                        __FILE__,
-                                        __LINE__,
-                                        "invalid escaped character");
+                        oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "invalid escaped character");
                         buf_cleanup(&buf);
                         return;
                     }
@@ -311,11 +302,7 @@ static void read_escaped_str(ParseInfo pi, const char *start) {
                     break;
                 }
                 pi->cur = s;
-                oj_set_error_at(pi,
-                                oj_parse_error_class,
-                                __FILE__,
-                                __LINE__,
-                                "invalid escaped character");
+                oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "invalid escaped character");
                 buf_cleanup(&buf);
                 return;
             }
@@ -347,8 +334,7 @@ static void read_escaped_str(ParseInfo pi, const char *start) {
             break;
         case NEXT_HASH_VALUE:
             pi->hash_set_cstr(pi, parent, buf.head, buf_len(&buf), start);
-            if (0 != parent->key && 0 < parent->klen &&
-                (parent->key < pi->json || pi->cur < parent->key)) {
+            if (0 != parent->key && 0 < parent->klen && (parent->key < pi->json || pi->cur < parent->key)) {
                 OJ_R_FREE((char *)parent->key);
                 parent->key = 0;
             }
@@ -378,11 +364,7 @@ static void read_str(ParseInfo pi) {
 
     pi->cur = scan_func(pi->cur, pi->end);
     if (RB_UNLIKELY(pi->end <= pi->cur)) {
-        oj_set_error_at(pi,
-                        oj_parse_error_class,
-                        __FILE__,
-                        __LINE__,
-                        "quoted string not terminated");
+        oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "quoted string not terminated");
         return;
     }
     if (RB_UNLIKELY('\0' == *pi->cur)) {
@@ -417,8 +399,7 @@ static void read_str(ParseInfo pi) {
             break;
         case NEXT_HASH_VALUE:
             pi->hash_set_cstr(pi, parent, str, pi->cur - str, str);
-            if (0 != parent->key && 0 < parent->klen &&
-                (parent->key < pi->json || pi->cur < parent->key)) {
+            if (0 != parent->key && 0 < parent->klen && (parent->key < pi->json || pi->cur < parent->key)) {
                 OJ_R_FREE((char *)parent->key);
                 parent->key = 0;
             }
@@ -461,7 +442,7 @@ static void read_num(ParseInfo pi) {
         ni.no_big      = !pi->options.compat_bigdec;
         ni.bigdec_load = pi->options.compat_bigdec;
     } else {
-        ni.no_big = (FloatDec == pi->options.bigdec_load || FastDec == pi->options.bigdec_load ||
+        ni.no_big      = (FloatDec == pi->options.bigdec_load || FastDec == pi->options.bigdec_load ||
                      RubyDec == pi->options.bigdec_load);
         ni.bigdec_load = pi->options.bigdec_load;
     }
@@ -471,33 +452,21 @@ static void read_num(ParseInfo pi) {
         ni.neg = 1;
     } else if ('+' == *pi->cur) {
         if (StrictMode == pi->options.mode) {
-            oj_set_error_at(pi,
-                            oj_parse_error_class,
-                            __FILE__,
-                            __LINE__,
-                            "not a number or other value");
+            oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number or other value");
             return;
         }
         pi->cur++;
     }
     if ('I' == *pi->cur) {
         if (No == pi->options.allow_nan || 0 != strncmp("Infinity", pi->cur, 8)) {
-            oj_set_error_at(pi,
-                            oj_parse_error_class,
-                            __FILE__,
-                            __LINE__,
-                            "not a number or other value");
+            oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number or other value");
             return;
         }
         pi->cur += 8;
         ni.infinity = 1;
     } else if ('N' == *pi->cur || 'n' == *pi->cur) {
         if ('a' != pi->cur[1] || ('N' != pi->cur[2] && 'n' != pi->cur[2])) {
-            oj_set_error_at(pi,
-                            oj_parse_error_class,
-                            __FILE__,
-                            __LINE__,
-                            "not a number or other value");
+            oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number or other value");
             return;
         }
         pi->cur += 3;
@@ -520,11 +489,7 @@ static void read_num(ParseInfo pi) {
             ni.i = ni.i * 10 + d;
         }
         if (RB_UNLIKELY(0 != ni.i && zero1 && CompatMode == pi->options.mode)) {
-            oj_set_error_at(pi,
-                            oj_parse_error_class,
-                            __FILE__,
-                            __LINE__,
-                            "not a number");
+            oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number");
             return;
         }
         if (INT64_MAX <= ni.i || DEC_MAX < dec_cnt) {
@@ -616,8 +581,7 @@ static void read_num(ParseInfo pi) {
             break;
         case NEXT_HASH_VALUE:
             pi->hash_set_num(pi, parent, &ni);
-            if (0 != parent->key && 0 < parent->klen &&
-                (parent->key < pi->json || pi->cur < parent->key)) {
+            if (0 != parent->key && 0 < parent->klen && (parent->key < pi->json || pi->cur < parent->key)) {
                 OJ_R_FREE((char *)parent->key);
                 parent->key = 0;
             }
@@ -751,11 +715,7 @@ void oj_parse2(ParseInfo pi) {
             // case '+':
         case '+':
             if (CompatMode == pi->options.mode) {
-                oj_set_error_at(pi,
-                                oj_parse_error_class,
-                                __FILE__,
-                                __LINE__,
-                                "unexpected character");
+                oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "unexpected character");
                 return;
             }
             pi->cur--;
@@ -781,11 +741,7 @@ void oj_parse2(ParseInfo pi) {
                 pi->cur--;
                 read_num(pi);
             } else {
-                oj_set_error_at(pi,
-                                oj_parse_error_class,
-                                __FILE__,
-                                __LINE__,
-                                "unexpected character");
+                oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "unexpected character");
             }
             break;
         case 't': read_true(pi); break;
@@ -805,9 +761,7 @@ void oj_parse2(ParseInfo pi) {
             }
             break;
         case '\0': pi->cur--; return;
-        default:
-            oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "unexpected character");
-            return;
+        default: oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "unexpected character"); return;
         }
         if (err_has(&pi->err)) {
             return;
@@ -844,11 +798,10 @@ static VALUE parse_big_decimal(VALUE str) {
 }
 
 static long double exp_plus[] = {
-    1.0,    1.0e1,  1.0e2,  1.0e3,  1.0e4,  1.0e5,  1.0e6,  1.0e7,  1.0e8,  1.0e9,
-    1.0e10, 1.0e11, 1.0e12, 1.0e13, 1.0e14, 1.0e15, 1.0e16, 1.0e17, 1.0e18, 1.0e19,
-    1.0e20, 1.0e21, 1.0e22, 1.0e23, 1.0e24, 1.0e25, 1.0e26, 1.0e27, 1.0e28, 1.0e29,
-    1.0e30, 1.0e31, 1.0e32, 1.0e33, 1.0e34, 1.0e35, 1.0e36, 1.0e37, 1.0e38, 1.0e39,
-    1.0e40, 1.0e41, 1.0e42, 1.0e43, 1.0e44, 1.0e45, 1.0e46, 1.0e47, 1.0e48, 1.0e49,
+    1.0,    1.0e1,  1.0e2,  1.0e3,  1.0e4,  1.0e5,  1.0e6,  1.0e7,  1.0e8,  1.0e9,  1.0e10, 1.0e11, 1.0e12,
+    1.0e13, 1.0e14, 1.0e15, 1.0e16, 1.0e17, 1.0e18, 1.0e19, 1.0e20, 1.0e21, 1.0e22, 1.0e23, 1.0e24, 1.0e25,
+    1.0e26, 1.0e27, 1.0e28, 1.0e29, 1.0e30, 1.0e31, 1.0e32, 1.0e33, 1.0e34, 1.0e35, 1.0e36, 1.0e37, 1.0e38,
+    1.0e39, 1.0e40, 1.0e41, 1.0e42, 1.0e43, 1.0e44, 1.0e45, 1.0e46, 1.0e47, 1.0e48, 1.0e49,
 };
 
 VALUE
@@ -920,7 +873,7 @@ oj_num_as_value(NumInfo ni) {
 
             rnum = rb_funcall(sv, rb_intern("to_f"), 0);
         } else {
-            char * end;
+            char  *end;
             double d = strtod(ni->str, &end);
 
             if ((long)ni->len != (long)(end - ni->str)) {
@@ -932,28 +885,23 @@ oj_num_as_value(NumInfo ni) {
     return rnum;
 }
 
-void oj_set_error_at(ParseInfo   pi,
-                     VALUE       err_clas,
-                     const char *file,
-                     int         line,
-                     const char *format,
-                     ...) {
+void oj_set_error_at(ParseInfo pi, VALUE err_clas, const char *file, int line, const char *format, ...) {
     va_list ap;
     char    msg[256];
-    char *  p   = msg;
-    char *  end = p + sizeof(msg) - 2;
-    char *  start;
+    char   *p   = msg;
+    char   *end = p + sizeof(msg) - 2;
+    char   *start;
     Val     vp;
-    int	mlen;
+    int     mlen;
 
     va_start(ap, format);
     mlen = vsnprintf(msg, sizeof(msg) - 1, format, ap);
     if (0 < mlen) {
-	if (sizeof(msg) - 2 < (size_t)mlen) {
-	    p = end - 2;
-	} else {
-	    p += mlen;
-	}
+        if (sizeof(msg) - 2 < (size_t)mlen) {
+            p = end - 2;
+        } else {
+            p += mlen;
+        }
     }
     va_end(ap);
     pi->err.clas = err_clas;
@@ -990,14 +938,7 @@ void oj_set_error_at(ParseInfo   pi,
     }
     *p = '\0';
     if (0 == pi->json) {
-        oj_err_set(&pi->err,
-                   err_clas,
-                   "%s at line %d, column %d [%s:%d]",
-                   msg,
-                   pi->rd.line,
-                   pi->rd.col,
-                   file,
-                   line);
+        oj_err_set(&pi->err, err_clas, "%s at line %d, column %d [%s:%d]", msg, pi->rd.line, pi->rd.col, file, line);
     } else {
         _oj_err_set_with_location(&pi->err, err_clas, msg, pi->json, pi->cur - 1, file, line);
     }
@@ -1016,7 +957,7 @@ static void oj_pi_set_input_str(ParseInfo pi, VALUE *inputp) {
 
     if (oj_utf8_encoding_index != idx) {
         rb_encoding *enc = rb_enc_from_index(idx);
-        *inputp = rb_str_conv_enc(*inputp, enc, oj_utf8_encoding);
+        *inputp          = rb_str_conv_enc(*inputp, enc, oj_utf8_encoding);
     }
     pi->json = RSTRING_PTR(*inputp);
     pi->end  = pi->json + RSTRING_LEN(*inputp);
@@ -1024,12 +965,12 @@ static void oj_pi_set_input_str(ParseInfo pi, VALUE *inputp) {
 
 VALUE
 oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yieldOk) {
-    char * buf = 0;
-    VALUE  input;
-    VALUE  wrapped_stack;
-    VALUE  result    = Qnil;
-    int    line      = 0;
-    int    free_json = 0;
+    char *buf = 0;
+    VALUE input;
+    VALUE wrapped_stack;
+    VALUE result    = Qnil;
+    int   line      = 0;
+    int   free_json = 0;
 
     if (argc < 1) {
         rb_raise(rb_eArgError, "Wrong number of arguments to parse.");
@@ -1089,8 +1030,7 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
             }
             ((char *)pi->json)[len] = '\0';
             /* skip UTF-8 BOM if present */
-            if (0xEF == (uint8_t)*pi->json && 0xBB == (uint8_t)pi->json[1] &&
-                0xBF == (uint8_t)pi->json[2]) {
+            if (0xEF == (uint8_t)*pi->json && 0xBB == (uint8_t)pi->json[1] && 0xBF == (uint8_t)pi->json[2]) {
                 pi->cur += 3;
             }
 #endif
@@ -1116,8 +1056,7 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
     wrapped_stack = oj_stack_init(&pi->stack);
     rb_protect(protect_parse, (VALUE)pi, &line);
     if (Qundef == pi->stack.head->val && !empty_ok(&pi->options)) {
-        if (No == pi->options.nilnil ||
-            (CompatMode == pi->options.mode && 0 < pi->cur - pi->json)) {
+        if (No == pi->options.nilnil || (CompatMode == pi->options.mode && 0 < pi->cur - pi->json)) {
             oj_set_error_at(pi, oj_json_parser_error_class, __FILE__, __LINE__, "Empty input");
         }
     }
@@ -1145,9 +1084,7 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
             switch (v->next) {
             case NEXT_ARRAY_NEW:
             case NEXT_ARRAY_ELEMENT:
-            case NEXT_ARRAY_COMMA:
-                oj_set_error_at(pi, err_class, __FILE__, __LINE__, "Array not terminated");
-                break;
+            case NEXT_ARRAY_COMMA: oj_set_error_at(pi, err_class, __FILE__, __LINE__, "Array not terminated"); break;
             case NEXT_HASH_NEW:
             case NEXT_HASH_KEY:
             case NEXT_HASH_COLON:

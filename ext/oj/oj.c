@@ -11,10 +11,10 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "mem.h"
 #include "dump.h"
 #include "encode.h"
 #include "intern.h"
+#include "mem.h"
 #include "odd.h"
 #include "parse.h"
 #include "rails.h"
@@ -22,7 +22,7 @@
 typedef struct _yesNoOpt {
     VALUE sym;
     char *attr;
-} * YesNoOpt;
+} *YesNoOpt;
 
 void Init_oj();
 
@@ -156,8 +156,8 @@ static VALUE word_sym;
 static VALUE xmlschema_sym;
 static VALUE xss_safe_sym;
 
-rb_encoding *oj_utf8_encoding = 0;
-int oj_utf8_encoding_index = 0;
+rb_encoding *oj_utf8_encoding       = 0;
+int          oj_utf8_encoding_index = 0;
 
 #ifdef HAVE_PTHREAD_MUTEX_INIT
 pthread_mutex_t oj_cache_mutex;
@@ -465,7 +465,7 @@ static VALUE get_def_opts(VALUE self) {
     if (NULL == oj_default_options.ignore) {
         rb_hash_aset(opts, ignore_sym, Qnil);
     } else {
-        VALUE *        vp;
+        VALUE         *vp;
         volatile VALUE a = rb_ary_new();
 
         for (vp = oj_default_options.ignore; Qnil != *vp; vp++) {
@@ -950,7 +950,7 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
         if (Qnil == v) {
             return ST_CONTINUE;
         }
-	copts->sym_key = (Qtrue == v) ? Yes : No;
+        copts->sym_key = (Qtrue == v) ? Yes : No;
     }
     return ST_CONTINUE;
 }
@@ -1115,7 +1115,7 @@ static VALUE load(int argc, VALUE *argv, VALUE self) {
  * Returns [_Object_|_Hash_|_Array_|_String_|_Fixnum_|_Float_|_Boolean_|_nil_]
  */
 static VALUE load_file(int argc, VALUE *argv, VALUE self) {
-    char *            path;
+    char             *path;
     int               fd;
     Mode              mode = oj_default_options.mode;
     struct _parseInfo pi;
@@ -1159,11 +1159,11 @@ static VALUE load_file(int argc, VALUE *argv, VALUE self) {
     {
         WCHAR *wide_path;
         wide_path = rb_w32_mbstr_to_wstr(CP_UTF8, path, -1, NULL);
-        fd = rb_w32_wopen(wide_path, O_RDONLY);
+        fd        = rb_w32_wopen(wide_path, O_RDONLY);
         OJ_FREE(wide_path);
     }
 #else
-    fd = open(path, O_RDONLY);
+    fd             = open(path, O_RDONLY);
 #endif
     if (0 == fd) {
         rb_raise(rb_eIOError, "%s", strerror(errno));
@@ -1238,10 +1238,10 @@ static VALUE safe_load(VALUE self, VALUE doc) {
  */
 
 struct dump_arg {
-    struct _out *    out;
+    struct _out     *out;
     struct _options *copts;
     int              argc;
-    VALUE *          argv;
+    VALUE           *argv;
 };
 
 static VALUE dump_body(VALUE a) {
@@ -1297,8 +1297,8 @@ static VALUE dump(int argc, VALUE *argv, VALUE self) {
 
     oj_out_init(arg.out);
 
-    arg.out->omit_nil  = copts.dump_opts.omit_nil;
-    arg.out->caller    = CALLER_DUMP;
+    arg.out->omit_nil = copts.dump_opts.omit_nil;
+    arg.out->caller   = CALLER_DUMP;
 
     return rb_ensure(dump_body, (VALUE)&arg, dump_ensure, (VALUE)&arg);
 }
@@ -1345,7 +1345,7 @@ static VALUE to_json(int argc, VALUE *argv, VALUE self) {
 
     oj_out_init(&out);
 
-    out.omit_nil  = copts.dump_opts.omit_nil;
+    out.omit_nil = copts.dump_opts.omit_nil;
     // For obj.to_json or generate nan is not allowed but if called from dump
     // it is.
     oj_dump_obj_to_json_using_params(*argv, &copts, &out, argc - 1, argv + 1);
@@ -1719,8 +1719,7 @@ static VALUE protect_require(VALUE x) {
 
 extern void print_all_odds(const char *label);
 
-static VALUE
-debug_odd(VALUE self, VALUE label) {
+static VALUE debug_odd(VALUE self, VALUE label) {
     print_all_odds(RSTRING_PTR(label));
     return Qnil;
 }
@@ -1780,7 +1779,7 @@ void Init_oj(void) {
     rb_protect(protect_require, Qnil, &err);
     rb_require("stringio");
     oj_utf8_encoding_index = rb_enc_find_index("UTF-8");
-    oj_utf8_encoding = rb_enc_from_index(oj_utf8_encoding_index);
+    oj_utf8_encoding       = rb_enc_from_index(oj_utf8_encoding_index);
 
     // rb_define_module_function(Oj, "hash_test", hash_test, 0);
     rb_define_module_function(Oj, "debug_odd", debug_odd, 1);
@@ -1819,49 +1818,49 @@ void Init_oj(void) {
 
     rb_define_module_function(Oj, "mem_report", mem_report, 0);
 
-    oj_add_value_id          = rb_intern("add_value");
-    oj_array_append_id       = rb_intern("array_append");
-    oj_array_end_id          = rb_intern("array_end");
-    oj_array_start_id        = rb_intern("array_start");
-    oj_as_json_id            = rb_intern("as_json");
-    oj_at_id                 = rb_intern("at");
-    oj_begin_id              = rb_intern("begin");
-    oj_bigdecimal_id         = rb_intern("BigDecimal");
-    oj_end_id                = rb_intern("end");
-    oj_error_id              = rb_intern("error");
-    oj_exclude_end_id        = rb_intern("exclude_end?");
-    oj_file_id               = rb_intern("file?");
-    oj_fileno_id             = rb_intern("fileno");
-    oj_ftype_id              = rb_intern("ftype");
-    oj_hash_end_id           = rb_intern("hash_end");
-    oj_hash_key_id           = rb_intern("hash_key");
-    oj_hash_set_id           = rb_intern("hash_set");
-    oj_hash_start_id         = rb_intern("hash_start");
-    oj_iconv_id              = rb_intern("iconv");
-    oj_json_create_id        = rb_intern("json_create");
-    oj_length_id             = rb_intern("length");
-    oj_new_id                = rb_intern("new");
-    oj_parse_id              = rb_intern("parse");
-    oj_pos_id                = rb_intern("pos");
-    oj_raw_json_id           = rb_intern("raw_json");
-    oj_read_id               = rb_intern("read");
-    oj_readpartial_id        = rb_intern("readpartial");
-    oj_replace_id            = rb_intern("replace");
-    oj_stat_id               = rb_intern("stat");
-    oj_string_id             = rb_intern("string");
-    oj_to_h_id               = rb_intern("to_h");
-    oj_to_hash_id            = rb_intern("to_hash");
-    oj_to_json_id            = rb_intern("to_json");
-    oj_to_s_id               = rb_intern("to_s");
-    oj_to_sym_id             = rb_intern("to_sym");
-    oj_to_time_id            = rb_intern("to_time");
-    oj_tv_nsec_id            = rb_intern("tv_nsec");
-    oj_tv_sec_id             = rb_intern("tv_sec");
-    oj_tv_usec_id            = rb_intern("tv_usec");
-    oj_utc_id                = rb_intern("utc");
-    oj_utc_offset_id         = rb_intern("utc_offset");
-    oj_utcq_id               = rb_intern("utc?");
-    oj_write_id              = rb_intern("write");
+    oj_add_value_id    = rb_intern("add_value");
+    oj_array_append_id = rb_intern("array_append");
+    oj_array_end_id    = rb_intern("array_end");
+    oj_array_start_id  = rb_intern("array_start");
+    oj_as_json_id      = rb_intern("as_json");
+    oj_at_id           = rb_intern("at");
+    oj_begin_id        = rb_intern("begin");
+    oj_bigdecimal_id   = rb_intern("BigDecimal");
+    oj_end_id          = rb_intern("end");
+    oj_error_id        = rb_intern("error");
+    oj_exclude_end_id  = rb_intern("exclude_end?");
+    oj_file_id         = rb_intern("file?");
+    oj_fileno_id       = rb_intern("fileno");
+    oj_ftype_id        = rb_intern("ftype");
+    oj_hash_end_id     = rb_intern("hash_end");
+    oj_hash_key_id     = rb_intern("hash_key");
+    oj_hash_set_id     = rb_intern("hash_set");
+    oj_hash_start_id   = rb_intern("hash_start");
+    oj_iconv_id        = rb_intern("iconv");
+    oj_json_create_id  = rb_intern("json_create");
+    oj_length_id       = rb_intern("length");
+    oj_new_id          = rb_intern("new");
+    oj_parse_id        = rb_intern("parse");
+    oj_pos_id          = rb_intern("pos");
+    oj_raw_json_id     = rb_intern("raw_json");
+    oj_read_id         = rb_intern("read");
+    oj_readpartial_id  = rb_intern("readpartial");
+    oj_replace_id      = rb_intern("replace");
+    oj_stat_id         = rb_intern("stat");
+    oj_string_id       = rb_intern("string");
+    oj_to_h_id         = rb_intern("to_h");
+    oj_to_hash_id      = rb_intern("to_hash");
+    oj_to_json_id      = rb_intern("to_json");
+    oj_to_s_id         = rb_intern("to_s");
+    oj_to_sym_id       = rb_intern("to_sym");
+    oj_to_time_id      = rb_intern("to_time");
+    oj_tv_nsec_id      = rb_intern("tv_nsec");
+    oj_tv_sec_id       = rb_intern("tv_sec");
+    oj_tv_usec_id      = rb_intern("tv_usec");
+    oj_utc_id          = rb_intern("utc");
+    oj_utc_offset_id   = rb_intern("utc_offset");
+    oj_utcq_id         = rb_intern("utc?");
+    oj_write_id        = rb_intern("write");
 
     rb_require("oj/bag");
     rb_require("oj/error");

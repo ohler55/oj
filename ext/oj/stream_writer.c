@@ -4,8 +4,8 @@
 #include <errno.h>
 #include <ruby.h>
 
-#include "mem.h"
 #include "encode.h"
+#include "mem.h"
 
 extern VALUE Oj;
 
@@ -83,8 +83,8 @@ static VALUE stream_writer_new(int argc, VALUE *argv, VALUE self) {
     if (oj_stringio_class == clas) {
         type = STRING_IO;
 #if !IS_WINDOWS
-    } else if (rb_respond_to(stream, oj_fileno_id) &&
-               Qnil != (s = rb_funcall(stream, oj_fileno_id, 0)) && 0 != (fd = FIX2INT(s))) {
+    } else if (rb_respond_to(stream, oj_fileno_id) && Qnil != (s = rb_funcall(stream, oj_fileno_id, 0)) &&
+               0 != (fd = FIX2INT(s))) {
         type = FILE_IO;
 #endif
     } else if (rb_respond_to(stream, oj_write_id)) {
@@ -254,9 +254,7 @@ static VALUE stream_writer_push_json(int argc, VALUE *argv, VALUE self) {
             oj_str_writer_push_json((StrWriter)DATA_PTR(self), StringValuePtr(*argv), 0);
         } else {
             rb_check_type(argv[1], T_STRING);
-            oj_str_writer_push_json((StrWriter)DATA_PTR(self),
-                                    StringValuePtr(*argv),
-                                    StringValuePtr(argv[1]));
+            oj_str_writer_push_json((StrWriter)DATA_PTR(self), StringValuePtr(*argv), StringValuePtr(argv[1]));
         }
         break;
     default: rb_raise(rb_eArgError, "Wrong number of argument to 'push_json'."); break;

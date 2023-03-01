@@ -1,9 +1,9 @@
 // Copyright (c) 2012, 2017 Peter Ohler. All rights reserved.
 // Licensed under the MIT License. See LICENSE file in the project root for license details.
 
-#include "mem.h"
 #include "dump.h"
 #include "encode.h"
+#include "mem.h"
 
 extern VALUE Oj;
 
@@ -56,10 +56,10 @@ void oj_str_writer_init(StrWriter sw, int buf_size) {
     }
     // Must be allocated. Using the out.stack_buffer results in double frees
     // and I haven't figured out why yet.
-    sw->out.buf        = OJ_R_ALLOC_N(char, buf_size);
-    sw->out.cur        = sw->out.buf;
-    sw->out.end        = sw->out.buf + buf_size - BUFFER_EXTRA;
-    sw->out.allocated  = true;
+    sw->out.buf       = OJ_R_ALLOC_N(char, buf_size);
+    sw->out.cur       = sw->out.buf;
+    sw->out.end       = sw->out.buf + buf_size - BUFFER_EXTRA;
+    sw->out.allocated = true;
 
     *sw->out.cur       = '\0';
     sw->out.circ_cache = NULL;
@@ -386,9 +386,7 @@ static VALUE str_writer_push_json(int argc, VALUE *argv, VALUE self) {
             oj_str_writer_push_json((StrWriter)DATA_PTR(self), StringValuePtr(*argv), 0);
         } else {
             rb_check_type(argv[1], T_STRING);
-            oj_str_writer_push_json((StrWriter)DATA_PTR(self),
-                                    StringValuePtr(*argv),
-                                    StringValuePtr(argv[1]));
+            oj_str_writer_push_json((StrWriter)DATA_PTR(self), StringValuePtr(*argv), StringValuePtr(argv[1]));
         }
         break;
     default: rb_raise(rb_eArgError, "Wrong number of argument to 'push_json'."); break;

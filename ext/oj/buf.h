@@ -4,15 +4,15 @@
 #ifndef OJ_BUF_H
 #define OJ_BUF_H
 
-#include "ruby.h"
 #include "mem.h"
+#include "ruby.h"
 
 typedef struct _buf {
     char *head;
     char *end;
     char *tail;
     char  base[1024];
-} * Buf;
+} *Buf;
 
 inline static void buf_init(Buf buf) {
     buf->head = buf->base;

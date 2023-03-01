@@ -76,15 +76,13 @@ static VALUE resolve_uri_http_class(void) {
 }
 
 static void raise_wab(VALUE obj) {
-    rb_raise(rb_eTypeError,
-             "Failed to dump %s Object to JSON in wab mode.\n",
-             rb_class2name(rb_obj_class(obj)));
+    rb_raise(rb_eTypeError, "Failed to dump %s Object to JSON in wab mode.\n", rb_class2name(rb_obj_class(obj)));
 }
 
 // Removed dependencies on math due to problems with CentOS 5.4.
 static void dump_float(VALUE obj, int depth, Out out, bool as_ok) {
     char   buf[64];
-    char * b;
+    char  *b;
     double d   = rb_num2dbl(obj);
     int    cnt = 0;
 
@@ -299,7 +297,7 @@ static VALUE calc_hash_key(ParseInfo pi, Val parent) {
 #if HAVE_RB_ENC_INTERNED_STR
         rkey = rb_enc_interned_str(parent->key, parent->klen, oj_utf8_encoding);
 #else
-	rkey = rb_utf8_str_new(parent->key, parent->klen);
+        rkey = rb_utf8_str_new(parent->key, parent->klen);
         rkey = rb_str_intern(rkey);
         OBJ_FREEZE(rkey);
 #endif
@@ -446,14 +444,14 @@ static VALUE protect_uri(VALUE rstr) {
 static VALUE cstr_to_rstr(ParseInfo pi, const char *str, size_t len) {
     volatile VALUE v = Qnil;
 
-    if (30 == len && '-' == str[4] && '-' == str[7] && 'T' == str[10] && ':' == str[13] &&
-        ':' == str[16] && '.' == str[19] && 'Z' == str[29]) {
+    if (30 == len && '-' == str[4] && '-' == str[7] && 'T' == str[10] && ':' == str[13] && ':' == str[16] &&
+        '.' == str[19] && 'Z' == str[29]) {
         if (Qnil != (v = time_parse(str, (int)len))) {
             return v;
         }
     }
-    if (36 == len && '-' == str[8] && '-' == str[13] && '-' == str[18] && '-' == str[23] &&
-        uuid_check(str, (int)len) && Qnil != resolve_wab_uuid_class()) {
+    if (36 == len && '-' == str[8] && '-' == str[13] && '-' == str[18] && '-' == str[23] && uuid_check(str, (int)len) &&
+        Qnil != resolve_wab_uuid_class()) {
         return rb_funcall(wab_uuid_clas, oj_new_id, 1, rb_str_new(str, len));
     }
     if (7 < len && 0 == strncasecmp("http://", str, 7)) {

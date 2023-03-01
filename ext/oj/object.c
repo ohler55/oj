@@ -270,8 +270,8 @@ static int hat_num(ParseInfo pi, Val parent, Val kval, NumInfo ni) {
                     parent->val = rb_funcall2(parent->val, oj_utc_id, 0, 0);
                 } else if (ni->has_exp) {
                     struct timespec ts;
-                    ts.tv_sec = ni->i;
-                    ts.tv_nsec = nsec;
+                    ts.tv_sec   = ni->i;
+                    ts.tv_nsec  = nsec;
                     parent->val = rb_time_timespec_new(&ts, (int)ni->exp);
                 } else {
                     parent->val = rb_time_nano_new(ni->i, (long)nsec);
@@ -325,14 +325,14 @@ static int hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, vol
                 sc = oj_name2struct(pi, *RARRAY_CONST_PTR(value), rb_eArgError);
             }
             if (sc == rb_cRange) {
-              parent->val = rb_class_new_instance(len - 1, RARRAY_CONST_PTR(value) + 1, rb_cRange);
+                parent->val = rb_class_new_instance(len - 1, RARRAY_CONST_PTR(value) + 1, rb_cRange);
             } else {
                 // Create a properly initialized struct instance without calling the initialize method.
                 parent->val = rb_obj_alloc(sc);
                 // If the JSON array has more entries than the struct class allows, we record an error.
 #ifdef RSTRUCT_LEN
 #if RSTRUCT_LEN_RETURNS_INTEGER_OBJECT
-            slen = (int)NUM2LONG(RSTRUCT_LEN(parent->val));
+                slen = (int)NUM2LONG(RSTRUCT_LEN(parent->val));
 #else   // RSTRUCT_LEN_RETURNS_INTEGER_OBJECT
                 slen = (int)RSTRUCT_LEN(parent->val);
 #endif  // RSTRUCT_LEN_RETURNS_INTEGER_OBJECT
@@ -545,7 +545,7 @@ WHICH_TYPE:
             }
         } else {
             if (3 <= klen && '^' == *key && '#' == key[1] && T_ARRAY == rb_type(value)) {
-                long            len = RARRAY_LEN(value);
+                long                  len = RARRAY_LEN(value);
                 volatile const VALUE *a   = RARRAY_CONST_PTR(value);
 
                 if (2 != len) {

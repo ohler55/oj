@@ -14,8 +14,8 @@
 #include <poll.h>
 #endif
 
-#include "mem.h"
 #include "cache8.h"
+#include "mem.h"
 #include "odd.h"
 #include "oj.h"
 #include "trace.h"
@@ -306,8 +306,8 @@ static const char *dump_unicode(const char *str, const char *end, Out out, const
         uint32_t c1;
 
         code -= 0x00010000;
-        c1          = ((code >> 10) & 0x000003FF) + 0x0000D800;
-        code        = (code & 0x000003FF) + 0x0000DC00;
+        c1   = ((code >> 10) & 0x000003FF) + 0x0000D800;
+        code = (code & 0x000003FF) + 0x0000DC00;
         APPEND_CHARS(out->cur, "\\u", 2);
         for (i = 3; 0 <= i; i--) {
             *out->cur++ = hex_chars[(uint8_t)(c1 >> (i * 4)) & 0x0F];
@@ -610,7 +610,7 @@ void oj_write_obj_to_file(VALUE obj, const char *path, Options copts) {
 
     oj_out_init(&out);
 
-    out.omit_nil  = copts->dump_opts.omit_nil;
+    out.omit_nil = copts->dump_opts.omit_nil;
     oj_dump_obj_to_json(obj, copts, &out);
     size = out.cur - out.buf;
     if (0 == (f = fopen(path, "w"))) {
@@ -658,7 +658,7 @@ void oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
 
     oj_out_init(&out);
 
-    out.omit_nil  = copts->dump_opts.omit_nil;
+    out.omit_nil = copts->dump_opts.omit_nil;
     oj_dump_obj_to_json(obj, copts, &out);
     size = out.cur - out.buf;
     if (oj_stringio_class == clas) {
@@ -698,7 +698,7 @@ void oj_dump_str(VALUE obj, int depth, Out out, bool as_ok) {
 
     if (oj_utf8_encoding_index != idx) {
         rb_encoding *enc = rb_enc_from_index(idx);
-        obj = rb_str_conv_enc(obj, enc, oj_utf8_encoding);
+        obj              = rb_str_conv_enc(obj, enc, oj_utf8_encoding);
     }
     oj_dump_cstr(RSTRING_PTR(obj), (int)RSTRING_LEN(obj), 0, 0, out);
 }
@@ -761,8 +761,8 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
         break;
     case SlashEsc:
         has_hi = true;
-        cmap = slash_friendly_chars;
-        size = slash_friendly_size((uint8_t *)str, cnt);
+        cmap   = slash_friendly_chars;
+        size   = slash_friendly_size((uint8_t *)str, cnt);
         break;
     case XSSEsc:
         cmap = xss_friendly_chars;
@@ -941,15 +941,15 @@ void oj_dump_raw(const char *str, size_t cnt, Out out) {
 }
 
 void oj_out_init(Out out) {
-    out->buf = out->stack_buffer;
-    out->cur = out->buf;
-    out->end = out->buf + sizeof(out->stack_buffer) - BUFFER_EXTRA;
+    out->buf       = out->stack_buffer;
+    out->cur       = out->buf;
+    out->end       = out->buf + sizeof(out->stack_buffer) - BUFFER_EXTRA;
     out->allocated = false;
 }
 
 void oj_out_free(Out out) {
     if (out->allocated) {
-        OJ_R_FREE(out->buf); // TBD
+        OJ_R_FREE(out->buf);  // TBD
     }
 }
 
@@ -980,24 +980,24 @@ void oj_grow_out(Out out, size_t len) {
 void oj_dump_nil(VALUE obj, int depth, Out out, bool as_ok) {
     assure_size(out, 4);
     APPEND_CHARS(out->cur, "null", 4);
-    *out->cur   = '\0';
+    *out->cur = '\0';
 }
 
 void oj_dump_true(VALUE obj, int depth, Out out, bool as_ok) {
     assure_size(out, 4);
     APPEND_CHARS(out->cur, "true", 4);
-    *out->cur   = '\0';
+    *out->cur = '\0';
 }
 
 void oj_dump_false(VALUE obj, int depth, Out out, bool as_ok) {
     assure_size(out, 5);
     APPEND_CHARS(out->cur, "false", 5);
-    *out->cur   = '\0';
+    *out->cur = '\0';
 }
 
 void oj_dump_fixnum(VALUE obj, int depth, Out out, bool as_ok) {
     char      buf[32];
-    char *    b              = buf + sizeof(buf) - 1;
+    char     *b              = buf + sizeof(buf) - 1;
     long long num            = NUM2LL(obj);
     int       neg            = 0;
     size_t    cnt            = 0;

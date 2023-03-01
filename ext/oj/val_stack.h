@@ -29,10 +29,10 @@ typedef enum {
 
 typedef struct _val {
     volatile VALUE val;
-    const char *   key;
+    const char    *key;
     char           karray[32];
     volatile VALUE key_val;
-    const char *   classname;
+    const char    *classname;
     VALUE          clas;
     OddArgs        odd_args;
     uint16_t       klen;
@@ -40,7 +40,7 @@ typedef struct _val {
     char           next;  // ValNext
     char           k1;    // first original character in the key
     char           kalloc;
-} * Val;
+} *Val;
 
 typedef struct _valStack {
     struct _val base[STACK_INC];
@@ -53,7 +53,7 @@ typedef struct _valStack {
     VALUE mutex;
 #endif
 
-} * ValStack;
+} *ValStack;
 
 extern VALUE oj_stack_init(ValStack stack);
 

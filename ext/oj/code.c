@@ -18,8 +18,8 @@ inline static VALUE resolve_classname(VALUE mod, const char *classname) {
 static VALUE path2class(const char *name) {
     char        class_name[1024];
     VALUE       clas;
-    char *      end = class_name + sizeof(class_name) - 1;
-    char *      s;
+    char       *end = class_name + sizeof(class_name) - 1;
+    char       *s;
     const char *n = name;
 
     clas = rb_cObject;

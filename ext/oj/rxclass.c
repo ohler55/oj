@@ -21,7 +21,7 @@ typedef struct _rxC {
 #endif
     VALUE clas;
     char  src[256];
-} * RxC;
+} *RxC;
 
 void oj_rxclass_init(RxClass rc) {
     *rc->err = '\0';

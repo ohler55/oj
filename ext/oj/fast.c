@@ -11,15 +11,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "mem.h"
-#include "encode.h"
-#include "oj.h"
 #include "dump.h"
+#include "encode.h"
+#include "mem.h"
+#include "oj.h"
 
 // maximum to allocate on the stack, arbitrary limit
 #define SMALL_JSON 65536
 #define MAX_STACK 100
-//#define BATCH_SIZE	(4096 / sizeof(struct _leaf) - 1)
+// #define BATCH_SIZE	(4096 / sizeof(struct _leaf) - 1)
 #define BATCH_SIZE 100
 
 // Support for compaction
@@ -33,25 +33,25 @@ typedef struct _batch {
     struct _batch *next;
     int            next_avail;
     struct _leaf   leaves[BATCH_SIZE];
-} * Batch;
+} *Batch;
 
 typedef struct _doc {
     Leaf          data;
-    Leaf *        where;                  // points to current location
+    Leaf         *where;                  // points to current location
     Leaf          where_path[MAX_STACK];  // points to head of path
-    char *        json;
+    char         *json;
     unsigned long size;  // number of leaves/branches in the doc
     VALUE         self;
     Batch         batches;
     struct _batch batch0;
-} * Doc;
+} *Doc;
 
 typedef struct _parseInfo {
     char *str;  // buffer being read from
     char *s;    // current position in buffer
     Doc   doc;
     void *stack_min;
-} * ParseInfo;
+} *ParseInfo;
 
 static void  leaf_init(Leaf leaf, int type);
 static Leaf  leaf_new(Doc doc, int type);
@@ -251,7 +251,7 @@ static void skip_comment(ParseInfo pi) {
 #endif
 
 static void leaf_fixnum_value(Leaf leaf) {
-    char *  s   = leaf->str;
+    char   *s   = leaf->str;
     int64_t n   = 0;
     int     neg = 0;
     int     big = 0;
@@ -357,7 +357,7 @@ static Leaf read_next(ParseInfo pi) {
 
 static Leaf read_obj(ParseInfo pi) {
     Leaf        h = leaf_new(pi->doc, T_HASH);
-    char *      end;
+    char       *end;
     const char *key = 0;
     Leaf        val = 0;
 
@@ -1086,14 +1086,14 @@ static void each_value(Doc doc, Leaf leaf) {
  *   doc.close()
  */
 static VALUE doc_open(VALUE clas, VALUE str) {
-    char *         json;
+    char          *json;
     size_t         len;
     volatile VALUE obj;
     int            given = rb_block_given_p();
 
     Check_Type(str, T_STRING);
-    len      = (int)RSTRING_LEN(str) + 1;
-    json     = OJ_R_ALLOC_N(char, len);
+    len  = (int)RSTRING_LEN(str) + 1;
+    json = OJ_R_ALLOC_N(char, len);
 
     memcpy(json, StringValuePtr(str), len);
     obj = parse_json(clas, json, given);
@@ -1126,9 +1126,9 @@ static VALUE doc_open(VALUE clas, VALUE str) {
  *   doc.close()
  */
 static VALUE doc_open_file(VALUE clas, VALUE filename) {
-    char *         path;
-    char *         json;
-    FILE *         f;
+    char          *path;
+    char          *json;
+    FILE          *f;
     size_t         len;
     volatile VALUE obj;
     int            given = rb_block_given_p();
@@ -1139,7 +1139,7 @@ static VALUE doc_open_file(VALUE clas, VALUE filename) {
         rb_raise(rb_eIOError, "%s", strerror(errno));
     }
     fseek(f, 0, SEEK_END);
-    len      = ftell(f);
+    len  = ftell(f);
     json = OJ_R_ALLOC_N(char, len + 1);
 
     fseek(f, 0, SEEK_SET);
@@ -1152,7 +1152,7 @@ static VALUE doc_open_file(VALUE clas, VALUE filename) {
     }
     fclose(f);
     json[len] = '\0';
-    obj = parse_json(clas, json, given);
+    obj       = parse_json(clas, json, given);
     // TBD is this needed
     /*
     if (given) {
@@ -1198,11 +1198,11 @@ static VALUE doc_where(VALUE self) {
     if (0 == *doc->where_path || doc->where == doc->where_path) {
         return oj_slash_string;
     } else {
-        Leaf * lp;
+        Leaf  *lp;
         Leaf   leaf;
         size_t size = 3;  // leading / and terminating \0
-        char * path;
-        char * p;
+        char  *path;
+        char  *p;
 
         for (lp = doc->where_path; lp <= doc->where; lp++) {
             leaf = *lp;
@@ -1345,7 +1345,7 @@ static VALUE doc_fetch(int argc, VALUE *argv, VALUE self) {
     Doc            doc;
     Leaf           leaf;
     volatile VALUE val  = Qnil;
-    const char *   path = 0;
+    const char    *path = 0;
 
     doc = self_doc(self);
     if (1 <= argc) {
@@ -1481,7 +1481,7 @@ static VALUE doc_each_child(int argc, VALUE *argv, VALUE self) {
         Doc         doc  = self_doc(self);
         const char *path = 0;
         size_t      wlen;
-        Leaf *      where_orig = doc->where;
+        Leaf       *where_orig = doc->where;
 
         wlen = doc->where - doc->where_path;
         if (0 < wlen) {
@@ -1603,7 +1603,7 @@ static VALUE doc_dump(int argc, VALUE *argv, VALUE self) {
 
             oj_out_init(&out);
 
-            out.omit_nil  = oj_default_options.dump_opts.omit_nil;
+            out.omit_nil = oj_default_options.dump_opts.omit_nil;
             oj_dump_leaf_to_json(leaf, &oj_default_options, &out);
             rjson = rb_str_new2(out.buf);
 

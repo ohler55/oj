@@ -16,21 +16,21 @@
 
 #define OJ_R_ALLOC(type) oj_r_alloc(sizeof(type), __FILE__, __LINE__)
 #define OJ_R_ALLOC_N(type, n) (type *)oj_r_alloc(sizeof(type) * (n), __FILE__, __LINE__)
-#define OJ_R_REALLOC_N(ptr, type, n) ((ptr) = (type*)oj_r_realloc(ptr, (sizeof(type) * (n)), __FILE__, __LINE__))
+#define OJ_R_REALLOC_N(ptr, type, n) ((ptr) = (type *)oj_r_realloc(ptr, (sizeof(type) * (n)), __FILE__, __LINE__))
 #define OJ_R_FREE(ptr) oj_r_free(ptr, __FILE__, __LINE__)
 
 #define OJ_STRDUP(str) oj_mem_strdup(str, __FILE__, __LINE__)
 
-extern void*	oj_malloc(size_t size, const char *file, int line);
-extern void*	oj_realloc(void *ptr, size_t size, const char *file, int line);
-extern void*	oj_calloc(size_t count, size_t size, const char *file, int line);
-extern void	oj_free(void *ptr, const char *file, int line);
+extern void *oj_malloc(size_t size, const char *file, int line);
+extern void *oj_realloc(void *ptr, size_t size, const char *file, int line);
+extern void *oj_calloc(size_t count, size_t size, const char *file, int line);
+extern void  oj_free(void *ptr, const char *file, int line);
 
-extern void*	oj_r_alloc(size_t size, const char *file, int line);
-extern void*	oj_r_realloc(void *ptr, size_t size, const char *file, int line);
-extern void	oj_r_free(void *ptr, const char *file, int line);
+extern void *oj_r_alloc(size_t size, const char *file, int line);
+extern void *oj_r_realloc(void *ptr, size_t size, const char *file, int line);
+extern void  oj_r_free(void *ptr, const char *file, int line);
 
-extern char*	oj_mem_strdup(const char *str, const char *file, int line);
+extern char *oj_mem_strdup(const char *str, const char *file, int line);
 
 #else
 
@@ -48,6 +48,6 @@ extern char*	oj_mem_strdup(const char *str, const char *file, int line);
 
 #endif
 
-extern void	oj_mem_report();
+extern void oj_mem_report();
 
 #endif /* OJ_MEM_H */

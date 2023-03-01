@@ -24,7 +24,7 @@ typedef struct _reader {
         VALUE       io;
         const char *in_str;
     };
-} * Reader;
+} *Reader;
 
 extern void oj_reader_init(Reader reader, VALUE io, int fd, bool to_s);
 extern int  oj_reader_read(Reader reader);

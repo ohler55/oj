@@ -13,7 +13,7 @@ struct _ojParser;
 typedef struct _col {
     long vi;  // value stack index
     long ki;  // key stack index if an hash else -1 for an array
-} * Col;
+} *Col;
 
 typedef union _key {
     struct {
@@ -22,9 +22,9 @@ typedef union _key {
     };
     struct {
         int16_t xlen;  // should be the same as len
-        char *  key;
+        char   *key;
     };
-} * Key;
+} *Key;
 
 #define MISS_AUTO 'A'
 #define MISS_RAISE 'R'
@@ -43,7 +43,7 @@ typedef struct _usual {
     Key ktail;
     Key kend;
 
-    VALUE (*get_key)(ojParser p, Key kp);
+    VALUE (*get_key)(struct _ojParser *p, Key kp);
     struct _cache *key_cache;  // same as str_cache or sym_cache
     struct _cache *str_cache;
     struct _cache *sym_cache;
@@ -53,14 +53,14 @@ typedef struct _usual {
     VALUE array_class;
     VALUE hash_class;
 
-    char *  create_id;
+    char   *create_id;
     uint8_t create_id_len;
     uint8_t cache_str;
     uint8_t cache_xrate;
     uint8_t miss_class;
     bool    cache_keys;
     bool    ignore_json_create;
-} * Usual;
+} *Usual;
 
 // Initialize the parser with the usual delegate. If the usual delegate is
 // wrapped then this function is called first and then the parser functions

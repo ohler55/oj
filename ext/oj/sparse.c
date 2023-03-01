@@ -7,10 +7,10 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "mem.h"
 #include "buf.h"
 #include "encode.h"
 #include "intern.h"  // for oj_strndup()
+#include "mem.h"
 #include "oj.h"
 #include "parse.h"
 #include "val_stack.h"
@@ -213,11 +213,7 @@ static void read_escaped_str(ParseInfo pi) {
     }
     while ('\"' != (c = reader_get(&pi->rd))) {
         if ('\0' == c) {
-            oj_set_error_at(pi,
-                            oj_parse_error_class,
-                            __FILE__,
-                            __LINE__,
-                            "quoted string not terminated");
+            oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "quoted string not terminated");
             buf_cleanup(&buf);
             return;
         } else if ('\\' == c) {
@@ -250,11 +246,7 @@ static void read_escaped_str(ParseInfo pi) {
                             reader_backup(&pi->rd);
                             break;
                         }
-                        oj_set_error_at(pi,
-                                        oj_parse_error_class,
-                                        __FILE__,
-                                        __LINE__,
-                                        "invalid escaped character");
+                        oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "invalid escaped character");
                         buf_cleanup(&buf);
                         return;
                     }
@@ -278,11 +270,7 @@ static void read_escaped_str(ParseInfo pi) {
                     buf_append(&buf, c);
                     break;
                 }
-                oj_set_error_at(pi,
-                                oj_parse_error_class,
-                                __FILE__,
-                                __LINE__,
-                                "invalid escaped character");
+                oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "invalid escaped character");
                 buf_cleanup(&buf);
                 return;
             }
@@ -346,11 +334,7 @@ static void read_str(ParseInfo pi) {
     reader_protect(&pi->rd);
     while ('\"' != (c = reader_get(&pi->rd))) {
         if ('\0' == c) {
-            oj_set_error_at(pi,
-                            oj_parse_error_class,
-                            __FILE__,
-                            __LINE__,
-                            "quoted string not terminated");
+            oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "quoted string not terminated");
             return;
         } else if ('\\' == c) {
             reader_backup(&pi->rd);
@@ -430,7 +414,7 @@ static void read_num(ParseInfo pi) {
         ni.no_big      = !pi->options.compat_bigdec;
         ni.bigdec_load = pi->options.compat_bigdec;
     } else {
-        ni.no_big = (FloatDec == pi->options.bigdec_load || FastDec == pi->options.bigdec_load ||
+        ni.no_big      = (FloatDec == pi->options.bigdec_load || FastDec == pi->options.bigdec_load ||
                      RubyDec == pi->options.bigdec_load);
         ni.bigdec_load = pi->options.bigdec_load;
     }
@@ -444,18 +428,10 @@ static void read_num(ParseInfo pi) {
     }
     if ('I' == c) {
         if (No == pi->options.allow_nan) {
-            oj_set_error_at(pi,
-                            oj_parse_error_class,
-                            __FILE__,
-                            __LINE__,
-                            "not a number or other value");
+            oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number or other value");
             return;
         } else if (0 != reader_expect(&pi->rd, "nfinity")) {
-            oj_set_error_at(pi,
-                            oj_parse_error_class,
-                            __FILE__,
-                            __LINE__,
-                            "not a number or other value");
+            oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number or other value");
             return;
         }
         ni.infinity = 1;
@@ -477,11 +453,7 @@ static void read_num(ParseInfo pi) {
 
                 if (0 < d) {
                     if (zero1 && CompatMode == pi->options.mode) {
-                        oj_set_error_at(pi,
-                                        oj_parse_error_class,
-                                        __FILE__,
-                                        __LINE__,
-                                        "not a number");
+                        oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number");
                         return;
                     }
                     zero1 = false;
@@ -592,7 +564,7 @@ static void read_nan(ParseInfo pi) {
         ni.no_big      = !pi->options.compat_bigdec;
         ni.bigdec_load = pi->options.compat_bigdec;
     } else {
-        ni.no_big = (FloatDec == pi->options.bigdec_load || FastDec == pi->options.bigdec_load ||
+        ni.no_big      = (FloatDec == pi->options.bigdec_load || FastDec == pi->options.bigdec_load ||
                      RubyDec == pi->options.bigdec_load);
         ni.bigdec_load = pi->options.bigdec_load;
     }
@@ -717,11 +689,7 @@ void oj_sparse2(ParseInfo pi) {
         case '"': read_str(pi); break;
         case '+':
             if (CompatMode == pi->options.mode) {
-                oj_set_error_at(pi,
-                                oj_parse_error_class,
-                                __FILE__,
-                                __LINE__,
-                                "unexpected character");
+                oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "unexpected character");
                 return;
             }
             pi->cur--;
@@ -746,11 +714,7 @@ void oj_sparse2(ParseInfo pi) {
                 reader_backup(&pi->rd);
                 read_num(pi);
             } else {
-                oj_set_error_at(pi,
-                                oj_parse_error_class,
-                                __FILE__,
-                                __LINE__,
-                                "unexpected character");
+                oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "unexpected character");
                 return;
             }
             break;
@@ -758,11 +722,7 @@ void oj_sparse2(ParseInfo pi) {
             if (Yes == pi->options.allow_nan) {
                 read_nan(pi);
             } else {
-                oj_set_error_at(pi,
-                                oj_parse_error_class,
-                                __FILE__,
-                                __LINE__,
-                                "unexpected character");
+                oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "unexpected character");
                 return;
             }
             break;
@@ -800,8 +760,7 @@ void oj_sparse2(ParseInfo pi) {
                     ni.no_big      = !pi->options.compat_bigdec;
                     ni.bigdec_load = pi->options.compat_bigdec;
                 } else {
-                    ni.no_big      = (FloatDec == pi->options.bigdec_load ||
-                                 FastDec == pi->options.bigdec_load ||
+                    ni.no_big      = (FloatDec == pi->options.bigdec_load || FastDec == pi->options.bigdec_load ||
                                  RubyDec == pi->options.bigdec_load);
                     ni.bigdec_load = pi->options.bigdec_load;
                 }
@@ -814,13 +773,7 @@ void oj_sparse2(ParseInfo pi) {
         case '/': skip_comment(pi); break;
         case '\0': return;
         default:
-            oj_set_error_at(pi,
-                            oj_parse_error_class,
-                            __FILE__,
-                            __LINE__,
-                            "unexpected character '%c' [0x%02x]",
-                            c,
-                            c);
+            oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "unexpected character '%c' [0x%02x]", c, c);
             return;
         }
         if (err_has(&pi->err)) {
@@ -879,8 +832,8 @@ oj_pi_sparse(int argc, VALUE *argv, ParseInfo pi, int fd) {
         } else {
             rb_raise(rb_eTypeError, "Nil is not a valid JSON source.");
         }
-    } else if (CompatMode == pi->options.mode && T_STRING == rb_type(input) &&
-               No == pi->options.nilnil && 0 == RSTRING_LEN(input)) {
+    } else if (CompatMode == pi->options.mode && T_STRING == rb_type(input) && No == pi->options.nilnil &&
+               0 == RSTRING_LEN(input)) {
         rb_raise(oj_json_parser_error_class, "An empty string is not a valid JSON string.");
     }
     if (rb_block_given_p()) {
@@ -933,9 +886,7 @@ oj_pi_sparse(int argc, VALUE *argv, ParseInfo pi, int fd) {
             switch (v->next) {
             case NEXT_ARRAY_NEW:
             case NEXT_ARRAY_ELEMENT:
-            case NEXT_ARRAY_COMMA:
-                oj_set_error_at(pi, err_class, __FILE__, __LINE__, "Array not terminated");
-                break;
+            case NEXT_ARRAY_COMMA: oj_set_error_at(pi, err_class, __FILE__, __LINE__, "Array not terminated"); break;
             case NEXT_HASH_NEW:
             case NEXT_HASH_KEY:
             case NEXT_HASH_COLON:

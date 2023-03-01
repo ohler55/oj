@@ -22,15 +22,13 @@ static const char ninf_val[] = NINF_VAL;
 static const char nan_val[]  = NAN_VAL;
 
 static void raise_strict(VALUE obj) {
-    rb_raise(rb_eTypeError,
-             "Failed to dump %s Object to JSON in strict mode.\n",
-             rb_class2name(rb_obj_class(obj)));
+    rb_raise(rb_eTypeError, "Failed to dump %s Object to JSON in strict mode.\n", rb_class2name(rb_obj_class(obj)));
 }
 
 // Removed dependencies on math due to problems with CentOS 5.4.
 static void dump_float(VALUE obj, int depth, Out out, bool as_ok) {
     char   buf[64];
-    char * b;
+    char*  b;
     double d   = rb_num2dbl(obj);
     int    cnt = 0;
 

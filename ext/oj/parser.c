@@ -20,7 +20,7 @@
 #define FRAC_LIMIT 10000000000000000ULL
 
 // Give better performance with indented JSON but worse with unindented.
-//#define SPACE_JUMP
+// #define SPACE_JUMP
 
 enum {
     SKIP_CHAR        = 'a',

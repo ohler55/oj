@@ -13,7 +13,7 @@ typedef struct _timeInfo {
     int day;
     int mon;
     int year;
-} * TimeInfo;
+}* TimeInfo;
 
 extern void sec_as_time(int64_t secs, TimeInfo ti);
 

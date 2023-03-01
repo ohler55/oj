@@ -4,8 +4,8 @@
 #ifndef OJ_PARSER_H
 #define OJ_PARSER_H
 
-#include <stdbool.h>
 #include <ruby.h>
+#include <stdbool.h>
 
 #include "buf.h"
 
@@ -38,7 +38,7 @@ typedef struct _num {
     bool        neg;
     bool        exp_neg;
     // for numbers as strings, reuse buf
-} * Num;
+} *Num;
 
 struct _ojParser;
 
@@ -54,11 +54,11 @@ typedef struct _funcs {
     void (*close_array)(struct _ojParser *p);
     void (*open_object)(struct _ojParser *p);
     void (*close_object)(struct _ojParser *p);
-} * Funcs;
+} *Funcs;
 
 typedef struct _ojParser {
-    const char *  map;
-    const char *  next_map;
+    const char   *map;
+    const char   *next_map;
     int           depth;
     unsigned char stack[1024];
 
@@ -67,7 +67,7 @@ typedef struct _ojParser {
     struct _buf key;
     struct _buf buf;
 
-    struct _funcs funcs[3]; // indexed by XXX_FUN defines
+    struct _funcs funcs[3];  // indexed by XXX_FUN defines
 
     void (*start)(struct _ojParser *p);
     VALUE (*option)(struct _ojParser *p, const char *key, VALUE value);
@@ -86,7 +86,7 @@ typedef struct _ojParser {
     uint32_t ucode;
     ojType   type;  // valType
     bool     just_one;
-} * ojParser;
+} *ojParser;
 
 // Create a new parser without setting the delegate. The parser is
 // wrapped. The parser is (ojParser)DATA_PTR(value) where value is the return
@@ -97,6 +97,5 @@ extern VALUE oj_parser_new();
 
 // Set set the options from a hash (ropts).
 extern void oj_parser_set_option(ojParser p, VALUE ropts);
-
 
 #endif /* OJ_PARSER_H */

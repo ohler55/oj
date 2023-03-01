@@ -27,12 +27,11 @@ inline static VALUE resolve_classname(VALUE mod, const char *classname, int auto
     return clas;
 }
 
-static VALUE
-resolve_classpath(ParseInfo pi, const char *name, size_t len, int auto_define, VALUE error_class) {
+static VALUE resolve_classpath(ParseInfo pi, const char *name, size_t len, int auto_define, VALUE error_class) {
     char        class_name[1024];
     VALUE       clas;
-    char *      end = class_name + sizeof(class_name) - 1;
-    char *      s;
+    char       *end = class_name + sizeof(class_name) - 1;
+    char       *s;
     const char *n = name;
 
     clas = rb_cObject;

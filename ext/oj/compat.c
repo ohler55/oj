@@ -3,17 +3,17 @@
 
 #include <stdio.h>
 
-#include "mem.h"
 #include "encode.h"
 #include "err.h"
 #include "intern.h"
+#include "mem.h"
 #include "oj.h"
 #include "parse.h"
 #include "resolve.h"
 #include "trace.h"
 
 static void hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *orig) {
-    const char *   key    = kval->key;
+    const char    *key    = kval->key;
     int            klen   = kval->klen;
     Val            parent = stack_peek(&pi->stack);
     volatile VALUE rkey   = kval->key_val;
@@ -31,7 +31,7 @@ static void hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, c
                 if (Yes == pi->options.sym_key) {
                     rkey = ID2SYM(rb_intern3(key, klen, oj_utf8_encoding));
                 } else {
-		    rkey = rb_utf8_str_new(key, klen);
+                    rkey = rb_utf8_str_new(key, klen);
                 }
             } else if (Yes == pi->options.sym_key) {
                 rkey = oj_sym_intern(key, klen);
@@ -121,11 +121,7 @@ static void hash_set_num(struct _parseInfo *pi, Val parent, NumInfo ni) {
         // json gem require the less efficient []= method be called to set
         // values. Even using the store method to set the values will fail
         // the unit tests.
-        rb_funcall(stack_peek(&pi->stack)->val,
-                   rb_intern("[]="),
-                   2,
-                   oj_calc_hash_key(pi, parent),
-                   rval);
+        rb_funcall(stack_peek(&pi->stack)->val, rb_intern("[]="), 2, oj_calc_hash_key(pi, parent), rval);
     } else {
         rb_hash_aset(stack_peek(&pi->stack)->val, oj_calc_hash_key(pi, parent), rval);
     }
@@ -138,11 +134,7 @@ static void hash_set_value(ParseInfo pi, Val parent, VALUE value) {
         // json gem require the less efficient []= method be called to set
         // values. Even using the store method to set the values will fail
         // the unit tests.
-        rb_funcall(stack_peek(&pi->stack)->val,
-                   rb_intern("[]="),
-                   2,
-                   oj_calc_hash_key(pi, parent),
-                   value);
+        rb_funcall(stack_peek(&pi->stack)->val, rb_intern("[]="), 2, oj_calc_hash_key(pi, parent), value);
     } else {
         rb_hash_aset(stack_peek(&pi->stack)->val, oj_calc_hash_key(pi, parent), value);
     }

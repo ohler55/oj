@@ -1,13 +1,14 @@
 // Copyright (c) 2021, Peter Ohler, All rights reserved.
 
-#include "mem.h"
-#include "cache.h"
-#include "oj.h"
-#include "parser.h"
 #include "saj2.h"
 
+#include "cache.h"
+#include "mem.h"
+#include "oj.h"
+#include "parser.h"
+
 static VALUE get_key(ojParser p) {
-    Saj       d   = (Saj)p->ctx;
+    Saj            d   = (Saj)p->ctx;
     const char    *key = buf_str(&p->key);
     size_t         len = buf_len(&p->key);
     volatile VALUE rkey;
@@ -44,7 +45,7 @@ static void open_object_loc(ojParser p) {
 }
 
 static void open_object_key(ojParser p) {
-    Saj       d   = (Saj)p->ctx;
+    Saj            d   = (Saj)p->ctx;
     volatile VALUE key = get_key(p);
 
     push_key(d, key);
@@ -52,7 +53,7 @@ static void open_object_key(ojParser p) {
 }
 
 static void open_object_loc_key(ojParser p) {
-    Saj       d   = (Saj)p->ctx;
+    Saj            d   = (Saj)p->ctx;
     volatile VALUE key = get_key(p);
 
     push_key(d, key);
@@ -68,7 +69,7 @@ static void open_array_loc(ojParser p) {
 }
 
 static void open_array_key(ojParser p) {
-    Saj       d   = (Saj)p->ctx;
+    Saj            d   = (Saj)p->ctx;
     volatile VALUE key = get_key(p);
 
     push_key(d, key);
@@ -76,7 +77,7 @@ static void open_array_key(ojParser p) {
 }
 
 static void open_array_loc_key(ojParser p) {
-    Saj       d   = (Saj)p->ctx;
+    Saj            d   = (Saj)p->ctx;
     volatile VALUE key = get_key(p);
 
     push_key(d, key);
@@ -84,8 +85,8 @@ static void open_array_loc_key(ojParser p) {
 }
 
 static void close_object(ojParser p) {
-    Saj d   = (Saj)p->ctx;
-    VALUE    key = Qnil;
+    Saj   d   = (Saj)p->ctx;
+    VALUE key = Qnil;
 
     if (OBJECT_FUN == p->stack[p->depth]) {
         d->tail--;
@@ -98,8 +99,8 @@ static void close_object(ojParser p) {
 }
 
 static void close_object_loc(ojParser p) {
-    Saj d   = (Saj)p->ctx;
-    VALUE    key = Qnil;
+    Saj   d   = (Saj)p->ctx;
+    VALUE key = Qnil;
 
     if (OBJECT_FUN == p->stack[p->depth]) {
         d->tail--;
@@ -112,8 +113,8 @@ static void close_object_loc(ojParser p) {
 }
 
 static void close_array(ojParser p) {
-    Saj d   = (Saj)p->ctx;
-    VALUE    key = Qnil;
+    Saj   d   = (Saj)p->ctx;
+    VALUE key = Qnil;
 
     if (OBJECT_FUN == p->stack[p->depth]) {
         d->tail--;
@@ -126,8 +127,8 @@ static void close_array(ojParser p) {
 }
 
 static void close_array_loc(ojParser p) {
-    Saj d   = (Saj)p->ctx;
-    VALUE    key = Qnil;
+    Saj   d   = (Saj)p->ctx;
+    VALUE key = Qnil;
 
     if (OBJECT_FUN == p->stack[p->depth]) {
         d->tail--;
@@ -144,13 +145,7 @@ static void add_null(ojParser p) {
 }
 
 static void add_null_loc(ojParser p) {
-    rb_funcall(((Saj)p->ctx)->handler,
-               oj_add_value_id,
-               4,
-               Qnil,
-               Qnil,
-               LONG2FIX(p->line),
-               LONG2FIX(p->cur - p->col));
+    rb_funcall(((Saj)p->ctx)->handler, oj_add_value_id, 4, Qnil, Qnil, LONG2FIX(p->line), LONG2FIX(p->cur - p->col));
 }
 
 static void add_null_key(ojParser p) {
@@ -172,13 +167,7 @@ static void add_true(ojParser p) {
 }
 
 static void add_true_loc(ojParser p) {
-    rb_funcall(((Saj)p->ctx)->handler,
-               oj_add_value_id,
-               4,
-               Qtrue,
-               Qnil,
-               LONG2FIX(p->line),
-               LONG2FIX(p->cur - p->col));
+    rb_funcall(((Saj)p->ctx)->handler, oj_add_value_id, 4, Qtrue, Qnil, LONG2FIX(p->line), LONG2FIX(p->cur - p->col));
 }
 
 static void add_true_key(ojParser p) {
@@ -200,13 +189,7 @@ static void add_false(ojParser p) {
 }
 
 static void add_false_loc(ojParser p) {
-    rb_funcall(((Saj)p->ctx)->handler,
-               oj_add_value_id,
-               4,
-               Qfalse,
-               Qnil,
-               LONG2FIX(p->line),
-               LONG2FIX(p->cur - p->col));
+    rb_funcall(((Saj)p->ctx)->handler, oj_add_value_id, 4, Qfalse, Qnil, LONG2FIX(p->line), LONG2FIX(p->cur - p->col));
 }
 
 static void add_false_key(ojParser p) {
@@ -316,7 +299,7 @@ static void add_big_key_loc(ojParser p) {
 }
 
 static void add_str(ojParser p) {
-    Saj       d = (Saj)p->ctx;
+    Saj            d = (Saj)p->ctx;
     volatile VALUE rstr;
     const char    *str = buf_str(&p->buf);
     size_t         len = buf_len(&p->buf);
@@ -330,7 +313,7 @@ static void add_str(ojParser p) {
 }
 
 static void add_str_loc(ojParser p) {
-    Saj       d = (Saj)p->ctx;
+    Saj            d = (Saj)p->ctx;
     volatile VALUE rstr;
     const char    *str = buf_str(&p->buf);
     size_t         len = buf_len(&p->buf);
@@ -344,7 +327,7 @@ static void add_str_loc(ojParser p) {
 }
 
 static void add_str_key(ojParser p) {
-    Saj       d = (Saj)p->ctx;
+    Saj            d = (Saj)p->ctx;
     volatile VALUE rstr;
     const char    *str = buf_str(&p->buf);
     size_t         len = buf_len(&p->buf);
@@ -358,7 +341,7 @@ static void add_str_key(ojParser p) {
 }
 
 static void add_str_key_loc(ojParser p) {
-    Saj       d = (Saj)p->ctx;
+    Saj            d = (Saj)p->ctx;
     volatile VALUE rstr;
     const char    *str = buf_str(&p->buf);
     size_t         len = buf_len(&p->buf);
@@ -557,8 +540,8 @@ static void mark(ojParser p) {
     if (NULL == p || NULL == p->ctx) {
         return;
     }
-    Saj d = (Saj)p->ctx;
-    VALUE   *kp;
+    Saj    d = (Saj)p->ctx;
+    VALUE *kp;
 
     cache_mark(d->str_cache);
     if (Qnil != d->handler) {
@@ -576,13 +559,13 @@ static VALUE form_str(const char *str, size_t len) {
 }
 
 void oj_init_saj(ojParser p, Saj d) {
-    d->klen      = 256;
-    d->keys      = OJ_R_ALLOC_N(VALUE, d->klen);
-    d->tail      = d->keys;
-    d->handler   = Qnil;
-    d->str_cache = cache_create(0, form_str, true, false);
-    d->cache_str = 16;
-    d->cache_keys = true;
+    d->klen        = 256;
+    d->keys        = OJ_R_ALLOC_N(VALUE, d->klen);
+    d->tail        = d->keys;
+    d->handler     = Qnil;
+    d->str_cache   = cache_create(0, form_str, true, false);
+    d->cache_str   = 16;
+    d->cache_keys  = true;
     d->thread_safe = false;
 
     p->ctx = (void *)d;
