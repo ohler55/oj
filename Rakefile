@@ -53,45 +53,13 @@ task :default => :test_all
 begin
   require "rails/version"
 
-  if Rails.version =~ /^4\.\d/
-    Rake::TestTask.new "activesupport4" do |t|
-      t.libs << 'test'
-      t.pattern = 'test/activesupport4/*_test.rb'
-      t.warning = true
-      t.verbose = true
-    end
-    Rake::Task[:test_all].enhance ["activesupport4"]
+  Rake::TestTask.new "activesupport#{Rails::VERSION::MAJOR}" do |t|
+    t.libs << 'test'
+    t.pattern = "test/activesupport#{Rails::VERSION::MAJOR}/*_test.rb"
+    t.warning = true
+    t.verbose = true
   end
-
-  if Rails.version =~ /^5\.\d/
-    Rake::TestTask.new "activesupport5" do |t|
-      t.libs << 'test'
-      t.pattern = 'test/activesupport5/*_test.rb'
-      t.warning = true
-      t.verbose = true
-    end
-    Rake::Task[:test_all].enhance ["activesupport5"]
-  end
-
-  if Rails.version =~ /^6\.\d/
-    Rake::TestTask.new "activesupport6" do |t|
-      t.libs << 'test'
-      t.pattern = 'test/activesupport6/*_test.rb'
-      t.warning = true
-      t.verbose = true
-    end
-    Rake::Task[:test_all].enhance ["activesupport6"]
-  end
-
-  if Rails.version =~ /7\.\d/
-    Rake::TestTask.new "activesupport7" do |t|
-      t.libs << 'test'
-      t.pattern = 'test/activesupport7/*_test.rb'
-      t.warning = true
-      t.verbose = true
-    end
-    Rake::Task[:test_all].enhance ["activesupport7"]
-  end
+  Rake::Task[:test_all].enhance ["activesupport#{Rails::VERSION::MAJOR}"]
 
   Rake::TestTask.new "activerecord" do |t|
     t.libs << 'test'

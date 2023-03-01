@@ -3,6 +3,9 @@ inherit_from: .rubocop_todo.yml
 AllCops:
   TargetRubyVersion: 2.7
   NewCops: enable
+  Exclude:
+    - 'test/activesupport6/**/*'
+    - 'test/activesupport7/**/*'
 
 Style/QuotedSymbols:
   EnforcedStyle: double_quotes
