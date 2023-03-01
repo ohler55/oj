@@ -10,7 +10,7 @@ Oj.optimize_rails()
 
 For more details and options, read on...
 
-# Oj Rails Compatibility
+## Oj Rails Compatibility
 
 The `:rails` mode mimics the ActiveSupport version 5 encoder. Rails and
 ActiveSupport are built around the use of the `as_json(*)` method defined for
@@ -46,10 +46,10 @@ instance of the Encoder class and provide options in the initializer.
 
 The globals that ActiveSupport uses for encoding are:
 
- * `ActiveSupport::JSON::Encoding.use_standard_json_time_format`
- * `ActiveSupport::JSON::Encoding.escape_html_entities_in_json`
- * `ActiveSupport::JSON::Encoding.time_precision`
- * `ActiveSupport::JSON::Encoding.json_encoder`
+* `ActiveSupport::JSON::Encoding.use_standard_json_time_format`
+* `ActiveSupport::JSON::Encoding.escape_html_entities_in_json`
+* `ActiveSupport::JSON::Encoding.time_precision`
+* `ActiveSupport::JSON::Encoding.json_encoder`
 
 Those globals are aliased to also be accessed from the ActiveSupport module
 directly so `ActiveSupport::JSON::Encoding.time_precision` can also be accessed
@@ -77,17 +77,17 @@ listed here.
 The classes that can be put in optimized mode and are optimized when
 `Oj::Rails.optimize` is called with no arguments are:
 
- * Array
- * BigDecimal
- * Float
- * Hash
- * Range
- * Regexp
- * Time
- * ActiveSupport::TimeWithZone
- * ActionController::Parameters
- * any class inheriting from ActiveRecord::Base
- * any other class where all attributes should be dumped
+* Array
+* BigDecimal
+* Float
+* Hash
+* Range
+* Regexp
+* Time
+* ActiveSupport::TimeWithZone
+* ActionController::Parameters
+* any class inheriting from ActiveRecord::Base
+* any other class where all attributes should be dumped
 
 The ActiveSupport decoder is the `JSON.parse()` method. Calling the
 `Oj::Rails.set_decoder()` method replaces that method with the Oj equivalent.
@@ -131,7 +131,7 @@ If you are using an older version of Ruby, you can pin `oj` to an earlier versio
 gem 'oj', '3.7.12'
 ```
 
-### Notes:
+### Notes
 
 1. Optimized Floats set the significant digits to 16. This is different than
    Ruby which is used by the json gem and by Rails. Ruby varies the
@@ -152,13 +152,17 @@ gem 'oj', '3.7.12'
 
    For example:
 
-     ```
+     ```ruby
      require 'active_support/core_ext'
      require 'active_support/json'
      require 'oj'
      Oj.optimize_rails
      tracer.enable { Time.now.to_json }
-     # prints output including
+     ```
+
+     Prints output including:
+
+     ```console
      ....
      [20, :c_call, #<Class:Oj::Rails::Encoder>, :new]
      [20, :c_call, Oj::Rails::Encoder, :encode]

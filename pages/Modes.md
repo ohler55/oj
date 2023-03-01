@@ -7,12 +7,12 @@ without monkey patching the object classes. From that start other demands were
 made the were best met by giving Oj multiple modes of operation. The current
 modes are:
 
- - `:strict`
- - `:null`
- - `:compat` or `:json`
- - `:rails`
- - `:object`
- - `:custom`
+- `:strict`
+- `:null`
+- `:compat` or `:json`
+- `:rails`
+- `:object`
+- `:custom`
 
 Since modes determine what the JSON output will look like and alternatively
 what Oj expects when the `Oj.load()` method is called, mixing the output and
@@ -142,7 +142,7 @@ information.
     for Rails is as a string. Setting the value to true will encode a
     BigDecimal as a number which breaks compatibility.
     Note: after version 3.11.3 both `Oj.generate` and `JSON.generate`
-    will not honour this option in Rails Mode, detais on https://github.com/ohler55/oj/pull/716.
+    will not honour this option in Rails Mode, detais on <https://github.com/ohler55/oj/pull/716>.
 
  4. The integer indent value in the default options will be honored by since
     the json gem expects a String type the indent in calls to 'to_json()',

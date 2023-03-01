@@ -1,12 +1,12 @@
 # Compatibility
 
-**Ruby**
+## Ruby
 
 Oj is compatible with Ruby 2.4+ and RBX.
 Support for JRuby has been removed as JRuby no longer supports C extensions and
 there are bugs in the older versions that are not being fixed.
 
-**Rails**
+## Rails
 
 Although up until 4.1 Rails uses [multi_json](https://github.com/intridea/multi_json), an [issue in Rails](https://github.com/rails/rails/issues/9212) causes ActiveSupport to fail to make use Oj for JSON handling.
 There is a
@@ -17,7 +17,7 @@ another work around to the rails older and newer behavior.
 
 The latest ActiveRecord is able to work with Oj by simply using the line:
 
-```
+```ruby
 serialize :metadata, Oj
 ```
 

@@ -13,7 +13,7 @@ json gem has been required.
 
 For more details and options, read on...
 
-# Oj JSON Gem Compatibility
+## Oj JSON Gem Compatibility
 
 The `:compat` mode mimics the json gem. The json gem is built around the use
 of the `to_json(*)` method defined for a class. Oj attempts to provide the
@@ -74,20 +74,20 @@ Oj.remove_to_json(Rational)
 
 The classes that can be added are:
 
- * Array
- * BigDecimal
- * Complex
- * Date
- * DateTime
- * Exception
- * Hash
- * Integer
- * OpenStruct
- * Range
- * Rational
- * Regexp
- * Struct
- * Time
+* Array
+* BigDecimal
+* Complex
+* Date
+* DateTime
+* Exception
+* Hash
+* Integer
+* OpenStruct
+* Range
+* Rational
+* Regexp
+* Struct
+* Time
 
 The compatibility target version is 2.0.3. The json gem unit tests were used
 to verify compatibility with a few changes to use Oj instead of the original

@@ -1,3 +1,5 @@
+# ActiveSupport 6
+
 Tests copied from [rails/activesupport/test/json/],
 [rails/activesupport/lib/active_support], [rails/activesupport/test].
 
