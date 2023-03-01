@@ -53,26 +53,6 @@ task :default => :test_all
 begin
   require "rails/version"
 
-  if Rails.version =~ /^4\.\d/
-    Rake::TestTask.new "activesupport4" do |t|
-      t.libs << 'test'
-      t.pattern = 'test/activesupport4/*_test.rb'
-      t.warning = true
-      t.verbose = true
-    end
-    Rake::Task[:test_all].enhance ["activesupport4"]
-  end
-
-  if Rails.version =~ /^5\.\d/
-    Rake::TestTask.new "activesupport5" do |t|
-      t.libs << 'test'
-      t.pattern = 'test/activesupport5/*_test.rb'
-      t.warning = true
-      t.verbose = true
-    end
-    Rake::Task[:test_all].enhance ["activesupport5"]
-  end
-
   if Rails.version =~ /^6\.\d/
     Rake::TestTask.new "activesupport6" do |t|
       t.libs << 'test'
