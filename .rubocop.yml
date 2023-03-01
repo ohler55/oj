@@ -9,6 +9,7 @@ AllCops:
   Exclude:
     - 'test/activesupport6/**/*'
     - 'test/activesupport7/**/*'
+    - 'vendor/**/*'
 
 Style/QuotedSymbols:
   EnforcedStyle: double_quotes
