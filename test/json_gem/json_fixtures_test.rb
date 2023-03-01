@@ -16,7 +16,7 @@ class JSONFixturesTest < Test::Unit::TestCase
     for name, source in @passed
       begin
         assert JSON.parse(source),
-          "Did not pass for fixture '#{name}': #{source.inspect}"
+               "Did not pass for fixture '#{name}': #{source.inspect}"
       rescue => e
         warn "\nCaught #{e.class}(#{e}) for fixture '#{name}': #{source.inspect}\n#{e.backtrace * "\n"}"
         raise e
@@ -27,7 +27,7 @@ class JSONFixturesTest < Test::Unit::TestCase
   def test_failing
     for name, source in @failed
       assert_raise(JSON::ParserError, JSON::NestingError,
-        "Did not fail for fixture '#{name}': #{source.inspect}") do
+                   "Did not fail for fixture '#{name}': #{source.inspect}") do
         JSON.parse(source)
       end
     end

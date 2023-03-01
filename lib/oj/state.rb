@@ -116,12 +116,12 @@ module JSON
               m = m.to_s[0..-2]
               m = m.to_sym
               return @attrs.store(m, args[0])
-	    end
-	    if @attrs.has_key?(m.to_sym)
+            end
+            if @attrs.has_key?(m.to_sym)
               raise ArgumentError.new("wrong number of arguments (#{args.size} for 0 with #{m}) to method #{m}") unless args.nil? or args.empty?
               return @attrs[m.to_sym]
-	    end
-	    return @attrs.send(m, *args, &block)
+            end
+            return @attrs.send(m, *args, &block)
           end
 
         end # State

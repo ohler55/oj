@@ -575,21 +575,21 @@ class Juice < Minitest::Test
 
     IO.pipe do |r, w|
       if fork
-	r.close
-	#w.nonblock = false
-	a = []
-	10_000.times do |i|
-	  a << i
-	end
-	Oj.to_stream(w, a, indent: 2)
-	w.close
+        r.close
+        #w.nonblock = false
+        a = []
+        10_000.times do |i|
+          a << i
+        end
+        Oj.to_stream(w, a, indent: 2)
+        w.close
       else
-	w.close
-	sleep(0.1) # to force a busy
-	cnt = 0
-	r.each_line { cnt += 1 }
-	r.close
-	Process.exit(0)
+        w.close
+        sleep(0.1) # to force a busy
+        cnt = 0
+        r.each_line { cnt += 1 }
+        r.close
+        Process.exit(0)
       end
     end
   end
@@ -693,14 +693,14 @@ class Juice < Minitest::Test
     msg = ''
     assert_raises(Oj::ParseError) {
       begin
-	Oj.load(%|{
+        Oj.load(%|{
   "first": [
     1, 2, { "third": 123x }
   ]
 }|)
       rescue Oj::ParseError => e
-	msg = e.message
-	raise e
+        msg = e.message
+        raise e
       end
     }
     assert_equal('after first[2].third', msg.split('(')[1].split(')')[0])
@@ -709,7 +709,7 @@ class Juice < Minitest::Test
   def test_bad_bignum
     if '2.4.0' < RUBY_VERSION
       assert_raises Oj::ParseError do
-	Oj.load(%|{ "big": -e123456789 }|, mode: :strict)
+        Oj.load(%|{ "big": -e123456789 }|, mode: :strict)
       end
     end
   end

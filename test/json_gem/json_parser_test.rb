@@ -141,9 +141,9 @@ class JSONParserTest < Test::Unit::TestCase
     assert_equal([1], JSON.parse('[1]'))
     assert_equal([1], JSON.parse('  [ 1  ]  '))
     ary = [[1], ["foo"], [3.14], [4711.0], [2.718], [nil],
-      [[1, -2, 3]], [false], [true]]
+           [[1, -2, 3]], [false], [true]]
     assert_equal(ary,
-      JSON.parse('[[1],["foo"],[3.14],[47.11e+2],[2718.0E-3],[null],[[1,-2,3]],[false],[true]]'))
+                 JSON.parse('[[1],["foo"],[3.14],[47.11e+2],[2718.0E-3],[null],[[1,-2,3]],[false],[true]]'))
     assert_equal(ary, JSON.parse(%Q{   [   [1] , ["foo"]  ,  [3.14] \t ,  [47.11e+2]\s
       , [2718.0E-3 ],\r[ null] , [[1, -2, 3 ]], [false ],[ true]\n ]  }))
   end
@@ -208,9 +208,9 @@ class JSONParserTest < Test::Unit::TestCase
 
   def test_symbolize_names
     assert_equal({ "foo" => "bar", "baz" => "quux" },
-      JSON.parse('{"foo":"bar", "baz":"quux"}'))
+                 JSON.parse('{"foo":"bar", "baz":"quux"}'))
     assert_equal({ :foo => "bar", :baz => "quux" },
-      JSON.parse('{"foo":"bar", "baz":"quux"}', :symbolize_names => true))
+                 JSON.parse('{"foo":"bar", "baz":"quux"}', :symbolize_names => true))
     assert_raise(ArgumentError) do
       JSON.parse('{}', :symbolize_names => true, :create_additions => true)
     end
@@ -442,7 +442,7 @@ EOT
     assert obj_again['foo']['bar']
     assert_equal obj, obj_again
     assert_equal ["foo"],
-      JSON(JSON(SubArray2["foo"]), :create_additions => true)
+                 JSON(JSON(SubArray2["foo"]), :create_additions => true)
   end
 
   def test_generate_core_subclasses_with_default_to_json
