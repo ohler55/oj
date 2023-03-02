@@ -13,7 +13,7 @@ class MimicDefine < Minitest::Test
     # Test constants
     assert(!defined?(JSON).nil?)
     assert(!defined?(JSON::ParserError).nil?)
-    assert(Object.respond_to?(:to_json))
+    assert_respond_to(Object, :to_json)
 
     # Test loaded features
     assert(!require('json'))
