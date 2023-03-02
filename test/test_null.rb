@@ -245,7 +245,8 @@ class NullJuice < Minitest::Test
 
   def test_io_file
     filename = File.join(File.dirname(__FILE__), 'open_file_test.json')
-    File.open(filename, 'w') { |f| f.write(%{{
+    File.open(filename, 'w') { |f|
+      f.write(%{{
   "x":true,
   "y":58,
   "z": [1,2,3]
