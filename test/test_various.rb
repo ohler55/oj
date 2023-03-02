@@ -456,7 +456,7 @@ class Juice < Minitest::Test
     assert_equal('null', json)
   end
 
-# Object with to_hash()
+  # Object with to_hash()
   def test_to_hash_object_null
     obj = Jazz.new(true, 58)
     json = Oj.dump(obj, :mode => :null)
@@ -593,7 +593,7 @@ class Juice < Minitest::Test
     end
   end
 
-# comments
+  # comments
   def test_comment_slash
     json = %{{
   "x":true,//three

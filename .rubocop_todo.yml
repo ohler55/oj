@@ -14,15 +14,6 @@ Gemspec/RequireMFA:
   Exclude:
     - 'oj.gemspec'
 
-# Offense count: 19
-# This cop supports safe autocorrection (--autocorrect).
-# Configuration parameters: AllowForAlignment.
-Layout/CommentIndentation:
-  Exclude:
-    - 'test/isolated/shared.rb'
-    - 'test/perf_fast.rb'
-    - 'test/test_various.rb'
-
 # Offense count: 8
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: AllowBorderComment, AllowMarginComment.
