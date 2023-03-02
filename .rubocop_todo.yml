@@ -684,13 +684,6 @@ Metrics/PerceivedComplexity:
 
 # Offense count: 2
 # This cop supports safe autocorrection (--autocorrect).
-Minitest/AssertEqual:
-  Exclude:
-    - 'test/test_file.rb'
-    - 'test/test_object.rb'
-
-# Offense count: 2
-# This cop supports safe autocorrection (--autocorrect).
 Minitest/AssertInDelta:
   Exclude:
     - 'test/test_fast.rb'

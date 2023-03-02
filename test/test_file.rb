@@ -165,7 +165,7 @@ class FileJuice < Minitest::Test
     if $ruby == 'ruby'
       assert_equal(%{{"^u":["Range",1,7,false]}}, json)
     else
-      assert(%{{"^O":"Range","begin":1,"end":7,"exclude_end?":false}} == json)
+      assert_equal(%{{"^O":"Range","begin":1,"end":7,"exclude_end?":false}}, json)
     end
     dump_and_load(1..7, false)
     dump_and_load(1..1, false)
