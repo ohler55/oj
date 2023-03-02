@@ -91,11 +91,7 @@ class DocTest < Minitest::Test
   def test_fixnum
     json = %{12345}
     Oj::Doc.open(json) do |doc|
-      if '2.4.0' <= RUBY_VERSION
-        assert_equal(Integer, doc.type)
-      else
-        assert_equal(Fixnum, doc.type)
-      end
+      assert_equal(Integer, doc.type)
       assert_equal(12345, doc.fetch())
     end
   end
@@ -223,7 +219,7 @@ class DocTest < Minitest::Test
     if '2.4.0' <= RUBY_VERSION
       num_class = Integer
     else
-      num_class = Fixnum
+      num_class = Integer
     end
     Oj::Doc.open(@json1) do |doc|
       [['/', Hash],
