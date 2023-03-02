@@ -286,7 +286,7 @@ class String
   end
 
   def to_json_raw(*)
-   to_json_raw_object().to_json()
+    to_json_raw_object().to_json()
   end
 
   def self.json_create(obj)
