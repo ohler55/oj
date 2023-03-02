@@ -13,7 +13,6 @@ Oj.default_options = { mode: :rails }
 
 class ActiveRecordResultTest < Minitest::Test
   def test_hash_rows
-
     result = ActiveRecord::Result.new(["one", "two"],
                                       [
                                         ["row 1 col 1", "row 1 col 2"],

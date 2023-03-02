@@ -47,6 +47,7 @@ class AllHandler < Oj::ScHandler
     @calls << [:hash_key, key]
     return 'too' if 'two' == key
     return :symbol if 'symbol' == key
+
     key
   end
 
@@ -402,6 +403,7 @@ class ScpTest < Minitest::Test
       c.puts json[0..11]
       10.times {
         break if c.closed?
+
         sleep(0.1)
       }
       unless c.closed?

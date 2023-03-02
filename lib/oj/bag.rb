@@ -15,7 +15,7 @@ module Oj
     # @example Oj::Bag.new(:@x => 42, :@y => 57)
     # @param [Hash] args instance variable symbols and their values
     def initialize(args = {})
-      args.each do |k,v|
+      args.each do |k, v|
         self.instance_variable_set(k, v)
       end
     end
@@ -26,6 +26,7 @@ module Oj
     #                   variable reader, otherwise false.
     def respond_to?(m)
       return true if super
+
       instance_variables.include?(:"@#{m}")
     end
 
@@ -37,8 +38,10 @@ module Oj
     # @raise [NoMethodError] if the instance variable is not defined.
     def method_missing(m, *args, &block)
       raise ArgumentError.new("wrong number of arguments (#{args.size} for 0) to method #{m}") unless args.nil? or args.empty?
+
       at_m = :"@#{m}"
       raise NoMethodError.new("undefined method #{m}", m) unless instance_variable_defined?(at_m)
+
       instance_variable_get(at_m)
     end
 
@@ -47,9 +50,11 @@ module Oj
     # @return [Boolean] true if each variable and value are the same, otherwise false.
     def eql?(other)
       return false if (other.nil? or self.class != other.class)
+
       ova = other.instance_variables
       iv = instance_variables
       return false if ova.size != iv.size
+
       iv.all? { |vid| instance_variable_get(vid) != other.instance_variable_get(vid) }
     end
     alias == eql?
@@ -65,6 +70,7 @@ module Oj
       classname = classname.to_s unless classname.is_a?(String)
       tokens = classname.split('::').map(&:to_sym)
       raise NameError.new("Invalid classname '#{classname}") if tokens.empty?
+
       m = Object
       tokens[0..-2].each do |sym|
         if m.const_defined?(sym)

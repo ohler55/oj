@@ -301,7 +301,7 @@ class ObjectJuice < Minitest::Test
   end
 
   def test_array_deep
-    dump_and_load([1,[2,[3,[4,[5,[6,[7,[8,[9,[10,[11,[12,[13,[14,[15,[16,[17,[18,[19,[20]]]]]]]]]]]]]]]]]]]], false)
+    dump_and_load([1, [2, [3, [4, [5, [6, [7, [8, [9, [10, [11, [12, [13, [14, [15, [16, [17, [18, [19, [20]]]]]]]]]]]]]]]]]]]], false)
   end
 
   # Hash
@@ -377,12 +377,14 @@ class ObjectJuice < Minitest::Test
 
   def test_io_file
     filename = File.join(File.dirname(__FILE__), 'open_file_test.json')
-    File.open(filename, 'w') { |f| f.write(%{{
+    File.open(filename, 'w') { |f|
+      f.write(%{{
   "x":true,
   "y":58,
   "z": [1,2,3]
 }
-}) }
+})
+    }
     f = File.new(filename)
     obj = Oj.object_load(f)
     f.close()
@@ -651,7 +653,7 @@ class ObjectJuice < Minitest::Test
 
     json = %{{"~#x":[1,2]}}
     h = Oj.object_load(json)
-    assert_equal({'~#x' => [1,2]}, h);
+    assert_equal({'~#x' => [1, 2]}, h);
   end
 
   def test_json_struct
@@ -838,7 +840,6 @@ class ObjectJuice < Minitest::Test
     h2 = Oj.object_load(json, :circular => true)
     assert_equal(h2['b'].__id__, h2.__id__)
   end
-
 
   def test_json_object_missing_fields
     json = %{{ "^u": [ "ObjectJuice::Stuck",1]}}

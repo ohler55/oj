@@ -177,7 +177,7 @@ puts "%d Ox.load()s in %0.3f seconds or %0.1f loads/msec" % [$iter, dt, $iter/dt
 
 puts "Parser results:"
 puts "gem       seconds  parses/msec  X faster than #{base_name} (higher is better)"
-parse_results.each do |name,dt|
+parse_results.each do |name, dt|
   if 0.0 == dt
     puts "#{name} failed to generate JSON"
     next
@@ -276,7 +276,7 @@ puts "%d Ox.dump()s in %0.3f seconds or %0.1f dumps/msec" % [$iter, dt, $iter/dt
 
 puts "Parser results:"
 puts "gem       seconds  dumps/msec  X faster than #{base_name} (higher is better)"
-parse_results.each do |name,dt|
+parse_results.each do |name, dt|
   if 0.0 == dt
     puts "#{name} failed to generate JSON"
     next

@@ -1,4 +1,3 @@
-
 require 'ostruct'
 require 'oj/state'
 
@@ -51,7 +50,7 @@ module JSON
 
   def self.dump_default_options=(h)
     m = Oj::MimicDumpOption.new
-    h.each do |k,v|
+    h.each do |k, v|
       m[k] = v
     end
   end
@@ -76,16 +75,19 @@ module JSON
     class Parser
       def initialize(src)
         raise TypeError.new("already initialized") unless @source.nil?
+
         @source = src
       end
 
       def source()
         raise TypeError.new("already initialized") if @source.nil?
+
         @source
       end
       
       def parse()
         raise TypeError.new("already initialized") if @source.nil?
+
         JSON.parse(@source)
       end
       

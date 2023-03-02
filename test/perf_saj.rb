@@ -93,7 +93,6 @@ if $verbose
   puts "json:\n#{$json}\n"
 end
 
-
 puts '-' * 80
 puts "Parse Performance"
 perf = Perf.new()
@@ -105,5 +104,5 @@ perf.run($iter)
 
 unless $failed.empty?
   puts "The following packages were not included for the reason listed"
-  $failed.each { |tag,msg| puts "***** #{tag}: #{msg}" }
+  $failed.each { |tag, msg| puts "***** #{tag}: #{msg}" }
 end

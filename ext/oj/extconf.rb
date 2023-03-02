@@ -47,7 +47,7 @@ if enable_config('trace-log', false)
   dflags['OJ_ENABLE_TRACE_LOG'] = 1
 end
 
-dflags.each do |k,v|
+dflags.each do |k, v|
   if v.nil?
     $CPPFLAGS += " -D#{k}"
   else

@@ -1,4 +1,3 @@
-
 module JSON
   module Ext
     module Generator
@@ -59,6 +58,7 @@ module JSON
 
           def configure(opts)
             raise TypeError.new('expected a Hash') unless opts.respond_to?(:to_h)
+
             @attrs.merge!(opts.to_h)
           end
 
@@ -84,6 +84,7 @@ module JSON
             return true if super
             return true if has_key?(key)
             return true if has_key?(key.to_s)
+
             has_key?(key.to_sym)
           end
 
@@ -113,12 +114,14 @@ module JSON
           def method_missing(m, *args, &block)
             if m.to_s.end_with?('=')
               raise ArgumentError.new("wrong number of arguments (#{args.size} for 1 with #{m}) to method #{m}") if args.nil? or 1 != args.length
+
               m = m.to_s[0..-2]
               m = m.to_sym
               return @attrs.store(m, args[0])
             end
             if @attrs.has_key?(m.to_sym)
               raise ArgumentError.new("wrong number of arguments (#{args.size} for 0 with #{m}) to method #{m}") unless args.nil? or args.empty?
+
               return @attrs[m.to_sym]
             end
             return @attrs.send(m, *args, &block)

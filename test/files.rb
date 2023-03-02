@@ -15,6 +15,7 @@ def files(dir)
   d = ::Sample::Dir.new(dir)
   Dir.new(dir).each do |fn|
     next if fn.start_with?('.')
+
     filename = File.join(dir, fn)
     #filename = '.' == dir ? fn : File.join(dir, fn)
     if File.directory?(filename)

@@ -40,10 +40,10 @@ class UsualTest < Minitest::Test
     [
       ['[]', []],
       ['[false]', [false]],
-      ['[true,false]', [true,false]],
+      ['[true,false]', [true, false]],
       ['[[]]', [[]]],
-      ['[true,[],false]', [true,[],false]],
-      ['[true,[true],false]', [true,[true],false]],
+      ['[true,[],false]', [true, [], false]],
+      ['[true,[true],false]', [true, [true], false]],
     ].each { |x|
       doc = p.parse(x[0])
       assert_equal(x[1], doc)

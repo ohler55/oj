@@ -133,9 +133,9 @@ class JSONParserTest < Test::Unit::TestCase
   end
 
   def test_parse_arrays
-    assert_equal([1,2,3], JSON.parse('[1,2,3]'))
-    assert_equal([1.2,2,3], JSON.parse('[1.2,2,3]'))
-    assert_equal([[],[[],[]]], JSON.parse('[[],[[],[]]]'))
+    assert_equal([1, 2, 3], JSON.parse('[1,2,3]'))
+    assert_equal([1.2, 2, 3], JSON.parse('[1.2,2,3]'))
+    assert_equal([[], [[], []]], JSON.parse('[[],[[],[]]]'))
     assert_equal([], JSON.parse('[]'))
     assert_equal([], JSON.parse('  [  ]  '))
     assert_equal([1], JSON.parse('[1]'))
@@ -217,42 +217,42 @@ class JSONParserTest < Test::Unit::TestCase
   end
 
   def test_parse_comments
-    json = <<EOT
-{
-  "key1":"value1", // eol comment
-  "key2":"value2"  /* multi line
-                    *  comment */,
-  "key3":"value3"  /* multi line
-                    // nested eol comment
-                    *  comment */
-}
-EOT
+    json = <<~EOT
+      {
+        "key1":"value1", // eol comment
+        "key2":"value2"  /* multi line
+                          *  comment */,
+        "key3":"value3"  /* multi line
+                          // nested eol comment
+                          *  comment */
+      }
+    EOT
     assert_equal(
       { "key1" => "value1", "key2" => "value2", "key3" => "value3" },
       JSON.parse(json))
-    json = <<EOT
-{
-  "key1":"value1"  /* multi line
-                    // nested eol comment
-                    /* illegal nested multi line comment */
-                    *  comment */
-}
-EOT
+    json = <<~EOT
+      {
+        "key1":"value1"  /* multi line
+                          // nested eol comment
+                          /* illegal nested multi line comment */
+                          *  comment */
+      }
+    EOT
     assert_raise(JSON::ParserError) { JSON.parse(json) }
-    json = <<EOT
-{
-  "key1":"value1"  /* multi line
-                   // nested eol comment
-                   closed multi comment */
-                   and again, throw an Error */
-}
-EOT
+    json = <<~EOT
+      {
+        "key1":"value1"  /* multi line
+                         // nested eol comment
+                         closed multi comment */
+                         and again, throw an Error */
+      }
+    EOT
     assert_raise(JSON::ParserError) { JSON.parse(json) }
-    json = <<EOT
-{
-  "key1":"value1"  /*/*/
-}
-EOT
+    json = <<~EOT
+      {
+        "key1":"value1"  /*/*/
+      }
+    EOT
     assert_equal({ "key1" => "value1" }, JSON.parse(json))
   end
 
@@ -348,7 +348,7 @@ EOT
 
   def test_parse_array_custom_array_derived_class
     res = JSON.parse('[1,2]', :array_class => SubArray)
-    assert_equal([1,2], res)
+    assert_equal([1, 2], res)
     assert_equal(SubArray, res.class)
     assert res.shifted?
   end
@@ -356,7 +356,7 @@ EOT
   def test_parse_array_custom_non_array_derived_class
     res = JSON.parse('[1,2]', :array_class => SubArrayWrapper)
     assert_equal(SubArrayWrapper, res.class)
-    assert_equal([1,2], res.data)
+    assert_equal([1, 2], res.data)
     assert res.shifted?
   end
 

@@ -152,7 +152,7 @@ class StrictJuice < Minitest::Test
   end
 
   def test_array_deep
-    dump_and_load([1,[2,[3,[4,[5,[6,[7,[8,[9,[10,[11,[12,[13,[14,[15,[16,[17,[18,[19,[20]]]]]]]]]]]]]]]]]]]], false)
+    dump_and_load([1, [2, [3, [4, [5, [6, [7, [8, [9, [10, [11, [12, [13, [14, [15, [16, [17, [18, [19, [20]]]]]]]]]]]]]]]]]]]], false)
   end
 
   def test_deep_nest
@@ -266,12 +266,14 @@ class StrictJuice < Minitest::Test
 
   def test_io_file
     filename = File.join(File.dirname(__FILE__), 'open_file_test.json')
-    File.open(filename, 'w') { |f| f.write(%{{
+    File.open(filename, 'w') { |f|
+      f.write(%{{
   "x":true,
   "y":58,
   "z": [1,2,3]
 }
-}) }
+})
+    }
     f = File.new(filename)
     obj = Oj.strict_load(f)
     f.close()

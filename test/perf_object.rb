@@ -6,7 +6,7 @@ $: << '../ext'
 
 if __FILE__ == $0
   if (i = ARGV.index('-I'))
-    x,path = ARGV.slice!(i, 2)
+    x, path = ARGV.slice!(i, 2)
     $: << path
   end
 end
@@ -92,7 +92,6 @@ Oj.default_options = { :mode => :object, :indent => $indent, :circular => $circu
 #puts "json: #{$json.size}"
 #puts "xml: #{$xml.size}"
 #puts "marshal: #{$mars.size}"
-
 
 if do_load
   puts '-' * 80

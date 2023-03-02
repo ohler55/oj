@@ -22,24 +22,24 @@ class JSONGeneratorTest < Test::Unit::TestCase
     }
     @json2 = '{"a":2,"b":3.141,"c":"c","d":[1,"b",3.14],"e":{"foo":"bar"},' +
       '"g":"\\"\\u0000\\u001f","h":1000.0,"i":0.001}'
-    @json3 = <<'EOT'.chomp
-{
-  "a": 2,
-  "b": 3.141,
-  "c": "c",
-  "d": [
-    1,
-    "b",
-    3.14
-  ],
-  "e": {
-    "foo": "bar"
-  },
-  "g": "\"\u0000\u001f",
-  "h": 1000.0,
-  "i": 0.001
-}
-EOT
+    @json3 = <<~'EOT'.chomp
+      {
+        "a": 2,
+        "b": 3.141,
+        "c": "c",
+        "d": [
+          1,
+          "b",
+          3.14
+        ],
+        "e": {
+          "foo": "bar"
+        },
+        "g": "\"\u0000\u001f",
+        "h": 1000.0,
+        "i": 0.001
+      }
+    EOT
   end
 
   def test_generate
@@ -64,11 +64,11 @@ EOT
     parsed_json = JSON.parse(json)
     assert_equal(@hash, parsed_json)
     json = JSON.pretty_generate({1=>2})
-    assert_equal(<<'EOT'.chomp, json)
-{
-  "1": 2
-}
-EOT
+    assert_equal(<<~'EOT'.chomp, json)
+      {
+        "1": 2
+      }
+    EOT
     parsed_json = JSON.parse(json)
     assert_equal({"1"=>2}, parsed_json)
     assert_equal '666', JSON.pretty_generate(666)
@@ -78,15 +78,15 @@ EOT
 
   def test_generate_custom
     state = JSON::State.new(:space_before => " ", :space => "   ", :indent => "<i>", :object_nl => "\n", :array_nl => "<a_nl>")
-    json = JSON.generate({1=>{2=>3,4=>[5,6]}}, state)
-    assert_equal(<<'EOT'.chomp, json)
-{
-<i>"1" :   {
-<i><i>"2" :   3,
-<i><i>"4" :   [<a_nl><i><i><i>5,<a_nl><i><i><i>6<a_nl><i><i>]
-<i>}
-}
-EOT
+    json = JSON.generate({1=>{2=>3, 4=>[5, 6]}}, state)
+    assert_equal(<<~'EOT'.chomp, json)
+      {
+      <i>"1" :   {
+      <i><i>"2" :   3,
+      <i><i>"4" :   [<a_nl><i><i><i>5,<a_nl><i><i><i>6<a_nl><i><i>]
+      <i>}
+      }
+    EOT
   end
 
   def test_fast_generate

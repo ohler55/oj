@@ -170,7 +170,7 @@ class CompatJuice < Minitest::Test
   end
 
   def test_array_deep
-    dump_and_load([1,[2,[3,[4,[5,[6,[7,[8,[9,[10,[11,[12,[13,[14,[15,[16,[17,[18,[19,[20]]]]]]]]]]]]]]]]]]]], false)
+    dump_and_load([1, [2, [3, [4, [5, [6, [7, [8, [9, [10, [11, [12, [13, [14, [15, [16, [17, [18, [19, [20]]]]]]]]]]]]]]]]]]]], false)
   end
 
   def test_symbol
@@ -341,12 +341,14 @@ class CompatJuice < Minitest::Test
 
   def test_io_file
     filename = File.join(File.dirname(__FILE__), 'open_file_test.json')
-    File.open(filename, 'w') { |f| f.write(%{{
+    File.open(filename, 'w') { |f|
+      f.write(%{{
   "x":true,
   "y":58,
   "z": [1,2,3]
 }
-}) }
+})
+    }
     f = File.new(filename)
     obj = Oj.compat_load(f)
     f.close()
@@ -485,7 +487,7 @@ class CompatJuice < Minitest::Test
 
   def test_parse_to_s
     s = Stringy.new
-    assert_equal([1,2], Oj.load(s, :mode => :compat))
+    assert_equal([1, 2], Oj.load(s, :mode => :compat))
   end
 
   def test_parse_large_string
@@ -496,10 +498,10 @@ class CompatJuice < Minitest::Test
     assert(error.message.include?('quoted string not terminated'))
 
     json =<<~JSON
-    {
-      "a": "\\u3074\\u30fc\\u305f\\u30fc",
-      "b": "aaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-    }
+      {
+        "a": "\\u3074\\u30fc\\u305f\\u30fc",
+        "b": "aaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
     JSON
     assert_equal("ぴーたー", Oj.load(json)['a'])
   end

@@ -164,7 +164,6 @@ $obj_json = %|{
   "juliet": "junk"
 }|
 
-
 p_usual = Oj::Parser.new(:usual)
 p_usual.cache_keys = $cache_keys
 p_usual.cache_strings = ($cache_keys ? 6 : 0)
@@ -186,5 +185,5 @@ perf.run($iter)
 
 unless $failed.empty?
   puts "The following packages were not included for the reason listed"
-  $failed.each { |tag,msg| puts "***** #{tag}: #{msg}" }
+  $failed.each { |tag, msg| puts "***** #{tag}: #{msg}" }
 end

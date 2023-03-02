@@ -1,4 +1,3 @@
-
 require 'sample/hasprops'
 require 'sample/group'
 require 'sample/layer'

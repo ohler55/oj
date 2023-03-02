@@ -49,7 +49,7 @@ class IntegerRangeTest < Minitest::Test
   end
 
   def test_modes_without_opt
-    test = {safe:0, unsafe: 10000000000000000000}
+    test = {safe: 0, unsafe: 10000000000000000000}
     exp = '{"safe":0,"unsafe":10000000000000000000}'
 
     [:strict, :null, :compat, :rails, :custom].each do |mode|
@@ -63,7 +63,7 @@ class IntegerRangeTest < Minitest::Test
   end
 
   def test_accept_nil_and_false
-    test = {safe:0, unsafe: 10000000000000000000}
+    test = {safe: 0, unsafe: 10000000000000000000}
     exp = '{"safe":0,"unsafe":10000000000000000000}'
 
     assert_equal(exp, Oj.dump(test, integer_range: nil))
