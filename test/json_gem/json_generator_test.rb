@@ -21,7 +21,7 @@ class JSONGeneratorTest < Test::Unit::TestCase
       'i' => 0.001
     }
     @json2 = '{"a":2,"b":3.141,"c":"c","d":[1,"b",3.14],"e":{"foo":"bar"},' +
-      '"g":"\\"\\u0000\\u001f","h":1000.0,"i":0.001}'
+             '"g":"\\"\\u0000\\u001f","h":1000.0,"i":0.001}'
     @json3 = <<~'EOT'.chomp
       {
         "a": 2,
