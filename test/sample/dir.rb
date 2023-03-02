@@ -1,7 +1,6 @@
 require 'etc'
 
 module Sample
-
   class Dir < File
     attr_accessor :files
 

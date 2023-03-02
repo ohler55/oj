@@ -1,7 +1,6 @@
 require 'etc'
 
 module Sample
-
   class File
     attr_accessor :name, :ctime, :mtime, :size, :owner, :group, :permissions
 

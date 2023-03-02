@@ -1,5 +1,4 @@
 module Oj
-
   # A Hash subclass that normalizes the hash keys to allow lookup by the
   # key.to_s or key.to_sym. It also supports looking up hash values by methods
   # that match the keys.

@@ -129,5 +129,4 @@ module JSON
       end # defined check
     end # Generator
   end # Ext
-
 end # JSON

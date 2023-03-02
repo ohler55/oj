@@ -102,7 +102,6 @@ class ObjectJuice < Minitest::Test
 
     class Stuck2 < Struct.new(:a, :b)
     end
-
   end # One
 
   class Stuck < Struct.new(:a, :b)

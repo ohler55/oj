@@ -1,5 +1,4 @@
 module Oj
-
   # Inherit Error class from StandardError.
   Error = Class.new(StandardError)
 
@@ -17,5 +16,4 @@ module Oj
 
   # An Exception that is raised if there is a conflict with mimicking JSON
   MimicError = Class.new(Error)
-
 end # Oj

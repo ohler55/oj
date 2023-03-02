@@ -1,5 +1,4 @@
 module Sample
-
   class Oval < Shape
     def initialize(left, top, wide, high, color=nil)
       super

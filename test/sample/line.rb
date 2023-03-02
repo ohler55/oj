@@ -1,5 +1,4 @@
 module Sample
-
   class Line
     include HasProps
 

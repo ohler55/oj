@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 module Oj
-
   # A generic class that is used only for storing attributes. It is the base
   # Class for auto-generated classes in the storage system. Instance variables
   # are added using the instance_variable_set() method. All instance variables

@@ -6,7 +6,6 @@ rescue Exception
 end
 
 module Oj
-
   ##
   # Custom mode can be used to emulate the compat mode with some minor
   # differences. These are the options that setup the custom mode to be like
@@ -275,7 +274,6 @@ module Oj
       end
     end
   end # self.mimic_loaded
-
 end # Oj
 
 # More monkey patches.
