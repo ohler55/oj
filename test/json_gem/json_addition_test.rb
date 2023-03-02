@@ -13,7 +13,6 @@ if REAL_JSON_GEM
   require 'json/add/bigdecimal'
   require 'json/add/ostruct'
 else
-  # Oj.add_to_json()
   Oj.add_to_json(Array, BigDecimal, Complex, Date, DateTime, Exception, Hash, Integer, OpenStruct, Range, Rational, Regexp, Struct, Time)
 end
 
