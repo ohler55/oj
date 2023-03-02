@@ -95,7 +95,6 @@ class MimicRails < Minitest::Test
     puts "*** category.as_json() #{category.as_json()}"
     puts "*** JSON.dump(serializer) #{JSON.dump(category)}"
     puts "*** Oj.dump(serializer) #{Oj.dump(category)}"
-
   end
 
   def test_dump_object_array

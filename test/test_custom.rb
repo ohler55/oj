@@ -343,7 +343,6 @@ class CustomJuice < Minitest::Test
   "b":[3]
 }
 |, json)
-
   end
 
   def test_symbol

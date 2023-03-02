@@ -91,6 +91,5 @@ class ActiveTest < Minitest::Test
   }
 ]
 |, User.all.to_json)
-
   end
 end

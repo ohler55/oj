@@ -286,7 +286,6 @@ class Juice < Minitest::Test
 --],#
 --"a"~:*1#
 }} == json)
-
   end
 
   def test_null_char

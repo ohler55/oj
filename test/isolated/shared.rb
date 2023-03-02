@@ -207,7 +207,6 @@ class SharedMimicTest < Minitest::Test
 --],#
 --"a"~:*1#
 }} == json)
-
   end
 
 # fast_generate

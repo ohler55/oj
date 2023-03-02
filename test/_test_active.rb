@@ -71,6 +71,5 @@ class ActiveTest < Minitest::Test
 
     # Array of instances as json. (not Oj)
     assert_equal(%|[{"id":1,"first_name":"John","last_name":"Smith","email":"john@example.com"},{"id":2,"first_name":"Joan","last_name":"Smith","email":"joan@example.com"}]|, User.all.to_json)
-
   end
 end

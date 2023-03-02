@@ -106,20 +106,6 @@ Layout/EmptyLinesAroundClassBody:
     - 'test/test_wab.rb'
     - 'test/test_writer.rb'
 
-# Offense count: 9
-# This cop supports safe autocorrection (--autocorrect).
-Layout/EmptyLinesAroundMethodBody:
-  Exclude:
-    - 'lib/oj/mimic.rb'
-    - 'test/_test_active.rb'
-    - 'test/_test_active_mimic.rb'
-    - 'test/_test_mimic_rails.rb'
-    - 'test/activerecord/result_test.rb'
-    - 'test/isolated/shared.rb'
-    - 'test/test_custom.rb'
-    - 'test/test_fast.rb'
-    - 'test/test_various.rb'
-
 # Offense count: 15
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: EnforcedStyle.

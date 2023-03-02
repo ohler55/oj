@@ -275,7 +275,6 @@ module Oj
         end
       end
     end
-
   end # self.mimic_loaded
 
 end # Oj

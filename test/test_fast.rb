@@ -310,7 +310,6 @@ class DocTest < Minitest::Test
       assert_nil(doc.fetch('/x'))
       assert_nil(doc.fetch('/0'))
     end
-
   end
 
   def test_move_fetch_path
