@@ -460,12 +460,6 @@ Layout/TrailingWhitespace:
     - 'test/test_hash.rb'
     - 'test/test_writer.rb'
 
-# Offense count: 5
-# This cop supports safe autocorrection (--autocorrect).
-Lint/AmbiguousOperator:
-  Exclude:
-    - 'test/json_gem/json_parser_test.rb'
-
 # Offense count: 11
 # This cop supports safe autocorrection (--autocorrect).
 Lint/AmbiguousOperatorPrecedence:
