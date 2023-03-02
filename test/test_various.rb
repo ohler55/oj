@@ -36,7 +36,7 @@ class Juice < Minitest::Test
       super
     end
 
-    def to_json()
+    def to_json(*_args)
       %{{"json_class":"#{self.class}","x":#{@x},"y":#{@y}}}
     end
 

@@ -577,14 +577,6 @@ Lint/SymbolConversion:
     - 'test/test_file.rb'
     - 'test/test_object.rb'
 
-# Offense count: 3
-# This cop supports safe autocorrection (--autocorrect).
-Lint/ToJSON:
-  Exclude:
-    - 'test/perf_simple.rb'
-    - 'test/test_file.rb'
-    - 'test/test_various.rb'
-
 # Offense count: 2
 # This cop supports safe autocorrection (--autocorrect).
 Lint/UnifiedInteger:
