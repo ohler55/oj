@@ -497,10 +497,10 @@ class CompatJuice < Minitest::Test
     assert(error.message.include?('quoted string not terminated'))
 
     json =<<~JSON
-    {
-      "a": "\\u3074\\u30fc\\u305f\\u30fc",
-      "b": "aaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-    }
+      {
+        "a": "\\u3074\\u30fc\\u305f\\u30fc",
+        "b": "aaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
     JSON
     assert_equal("ぴーたー", Oj.load(json)['a'])
   end

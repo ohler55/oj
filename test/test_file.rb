@@ -212,11 +212,11 @@ class FileJuice < Minitest::Test
 
   def test_load_unicode_path
     json =<<~JSON
-    {
-      "x":true,
-      "y":58,
-      "z": [1,2,3]
-    }
+      {
+        "x":true,
+        "y":58,
+        "z": [1,2,3]
+      }
     JSON
 
     Tempfile.create('file_test_conceição1.json') do |f|
