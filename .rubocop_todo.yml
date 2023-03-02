@@ -64,14 +64,6 @@ Layout/MultilineHashBraceLayout:
     - 'test/test_strict.rb'
     - 'test/test_wab.rb'
 
-# Offense count: 2
-# This cop supports safe autocorrection (--autocorrect).
-# Configuration parameters: EnforcedStyle.
-# SupportedStyles: symmetrical, new_line, same_line
-Layout/MultilineMethodCallBraceLayout:
-  Exclude:
-    - 'test/json_gem/json_generic_object_test.rb'
-    - 'test/json_gem/json_parser_test.rb'
 
 # Offense count: 30
 # This cop supports safe autocorrection (--autocorrect).

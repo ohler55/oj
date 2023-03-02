@@ -55,7 +55,8 @@ class JSONGenericObjectTest < Test::Unit::TestCase
 
   def test_from_hash
     result = JSON::GenericObject.from_hash(
-      :foo => { :bar => { :baz => true }, :quux => [ { :foobar => true } ] })
+      :foo => { :bar => { :baz => true }, :quux => [ { :foobar => true } ] }
+    )
     assert_kind_of JSON::GenericObject, result.foo
     assert_kind_of JSON::GenericObject, result.foo.bar
     assert_equal   true, result.foo.bar.baz

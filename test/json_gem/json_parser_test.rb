@@ -229,7 +229,8 @@ class JSONParserTest < Test::Unit::TestCase
     EOT
     assert_equal(
       { "key1" => "value1", "key2" => "value2", "key3" => "value3" },
-      JSON.parse(json))
+      JSON.parse(json)
+    )
     json = <<~EOT
       {
         "key1":"value1"  /* multi line
