@@ -682,14 +682,6 @@ Metrics/PerceivedComplexity:
     - 'test/perf.rb'
     - 'test/sample/file.rb'
 
-# Offense count: 14
-# This cop supports safe autocorrection (--autocorrect).
-Minitest/AssertEmptyLiteral:
-  Exclude:
-    - 'test/json_gem/json_parser_test.rb'
-    - 'test/test_fast.rb'
-    - 'test/test_various.rb'
-
 # Offense count: 2
 # This cop supports safe autocorrection (--autocorrect).
 Minitest/AssertEqual:

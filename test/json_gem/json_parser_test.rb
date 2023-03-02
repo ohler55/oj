@@ -57,8 +57,8 @@ class JSONParserTest < Test::Unit::TestCase
   end
 
   def test_parse_simple_arrays
-    assert_equal([],             JSON.parse('[]'))
-    assert_equal([],             JSON.parse('  [  ] '))
+    assert_empty(JSON.parse('[]'))
+    assert_empty(JSON.parse('  [  ] '))
     assert_equal([ nil ],        JSON.parse('[null]'))
     assert_equal([ false ],      JSON.parse('[false]'))
     assert_equal([ true ],       JSON.parse('[true]'))
@@ -72,8 +72,8 @@ class JSONParserTest < Test::Unit::TestCase
   end
 
   def test_parse_simple_objects
-    assert_equal({}, JSON.parse('{}'))
-    assert_equal({}, JSON.parse(' {   }   '))
+    assert_empty(JSON.parse('{}'))
+    assert_empty(JSON.parse(' {   }   '))
     assert_equal({ "a" => nil }, JSON.parse('{   "a"   :  null}'))
     assert_equal({ "a" => nil }, JSON.parse('{"a":null}'))
     assert_equal({ "a" => false }, JSON.parse('{   "a"  :  false  }  '))
@@ -136,8 +136,8 @@ class JSONParserTest < Test::Unit::TestCase
     assert_equal([1, 2, 3], JSON.parse('[1,2,3]'))
     assert_equal([1.2, 2, 3], JSON.parse('[1.2,2,3]'))
     assert_equal([[], [[], []]], JSON.parse('[[],[[],[]]]'))
-    assert_equal([], JSON.parse('[]'))
-    assert_equal([], JSON.parse('  [  ]  '))
+    assert_empty(JSON.parse('[]'))
+    assert_empty(JSON.parse('  [  ]  '))
     assert_equal([1], JSON.parse('[1]'))
     assert_equal([1], JSON.parse('  [ 1  ]  '))
     ary = [[1], ["foo"], [3.14], [4711.0], [2.718], [nil],
@@ -361,8 +361,8 @@ class JSONParserTest < Test::Unit::TestCase
   end
 
   def test_parse_object
-    assert_equal({}, JSON.parse('{}'))
-    assert_equal({}, JSON.parse('  {  }  '))
+    assert_empty(JSON.parse('{}'))
+    assert_empty(JSON.parse('  {  }  '))
     assert_equal({'foo'=>'bar'}, JSON.parse('{"foo":"bar"}'))
     assert_equal({'foo'=>'bar'}, JSON.parse('    { "foo"  :   "bar"   }   '))
   end

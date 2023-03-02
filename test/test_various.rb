@@ -712,13 +712,13 @@ class Juice < Minitest::Test
   end
 
   def test_quirks_array_mode
-    assert_equal([], Oj.load("[]", :quirks_mode => false))
-    assert_equal([], Oj.load("[]", :quirks_mode => true))
+    assert_empty(Oj.load("[]", :quirks_mode => false))
+    assert_empty(Oj.load("[]", :quirks_mode => true))
   end
 
   def test_quirks_object_mode
-    assert_equal({}, Oj.load("{}", :quirks_mode => false))
-    assert_equal({}, Oj.load("{}", :quirks_mode => true))
+    assert_empty(Oj.load("{}", :quirks_mode => false))
+    assert_empty(Oj.load("{}", :quirks_mode => true))
   end
 
   def test_omit_nil

@@ -117,7 +117,7 @@ class DocTest < Minitest::Test
     json = %{[]}
     Oj::Doc.open(json) do |doc|
       assert_equal(Array, doc.type)
-      assert_equal([], doc.fetch())
+      assert_empty(doc.fetch())
     end
   end
 
@@ -133,7 +133,7 @@ class DocTest < Minitest::Test
     json = %{{}}
     Oj::Doc.open(json) do |doc|
       assert_equal(Hash, doc.type)
-      assert_equal({}, doc.fetch())
+      assert_empty(doc.fetch())
     end
   end
 
