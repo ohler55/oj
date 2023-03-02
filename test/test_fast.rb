@@ -168,7 +168,8 @@ class DocTest < Minitest::Test
 
   def test_move
     Oj::Doc.open(@json1) do |doc|
-      [ '/',
+      [
+        '/',
         '/array',
         '/boolean',
         '/array/1/hash/h2/a/3',
@@ -206,8 +207,7 @@ class DocTest < Minitest::Test
        ['/array/1/hash', 'h2/a', '/array/1/hash/h2/a'],
        ['/array/1', 'hash/h2/a/2', '/array/1/hash/h2/a/2'],
        ['/array/1/hash', '../string', '/array/1/string'],
-       ['/array/1/hash', '..', '/array/1'],
-      ].each do |start, path, where|
+       ['/array/1/hash', '..', '/array/1'],].each do |start, path, where|
         doc.move(start)
         doc.move(path)
         assert_equal(where, doc.where?)
@@ -224,8 +224,7 @@ class DocTest < Minitest::Test
        ['/array/1/string', String],
        ['/array/1/hash/h2/a', Array],
        ['/array/1/hash/../num', Integer],
-       ['/array/1/hash/../..', Array],
-      ].each do |path, type|
+       ['/array/1/hash/../..', Array],].each do |path, type|
         assert_equal(type, doc.type(path))
       end
     end
@@ -241,8 +240,7 @@ class DocTest < Minitest::Test
        ['/array/1/hash/h2/a', 'a'],
        ['/array/1/hash/../num', 'num'],
        ['/array/1/hash/..', 1],
-       ['/array/1/hash/../..', 'array'],
-      ].each do |path, key|
+       ['/array/1/hash/../..', 'array'],].each do |path, key|
         doc.move(path)
         if key.nil?
           assert_nil(doc.local_key())
@@ -263,8 +261,7 @@ class DocTest < Minitest::Test
        ['/array/1/hash/../..', [{'num' => 3, 'string' => 'message', 'hash' => {'h2' => {'a' => [1, 2, 3]}}}]],
        ['/array/1', {'num' => 3, 'string' => 'message', 'hash' => {'h2' => {'a' => [1, 2, 3]}}}],
        ['/array', [{'num' => 3, 'string' => 'message', 'hash' => {'h2' => {'a' => [1, 2, 3]}}}]],
-       ['/', {'array' => [{'num' => 3, 'string' => 'message', 'hash' => {'h2' => {'a' => [1, 2, 3]}}}], 'boolean' => true}],
-      ].each do |path, val|
+       ['/', {'array' => [{'num' => 3, 'string' => 'message', 'hash' => {'h2' => {'a' => [1, 2, 3]}}}], 'boolean' => true}],].each do |path, val|
         doc.move(path)
         assert_equal(val, doc.fetch())
       end
@@ -283,8 +280,7 @@ class DocTest < Minitest::Test
        ['/array', [{'num' => 3, 'string' => 'message', 'hash' => {'h2' => {'a' => [1, 2, 3]}}}]],
        ['/', {'array' => [{'num' => 3, 'string' => 'message', 'hash' => {'h2' => {'a' => [1, 2, 3]}}}], 'boolean' => true}],
        ['/nothing', nil],
-       ['/array/10', nil],
-      ].each do |path, val|
+       ['/array/10', nil],].each do |path, val|
         if val.nil?
           assert_nil(doc.fetch(path))
         else
@@ -307,8 +303,7 @@ class DocTest < Minitest::Test
     Oj::Doc.open(@json1) do |doc|
       [['/array/1', 'num', 3],
        ['/array/1', 'string', 'message'],
-       ['/array/1/hash', 'h2/a', [1, 2, 3]],
-      ].each do |path, fetch_path, val|
+       ['/array/1/hash', 'h2/a', [1, 2, 3]],].each do |path, fetch_path, val|
         doc.move(path)
         assert_equal(val, doc.fetch(fetch_path))
       end
@@ -322,8 +317,7 @@ class DocTest < Minitest::Test
        ['/array/1/hash', true],
        ['/array/1/dash', false],
        ['/array/3', false],
-       ['/nothing', false],
-      ].each do |path, val|
+       ['/nothing', false],].each do |path, val|
         assert_equal(val, doc.exists?(path), "failed for #{path.inspect}")
       end
     end
