@@ -49,14 +49,6 @@ Layout/HashAlignment:
     - 'test/json_gem/json_generator_test.rb'
     - 'test/json_gem/json_parser_test.rb'
 
-# Offense count: 1
-# This cop supports safe autocorrection (--autocorrect).
-# Configuration parameters: AutoCorrect, EnforcedStyle.
-# SupportedStyles: space, no_space
-Layout/LineContinuationSpacing:
-  Exclude:
-    - 'test/json_gem/json_common_interface_test.rb'
-
 # Offense count: 8
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: EnforcedStyle.
