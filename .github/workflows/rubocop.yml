@@ -9,11 +9,17 @@ on:
       - ".rubocop*.yml"
       - ".github/workflows/rubocop.yml"
       - "**/*.rb"
+      - "**/*.gemspec"
+      - "**/*.gemfile"
+      - "Gemfile"
   pull_request:
     paths:
       - ".rubocop*.yml"
       - ".github/workflows/rubocop.yml"
       - "**/*.rb"
+      - "**/*.gemspec"
+      - "**/*.gemfile"
+      - "Gemfile"
 
 jobs:
   formatting-check:
@@ -28,12 +34,10 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: "2.7"
-
-      - name: Install rubocop
-        run: gem install rubocop --no-doc
+          bundler-cache: true
 
       - name: Set-up RuboCop Problem Matcher
         uses: r7kamura/rubocop-problem-matchers-action@v1
 
       - name: Run rubocop
-        run: rubocop
+        run: bundle exec rubocop

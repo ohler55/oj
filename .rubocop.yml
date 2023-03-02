@@ -1,11 +1,15 @@
 inherit_from: .rubocop_todo.yml
 
+require:
+  - rubocop-minitest
+
 AllCops:
   TargetRubyVersion: 2.7
   NewCops: enable
   Exclude:
     - 'test/activesupport6/**/*'
     - 'test/activesupport7/**/*'
+    - 'vendor/**/*'
 
 Style/QuotedSymbols:
   EnforcedStyle: double_quotes
