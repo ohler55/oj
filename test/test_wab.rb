@@ -32,7 +32,6 @@ module WAB
   end # UUID
 end # WAB
 
-
 class WabJuice < Minitest::Test
 
   module TestModule

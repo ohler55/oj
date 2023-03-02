@@ -93,7 +93,6 @@ Oj.default_options = { :mode => :object, :indent => $indent, :circular => $circu
 #puts "xml: #{$xml.size}"
 #puts "marshal: #{$mars.size}"
 
-
 if do_load
   puts '-' * 80
   puts "Load Performance"

@@ -840,7 +840,6 @@ class ObjectJuice < Minitest::Test
     assert_equal(h2['b'].__id__, h2.__id__)
   end
 
-
   def test_json_object_missing_fields
     json = %{{ "^u": [ "ObjectJuice::Stuck",1]}}
 

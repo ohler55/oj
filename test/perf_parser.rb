@@ -164,7 +164,6 @@ $obj_json = %|{
   "juliet": "junk"
 }|
 
-
 p_usual = Oj::Parser.new(:usual)
 p_usual.cache_keys = $cache_keys
 p_usual.cache_strings = ($cache_keys ? 6 : 0)

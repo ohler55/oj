@@ -93,7 +93,6 @@ if $verbose
   puts "json:\n#{$json}\n"
 end
 
-
 puts '-' * 80
 puts "Parse Performance"
 perf = Perf.new()
