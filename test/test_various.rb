@@ -680,7 +680,7 @@ class Juice < Minitest::Test
 
   def test_quirks_decimal_mode
     assert_raises(Oj::ParseError) { Oj.load("123.45", :quirks_mode => false) }
-    assert_equal(123.45, Oj.load("123.45", :quirks_mode => true))
+    assert_in_delta(123.45, Oj.load("123.45", :quirks_mode => true))
   end
 
   def test_quirks_string_mode

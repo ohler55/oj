@@ -100,7 +100,7 @@ class DocTest < Minitest::Test
     json = %{12345.6789}
     Oj::Doc.open(json) do |doc|
       assert_equal(Float, doc.type)
-      assert_equal(12345.6789, doc.fetch())
+      assert_in_delta(12345.6789, doc.fetch())
     end
   end
 
