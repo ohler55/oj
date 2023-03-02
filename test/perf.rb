@@ -60,7 +60,7 @@ class Perf
     iva.each do |i|
       line = ["%*s" % [width, i.title]]
       iva.each do |o|
-        line << "%*.2f" % [width, o.duration / i.duration]
+        line << ("%*.2f" % [width, o.duration / i.duration])
       end
       puts line.join('  ')
     end

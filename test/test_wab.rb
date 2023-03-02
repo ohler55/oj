@@ -108,7 +108,7 @@ class WabJuice < Minitest::Test
 
     begin
       n = 10000
-      Oj.wab_load('[' * n + ']' * n)
+      Oj.wab_load(('[' * n) + (']' * n))
     rescue Exception => e
       assert(false, e.message)
     end

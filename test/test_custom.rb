@@ -204,7 +204,7 @@ class CustomJuice < Minitest::Test
 
     begin
       n = 10000
-      Oj.strict_load('[' * n + ']' * n)
+      Oj.strict_load(('[' * n) + (']' * n))
     rescue Exception => e
       assert(false, e.message)
     end

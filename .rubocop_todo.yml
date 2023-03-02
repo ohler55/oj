@@ -460,17 +460,6 @@ Layout/TrailingWhitespace:
     - 'test/test_hash.rb'
     - 'test/test_writer.rb'
 
-# Offense count: 11
-# This cop supports safe autocorrection (--autocorrect).
-Lint/AmbiguousOperatorPrecedence:
-  Exclude:
-    - 'test/perf.rb'
-    - 'test/perf_file.rb'
-    - 'test/sample.rb'
-    - 'test/test_custom.rb'
-    - 'test/test_strict.rb'
-    - 'test/test_wab.rb'
-
 # Offense count: 3
 # This cop supports safe autocorrection (--autocorrect).
 Lint/AmbiguousRegexpLiteral:
