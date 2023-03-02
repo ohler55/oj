@@ -106,12 +106,6 @@ Layout/EmptyLinesAroundClassBody:
     - 'test/test_wab.rb'
     - 'test/test_writer.rb'
 
-# Offense count: 1
-# This cop supports safe autocorrection (--autocorrect).
-Layout/EmptyLinesAroundExceptionHandlingKeywords:
-  Exclude:
-    - 'Rakefile'
-
 # Offense count: 9
 # This cop supports safe autocorrection (--autocorrect).
 Layout/EmptyLinesAroundMethodBody:

@@ -68,6 +68,5 @@ begin
     t.verbose = true
   end
   Rake::Task[:test_all].enhance ["activerecord"]
-
 rescue LoadError
 end
