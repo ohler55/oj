@@ -346,7 +346,8 @@ class CompatJuice < Minitest::Test
   "y":58,
   "z": [1,2,3]
 }
-}) }
+})
+    }
     f = File.new(filename)
     obj = Oj.compat_load(f)
     f.close()

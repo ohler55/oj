@@ -250,7 +250,8 @@ class NullJuice < Minitest::Test
   "y":58,
   "z": [1,2,3]
 }
-}) }
+})
+    }
     f = File.new(filename)
     obj = Oj.strict_load(f)
     f.close()

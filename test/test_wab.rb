@@ -194,7 +194,8 @@ class WabJuice < Minitest::Test
   "y":58,
   "z": [1,2,3]
 }
-}) }
+})
+    }
     f = File.new(filename)
     obj = Oj.wab_load(f)
     f.close()
