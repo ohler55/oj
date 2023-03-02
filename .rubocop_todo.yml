@@ -526,15 +526,6 @@ Lint/RaiseException:
   Exclude:
     - 'test/test_wab.rb'
 
-# Offense count: 4
-# This cop supports safe autocorrection (--autocorrect).
-Lint/RedundantRequireStatement:
-  Exclude:
-    - 'test/files.rb'
-    - 'test/helper.rb'
-    - 'test/sample.rb'
-    - 'test/sample_json.rb'
-
 # Offense count: 1
 # This cop supports safe autocorrection (--autocorrect).
 Lint/RedundantStringCoercion:

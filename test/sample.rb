@@ -7,7 +7,6 @@ if $0 == __FILE__
   $: << '../ext'
 end
 
-require 'pp'
 require 'sample/doc'
 
 def sample_doc(size=3)

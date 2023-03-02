@@ -15,7 +15,6 @@ require 'minitest/autorun'
 require 'stringio'
 require 'date'
 require 'bigdecimal'
-require 'pp'
 require 'oj'
 
 def verify_gc_compaction

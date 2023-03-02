@@ -7,7 +7,6 @@ if $0 == __FILE__
   $: << '../ext'
 end
 
-require 'pp'
 require 'oj'
 
 def sample_json(size=3)
