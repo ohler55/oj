@@ -526,12 +526,6 @@ Lint/RaiseException:
   Exclude:
     - 'test/test_wab.rb'
 
-# Offense count: 1
-# This cop supports safe autocorrection (--autocorrect).
-Lint/RedundantStringCoercion:
-  Exclude:
-    - 'test/test_compat.rb'
-
 # Offense count: 57
 Lint/RescueException:
   Exclude:

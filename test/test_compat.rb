@@ -30,7 +30,7 @@ class CompatJuice < Minitest::Test
     alias == eql?
 
     def to_json(*a)
-      %|{"json_class":"#{self.class.to_s}","x":#{@x},"y":#{@y}}|
+      %|{"json_class":"#{self.class}","x":#{@x},"y":#{@y}}|
     end
 
     def self.json_create(h)
