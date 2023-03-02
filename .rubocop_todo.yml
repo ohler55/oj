@@ -14,23 +14,6 @@ Gemspec/RequireMFA:
   Exclude:
     - 'oj.gemspec'
 
-# Offense count: 19
-# This cop supports safe autocorrection (--autocorrect).
-# Configuration parameters: AllowForAlignment, AllowBeforeTrailingComments, ForceEqualSignAlignment.
-Layout/ExtraSpacing:
-  Exclude:
-    - 'test/json_gem/json_common_interface_test.rb'
-    - 'test/json_gem/json_generator_test.rb'
-    - 'test/json_gem/json_generic_object_test.rb'
-    - 'test/perf_compat.rb'
-    - 'test/perf_fast.rb'
-    - 'test/perf_file.rb'
-    - 'test/perf_parser.rb'
-    - 'test/perf_saj.rb'
-    - 'test/perf_scp.rb'
-    - 'test/perf_strict.rb'
-    - 'test/perf_wab.rb'
-
 # Offense count: 1
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: EnforcedStyle, IndentationWidth.

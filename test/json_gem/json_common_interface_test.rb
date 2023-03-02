@@ -109,7 +109,7 @@ class JSONCommonInterfaceTest < Test::Unit::TestCase
   end
 
   def test_load_with_options
-    json  = '{ "foo": NaN }'
+    json = '{ "foo": NaN }'
     assert JSON.load(json, nil, :allow_nan => true)['foo'].nan?
   end
 

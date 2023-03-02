@@ -65,10 +65,10 @@ $obj = {
   'c' => 12345,   # number
   'd' => [ true, [false, {'12345' => 12345, 'nil' => nil}, 3.967, { 'x' => 'something', 'y' => false, 'z' => true}, nil]], # mix it up array
   'e' => { 'one' => 1, 'two' => 2 }, # hash
-  'f' => nil,     # nil
+  'f' => nil, # nil
   'g' => 12345678901234567890123456789, # big number
   'h' => { 'a' => { 'b' => { 'c' => { 'd' => {'e' => { 'f' => { 'g' => nil }}}}}}}, # deep hash, not that deep
-  'i' => [[[[[[[nil]]]]]]]  # deep array, again, not that deep
+  'i' => [[[[[[[nil]]]]]]] # deep array, again, not that deep
 }
 
 Oj.default_options = { :indent => $indent, :mode => :compat }

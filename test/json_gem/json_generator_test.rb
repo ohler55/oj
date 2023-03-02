@@ -131,7 +131,7 @@ class JSONGeneratorTest < Test::Unit::TestCase
     s = JSON.state.new
     a = [ 1, 2 ]
     a << a
-    assert_raise(JSON::NestingError) {  JSON.generate(a, s) }
+    assert_raise(JSON::NestingError) { JSON.generate(a, s) }
     assert s.check_circular?
     assert s[:check_circular?]
   end
