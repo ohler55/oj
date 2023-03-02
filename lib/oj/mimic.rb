@@ -102,6 +102,7 @@ module Oj
           def as_json(*)
             name = self.class.name.to_s
             raise JSON::JSONError, "Only named structs are supported!" if 0 == name.length
+
             { JSON.create_id => name, 't' => table }
           end
         end
@@ -232,6 +233,7 @@ module Oj
         def as_json(*)
           name = self.class.name.to_s
           raise JSON::JSONError, "Only named structs are supported!" if 0 == name.length
+
           { JSON.create_id => name, 'v' => values }
         end
       end

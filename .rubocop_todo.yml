@@ -31,19 +31,6 @@ Layout/EmptyComment:
     - 'test/json_gem/json_generator_test.rb'
     - 'test/json_gem/json_parser_test.rb'
 
-# Offense count: 23
-# This cop supports safe autocorrection (--autocorrect).
-Layout/EmptyLineAfterGuardClause:
-  Exclude:
-    - 'lib/oj/bag.rb'
-    - 'lib/oj/easy_hash.rb'
-    - 'lib/oj/json.rb'
-    - 'lib/oj/mimic.rb'
-    - 'lib/oj/state.rb'
-    - 'test/files.rb'
-    - 'test/perf.rb'
-    - 'test/test_scp.rb'
-
 # Offense count: 3
 # This cop supports safe autocorrection (--autocorrect).
 Layout/EmptyLineAfterMagicComment:

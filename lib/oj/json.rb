@@ -76,16 +76,19 @@ module JSON
     class Parser
       def initialize(src)
         raise TypeError.new("already initialized") unless @source.nil?
+
         @source = src
       end
 
       def source()
         raise TypeError.new("already initialized") if @source.nil?
+
         @source
       end
       
       def parse()
         raise TypeError.new("already initialized") if @source.nil?
+
         JSON.parse(@source)
       end
       
