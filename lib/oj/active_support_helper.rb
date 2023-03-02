@@ -25,15 +25,19 @@ class DateTime
   def hour()
     super
   end
+
   def min()
     super
   end
+
   def sec()
     super
   end
+
   def sec_fraction()
     super
   end
+
   def offset()
     super
   end

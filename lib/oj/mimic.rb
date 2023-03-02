@@ -286,9 +286,11 @@ class String
       'raw' => self.bytes
     }
   end
+
   def to_json_raw(*)
    to_json_raw_object().to_json()
   end
+
   def self.json_create(obj)
     s = ''
     s.encode!(Encoding::ASCII_8BIT) if s.respond_to?(:encode!)

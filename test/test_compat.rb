@@ -201,6 +201,7 @@ class CompatJuice < Minitest::Test
     h = Oj.load(json, :mode => :strict)
     assert_equal({ "1" => true, "0" => false }, h)
   end
+
   def test_hash
     dump_and_load({}, false)
     dump_and_load({ 'true' => true, 'false' => false}, false)

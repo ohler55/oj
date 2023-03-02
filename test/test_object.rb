@@ -48,9 +48,11 @@ class ObjectJuice < Minitest::Test
     def initialize(x, y)
       super
     end
+
     def to_hash()
       { 'json_class' => self.class.to_s, 'x' => @x, 'y' => @y }
     end
+
     def self.json_create(h)
       self.new(h['x'], h['y'])
     end

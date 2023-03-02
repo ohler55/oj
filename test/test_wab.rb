@@ -23,9 +23,11 @@ module WAB
       @id = id.downcase
       raise Exception.new("Invalid UUID format.") if /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.match(@id).nil?
     end
+
     def to_s
       @id
     end
+
     def ==(other)
       other.is_a?(self.class) && @id == other.id
     end

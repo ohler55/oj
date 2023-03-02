@@ -80,9 +80,11 @@ class Juice < Minitest::Test
     def initialize(x, y)
       super
     end
+
     def to_hash()
       { 'json_class' => self.class.to_s, 'x' => @x, 'y' => @y }
     end
+
     def self.json_create(h)
       self.new(h['x'], h['y'])
     end
@@ -300,6 +302,7 @@ class Juice < Minitest::Test
     dump_and_load([[nil]], false)
     dump_and_load([[nil], 58], false)
   end
+
   def test_array_not_closed
     begin
       Oj.load('[')
@@ -338,33 +341,39 @@ class Juice < Minitest::Test
     out = Oj.dump(hash)
     assert_equal(json, out)
   end
+
   def test_escapes_entities_by_default_when_configured_to_do_so
     hash = {'key' => "I <3 this"}
     Oj.default_options = {:escape_mode => :xss_safe}
     out = Oj.dump hash
     assert_equal(%{{"key":"I \\u003c3 this"}}, out)
   end
+
   def test_escapes_slashes_by_default_when_configured_to_do_so
     hash = {'key' => "I <3 this </script>"}
     Oj.default_options = {:escape_mode => :slash}
     out = Oj.dump hash
     assert_equal(%{{"key":"I <3 this <\\/script>"}}, out)
   end
+
   def test_escapes_entities_when_asked_to
     hash = {'key' => "I <3 this"}
     out = Oj.dump(hash, :escape_mode => :xss_safe)
     assert_equal(%{{"key":"I \\u003c3 this"}}, out)
   end
+
   def test_does_not_escape_entities_when_not_asked_to
     hash = {'key' => "I <3 this"}
     out = Oj.dump(hash, :escape_mode => :json)
     assert_equal(%{{"key":"I <3 this"}}, out)
   end
+
   def test_escapes_common_xss_vectors
     hash = {'key' => "<script>alert(123) && formatHD()</script>"}
     out = Oj.dump(hash, :escape_mode => :xss_safe)
     assert_equal(%{{"key":"\\u003cscript\\u003ealert(123) \\u0026\\u0026 formatHD()\\u003c\\/script\\u003e"}}, out)
   end
+
   def test_escape_newline_by_default
     Oj.default_options = { :escape_mode => :json }
     json = %{["one","two\\n2"]}
@@ -372,6 +381,7 @@ class Juice < Minitest::Test
     out = Oj.dump(x)
     assert_equal(json, out)
   end
+
   def test_does_not_escape_newline
     Oj.default_options = { :escape_mode => :newline }
     json = %{["one","two\n2"]}
@@ -379,6 +389,7 @@ class Juice < Minitest::Test
     out = Oj.dump(x)
     assert_equal(json, out)
   end
+
   def test_dump_invalid_utf8
     Oj.default_options = { :escape_mode => :ascii }
     assert_raises(EncodingError) {

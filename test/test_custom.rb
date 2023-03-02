@@ -27,18 +27,23 @@ class CustomJuice < Minitest::Test
       @y = y
       @_z = x.to_s
     end
+
     def ==(o)
       self.class == o.class && @x == o.x && @y = o.y
     end
+
     def to_json(*args)
       %|{"xx":#{@x},"yy":#{y}}|
     end
+
     def raw_json(depth, indent)
       %|{"xxx":#{@x},"yyy":#{y}}|
     end
+
     def as_json(*args)
       {'a' => @x, :b => @y }
     end
+
     def to_hash()
       {'b' => @x, 'n' => @y }
     end
@@ -51,9 +56,11 @@ class CustomJuice < Minitest::Test
       @x = x
       @y = y
     end
+
     def ==(o)
       self.class == o.class && @x == o.x && @y = o.y
     end
+
     def as_json(*args)
       {'a' => @x, :b => @y }
     end
@@ -66,9 +73,11 @@ class CustomJuice < Minitest::Test
       @x = x
       @y = y
     end
+
     def ==(o)
       self.class == o.class && @x == o.x && @y = o.y
     end
+
     def as_json(*args)
       a = @x
       a = a.as_json if a.respond_to?('as_json')

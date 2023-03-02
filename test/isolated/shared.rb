@@ -186,6 +186,7 @@ class SharedMimicTest < Minitest::Test
     assert(%{{"a":1,"b":[true,false]}} == json ||
            %{{"b":[true,false],"a":1}} == json)
   end
+
   def test_generate_options
     json = JSON.generate({ 'a' => 1, 'b' => [true, false]},
                          :indent => "--",
@@ -241,11 +242,13 @@ class SharedMimicTest < Minitest::Test
     obj = JSON.parse(json)
     assert_equal({ 'a' => 1, 'b' => [true, false]}, obj)
   end
+
   def test_parse_sym_names
     json = %{{"a":1,"b":[true,false]}}
     obj = JSON.parse(json, :symbolize_names => true)
     assert_equal({ :a => 1, :b => [true, false]}, obj)
   end
+
   def test_parse_additions
     jam = Jam.new(true, 58)
     json = Oj.dump(jam, :mode => :compat, :use_to_json => true)
@@ -261,6 +264,7 @@ class SharedMimicTest < Minitest::Test
     JSON.create_id = 'json_class'
     assert_equal(jam, obj)
   end
+
   def test_parse_bang
     json = %{{"a":1,"b":[true,false]}}
     obj = JSON.parse!(json)
