@@ -19,7 +19,7 @@ class ActiveRecordResultTest < Minitest::Test
                                         ["row 2 col 1", "row 2 col 2"],
                                         ["row 3 col 1", "row 3 col 2"],
                                       ])
-    #puts "*** result: #{Oj.dump(result, indent: 2)}"
+    # puts "*** result: #{Oj.dump(result, indent: 2)}"
     json_result = if ActiveRecord.version >= Gem::Version.new("6")
                     result.to_a
                   else

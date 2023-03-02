@@ -462,7 +462,7 @@ class ObjectJuice < Minitest::Test
     # mismatch so instead the seconds, nsecs, and gmt_offset are checked
     # separately along with utc.
     json = Oj.dump(t, :mode => :object, :time_format => :xmlschema)
-    #puts "*** json for test_xml_time '#{json}'"
+    # puts "*** json for test_xml_time '#{json}'"
     loaded = Oj.object_load(json);
     assert_equal(t.tv_sec, loaded.tv_sec)
     if t.respond_to?(:tv_nsec)
@@ -497,7 +497,7 @@ class ObjectJuice < Minitest::Test
     # mismatch so instead the seconds, nsecs, and gmt_offset are checked
     # separately along with utc.
     json = Oj.dump(t, :mode => :object, :time_format => :ruby)
-    #puts "*** json for test_ruby_time '#{json}'"
+    # puts "*** json for test_ruby_time '#{json}'"
     loaded = Oj.object_load(json);
     assert_equal(t.tv_sec, loaded.tv_sec)
     if t.respond_to?(:tv_nsec)
@@ -515,9 +515,9 @@ class ObjectJuice < Minitest::Test
     # mismatch so instead the seconds, nsecs, and gmt_offset are checked
     # separately along with utc.
     json = Oj.dump(t, :mode => :object, :time_format => :ruby)
-    #puts "*** json for test_ruby_time '#{json}'"
+    # puts "*** json for test_ruby_time '#{json}'"
     loaded = Oj.object_load(json);
-    #puts "*** loaded: #{loaded}"
+    # puts "*** loaded: #{loaded}"
     assert_equal(t.tv_sec, loaded.tv_sec)
     if t.respond_to?(:tv_nsec)
       assert_equal(t.tv_nsec, loaded.tv_nsec)
@@ -534,7 +534,7 @@ class ObjectJuice < Minitest::Test
     # mismatch so instead the seconds, nsecs, and gmt_offset are checked
     # separately along with utc.
     json = Oj.dump(t, :mode => :object, :time_format => :ruby)
-    #puts json
+    # puts json
     loaded = Oj.object_load(json);
     assert_equal(t.tv_sec, loaded.tv_sec)
     if t.respond_to?(:tv_nsec)
@@ -555,7 +555,7 @@ class ObjectJuice < Minitest::Test
     # mismatch so instead the seconds, nsecs, and gmt_offset are checked
     # separately along with utc.
     json = Oj.dump(t, :mode => :object, :time_format => :unix_zone)
-    #puts json
+    # puts json
     loaded = Oj.object_load(json);
     assert_equal(t.tv_sec, loaded.tv_sec)
     if t.respond_to?(:tv_nsec)
@@ -573,7 +573,7 @@ class ObjectJuice < Minitest::Test
     # mismatch so instead the seconds, nsecs, and gmt_offset are checked
     # separately along with utc.
     json = Oj.dump(t, :mode => :object, :time_format => :unix_zone)
-    #puts json
+    # puts json
     loaded = Oj.object_load(json);
     assert_equal(t.tv_sec, loaded.tv_sec)
     if t.respond_to?(:tv_nsec)
@@ -591,7 +591,7 @@ class ObjectJuice < Minitest::Test
     # mismatch so instead the seconds, nsecs, and gmt_offset are checked
     # separately along with utc.
     json = Oj.dump(t, :mode => :object, :time_format => :unix_zone)
-    #puts json
+    # puts json
     loaded = Oj.object_load(json);
     assert_equal(t.tv_sec, loaded.tv_sec)
     if t.respond_to?(:tv_nsec)
@@ -609,7 +609,7 @@ class ObjectJuice < Minitest::Test
     # mismatch so instead the seconds, nsecs, and gmt_offset are checked
     # separately along with utc.
     json = Oj.dump(t, :mode => :object, :time_format => :unix_zone)
-    #puts json
+    # puts json
     loaded = Oj.object_load(json);
     assert_equal(t.tv_sec, loaded.tv_sec)
     if t.respond_to?(:tv_nsec)
@@ -666,7 +666,7 @@ class ObjectJuice < Minitest::Test
     s = Struct.new(:x, :y)
     obj = s.new(1, 2)
     json = Oj.dump(obj, :indent => 2, :mode => :object)
-    #puts json
+    # puts json
     loaded = Oj.object_load(json);
     assert_equal(obj.members, loaded.members)
     assert_equal(obj.values, loaded.values)
@@ -777,7 +777,7 @@ class ObjectJuice < Minitest::Test
       err = e
     end
     json = Oj.dump(err, :mode => :object, :indent => 2)
-    #puts "*** #{json}"
+    # puts "*** #{json}"
     e2 = Oj.load(json, :mode => :strict)
     assert_equal(err.class.to_s, e2['^o'])
     assert_equal(err.message, e2['~mesg'])
@@ -807,7 +807,7 @@ class ObjectJuice < Minitest::Test
       err = e
     end
     json = Oj.dump(err, :mode => :object, :indent => 2)
-    #puts "*** #{json}"
+    # puts "*** #{json}"
     e2 = Oj.load(json, :mode => :strict)
     assert_equal(err.class.to_s, e2['^o'])
     assert_equal(err.message, e2['~mesg'])

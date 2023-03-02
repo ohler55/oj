@@ -142,8 +142,8 @@ class Juice < Minitest::Test
       safe: true,
     }
     Oj.default_options = alt
-    #keys = alt.keys
-    #Oj.default_options.keys.each { |k| puts k unless keys.include? k}
+    # keys = alt.keys
+    # Oj.default_options.keys.each { |k| puts k unless keys.include? k}
     opts = Oj.default_options()
     assert_equal(alt, opts);
 
@@ -585,7 +585,7 @@ class Juice < Minitest::Test
     IO.pipe do |r, w|
       if fork
         r.close
-        #w.nonblock = false
+        # w.nonblock = false
         a = []
         10_000.times do |i|
           a << i

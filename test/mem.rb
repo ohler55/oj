@@ -21,7 +21,7 @@ end
           ('a'..'z').each { |f|
             key = "#{a}#{b}#{c}#{d}#{e}#{f}"
             x = Oj.load(%|{ "#{key}": 101}|)
-            #Oj.dump(x)
+            # Oj.dump(x)
           }
         }
       }

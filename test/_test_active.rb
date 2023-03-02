@@ -13,10 +13,10 @@ require 'sqlite3'
 require 'active_record'
 require 'oj'
 
-#Oj.mimic_JSON()
+# Oj.mimic_JSON()
 Oj.default_options = {mode: :compat, indent: 2}
 
-#ActiveRecord::Base.logger = Logger.new(STDERR)
+# ActiveRecord::Base.logger = Logger.new(STDERR)
 
 ActiveRecord::Base.establish_connection(
   :adapter => "sqlite3",

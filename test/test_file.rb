@@ -117,7 +117,7 @@ class FileJuice < Minitest::Test
   # Symbol
   def test_symbol_object
     Oj.default_options = { :mode => :object }
-    #dump_and_load(''.to_sym, false)
+    # dump_and_load(''.to_sym, false)
     dump_and_load(:abc, false)
     dump_and_load(':xyz'.to_sym, false)
   end

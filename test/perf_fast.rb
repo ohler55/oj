@@ -6,7 +6,7 @@ $: << File.join(File.dirname(__FILE__), "../lib")
 $: << File.join(File.dirname(__FILE__), "../ext")
 
 require 'optparse'
-#require 'yajl'
+# require 'yajl'
 require 'perf'
 require 'json'
 require 'json/ext'
@@ -71,7 +71,7 @@ end
 
 # Verify that all packages dump and load correctly and return the same Object as the original.
 capture_error('Oj::Doc', $obj, 'load', 'dump') { |o| Oj::Doc.open(Oj.dump(o, :mode => :strict)) { |f| f.fetch() } }
-#capture_error('Yajl', $obj, 'encode', 'parse') { |o| Yajl::Parser.parse(Yajl::Encoder.encode(o)) }
+# capture_error('Yajl', $obj, 'encode', 'parse') { |o| Yajl::Parser.parse(Yajl::Encoder.encode(o)) }
 capture_error('JSON::Ext', $obj, 'generate', 'parse') { |o| JSON.generator = JSON::Ext::Generator; JSON::Ext::Parser.new(JSON.generate(o)).parse }
 
 if $verbose
@@ -82,7 +82,7 @@ puts '-' * 80
 puts "Parse Performance"
 perf = Perf.new()
 perf.add('Oj::Doc', 'parse') { Oj::Doc.open($json) {|f| } } unless $failed.has_key?('Oj::Doc')
-#perf.add('Yajl', 'parse') { Yajl::Parser.parse($json) } unless $failed.has_key?('Yajl')
+# perf.add('Yajl', 'parse') { Yajl::Parser.parse($json) } unless $failed.has_key?('Yajl')
 perf.add('JSON::Ext', 'parse') { JSON::Ext::Parser.new($json).parse } unless $failed.has_key?('JSON::Ext')
 perf.run($iter)
 
@@ -112,8 +112,8 @@ if $fetch
   puts "fetch nested Performance"
   json_hash = Oj.load($json, :mode => :strict)
   Oj::Doc.open($json) do |fast|
-    #puts "*** C fetch: #{fast.fetch('/d/2/4/y')}"
-    #puts "*** Ruby fetch: #{json_hash.fetch('d', []).fetch(1, []).fetch(3, []).fetch('x', nil)}"
+    # puts "*** C fetch: #{fast.fetch('/d/2/4/y')}"
+    # puts "*** Ruby fetch: #{json_hash.fetch('d', []).fetch(1, []).fetch(3, []).fetch('x', nil)}"
     perf = Perf.new()
     perf.add('Oj::Doc', 'fetch') { fast.fetch('/d/2/4/x'); fast.fetch('/h/a/b/c/d/e/f/g'); fast.fetch('/i/1/1/1/1/1/1/1') }
     # version that fails gracefully

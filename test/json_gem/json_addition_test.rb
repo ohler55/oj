@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # encoding: UTF-8
 
-#frozen_string_literal: false
+# frozen_string_literal: false
 
 require 'json_gem/test_helper'
 require 'date'
@@ -13,7 +13,7 @@ if REAL_JSON_GEM
   require 'json/add/bigdecimal'
   require 'json/add/ostruct'
 else
-  #Oj.add_to_json()
+  # Oj.add_to_json()
   Oj.add_to_json(Array, BigDecimal, Complex, Date, DateTime, Exception, Hash, Integer, OpenStruct, Range, Rational, Regexp, Struct, Time)
 end
 

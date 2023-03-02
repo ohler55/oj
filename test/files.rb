@@ -16,14 +16,14 @@ def files(dir)
     next if fn.start_with?('.')
 
     filename = File.join(dir, fn)
-    #filename = '.' == dir ? fn : File.join(dir, fn)
+    # filename = '.' == dir ? fn : File.join(dir, fn)
     if File.directory?(filename)
       d << files(filename)
     else
       d << ::Sample::File.new(filename)
     end
   end
-  #pp d
+  # pp d
   d
 end
 

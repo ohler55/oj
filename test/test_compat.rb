@@ -178,7 +178,7 @@ class CompatJuice < Minitest::Test
 
   def test_time_xml_schema
     t = Time.xmlschema("2012-01-05T23:58:07.123456000+09:00")
-    #t = Time.local(2012, 1, 5, 23, 58, 7, 123456)
+    # t = Time.local(2012, 1, 5, 23, 58, 7, 123456)
     json = Oj.dump(t, :mode => :compat)
     assert_equal(%{"2012-01-05 23:58:07 +0900"}, json)
   end

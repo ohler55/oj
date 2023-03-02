@@ -49,39 +49,6 @@ Layout/HashAlignment:
     - 'test/json_gem/json_generator_test.rb'
     - 'test/json_gem/json_parser_test.rb'
 
-# Offense count: 61
-# This cop supports safe autocorrection (--autocorrect).
-# Configuration parameters: AllowDoxygenCommentStyle, AllowGemfileRubyComment.
-Layout/LeadingCommentSpace:
-  Exclude:
-    - 'ext/oj/extconf.rb'
-    - 'samples/wrapexception.rb'
-    - 'test/_test_active.rb'
-    - 'test/_test_active_mimic.rb'
-    - 'test/_test_mimic_rails.rb'
-    - 'test/activerecord/result_test.rb'
-    - 'test/files.rb'
-    - 'test/json_gem/json_addition_test.rb'
-    - 'test/json_gem/json_common_interface_test.rb'
-    - 'test/json_gem/json_encoding_test.rb'
-    - 'test/json_gem/json_ext_parser_test.rb'
-    - 'test/json_gem/json_fixtures_test.rb'
-    - 'test/json_gem/json_generic_object_test.rb'
-    - 'test/json_gem/json_string_matching_test.rb'
-    - 'test/mem.rb'
-    - 'test/perf_fast.rb'
-    - 'test/perf_file.rb'
-    - 'test/perf_object.rb'
-    - 'test/perf_wab.rb'
-    - 'test/test_compat.rb'
-    - 'test/test_fast.rb'
-    - 'test/test_file.rb'
-    - 'test/test_object.rb'
-    - 'test/test_various.rb'
-    - 'test/tests.rb'
-    - 'test/tests_mimic.rb'
-    - 'test/tests_mimic_addition.rb'
-
 # Offense count: 1
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: AutoCorrect, EnforcedStyle.

@@ -7,8 +7,8 @@
 
 $VERBOSE = true
 
-#$: << File.join(File.dirname(__FILE__), "../lib")
-#$: << File.join(File.dirname(__FILE__), "../ext")
+# $: << File.join(File.dirname(__FILE__), "../lib")
+# $: << File.join(File.dirname(__FILE__), "../ext")
 
 require 'oj'
 
