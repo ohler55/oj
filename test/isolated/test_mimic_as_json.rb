@@ -32,14 +32,14 @@ class ObjectFolder < Minitest::Test
     raccoon = Raccoon.new('Rocket')
     json = raccoon.to_json()
 
-    assert_equal(json, '{"name":"Rocket"}')
+    assert_equal('{"name":"Rocket"}', json)
 
     json = raccoon.to_json(:occupation => 'bounty hunter')
     # depending on the ruby version the order of the hash members maybe different.
     if (json.start_with?('{"name'))
-        assert_equal(json, '{"name":"Rocket","occupation":"bounty hunter"}')
+        assert_equal('{"name":"Rocket","occupation":"bounty hunter"}', json)
     else
-        assert_equal(json, '{"occupation":"bounty hunter","name":"Rocket"}')
+        assert_equal('{"occupation":"bounty hunter","name":"Rocket"}', json)
     end
   end
 

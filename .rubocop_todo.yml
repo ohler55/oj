@@ -701,13 +701,6 @@ Minitest/AssertWithExpectedArgument:
     - 'test/test_strict.rb'
     - 'test/test_wab.rb'
 
-# Offense count: 4
-# This cop supports safe autocorrection (--autocorrect).
-Minitest/LiteralAsActualArgument:
-  Exclude:
-    - 'test/isolated/test_mimic_as_json.rb'
-    - 'test/test_compat.rb'
-
 # Offense count: 52
 # Configuration parameters: Max.
 Minitest/MultipleAssertions:
