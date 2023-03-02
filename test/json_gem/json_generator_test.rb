@@ -366,19 +366,19 @@ class JSONGeneratorTest < Test::Unit::TestCase
     data = [ '\\.(?i:gif|jpe?g|png)$' ]
     json = '["\\\\.(?i:gif|jpe?g|png)$"]'
     assert_equal json, JSON.generate(data)
-    #
+
     data = [ '\\"' ]
     json = '["\\\\\""]'
     assert_equal json, JSON.generate(data)
-    #
+
     data = [ '/' ]
     json = '["/"]'
     assert_equal json, JSON.generate(data)
-    #
+
     data = ['"']
     json = '["\""]'
     assert_equal json, JSON.generate(data)
-    #
+
     data = ["'"]
     json = '["\\\'"]'
     assert_equal '["\'"]', JSON.generate(data)

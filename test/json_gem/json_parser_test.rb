@@ -282,19 +282,19 @@ class JSONParserTest < Test::Unit::TestCase
     data = [ '\\.(?i:gif|jpe?g|png)$' ]
     json = '["\\\\.(?i:gif|jpe?g|png)$"]'
     assert_equal data, JSON.parse(json)
-    #
+
     data = [ '\\"' ]
     json = '["\\\\\""]'
     assert_equal data, JSON.parse(json)
-    #
+
     json = '["/"]'
     data = [ '/' ]
     assert_equal data, JSON.parse(json)
-    #
+
     json = '["\""]'
     data = ['"']
     assert_equal data, JSON.parse(json)
-    #
+
     json = '["\\\'"]'
     data = ["'"]
     assert_equal data, JSON.parse(json)
