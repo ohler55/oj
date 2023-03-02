@@ -19,7 +19,7 @@ class FileJuice < Minitest::Test
     end
     alias == eql?
 
-  end# Jam
+  end # Jam
 
   class Jeez < Jam
     def initialize(x, y)
@@ -33,7 +33,7 @@ class FileJuice < Minitest::Test
     def self.json_create(h)
       self.new(h['x'], h['y'])
     end
-  end# Jeez
+  end # Jeez
 
   class Orange < Jam
     def initialize(x, y)

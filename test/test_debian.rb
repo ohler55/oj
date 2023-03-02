@@ -16,7 +16,7 @@ class DebJuice < Minitest::Test
     end
     alias == eql?
 
-  end# Jam
+  end # Jam
 
   # contributed by sauliusg to fix as_json
   class Orange < Jam
