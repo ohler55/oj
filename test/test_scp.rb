@@ -347,12 +347,10 @@ class ScpTest < Minitest::Test
   end
 
   def test_bad_bignum
-    if '2.4.0' < RUBY_VERSION
-      handler = AllHandler.new()
-      json = %|{"big":-e123456789}|
-      assert_raises Exception do # Can be either Oj::ParseError or ArgumentError depending on Ruby version
-        Oj.sc_parse(handler, json)
-      end
+    handler = AllHandler.new()
+    json = %|{"big":-e123456789}|
+    assert_raises Exception do # Can be either Oj::ParseError or ArgumentError depending on Ruby version
+      Oj.sc_parse(handler, json)
     end
   end
 

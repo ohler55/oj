@@ -95,21 +95,21 @@ class JSONParserTest < Test::Unit::TestCase
     assert_raise(JSON::ParserError) { JSON.parse('.23') }
     assert_raise(JSON::ParserError) { JSON.parse('023') }
     assert_equal 23, JSON.parse('23')
-    assert_equal -23, JSON.parse('-23')
+    assert_equal(-23, JSON.parse('-23'))
     assert_equal_float 3.141, JSON.parse('3.141')
-    assert_equal_float -3.141, JSON.parse('-3.141')
+    assert_equal_float(-3.141, JSON.parse('-3.141'))
     assert_equal_float 3.141, JSON.parse('3141e-3')
     assert_equal_float 3.141, JSON.parse('3141.1e-3')
     assert_equal_float 3.141, JSON.parse('3141E-3')
     assert_equal_float 3.141, JSON.parse('3141.0E-3')
-    assert_equal_float -3.141, JSON.parse('-3141.0e-3')
-    assert_equal_float -3.141, JSON.parse('-3141e-3')
+    assert_equal_float(-3.141, JSON.parse('-3141.0e-3'))
+    assert_equal_float(-3.141, JSON.parse('-3141e-3'))
     assert_raise(JSON::ParserError) { JSON.parse('NaN') }
     assert JSON.parse('NaN', :allow_nan => true).nan?
     assert_raise(JSON::ParserError) { JSON.parse('Infinity') }
     assert_equal 1.0/0, JSON.parse('Infinity', :allow_nan => true)
     assert_raise(JSON::ParserError) { JSON.parse('-Infinity') }
-    assert_equal -1.0/0, JSON.parse('-Infinity', :allow_nan => true)
+    assert_equal(-1.0/0, JSON.parse('-Infinity', :allow_nan => true))
   end
 
   if Array.method_defined?(:permutation)

@@ -460,29 +460,6 @@ Layout/TrailingWhitespace:
     - 'test/test_hash.rb'
     - 'test/test_writer.rb'
 
-# Offense count: 5
-# This cop supports safe autocorrection (--autocorrect).
-Lint/AmbiguousOperator:
-  Exclude:
-    - 'test/json_gem/json_parser_test.rb'
-
-# Offense count: 11
-# This cop supports safe autocorrection (--autocorrect).
-Lint/AmbiguousOperatorPrecedence:
-  Exclude:
-    - 'test/perf.rb'
-    - 'test/perf_file.rb'
-    - 'test/sample.rb'
-    - 'test/test_custom.rb'
-    - 'test/test_strict.rb'
-    - 'test/test_wab.rb'
-
-# Offense count: 3
-# This cop supports safe autocorrection (--autocorrect).
-Lint/AmbiguousRegexpLiteral:
-  Exclude:
-    - 'test/json_gem/json_common_interface_test.rb'
-
 # Offense count: 1
 # This cop supports unsafe autocorrection (--autocorrect-all).
 # Configuration parameters: AllowSafeAssignment.
@@ -549,21 +526,6 @@ Lint/RaiseException:
   Exclude:
     - 'test/test_wab.rb'
 
-# Offense count: 4
-# This cop supports safe autocorrection (--autocorrect).
-Lint/RedundantRequireStatement:
-  Exclude:
-    - 'test/files.rb'
-    - 'test/helper.rb'
-    - 'test/sample.rb'
-    - 'test/sample_json.rb'
-
-# Offense count: 1
-# This cop supports safe autocorrection (--autocorrect).
-Lint/RedundantStringCoercion:
-  Exclude:
-    - 'test/test_compat.rb'
-
 # Offense count: 57
 Lint/RescueException:
   Exclude:
@@ -614,20 +576,6 @@ Lint/SymbolConversion:
   Exclude:
     - 'test/test_file.rb'
     - 'test/test_object.rb'
-
-# Offense count: 3
-# This cop supports safe autocorrection (--autocorrect).
-Lint/ToJSON:
-  Exclude:
-    - 'test/perf_simple.rb'
-    - 'test/test_file.rb'
-    - 'test/test_various.rb'
-
-# Offense count: 2
-# This cop supports safe autocorrection (--autocorrect).
-Lint/UnifiedInteger:
-  Exclude:
-    - 'test/test_fast.rb'
 
 # Offense count: 3
 # This cop supports safe autocorrection (--autocorrect).

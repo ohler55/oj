@@ -42,7 +42,7 @@ $obj = {
 }
 
 json = Oj.dump($obj, :indent => $indent)
-cnt = ($size * 1024 * 1024 + json.size) / json.size
+cnt = (($size * 1024 * 1024) + json.size) / json.size
 cnt = 1 if 0 == $size
 
 filename = 'tmp.json'

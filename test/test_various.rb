@@ -36,7 +36,7 @@ class Juice < Minitest::Test
       super
     end
 
-    def to_json()
+    def to_json(*_args)
       %{{"json_class":"#{self.class}","x":#{@x},"y":#{@y}}}
     end
 
@@ -706,10 +706,8 @@ class Juice < Minitest::Test
   end
 
   def test_bad_bignum
-    if '2.4.0' < RUBY_VERSION
-      assert_raises Oj::ParseError do
-        Oj.load(%|{ "big": -e123456789 }|, mode: :strict)
-      end
+    assert_raises Oj::ParseError do
+      Oj.load(%|{ "big": -e123456789 }|, mode: :strict)
     end
   end
 

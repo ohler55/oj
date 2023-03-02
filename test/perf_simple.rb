@@ -21,7 +21,7 @@ class Jazz
     @array = [true, false, nil]
     @hash = { 'one' => 1, 'two' => 2 }
   end
-  def to_json()
+  def to_json(*_args)
     %{
     { "boolean":#{@boolean},
       "number":#{@number},

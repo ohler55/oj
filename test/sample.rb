@@ -7,7 +7,6 @@ if $0 == __FILE__
   $: << '../ext'
 end
 
-require 'pp'
 require 'sample/doc'
 
 def sample_doc(size=3)
@@ -27,7 +26,7 @@ def sample_doc(size=3)
       g = ::Sample::Group.new
       (1..size).each do |k|
         g2 = ::Sample::Group.new
-        r = ::Sample::Rect.new(j * 40 + 10.0, i * 10.0,
+        r = ::Sample::Rect.new((j * 40) + 10.0, i * 10.0,
                                10.123456 / k, 10.0 / k, colors[(i + j + k) % colors.size])
         r.add_prop(:part_of, layer.name)
         g2 << r
@@ -36,7 +35,7 @@ def sample_doc(size=3)
       end
       g2 = ::Sample::Group.new
       (1..size).each do |k|
-        o = ::Sample::Oval.new(j * 40 + 12.0, i * 10.0 + 2.0,
+        o = ::Sample::Oval.new((j * 40) + 12.0, (i * 10.0) + 2.0,
                                6.0 / k, 6.0 / k, colors[(i + j + k) % colors.size])
         o.add_prop(:inside, true)
         g << o
