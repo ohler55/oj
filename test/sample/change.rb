@@ -1,4 +1,3 @@
-
 module Sample
   class Change
     attr_accessor :time

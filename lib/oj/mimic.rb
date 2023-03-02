@@ -1,4 +1,3 @@
-
 require 'bigdecimal'
 begin
   require 'ostruct'

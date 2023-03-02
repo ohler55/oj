@@ -1,4 +1,3 @@
-
 module Oj
 
   # Inherit Error class from StandardError.

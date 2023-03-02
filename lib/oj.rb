@@ -1,4 +1,3 @@
-
 module Oj
 end
 

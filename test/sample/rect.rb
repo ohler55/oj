@@ -1,4 +1,3 @@
-
 module Sample
   class Rect < Shape
 

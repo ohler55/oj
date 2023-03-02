@@ -1,4 +1,3 @@
-
 module JSON
   module Ext
     module Generator

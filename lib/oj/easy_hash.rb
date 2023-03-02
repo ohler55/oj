@@ -1,4 +1,3 @@
-
 module Oj
 
   # A Hash subclass that normalizes the hash keys to allow lookup by the

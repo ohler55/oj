@@ -1,4 +1,3 @@
-
 class Perf
 
   def initialize()

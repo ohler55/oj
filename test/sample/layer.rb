@@ -1,4 +1,3 @@
-
 module Sample
   class Layer < Group
     attr_accessor :name

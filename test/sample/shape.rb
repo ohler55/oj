@@ -1,4 +1,3 @@
-
 module Sample
   class Shape
     include HasProps

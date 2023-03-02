@@ -226,31 +226,6 @@ Layout/LeadingCommentSpace:
     - 'test/tests_mimic.rb'
     - 'test/tests_mimic_addition.rb'
 
-# Offense count: 20
-# This cop supports safe autocorrection (--autocorrect).
-Layout/LeadingEmptyLines:
-  Exclude:
-    - 'lib/oj.rb'
-    - 'lib/oj/active_support_helper.rb'
-    - 'lib/oj/easy_hash.rb'
-    - 'lib/oj/error.rb'
-    - 'lib/oj/json.rb'
-    - 'lib/oj/mimic.rb'
-    - 'lib/oj/state.rb'
-    - 'lib/oj/version.rb'
-    - 'oj.gemspec'
-    - 'test/perf.rb'
-    - 'test/sample/change.rb'
-    - 'test/sample/dir.rb'
-    - 'test/sample/doc.rb'
-    - 'test/sample/file.rb'
-    - 'test/sample/group.rb'
-    - 'test/sample/hasprops.rb'
-    - 'test/sample/layer.rb'
-    - 'test/sample/rect.rb'
-    - 'test/sample/shape.rb'
-    - 'test/sample/text.rb'
-
 # Offense count: 1
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: AutoCorrect, EnforcedStyle.

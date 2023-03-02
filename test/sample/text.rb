@@ -1,4 +1,3 @@
-
 module Sample
   class Text < Shape
     attr_accessor :text
