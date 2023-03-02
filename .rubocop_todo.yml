@@ -274,12 +274,6 @@ Layout/MultilineOperationIndentation:
   Exclude:
     - 'test/json_gem/json_generator_test.rb'
 
-# Offense count: 2
-# This cop supports safe autocorrection (--autocorrect).
-Layout/SpaceAfterColon:
-  Exclude:
-    - 'test/test_integer_range.rb'
-
 # Offense count: 161
 # This cop supports safe autocorrection (--autocorrect).
 Layout/SpaceAfterComma:
@@ -740,7 +734,7 @@ Metrics/AbcSize:
 # Offense count: 19
 # Configuration parameters: CountComments, CountAsOne.
 Metrics/ClassLength:
-  Max: 684
+  Max: 685
 
 # Offense count: 4
 # Configuration parameters: AllowedMethods, AllowedPatterns, Max.
