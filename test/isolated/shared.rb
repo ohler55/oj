@@ -27,7 +27,6 @@ class SharedMimicTest < Minitest::Test
     def self.json_create(h)
       self.new(h['x'], h['y'])
     end
-
   end # Jam
 
   def setup

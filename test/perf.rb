@@ -1,5 +1,4 @@
 class Perf
-
   def initialize()
     @items = []
   end
@@ -102,6 +101,5 @@ class Perf
         @error = "#{e.class}: #{e.message}"
       end
     end
-
   end # Item
 end # Perf

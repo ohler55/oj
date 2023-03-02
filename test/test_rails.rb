@@ -6,7 +6,6 @@ $: << File.dirname(__FILE__)
 require 'helper'
 
 class RailsJuice < Minitest::Test
-
   def test_bigdecimal_dump
     orig = Oj.default_options
     Oj.default_options = { mode: :rails, bigdecimal_as_decimal: true }
@@ -31,5 +30,4 @@ class RailsJuice < Minitest::Test
       Oj.dump("\xf3j", mode: :rails)
     }
   end
-
 end

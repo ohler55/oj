@@ -75,6 +75,5 @@ module Oj
 
     def error(message, line, column)
     end
-
   end # Saj
 end # Oj

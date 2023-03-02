@@ -6,7 +6,6 @@ $: << File.dirname(__FILE__)
 require 'helper'
 
 class HashTest < Minitest::Test
-
   module TestModule
   end
 

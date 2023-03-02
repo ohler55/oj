@@ -137,6 +137,5 @@ module Oj
 
     def array_append(a, value)
     end
-
   end # ScHandler
 end # Oj

@@ -71,7 +71,6 @@ class AllHandler < Oj::ScHandler
   def array_append(a, value)
     @calls << [:array_append, value]
   end
-
 end # AllHandler
 
 class Closer < AllHandler
@@ -92,11 +91,9 @@ class Closer < AllHandler
     @calls << [:hash_set, key, value]
     @io.close
   end
-
 end # Closer
 
 class ScpTest < Minitest::Test
-
   def setup
     @default_options = Oj.default_options
   end
@@ -428,5 +425,4 @@ class ScpTest < Minitest::Test
                   [:hash_key, 'one'],
                   [:hash_set, 'one', true]], handler.calls)
   end
-
 end

@@ -42,6 +42,5 @@ module Sample
         }
       end
     end
-
   end # File
 end # Sample

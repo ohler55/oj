@@ -13,6 +13,5 @@ module Sample
     def <<(f)
       @files << f
     end
-
   end # Dir
 end # Sample

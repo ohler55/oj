@@ -46,7 +46,6 @@ module One
   module Two
     module Three
       class Empty
-
         def initialize()
           @a = 1
           @b = 2

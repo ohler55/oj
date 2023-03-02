@@ -50,7 +50,6 @@ class AllSaj < Oj::Saj
   def error(message, line, column)
     @calls << [:error, message, line, column]
   end
-
 end # AllSaj
 
 class LocSaj
@@ -79,11 +78,9 @@ class LocSaj
   def add_value(value, key, line, column)
     @calls << [:add_value, value, key, line, column]
   end
-
 end # LocSaj
 
 class SajTest < Minitest::Test
-
   def test_nil
     handler = AllSaj.new()
     json = %{null}
@@ -331,5 +328,4 @@ class SajTest < Minitest::Test
                   [:add_value, true, 'boolean', 13, 18],
                   [:hash_end, nil, 14, 1]], handler.calls)
   end
-
 end

@@ -516,5 +516,4 @@ class DocTest < Minitest::Test
     end
     assert_equal({'/x' => true, '/y' => 58, '/z/1' => 1, '/z/2' => 2, '/z/3' => 3}, results)
   end
-
 end # DocTest

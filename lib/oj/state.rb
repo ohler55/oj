@@ -11,7 +11,6 @@ module JSON
         # this a subclass of Object instead of Hash like EashyHash due to
         # conflicts with the json gem.
         class State
-
           def self.from_state(opts)
             s = self.new()
             s.clear()
@@ -126,7 +125,6 @@ module JSON
             end
             return @attrs.send(m, *args, &block)
           end
-
         end # State
       end # defined check
     end # Generator

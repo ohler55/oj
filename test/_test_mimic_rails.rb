@@ -34,7 +34,6 @@ class CategorySerializer < ActiveModel::Serializer
 end
 
 class MimicRails < Minitest::Test
-
   def test_mimic_exception
     begin
       ActiveSupport::JSON.decode("{")
@@ -121,5 +120,4 @@ class MimicRails < Minitest::Test
     #puts "Now: #{now}\n Oj: #{oj_dump}"
     assert_equal("2014-11-01T13:20:47-05:00", oj_dump.xmlschema)
   end
-
 end # MimicRails

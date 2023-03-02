@@ -8,7 +8,6 @@ module Oj
   # can be accessed using the variable name (without the @ prefix). No setters
   # are provided as the Class is intended for reading only.
   class Bag
-
     # The initializer can take multiple arguments in the form of key values
     # where the key is the variable name and the value is the variable
     # value. This is intended for testing purposes only.
@@ -90,6 +89,5 @@ module Oj
       end
       c
     end
-
   end # Bag
 end # Oj

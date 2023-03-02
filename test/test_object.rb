@@ -41,7 +41,6 @@ class ObjectJuice < Minitest::Test
       self.class == o.class && @x == o.x && @y == o.y
     end
     alias == eql?
-
   end # Jam
 
   class Jazz < Jam
@@ -78,7 +77,6 @@ class ObjectJuice < Minitest::Test
     module Two
       module Three
         class Deep
-
           def initialize()
           end
 
@@ -111,7 +109,6 @@ class ObjectJuice < Minitest::Test
   end
 
   class Strung < String
-
     def initialize(str, safe)
       super(str)
       @safe = safe
@@ -201,7 +198,6 @@ class ObjectJuice < Minitest::Test
 
       module San
         class Shi
-
           attr_accessor :hash
 
           def initialize(h)
@@ -211,7 +207,6 @@ class ObjectJuice < Minitest::Test
           def dump()
             @hash
           end
-
         end # Shi
       end # San
     end # Ni
@@ -1024,5 +1019,4 @@ class ObjectJuice < Minitest::Test
     end
     loaded
   end
-
 end

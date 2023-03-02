@@ -14,55 +14,6 @@ Gemspec/RequireMFA:
   Exclude:
     - 'oj.gemspec'
 
-# Offense count: 73
-# This cop supports safe autocorrection (--autocorrect).
-# Configuration parameters: EnforcedStyle.
-# SupportedStyles: empty_lines, empty_lines_except_namespace, empty_lines_special, no_empty_lines, beginning_only, ending_only
-Layout/EmptyLinesAroundClassBody:
-  Exclude:
-    - 'lib/oj/active_support_helper.rb'
-    - 'lib/oj/bag.rb'
-    - 'lib/oj/easy_hash.rb'
-    - 'lib/oj/json.rb'
-    - 'lib/oj/saj.rb'
-    - 'lib/oj/schandler.rb'
-    - 'lib/oj/state.rb'
-    - 'test/_test_active.rb'
-    - 'test/_test_active_mimic.rb'
-    - 'test/_test_mimic_rails.rb'
-    - 'test/isolated/shared.rb'
-    - 'test/isolated/test_mimic_as_json.rb'
-    - 'test/perf.rb'
-    - 'test/perf_compat.rb'
-    - 'test/perf_scp.rb'
-    - 'test/sample/dir.rb'
-    - 'test/sample/doc.rb'
-    - 'test/sample/file.rb'
-    - 'test/sample/group.rb'
-    - 'test/sample/layer.rb'
-    - 'test/sample/line.rb'
-    - 'test/sample/oval.rb'
-    - 'test/sample/rect.rb'
-    - 'test/sample/text.rb'
-    - 'test/test_compat.rb'
-    - 'test/test_custom.rb'
-    - 'test/test_debian.rb'
-    - 'test/test_fast.rb'
-    - 'test/test_file.rb'
-    - 'test/test_generate.rb'
-    - 'test/test_hash.rb'
-    - 'test/test_null.rb'
-    - 'test/test_object.rb'
-    - 'test/test_parser_saj.rb'
-    - 'test/test_parser_usual.rb'
-    - 'test/test_rails.rb'
-    - 'test/test_saj.rb'
-    - 'test/test_scp.rb'
-    - 'test/test_strict.rb'
-    - 'test/test_various.rb'
-    - 'test/test_wab.rb'
-    - 'test/test_writer.rb'
-
 # Offense count: 15
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: EnforcedStyle.

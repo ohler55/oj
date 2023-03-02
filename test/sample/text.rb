@@ -14,6 +14,5 @@ module Sample
       @just = 'left'
       @text_color = 'black'
     end
-
   end # Text
 end # Sample

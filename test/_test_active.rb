@@ -35,7 +35,6 @@ class User < ActiveRecord::Base
 end
 
 class ActiveTest < Minitest::Test
-
   def test_active
     User.find_or_create_by(first_name: "John", last_name: "Smith", email: "john@example.com")
     User.find_or_create_by(first_name: "Joan", last_name: "Smith", email: "joan@example.com")

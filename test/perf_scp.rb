@@ -108,7 +108,6 @@ class AllHandler < Oj::ScHandler
 
   def array_append(a, value)
   end
-
 end # AllHandler
 
 saj_handler = AllSaj.new()

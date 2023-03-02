@@ -15,7 +15,6 @@ require 'bigdecimal'
 require 'oj'
 
 class CompatJuice < Minitest::Test
-
   class Jeez
     attr_accessor :x, :y
 
@@ -60,7 +59,6 @@ class CompatJuice < Minitest::Test
     module Two
       module Three
         class Deep
-
           def initialize()
           end
 
@@ -548,5 +546,4 @@ class CompatJuice < Minitest::Test
     end
     loaded
   end
-
 end

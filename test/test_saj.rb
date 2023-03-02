@@ -50,11 +50,9 @@ class AllSaj < Oj::Saj
   def error(message, line, column)
     @calls << [:error, message, line, column]
   end
-
 end # AllSaj
 
 class SajTest < Minitest::Test
-
   def setup
     @default_options = Oj.default_options
   end
@@ -182,5 +180,4 @@ class SajTest < Minitest::Test
     assert_equal([:error, 1, 6], [type, line, column])
     assert_match(%r{invalid format, extra characters at line 1, column 6 \[(?:[A-Za-z]:\/)?(?:[a-z\.]+/)*saj\.c:\d+\]}, message)
   end
-
 end

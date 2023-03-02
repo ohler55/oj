@@ -9,7 +9,6 @@ module Sample
     def <<(member)
       @members << member
     end
-
   end # Group
 end # Sample
     

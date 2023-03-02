@@ -6,6 +6,5 @@ module Sample
       super()
       @name = name
     end
-
   end # Layer
 end # Sample

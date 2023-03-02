@@ -4,7 +4,6 @@ module Oj
 
   # Exists only to handle the ActiveSupport::TimeWithZone.
   class ActiveSupportHelper
-
     def self.createTimeWithZone(utc, zone)
       ActiveSupport::TimeWithZone.new(utc - utc.gmt_offset, ActiveSupport::TimeZone[zone])
     end

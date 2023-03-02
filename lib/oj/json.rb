@@ -145,7 +145,6 @@ module JSON
       def dump(obj, *args)
         ::JSON.dump(obj, *args)
       end
-
     end # self
 
     self.json_creatable = false

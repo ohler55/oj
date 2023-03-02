@@ -41,5 +41,4 @@ class ObjectFolder < Minitest::Test
         assert_equal(json, '{"occupation":"bounty hunter","name":"Rocket"}')
     end
   end
-
 end

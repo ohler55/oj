@@ -6,7 +6,6 @@ $: << File.dirname(__FILE__)
 require 'helper'
 
 class UsualTest < Minitest::Test
-
   def test_nil
     p = Oj::Parser.new(:usual)
     doc = p.parse('nil')

@@ -36,7 +36,6 @@ module WAB
 end # WAB
 
 class WabJuice < Minitest::Test
-
   module TestModule
   end
 
@@ -309,5 +308,4 @@ class WabJuice < Minitest::Test
     end
     loaded
   end
-
 end

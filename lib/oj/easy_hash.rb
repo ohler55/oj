@@ -4,7 +4,6 @@ module Oj
   # key.to_s or key.to_sym. It also supports looking up hash values by methods
   # that match the keys.
   class EasyHash < Hash
-
     # Initializes the instance to an empty Hash.
     def initialize()
     end
@@ -51,6 +50,5 @@ module Oj
       end
       raise NoMethodError.new("undefined method #{m}", m)
     end
-
   end # EasyHash
 end # Oj

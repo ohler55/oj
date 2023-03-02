@@ -28,7 +28,6 @@ class Juice < Minitest::Test
       self.class == o.class && @x == o.x && @y == o.y
     end
     alias == eql?
-
   end # Jam
 
   class Jeez < Jam
@@ -756,5 +755,4 @@ class Juice < Minitest::Test
     end
     loaded
   end
-
 end

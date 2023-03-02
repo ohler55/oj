@@ -15,7 +15,6 @@ require 'bigdecimal'
 require 'oj'
 
 class CustomJuice < Minitest::Test
-
   module TestModule
   end
 
@@ -545,5 +544,4 @@ class CustomJuice < Minitest::Test
     end
     loaded
   end
-
 end

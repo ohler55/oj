@@ -15,7 +15,6 @@ class DebJuice < Minitest::Test
       self.class == o.class && @x == o.x && @y == o.y
     end
     alias == eql?
-
   end # Jam
 
   # contributed by sauliusg to fix as_json
@@ -49,5 +48,4 @@ class DebJuice < Minitest::Test
     assert_equal(obj, loaded)
     loaded
   end
-
 end

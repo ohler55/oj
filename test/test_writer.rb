@@ -6,7 +6,6 @@ $: << File.dirname(__FILE__)
 require 'helper'
 
 class OjWriter < Minitest::Test
-
   def setup
     @default_options = Oj.default_options
   end
