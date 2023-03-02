@@ -61,4 +61,3 @@ perf.add('Oj.load_file', '') { Oj.load_file(filename) }
 perf.add('Oj.load(string)', '') { Oj.load(File.read(filename)) }
 perf.add('Oj.load(file)', '') { File.open(filename, 'r') { |f| Oj.load(f) } }
 perf.run($iter)
-

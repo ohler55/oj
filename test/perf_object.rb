@@ -133,5 +133,3 @@ if do_write
   perf.add('Marshal', 'dump') { Marshal.dump($obj, File.new('sample.marshal', 'w')) }
   perf.run($iter)
 end
-
-

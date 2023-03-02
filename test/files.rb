@@ -26,4 +26,3 @@ def files(dir)
   # pp d
   d
 end
-

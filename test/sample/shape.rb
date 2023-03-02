@@ -31,4 +31,3 @@ module Sample
     
   end # Shape
 end # Sample
-
