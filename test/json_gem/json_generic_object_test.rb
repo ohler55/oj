@@ -32,6 +32,7 @@ class JSONGenericObjectTest < Test::Unit::TestCase
         '{ "json_class": "JSON::GenericObject", "a": 1, "b": 2 }',
         :create_additions => true
       )
+
     assert_kind_of Hash,
                    JSON(
                      '{ "json_class": "JSON::GenericObject", "a": 1, "b": 2 }',
@@ -56,6 +57,7 @@ class JSONGenericObjectTest < Test::Unit::TestCase
   def test_from_hash
     result  = JSON::GenericObject.from_hash(
       :foo => { :bar => { :baz => true }, :quux => [ { :foobar => true } ] })
+
     assert_kind_of JSON::GenericObject, result.foo
     assert_kind_of JSON::GenericObject, result.foo.bar
     assert_equal   true, result.foo.bar.baz
@@ -66,16 +68,20 @@ class JSONGenericObjectTest < Test::Unit::TestCase
 
   def test_json_generic_object_load
     empty = JSON::GenericObject.load(nil)
+
     assert_kind_of JSON::GenericObject, empty
     simple_json = '{"json_class":"JSON::GenericObject","hello":"world"}'
     simple = JSON::GenericObject.load(simple_json)
+
     assert_kind_of JSON::GenericObject, simple
     assert_equal "world", simple.hello
     converting = JSON::GenericObject.load('{ "hello": "world" }')
+
     assert_kind_of JSON::GenericObject, converting
     assert_equal "world", converting.hello
 
     json = JSON::GenericObject.dump(JSON::GenericObject[:hello => 'world'])
+
     assert_equal JSON(json), JSON('{"json_class":"JSON::GenericObject","hello":"world"}')
   end
 

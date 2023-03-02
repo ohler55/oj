@@ -78,6 +78,7 @@ class NullJuice < Minitest::Test
       assert(true)
       return
     end
+
     assert(false, "*** expected an exception")
   end
 
@@ -90,6 +91,7 @@ class NullJuice < Minitest::Test
       assert(true)
       return
     end
+
     assert(false, "*** expected an exception")
   end
 
@@ -102,6 +104,7 @@ class NullJuice < Minitest::Test
       assert(true)
       return
     end
+
     assert(false, "*** expected an exception")
   end
 
@@ -120,6 +123,7 @@ class NullJuice < Minitest::Test
     end
     Oj.default_options = { :ascii_only => true }
     json = Oj.dump("ぴーたー")
+
     assert_equal(%{"\\u3074\\u30fc\\u305f\\u30fc"}, json)
     unless 'jruby' == $ruby
       dump_and_load("ぴーたー", false)
@@ -132,6 +136,7 @@ class NullJuice < Minitest::Test
     json = %{"\\u019f\\u05e9\\u3074\\ud834\\udd1e"}
     obj = Oj.load(json)
     json2 = Oj.dump(obj, :ascii_only => true)
+
     assert_equal(json, json2)
   end
 
@@ -140,6 +145,7 @@ class NullJuice < Minitest::Test
     json = %{"\\u019f\\u05e9\\u3074\\ud834\\udd1e #{'x' * 2000}"}
     obj = Oj.load(json)
     json2 = Oj.dump(obj, :ascii_only => true)
+
     assert_equal(json, json2)
   end
 
@@ -188,6 +194,7 @@ class NullJuice < Minitest::Test
   def test_hash_escaped_key
     json = %{{"a\nb":true,"c\td":false}}
     obj = Oj.strict_load(json)
+
     assert_equal({"a\nb" => true, "c\td" => false}, obj)
   end
 
@@ -198,6 +205,7 @@ class NullJuice < Minitest::Test
       assert(true)
       return
     end
+
     assert(false, "*** expected an exception")
   end
 
@@ -215,6 +223,7 @@ class NullJuice < Minitest::Test
     orig = BigDecimal('80.51')
     json = Oj.dump(orig, :mode => :strict, :bigdecimal_as_decimal => true)
     bg = Oj.load(json, :mode => :strict, :bigdecimal_load => true)
+
     assert_equal(BigDecimal, bg.class)
     assert_equal(orig, bg)
   end
@@ -222,11 +231,13 @@ class NullJuice < Minitest::Test
   def test_json_object
     obj = Jeez.new(true, 58)
     json = Oj.dump(obj)
+
     assert_equal('null', json)
   end
 
   def test_range
     json = Oj.dump(1..7)
+
     assert_equal('null', json)
   end
 
@@ -240,6 +251,7 @@ class NullJuice < Minitest::Test
 }
     input = StringIO.new(json)
     obj = Oj.strict_load(input)
+
     assert_equal({ 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}, obj)
   end
 
@@ -256,27 +268,32 @@ class NullJuice < Minitest::Test
     f = File.new(filename)
     obj = Oj.strict_load(f)
     f.close()
+
     assert_equal({ 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}, obj)
   end
 
   def test_symbol
     json = Oj.dump(:abc)
+
     assert_equal('"abc"', json)
   end
 
   def test_time
     t = Time.local(2012, 1, 5, 23, 58, 7)
     json = Oj.dump(t)
+
     assert_equal('null', json)
   end
 
   def test_class
     json = Oj.dump(NullJuice)
+
     assert_equal('null', json)
   end
 
   def test_module
     json = Oj.dump(TestModule)
+
     assert_equal('null', json)
   end
 
@@ -289,6 +306,7 @@ class NullJuice < Minitest::Test
 }
 }
     obj = Oj.strict_load(json, :symbol_keys => true)
+
     assert_equal({ :x => true, :y => 58, :z => [1, 2, 3]}, obj)
   end
 
@@ -300,6 +318,7 @@ class NullJuice < Minitest::Test
 }
 }
     obj = Oj.safe_load(json)
+
     assert_equal({ 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}, obj)
   end
 
@@ -313,6 +332,7 @@ class NullJuice < Minitest::Test
 ]}
 }
     obj = Oj.strict_load(json)
+
     assert_equal({ 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}, obj)
   end
 
@@ -323,6 +343,7 @@ class NullJuice < Minitest::Test
   "z": [1,2,3]}
 }
     obj = Oj.strict_load(json)
+
     assert_equal({ 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}, obj)
   end
 
@@ -336,6 +357,7 @@ class NullJuice < Minitest::Test
 }
 }
     obj = Oj.strict_load(json)
+
     assert_equal({ 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}, obj)
   end
 
@@ -351,6 +373,7 @@ class NullJuice < Minitest::Test
     h = { 'a' => 7 }
     h['b'] = h
     json = Oj.dump(h, :indent => 2, :circular => true, :mode => :null)
+
     assert_equal(%|{
   "a":7,
   "b":null
@@ -360,6 +383,7 @@ class NullJuice < Minitest::Test
 
   def test_omit_nil
     json = Oj.dump({'x' => {'a' => 1, 'b' => nil }, 'y' => nil}, :omit_nil => true)
+
     assert_equal(%|{"x":{"a":1}}|, json)
   end
 

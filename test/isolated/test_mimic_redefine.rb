@@ -10,6 +10,7 @@ class MimicRedefine < Minitest::Test
     require 'json'
     parser_error = JSON::ParserError
     Oj.mimic_JSON
+
     assert_equal(parser_error, JSON::ParserError)
   end
 end # MimicSingle

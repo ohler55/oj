@@ -49,6 +49,7 @@ class MimicRails < Minitest::Test
   def test_dump_string
     Oj.default_options= {:indent => 2}
     json = ActiveSupport::JSON.encode([1, true, nil])
+
     assert_equal(%{[
   1,
   true,
@@ -60,6 +61,7 @@ class MimicRails < Minitest::Test
   def test_dump_rational
     Oj.default_options= {:indent => 2}
     json = ActiveSupport::JSON.encode([1, true, Rational(1)])
+
     assert_equal(%{[
   1,
   true,
@@ -71,6 +73,7 @@ class MimicRails < Minitest::Test
   def test_dump_range
     Oj.default_options= {:indent => 2}
     json = ActiveSupport::JSON.encode([1, true, '01'..'12'])
+
     assert_equal(%{[
   1,
   true,

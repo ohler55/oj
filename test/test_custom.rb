@@ -120,11 +120,13 @@ class CustomJuice < Minitest::Test
 
   def test_float_parse
     f = Oj.load("12.123456789012345678", mode: :custom, bigdecimal_load: :float);
+
     assert_equal(Float, f.class)
   end
 
   def test_float_parse_fast
     f = Oj.load("12.123456789012345678", mode: :custom, bigdecimal_load: :fast);
+
     assert_equal(Float, f.class)
     assert(12.12345678901234 <= f && f < 12.12345678901236)
   end
@@ -139,6 +141,7 @@ class CustomJuice < Minitest::Test
       assert(true)
       return
     end
+
     assert(false, "*** expected an exception")
   end
 
@@ -152,6 +155,7 @@ class CustomJuice < Minitest::Test
       assert(true)
       return
     end
+
     assert(false, "*** expected an exception")
   end
 
@@ -165,6 +169,7 @@ class CustomJuice < Minitest::Test
       assert(true)
       return
     end
+
     assert(false, "*** expected an exception")
   end
 
@@ -177,12 +182,14 @@ class CustomJuice < Minitest::Test
 
   def test_string_ascii
     json = Oj.dump("ぴーたー", :escape_mode => :ascii)
+
     assert_equal(%{"\\u3074\\u30fc\\u305f\\u30fc"}, json)
     dump_and_load("ぴーたー", false, :escape_mode => :ascii)
   end
 
   def test_string_json
     json = Oj.dump("ぴーたー", :escape_mode => :json)
+
     assert_equal(%{"ぴーたー"}, json)
     dump_and_load("ぴーたー", false, :escape_mode => :json)
   end
@@ -242,6 +249,7 @@ class CustomJuice < Minitest::Test
   def test_hash_escaped_key
     json = %{{"a\nb":true,"c\td":false}}
     obj = Oj.load(json)
+
     assert_equal({"a\nb" => true, "c\td" => false}, obj)
   end
 
@@ -262,8 +270,10 @@ class CustomJuice < Minitest::Test
   def test_object
     obj = Jeez.new(true, 58)
     json = Oj.dump(obj, create_id: "^o", use_to_json: false, use_as_json: false, use_to_hash: false)
+
     assert_equal(%|{"x":true,"y":58,"_z":"true"}|, json)
     json = Oj.dump(obj, create_id: "^o", use_to_json: false, use_as_json: false, use_to_hash: false, ignore_under: true)
+
     assert_equal(%|{"x":true,"y":58}|, json)
     dump_and_load(obj, false, :create_id => "^o", :create_additions => true)
   end
@@ -271,24 +281,28 @@ class CustomJuice < Minitest::Test
   def test_object_to_json
     obj = Jeez.new(true, 58)
     json = Oj.dump(obj, :use_to_json => true, :use_as_json => false, :use_to_hash => false)
+
     assert_equal(%|{"xx":true,"yy":58}|, json)
   end
 
   def test_object_as_json
     obj = Jeez.new(true, 58)
     json = Oj.dump(obj, :use_to_json => false, :use_as_json => true, :use_to_hash => false)
+
     assert_equal(%|{"a":true,"b":58}|, json)
   end
 
   def test_object_to_hash
     obj = Jeez.new(true, 58)
     json = Oj.dump(obj, :use_to_json => false, :use_as_json => false, :use_to_hash => true)
+
     assert_equal(%|{"b":true,"n":58}|, json)
   end
 
   def test_object_raw_json
     obj = Jeez.new(true, 58)
     json = Oj.dump(obj, :use_to_json => true, :use_as_json => false, :use_raw_json => true, :use_to_hash => false)
+
     assert_equal(%|{"xxx":true,"yyy":58}|, json)
   end
 
@@ -297,6 +311,7 @@ class CustomJuice < Minitest::Test
     obj.push_array()
     obj.pop()
     json = Oj.dump(obj, :use_raw_json => true)
+
     assert_equal(%|[]|, json)
   end
 
@@ -308,6 +323,7 @@ class CustomJuice < Minitest::Test
     j = AsJson.new(1, obj)
 
     json = Oj.dump(j, use_raw_json: true, use_as_json: true, indent: 2)
+
     assert_equal(%|{
   "a":1,
   "b":[3]
@@ -315,6 +331,7 @@ class CustomJuice < Minitest::Test
 |, json)
 
     json = Oj.dump(j, use_raw_json: false, use_as_json: true, indent: 2)
+
     assert_equal(%|{
   "a":1,
   "b":{}
@@ -329,6 +346,7 @@ class CustomJuice < Minitest::Test
     obj.pop()
     j = AsRails.new(1, obj)
     json = Oj.dump(j, mode: :rails, use_raw_json: true, indent: 2)
+
     assert_equal(%|{
   "a":1,
   "b":{}
@@ -338,6 +356,7 @@ class CustomJuice < Minitest::Test
     Oj::Rails.optimize
     json = Oj.dump(j, mode: :rails, use_raw_json: true, indent: 2)
     Oj::Rails.deoptimize
+
     assert_equal(%|{
   "a":1,
   "b":[3]
@@ -347,6 +366,7 @@ class CustomJuice < Minitest::Test
 
   def test_symbol
     json = Oj.dump(:abc)
+
     assert_equal('"abc"', json)
   end
 
@@ -366,6 +386,7 @@ class CustomJuice < Minitest::Test
 }
 |
     obj = Oj.load(json, :symbol_keys => true)
+
     assert_equal({ :x => true, :y => 58, :z => [1, 2, 3]}, obj)
   end
 
@@ -381,6 +402,7 @@ class CustomJuice < Minitest::Test
     h = { 'a' => 7 }
     h['b'] = h
     json = Oj.dump(h, :indent => 2, :circular => true)
+
     assert_equal(%|{
   "a":7,
   "b":null
@@ -390,6 +412,7 @@ class CustomJuice < Minitest::Test
 
   def test_omit_nil
     json = Oj.dump({'x' => {'a' => 1, 'b' => nil }, 'y' => nil}, :omit_nil => true)
+
     assert_equal(%|{"x":{"a":1}}|, json)
   end
 
@@ -416,24 +439,28 @@ class CustomJuice < Minitest::Test
   def test_date_unix
     obj = Date.new(2017, 1, 5)
     json = Oj.dump(obj, :indent => 2, time_format: :unix)
+
     assert_equal('1483574400.000000000', json)
   end
 
   def test_date_unix_zone
     obj = Date.new(2017, 1, 5)
     json = Oj.dump(obj, :indent => 2, time_format: :unix_zone)
+
     assert_equal('1483574400.000000000', json)
   end
 
   def test_date_ruby
     obj = Date.new(2017, 1, 5)
     json = Oj.dump(obj, :indent => 2, time_format: :ruby)
+
     assert_equal('"2017-01-05"', json)
   end
 
   def test_date_xmlschema
     obj = Date.new(2017, 1, 5)
     json = Oj.dump(obj, :indent => 2, time_format: :xmlschema)
+
     assert_equal('"2017-01-05"', json)
   end
 
@@ -445,24 +472,28 @@ class CustomJuice < Minitest::Test
   def test_datetime_unix
     obj = DateTime.new(2017, 1, 5, 10, 20, 30, '-0500')
     json = Oj.dump(obj, :indent => 2, time_format: :unix)
+
     assert_equal('1483629630.000000000', json)
   end
 
   def test_datetime_unix_zone
     obj = DateTime.new(2017, 1, 5, 10, 20, 30, '-0500')
     json = Oj.dump(obj, :indent => 2, time_format: :unix_zone)
+
     assert_equal('1483629630.000000000e-18000', json)
   end
 
   def test_datetime_ruby
     obj = DateTime.new(2017, 1, 5, 10, 20, 30, '-0500')
     json = Oj.dump(obj, :indent => 2, time_format: :ruby)
+
     assert_equal('"2017-01-05T10:20:30-05:00"', json)
   end
 
   def test_datetime_xmlschema
     obj = DateTime.new(2017, 1, 5, 10, 20, 30, '-0500')
     json = Oj.dump(obj, :indent => 2, time_format: :xmlschema)
+
     assert_equal('"2017-01-05T10:20:30-05:00"', json)
   end
 
@@ -532,6 +563,7 @@ class CustomJuice < Minitest::Test
       assert_nil(loaded)
     else
       json2 = Oj.dump(loaded, options)
+
       assert_equal(json, json2)
     end
     loaded

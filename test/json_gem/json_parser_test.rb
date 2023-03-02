@@ -14,12 +14,14 @@ class JSONParserTest < Test::Unit::TestCase
 
   def test_construction
     parser = JSON::Parser.new('test')
+
     assert_equal 'test', parser.source
   end
 
   def test_argument_encoding
     source = "{}".encode("UTF-16")
     JSON::Parser.new(source)
+
     assert_equal Encoding::UTF_16, source.encoding
   end if defined?(Encoding::UTF_16)
 
@@ -29,17 +31,20 @@ class JSONParserTest < Test::Unit::TestCase
     e = assert_raise(JSON::ParserError) {
       JSON::Ext::Parser.new(json).parse
     }
+
     assert_equal(Encoding::UTF_8, e.message.encoding, bug10705)
     assert_include(e.message, json, bug10705)
   end if defined?(Encoding::UTF_8) and defined?(JSON::Ext::Parser)
 
   def test_parsing
     parser = JSON::Parser.new('"test"')
+
     assert_equal 'test', parser.parse
   end
 
   def test_parser_reset
     parser = JSON::Parser.new('{"a":"b"}')
+
     assert_equal({ 'a' => 'b' }, parser.parse)
     assert_equal({ 'a' => 'b' }, parser.parse)
   end
@@ -117,6 +122,7 @@ class JSONParserTest < Test::Unit::TestCase
       a = [ nil, false, true, "foßbar", [ "n€st€d", true ], { "nested" => true, "n€ßt€ð2" => {} }]
       a.permutation.each do |perm|
         json = JSON.pretty_generate(perm)
+
         assert_equal perm, JSON.parse(json)
       end
     end
@@ -127,6 +133,7 @@ class JSONParserTest < Test::Unit::TestCase
         s = "a"
         orig_obj = perm.inject({}) { |h, x| h[s.dup] = x; s = s.succ; h }
         json = JSON.pretty_generate(orig_obj)
+
         assert_equal orig_obj, JSON.parse(json)
       end
     end
@@ -142,6 +149,7 @@ class JSONParserTest < Test::Unit::TestCase
     assert_equal([1], JSON.parse('  [ 1  ]  '))
     ary = [[1], ["foo"], [3.14], [4711.0], [2.718], [nil],
            [[1, -2, 3]], [false], [true]]
+
     assert_equal(ary,
                  JSON.parse('[[1],["foo"],[3.14],[47.11e+2],[2718.0E-3],[null],[[1,-2,3]],[false],[true]]'))
     assert_equal(ary, JSON.parse(%Q{   [   [1] , ["foo"]  ,  [3.14] \t ,  [47.11e+2]\s
@@ -179,14 +187,19 @@ class JSONParserTest < Test::Unit::TestCase
 
   def test_parse_big_integers
     json1 = JSON(orig = (1 << 31) - 1)
+
     assert_equal orig, JSON.parse(json1)
     json2 = JSON(orig = 1 << 31)
+
     assert_equal orig, JSON.parse(json2)
     json3 = JSON(orig = (1 << 62) - 1)
+
     assert_equal orig, JSON.parse(json3)
     json4 = JSON(orig = 1 << 62)
+
     assert_equal orig, JSON.parse(json4)
     json5 = JSON(orig = 1 << 64)
+
     assert_equal orig, JSON.parse(json5)
   end
 
@@ -262,18 +275,23 @@ class JSONParserTest < Test::Unit::TestCase
     assert_raise(JSON::NestingError) { JSON.parse too_deep }
     assert_raise(JSON::NestingError) { JSON.parse too_deep, :max_nesting => 100 }
     ok = JSON.parse too_deep, :max_nesting => 101
+
     assert_equal too_deep_ary, ok
     ok = JSON.parse too_deep, :max_nesting => nil
+
     assert_equal too_deep_ary, ok
     ok = JSON.parse too_deep, :max_nesting => false
+
     assert_equal too_deep_ary, ok
     ok = JSON.parse too_deep, :max_nesting => 0
+
     assert_equal too_deep_ary, ok
 
     unless ENV['REAL_JSON_GEM']
       # max_nesting should be reset to 0 if not included in options
       # This behavior is not compatible with Ruby standard JSON gem
       ok = JSON.parse too_deep, {}
+
       assert_equal too_deep_ary, ok
     end
   end
@@ -281,22 +299,27 @@ class JSONParserTest < Test::Unit::TestCase
   def test_backslash
     data = [ '\\.(?i:gif|jpe?g|png)$' ]
     json = '["\\\\.(?i:gif|jpe?g|png)$"]'
+
     assert_equal data, JSON.parse(json)
     #
     data = [ '\\"' ]
     json = '["\\\\\""]'
+
     assert_equal data, JSON.parse(json)
     #
     json = '["/"]'
     data = [ '/' ]
+
     assert_equal data, JSON.parse(json)
     #
     json = '["\""]'
     data = ['"']
+
     assert_equal data, JSON.parse(json)
     #
     json = '["\\\'"]'
     data = ["'"]
+
     assert_equal data, JSON.parse(json)
   end
 
@@ -348,6 +371,7 @@ class JSONParserTest < Test::Unit::TestCase
 
   def test_parse_array_custom_array_derived_class
     res = JSON.parse('[1,2]', :array_class => SubArray)
+
     assert_equal([1, 2], res)
     assert_equal(SubArray, res.class)
     assert_predicate res, :shifted?
@@ -355,6 +379,7 @@ class JSONParserTest < Test::Unit::TestCase
 
   def test_parse_array_custom_non_array_derived_class
     res = JSON.parse('[1,2]', :array_class => SubArrayWrapper)
+
     assert_equal(SubArrayWrapper, res.class)
     assert_equal([1, 2], res.data)
     assert_predicate res, :shifted?
@@ -408,6 +433,7 @@ class JSONParserTest < Test::Unit::TestCase
 
   def test_parse_object_custom_hash_derived_class
     res = JSON.parse('{"foo":"bar"}', :object_class => SubHash)
+
     assert_equal(SubHash, res.class)
     assert_equal({"foo" => "bar"}, res)
     assert_predicate res, :item_set?
@@ -415,6 +441,7 @@ class JSONParserTest < Test::Unit::TestCase
 
   def test_parse_object_custom_non_hash_derived_class
     res = JSON.parse('{"foo":"bar"}', :object_class => SubOpenStruct)
+
     assert_equal(SubOpenStruct, res.class)
     assert_equal "bar", res.foo
     assert_predicate res, :item_set?
@@ -425,6 +452,7 @@ class JSONParserTest < Test::Unit::TestCase
       '{"foo":"bar", "baz":{}}',
       :object_class => JSON::GenericObject
     )
+
     assert_equal(JSON::GenericObject, res.class)
     assert_equal "bar", res.foo
     assert_equal "bar", res["foo"]
@@ -437,6 +465,7 @@ class JSONParserTest < Test::Unit::TestCase
     obj = SubHash2["foo" => SubHash2["bar" => true]]
     obj_json = JSON(obj)
     obj_again = JSON.parse(obj_json, :create_additions => true)
+
     assert_kind_of SubHash2, obj_again
     assert_kind_of SubHash2, obj_again['foo']
     assert obj_again['foo']['bar']
@@ -454,6 +483,7 @@ class JSONParserTest < Test::Unit::TestCase
     obj = SubHash["foo" => SubHash["bar" => true]]
     obj_json = JSON(obj)
     obj_again = JSON(obj_json)
+
     assert_kind_of Hash, obj_again
     assert_kind_of Hash, obj_again['foo']
     assert obj_again['foo']['bar']
@@ -472,6 +502,7 @@ class JSONParserTest < Test::Unit::TestCase
   def assert_equal_float(expected, actual, delta = 1e-2)
     Array === expected and expected = expected.first
     Array === actual and actual = actual.first
+
     assert_in_delta(expected, actual, delta)
   end
 end

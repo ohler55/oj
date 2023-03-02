@@ -99,6 +99,7 @@ class FileJuice < Minitest::Test
     dump_and_load('abc', false)
     dump_and_load("abc\ndef", false)
     dump_and_load("a\u0041", false)
+
     assert_equal("a\u0000a", dump_and_load("a\u0000a", false))
   end
 
@@ -150,6 +151,7 @@ class FileJuice < Minitest::Test
     Oj.default_options = { :mode => :compat, :use_to_json => true, :create_additions => true }
     obj = Jeez.new(true, 58)
     json = Oj.dump(obj, :indent => 2)
+
     assert(%{{"json_class":"FileJuice::Jeez","x":true,"y":58}
 } == json ||
            %{{"json_class":"FileJuice::Jeez","y":58,"x":true}
@@ -224,6 +226,7 @@ class FileJuice < Minitest::Test
       f.close
 
       objects = Oj.load_file(f.path)
+
       assert_equal(Oj.load(json), objects)
     end
   end
@@ -242,6 +245,7 @@ class FileJuice < Minitest::Test
       else
         assert_equal(obj.tv_usec, loaded.tv_usec)
       end
+
       assert_equal(obj.utc?, loaded.utc?)
       assert_equal(obj.utc_offset, loaded.utc_offset)
     elsif obj.nil?

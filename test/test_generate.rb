@@ -15,6 +15,7 @@ class Generator < Minitest::Test
 
   def test_before
     json = Oj.generate({})
+
     assert_equal("{}", json)
   end
 

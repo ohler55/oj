@@ -14,6 +14,7 @@ class HashTest < Minitest::Test
     h = Oj::EasyHash.new()
     h['abc'] = 3
     out = Oj.dump(h, :mode => :compat)
+
     assert_equal(%|{"abc":3}|, out)
   end
 
@@ -32,6 +33,7 @@ class HashTest < Minitest::Test
     out = Marshal.dump(h)
 
     obj = Marshal.load(out)
+
     assert_equal(Oj::EasyHash, obj.class)
     assert_equal(3, obj[:abc])
   end

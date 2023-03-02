@@ -108,6 +108,7 @@ class ScpTest < Minitest::Test
     handler = AllHandler.new()
     json = %{null}
     Oj.sc_parse(handler, json)
+
     assert_equal([[:add_value, nil]], handler.calls)
   end
 
@@ -115,6 +116,7 @@ class ScpTest < Minitest::Test
     handler = AllHandler.new()
     json = %{true}
     Oj.sc_parse(handler, json)
+
     assert_equal([[:add_value, true]], handler.calls)
   end
 
@@ -122,6 +124,7 @@ class ScpTest < Minitest::Test
     handler = AllHandler.new()
     json = %{false}
     Oj.sc_parse(handler, json)
+
     assert_equal([[:add_value, false]], handler.calls)
   end
 
@@ -129,6 +132,7 @@ class ScpTest < Minitest::Test
     handler = AllHandler.new()
     json = %{"a string"}
     Oj.sc_parse(handler, json)
+
     assert_equal([[:add_value, 'a string']], handler.calls)
   end
 
@@ -136,6 +140,7 @@ class ScpTest < Minitest::Test
     handler = AllHandler.new()
     json = %{12345}
     Oj.sc_parse(handler, json)
+
     assert_equal([[:add_value, 12345]], handler.calls)
   end
 
@@ -143,6 +148,7 @@ class ScpTest < Minitest::Test
     handler = AllHandler.new()
     json = %{12345.6789}
     Oj.sc_parse(handler, json)
+
     assert_equal([[:add_value, 12345.6789]], handler.calls)
   end
 
@@ -150,6 +156,7 @@ class ScpTest < Minitest::Test
     handler = AllHandler.new()
     json = %{12345.6789e7}
     Oj.sc_parse(handler, json)
+
     assert_equal(1, handler.calls.size)
     assert_equal(:add_value, handler.calls[0][0])
     assert_equal((12345.6789e7 * 10000).to_i, (handler.calls[0][1] * 10000).to_i)
@@ -159,6 +166,7 @@ class ScpTest < Minitest::Test
     handler = AllHandler.new()
     json = %{[]}
     Oj.sc_parse(handler, json)
+
     assert_equal([[:array_start],
                   [:array_end],
                   [:add_value, []]], handler.calls)
@@ -168,6 +176,7 @@ class ScpTest < Minitest::Test
     handler = AllHandler.new()
     json = %{[true,false]}
     Oj.sc_parse(handler, json)
+
     assert_equal([[:array_start],
                   [:array_append, true],
                   [:array_append, false],
@@ -179,6 +188,7 @@ class ScpTest < Minitest::Test
     handler = AllHandler.new()
     json = %{{}}
     Oj.sc_parse(handler, json)
+
     assert_equal([[:hash_start],
                   [:hash_end],
                   [:add_value, {}]], handler.calls)
@@ -188,6 +198,7 @@ class ScpTest < Minitest::Test
     handler = AllHandler.new()
     json = %{{"one":true,"two":false}}
     Oj.sc_parse(handler, json)
+
     assert_equal([[:hash_start],
                   [:hash_key, 'one'],
                   [:hash_set, 'one', true],
@@ -201,6 +212,7 @@ class ScpTest < Minitest::Test
     handler = AllHandler.new()
     json = %{{"one":true,"two":false}}
     Oj.sc_parse(handler, json, :symbol_keys => true)
+
     assert_equal([[:hash_start],
                   [:hash_key, 'one'],
                   [:hash_set, 'one', true],
@@ -214,6 +226,7 @@ class ScpTest < Minitest::Test
     handler = AllHandler.new()
     json = %{{"one":true,"symbol":false}}
     Oj.sc_parse(handler, json)
+
     assert_equal([[:hash_start],
                   [:hash_key, 'one'],
                   [:hash_set, 'one', true],
@@ -226,6 +239,7 @@ class ScpTest < Minitest::Test
   def test_full
     handler = AllHandler.new()
     Oj.sc_parse(handler, $json)
+
     assert_equal([[:hash_start],
                   [:hash_key, 'array'],
                   [:array_start],
@@ -263,6 +277,7 @@ class ScpTest < Minitest::Test
     handler = AllHandler.new()
     json = %{{"one":true,"two":false}{"three":true,"four":false}}
     Oj.sc_parse(handler, json)
+
     assert_equal([[:hash_start],
                   [:hash_key, 'one'],
                   [:hash_set, 'one', true],
@@ -283,6 +298,7 @@ class ScpTest < Minitest::Test
     handler = AllHandler.new()
     json = %{{"one":true,"two":false}{"three":true,"four":false}}
     Oj.sc_parse(handler, StringIO.new(json))
+
     assert_equal([[:hash_start],
                   [:hash_key, 'one'],
                   [:hash_set, 'one', true],
@@ -330,6 +346,7 @@ class ScpTest < Minitest::Test
         write_io.close
         Oj.sc_parse(handler, read_io)
         read_io.close
+
         assert_equal([[:hash_start],
                       [:hash_key, 'one'],
                       [:hash_set, 'one', true],
@@ -369,6 +386,7 @@ class ScpTest < Minitest::Test
         rescue Exception => e
           err = e.class.to_s
         end
+
         assert_equal("IOError", err)
         assert_equal([[:hash_start],
                       [:hash_key, 'one'],
@@ -422,6 +440,7 @@ class ScpTest < Minitest::Test
     rescue Exception => e
       err = e.class.to_s
     end
+
     assert_equal("IOError", err)
     assert_equal([[:hash_start],
                   [:hash_key, 'one'],

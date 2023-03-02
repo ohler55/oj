@@ -44,14 +44,19 @@ class JSONGeneratorTest < Test::Unit::TestCase
 
   def test_generate
     json = JSON.generate(@hash)
+
     assert_equal(JSON.parse(@json2), JSON.parse(json))
     json = JSON[@hash]
+
     assert_equal(JSON.parse(@json2), JSON.parse(json))
     parsed_json = JSON.parse(json)
+
     assert_equal(@hash, parsed_json)
     json = JSON.generate({1=>2})
+
     assert_equal('{"1":2}', json)
     parsed_json = JSON.parse(json)
+
     assert_equal({"1"=>2}, parsed_json)
     assert_equal '666', JSON.generate(666)
   end
@@ -62,23 +67,28 @@ class JSONGeneratorTest < Test::Unit::TestCase
     assert_equal(@json3, json)
     assert_equal(JSON.parse(@json3), JSON.parse(json))
     parsed_json = JSON.parse(json)
+
     assert_equal(@hash, parsed_json)
     json = JSON.pretty_generate({1=>2})
+
     assert_equal(<<~'EOT'.chomp, json)
       {
         "1": 2
       }
     EOT
     parsed_json = JSON.parse(json)
+
     assert_equal({"1"=>2}, parsed_json)
     assert_equal '666', JSON.pretty_generate(666)
     json_nil_opts = JSON.pretty_generate({1=>2}, nil)
+
     assert_equal json, json_nil_opts
   end
 
   def test_generate_custom
     state = JSON::State.new(:space_before => " ", :space => "   ", :indent => "<i>", :object_nl => "\n", :array_nl => "<a_nl>")
     json = JSON.generate({1=>{2=>3, 4=>[5, 6]}}, state)
+
     assert_equal(<<~'EOT'.chomp, json)
       {
       <i>"1" :   {
@@ -91,12 +101,16 @@ class JSONGeneratorTest < Test::Unit::TestCase
 
   def test_fast_generate
     json = JSON.fast_generate(@hash)
+
     assert_equal(JSON.parse(@json2), JSON.parse(json))
     parsed_json = JSON.parse(json)
+
     assert_equal(@hash, parsed_json)
     json = JSON.fast_generate({1=>2})
+
     assert_equal('{"1":2}', json)
     parsed_json = JSON.parse(json)
+
     assert_equal({"1"=>2}, parsed_json)
     assert_equal '666', JSON.fast_generate(666)
   end
@@ -104,12 +118,16 @@ class JSONGeneratorTest < Test::Unit::TestCase
   def test_own_state
     state = JSON::State.new
     json = JSON.generate(@hash, state)
+
     assert_equal(JSON.parse(@json2), JSON.parse(json))
     parsed_json = JSON.parse(json)
+
     assert_equal(@hash, parsed_json)
     json = JSON.generate({1=>2}, state)
+
     assert_equal('{"1":2}', json)
     parsed_json = JSON.parse(json)
+
     assert_equal({"1"=>2}, parsed_json)
     assert_equal '666', JSON.generate(666, state)
   end
@@ -120,8 +138,10 @@ class JSONGeneratorTest < Test::Unit::TestCase
   # circular should use circular in defaults or maybe always set to true, allow changes with [:check_circular]=
   def test_states
     json = JSON.generate({1=>2}, nil)
+
     assert_equal('{"1":2}', json)
     s = JSON.state.new
+
     assert_predicate s, :check_circular?
     assert s[:check_circular?]
     h = { 1=>2 }
@@ -142,6 +162,7 @@ class JSONGeneratorTest < Test::Unit::TestCase
     # seems to occur on travis but not locally.
     actual = state.to_h
     actual.delete(:escape_slash)
+
     assert_equal({
       :allow_nan             => false,
       :array_nl              => "\n",
@@ -162,6 +183,7 @@ class JSONGeneratorTest < Test::Unit::TestCase
     # seems to occur on travis but not locally.
     actual = state.to_h
     actual.delete(:escape_slash)
+
     assert_equal({
       :allow_nan             => false,
       :array_nl              => "",
@@ -182,6 +204,7 @@ class JSONGeneratorTest < Test::Unit::TestCase
     # seems to occur on travis but not locally.
     actual = state.to_h
     actual.delete(:escape_slash)
+
     assert_equal({
       :allow_nan             => false,
       :array_nl              => "",
@@ -216,6 +239,7 @@ class JSONGeneratorTest < Test::Unit::TestCase
 
   def test_depth
     ary = []; ary << ary
+
     assert_equal 0, JSON::SAFE_STATE_PROTOTYPE.depth
     assert_raise(JSON::NestingError) { JSON.generate(ary) }
     assert_equal 0, JSON::SAFE_STATE_PROTOTYPE.depth
@@ -223,6 +247,7 @@ class JSONGeneratorTest < Test::Unit::TestCase
     assert_raise(JSON::NestingError) { JSON.pretty_generate(ary) }
     assert_equal 0, JSON::PRETTY_STATE_PROTOTYPE.depth
     s = JSON.state.new
+
     assert_equal 0, s.depth
     assert_raise(JSON::NestingError) { ary.to_json(s) }
     assert_equal 100, s.depth
@@ -230,12 +255,16 @@ class JSONGeneratorTest < Test::Unit::TestCase
 
   def test_buffer_initial_length
     s = JSON.state.new
+
     assert_equal 1024, s.buffer_initial_length
     s.buffer_initial_length = 0
+
     assert_equal 1024, s.buffer_initial_length
     s.buffer_initial_length = -1
+
     assert_equal 1024, s.buffer_initial_length
     s.buffer_initial_length = 128
+
     assert_equal 128, s.buffer_initial_length
   end
 
@@ -264,6 +293,7 @@ class JSONGeneratorTest < Test::Unit::TestCase
     }
     state1 = JSON.state.new
     state1.merge(numbered_state)
+
     assert_equal '1', state1.indent
     assert_equal '2', state1.space
     assert_equal '3', state1.space_before
@@ -271,6 +301,7 @@ class JSONGeneratorTest < Test::Unit::TestCase
     assert_equal '5', state1.array_nl
     state2 = JSON.state.new
     state2.configure(numbered_state)
+
     assert_equal '1', state2.indent
     assert_equal '2', state2.space
     assert_equal '3', state2.space_before
@@ -281,6 +312,7 @@ class JSONGeneratorTest < Test::Unit::TestCase
   def test_configure_hash_conversion
     state = JSON.state.new
     state.configure(:indent => '1')
+
     assert_equal '1', state.indent
     state = JSON.state.new
     foo = 'foo'
@@ -291,6 +323,7 @@ class JSONGeneratorTest < Test::Unit::TestCase
       { :indent => '2' }
     end
     state.configure(foo)
+
     assert_equal '2', state.indent
   end
 
@@ -312,31 +345,38 @@ class JSONGeneratorTest < Test::Unit::TestCase
         end
       end
       _, status = Process.waitpid2(pid)
+
       assert_predicate status, :success?
     end
   end
 
   def test_hash_likeness_set_symbol
     state = JSON.state.new
+
     assert_nil state[:foo]
     assert_equal nil.class, state[:foo].class
     assert_nil state['foo']
     state[:foo] = :bar
+
     assert_equal :bar, state[:foo]
     assert_equal :bar, state['foo']
     state_hash = state.to_hash
+
     assert_kind_of Hash, state_hash
     assert_equal :bar, state_hash[:foo]
   end
 
   def test_hash_likeness_set_string
     state = JSON.state.new
+
     assert_nil state[:foo]
     assert_nil state['foo']
     state['foo'] = :bar
+
     assert_equal :bar, state[:foo]
     assert_equal :bar, state['foo']
     state_hash = state.to_hash
+
     assert_kind_of Hash, state_hash
     assert_equal :bar, state_hash[:foo]
   end
@@ -353,34 +393,43 @@ class JSONGeneratorTest < Test::Unit::TestCase
     assert_raise(JSON::NestingError) { JSON.generate too_deep_ary }
     assert_raise(JSON::NestingError) { JSON.generate too_deep_ary, :max_nesting => 100 }
     ok = JSON.generate too_deep_ary, :max_nesting => 101
+
     assert_equal too_deep, ok
     ok = JSON.generate too_deep_ary, :max_nesting => nil
+
     assert_equal too_deep, ok
     ok = JSON.generate too_deep_ary, :max_nesting => false
+
     assert_equal too_deep, ok
     ok = JSON.generate too_deep_ary, :max_nesting => 0
+
     assert_equal too_deep, ok
   end
 
   def test_backslash
     data = [ '\\.(?i:gif|jpe?g|png)$' ]
     json = '["\\\\.(?i:gif|jpe?g|png)$"]'
+
     assert_equal json, JSON.generate(data)
     #
     data = [ '\\"' ]
     json = '["\\\\\""]'
+
     assert_equal json, JSON.generate(data)
     #
     data = [ '/' ]
     json = '["/"]'
+
     assert_equal json, JSON.generate(data)
     #
     data = ['"']
     json = '["\""]'
+
     assert_equal json, JSON.generate(data)
     #
     data = ["'"]
     json = '["\\\'"]'
+
     assert_equal '["\'"]', JSON.generate(data)
   end
 

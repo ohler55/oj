@@ -20,6 +20,7 @@ class MimicDefine < Minitest::Test
 
     begin
       require('json_spec')
+
       assert(false, '** should raise LoadError')
     rescue LoadError
       assert(true)

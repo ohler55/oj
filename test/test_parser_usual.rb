@@ -10,6 +10,7 @@ class UsualTest < Minitest::Test
   def test_nil
     p = Oj::Parser.new(:usual)
     doc = p.parse('nil')
+
     assert_nil(doc)
   end
 
@@ -23,6 +24,7 @@ class UsualTest < Minitest::Test
       ['"abc"', 'abc'],
     ].each { |x|
       doc = p.parse(x[0])
+
       assert_equal(x[1], doc)
     }
   end
@@ -30,8 +32,10 @@ class UsualTest < Minitest::Test
   def test_big
     p = Oj::Parser.new(:usual)
     doc = p.parse('12345678901234567890123456789')
+
     assert_equal(BigDecimal, doc.class)
     doc = p.parse('1234567890.1234567890123456789')
+
     assert_equal(BigDecimal, doc.class)
   end
 
@@ -46,6 +50,7 @@ class UsualTest < Minitest::Test
       ['[true,[true],false]', [true, [true], false]],
     ].each { |x|
       doc = p.parse(x[0])
+
       assert_equal(x[1], doc)
     }
   end
@@ -61,56 +66,72 @@ class UsualTest < Minitest::Test
       ['{"a": [true]}', {'a' => [true]}],
     ].each { |x|
       doc = p.parse(x[0])
+
       assert_equal(x[1], doc)
     }
   end
 
   def test_symbol_keys
     p = Oj::Parser.new(:usual)
+
     assert_equal(false, p.symbol_keys)
     p.symbol_keys = true
     doc = p.parse('{"a": true, "b": false}')
+
     assert_equal({a: true, b: false}, doc)
   end
 
   def test_strings
     p = Oj::Parser.new(:usual)
     doc = p.parse('{"ぴ": "", "ぴ ": "x", "c": "ぴーたー", "d": " ぴーたー "}')
+
     assert_equal({'ぴ' => '', 'ぴ ' => 'x', 'c' => 'ぴーたー', 'd' => ' ぴーたー '}, doc)
   end
 
   def test_capacity
     p = Oj::Parser.new(:usual, capacity: 1000)
+
     assert_equal(4096, p.capacity)
     p.capacity = 5000
+
     assert_equal(5000, p.capacity)
   end
 
   def test_decimal
     p = Oj::Parser.new(:usual)
+
     assert_equal(:auto, p.decimal)
     doc = p.parse('1.234567890123456789')
+
     assert_equal(BigDecimal, doc.class)
     assert_equal('0.1234567890123456789e1', doc.to_s)
     doc = p.parse('1.25')
+
     assert_equal(Float, doc.class)
 
     p.decimal = :float
+
     assert_equal(:float, p.decimal)
     doc = p.parse('1.234567890123456789')
+
     assert_equal(Float, doc.class)
 
     p.decimal = :bigdecimal
+
     assert_equal(:bigdecimal, p.decimal)
     doc = p.parse('1.234567890123456789')
+
     assert_equal(BigDecimal, doc.class)
     doc = p.parse('1.25')
+
     assert_equal(BigDecimal, doc.class)
     assert_equal('0.125e1', doc.to_s)
 
     p.decimal = :ruby
+
     assert_equal(:ruby, p.decimal)
     doc = p.parse('1.234567890123456789')
+
     assert_equal(Float, doc.class)
   end
 
@@ -118,10 +139,12 @@ class UsualTest < Minitest::Test
     p = Oj::Parser.new(:usual)
     p.omit_null = true
     doc = p.parse('{"a":true,"b":null}')
+
     assert_equal({'a'=>true}, doc)
 
     p.omit_null = false
     doc = p.parse('{"a":true,"b":null}')
+
     assert_equal({'a'=>true, 'b'=>nil}, doc)
   end
 
@@ -131,8 +154,10 @@ class UsualTest < Minitest::Test
   def test_array_class
     p = Oj::Parser.new(:usual)
     p.array_class = MyArray
+
     assert_equal(MyArray, p.array_class)
     doc = p.parse('[true]')
+
     assert_equal(MyArray, doc.class)
   end
 
@@ -142,8 +167,10 @@ class UsualTest < Minitest::Test
   def test_hash_class
     p = Oj::Parser.new(:usual)
     p.hash_class = MyHash
+
     assert_equal(MyHash, p.hash_class)
     doc = p.parse('{"a":true}')
+
     assert_equal(MyHash, doc.class)
   end
 
@@ -169,19 +196,25 @@ class UsualTest < Minitest::Test
     p = Oj::Parser.new(:usual)
     p.create_id = '^'
     doc = p.parse('{"a":true}')
+
     assert_equal(Hash, doc.class)
     doc = p.parse('{"a":true,"^":"UsualTest::MyClass","b":false}')
+
     assert_equal('UsualTest::MyClass{a: true b: false}', doc.to_s)
 
     doc = p.parse('{"a":true,"^":"UsualTest::MyClass2","b":false}')
+
     assert_equal('UsualTest::MyClass2{a: true b: false}', doc.to_s)
 
     p.hash_class = MyHash
+
     assert_equal(MyHash, p.hash_class)
     doc = p.parse('{"a":true}')
+
     assert_equal(MyHash, doc.class)
 
     doc = p.parse('{"a":true,"^":"UsualTest::MyClass","b":false}')
+
     assert_equal('UsualTest::MyClass{a: true b: false}', doc.to_s)
   end
 
@@ -189,6 +222,7 @@ class UsualTest < Minitest::Test
     p = Oj::Parser.new(:usual, create_id: '^')
     json = '{"a":true,"^":"Auto","b":false}'
     doc = p.parse(json)
+
     assert_equal(Hash, doc.class)
 
     p.missing_class = :auto
@@ -204,14 +238,17 @@ class UsualTest < Minitest::Test
     p.missing_class = :auto
     json = '{"a":true,"^":"Auto2","b":false}'
     doc = p.parse(json)
+
     assert_equal(Auto2, doc.class)
 
     doc = p.parse(json)
+
     assert_equal(Auto2, doc.class)
   end
 
   def test_default_parser
     doc = Oj::Parser.usual.parse('{"a":true,"b":null}')
+
     assert_equal({'a'=>true, 'b'=>nil}, doc)
   end
 end

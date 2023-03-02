@@ -19,6 +19,7 @@ class OjWriter < Minitest::Test
     w = Oj::StringWriter.new(:indent => 0)
     w.push_array()
     w.pop()
+
     assert_equal("[]\n", w.to_s)
   end
 
@@ -34,6 +35,7 @@ class OjWriter < Minitest::Test
     w.push_array()
     w.pop()
     w.pop()
+
     assert_equal("[[],[[]],[]]\n", w.to_s)
   end
 
@@ -41,6 +43,7 @@ class OjWriter < Minitest::Test
     w = Oj::StringWriter.new(:indent => 0)
     w.push_object()
     w.pop()
+
     assert_equal("{}\n", w.to_s)
   end
 
@@ -49,6 +52,7 @@ class OjWriter < Minitest::Test
     w.push_object()
     w.push_value(nil, 'nothing')
     w.pop()
+
     assert_equal(%|{"nothing":null}\n|, w.to_s)
   end
 
@@ -64,6 +68,7 @@ class OjWriter < Minitest::Test
     w.push_object("a3")
     w.pop()
     w.pop()
+
     assert_equal(%|{"a1":{},"a2":{"b":{}},"a3":{}}\n|, w.to_s)
   end
 
@@ -84,6 +89,7 @@ class OjWriter < Minitest::Test
     w.push_value(37)
     w.pop()
     w.pop()
+
     assert_equal(%|{"a1":{},"a2":{"b":{}},"a3":{"a4":37}}\n|, w.to_s)
   end
 
@@ -98,6 +104,7 @@ class OjWriter < Minitest::Test
     w.push_value({'a' => 65})
     w.push_value([1, 2])
     w.pop()
+
     assert_equal(%|[
   7,
   7.3,
@@ -126,6 +133,7 @@ class OjWriter < Minitest::Test
         w.push_value(3)
       }
     }
+
     assert_equal(%|{"a1":{"a7":7},"a2":["x",3]}\n|, w.to_s)
   end
 
@@ -139,6 +147,7 @@ class OjWriter < Minitest::Test
     w.push_json('{"a":65}', 'x')
     w.pop()
     w.pop()
+
     assert_equal(%|[7,true,"a string",{"x":{"a":65}}]\n|, w.to_s)
   end
 
@@ -152,6 +161,7 @@ class OjWriter < Minitest::Test
       assert(true)
       return
     end
+
     assert(false, "*** expected an exception")
   end
 
@@ -166,6 +176,7 @@ class OjWriter < Minitest::Test
       assert(true)
       return
     end
+
     assert(false, "*** expected an exception")
   end
 
@@ -177,6 +188,7 @@ class OjWriter < Minitest::Test
       assert(true)
       return
     end
+
     assert(false, "*** expected an exception")
   end
 
@@ -189,6 +201,7 @@ class OjWriter < Minitest::Test
       assert(true)
       return
     end
+
     assert(false, "*** expected an exception")
   end
 
@@ -214,6 +227,7 @@ class OjWriter < Minitest::Test
     w.push_value(3)
     w.push_array()
     w.pop_all()
+
     assert_equal(%|{"a1":{},"a2":[3,[]]}\n|, w.to_s)
   end
 
@@ -222,6 +236,7 @@ class OjWriter < Minitest::Test
     w.push_array()
     w.pop()
     w.reset()
+
     assert_equal('', w.to_s)
   end
 
@@ -240,6 +255,7 @@ class OjWriter < Minitest::Test
     x = "香港" # Hong Kong
     x = x.force_encoding('ASCII-8BIT')
     w.push_value(x)
+
     assert_equal(::Encoding::UTF_8, output.encoding)
   end
 
@@ -248,6 +264,7 @@ class OjWriter < Minitest::Test
     w = Oj::StreamWriter.new(output, :indent => 0)
     w.push_array()
     w.pop()
+
     assert_equal("[]\n", output.string())
   end
 
@@ -268,6 +285,7 @@ class OjWriter < Minitest::Test
     w.pop()
     w.pop()
     result = output.string()
+
     assert_equal(%|{"a1":{},"a2":{"b":[7,true,"string"]},"a3":{}}\n|, result)
   end
 
@@ -290,6 +308,7 @@ class OjWriter < Minitest::Test
       w.pop()
     end
     content = File.read(filename)
+
     assert_equal(%|{"a1":{},"a2":{"b":[7,true,"string"]},"a3":{}}\n|, content)
   end
 
@@ -311,6 +330,7 @@ class OjWriter < Minitest::Test
     w.push_value(37)
     w.pop()
     w.pop()
+
     assert_equal(%|{"a1":{},"a2":{"b":{}},"a3":{"a4":37}}\n|, output.string())
   end
 
@@ -338,6 +358,7 @@ class OjWriter < Minitest::Test
     output = StringIO.open("", "w+")
     w = Oj::StreamWriter.new(output, :indent => 0, :buffer_size => 20)
     push_stuff(w)
+
     assert_equal(%|{"a1":{},"a2":{"b":[7,true,"string"]},"a3":{}}\n|, output.string())
   end
 
@@ -345,6 +366,7 @@ class OjWriter < Minitest::Test
     output = StringIO.open("", "w+")
     w = Oj::StreamWriter.new(output, :indent => 0, :buffer_size => 16000)
     push_stuff(w)
+
     assert_equal(%|{"a1":{},"a2":{"b":[7,true,"string"]},"a3":{}}\n|, output.string())
   end
 
@@ -355,6 +377,7 @@ class OjWriter < Minitest::Test
     # no flush so nothing should be in the output yet
     assert_equal("", output.string())
     w.flush()
+
     assert_equal(%|{"a1":{},"a2":{"b":[7,true,"string"]},"a3":{}}\n|, output.string())
   end
   
@@ -366,6 +389,7 @@ class OjWriter < Minitest::Test
     # is called after adding "string".
     assert_equal(%|{"a1":{},"a2":{"b":[7,true,"string"|, output.string())
     w.flush()
+
     assert_equal(%|{"a1":{},"a2":{"b":[7,true,"string"]},"a3":{}}\n|, output.string())
   end
 
@@ -375,6 +399,7 @@ class OjWriter < Minitest::Test
     w.push_object()
     w.push_value(nil, 'nothing')
     w.pop()
+
     assert_equal(%|{"nothing":null}\n|, output.string())
   end
 end # OjWriter

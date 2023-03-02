@@ -66,6 +66,7 @@ class JSONCommonInterfaceTest < Test::Unit::TestCase
   def test_create_id
     assert_equal 'json_class', JSON.create_id
     JSON.create_id = 'foo_bar'
+
     assert_equal 'foo_bar', JSON.create_id
   ensure
     JSON.create_id = 'json_class'
@@ -98,9 +99,11 @@ class JSONCommonInterfaceTest < Test::Unit::TestCase
     tempfile = Tempfile.open('@json')
     tempfile.write @json
     tempfile.rewind
+
     assert_equal @hash, JSON.load(tempfile)
     stringio = StringIO.new(@json)
     stringio.rewind
+
     assert_equal @hash, JSON.load(stringio)
     assert_nil JSON.load(nil)
     assert_nil JSON.load('')
@@ -110,6 +113,7 @@ class JSONCommonInterfaceTest < Test::Unit::TestCase
 
   def test_load_with_options
     json  = '{ "foo": NaN }'
+
     assert_predicate JSON.load(json, nil, :allow_nan => true)['foo'], :nan?
   end
 
@@ -126,6 +130,7 @@ class JSONCommonInterfaceTest < Test::Unit::TestCase
 
   def test_dump
     too_deep = '[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]'
+
     assert_equal too_deep, JSON.dump(eval(too_deep))
     assert_kind_of String, Marshal.dump(eval(too_deep))
     assert_raise(ArgumentError) { JSON.dump(eval(too_deep), 100) }
@@ -134,15 +139,18 @@ class JSONCommonInterfaceTest < Test::Unit::TestCase
     assert_kind_of String, Marshal.dump(eval(too_deep), 101)
     output = StringIO.new
     JSON.dump(eval(too_deep), output)
+
     assert_equal too_deep, output.string
     output = StringIO.new
     JSON.dump(eval(too_deep), output, 101)
+
     assert_equal too_deep, output.string
   end
 
   def test_dump_should_modify_defaults
     max_nesting = JSON.dump_default_options[:max_nesting]
     JSON.dump([], StringIO.new, 10)
+
     assert_equal max_nesting, JSON.dump_default_options[:max_nesting]
   end
 

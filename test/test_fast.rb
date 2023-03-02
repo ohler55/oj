@@ -150,8 +150,10 @@ class DocTest < Minitest::Test
     json = %{{"one":{"two":false}}}
     Oj::Doc.open(json) do |doc|
       doc.move('/one')
+
       assert_equal('/one', doc.where?)
       doc.move('/one/two')
+
       assert_equal('/one/two', doc.where?)
     end
   end
@@ -160,8 +162,10 @@ class DocTest < Minitest::Test
     json = %{[1,[2,true]]}
     Oj::Doc.open(json) do |doc|
       doc.move('/1')
+
       assert_equal('/1', doc.where?)
       doc.move('/2/1')
+
       assert_equal('/2/1', doc.where?)
     end
   end
@@ -174,6 +178,7 @@ class DocTest < Minitest::Test
         '/array/1/hash/h2/a/3',
       ].each do |p|
         doc.move(p)
+
         assert_equal(p, doc.where?)
       end
       begin
@@ -188,6 +193,7 @@ class DocTest < Minitest::Test
   def test_move_slash
     Oj::Doc.open(%|{"top":{"a/b":3}}|) do |doc|
       doc.move('top/a\/b')
+
       assert_equal('/top/a\/b', doc.where?)
     end
   end
@@ -195,6 +201,7 @@ class DocTest < Minitest::Test
   def test_fetch_slash
     Oj::Doc.open(%|{"a/b":3}|) do |doc|
       x = doc.fetch('a\/b')
+
       assert_equal(3, x)
     end
   end
@@ -210,6 +217,7 @@ class DocTest < Minitest::Test
       ].each do |start, path, where|
         doc.move(start)
         doc.move(path)
+
         assert_equal(where, doc.where?)
       end
     end
@@ -266,6 +274,7 @@ class DocTest < Minitest::Test
        ['/', {'array' => [{'num' => 3, 'string' => 'message', 'hash' => {'h2' => {'a' => [1, 2, 3]}}}], 'boolean' => true}],
       ].each do |path, val|
         doc.move(path)
+
         assert_equal(val, doc.fetch())
       end
     end
@@ -310,6 +319,7 @@ class DocTest < Minitest::Test
        ['/array/1/hash', 'h2/a', [1, 2, 3]],
       ].each do |path, fetch_path, val|
         doc.move(path)
+
         assert_equal(val, doc.fetch(fetch_path))
       end
     end
@@ -333,6 +343,7 @@ class DocTest < Minitest::Test
     Oj::Doc.open(@json1) do |doc|
       doc.move('/array/1/num')
       doc.home()
+
       assert_equal('/', doc.where?)
     end
   end
@@ -341,6 +352,7 @@ class DocTest < Minitest::Test
     Oj::Doc.open(@json1) do |doc|
       values = []
       doc.each_value() { |v| values << v.to_s }
+
       assert_equal(['1', '2', '3', '3', 'message', 'true'], values.sort)
     end
   end
@@ -350,6 +362,7 @@ class DocTest < Minitest::Test
       doc.move('/array/1/hash')
       values = []
       doc.each_value() { |v| values << v.to_s }
+
       assert_equal(['1', '2', '3'], values.sort)
     end
   end
@@ -358,6 +371,7 @@ class DocTest < Minitest::Test
     Oj::Doc.open(@json1) do |doc|
       values = []
       doc.each_value('/array/1/hash') { |v| values << v.to_s }
+
       assert_equal(['1', '2', '3'], values.sort)
     end
   end
@@ -367,10 +381,12 @@ class DocTest < Minitest::Test
       locations = []
       doc.move('/array/1/hash/h2/a')
       doc.each_child() { |d| locations << d.where? }
+
       assert_equal(['/array/1/hash/h2/a/1', '/array/1/hash/h2/a/2', '/array/1/hash/h2/a/3'], locations)
       locations = []
       doc.move('/array/1')
       doc.each_child() { |d| locations << d.where? }
+
       assert_equal(['/array/1/num', '/array/1/string', '/array/1/hash'], locations)
     end
   end
@@ -379,9 +395,11 @@ class DocTest < Minitest::Test
     Oj::Doc.open(@json1) do |doc|
       locations = []
       doc.each_child('/array/1/hash/h2/a') { |d| locations << d.where? }
+
       assert_equal(['/array/1/hash/h2/a/1', '/array/1/hash/h2/a/2', '/array/1/hash/h2/a/3'], locations)
       locations = []
       doc.each_child('/array/1') { |d| locations << d.where? }
+
       assert_equal(['/array/1/num', '/array/1/string', '/array/1/hash'], locations)
     end
   end
@@ -396,6 +414,7 @@ class DocTest < Minitest::Test
         end
       end
     end
+
     assert_equal({"/a"=>1, "/c"=>[2], "/c/1"=>2, "/d"=>3}, h)
   end
 
@@ -411,6 +430,7 @@ class DocTest < Minitest::Test
   def test_open_file
     filename = File.join(File.dirname(__FILE__), 'open_file_test.json')
     File.open(filename, 'w') { |f| f.write('{"a":[1,2,3]}') }
+
     Oj::Doc.open_file(filename) do |doc|
       assert_equal(5, doc.size)
     end
@@ -419,11 +439,13 @@ class DocTest < Minitest::Test
   def test_open_close
     json = %{{"a":[1,2,3]}}
     doc = Oj::Doc.open(json)
+
     assert_equal(Oj::Doc, doc.class)
     assert_equal(5, doc.size)
     assert_equal('/', doc.where?)
     doc.move('a/1')
     doc.home()
+
     assert_equal(2, doc.fetch('/a/2'))
     assert_equal(2, doc.fetch('a/2'))
     doc.close()
@@ -438,11 +460,13 @@ class DocTest < Minitest::Test
     filename = File.join(File.dirname(__FILE__), 'open_file_test.json')
     File.open(filename, 'w') { |f| f.write('{"a":[1,2,3]}') }
     doc = Oj::Doc.open_file(filename)
+
     assert_equal(Oj::Doc, doc.class)
     assert_equal(5, doc.size)
     assert_equal('/', doc.where?)
     doc.move('a/1')
     doc.home()
+
     assert_equal(2, doc.fetch('/a/2'))
     assert_equal(2, doc.fetch('a/2'))
     doc.close()
@@ -456,11 +480,13 @@ class DocTest < Minitest::Test
   def test_open_no_close
     json = %{{"a":[1,2,3]}}
     doc = Oj::Doc.open(json)
+
     assert_equal(Oj::Doc, doc.class)
     assert_equal(5, doc.size)
     assert_equal('/', doc.where?)
     doc.move('a/1')
     doc.home()
+
     assert_equal(2, doc.fetch('/a/2'))
     assert_equal(2, doc.fetch('a/2'))
     doc = nil
@@ -483,6 +509,7 @@ class DocTest < Minitest::Test
       doc.each_leaf() { |d| h[d.where?] = d.fetch() }
       h
     end
+
     assert_equal({'/1' => 1, '/2/1' => 2, '/2/2' => 3}, results)
   end
 
@@ -492,11 +519,13 @@ class DocTest < Minitest::Test
       doc.each_leaf() { |d| h[d.where?] = d.fetch() }
       h
     end
+
     assert_equal({'/a/x' => 2, '/b/y' => 4}, results)
   end
 
   def test_doc_empty
     result = Oj::Doc.open("") { |doc| doc.each_child {} }
+
     assert_nil(result)
   end
 
@@ -514,6 +543,7 @@ class DocTest < Minitest::Test
       doc.each_leaf() { |d| h[d.where?] = d.fetch() }
       h
     end
+
     assert_equal({'/x' => true, '/y' => 58, '/z/1' => 1, '/z/2' => 2, '/z/3' => 3}, results)
   end
 

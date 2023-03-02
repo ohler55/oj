@@ -165,6 +165,7 @@ class WabJuice < Minitest::Test
     orig = BigDecimal('80.51')
     json = Oj.dump(orig, mode: :wab)
     bg = Oj.load(json, :mode => :wab, :bigdecimal_load => true)
+
     assert_equal(BigDecimal, bg.class)
     assert_equal(orig, bg)
   end
@@ -183,6 +184,7 @@ class WabJuice < Minitest::Test
 }
     input = StringIO.new(json)
     obj = Oj.wab_load(input)
+
     assert_equal({ x: true, y: 58, z: [1, 2, 3]}, obj)
   end
 
@@ -199,27 +201,32 @@ class WabJuice < Minitest::Test
     f = File.new(filename)
     obj = Oj.wab_load(f)
     f.close()
+
     assert_equal({ x: true, y: 58, z: [1, 2, 3]}, obj)
   end
 
   def test_symbol
     json = Oj.dump(:abc, mode: :wab)
+
     assert_equal('"abc"', json)
   end
 
   def test_time
     t = Time.gm(2017, 1, 5, 23, 58, 7, 123456.789)
     json = Oj.dump(t, mode: :wab)
+
     assert_equal('"2017-01-05T23:58:07.123456789Z"', json)
     # must load and convert to json as the Time#== does not match identical
     # times due to the way it tracks fractional seconds.
     loaded = Oj.wab_load(json);
+
     assert_equal(json, Oj.dump(loaded, mode: :wab), "json mismatch after load")
   end
 
   def test_uuid
     u = ::WAB::UUID.new('123e4567-e89b-12d3-a456-426655440000')
     json = Oj.dump(u, mode: :wab)
+
     assert_equal('"123e4567-e89b-12d3-a456-426655440000"', json)
     dump_and_load(u, false)
   end
@@ -227,6 +234,7 @@ class WabJuice < Minitest::Test
   def test_uri
     u = URI('http://opo.technology/sample')
     json = Oj.dump(u, mode: :wab)
+
     assert_equal('"http://opo.technology/sample"', json)
     dump_and_load(u, false)
   end
@@ -248,6 +256,7 @@ class WabJuice < Minitest::Test
 }
 }
     obj = Oj.wab_load(json, :symbol_keys => true)
+
     assert_equal({ x: true, y: 58, z: [1, 2, 3]}, obj)
   end
 
@@ -261,6 +270,7 @@ class WabJuice < Minitest::Test
 ]}
 }
     obj = Oj.wab_load(json)
+
     assert_equal({ x: true, y: 58, z: [1, 2, 3]}, obj)
   end
 
@@ -271,6 +281,7 @@ class WabJuice < Minitest::Test
   "z": [1,2,3]}
 }
     obj = Oj.wab_load(json)
+
     assert_equal({ x: true, y: 58, z: [1, 2, 3]}, obj)
   end
 
@@ -284,6 +295,7 @@ class WabJuice < Minitest::Test
 }
 }
     obj = Oj.wab_load(json)
+
     assert_equal({ x: true, y: 58, z: [1, 2, 3]}, obj)
   end
 

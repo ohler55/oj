@@ -149,6 +149,7 @@ class CompatJuice < Minitest::Test
     opts = Oj.default_options
     Oj.default_options = { :ascii_only => true }
     json = Oj.dump("ぴーたー")
+
     assert_equal(%{"\\u3074\\u30fc\\u305f\\u30fc"}, json)
     Oj.default_options = opts
   end
@@ -158,6 +159,7 @@ class CompatJuice < Minitest::Test
     json = %{"\\u019f\\u05e9\\u3074\\ud834\\udd1e"}
     obj = Oj.load(json)
     json2 = Oj.dump(obj, :ascii_only => true)
+
     assert_equal(json, json2)
   end
 
@@ -175,6 +177,7 @@ class CompatJuice < Minitest::Test
 
   def test_symbol
     json = Oj.dump(:abc, :mode => :compat)
+
     assert_equal('"abc"', json)
   end
 
@@ -182,16 +185,19 @@ class CompatJuice < Minitest::Test
     t = Time.xmlschema("2012-01-05T23:58:07.123456000+09:00")
     #t = Time.local(2012, 1, 5, 23, 58, 7, 123456)
     json = Oj.dump(t, :mode => :compat)
+
     assert_equal(%{"2012-01-05 23:58:07 +0900"}, json)
   end
 
   def test_class
     json = Oj.dump(CompatJuice, :mode => :compat)
+
     assert_equal(%{"CompatJuice"}, json)
   end
 
   def test_module
     json = Oj.dump(One::Two, :mode => :compat)
+
     assert_equal(%{"CompatJuice::One::Two"}, json)
   end
 
@@ -199,6 +205,7 @@ class CompatJuice < Minitest::Test
   def test_non_str_hash
     json = Oj.dump({ 1 => true, 0 => false }, :mode => :compat)
     h = Oj.load(json, :mode => :strict)
+
     assert_equal({ "1" => true, "0" => false }, h)
   end
   def test_hash
@@ -233,17 +240,20 @@ class CompatJuice < Minitest::Test
   def test_hash_escaped_key
     json = %{{"a\nb":true,"c\td":false}}
     obj = Oj.compat_load(json)
+
     assert_equal({"a\nb" => true, "c\td" => false}, obj)
   end
 
   def test_invalid_escapes_handled
     json = '{"subtext":"\"404er\” \w \k \3 \a"}'
     obj = Oj.compat_load(json)
+
     assert_equal({"subtext" => "\"404er” w k 3 a"}, obj)
   end
 
   def test_hash_escaping
     json = Oj.to_json({'<>' => '<>'}, mode: :compat)
+
     assert_equal(json, '{"<>":"<>"}')
   end
 
@@ -254,6 +264,7 @@ class CompatJuice < Minitest::Test
   def test_json_object
     obj = Jeez.new(true, 58)
     json = Oj.to_json(obj)
+
     assert(%|{"json_class":"CompatJuice::Jeez","x":true,"y":58}| == json ||
           %|{"json_class":"CompatJuice::Jeez","y":58,"x":true}| == json)
     dump_to_json_and_load(obj, false)
@@ -264,6 +275,7 @@ class CompatJuice < Minitest::Test
     expected = Jeez.new(true, 58)
     json = %{{"kson_class":"CompatJuice::Jeez","x":true,"y":58}}
     obj = Oj.load(json)
+
     assert_equal(expected, obj)
     Oj.default_options = { :create_id => 'json_class' }
   end
@@ -271,6 +283,7 @@ class CompatJuice < Minitest::Test
   def test_bignum_compat
     json = Oj.dump(7 ** 55, :mode => :compat)
     b = Oj.load(json, :mode => :strict)
+
     assert_equal(30226801971775055948247051683954096612865741943, b)
   end
 
@@ -287,12 +300,14 @@ class CompatJuice < Minitest::Test
     big = BigDecimal('3.14159265358979323846')
     # :decimal_class is the undocumented feature.
     json = Oj.load('3.14159265358979323846', mode: :compat, decimal_class: BigDecimal)
+
     assert_equal(big, json)
   end
 
   def test_infinity
     assert_raises(Oj::ParseError) { Oj.load('Infinity', :mode => :strict) }
     x = Oj.load('Infinity', :mode => :compat)
+
     assert_equal('Infinity', x.to_s)
   end
 
@@ -301,6 +316,7 @@ class CompatJuice < Minitest::Test
     t = Time.new(2015, 1, 5, 21, 37, 7.123456, -8 * 3600)
     expect = '"' + t.to_s + '"'
     json = Oj.dump(t)
+
     assert_equal(expect, json)
   end
 
@@ -336,6 +352,7 @@ class CompatJuice < Minitest::Test
 }
     input = StringIO.new(json)
     obj = Oj.compat_load(input)
+
     assert_equal({ 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}, obj)
   end
 
@@ -352,6 +369,7 @@ class CompatJuice < Minitest::Test
     f = File.new(filename)
     obj = Oj.compat_load(f)
     f.close()
+
     assert_equal({ 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}, obj)
   end
 
@@ -364,6 +382,7 @@ class CompatJuice < Minitest::Test
 }
 }
     obj = Oj.compat_load(json, :symbol_keys => true)
+
     assert_equal({ :x => true, :y => 58, :z => [1, 2, 3]}, obj)
   end
 
@@ -377,6 +396,7 @@ class CompatJuice < Minitest::Test
 ]}
 }
     obj = Oj.compat_load(json)
+
     assert_equal({ 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}, obj)
   end
 
@@ -387,6 +407,7 @@ class CompatJuice < Minitest::Test
   "z": [1,2,3]}
 }
     obj = Oj.compat_load(json)
+
     assert_equal({ 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}, obj)
   end
 
@@ -400,6 +421,7 @@ class CompatJuice < Minitest::Test
 }
 }
     obj = Oj.compat_load(json)
+
     assert_equal({ 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}, obj)
   end
 
@@ -413,6 +435,7 @@ class CompatJuice < Minitest::Test
   # A child to_json should not be called.
   def test_json_object_child
     obj = { "child" => Jeez.new(true, 58) }
+
     assert_equal('{"child":{"json_class":"CompatJuice::Jeez","x":true,"y":58}}', Oj.dump(obj))
   end
 
@@ -425,6 +448,7 @@ class CompatJuice < Minitest::Test
     expected = Jeez.new(true, 58)
     json = Oj.to_json(expected)
     obj = Oj.compat_load(json, :create_additions => true)
+
     assert_equal(expected, obj)
   end
 
@@ -436,6 +460,7 @@ class CompatJuice < Minitest::Test
       assert_equal("ArgumentError", e.class().name)
       return
     end
+
     assert(false, "*** expected an exception")
   end
 
@@ -443,8 +468,10 @@ class CompatJuice < Minitest::Test
     expected = Jeez.new(true, 58)
     json = Oj.to_json(expected)
     obj = Oj.compat_load(json, :class_cache => true, :create_additions => true)
+
     assert_equal(expected, obj)
     obj = Oj.compat_load(json, :class_cache => false, :create_additions => true)
+
     assert_equal(expected, obj)
   end
 
@@ -453,6 +480,7 @@ class CompatJuice < Minitest::Test
     json = Oj.to_json(expected)
     json.gsub!('json_class', '_class_')
     obj = Oj.compat_load(json, :create_id => "_class_", :create_additions => true)
+
     assert_equal(expected, obj)
   end
 
@@ -460,16 +488,19 @@ class CompatJuice < Minitest::Test
     expected = One::Two::Three::Deep.new()
     json = Oj.to_json(expected)
     obj = Oj.compat_load(json, :create_additions => true)
+
     assert_equal(expected, obj)
   end
 
   def test_range
     json = Oj.dump(1..7)
+
     assert_equal('"1..7"', json)
   end
 
   def test_arg_passing
     json = Oj.to_json(Argy.new(), :max_nesting=> 40)
+
     assert_equal(%|{"args":"[{:max_nesting=>40}]"}|, json)
   end
 
@@ -487,14 +518,17 @@ class CompatJuice < Minitest::Test
 
   def test_parse_to_s
     s = Stringy.new
+
     assert_equal([1, 2], Oj.load(s, :mode => :compat))
   end
 
   def test_parse_large_string
     error = assert_raises() { Oj.load(%|{"a":"aaaaaaaaaa\0aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}|) }
+
     assert_includes(error.message, 'NULL byte in string')
 
     error = assert_raises() { Oj.load(%|{"a":"aaaaaaaaaaaaaaaaaaaa                       }|) }
+
     assert_includes(error.message, 'quoted string not terminated')
 
     json =<<~JSON
@@ -509,9 +543,11 @@ class CompatJuice < Minitest::Test
   def test_parse_large_escaped_string
     invalid_json = %|{"a":\"aaaa\\nbbbb\\rcccc\\tddd\\feee\\bf\/\\\\\\u3074\\u30fc\\u305f\\u30fc                             }|
     error = assert_raises() { Oj.load(invalid_json) }
+
     assert_includes(error.message, 'quoted string not terminated')
 
     json = "\"aaaa\\nbbbb\\rcccc\\tddd\\feee\\bf\/\\\\\\u3074\\u30fc\\u305f\\u30fc             \""
+
     assert_equal("aaaa\nbbbb\rcccc\tddd\feee\bf/\\ぴーたー             ", Oj.load(json))
   end
 

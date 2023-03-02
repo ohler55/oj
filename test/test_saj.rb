@@ -67,6 +67,7 @@ class SajTest < Minitest::Test
     handler = AllSaj.new()
     json = %{null}
     Oj.saj_parse(handler, json)
+
     assert_equal([[:add_value, nil, nil]], handler.calls)
   end
 
@@ -74,6 +75,7 @@ class SajTest < Minitest::Test
     handler = AllSaj.new()
     json = %{true}
     Oj.saj_parse(handler, json)
+
     assert_equal([[:add_value, true, nil]], handler.calls)
   end
 
@@ -81,6 +83,7 @@ class SajTest < Minitest::Test
     handler = AllSaj.new()
     json = %{false}
     Oj.saj_parse(handler, json)
+
     assert_equal([[:add_value, false, nil]], handler.calls)
   end
 
@@ -88,6 +91,7 @@ class SajTest < Minitest::Test
     handler = AllSaj.new()
     json = %{"a string"}
     Oj.saj_parse(handler, json)
+
     assert_equal([[:add_value, 'a string', nil]], handler.calls)
   end
 
@@ -95,6 +99,7 @@ class SajTest < Minitest::Test
     handler = AllSaj.new()
     json = %{12345}
     Oj.saj_parse(handler, json)
+
     assert_equal([[:add_value, 12345, nil]], handler.calls)
   end
 
@@ -102,6 +107,7 @@ class SajTest < Minitest::Test
     handler = AllSaj.new()
     json = %{12345.6789}
     Oj.saj_parse(handler, json)
+
     assert_equal([[:add_value, 12345.6789, nil]], handler.calls)
   end
 
@@ -109,6 +115,7 @@ class SajTest < Minitest::Test
     handler = AllSaj.new()
     json = %{12345.6789e7}
     Oj.saj_parse(handler, json)
+
     assert_equal(1, handler.calls.size)
     assert_equal(:add_value, handler.calls[0][0])
     assert_equal((12345.6789e7 * 10000).to_i, (handler.calls[0][1] * 10000).to_i)
@@ -118,6 +125,7 @@ class SajTest < Minitest::Test
     handler = AllSaj.new()
     json = %{[]}
     Oj.saj_parse(handler, json)
+
     assert_equal([[:array_start, nil],
                   [:array_end, nil]], handler.calls)
   end
@@ -126,6 +134,7 @@ class SajTest < Minitest::Test
     handler = AllSaj.new()
     json = %{[true,false]}
     Oj.saj_parse(handler, json)
+
     assert_equal([[:array_start, nil],
                   [:add_value, true, nil],
                   [:add_value, false, nil],
@@ -136,6 +145,7 @@ class SajTest < Minitest::Test
     handler = AllSaj.new()
     json = %{{}}
     Oj.saj_parse(handler, json)
+
     assert_equal([[:hash_start, nil],
                   [:hash_end, nil]], handler.calls)
   end
@@ -144,6 +154,7 @@ class SajTest < Minitest::Test
     handler = AllSaj.new()
     json = %{{"one":true,"two":false}}
     Oj.saj_parse(handler, json)
+
     assert_equal([[:hash_start, nil],
                   [:add_value, true, 'one'],
                   [:add_value, false, 'two'],
@@ -153,6 +164,7 @@ class SajTest < Minitest::Test
   def test_full
     handler = AllSaj.new()
     Oj.saj_parse(handler, $json)
+
     assert_equal([[:hash_start, nil],
                   [:array_start, 'array'],
                   [:hash_start, nil],
@@ -177,8 +189,10 @@ class SajTest < Minitest::Test
     handler = AllSaj.new()
     json = %{12345xyz}
     Oj.saj_parse(handler, json)
+
     assert_equal([:add_value, 12345, nil], handler.calls.first)
     type, message, line, column = handler.calls.last
+
     assert_equal([:error, 1, 6], [type, line, column])
     assert_match(%r{invalid format, extra characters at line 1, column 6 \[(?:[A-Za-z]:\/)?(?:[a-z\.]+/)*saj\.c:\d+\]}, message)
   end

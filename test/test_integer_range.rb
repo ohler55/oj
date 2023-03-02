@@ -25,12 +25,14 @@ class IntegerRangeTest < Minitest::Test
   def test_range
     test = {s: 0, s2: -1, s3: 1, u: -2, u2: 2, u3: 9007199254740993}
     exp = '{"s":0,"s2":-1,"s3":1,"u":"-2","u2":"2","u3":"9007199254740993"}'
+
     assert_equal(exp, Oj.dump(test, integer_range: (-1..1)))
   end
 
   def test_bignum
     test = {u: -10000000000000000000, u2: 10000000000000000000}
     exp = '{"u":"-10000000000000000000","u2":"10000000000000000000"}'
+
     assert_equal(exp, Oj.dump(test, integer_range: (-1..1)))
   end
 
@@ -43,6 +45,7 @@ class IntegerRangeTest < Minitest::Test
     end
 
     exp = '{":safe":0,":unsafe":"9007199254740993"}'
+
     [:object].each do |mode|
       assert_equal(exp, Oj.dump(test, mode: mode, integer_range: (-1..1)), "Invalid mode #{mode}")
     end
@@ -57,6 +60,7 @@ class IntegerRangeTest < Minitest::Test
     end
 
     exp = '{":safe":0,":unsafe":10000000000000000000}'
+
     [:object].each do |mode|
       assert_equal(exp, Oj.dump(test, mode: mode), "Invalid mode #{mode}")
     end

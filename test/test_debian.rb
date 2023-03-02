@@ -39,6 +39,7 @@ class DebJuice < Minitest::Test
     Oj.default_options = { :mode => :compat, :class_cache => true, :use_as_json => true }
     obj = Orange.new(true, 58)
     json = Oj.dump(obj, :indent => 2)
+
     assert(!json.nil?)
     dump_and_load(obj, true)
   end
@@ -46,6 +47,7 @@ class DebJuice < Minitest::Test
   def dump_and_load(obj, trace=false)
     json = Oj.dump(obj, :indent => 2)
     loaded = Oj.load(json);
+
     assert_equal(obj, loaded)
     loaded
   end

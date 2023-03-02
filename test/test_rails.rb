@@ -17,9 +17,11 @@ class RailsJuice < Minitest::Test
     assert_equal('0.123e3', json.downcase)
 
     json = Oj.dump(bd, mode: :rails, bigdecimal_as_decimal: false)
+
     assert_equal('"0.123e3"', json.downcase)
 
     json = Oj.dump(bd, mode: :rails, bigdecimal_as_decimal: true)
+
     assert_equal('0.123e3', json.downcase)
   end
 

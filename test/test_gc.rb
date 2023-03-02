@@ -54,6 +54,7 @@ class GCTest < Minitest::Test
 
     50.times do
       data = Oj.load(json)
+
       assert_equal(json, Oj.dump(data))
     end
   end

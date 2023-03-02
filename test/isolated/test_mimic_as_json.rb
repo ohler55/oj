@@ -31,6 +31,7 @@ class ObjectFolder < Minitest::Test
     Oj.mimic_JSON()
     raccoon = Raccoon.new('Rocket')
     json = raccoon.to_json()
+
     assert_equal(json, '{"name":"Rocket"}')
 
     json = raccoon.to_json(:occupation => 'bounty hunter')

@@ -96,6 +96,7 @@ class SharedMimicTest < Minitest::Test
   def test_dump_io
     s = StringIO.new()
     json = JSON.dump([1, true, nil, @time], s)
+
     assert_equal(s, json)
     if $rails_monkey
       assert_equal(%{[1,true,null,#{@expected_time_string}]}, s.string)
@@ -122,6 +123,7 @@ class SharedMimicTest < Minitest::Test
       end
     else
       j = '"' + o.to_s.gsub('"', '\\"') + '"'
+
       assert_equal(j, json)
     end
   end
@@ -130,12 +132,14 @@ class SharedMimicTest < Minitest::Test
   def test_load_string
     json = %{{"a":1,"b":[true,false]}}
     obj = JSON.load(json)
+
     assert_equal({ 'a' => 1, 'b' => [true, false]}, obj)
   end
 
   def test_load_io
     json = %{{"a":1,"b":[true,false]}}
     obj = JSON.load(StringIO.new(json))
+
     assert_equal({ 'a' => 1, 'b' => [true, false]}, obj)
   end
 
@@ -149,6 +153,7 @@ class SharedMimicTest < Minitest::Test
       p = Proc.new {|x| children << x }
       obj = JSON.load(json, p)
     end
+
     assert_equal({ 'a' => 1, 'b' => [true, false]}, obj)
     assert([1, true, false, [true, false], { 'a' => 1, 'b' => [true, false]}] == children ||
            [true, false, [true, false], 1, { 'a' => 1, 'b' => [true, false]}] == children,
@@ -157,6 +162,7 @@ class SharedMimicTest < Minitest::Test
 
   def test_parse_with_quirks_mode
     json = %{null}
+
     assert_nil(JSON.parse(json, :quirks_mode => true))
     assert_raises(JSON::ParserError) { JSON.parse(json, :quirks_mode => false) }
     assert_raises(JSON::ParserError) { JSON.parse(json) }
@@ -172,17 +178,20 @@ class SharedMimicTest < Minitest::Test
   def test_bracket_load
     json = %{{"a":1,"b":[true,false]}}
     obj = JSON[json]
+
     assert_equal({ 'a' => 1, 'b' => [true, false]}, obj)
   end
 
   def test_bracket_dump
     json = JSON[[1, true, nil]]
+
     assert_equal(%{[1,true,null]}, json)
   end
 
 # generate
   def test_generate
     json = JSON.generate({ 'a' => 1, 'b' => [true, false]})
+
     assert(%{{"a":1,"b":[true,false]}} == json ||
            %{{"b":[true,false],"a":1}} == json)
   end
@@ -193,6 +202,7 @@ class SharedMimicTest < Minitest::Test
                          :object_nl => "#\n",
                          :space => "*",
                          :space_before => "~")
+
     assert(%{{#
 --"a"~:*1,#
 --"b"~:*[
@@ -212,6 +222,7 @@ class SharedMimicTest < Minitest::Test
 # fast_generate
   def test_fast_generate
     json = JSON.generate({ 'a' => 1, 'b' => [true, false]})
+
     assert(%{{"a":1,"b":[true,false]}} == json ||
            %{{"b":[true,false],"a":1}} == json)
   end
@@ -219,6 +230,7 @@ class SharedMimicTest < Minitest::Test
 # pretty_generate
   def test_pretty_generate
     json = JSON.pretty_generate({ 'a' => 1, 'b' => [true, false]})
+
     assert(%{{
   "a": 1,
   "b": [
@@ -239,31 +251,38 @@ class SharedMimicTest < Minitest::Test
   def test_parse
     json = %{{"a":1,"b":[true,false]}}
     obj = JSON.parse(json)
+
     assert_equal({ 'a' => 1, 'b' => [true, false]}, obj)
   end
   def test_parse_sym_names
     json = %{{"a":1,"b":[true,false]}}
     obj = JSON.parse(json, :symbolize_names => true)
+
     assert_equal({ :a => 1, :b => [true, false]}, obj)
   end
   def test_parse_additions
     jam = Jam.new(true, 58)
     json = Oj.dump(jam, :mode => :compat, :use_to_json => true)
     obj = JSON.parse(json)
+
     assert_equal(jam, obj)
     obj = JSON.parse(json, :create_additions => true)
+
     assert_equal(jam, obj)
     obj = JSON.parse(json, :create_additions => false)
+
     assert_equal({'json_class' => 'SharedMimicTest::Jam', 'x' => true, 'y' => 58}, obj)
     json.gsub!('json_class', 'kson_class')
     JSON.create_id = 'kson_class'
     obj = JSON.parse(json, :create_additions => true)
     JSON.create_id = 'json_class'
+
     assert_equal(jam, obj)
   end
   def test_parse_bang
     json = %{{"a":1,"b":[true,false]}}
     obj = JSON.parse!(json)
+
     assert_equal({ 'a' => 1, 'b' => [true, false]}, obj)
   end
 
@@ -301,6 +320,7 @@ if defined?(ActiveSupport)
     def test_activesupport_encode
       Oj.default_options= {:indent => 0}
       json = ActiveSupport::JSON.encode([1, true, nil])
+
       assert_equal(%{[1,true,null]}, json)
     end
   end # SharedMimicRailsTest
