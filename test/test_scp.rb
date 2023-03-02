@@ -76,6 +76,7 @@ end # AllHandler
 
 class Closer < AllHandler
   attr_accessor :io
+
   def initialize(io)
     super()
     @io = io

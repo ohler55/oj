@@ -19,6 +19,7 @@ require 'oj'
 module WAB
   class UUID
     attr_reader :id
+
     def initialize(id)
       @id = id.downcase
       raise Exception.new("Invalid UUID format.") if /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.match(@id).nil?

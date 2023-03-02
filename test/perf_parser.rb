@@ -134,6 +134,7 @@ perf.run($iter)
 
 class Stuff
   attr_accessor :alpha, :bravo, :charlie, :delta, :echo, :foxtrot, :golf, :hotel, :india, :juliet
+
   def self.json_create(arg)
     obj = self.new
     obj.alpha = arg["alpha"]
