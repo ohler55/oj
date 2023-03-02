@@ -126,5 +126,5 @@ puts
 
 unless $failed.empty?
   puts "The following packages were not included for the reason listed"
-  $failed.each { |tag,msg| puts "***** #{tag}: #{msg}" }
+  $failed.each { |tag, msg| puts "***** #{tag}: #{msg}" }
 end

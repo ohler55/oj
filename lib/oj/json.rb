@@ -50,7 +50,7 @@ module JSON
 
   def self.dump_default_options=(h)
     m = Oj::MimicDumpOption.new
-    h.each do |k,v|
+    h.each do |k, v|
       m[k] = v
     end
   end

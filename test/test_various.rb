@@ -318,7 +318,7 @@ class Juice < Minitest::Test
 }
     results = []
     Oj.load(json, :mode => :strict) { |x, start, len| results << [x, start, len] }
-    assert_equal([[{"a"=>1}, 0, 7], [[1,2], 7, 6], [[3,4], 13, 5], [{"b"=>2}, 18, 8]], results)
+    assert_equal([[{"a"=>1}, 0, 7], [[1, 2], 7, 6], [[3, 4], 13, 5], [{"b"=>2}, 18, 8]], results)
   end
 
   def test_multiple_json_no_callback

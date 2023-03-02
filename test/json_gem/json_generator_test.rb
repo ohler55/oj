@@ -78,7 +78,7 @@ class JSONGeneratorTest < Test::Unit::TestCase
 
   def test_generate_custom
     state = JSON::State.new(:space_before => " ", :space => "   ", :indent => "<i>", :object_nl => "\n", :array_nl => "<a_nl>")
-    json = JSON.generate({1=>{2=>3,4=>[5,6]}}, state)
+    json = JSON.generate({1=>{2=>3, 4=>[5, 6]}}, state)
     assert_equal(<<~'EOT'.chomp, json)
       {
       <i>"1" :   {

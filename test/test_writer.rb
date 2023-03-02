@@ -96,7 +96,7 @@ class OjWriter < Minitest::Test
     w.push_value(nil)
     w.push_value("a string")
     w.push_value({'a' => 65})
-    w.push_value([1,2])
+    w.push_value([1, 2])
     w.pop()
     assert_equal(%|[
   7,

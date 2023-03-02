@@ -133,9 +133,9 @@ class JSONParserTest < Test::Unit::TestCase
   end
 
   def test_parse_arrays
-    assert_equal([1,2,3], JSON.parse('[1,2,3]'))
-    assert_equal([1.2,2,3], JSON.parse('[1.2,2,3]'))
-    assert_equal([[],[[],[]]], JSON.parse('[[],[[],[]]]'))
+    assert_equal([1, 2, 3], JSON.parse('[1,2,3]'))
+    assert_equal([1.2, 2, 3], JSON.parse('[1.2,2,3]'))
+    assert_equal([[], [[], []]], JSON.parse('[[],[[],[]]]'))
     assert_equal([], JSON.parse('[]'))
     assert_equal([], JSON.parse('  [  ]  '))
     assert_equal([1], JSON.parse('[1]'))
@@ -348,7 +348,7 @@ class JSONParserTest < Test::Unit::TestCase
 
   def test_parse_array_custom_array_derived_class
     res = JSON.parse('[1,2]', :array_class => SubArray)
-    assert_equal([1,2], res)
+    assert_equal([1, 2], res)
     assert_equal(SubArray, res.class)
     assert res.shifted?
   end
@@ -356,7 +356,7 @@ class JSONParserTest < Test::Unit::TestCase
   def test_parse_array_custom_non_array_derived_class
     res = JSON.parse('[1,2]', :array_class => SubArrayWrapper)
     assert_equal(SubArrayWrapper, res.class)
-    assert_equal([1,2], res.data)
+    assert_equal([1, 2], res.data)
     assert res.shifted?
   end
 

@@ -301,7 +301,7 @@ class ObjectJuice < Minitest::Test
   end
 
   def test_array_deep
-    dump_and_load([1,[2,[3,[4,[5,[6,[7,[8,[9,[10,[11,[12,[13,[14,[15,[16,[17,[18,[19,[20]]]]]]]]]]]]]]]]]]]], false)
+    dump_and_load([1, [2, [3, [4, [5, [6, [7, [8, [9, [10, [11, [12, [13, [14, [15, [16, [17, [18, [19, [20]]]]]]]]]]]]]]]]]]]], false)
   end
 
   # Hash
@@ -653,7 +653,7 @@ class ObjectJuice < Minitest::Test
 
     json = %{{"~#x":[1,2]}}
     h = Oj.object_load(json)
-    assert_equal({'~#x' => [1,2]}, h);
+    assert_equal({'~#x' => [1, 2]}, h);
   end
 
   def test_json_struct

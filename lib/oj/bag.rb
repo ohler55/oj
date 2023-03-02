@@ -15,7 +15,7 @@ module Oj
     # @example Oj::Bag.new(:@x => 42, :@y => 57)
     # @param [Hash] args instance variable symbols and their values
     def initialize(args = {})
-      args.each do |k,v|
+      args.each do |k, v|
         self.instance_variable_set(k, v)
       end
     end
