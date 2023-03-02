@@ -5,7 +5,7 @@ module Sample
     attr_accessor :x, :y, :dx, :dy
     attr_accessor :color
     attr_accessor :thick
-    
+
     def initialize(x, y, dx, dy, thick, color)
       @x = x
       @y = y

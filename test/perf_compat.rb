@@ -60,7 +60,7 @@ module One
         def as_json(*a)
           {JSON.create_id => self.class.name, 'a' => @a, 'b' => @b, 'c' => @c }
         end
-        
+
         def to_json(*a)
           JSON.generate(as_json())
         end

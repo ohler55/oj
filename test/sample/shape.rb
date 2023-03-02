@@ -12,22 +12,21 @@ module Sample
       @border = 1
       @border_color = :black
     end
-    
+
     def left
       @bounds[0][0]
     end
-    
+
     def top
       @bounds[0][1]
     end
-    
+
     def width
       @bounds[1][0] - @bounds[0][0]
     end
-    
+
     def height
       @bounds[1][1] - @bounds[0][1]
     end
-    
   end # Shape
 end # Sample

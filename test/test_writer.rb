@@ -229,7 +229,7 @@ class OjWriter < Minitest::Test
   class SString < ::String
     alias :write :concat
   end
-  
+
   def test_stream_writer_encoding
     output = SString.new.force_encoding(::Encoding::UTF_8)
     w = Oj::StreamWriter.new(output, :indent => 0)
@@ -356,7 +356,7 @@ class OjWriter < Minitest::Test
     w.flush()
     assert_equal(%|{"a1":{},"a2":{"b":[7,true,"string"]},"a3":{}}\n|, output.string())
   end
-  
+
   def test_stream_writer_buf_flush_small
     output = StringIO.open("", "w+")
     w = Oj::StreamWriter.new(output, :indent => 0, :buffer_size => 30)

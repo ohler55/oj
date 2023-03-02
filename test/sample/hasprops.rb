@@ -9,6 +9,5 @@ module Sample
       @props = { } unless self.instance_variable_defined?(:@props)
       @props
     end
-    
   end # HasProps
 end # Sample

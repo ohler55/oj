@@ -14,7 +14,7 @@ module Sample
       @group = Etc.getgrgid(stat.gid).name
       if false
         @permissions = {
-          'user' => { 
+          'user' => {
             'read' => (0 != (stat.mode & 0x0100)),
             'write' => (0 != (stat.mode & 0x0080)),
             'execute' => (0 != (stat.mode & 0x0040))},

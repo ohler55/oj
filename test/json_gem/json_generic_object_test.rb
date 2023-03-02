@@ -19,7 +19,7 @@ class JSONGenericObjectTest < Test::Unit::TestCase
     assert_equal 2, @go[:b]
     assert_nil @go.c
     assert_nil @go[:c]
-  end 
+  end
 
   def test_generate_json
     switch_json_creatable do

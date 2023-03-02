@@ -64,7 +64,6 @@ Layout/MultilineHashBraceLayout:
     - 'test/test_strict.rb'
     - 'test/test_wab.rb'
 
-
 # Offense count: 30
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: EnforcedStyle.
@@ -217,25 +216,6 @@ Layout/SpaceInsideHashLiteralBraces:
 Layout/SpaceInsideReferenceBrackets:
   Exclude:
     - 'test/json_gem/json_generic_object_test.rb'
-
-# Offense count: 27
-# This cop supports safe autocorrection (--autocorrect).
-# Configuration parameters: AllowInHeredoc.
-Layout/TrailingWhitespace:
-  Exclude:
-    - 'lib/oj/json.rb'
-    - 'test/json_gem/json_generic_object_test.rb'
-    - 'test/perf_compat.rb'
-    - 'test/sample/change.rb'
-    - 'test/sample/dir.rb'
-    - 'test/sample/doc.rb'
-    - 'test/sample/file.rb'
-    - 'test/sample/group.rb'
-    - 'test/sample/hasprops.rb'
-    - 'test/sample/line.rb'
-    - 'test/sample/shape.rb'
-    - 'test/test_hash.rb'
-    - 'test/test_writer.rb'
 
 # Offense count: 1
 # This cop supports unsafe autocorrection (--autocorrect-all).
