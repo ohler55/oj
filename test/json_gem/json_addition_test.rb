@@ -83,7 +83,7 @@ class JSONAdditionTest < Test::Unit::TestCase
 
   def test_extended_json
     a = A.new(666)
-    assert A.json_creatable?
+    assert_predicate A, :json_creatable?
     json = JSON.generate(a)
     a_again = JSON.parse(json, :create_additions => true)
     assert_kind_of a.class, a_again
@@ -92,7 +92,7 @@ class JSONAdditionTest < Test::Unit::TestCase
 
   def test_extended_json_default
     a = A.new(666)
-    assert A.json_creatable?
+    assert_predicate A, :json_creatable?
     json = JSON.generate(a)
     a_hash = JSON.parse(json)
     assert_kind_of Hash, a_hash
@@ -100,7 +100,7 @@ class JSONAdditionTest < Test::Unit::TestCase
 
   def test_extended_json_disabled
     a = A.new(666)
-    assert A.json_creatable?
+    assert_predicate A, :json_creatable?
     json = JSON.generate(a)
     a_again = JSON.parse(json, :create_additions => true)
     assert_kind_of a.class, a_again

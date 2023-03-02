@@ -122,7 +122,7 @@ class JSONGeneratorTest < Test::Unit::TestCase
     json = JSON.generate({1=>2}, nil)
     assert_equal('{"1":2}', json)
     s = JSON.state.new
-    assert s.check_circular?
+    assert_predicate s, :check_circular?
     assert s[:check_circular?]
     h = { 1=>2 }
     h[3] = h
@@ -132,7 +132,7 @@ class JSONGeneratorTest < Test::Unit::TestCase
     a = [ 1, 2 ]
     a << a
     assert_raise(JSON::NestingError) {  JSON.generate(a, s) }
-    assert s.check_circular?
+    assert_predicate s, :check_circular?
     assert s[:check_circular?]
   end
 
@@ -312,7 +312,7 @@ class JSONGeneratorTest < Test::Unit::TestCase
         end
       end
       _, status = Process.waitpid2(pid)
-      assert status.success?
+      assert_predicate status, :success?
     end
   end
 

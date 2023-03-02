@@ -105,7 +105,7 @@ class JSONParserTest < Test::Unit::TestCase
     assert_equal_float(-3.141, JSON.parse('-3141.0e-3'))
     assert_equal_float(-3.141, JSON.parse('-3141e-3'))
     assert_raise(JSON::ParserError) { JSON.parse('NaN') }
-    assert JSON.parse('NaN', :allow_nan => true).nan?
+    assert_predicate JSON.parse('NaN', :allow_nan => true), :nan?
     assert_raise(JSON::ParserError) { JSON.parse('Infinity') }
     assert_equal 1.0/0, JSON.parse('Infinity', :allow_nan => true)
     assert_raise(JSON::ParserError) { JSON.parse('-Infinity') }
@@ -160,9 +160,9 @@ class JSONParserTest < Test::Unit::TestCase
     assert_equal_float 3.141, JSON.parse('3.141'), 1E-3
     assert_equal 2 ** 64, JSON.parse('18446744073709551616')
     assert_equal 'foo', JSON.parse('"foo"')
-    assert JSON.parse('NaN', :allow_nan => true).nan?
-    assert JSON.parse('Infinity', :allow_nan => true).infinite?
-    assert JSON.parse('-Infinity', :allow_nan => true).infinite?
+    assert_predicate JSON.parse('NaN', :allow_nan => true), :nan?
+    assert_predicate JSON.parse('Infinity', :allow_nan => true), :infinite?
+    assert_predicate JSON.parse('-Infinity', :allow_nan => true), :infinite?
     assert_raise(JSON::ParserError) { JSON.parse('[ 1, ]') }
   end
 
@@ -350,14 +350,14 @@ class JSONParserTest < Test::Unit::TestCase
     res = JSON.parse('[1,2]', :array_class => SubArray)
     assert_equal([1, 2], res)
     assert_equal(SubArray, res.class)
-    assert res.shifted?
+    assert_predicate res, :shifted?
   end
 
   def test_parse_array_custom_non_array_derived_class
     res = JSON.parse('[1,2]', :array_class => SubArrayWrapper)
     assert_equal(SubArrayWrapper, res.class)
     assert_equal([1, 2], res.data)
-    assert res.shifted?
+    assert_predicate res, :shifted?
   end
 
   def test_parse_object
@@ -410,14 +410,14 @@ class JSONParserTest < Test::Unit::TestCase
     res = JSON.parse('{"foo":"bar"}', :object_class => SubHash)
     assert_equal(SubHash, res.class)
     assert_equal({"foo" => "bar"}, res)
-    assert res.item_set?
+    assert_predicate res, :item_set?
   end
 
   def test_parse_object_custom_non_hash_derived_class
     res = JSON.parse('{"foo":"bar"}', :object_class => SubOpenStruct)
     assert_equal(SubOpenStruct, res.class)
     assert_equal "bar", res.foo
-    assert res.item_set?
+    assert_predicate res, :item_set?
   end
 
   def test_parse_generic_object
