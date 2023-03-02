@@ -460,12 +460,6 @@ Layout/TrailingWhitespace:
     - 'test/test_hash.rb'
     - 'test/test_writer.rb'
 
-# Offense count: 3
-# This cop supports safe autocorrection (--autocorrect).
-Lint/AmbiguousRegexpLiteral:
-  Exclude:
-    - 'test/json_gem/json_common_interface_test.rb'
-
 # Offense count: 1
 # This cop supports unsafe autocorrection (--autocorrect-all).
 # Configuration parameters: AllowSafeAssignment.
