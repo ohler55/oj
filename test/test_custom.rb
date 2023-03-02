@@ -449,12 +449,9 @@ class CustomJuice < Minitest::Test
   end
 
   def test_datetime_unix_zone
-    # older versions seems to have issues getting the utc offset.
-    if '2.4' <= RUBY_VERSION
-      obj = DateTime.new(2017, 1, 5, 10, 20, 30, '-0500')
-      json = Oj.dump(obj, :indent => 2, time_format: :unix_zone)
-      assert_equal('1483629630.000000000e-18000', json)
-    end
+    obj = DateTime.new(2017, 1, 5, 10, 20, 30, '-0500')
+    json = Oj.dump(obj, :indent => 2, time_format: :unix_zone)
+    assert_equal('1483629630.000000000e-18000', json)
   end
 
   def test_datetime_ruby

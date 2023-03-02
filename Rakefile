@@ -29,19 +29,14 @@ task :test_all => [:clean, :compile] do
   end
   exitcode = 1 unless status
 
-  # Verifying that json gem tests work for native implementation for Ruby 2.4.0
-  # and above only. We know the older versions do not pass the 2.4.0 unit
-  # tests.
-  if RUBY_VERSION >= '2.4'
-    Dir.glob('test/json_gem/*_test.rb').each do |file|
-      cmd = "bundle exec ruby -Itest #{file}"
-      STDOUT.syswrite "\n#{'#'*90}\n#{cmd}\n"
-      Bundler.with_original_env do
-        ENV['REAL_JSON_GEM'] = '1'
-        status = system(cmd)
-      end
-      exitcode = 1 unless status
+  Dir.glob('test/json_gem/*_test.rb').each do |file|
+    cmd = "bundle exec ruby -Itest #{file}"
+    STDOUT.syswrite "\n#{'#'*90}\n#{cmd}\n"
+    Bundler.with_original_env do
+      ENV['REAL_JSON_GEM'] = '1'
+      status = system(cmd)
     end
+    exitcode = 1 unless status
   end
 
   Rake::Task['test'].invoke

@@ -216,19 +216,14 @@ class DocTest < Minitest::Test
   end
 
   def test_type
-    if '2.4.0' <= RUBY_VERSION
-      num_class = Integer
-    else
-      num_class = Integer
-    end
     Oj::Doc.open(@json1) do |doc|
       [['/', Hash],
        ['/array', Array],
        ['/array/1', Hash],
-       ['/array/1/num', num_class],
+       ['/array/1/num', Integer],
        ['/array/1/string', String],
        ['/array/1/hash/h2/a', Array],
-       ['/array/1/hash/../num', num_class],
+       ['/array/1/hash/../num', Integer],
        ['/array/1/hash/../..', Array],
       ].each do |path, type|
         assert_equal(type, doc.type(path))
