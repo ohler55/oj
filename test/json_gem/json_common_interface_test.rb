@@ -102,8 +102,8 @@ class JSONCommonInterfaceTest < Test::Unit::TestCase
     stringio = StringIO.new(@json)
     stringio.rewind
     assert_equal @hash, JSON.load(stringio)
-    assert_equal nil, JSON.load(nil)
-    assert_equal nil, JSON.load('')
+    assert_nil JSON.load(nil)
+    assert_nil JSON.load('')
   ensure
     tempfile.close!
   end
@@ -114,11 +114,11 @@ class JSONCommonInterfaceTest < Test::Unit::TestCase
   end
 
   def test_load_null
-    assert_equal nil, JSON.load(nil, nil, :allow_blank => true)
+    assert_nil JSON.load(nil, nil, :allow_blank => true)
     assert_raise(TypeError) { JSON.load(nil, nil, :allow_blank => false) }
     assert_raise(JSON::ParserError) { JSON.load('', nil, :allow_blank => false) }
     # The next tests are added by Oj to catch additional cases.
-    assert_equal nil, JSON.load('', nil, :allow_blank => true)
+    assert_nil JSON.load('', nil, :allow_blank => true)
     assert_raise(JSON::ParserError) { JSON.load('', nil, :allow_blank => false) }
     assert_raise(JSON::ParserError) { JSON.load(' ', nil, :allow_blank => true) }
     assert_raise(JSON::ParserError) { JSON.load(' ', nil, :allow_blank => false) }

@@ -45,7 +45,7 @@ class JSONParserTest < Test::Unit::TestCase
   end
 
   def test_parse_values
-    assert_equal(nil,      JSON.parse('null'))
+    assert_nil(JSON.parse('null'))
     assert_equal(false,    JSON.parse('false'))
     assert_equal(true,     JSON.parse('true'))
     assert_equal(-23,      JSON.parse('-23'))
@@ -152,7 +152,7 @@ class JSONParserTest < Test::Unit::TestCase
     assert_raise(JSON::ParserError) { JSON.parse('') }
     assert_raise(TypeError) { JSON.parse(nil) }
     assert_raise(JSON::ParserError) { JSON.parse('  /* foo */ ') }
-    assert_equal nil, JSON.parse('null')
+    assert_nil JSON.parse('null')
     assert_equal false, JSON.parse('false')
     assert_equal true, JSON.parse('true')
     assert_equal 23, JSON.parse('23')
