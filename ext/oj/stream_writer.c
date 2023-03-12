@@ -104,10 +104,12 @@ static VALUE stream_writer_new(int argc, VALUE *argv, VALUE self) {
         if (Qnil != (v = rb_hash_lookup(argv[1], buffer_size_sym))) {
 #ifdef RUBY_INTEGER_UNIFICATION
             if (rb_cInteger != rb_obj_class(v)) {
+                OJ_R_FREE(sw);
                 rb_raise(rb_eArgError, ":buffer size must be a Integer.");
             }
 #else
             if (T_FIXNUM != rb_type(v)) {
+                OJ_R_FREE(sw);
                 rb_raise(rb_eArgError, ":buffer size must be a Integer.");
             }
 #endif
