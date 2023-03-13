@@ -640,15 +640,9 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
     } else if (float_prec_sym == k) {
         int n;
 
-#ifdef RUBY_INTEGER_UNIFICATION
         if (rb_cInteger != rb_obj_class(v)) {
             rb_raise(rb_eArgError, ":float_precision must be a Integer.");
         }
-#else
-        if (T_FIXNUM != rb_type(v)) {
-            rb_raise(rb_eArgError, ":float_precision must be a Fixnum.");
-        }
-#endif
         n = FIX2INT(v);
         if (0 >= n) {
             *copts->float_fmt = '\0';
@@ -663,15 +657,9 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
     } else if (cache_str_sym == k || cache_string_sym == k) {
         int n;
 
-#ifdef RUBY_INTEGER_UNIFICATION
         if (rb_cInteger != rb_obj_class(v)) {
             rb_raise(rb_eArgError, ":cache_str must be a Integer.");
         }
-#else
-        if (T_FIXNUM != rb_type(v)) {
-            rb_raise(rb_eArgError, ":cache_str must be a Fixnum.");
-        }
-#endif
         n = FIX2INT(v);
         if (0 >= n) {
             copts->cache_str = 0;
@@ -684,15 +672,9 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
     } else if (sec_prec_sym == k) {
         int n;
 
-#ifdef RUBY_INTEGER_UNIFICATION
         if (rb_cInteger != rb_obj_class(v)) {
             rb_raise(rb_eArgError, ":second_precision must be a Integer.");
         }
-#else
-        if (T_FIXNUM != rb_type(v)) {
-            rb_raise(rb_eArgError, ":second_precision must be a Fixnum.");
-        }
-#endif
         n = NUM2INT(v);
         if (0 > n) {
             n                   = 0;
