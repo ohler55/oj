@@ -642,7 +642,7 @@ oj_saj_parse(int argc, VALUE *argv, VALUE self) {
             s    = rb_funcall2(input, oj_string_id, 0, 0);
             len  = RSTRING_LEN(s) + 1;
             json = OJ_R_ALLOC_N(char, len);
-            strcpy(json, rb_string_value_cstr((VALUE *)&s));
+            strcpy(json, StringValueCStr(s));
 #if !IS_WINDOWS
         } else if (rb_cFile == clas && 0 == FIX2INT(rb_funcall(input, oj_pos_id, 0))) {
             int     fd = FIX2INT(rb_funcall(input, oj_fileno_id, 0));
@@ -660,7 +660,7 @@ oj_saj_parse(int argc, VALUE *argv, VALUE self) {
             s    = rb_funcall2(input, oj_read_id, 0, 0);
             len  = RSTRING_LEN(s) + 1;
             json = OJ_R_ALLOC_N(char, len);
-            strcpy(json, rb_string_value_cstr((VALUE *)&s));
+            strcpy(json, StringValueCStr(s));
         } else {
             rb_raise(rb_eArgError, "saj_parse() expected a String or IO Object.");
         }

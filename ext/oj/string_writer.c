@@ -281,7 +281,6 @@ static VALUE str_writer_new(int argc, VALUE *argv, VALUE self) {
 static VALUE str_writer_push_key(VALUE self, VALUE key) {
     StrWriter sw = (StrWriter)DATA_PTR(self);
 
-    rb_check_type(key, T_STRING);
     oj_str_writer_push_key(sw, StringValuePtr(key));
 
     return Qnil;
@@ -303,7 +302,6 @@ static VALUE str_writer_push_object(int argc, VALUE *argv, VALUE self) {
         if (Qnil == argv[0]) {
             oj_str_writer_push_object(sw, 0);
         } else {
-            rb_check_type(argv[0], T_STRING);
             oj_str_writer_push_object(sw, StringValuePtr(argv[0]));
         }
         break;
@@ -332,7 +330,6 @@ static VALUE str_writer_push_array(int argc, VALUE *argv, VALUE self) {
         if (Qnil == argv[0]) {
             oj_str_writer_push_array(sw, 0);
         } else {
-            rb_check_type(argv[0], T_STRING);
             oj_str_writer_push_array(sw, StringValuePtr(argv[0]));
         }
         break;
@@ -359,7 +356,6 @@ static VALUE str_writer_push_value(int argc, VALUE *argv, VALUE self) {
         if (Qnil == argv[1]) {
             oj_str_writer_push_value((StrWriter)DATA_PTR(self), *argv, 0);
         } else {
-            rb_check_type(argv[1], T_STRING);
             oj_str_writer_push_value((StrWriter)DATA_PTR(self), *argv, StringValuePtr(argv[1]));
         }
         break;
@@ -378,14 +374,12 @@ static VALUE str_writer_push_value(int argc, VALUE *argv, VALUE self) {
  * - *key* [_String_] the key if adding to an object in the JSON document
  */
 static VALUE str_writer_push_json(int argc, VALUE *argv, VALUE self) {
-    rb_check_type(argv[0], T_STRING);
     switch (argc) {
     case 1: oj_str_writer_push_json((StrWriter)DATA_PTR(self), StringValuePtr(*argv), 0); break;
     case 2:
         if (Qnil == argv[1]) {
             oj_str_writer_push_json((StrWriter)DATA_PTR(self), StringValuePtr(*argv), 0);
         } else {
-            rb_check_type(argv[1], T_STRING);
             oj_str_writer_push_json((StrWriter)DATA_PTR(self), StringValuePtr(*argv), StringValuePtr(argv[1]));
         }
         break;

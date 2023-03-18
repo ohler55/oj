@@ -17,7 +17,7 @@ inline static void dump_chars(const char *s, size_t size, Out out) {
 static void dump_leaf_str(Leaf leaf, Out out) {
     switch (leaf->value_type) {
     case STR_VAL: oj_dump_cstr(leaf->str, strlen(leaf->str), 0, 0, out); break;
-    case RUBY_VAL: oj_dump_cstr(rb_string_value_cstr(&leaf->value), (int)RSTRING_LEN(leaf->value), 0, 0, out); break;
+    case RUBY_VAL: oj_dump_cstr(StringValueCStr(leaf->value), (int)RSTRING_LEN(leaf->value), 0, 0, out); break;
     case COL_VAL:
     default: rb_raise(rb_eTypeError, "Unexpected value type %02x.\n", leaf->value_type); break;
     }

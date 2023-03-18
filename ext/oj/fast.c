@@ -1133,7 +1133,6 @@ static VALUE doc_open_file(VALUE clas, VALUE filename) {
     volatile VALUE obj;
     int            given = rb_block_given_p();
 
-    Check_Type(filename, T_STRING);
     path = StringValuePtr(filename);
     if (0 == (f = fopen(path, "r"))) {
         rb_raise(rb_eIOError, "%s", strerror(errno));
@@ -1305,7 +1304,6 @@ static VALUE doc_type(int argc, VALUE *argv, VALUE self) {
     VALUE       type = Qnil;
 
     if (1 <= argc) {
-        Check_Type(*argv, T_STRING);
         path = StringValuePtr(*argv);
     }
     if (0 != (leaf = get_doc_leaf(doc, path))) {
@@ -1345,7 +1343,6 @@ static VALUE doc_fetch(int argc, VALUE *argv, VALUE self) {
 
     doc = self_doc(self);
     if (1 <= argc) {
-        Check_Type(*argv, T_STRING);
         path = StringValuePtr(*argv);
         if (2 == argc) {
             val = argv[1];
@@ -1370,7 +1367,6 @@ static VALUE doc_exists(VALUE self, VALUE str) {
     Leaf leaf;
 
     doc = self_doc(self);
-    Check_Type(str, T_STRING);
     if (0 != (leaf = get_doc_leaf(doc, StringValuePtr(str)))) {
         if (NULL != leaf) {
             return Qtrue;
@@ -1407,7 +1403,6 @@ static VALUE doc_each_leaf(int argc, VALUE *argv, VALUE self) {
             memcpy(save_path, doc->where_path, sizeof(Leaf) * (wlen + 1));
         }
         if (1 <= argc) {
-            Check_Type(*argv, T_STRING);
             path = StringValuePtr(*argv);
             if ('/' == *path) {
                 doc->where = doc->where_path;
@@ -1442,7 +1437,6 @@ static VALUE doc_move(VALUE self, VALUE str) {
     const char *path;
     int         loc;
 
-    Check_Type(str, T_STRING);
     path = StringValuePtr(str);
     if ('/' == *path) {
         doc->where = doc->where_path;
@@ -1484,7 +1478,6 @@ static VALUE doc_each_child(int argc, VALUE *argv, VALUE self) {
             memcpy(save_path, doc->where_path, sizeof(Leaf) * (wlen + 1));
         }
         if (1 <= argc) {
-            Check_Type(*argv, T_STRING);
             path = StringValuePtr(*argv);
             if ('/' == *path) {
                 doc->where = doc->where_path;
@@ -1551,7 +1544,6 @@ static VALUE doc_each_value(int argc, VALUE *argv, VALUE self) {
         Leaf        leaf;
 
         if (1 <= argc) {
-            Check_Type(*argv, T_STRING);
             path = StringValuePtr(*argv);
         }
         if (0 != (leaf = get_doc_leaf(doc, path))) {
@@ -1583,11 +1575,9 @@ static VALUE doc_dump(int argc, VALUE *argv, VALUE self) {
 
     if (1 <= argc) {
         if (Qnil != *argv) {
-            Check_Type(*argv, T_STRING);
             path = StringValuePtr(*argv);
         }
         if (2 <= argc) {
-            Check_Type(argv[1], T_STRING);
             filename = StringValuePtr(argv[1]);
         }
     }

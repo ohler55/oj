@@ -1180,7 +1180,7 @@ static int opt_cb(VALUE rkey, VALUE value, VALUE ptr) {
         rkey = rb_sym2str(rkey);
         // fall through
     case RUBY_T_STRING:
-        key  = rb_string_value_ptr(&rkey);
+        key  = StringValuePtr(rkey);
         klen = RSTRING_LEN(rkey);
         break;
     default: rb_raise(rb_eArgError, "option keys must be a symbol or string");
@@ -1349,7 +1349,7 @@ static VALUE parser_missing(int argc, VALUE *argv, VALUE self) {
     case RUBY_T_SYMBOL:
         rkey = rb_sym2str(rkey);
         // fall through
-    case RUBY_T_STRING: key = rb_string_value_ptr(&rkey); break;
+    case RUBY_T_STRING: key = StringValuePtr(rkey); break;
     default: rb_raise(rb_eArgError, "option method must be a symbol or string");
     }
     if (1 < argc) {
@@ -1366,12 +1366,12 @@ static VALUE parser_missing(int argc, VALUE *argv, VALUE self) {
  * Returns the result according to the delegate of the parser.
  */
 static VALUE parser_parse(VALUE self, VALUE json) {
-    ojParser p = (ojParser)DATA_PTR(self);
+    ojParser    p   = (ojParser)DATA_PTR(self);
+    const byte *ptr = (const byte *)StringValuePtr(json);
 
-    Check_Type(json, T_STRING);
     parser_reset(p);
     p->start(p);
-    parse(p, (const byte *)rb_string_value_ptr(&json));
+    parse(p, ptr);
 
     return p->result(p);
 }
@@ -1424,8 +1424,7 @@ static VALUE parser_file(VALUE self, VALUE filename) {
     const char *path;
     int         fd;
 
-    Check_Type(filename, T_STRING);
-    path = rb_string_value_ptr(&filename);
+    path = StringValuePtr(filename);
 
     parser_reset(p);
     p->start(p);

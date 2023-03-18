@@ -1105,7 +1105,7 @@ static VALUE load_file(int argc, VALUE *argv, VALUE self) {
     if (1 > argc) {
         rb_raise(rb_eArgError, "Wrong number of arguments to load().");
     }
-    Check_Type(*argv, T_STRING);
+    path = StringValuePtr(*argv);
     parse_info_init(&pi);
     pi.options   = oj_default_options;
     pi.handler   = Qnil;
@@ -1136,7 +1136,6 @@ static VALUE load_file(int argc, VALUE *argv, VALUE self) {
             }
         }
     }
-    path = StringValuePtr(*argv);
 #ifdef _WIN32
     {
         WCHAR *wide_path;
@@ -1359,7 +1358,6 @@ static VALUE to_file(int argc, VALUE *argv, VALUE self) {
     if (3 == argc) {
         oj_parse_options(argv[2], &copts);
     }
-    Check_Type(*argv, T_STRING);
     oj_write_obj_to_file(argv[1], StringValuePtr(*argv), &copts);
 
     return Qnil;
