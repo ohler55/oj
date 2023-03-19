@@ -63,6 +63,8 @@ module Oj
       self.store(:allow_nan, true)
       self.store(:quirks_mode, oo[:quirks_mode])
       self.store(:ascii_only, (:ascii == oo[:escape_mode]))
+
+      super
     end
 
     def []=(key, value)

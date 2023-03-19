@@ -25,6 +25,8 @@ class AllSaj < Oj::Saj
 
   def initialize()
     @calls = []
+
+    super
   end
 
   def hash_start(key)
