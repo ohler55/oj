@@ -5,10 +5,6 @@ module Oj
   # that match the keys.
   class EasyHash < Hash
 
-    # Initializes the instance to an empty Hash.
-    def initialize()
-    end
-
     # Replaces the Object.respond_to?() method.
     # @param [Symbol] m method symbol
     # @param [Boolean] include_all whether to include private and protected methods in the search

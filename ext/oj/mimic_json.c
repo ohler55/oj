@@ -654,11 +654,9 @@ static VALUE mimic_recurse_proc(VALUE self, VALUE obj) {
  *
  * - *id* [_nil_|String] new create_id
  *
- * Returns [_String_] the id.
+ * Returns [_nil_|_String_] the id.
  */
 static VALUE mimic_set_create_id(VALUE self, VALUE id) {
-    Check_Type(id, T_STRING);
-
     if (NULL != oj_default_options.create_id) {
         if (oj_json_class != oj_default_options.create_id) {
             OJ_R_FREE((char *)oj_default_options.create_id);
@@ -667,10 +665,11 @@ static VALUE mimic_set_create_id(VALUE self, VALUE id) {
         oj_default_options.create_id_len = 0;
     }
     if (Qnil != id) {
-        size_t len = RSTRING_LEN(id) + 1;
+        const char *ptr = StringValueCStr(id);
+        size_t      len = RSTRING_LEN(id) + 1;
 
         oj_default_options.create_id = OJ_R_ALLOC_N(char, len);
-        strcpy((char *)oj_default_options.create_id, StringValuePtr(id));
+        strcpy((char *)oj_default_options.create_id, ptr);
         oj_default_options.create_id_len = len - 1;
     }
     return id;
