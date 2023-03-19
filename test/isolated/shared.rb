@@ -260,6 +260,8 @@ class SharedMimicTest < Minitest::Test
     obj = JSON.parse(json, :create_additions => true)
     JSON.create_id = 'json_class'
     assert_equal(jam, obj)
+
+    assert_nothing_raised { JSON.create_id = nil }
   end
   def test_parse_bang
     json = %{{"a":1,"b":[true,false]}}
