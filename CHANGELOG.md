@@ -14,7 +14,7 @@
 
 - Tracing is now a compile time option giving a 15 to 20% performance boost.
 
-- Some cleanup in teh fast parser.
+- Some cleanup in the fast parser.
 
 ## 3.13.23 - 2022-11-06
 
