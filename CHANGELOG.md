@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.14.3 - 2023-04-06
+
+- Fixed compat parse with optimized Hash when parsing a JSON::GenericObject.
+
 ## 3.14.2 - 2023-02-10
 
 - Fixed check for \0 in strings.
