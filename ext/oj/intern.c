@@ -89,8 +89,6 @@ void oj_hash_init(void) {
     VALUE cache_class = rb_define_class_under(Oj, "Cache", rb_cObject);
     rb_undef_alloc_func(cache_class);
 
-    rb_undef_alloc_func(cache_class);
-
     struct _cache *str_cache = cache_create(0, form_str, true, true);
     str_cache_obj            = Data_Wrap_Struct(cache_class, cache_mark, cache_free, str_cache);
     rb_gc_register_address(&str_cache_obj);
