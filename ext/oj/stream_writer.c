@@ -135,7 +135,6 @@ static VALUE stream_writer_new(int argc, VALUE *argv, VALUE self) {
 static VALUE stream_writer_push_key(VALUE self, VALUE key) {
     StreamWriter sw = (StreamWriter)DATA_PTR(self);
 
-    rb_check_type(key, T_STRING);
     oj_str_writer_push_key(&sw->sw, StringValuePtr(key));
     if (sw->flush_limit < sw->sw.out.cur - sw->sw.out.buf) {
         stream_writer_write(sw);
@@ -160,7 +159,6 @@ static VALUE stream_writer_push_object(int argc, VALUE *argv, VALUE self) {
         if (Qnil == argv[0]) {
             oj_str_writer_push_object(&sw->sw, 0);
         } else {
-            rb_check_type(argv[0], T_STRING);
             oj_str_writer_push_object(&sw->sw, StringValuePtr(argv[0]));
         }
         break;
@@ -189,7 +187,6 @@ static VALUE stream_writer_push_array(int argc, VALUE *argv, VALUE self) {
         if (Qnil == argv[0]) {
             oj_str_writer_push_array(&sw->sw, 0);
         } else {
-            rb_check_type(argv[0], T_STRING);
             oj_str_writer_push_array(&sw->sw, StringValuePtr(argv[0]));
         }
         break;
@@ -217,7 +214,6 @@ static VALUE stream_writer_push_value(int argc, VALUE *argv, VALUE self) {
         if (Qnil == argv[1]) {
             oj_str_writer_push_value((StrWriter)DATA_PTR(self), *argv, 0);
         } else {
-            rb_check_type(argv[1], T_STRING);
             oj_str_writer_push_value((StrWriter)DATA_PTR(self), *argv, StringValuePtr(argv[1]));
         }
         break;
@@ -241,14 +237,12 @@ static VALUE stream_writer_push_value(int argc, VALUE *argv, VALUE self) {
 static VALUE stream_writer_push_json(int argc, VALUE *argv, VALUE self) {
     StreamWriter sw = (StreamWriter)DATA_PTR(self);
 
-    rb_check_type(argv[0], T_STRING);
     switch (argc) {
     case 1: oj_str_writer_push_json((StrWriter)DATA_PTR(self), StringValuePtr(*argv), 0); break;
     case 2:
         if (Qnil == argv[1]) {
             oj_str_writer_push_json((StrWriter)DATA_PTR(self), StringValuePtr(*argv), 0);
         } else {
-            rb_check_type(argv[1], T_STRING);
             oj_str_writer_push_json((StrWriter)DATA_PTR(self), StringValuePtr(*argv), StringValuePtr(argv[1]));
         }
         break;
