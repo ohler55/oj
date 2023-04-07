@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 3.14.3 - 2023-04-06
+## 3.14.3 - 2023-04-07
 
 - Fixed compat parse with optimized Hash when parsing a JSON::GenericObject.
 
