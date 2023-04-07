@@ -116,7 +116,7 @@ static void add_num(ParseInfo pi, NumInfo ni) {
 static void hash_set_num(struct _parseInfo *pi, Val parent, NumInfo ni) {
     volatile VALUE rval = oj_num_as_value(ni);
 
-    if (!oj_use_hash_alt && rb_cHash != rb_obj_class(parent->val)) {
+    if (rb_cHash != rb_obj_class(parent->val)) {
         // The rb_hash_set would still work but the unit tests for the
         // json gem require the less efficient []= method be called to set
         // values. Even using the store method to set the values will fail

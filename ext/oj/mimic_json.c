@@ -349,12 +349,11 @@ static VALUE mimic_load(int argc, VALUE *argv, VALUE self) {
 static VALUE mimic_dump_load(int argc, VALUE *argv, VALUE self) {
     if (1 > argc) {
         rb_raise(rb_eArgError, "wrong number of arguments (0 for 1)");
-    } else if (T_STRING == rb_type(*argv)) {
-        return mimic_load(argc, argv, self);
-    } else {
-        return mimic_dump(argc, argv, self);
     }
-    return Qnil;
+    if (T_STRING == rb_type(*argv)) {
+        return mimic_load(argc, argv, self);
+    }
+    return mimic_dump(argc, argv, self);
 }
 
 static VALUE mimic_generate_core(int argc, VALUE *argv, Options copts) {
