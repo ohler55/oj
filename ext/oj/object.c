@@ -446,9 +446,7 @@ WHICH_TYPE:
                         rb_class2name(rb_obj_class(parent->val)));
         return;
     }
-    if (RB_UNLIKELY(Yes == pi->options.trace)) {
-        oj_trace_parse_call("set_string", pi, __FILE__, __LINE__, rval);
-    }
+    TRACE_PARSE_CALL(pi->options.trace, "set_string", pi, rval);
 }
 
 static void hash_set_num(ParseInfo pi, Val kval, NumInfo ni) {
@@ -517,9 +515,7 @@ WHICH_TYPE:
                         rb_class2name(rb_obj_class(parent->val)));
         return;
     }
-    if (RB_UNLIKELY(Yes == pi->options.trace)) {
-        oj_trace_parse_call("add_number", pi, __FILE__, __LINE__, rval);
-    }
+    TRACE_PARSE_CALL(pi->options.trace, "add_number", pi, rval);
 }
 
 static void hash_set_value(ParseInfo pi, Val kval, VALUE value) {
@@ -603,9 +599,7 @@ WHICH_TYPE:
                         rb_class2name(rb_obj_class(parent->val)));
         return;
     }
-    if (RB_UNLIKELY(Yes == pi->options.trace)) {
-        oj_trace_parse_call("add_value", pi, __FILE__, __LINE__, value);
-    }
+    TRACE_PARSE_CALL(pi->options.trace, "add_value", pi, value);
 }
 
 static VALUE start_hash(ParseInfo pi) {
@@ -651,32 +645,24 @@ static void array_append_cstr(ParseInfo pi, const char *str, size_t len, const c
     }
     rval = str_to_value(pi, str, len, orig);
     rb_ary_push(stack_peek(&pi->stack)->val, rval);
-    if (RB_UNLIKELY(Yes == pi->options.trace)) {
-        oj_trace_parse_call("append_string", pi, __FILE__, __LINE__, rval);
-    }
+    TRACE_PARSE_CALL(pi->options.trace, "append_string", pi, rval);
 }
 
 static void array_append_num(ParseInfo pi, NumInfo ni) {
     volatile VALUE rval = oj_num_as_value(ni);
 
     rb_ary_push(stack_peek(&pi->stack)->val, rval);
-    if (RB_UNLIKELY(Yes == pi->options.trace)) {
-        oj_trace_parse_call("append_number", pi, __FILE__, __LINE__, rval);
-    }
+    TRACE_PARSE_CALL(pi->options.trace, "append_number", pi, rval);
 }
 
 static void add_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
     pi->stack.head->val = str_to_value(pi, str, len, orig);
-    if (RB_UNLIKELY(Yes == pi->options.trace)) {
-        oj_trace_parse_call("add_string", pi, __FILE__, __LINE__, pi->stack.head->val);
-    }
+    TRACE_PARSE_CALL(pi->options.trace, "add_string", pi, pi->stack.head->val);
 }
 
 static void add_num(ParseInfo pi, NumInfo ni) {
     pi->stack.head->val = oj_num_as_value(ni);
-    if (RB_UNLIKELY(Yes == pi->options.trace)) {
-        oj_trace_parse_call("add_num", pi, __FILE__, __LINE__, pi->stack.head->val);
-    }
+    TRACE_PARSE_CALL(pi->options.trace, "add_num", pi, pi->stack.head->val);
 }
 
 void oj_set_object_callbacks(ParseInfo pi) {
