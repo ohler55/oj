@@ -937,9 +937,7 @@ static void hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, c
             break;
         default: break;
         }
-        if (RB_UNLIKELY(Yes == pi->options.trace)) {
-            oj_trace_parse_call("set_string", pi, __FILE__, __LINE__, rstr);
-        }
+        TRACE_PARSE_CALL(pi->options.trace, "set_string", pi, rstr);
     }
 }
 
@@ -998,9 +996,7 @@ static void hash_set_num(struct _parseInfo *pi, Val kval, NumInfo ni) {
         break;
     default: break;
     }
-    if (RB_UNLIKELY(Yes == pi->options.trace)) {
-        oj_trace_parse_call("set_string", pi, __FILE__, __LINE__, rval);
-    }
+    TRACE_PARSE_CALL(pi->options.trace, "set_string", pi, rval);
 }
 
 static void hash_set_value(ParseInfo pi, Val kval, VALUE value) {
@@ -1011,9 +1007,7 @@ static void hash_set_value(ParseInfo pi, Val kval, VALUE value) {
     case T_HASH: rb_hash_aset(parent->val, oj_calc_hash_key(pi, kval), value); break;
     default: break;
     }
-    if (RB_UNLIKELY(Yes == pi->options.trace)) {
-        oj_trace_parse_call("set_value", pi, __FILE__, __LINE__, value);
-    }
+    TRACE_PARSE_CALL(pi->options.trace, "set_value", pi, value);
 }
 
 static void array_append_num(ParseInfo pi, NumInfo ni) {
@@ -1021,9 +1015,7 @@ static void array_append_num(ParseInfo pi, NumInfo ni) {
     volatile VALUE rval   = oj_num_as_value(ni);
 
     rb_ary_push(parent->val, rval);
-    if (RB_UNLIKELY(Yes == pi->options.trace)) {
-        oj_trace_parse_call("append_number", pi, __FILE__, __LINE__, rval);
-    }
+    TRACE_PARSE_CALL(pi->options.trace, "append_number", pi, rval);
 }
 
 static void array_append_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
@@ -1038,9 +1030,7 @@ static void array_append_cstr(ParseInfo pi, const char *str, size_t len, const c
         }
     }
     rb_ary_push(stack_peek(&pi->stack)->val, rstr);
-    if (RB_UNLIKELY(Yes == pi->options.trace)) {
-        oj_trace_parse_call("append_string", pi, __FILE__, __LINE__, rstr);
-    }
+    TRACE_PARSE_CALL(pi->options.trace, "append_string", pi, rstr);
 }
 
 void oj_set_custom_callbacks(ParseInfo pi) {
