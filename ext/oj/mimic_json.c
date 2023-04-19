@@ -791,28 +791,48 @@ void oj_mimic_json_methods(VALUE json) {
     VALUE json_error;
     VALUE generator;
     VALUE ext;
+    VALUE verbose;
 
+    // rb_undef_method doesn't work for modules or maybe sometimes
+    // doesn't. Anyway setting verbose should hide the warning.
+    verbose = rb_gv_get("$VERBOSE");
+    rb_gv_set("$VERBOSE", Qfalse);
+
+    rb_undef_method(json, "create_id=");
     rb_define_module_function(json, "create_id=", mimic_set_create_id, 1);
+    rb_undef_method(json, "create_id");
     rb_define_module_function(json, "create_id", mimic_create_id, 0);
 
+    rb_undef_method(json, "dump");
     rb_define_module_function(json, "dump", mimic_dump, -1);
+    rb_undef_method(json, "load");
     rb_define_module_function(json, "load", mimic_load, -1);
     rb_define_module_function(json, "restore", mimic_load, -1);
+    rb_undef_method(json, "recurse_proc");
     rb_define_module_function(json, "recurse_proc", mimic_recurse_proc, 1);
+    rb_undef_method(json, "[]");
     rb_define_module_function(json, "[]", mimic_dump_load, -1);
 
+    rb_undef_method(json, "generate");
     rb_define_module_function(json, "generate", oj_mimic_generate, -1);
+    rb_undef_method(json, "fast_generate");
     rb_define_module_function(json, "fast_generate", oj_mimic_generate, -1);
+    rb_undef_method(json, "pretty_generate");
     rb_define_module_function(json, "pretty_generate", oj_mimic_pretty_generate, -1);
     // For older versions of JSON, the deprecated unparse methods.
+    rb_undef_method(json, "unparse");
     rb_define_module_function(json, "unparse", oj_mimic_generate, -1);
     rb_define_module_function(json, "fast_unparse", oj_mimic_generate, -1);
     rb_define_module_function(json, "pretty_unparse", oj_mimic_pretty_generate, -1);
 
+    rb_undef_method(json, "parse");
     rb_define_module_function(json, "parse", oj_mimic_parse, -1);
+    rb_undef_method(json, "parse!");
     rb_define_module_function(json, "parse!", mimic_parse_bang, -1);
 
+    rb_undef_method(json, "state");
     rb_define_module_function(json, "state", mimic_state, 0);
+    rb_gv_set("$VERBOSE", verbose);
 
     if (rb_const_defined_at(json, rb_intern("JSONError"))) {
         json_error = rb_const_get(json, rb_intern("JSONError"));
