@@ -995,6 +995,18 @@ void oj_dump_false(VALUE obj, int depth, Out out, bool as_ok) {
     *out->cur = '\0';
 }
 
+static const char digits_table[] = "\
+00010203040506070809\
+10111213141516171819\
+20212223242526272829\
+30313233343536373839\
+40414243444546474849\
+50515253545556575859\
+60616263646566676869\
+70717273747576777879\
+80818283848586878889\
+90919293949596979899";
+
 void oj_dump_fixnum(VALUE obj, int depth, Out out, bool as_ok) {
     char      buf[32];
     char     *b              = buf + sizeof(buf) - 1;
@@ -1017,9 +1029,19 @@ void oj_dump_fixnum(VALUE obj, int depth, Out out, bool as_ok) {
         *b-- = '"';
     }
     if (0 < num) {
-        for (; 0 < num; num /= 10, b--) {
-            *b = (num % 10) + '0';
+        while (100 <= num) {
+            unsigned idx = num % 100 * 2;
+            *b--         = digits_table[idx + 1];
+            *b--         = digits_table[idx];
+            num /= 100;
         }
+        if (num < 10) {
+            *b-- = num + '0';
+        } else {
+            *b-- = digits_table[num * 2 + 1];
+            *b-- = digits_table[num * 2];
+        }
+
         if (neg) {
             *b = '-';
         } else {
