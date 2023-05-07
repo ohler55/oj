@@ -22,6 +22,13 @@
 // #define BATCH_SIZE	(4096 / sizeof(struct _leaf) - 1)
 #define BATCH_SIZE 100
 
+// Support for compaction
+#ifdef HAVE_RB_GC_MARK_MOVABLE
+#define mark rb_gc_mark_movable
+#else
+#define mark rb_gc_mark
+#endif
+
 typedef struct _batch {
     struct _batch *next;
     int            next_avail;
@@ -684,7 +691,7 @@ static void mark_leaf(Leaf leaf) {
                 } while (e != first);
             }
             break;
-        case RUBY_VAL: rb_gc_mark_movable(leaf->value); break;
+        case RUBY_VAL: mark(leaf->value); break;
 
         default: break;
         }
@@ -695,11 +702,11 @@ static void mark_doc(void *ptr) {
     if (NULL != ptr) {
         Doc doc = (Doc)ptr;
 
-        rb_gc_mark_movable(doc->self);
+        mark(doc->self);
         mark_leaf(doc->data);
     }
 }
-
+#ifdef HAVE_RB_GC_MARK_MOVABLE
 static void compact_leaf(Leaf leaf) {
     switch (leaf->value_type) {
     case COL_VAL:
@@ -727,6 +734,7 @@ static void compact_doc(void *ptr) {
         compact_leaf(doc->data);
     }
 }
+#endif
 
 static const rb_data_type_t oj_doc_type = {
     "Oj/doc",
@@ -734,7 +742,9 @@ static const rb_data_type_t oj_doc_type = {
         mark_doc,
         free_doc_cb,
         NULL,
+#ifdef HAVE_RB_GC_MARK_MOVABLE
         compact_doc,
+#endif
     },
     0,
     0,
