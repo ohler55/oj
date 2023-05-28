@@ -25,8 +25,4 @@ Gem::Specification.new do |s|
 
   s.extra_rdoc_files = ['README.md', 'LICENSE', 'CHANGELOG.md', 'RELEASE_NOTES.md'] + Dir["pages/*.md"]
   s.rdoc_options = ['--title', 'Oj', '--main', 'README.md']
-
-  s.add_development_dependency 'minitest', '~> 5'
-  s.add_development_dependency 'rake-compiler', '>= 0.9', '< 2.0'
-  s.add_development_dependency 'test-unit', '~> 3.0'
 end
