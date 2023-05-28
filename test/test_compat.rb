@@ -111,6 +111,12 @@ class CompatJuice < Minitest::Test
     dump_and_load(1, false)
   end
 
+  def test_fixnum_array
+    data = (1..1000).to_a
+    json = Oj.dump(data, mode: :compat)
+    assert_equal("[#{data.join(',')}]", json)
+  end
+
   def test_float
     dump_and_load(0.0, false)
     dump_and_load(0.56, false)
