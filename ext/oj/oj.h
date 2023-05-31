@@ -165,6 +165,7 @@ typedef struct _options {
     char             float_fmt[7];   // float format for dumping, if empty use Ruby
     VALUE            hash_class;     // class to use in place of Hash on load
     VALUE            array_class;    // class to use in place of Array on load
+    char             skip_null_byte; // YesNo
     struct _dumpOpts dump_opts;
     struct _rxClass  str_rx;
     VALUE           *ignore;  // Qnil terminated array of classes or NULL
@@ -323,6 +324,7 @@ extern VALUE oj_max_nesting_sym;
 extern VALUE oj_object_class_sym;
 extern VALUE oj_object_nl_sym;
 extern VALUE oj_quirks_mode_sym;
+extern VALUE oj_skip_null_byte_sym;
 extern VALUE oj_space_before_sym;
 extern VALUE oj_space_sym;
 extern VALUE oj_symbolize_names_sym;
