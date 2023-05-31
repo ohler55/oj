@@ -393,6 +393,11 @@ class CustomJuice < Minitest::Test
     assert_equal(%|{"x":{"a":1}}|, json)
   end
 
+  def test_skip_null_byte
+    json = Oj.dump({ "fo\x00o" => "b\x00ar" }, :skip_null_byte => true)
+    assert_equal(%|{"foo":"bar"}|, json)
+  end
+
   def test_complex
     obj = Complex(2, 9)
     dump_and_load(obj, false, :create_id => "^o", :create_additions => true)

@@ -139,6 +139,7 @@ class Juice < Minitest::Test
       ignore_under: true,
       trace: true,
       safe: true,
+      skip_null_byte: false
     }
     Oj.default_options = alt
     #keys = alt.keys
@@ -732,6 +733,51 @@ class Juice < Minitest::Test
 
     json = Oj.dump({'x' => {'a' => 1, 'b' => nil }, 'y' => nil}, :omit_nil => true, :mode => :null)
     assert_equal(%|{"x":{"a":1}}|, json)
+  end
+
+  def test_skip_null_byte
+    Oj.default_options = { :skip_null_byte => true }
+
+    json = Oj.dump({ "fo\x00o" => "b\x00ar" })
+    assert_equal(%|{"foo":"bar"}|, json)
+
+    json = Oj.dump({ "foo\x00" => "\x00bar" })
+    assert_equal(%|{"foo":"bar"}|, json)
+
+    json = Oj.dump({ "\x00foo" => "bar\x00" })
+    assert_equal(%|{"foo":"bar"}|, json)
+
+    json = Oj.dump({ "fo\0o" => "ba\0r" })
+    assert_equal(%|{"foo":"bar"}|, json)
+
+    json = Oj.dump({ "foo\0" => "\0bar" })
+    assert_equal(%|{"foo":"bar"}|, json)
+
+    json = Oj.dump({ "\0foo" => "bar\0" })
+    assert_equal(%|{"foo":"bar"}|, json)
+
+    json = Oj.dump({ "fo\u0000o" => "ba\u0000r" })
+    assert_equal(%|{"foo":"bar"}|, json)
+
+    json = Oj.dump({ "foo\u0000" => "\u0000bar" })
+    assert_equal(%|{"foo":"bar"}|, json)
+
+    json = Oj.dump({ "\u0000foo" => "bar\u0000" })
+    assert_equal(%|{"foo":"bar"}|, json)
+
+    json = Oj.dump({ "\x00foo" => "bar\x00" }, :skip_null_byte => false)
+    assert_equal(%|{"\\u0000foo":"bar\\u0000"}|, json)
+
+    json = Oj.dump({ "\x00foo" => "bar\x00" }, :skip_null_byte => nil)
+    assert_equal(%|{"\\u0000foo":"bar\\u0000"}|, json)
+
+    Oj.default_options = { :skip_null_byte => false }
+
+    json = Oj.dump({ "\x00foo" => "bar\x00" })
+    assert_equal(%|{"\\u0000foo":"bar\\u0000"}|, json)
+
+    json = Oj.dump({ "\x00foo" => "bar\x00" }, :skip_null_byte => true)
+    assert_equal(%|{"foo":"bar"}|, json)
   end
 
   def dump_and_load(obj, trace=false)
