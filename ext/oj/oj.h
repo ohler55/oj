@@ -128,44 +128,44 @@ typedef struct _dumpOpts {
 } *DumpOpts;
 
 typedef struct _options {
-    int              indent;         // indention for dump, default 2
-    char             circular;       // YesNo
-    char             auto_define;    // YesNo
-    char             sym_key;        // YesNo
-    char             escape_mode;    // Escape_Mode
-    char             mode;           // Mode
-    char             class_cache;    // YesNo
-    char             time_format;    // TimeFormat
-    char             bigdec_as_num;  // YesNo
-    char             bigdec_load;    // BigLoad
-    char             compat_bigdec;  // boolean (0 or 1)
-    char             to_hash;        // YesNo
-    char             to_json;        // YesNo
-    char             as_json;        // YesNo
-    char             raw_json;       // YesNo
-    char             nilnil;         // YesNo
-    char             empty_string;   // YesNo
-    char             allow_gc;       // allow GC during parse
-    char             quirks_mode;    // allow single JSON values instead of documents
-    char             allow_invalid;  // YesNo - allow invalid unicode
-    char             create_ok;      // YesNo allow create_id
-    char             allow_nan;      // YEsyNo for parsing only
-    char             trace;          // YesNo
-    char             safe;           // YesNo
-    char             sec_prec_set;   // boolean (0 or 1)
-    char             ignore_under;   // YesNo - ignore attrs starting with _ if true in object and custom modes
-    char             cache_keys;     // YesNo
-    char             cache_str;      // string short than or equal to this are cache
-    int64_t          int_range_min;  // dump numbers below as string
-    int64_t          int_range_max;  // dump numbers above as string
-    const char      *create_id;      // 0 or string
-    size_t           create_id_len;  // length of create_id
-    int              sec_prec;       // second precision when dumping time
-    char             float_prec;     // float precision, linked to float_fmt
-    char             float_fmt[7];   // float format for dumping, if empty use Ruby
-    VALUE            hash_class;     // class to use in place of Hash on load
-    VALUE            array_class;    // class to use in place of Array on load
-    char             skip_null_byte; // YesNo
+    int              indent;          // indention for dump, default 2
+    char             circular;        // YesNo
+    char             auto_define;     // YesNo
+    char             sym_key;         // YesNo
+    char             escape_mode;     // Escape_Mode
+    char             mode;            // Mode
+    char             class_cache;     // YesNo
+    char             time_format;     // TimeFormat
+    char             bigdec_as_num;   // YesNo
+    char             bigdec_load;     // BigLoad
+    char             compat_bigdec;   // boolean (0 or 1)
+    char             to_hash;         // YesNo
+    char             to_json;         // YesNo
+    char             as_json;         // YesNo
+    char             raw_json;        // YesNo
+    char             nilnil;          // YesNo
+    char             empty_string;    // YesNo
+    char             allow_gc;        // allow GC during parse
+    char             quirks_mode;     // allow single JSON values instead of documents
+    char             allow_invalid;   // YesNo - allow invalid unicode
+    char             create_ok;       // YesNo allow create_id
+    char             allow_nan;       // YEsyNo for parsing only
+    char             trace;           // YesNo
+    char             safe;            // YesNo
+    char             sec_prec_set;    // boolean (0 or 1)
+    char             ignore_under;    // YesNo - ignore attrs starting with _ if true in object and custom modes
+    char             cache_keys;      // YesNo
+    char             cache_str;       // string short than or equal to this are cache
+    int64_t          int_range_min;   // dump numbers below as string
+    int64_t          int_range_max;   // dump numbers above as string
+    const char      *create_id;       // 0 or string
+    size_t           create_id_len;   // length of create_id
+    int              sec_prec;        // second precision when dumping time
+    char             float_prec;      // float precision, linked to float_fmt
+    char             float_fmt[7];    // float format for dumping, if empty use Ruby
+    VALUE            hash_class;      // class to use in place of Hash on load
+    VALUE            array_class;     // class to use in place of Array on load
+    char             skip_null_byte;  // YesNo
     struct _dumpOpts dump_opts;
     struct _rxClass  str_rx;
     VALUE           *ignore;  // Qnil terminated array of classes or NULL

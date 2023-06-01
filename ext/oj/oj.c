@@ -387,10 +387,11 @@ static VALUE get_def_opts(VALUE self) {
         opts,
         cache_keys_sym,
         (Yes == oj_default_options.cache_keys) ? Qtrue : ((No == oj_default_options.cache_keys) ? Qfalse : Qnil));
-    rb_hash_aset(
-        opts,
-        oj_skip_null_byte_sym,
-        (Yes == oj_default_options.skip_null_byte) ? Qtrue : ((No == oj_default_options.skip_null_byte) ? Qfalse : Qnil));
+    rb_hash_aset(opts,
+                 oj_skip_null_byte_sym,
+                 (Yes == oj_default_options.skip_null_byte)
+                     ? Qtrue
+                     : ((No == oj_default_options.skip_null_byte) ? Qfalse : Qnil));
 
     switch (oj_default_options.mode) {
     case StrictMode: rb_hash_aset(opts, mode_sym, strict_sym); break;
