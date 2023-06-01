@@ -265,6 +265,10 @@ to true.
 
 The number of digits after the decimal when dumping the seconds of time.
 
+### :skip_null_byte [Boolean]
+
+If true, null bytes in strings will be omitted when dumping.
+
 ### :space
 
 String inserted after the ':' character when dumping a JSON object. The

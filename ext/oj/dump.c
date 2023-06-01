@@ -857,6 +857,9 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
                 break;
             case '6':  // control characters
                 if (*(uint8_t *)str < 0x80) {
+                    if (0 == (uint8_t)*str && Yes == out->opts->skip_null_byte) {
+                        break;
+                    }
                     APPEND_CHARS(out->cur, "\\u00", 4);
                     dump_hex((uint8_t)*str, out);
                 } else {

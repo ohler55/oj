@@ -97,6 +97,7 @@ VALUE oj_nanosecond_sym;
 VALUE oj_object_class_sym;
 VALUE oj_quirks_mode_sym;
 VALUE oj_safe_sym;
+VALUE oj_skip_null_byte_sym;
 VALUE oj_symbolize_names_sym;
 VALUE oj_trace_sym;
 
@@ -207,6 +208,7 @@ struct _options oj_default_options = {
     "%0.15g",       // float_fmt
     Qnil,           // hash_class
     Qnil,           // array_class
+    No,             // skip_null_byte
     {
         // dump_opts
         false,      // use
@@ -299,6 +301,7 @@ struct _options oj_default_options = {
  * - *:integer_range* [_Range_] Dump integers outside range as strings.
  * - *:trace* [_true,_|_false_] Trace all load and dump calls, default is false (trace is off)
  * - *:safe* [_true,_|_false_] Safe mimic breaks JSON mimic to be safer, default is false (safe is
+ * - *:skip_null_byte* [_true_|_false_] if true null bytes in strings will be omitted when dumping
  *off)
  *
  * Return [_Hash_] all current option settings.
@@ -384,6 +387,12 @@ static VALUE get_def_opts(VALUE self) {
         opts,
         cache_keys_sym,
         (Yes == oj_default_options.cache_keys) ? Qtrue : ((No == oj_default_options.cache_keys) ? Qfalse : Qnil));
+    rb_hash_aset(opts,
+                 oj_skip_null_byte_sym,
+                 (Yes == oj_default_options.skip_null_byte)
+                     ? Qtrue
+                     : ((No == oj_default_options.skip_null_byte) ? Qfalse : Qnil));
+
     switch (oj_default_options.mode) {
     case StrictMode: rb_hash_aset(opts, mode_sym, strict_sym); break;
     case CompatMode: rb_hash_aset(opts, mode_sym, compat_sym); break;
@@ -585,6 +594,7 @@ bool set_yesno_options(VALUE key, VALUE value, Options copts) {
                                {ignore_under_sym, &copts->ignore_under},
                                {oj_create_additions_sym, &copts->create_ok},
                                {cache_keys_sym, &copts->cache_keys},
+                               {oj_skip_null_byte_sym, &copts->skip_null_byte},
                                {Qnil, 0}};
     YesNoOpt         o;
 
@@ -1967,6 +1977,8 @@ void Init_oj(void) {
     rb_gc_register_address(&oj_quirks_mode_sym);
     oj_safe_sym = ID2SYM(rb_intern("safe"));
     rb_gc_register_address(&oj_safe_sym);
+    oj_skip_null_byte_sym = ID2SYM(rb_intern("skip_null_byte"));
+    rb_gc_register_address(&oj_skip_null_byte_sym);
     oj_space_before_sym = ID2SYM(rb_intern("space_before"));
     rb_gc_register_address(&oj_space_before_sym);
     oj_space_sym = ID2SYM(rb_intern("space"));
