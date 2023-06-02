@@ -723,7 +723,6 @@ static struct _options mimic_object_to_json_options = {0,              // indent
                                                        "%0.16g",       // float_fmt
                                                        Qnil,           // hash_class
                                                        Qnil,           // array_class
-                                                       No,             // skip_null_byte
                                                        {
                                                            // dump_opts
                                                            false,     // use
@@ -739,6 +738,7 @@ static struct _options mimic_object_to_json_options = {0,              // indent
                                                            0,         // array_size
                                                            RaiseNan,  // nan_dump
                                                            false,     // omit_nil
+                                                           false,     // omit_null_byte
                                                            100,       // max_depth
                                                        },
                                                        {

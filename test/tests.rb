@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
 $LOAD_PATH << __dir__
 @oj_dir = File.dirname(File.expand_path(__dir__))
@@ -24,7 +25,7 @@ require 'test_integer_range'
 
 at_exit do
   require 'helper'
-  if '3.1.0' <= RUBY_VERSION && !(RbConfig::CONFIG['host_os'] =~ /(mingw|mswin)/)
+  if '3.1.0' <= RUBY_VERSION && RbConfig::CONFIG['host_os'] !~ /(mingw|mswin)/
     # Oj::debug_odd("teardown before GC.verify_compaction_references")
     verify_gc_compaction
     # Oj::debug_odd("teardown after GC.verify_compaction_references")

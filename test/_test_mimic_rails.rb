@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
-$LOAD_PATH << File.dirname(__FILE__)
+$LOAD_PATH << __dir__
 
 require 'helper'
 # Oj.mimic_JSON
@@ -35,14 +36,12 @@ end
 class MimicRails < Minitest::Test
 
   def test_mimic_exception
-    begin
-      ActiveSupport::JSON.decode("{")
-      puts "Failed"
-    rescue ActiveSupport::JSON.parse_error
-      assert(true)
-    rescue Exception
-      assert(false, 'Expected a JSON::ParserError')
-    end
+    ActiveSupport::JSON.decode('{')
+    puts 'Failed'
+  rescue ActiveSupport::JSON.parse_error
+    assert(true)
+  rescue Exception
+    assert(false, 'Expected a JSON::ParserError')
   end
 
   def test_dump_string
@@ -83,11 +82,11 @@ class MimicRails < Minitest::Test
     category = Category.new(1, 'test')
     serializer = CategorySerializer.new(category)
 
-    json = serializer.to_json()
+    serializer.to_json()
     puts "*** serializer.to_json() #{serializer.to_json()}"
-    json = serializer.as_json()
+    serializer.as_json()
     puts "*** serializer.as_json() #{serializer.as_json()}"
-    json = JSON.dump(serializer)
+    JSON.dump(serializer)
     puts "*** JSON.dump(serializer) #{JSON.dump(serializer)}"
 
     puts "*** category.to_json() #{category.to_json()}"
@@ -112,13 +111,13 @@ class MimicRails < Minitest::Test
 
   def test_dump_time
     Oj.default_options= {:indent => 2}
-    now = ActiveSupport::TimeZone['America/Chicago'].parse("2014-11-01 13:20:47")
+    now = ActiveSupport::TimeZone['America/Chicago'].parse('2014-11-01 13:20:47')
     json = Oj.dump(now, mode: :object, time_format: :xmlschema)
     # puts "*** json: #{json}"
 
     oj_dump = Oj.load(json, mode: :object, time_format: :xmlschema)
     # puts "Now: #{now}\n Oj: #{oj_dump}"
-    assert_equal("2014-11-01T13:20:47-05:00", oj_dump.xmlschema)
+    assert_equal('2014-11-01T13:20:47-05:00', oj_dump.xmlschema)
   end
 
 end # MimicRails

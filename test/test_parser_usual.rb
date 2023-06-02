@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
 $LOAD_PATH << __dir__
 
@@ -66,7 +67,7 @@ class UsualTest < Minitest::Test
 
   def test_symbol_keys
     p = Oj::Parser.new(:usual)
-    assert_equal(false, p.symbol_keys)
+    refute(p.symbol_keys)
     p.symbol_keys = true
     doc = p.parse('{"a": true, "b": false}')
     assert_equal({a: true, b: false}, doc)

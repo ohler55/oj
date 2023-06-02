@@ -1,3 +1,6 @@
+# frozen_string_literal: true
+
+# Oj module is defined in oj.c.
 module Oj
 end
 

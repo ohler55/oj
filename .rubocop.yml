@@ -1,4 +1,3 @@
-inherit_from: .rubocop_todo.yml
 
 require:
   - rubocop-minitest
@@ -109,15 +108,7 @@ Layout/FirstHashElementIndentation:
 
 Layout/MultilineHashBraceLayout:
   # test are easier to read with a mix
-  Exclude:
-    - 'test/perf_simple.rb'
-    - 'test/sample/file.rb'
-    - 'test/test_compat.rb'
-    - 'test/test_custom.rb'
-    - 'test/test_null.rb'
-    - 'test/test_object.rb'
-    - 'test/test_strict.rb'
-    - 'test/test_wab.rb'
+  Enabled: false
 
 Layout/SpaceAroundEqualsInParameterDefault:
   EnforcedStyle: no_space
@@ -147,3 +138,302 @@ Metrics/ClassLength:
 
 Metrics/MethodLength:
   Enabled: false
+
+# Configuration parameters:
+Lint/UnusedMethodArgument:
+  AllowUnusedKeywordArguments: false
+  IgnoreEmptyMethods: true
+  IgnoreNotImplementedMethods: true
+
+Lint/UselessAssignment:
+  Enabled: true
+
+Lint/UselessMethodDefinition:
+  Enabled: true
+
+Metrics/CyclomaticComplexity:
+  Max: 20
+
+Metrics/PerceivedComplexity:
+  Max: 20
+
+Metrics/ModuleLength:
+  Enabled: false
+
+# Offense count: 14
+# This cop supports safe autocorrection (--autocorrect).
+Minitest/AssertEmptyLiteral:
+  Enabled: true
+
+Minitest/AssertEqual:
+  Enabled: true
+
+Minitest/AssertInDelta:
+  Enabled: true
+
+Minitest/AssertIncludes:
+  Enabled: true
+
+Minitest/AssertNil:
+  Enabled: true
+
+Minitest/AssertPredicate:
+  Enabled: true
+
+Minitest/AssertRespondTo:
+  Enabled: true
+
+Minitest/AssertTruthy:
+  Enabled: true
+
+Minitest/AssertWithExpectedArgument:
+  Enabled: true
+
+Minitest/EmptyLineBeforeAssertionMethods:
+  Enabled: false
+
+Minitest/LiteralAsActualArgument:
+  Enabled: true
+
+Minitest/MultipleAssertions:
+  Enabled: false
+
+Minitest/RefuteFalse:
+  Enabled: true
+
+Minitest/TestFileName:
+  Enabled: false
+
+Minitest/UnspecifiedException:
+  Enabled: false
+
+Minitest/UselessAssertion:
+  Enabled: false
+
+Naming/BinaryOperatorParameterName:
+  Enabled: false
+
+Naming/ConstantName:
+  Enabled: true
+
+Naming/HeredocDelimiterNaming:
+  Enabled: true
+
+Naming/MethodName:
+  EnforcedStyle: snake_case
+
+Naming/MethodParameterName:
+  Enabled: false
+
+Naming/PredicateName:
+  Enabled: true
+
+Naming/VariableNumber:
+  Enabled: false
+
+Security/Eval:
+  Enabled: true
+
+Security/JSONLoad:
+  Enabled: true
+
+Security/MarshalLoad:
+  Enabled: false
+
+Style/AccessorGrouping:
+  Enabled: false
+
+Style/Alias:
+  EnforcedStyle: prefer_alias
+
+Style/AndOr:
+  EnforcedStyle: always
+
+Style/BarePercentLiterals:
+  EnforcedStyle: bare_percent
+
+Style/BlockComments:
+  Enabled: false
+
+Style/BlockDelimiters:
+  Enabled: false
+
+Style/CaseEquality:
+  Enabled: true
+
+Style/CharacterLiteral:
+  Enabled: true
+
+Style/ClassVars:
+  Enabled: true
+
+Style/CommandLiteral:
+  EnforcedStyle: backticks
+
+Style/CommentedKeyword:
+  Enabled: false
+
+Style/ConditionalAssignment:
+  EnforcedStyle: assign_to_condition
+
+Style/DefWithParentheses:
+  Enabled: false
+
+Style/Dir:
+  Enabled: true
+
+Style/Documentation:
+  Enabled: true
+
+Style/DoubleNegation:
+  Enabled: true
+
+Style/EachForSimpleLoop:
+  Enabled: true
+
+Style/EachWithObject:
+  Enabled: true
+
+Style/EmptyCaseCondition:
+  Enabled: true
+
+Style/EmptyMethod:
+  EnforcedStyle: expanded
+
+Style/Encoding:
+  Enabled: true
+
+Style/ExponentialNotation:
+  Enabled: false
+
+Style/FileWrite:
+  Enabled: true
+
+Style/For:
+  EnforcedStyle: each
+
+Style/GlobalStdStream:
+  Enabled: true
+
+Style/GlobalVars:
+  Enabled: false
+
+Style/GuardClause:
+  Enabled: false
+
+Style/HashEachMethods:
+  Enabled: true
+
+Style/IfUnlessModifier:
+  Enabled: false
+
+Style/IfUnlessModifierOfIfUnless:
+  Enabled: true
+
+Style/InverseMethods:
+  InverseMethods: true
+  InverseBlocks: true
+
+Style/LineEndConcatenation:
+  Enabled: true
+
+Style/MissingRespondToMissing:
+  Enabled: true
+
+Style/MultilineIfModifier:
+  Enabled: true
+
+Style/MultipleComparison:
+  Enabled: false
+
+Style/MutableConstant:
+  EnforcedStyle: strict
+
+Style/NegatedIfElseCondition:
+  Enabled: true
+
+Style/NestedModifier:
+  Enabled: true
+
+Style/NumericLiterals:
+  MinDigits: 5
+
+Style/OpenStructUse:
+  Enabled: false
+
+Style/OptionalBooleanParameter:
+  Enabled: false
+
+Style/ParenthesesAroundCondition:
+  AllowSafeAssignment: true
+  AllowInMultilineConditions: true
+
+Style/PreferredHashMethods:
+  EnforcedStyle: short
+
+Style/Proc:
+  Enabled: true
+
+Style/RaiseArgs:
+  EnforcedStyle: compact
+
+Style/RedundantArgument:
+  Enabled: false
+
+Style/RedundantBegin:
+  Enabled: true
+
+Style/RedundantConstantBase:
+  Enabled: true
+
+Style/RedundantHeredocDelimiterQuotes:
+  Enabled: true
+
+Style/RedundantInitialize:
+  Enabled: true
+
+Style/RedundantInterpolation:
+  Enabled: true
+
+Style/RedundantParentheses:
+  Enabled: true
+
+Style/RedundantPercentQ:
+  Enabled: true
+
+Style/RedundantRegexpEscape:
+  Enabled: true
+
+Style/RedundantReturn:
+  Enabled: true
+
+Style/RedundantSelf:
+  Enabled: true
+
+Style/RedundantSortBy:
+  Enabled: true
+
+Style/RedundantStringEscape:
+  Enabled: true
+
+Style/RescueStandardError:
+  Enabled: false
+
+Style/SingleLineMethods:
+  Enabled: true
+
+Style/SoleNestedConditional:
+  Enabled: true
+
+Style/SpecialGlobalVars:
+  Enabled: true
+
+Style/StringConcatenation:
+  Enabled: false
+
+# Offense count: 678
+# This cop supports safe autocorrection (--autocorrect).
+# Configuration parameters: EnforcedStyle, ConsistentQuotesInMultiline.
+# SupportedStyles: single_quotes, double_quotes
+Style/StringLiterals:
+  EnforcedStyle: single_quotes

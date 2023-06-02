@@ -1,4 +1,5 @@
 #!/usr/bin/env rake
+# frozen_string_literal: true
 
 require 'bundler/gem_tasks'
 require 'rake/extensiontask'
@@ -17,13 +18,13 @@ end
 =end
 
 task :test_all => [:clean, :compile] do
-  STDOUT.flush
+  $stdout.flush
   exitcode = 0
   status = 0
 
-  cmds = "ruby test/tests.rb -v && ruby test/tests_mimic.rb -v && ruby test/tests_mimic_addition.rb -v"
+  cmds = 'ruby test/tests.rb -v && ruby test/tests_mimic.rb -v && ruby test/tests_mimic_addition.rb -v'
 
-  STDOUT.syswrite "\n#{'#'*90}\n#{cmds}\n"
+  $stdout.syswrite "\n#{'#'*90}\n#{cmds}\n"
   Bundler.with_original_env do
     status = system(cmds)
   end
@@ -31,7 +32,7 @@ task :test_all => [:clean, :compile] do
 
   Dir.glob('test/json_gem/*_test.rb').each do |file|
     cmd = "bundle exec ruby -Itest #{file}"
-    STDOUT.syswrite "\n#{'#'*90}\n#{cmd}\n"
+    $stdout.syswrite "\n#{'#'*90}\n#{cmd}\n"
     Bundler.with_original_env do
       ENV['REAL_JSON_GEM'] = '1'
       status = system(cmd)
@@ -46,7 +47,7 @@ end
 task :default => :test_all
 
 begin
-  require "rails/version"
+  require 'rails/version'
 
   Rake::TestTask.new "activesupport#{Rails::VERSION::MAJOR}" do |t|
     t.libs << 'test'
@@ -56,12 +57,13 @@ begin
   end
   Rake::Task[:test_all].enhance ["activesupport#{Rails::VERSION::MAJOR}"]
 
-  Rake::TestTask.new "activerecord" do |t|
+  Rake::TestTask.new 'activerecord' do |t|
     t.libs << 'test'
     t.pattern = 'test/activerecord/*_test.rb'
     t.warning = true
     t.verbose = true
   end
-  Rake::Task[:test_all].enhance ["activerecord"]
-rescue LoadError
+  Rake::Task[:test_all].enhance ['activerecord']
+rescue LoadError => e
+  puts "Rake failed #{e}"
 end

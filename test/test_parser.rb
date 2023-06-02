@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-# encoding: UTF-8
+# frozen_string_literal: true
 
 $LOAD_PATH << __dir__
 @oj_dir = File.dirname(File.expand_path(__dir__))

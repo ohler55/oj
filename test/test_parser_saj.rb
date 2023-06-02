@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
 $LOAD_PATH << __dir__
 
@@ -22,7 +23,7 @@ $json = %|{
 class AllSaj < Oj::Saj
   attr_accessor :calls
 
-  def initialize()
+  def initialize
     @calls = []
 
     super
@@ -57,7 +58,7 @@ end # AllSaj
 class LocSaj
   attr_accessor :calls
 
-  def initialize()
+  def initialize
     @calls = []
   end
 
@@ -127,7 +128,7 @@ class SajTest < Minitest::Test
     p = Oj::Parser.new(:saj)
     p.handler = handler
     p.parse(json)
-    assert_equal([[:add_value, 12345, nil]], handler.calls)
+    assert_equal([[:add_value, 12_345, nil]], handler.calls)
   end
 
   def test_float
@@ -136,7 +137,7 @@ class SajTest < Minitest::Test
     p = Oj::Parser.new(:saj)
     p.handler = handler
     p.parse(json)
-    assert_equal([[:add_value, 12345.6789, nil]], handler.calls)
+    assert_equal([[:add_value, 12_345.6789, nil]], handler.calls)
   end
 
   def test_float_exp
@@ -147,7 +148,7 @@ class SajTest < Minitest::Test
     p.parse(json)
     assert_equal(1, handler.calls.size)
     assert_equal(:add_value, handler.calls[0][0])
-    assert_equal((12345.6789e7 * 10000).to_i, (handler.calls[0][1] * 10000).to_i)
+    assert_equal((12_345.6789e7 * 10_000).to_i, (handler.calls[0][1] * 10_000).to_i)
   end
 
   def test_bignum
@@ -158,7 +159,7 @@ class SajTest < Minitest::Test
     p.parse(json)
     assert_equal(1, handler.calls.size)
     assert_equal(:add_value, handler.calls[0][0])
-    assert_equal(-118999, (handler.calls[0][1] * 10000).to_i)
+    assert_equal(-118_999, (handler.calls[0][1] * 10_000).to_i)
   end
 
   def test_bignum_loc
@@ -176,10 +177,10 @@ class SajTest < Minitest::Test
     p.handler = handler
     p.parse(json)
     assert_equal(6, handler.calls.size)
-    assert_equal(1_923_380, (handler.calls[1][1] * 10000).to_i)
+    assert_equal(1_923_380, (handler.calls[1][1] * 10_000).to_i)
     handler.calls[1][1] = 1_923_380
     assert_equal([[:hash_start, nil, 1, 1],
-                  [:add_value, 1923380, 'width', 2, 30],
+                  [:add_value, 1_923_380, 'width', 2, 30],
                   [:hash_start, 'xaxis', 3, 12],
                   [:add_value, 'y', 'anchor', 4, 17],
                   [:hash_end, 'xaxis', 5, 3],

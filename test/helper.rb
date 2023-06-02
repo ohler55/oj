@@ -20,8 +20,8 @@ require 'oj'
 def verify_gc_compaction
   # This method was added in Ruby 3.0.0. Calling it this way asks the GC to
   # move objects around, helping to find object movement bugs.
-  if defined?(GC.verify_compaction_references) == 'method' && !(RbConfig::CONFIG['host_os'] =~ /(mingw|mswin)/)
-    if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new("3.2.0")
+  if defined?(GC.verify_compaction_references) == 'method' && RbConfig::CONFIG['host_os'] !~ /(mingw|mswin)/
+    if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('3.2.0')
       GC.verify_compaction_references(expand_heap: true, toward: :empty)
     else
       GC.verify_compaction_references(double_heap: true, toward: :empty)
@@ -33,7 +33,7 @@ $ruby = RUBY_DESCRIPTION.split(' ')[0]
 $ruby = 'ree' if 'ruby' == $ruby && RUBY_DESCRIPTION.include?('Ruby Enterprise Edition')
 
 class Range
-  def to_hash()
-    { 'begin' => self.begin, 'end' => self.end, 'exclude_end' => self.exclude_end? }
+  def to_hash
+    { 'begin' => self.begin, 'end' => self.end, 'exclude_end' => exclude_end? }
   end
 end

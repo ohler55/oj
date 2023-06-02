@@ -1,14 +1,15 @@
 #!/usr/bin/env ruby
-# encoding: UTF-8
+# frozen_string_literal: true
 
+require 'English'
 $LOAD_PATH << '.'
-$LOAD_PATH << File.join(File.dirname(__FILE__), "../lib")
-$LOAD_PATH << File.join(File.dirname(__FILE__), "../ext")
+$LOAD_PATH << File.join(__dir__, '../lib')
+$LOAD_PATH << File.join(__dir__, '../ext')
 
 require 'oj'
 
 filename = 'tmp.json'
-File.open(filename, "w") { |f|
+File.open(filename, 'w') { |f|
   cnt = 0
   f.puts('{')
   ('a'..'z').each { |a|
@@ -25,7 +26,7 @@ File.open(filename, "w") { |f|
 }
 
 def mem
-  `ps -o rss= -p #{$$}`.to_i
+  `ps -o rss= -p #{$PROCESS_ID}`.to_i
 end
 
 Oj.default_options = { mode: :strict, cache_keys: false, cache_str: -1 }

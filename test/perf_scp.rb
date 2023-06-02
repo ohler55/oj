@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby -wW1
+# frozen_string_literal: true
 
 $LOAD_PATH << '.'
 $LOAD_PATH << File.join(__dir__, '../lib')
@@ -24,19 +25,19 @@ opts.on('-i', '--indent [Int]', Integer, 'indentation')   { |i| @indent = i }
 opts.on('-s', '--size [Int]', Integer, 'size (~Kbytes)')  { |i| @size = i }
 opts.on('-b', 'with bignum')                              { @with_bignum = true }
 opts.on('-h', '--help', 'Show this display')              { puts opts; Process.exit!(0) }
-files = opts.parse(ARGV)
+opts.parse(ARGV)
 
 @obj = {
   'a' => 'Alpha', # string
   'b' => true,    # boolean
-  'c' => 12345,   # number
-  'd' => [ true, [false, [-123456789, nil], 3.9676, ['Something else.', false], nil]], # mix it up array
+  'c' => 12_345,   # number
+  'd' => [ true, [false, [-123_456_789, nil], 3.9676, ['Something else.', false], nil]], # mix it up array
   'e' => { 'zero' => nil, 'one' => 1, 'two' => 2, 'three' => [3], 'four' => [0, 1, 2, 3, 4] }, # hash
   'f' => nil,     # nil
   'h' => { 'a' => { 'b' => { 'c' => { 'd' => {'e' => { 'f' => { 'g' => nil }}}}}}}, # deep hash, not that deep
   'i' => [[[[[[[nil]]]]]]]  # deep array, again, not that deep
 }
-@obj['g'] = 12345678901234567890123456789 if @with_bignum
+@obj['g'] = 12_345_678_901_234_567_890_123_456_789 if @with_bignum
 
 if 0 < @size
   ob = @obj
@@ -75,18 +76,18 @@ class NoHandler < Oj::ScHandler
 end # NoHandler
 
 class AllHandler < Oj::ScHandler
-  def hash_start()
-    return nil
+  def hash_start
+    nil
   end
 
-  def hash_end()
+  def hash_end
   end
 
-  def array_start()
-    return nil
+  def array_start
+    nil
   end
 
-  def array_end()
+  def array_end
   end
 
   def add_value(value)
@@ -107,12 +108,10 @@ sc_handler = AllHandler.new()
 no_handler = NoHandler.new()
 
 def capture_error(tag, orig, load_key, dump_key, &blk)
-  begin
-    obj = blk.call(orig)
-    raise "#{tag} #{dump_key} and #{load_key} did not return the same object as the original." unless orig == obj
-  rescue Exception => e
-    @failed[tag] = "#{e.class}: #{e.message}"
-  end
+  obj = blk.call(orig)
+  raise "#{tag} #{dump_key} and #{load_key} did not return the same object as the original." unless orig == obj
+rescue Exception => e
+  @failed[tag] = "#{e.class}: #{e.message}"
 end
 
 # Verify that all packages dump and load correctly and return the same Object as the original.
@@ -132,7 +131,7 @@ perf.add('Oj::Scp.all', 'all') { Oj.sc_parse(sc_handler, @json) }
 perf.add('Oj::Scp.none', 'none') { Oj.sc_parse(no_handler, @json) }
 perf.add('Oj::load', 'none') { Oj.wab_load(@json) }
 # perf.add('Yajl', 'parse') { Yajl::Parser.parse(@json) } unless @failed.has_key?('Yajl')
-perf.add('JSON::Ext', 'parse') { JSON::Ext::Parser.new(@json).parse } unless @failed.has_key?('JSON::Ext')
+perf.add('JSON::Ext', 'parse') { JSON::Ext::Parser.new(@json).parse } unless @failed.key?('JSON::Ext')
 perf.run(@iter)
 
 unless @failed.empty?

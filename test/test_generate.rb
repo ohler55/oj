@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
 $LOAD_PATH << __dir__
 @oj_dir = File.dirname(File.expand_path(__dir__))
@@ -14,7 +15,7 @@ class Generator < Minitest::Test
 
   def test_before
     json = Oj.generate({})
-    assert_equal("{}", json)
+    assert_equal('{}', json)
   end
 
 end

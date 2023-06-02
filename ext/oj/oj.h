@@ -124,6 +124,7 @@ typedef struct _dumpOpts {
     uint8_t array_size;
     char    nan_dump;  // NanDump
     bool    omit_nil;
+    bool    omit_null_byte;
     int     max_depth;
 } *DumpOpts;
 
@@ -165,7 +166,6 @@ typedef struct _options {
     char             float_fmt[7];    // float format for dumping, if empty use Ruby
     VALUE            hash_class;      // class to use in place of Hash on load
     VALUE            array_class;     // class to use in place of Array on load
-    char             skip_null_byte;  // YesNo
     struct _dumpOpts dump_opts;
     struct _rxClass  str_rx;
     VALUE           *ignore;  // Qnil terminated array of classes or NULL
@@ -200,6 +200,7 @@ typedef struct _out {
     uint32_t   hash_cnt;
     bool       allocated;
     bool       omit_nil;
+    bool       omit_null_byte;
     int        argc;
     VALUE     *argv;
     DumpCaller caller;  // used for the mimic json only

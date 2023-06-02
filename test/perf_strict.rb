@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
 $LOAD_PATH << '.'
 $LOAD_PATH << File.join(__dir__, '../lib')
@@ -10,7 +11,7 @@ require 'oj'
 
 @verbose = false
 @indent = 0
-@iter = 20000
+@iter = 20_000
 @with_bignum = false
 @with_nums = true
 @size = 0
@@ -33,14 +34,14 @@ if @with_nums
   @obj = {
     'a' => 'Alpha', # string
     'b' => true,    # boolean
-    'c' => 12345,   # number
-    'd' => [ true, [false, [-123456789, nil], 3.9676, ['Something else.', false], nil]], # mix it up array
+    'c' => 12_345,   # number
+    'd' => [ true, [false, [-123_456_789, nil], 3.9676, ['Something else.', false], nil]], # mix it up array
     'e' => { 'zero' => nil, 'one' => 1, 'two' => 2, 'three' => [3], 'four' => [0, 1, 2, 3, 4] }, # hash
     'f' => nil,     # nil
     'h' => { 'a' => { 'b' => { 'c' => { 'd' => {'e' => { 'f' => { 'g' => nil }}}}}}}, # deep hash, not that deep
     'i' => [[[[[[[nil]]]]]]]  # deep array, again, not that deep
   }
-  @obj['g'] = 12345678901234567890123456789 if @with_bignum
+  @obj['g'] = 12_345_678_901_234_567_890_123_456_789 if @with_bignum
 else
   @obj = {
     'a' => 'Alpha',
@@ -68,12 +69,10 @@ end
 @failed = {} # key is same as String used in tests later
 
 def capture_error(tag, orig, load_key, dump_key, &blk)
-  begin
-    obj = blk.call(orig)
-    raise "#{tag} #{dump_key} and #{load_key} did not return the same object as the original." unless orig == obj
-  rescue Exception => e
-    @failed[tag] = "#{e.class}: #{e.message}"
-  end
+  obj = blk.call(orig)
+  raise "#{tag} #{dump_key} and #{load_key} did not return the same object as the original." unless orig == obj
+rescue Exception => e
+  @failed[tag] = "#{e.class}: #{e.message}"
 end
 
 # Verify that all packages dump and load correctly and return the same Object as the original.
@@ -104,28 +103,28 @@ end
 puts '-' * 80
 puts 'Strict Parse Performance'
 perf = Perf.new()
-unless @failed.has_key?('JSON::Ext')
+unless @failed.key?('JSON::Ext')
   perf.add('JSON::Ext', 'parse') { JSON.parse(@json, symbolize_names: @symbolize) }
   perf.before('JSON::Ext') { JSON.parser = JSON::Ext::Parser }
 end
-unless @failed.has_key?('Oj:strict')
+unless @failed.key?('Oj:strict')
   perf.add('Oj:strict', 'strict_load') { Oj.strict_load(@json) }
   perf.add('Oj:wab', 'wab_load') { Oj.wab_load(@json) }
 end
-perf.add('Yajl', 'parse') { Yajl::Parser.parse(@json) } unless @failed.has_key?('Yajl')
+perf.add('Yajl', 'parse') { Yajl::Parser.parse(@json) } unless @failed.key?('Yajl')
 perf.run(@iter)
 
 puts '-' * 80
 puts 'Strict Dump Performance'
 perf = Perf.new()
-unless @failed.has_key?('JSON::Ext')
+unless @failed.key?('JSON::Ext')
   perf.add('JSON::Ext', 'dump') { JSON.generate(@obj) }
   perf.before('JSON::Ext') { JSON.generator = JSON::Ext::Generator }
 end
-unless @failed.has_key?('Oj:strict')
+unless @failed.key?('Oj:strict')
   perf.add('Oj:strict', 'dump') { Oj.dump(@obj) }
 end
-perf.add('Yajl', 'encode') { Yajl::Encoder.encode(@obj) } unless @failed.has_key?('Yajl')
+perf.add('Yajl', 'encode') { Yajl::Encoder.encode(@obj) } unless @failed.key?('Yajl')
 perf.run(@iter)
 
 puts

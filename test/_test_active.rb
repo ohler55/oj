@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
-$LOAD_PATH << File.dirname(__FILE__)
+$LOAD_PATH << __dir__
 %w(lib ext test).each do |dir|
   $LOAD_PATH.unshift File.expand_path("../../#{dir}", __FILE__)
 end
@@ -18,8 +19,8 @@ Oj.default_options = {mode: :compat, indent: 2}
 # ActiveRecord::Base.logger = Logger.new(STDERR)
 
 ActiveRecord::Base.establish_connection(
-  :adapter => "sqlite3",
-  :database => ":memory:"
+  :adapter => 'sqlite3',
+  :database => ':memory:'
 )
 
 ActiveRecord::Schema.define do
@@ -36,8 +37,8 @@ end
 class ActiveTest < Minitest::Test
 
   def test_active
-    User.find_or_create_by(first_name: "John", last_name: "Smith", email: "john@example.com")
-    User.find_or_create_by(first_name: "Joan", last_name: "Smith", email: "joan@example.com")
+    User.find_or_create_by(first_name: 'John', last_name: 'Smith', email: 'john@example.com')
+    User.find_or_create_by(first_name: 'Joan', last_name: 'Smith', email: 'joan@example.com')
 
     # Single instance.
     assert_equal(%|{

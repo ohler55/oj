@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
 $LOAD_PATH << __dir__
 @oj_dir = File.dirname(File.expand_path(__dir__))
@@ -21,7 +22,7 @@ module WAB
 
     def initialize(id)
       @id = id.downcase
-      raise StandardError.new("Invalid UUID format.") if /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.match(@id).nil?
+      raise StandardError.new('Invalid UUID format.') if /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.match(@id).nil?
     end
 
     def to_s
@@ -53,16 +54,16 @@ class WabJuice < Minitest::Test
 
   def test_fixnum
     dump_and_load(0, false)
-    dump_and_load(12345, false)
-    dump_and_load(-54321, false)
+    dump_and_load(12_345, false)
+    dump_and_load(-54_321, false)
     dump_and_load(1, false)
   end
 
   def test_float
     dump_and_load(0.0, false)
-    dump_and_load(12345.6789, false)
+    dump_and_load(12_345.6789, false)
     dump_and_load(70.35, false)
-    dump_and_load(-54321.012, false)
+    dump_and_load(-54_321.012, false)
     dump_and_load(1.7775, false)
     dump_and_load(2.5024, false)
     dump_and_load(2.48e16, false)
@@ -90,7 +91,7 @@ class WabJuice < Minitest::Test
   end
 
   def test_encode
-    dump_and_load("ぴーたー", false)
+    dump_and_load('ぴーたー', false)
   end
 
   def test_array
@@ -109,10 +110,10 @@ class WabJuice < Minitest::Test
     skip 'TruffleRuby causes SEGV' if RUBY_ENGINE == 'truffleruby'
 
     begin
-      n = 10000
+      n = 10_000
       Oj.wab_load(('[' * n) + (']' * n))
     rescue Exception => e
-      assert(false, e.message)
+      refute(e.message)
     end
   end
 
@@ -190,14 +191,12 @@ class WabJuice < Minitest::Test
 
   def test_io_file
     filename = File.join(__dir__, 'open_file_test.json')
-    File.open(filename, 'w') { |f|
-      f.write(%{{
+    File.write(filename, %{{
   "x":true,
   "y":58,
   "z": [1,2,3]
 }
 })
-    }
     f = File.new(filename)
     obj = Oj.wab_load(f)
     f.close()
@@ -210,13 +209,13 @@ class WabJuice < Minitest::Test
   end
 
   def test_time
-    t = Time.gm(2017, 1, 5, 23, 58, 7, 123456.789)
+    t = Time.gm(2017, 1, 5, 23, 58, 7, 123_456.789)
     json = Oj.dump(t, mode: :wab)
     assert_equal('"2017-01-05T23:58:07.123456789Z"', json)
     # must load and convert to json as the Time#== does not match identical
     # times due to the way it tracks fractional seconds.
     loaded = Oj.wab_load(json)
-    assert_equal(json, Oj.dump(loaded, mode: :wab), "json mismatch after load")
+    assert_equal(json, Oj.dump(loaded, mode: :wab), 'json mismatch after load')
   end
 
   def test_uuid

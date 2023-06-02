@@ -1,14 +1,13 @@
 #!/usr/bin/env ruby -wW1
+# frozen_string_literal: true
 
 $LOAD_PATH << '.'
 $LOAD_PATH << '../lib'
 $LOAD_PATH << '../ext'
 
-if __FILE__ == $0
-  if (i = ARGV.index('-I'))
-    x, path = ARGV.slice!(i, 2)
-    $LOAD_PATH << path
-  end
+if __FILE__ == $PROGRAM_NAME && (i = ARGV.index('-I'))
+  _, path = ARGV.slice!(i, 2)
+  $LOAD_PATH << path
 end
 
 require 'optparse'
@@ -21,22 +20,22 @@ require 'perf'
 
 opts = OptionParser.new
 
-opts.on("-r", "read")                                       { do_read = true }
-opts.on("-c", "--count [Int]", Integer, "iterations")       { |v| @iter = v }
-opts.on("-i", "--indent [Int]", Integer, "indent")          { |v| @indent = v }
-opts.on("-s", "--size [Int]", Integer, "size in Mbytes")    { |s| @size = s }
+opts.on('-r', 'read')                                       { true }
+opts.on('-c', '--count [Int]', Integer, 'iterations')       { |v| @iter = v }
+opts.on('-i', '--indent [Int]', Integer, 'indent')          { |v| @indent = v }
+opts.on('-s', '--size [Int]', Integer, 'size in Mbytes')    { |s| @size = s }
 
-opts.on("-h", "--help", "Show this display")                { puts opts; Process.exit!(0) }
-files = opts.parse(ARGV)
+opts.on('-h', '--help', 'Show this display')                { puts opts; Process.exit!(0) }
+opts.parse(ARGV)
 
 @obj = {
   'a' => 'Alpha', # string
   'b' => true,    # boolean
-  'c' => 12345,   # number
-  'd' => [ true, [false, [-123456789, nil], 3.9676, ['Something else.', false], nil]], # mix it up array
+  'c' => 12_345,   # number
+  'd' => [ true, [false, [-123_456_789, nil], 3.9676, ['Something else.', false], nil]], # mix it up array
   'e' => { 'zero' => nil, 'one' => 1, 'two' => 2, 'three' => [3], 'four' => [0, 1, 2, 3, 4] }, # hash
   'f' => nil,     # nil
-  'g' => 12345678901234567890123456789, # _bignum
+  'g' => 12_345_678_901_234_567_890_123_456_789, # _bignum
   'h' => { 'a' => { 'b' => { 'c' => { 'd' => {'e' => { 'f' => { 'g' => nil }}}}}}}, # deep hash, not that deep
   'i' => [[[[[[[nil]]]]]]]  # deep array, again, not that deep
 }
@@ -46,7 +45,7 @@ cnt = ((@size * 1024 * 1024) + json.size) / json.size
 cnt = 1 if 0 == @size
 
 filename = 'tmp.json'
-File.open(filename, "w") { |f|
+File.open(filename, 'w') { |f|
   cnt.times do
     Oj.to_stream(f, @obj, :indent => @indent)
   end

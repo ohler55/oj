@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
 $LOAD_PATH << __dir__
 
@@ -22,7 +23,7 @@ $json = %{{
 class AllSaj < Oj::Saj
   attr_accessor :calls
 
-  def initialize()
+  def initialize
     @calls = []
 
     super
@@ -96,14 +97,14 @@ class SajTest < Minitest::Test
     handler = AllSaj.new()
     json = %{12345}
     Oj.saj_parse(handler, json)
-    assert_equal([[:add_value, 12345, nil]], handler.calls)
+    assert_equal([[:add_value, 12_345, nil]], handler.calls)
   end
 
   def test_float
     handler = AllSaj.new()
     json = %{12345.6789}
     Oj.saj_parse(handler, json)
-    assert_equal([[:add_value, 12345.6789, nil]], handler.calls)
+    assert_equal([[:add_value, 12_345.6789, nil]], handler.calls)
   end
 
   def test_float_exp
@@ -112,7 +113,7 @@ class SajTest < Minitest::Test
     Oj.saj_parse(handler, json)
     assert_equal(1, handler.calls.size)
     assert_equal(:add_value, handler.calls[0][0])
-    assert_equal((12345.6789e7 * 10000).to_i, (handler.calls[0][1] * 10000).to_i)
+    assert_equal((12_345.6789e7 * 10_000).to_i, (handler.calls[0][1] * 10_000).to_i)
   end
 
   def test_array_empty
@@ -178,10 +179,10 @@ class SajTest < Minitest::Test
     handler = AllSaj.new()
     json = %{12345xyz}
     Oj.saj_parse(handler, json)
-    assert_equal([:add_value, 12345, nil], handler.calls.first)
+    assert_equal([:add_value, 12_345, nil], handler.calls.first)
     type, message, line, column = handler.calls.last
     assert_equal([:error, 1, 6], [type, line, column])
-    assert_match(%r{invalid format, extra characters at line 1, column 6 \[(?:[A-Za-z]:\/)?(?:[a-z\.]+/)*saj\.c:\d+\]}, message)
+    assert_match(%r{invalid format, extra characters at line 1, column 6 \[(?:[A-Za-z]:/)?(?:[a-z.]+/)*saj\.c:\d+\]}, message)
   end
 
 end
