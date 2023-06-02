@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -wW1
 
-$LOAD_PATH << File.join(__dir__, "../lib")
-$LOAD_PATH << File.join(__dir__, "../ext")
+$LOAD_PATH << File.join(__dir__, '../lib')
+$LOAD_PATH << File.join(__dir__, '../ext')
 
 require 'optparse'
 require 'yajl'
@@ -16,7 +16,7 @@ class Jazz
   def initialize()
     @boolean = true
     @number = 58
-    @string = "A string"
+    @string = 'A string'
     @array = [true, false, nil]
     @hash = { 'one' => 1, 'two' => 2 }
   end
@@ -53,12 +53,12 @@ $with_bignum = true
 $with_nums = true
 
 opts = OptionParser.new
-opts.on("-c", "--count [Int]", Integer, "iterations")       { |i| $iter = i }
-opts.on("-i", "--indent [Int]", Integer, "indentation")     { |i| $indent = i }
-opts.on("-o", "without objects")                            { $with_object = false }
-opts.on("-b", "without bignum")                             { $with_bignum = false }
-opts.on("-n", "without numbers")                            { $with_nums = false }
-opts.on("-h", "--help", "Show this display")                { puts opts; Process.exit!(0) }
+opts.on('-c', '--count [Int]', Integer, 'iterations')       { |i| $iter = i }
+opts.on('-i', '--indent [Int]', Integer, 'indentation')     { |i| $indent = i }
+opts.on('-o', 'without objects')                            { $with_object = false }
+opts.on('-b', 'without bignum')                             { $with_bignum = false }
+opts.on('-n', 'without numbers')                            { $with_nums = false }
+opts.on('-h', '--help', 'Show this display')                { puts opts; Process.exit!(0) }
 files = opts.parse(ARGV)
 
 if $with_nums
@@ -177,14 +177,14 @@ dt = Time.now - start
 parse_results[:ox] = dt
 puts "%d Ox.load()s in %0.3f seconds or %0.1f loads/msec" % [$iter, dt, $iter/dt/1000.0]
 
-puts "Parser results:"
+puts 'Parser results:'
 puts "gem       seconds  parses/msec  X faster than #{base_name} (higher is better)"
-parse_results.each do |name, dt|
-  if dt <= 0.0
+parse_results.each do |name, dt2|
+  if dt2 <= 0.0
     puts "#{name} failed to generate JSON"
     next
   end
-  puts "%-7s  %6.3f    %5.1f        %4.1f" % [name, dt, $iter/dt/1000.0, base_dt/dt]
+  puts "%-7s  %6.3f    %5.1f        %4.1f" % [name, dt2, $iter/dt/1000.0, base_dt/dt2]
 end
 
 puts
@@ -276,14 +276,14 @@ dt = Time.now - start
 parse_results[:ox] = dt
 puts "%d Ox.dump()s in %0.3f seconds or %0.1f dumps/msec" % [$iter, dt, $iter/dt/1000.0]
 
-puts "Parser results:"
+puts 'Parser results:'
 puts "gem       seconds  dumps/msec  X faster than #{base_name} (higher is better)"
-parse_results.each do |name, dt|
-  if dt <= 0.0
+parse_results.each do |name, dt2|
+  if dt2 <= 0.0
     puts "#{name} failed to generate JSON"
     next
   end
-  puts "%-7s  %6.3f    %5.1f       %4.1f" % [name, dt, $iter/dt/1000.0, base_dt/dt]
+  puts "%-7s  %6.3f    %5.1f       %4.1f" % [name, dt2, $iter/dt/1000.0, base_dt/dt2]
 end
 
 puts

@@ -15,21 +15,21 @@ require 'optparse'
 require 'oj'
 require 'perf'
 
-$indent = 0
-$iter = 1
-$size = 1
+@indent = 0
+@iter = 1
+@size = 1
 
 opts = OptionParser.new
 
 opts.on("-r", "read")                                       { do_read = true }
-opts.on("-c", "--count [Int]", Integer, "iterations")       { |i| $iter = i }
-opts.on("-i", "--indent [Int]", Integer, "indent")          { |i| $indent = i }
-opts.on("-s", "--size [Int]", Integer, "size in Mbytes")    { |s| $size = s }
+opts.on("-c", "--count [Int]", Integer, "iterations")       { |v| @iter = v }
+opts.on("-i", "--indent [Int]", Integer, "indent")          { |v| @indent = v }
+opts.on("-s", "--size [Int]", Integer, "size in Mbytes")    { |s| @size = s }
 
 opts.on("-h", "--help", "Show this display")                { puts opts; Process.exit!(0) }
 files = opts.parse(ARGV)
 
-$obj = {
+@obj = {
   'a' => 'Alpha', # string
   'b' => true,    # boolean
   'c' => 12345,   # number
@@ -41,18 +41,18 @@ $obj = {
   'i' => [[[[[[[nil]]]]]]]  # deep array, again, not that deep
 }
 
-json = Oj.dump($obj, :indent => $indent)
-cnt = (($size * 1024 * 1024) + json.size) / json.size
-cnt = 1 if 0 == $size
+json = Oj.dump(@obj, :indent => @indent)
+cnt = ((@size * 1024 * 1024) + json.size) / json.size
+cnt = 1 if 0 == @size
 
 filename = 'tmp.json'
 File.open(filename, "w") { |f|
   cnt.times do
-    Oj.to_stream(f, $obj, :indent => $indent)
+    Oj.to_stream(f, @obj, :indent => @indent)
   end
 }
 
-Oj.default_options = { :mode => :strict, :indent => $indent }
+Oj.default_options = { :mode => :strict, :indent => @indent }
 
 puts '-' * 80
 puts "Read from #{cnt * json.size / (1024 * 1024)} Mb file Performance"
@@ -60,4 +60,4 @@ perf = Perf.new()
 perf.add('Oj.load_file', '') { Oj.load_file(filename) }
 perf.add('Oj.load(string)', '') { Oj.load(File.read(filename)) }
 perf.add('Oj.load(file)', '') { File.open(filename, 'r') { |f| Oj.load(f) } }
-perf.run($iter)
+perf.run(@iter)

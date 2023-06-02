@@ -12,6 +12,10 @@ AllCops:
     - 'test/activesupport6/**/*'
     - 'test/activesupport7/**/*'
 
+# This rule suggests a change that will cause CI tests to fail.
+Gemspec/DevelopmentDependencies:
+  Enabled: false
+
 Style/QuotedSymbols:
   EnforcedStyle: double_quotes
 
@@ -128,4 +132,18 @@ Layout/TrailingEmptyLines:
   EnforcedStyle: final_newline
 
 Lint/EmptyBlock:
+  Enabled: false
+
+# Rescue of an Exception during a test allows all Exceptions to be
+# rescued and not just StandardError.
+Lint/RescueException:
+  Enabled: false
+
+Metrics/AbcSize:
+  Max: 200
+
+Metrics/ClassLength:
+  Enabled: false
+
+Metrics/MethodLength:
   Enabled: false

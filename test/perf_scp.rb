@@ -39,10 +39,10 @@ files = opts.parse(ARGV)
 @obj['g'] = 12345678901234567890123456789 if @with_bignum
 
 if 0 < @size
-  o = @obj
+  ob = @obj
   @obj = []
   (4 * @size).times do
-    @obj << o
+    @obj << ob
   end
 end
 
