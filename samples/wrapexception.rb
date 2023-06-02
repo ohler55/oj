@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-# encoding: UTF-8
+# frozen_string_literal: true
 
 # Ubuntu does not accept arguments to ruby when called using env. To get warnings to show up the -w options is
 # required. That can be set in the RUBYOPT environment variable.
@@ -7,8 +7,8 @@
 
 $VERBOSE = true
 
-#$: << File.join(File.dirname(__FILE__), "../lib")
-#$: << File.join(File.dirname(__FILE__), "../ext")
+# $LOAD_PATH << File.join(File.dirname(__FILE__), "../lib")
+# $LOAD_PATH << File.join(File.dirname(__FILE__), "../ext")
 
 require 'oj'
 
@@ -26,7 +26,6 @@ require 'oj'
 # the initializer. Unfortunately that means any subclass that provides a
 # different initializer can not be automatically decoded. A way around this is
 # to use a create function but this example shows an alternative.
-
 class WrapException < StandardError
   attr_reader :original
 
@@ -42,7 +41,7 @@ class WrapException < StandardError
   end
 end
 
-e = WrapException.new(RuntimeError.new("Something broke."))
+e = WrapException.new(RuntimeError.new('Something broke.'))
 
 json = Oj.dump(e, :mode => :object)
 puts "original:\n#{json}"
@@ -56,4 +55,3 @@ puts "dumped, loaded, and dumped again:\n#{Oj.dump(e2, :mode => :object)}"
 # original: {"^o":"WrapException","original":{"^o":"RuntimeError","~mesg":"Something broke.","~bt":null},"~mesg":"Something broke.","~bt":null}
 # dumped, loaded, and dumped again:
 # {"^o":"WrapException","original":{"^o":"RuntimeError","~mesg":"Something broke.","~bt":null},"~mesg":"Something broke.","~bt":null}
-

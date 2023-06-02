@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.15.0 - 2023-06-03
+
+- Added `omit_null_byte` option when dumping.
+
 ## 3.14.3 - 2023-04-07
 
 - Fixed compat parse with optimized Hash when parsing a JSON::GenericObject.

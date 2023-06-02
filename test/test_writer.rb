@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
-# encoding: utf-8
+# frozen_string_literal: false
 
-$: << File.dirname(__FILE__)
+$LOAD_PATH << __dir__
 
 require 'helper'
 
@@ -55,13 +55,13 @@ class OjWriter < Minitest::Test
   def test_string_writer_nested_object
     w = Oj::StringWriter.new(:indent => 0)
     w.push_object()
-    w.push_object("a1")
+    w.push_object('a1')
     w.pop()
-    w.push_object("a2")
-    w.push_object("b")
+    w.push_object('a2')
+    w.push_object('b')
     w.pop()
     w.pop()
-    w.push_object("a3")
+    w.push_object('a3')
     w.pop()
     w.pop()
     assert_equal(%|{"a1":{},"a2":{"b":{}},"a3":{}}\n|, w.to_s)
@@ -94,7 +94,7 @@ class OjWriter < Minitest::Test
     w.push_value(7.3)
     w.push_value(true)
     w.push_value(nil)
-    w.push_value("a string")
+    w.push_value('a string')
     w.push_value({'a' => 65})
     w.push_value([1, 2])
     w.pop()
@@ -118,10 +118,10 @@ class OjWriter < Minitest::Test
   def test_string_writer_block
     w = Oj::StringWriter.new(:indent => 0)
     w.push_object() {
-      w.push_object("a1") {
+      w.push_object('a1') {
         w.push_value(7, 'a7')
       }
-      w.push_array("a2") {
+      w.push_array('a2') {
         w.push_value('x')
         w.push_value(3)
       }
@@ -152,7 +152,7 @@ class OjWriter < Minitest::Test
       assert(true)
       return
     end
-    assert(false, "*** expected an exception")
+    assert(false, '*** expected an exception')
   end
 
   def test_string_writer_array_key
@@ -166,7 +166,7 @@ class OjWriter < Minitest::Test
       assert(true)
       return
     end
-    assert(false, "*** expected an exception")
+    assert(false, '*** expected an exception')
   end
 
   def test_string_writer_pop_with_key
@@ -177,7 +177,7 @@ class OjWriter < Minitest::Test
       assert(true)
       return
     end
-    assert(false, "*** expected an exception")
+    assert(false, '*** expected an exception')
   end
 
   def test_string_writer_obj_no_key
@@ -189,7 +189,7 @@ class OjWriter < Minitest::Test
       assert(true)
       return
     end
-    assert(false, "*** expected an exception")
+    assert(false, '*** expected an exception')
   end
 
   def test_string_writer_deep
@@ -208,9 +208,9 @@ class OjWriter < Minitest::Test
   def test_string_writer_pop_all
     w = Oj::StringWriter.new(:indent => 0)
     w.push_object()
-    w.push_object("a1")
+    w.push_object('a1')
     w.pop()
-    w.push_array("a2")
+    w.push_array('a2')
     w.push_value(3)
     w.push_array()
     w.pop_all()
@@ -228,23 +228,23 @@ class OjWriter < Minitest::Test
   # Stream Writer
 
   class SString < ::String
-    alias :write :concat
+    alias write concat
   end
-  
+
   def test_stream_writer_encoding
     output = SString.new.force_encoding(::Encoding::UTF_8)
     w = Oj::StreamWriter.new(output, :indent => 0)
     # Oddly enough, when pushing ASCII characters with UTF-8 encoding or even
     # ASCII-8BIT does not change the output encoding. Pushing any non-ASCII no
     # matter what the encoding changes the output encoding to ASCII-8BIT.
-    x = "香港" # Hong Kong
+    x = '香港' # Hong Kong
     x = x.force_encoding('ASCII-8BIT')
     w.push_value(x)
     assert_equal(::Encoding::UTF_8, output.encoding)
   end
 
   def test_stream_writer_empty_array
-    output = StringIO.open("", "w+")
+    output = StringIO.open('', 'w+')
     w = Oj::StreamWriter.new(output, :indent => 0)
     w.push_array()
     w.pop()
@@ -252,19 +252,19 @@ class OjWriter < Minitest::Test
   end
 
   def test_stream_writer_mixed_stringio
-    output = StringIO.open("", "w+")
+    output = StringIO.open('', 'w+')
     w = Oj::StreamWriter.new(output, :indent => 0)
     w.push_object()
-    w.push_object("a1")
+    w.push_object('a1')
     w.pop()
-    w.push_object("a2")
-    w.push_array("b")
+    w.push_object('a2')
+    w.push_array('b')
     w.push_value(7)
     w.push_value(true)
-    w.push_value("string")
+    w.push_value('string')
     w.pop()
     w.pop()
-    w.push_object("a3")
+    w.push_object('a3')
     w.pop()
     w.pop()
     result = output.string()
@@ -272,20 +272,20 @@ class OjWriter < Minitest::Test
   end
 
   def test_stream_writer_mixed_file
-    filename = File.join(File.dirname(__FILE__), 'open_file_test.json')
-    File.open(filename, "w") do |f|
+    filename = File.join(__dir__, 'open_file_test.json')
+    File.open(filename, 'w') do |f|
       w = Oj::StreamWriter.new(f, :indent => 0)
       w.push_object()
-      w.push_object("a1")
+      w.push_object('a1')
       w.pop()
-      w.push_object("a2")
-      w.push_array("b")
+      w.push_object('a2')
+      w.push_array('b')
       w.push_value(7)
       w.push_value(true)
-      w.push_value("string")
+      w.push_value('string')
       w.pop()
       w.pop()
-      w.push_object("a3")
+      w.push_object('a3')
       w.pop()
       w.pop()
     end
@@ -294,7 +294,7 @@ class OjWriter < Minitest::Test
   end
 
   def test_stream_writer_nested_key_object
-    output = StringIO.open("", "w+")
+    output = StringIO.open('', 'w+')
     w = Oj::StreamWriter.new(output, :indent => 0)
     w.push_object()
     w.push_key('a1')
@@ -316,16 +316,16 @@ class OjWriter < Minitest::Test
 
   def push_stuff(w, pop_all=true)
     w.push_object()
-    w.push_object("a1")
+    w.push_object('a1')
     w.pop()
-    w.push_object("a2")
-    w.push_array("b")
+    w.push_object('a2')
+    w.push_array('b')
     w.push_value(7)
     w.push_value(true)
-    w.push_value("string")
+    w.push_value('string')
     w.pop()
     w.pop()
-    w.push_object("a3")
+    w.push_object('a3')
     if pop_all
       w.pop_all()
     else
@@ -335,31 +335,31 @@ class OjWriter < Minitest::Test
   end
 
   def test_stream_writer_buf_small
-    output = StringIO.open("", "w+")
+    output = StringIO.open('', 'w+')
     w = Oj::StreamWriter.new(output, :indent => 0, :buffer_size => 20)
     push_stuff(w)
     assert_equal(%|{"a1":{},"a2":{"b":[7,true,"string"]},"a3":{}}\n|, output.string())
   end
 
   def test_stream_writer_buf_large
-    output = StringIO.open("", "w+")
-    w = Oj::StreamWriter.new(output, :indent => 0, :buffer_size => 16000)
+    output = StringIO.open('', 'w+')
+    w = Oj::StreamWriter.new(output, :indent => 0, :buffer_size => 16_000)
     push_stuff(w)
     assert_equal(%|{"a1":{},"a2":{"b":[7,true,"string"]},"a3":{}}\n|, output.string())
   end
 
   def test_stream_writer_buf_flush
-    output = StringIO.open("", "w+")
+    output = StringIO.open('', 'w+')
     w = Oj::StreamWriter.new(output, :indent => 0, :buffer_size => 4096)
     push_stuff(w, false)
     # no flush so nothing should be in the output yet
-    assert_equal("", output.string())
+    assert_equal('', output.string())
     w.flush()
     assert_equal(%|{"a1":{},"a2":{"b":[7,true,"string"]},"a3":{}}\n|, output.string())
   end
-  
+
   def test_stream_writer_buf_flush_small
-    output = StringIO.open("", "w+")
+    output = StringIO.open('', 'w+')
     w = Oj::StreamWriter.new(output, :indent => 0, :buffer_size => 30)
     push_stuff(w, false)
     # flush should be called at 30 bytes but since the writes are chunky flush
@@ -370,7 +370,7 @@ class OjWriter < Minitest::Test
   end
 
   def test_stream_writer_push_null_value_with_key
-    output = StringIO.open("", "w+")
+    output = StringIO.open('', 'w+')
     w = Oj::StreamWriter.new(output, :indent => 0)
     w.push_object()
     w.push_value(nil, 'nothing')

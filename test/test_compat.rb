@@ -1,10 +1,10 @@
 #!/usr/bin/env ruby
-# encoding: utf-8
+# frozen_string_literal: true
 
-$: << File.dirname(__FILE__)
-$oj_dir = File.dirname(File.expand_path(File.dirname(__FILE__)))
+$LOAD_PATH << __dir__
+@oj_dir = File.dirname(File.expand_path(__dir__))
 %w(lib ext).each do |dir|
-  $: << File.join($oj_dir, dir)
+  $LOAD_PATH << File.join(@oj_dir, dir)
 end
 
 require 'minitest'
@@ -29,18 +29,16 @@ class CompatJuice < Minitest::Test
     end
     alias == eql?
 
-    def to_json(*a)
+    def to_json(*_a)
       %|{"json_class":"#{self.class}","x":#{@x},"y":#{@y}}|
     end
 
     def self.json_create(h)
-      self.new(h['x'], h['y'])
+      new(h['x'], h['y'])
     end
   end # Jeez
 
   class Argy
-    def initialize()
-    end
 
     def to_json(*a)
       %|{"args":"#{a}"}|
@@ -48,10 +46,8 @@ class CompatJuice < Minitest::Test
   end # Argy
 
   class Stringy
-    def initialize()
-    end
 
-    def to_s()
+    def to_s
       %|[1,2]|
     end
   end # Stringy
@@ -61,20 +57,17 @@ class CompatJuice < Minitest::Test
       module Three
         class Deep
 
-          def initialize()
-          end
-
           def eql?(o)
             self.class == o.class
           end
           alias == eql?
 
-          def to_json(*a)
+          def to_json(*_a)
             %|{"json_class":"#{self.class.name}"}|
           end
 
-          def self.json_create(h)
-            self.new()
+          def self.json_create(_h)
+            new()
           end
         end # Deep
       end # Three
@@ -106,8 +99,8 @@ class CompatJuice < Minitest::Test
 
   def test_fixnum
     dump_and_load(0, false)
-    dump_and_load(12345, false)
-    dump_and_load(-54321, false)
+    dump_and_load(12_345, false)
+    dump_and_load(-54_321, false)
     dump_and_load(1, false)
   end
 
@@ -121,15 +114,15 @@ class CompatJuice < Minitest::Test
     dump_and_load(0.0, false)
     dump_and_load(0.56, false)
     dump_and_load(3.0, false)
-    dump_and_load(12345.6789, false)
+    dump_and_load(12_345.6789, false)
     dump_and_load(70.35, false)
-    dump_and_load(-54321.012, false)
+    dump_and_load(-54_321.012, false)
     dump_and_load(1.7775, false)
     dump_and_load(2.5024, false)
     dump_and_load(2.48e16, false)
     dump_and_load(2.48e100 * 1.0e10, false)
     dump_and_load(-2.48e100 * 1.0e10, false)
-    dump_and_load(1405460727.723866, false)
+    dump_and_load(1_405_460_727.723866, false)
     dump_and_load(0.5773, false)
     dump_and_load(0.6768, false)
     dump_and_load(0.685, false)
@@ -154,7 +147,7 @@ class CompatJuice < Minitest::Test
   def test_encode
     opts = Oj.default_options
     Oj.default_options = { :ascii_only => true }
-    json = Oj.dump("ぴーたー")
+    json = Oj.dump('ぴーたー')
     assert_equal(%{"\\u3074\\u30fc\\u305f\\u30fc"}, json)
     Oj.default_options = opts
   end
@@ -185,8 +178,8 @@ class CompatJuice < Minitest::Test
   end
 
   def test_time_xml_schema
-    t = Time.xmlschema("2012-01-05T23:58:07.123456000+09:00")
-    #t = Time.local(2012, 1, 5, 23, 58, 7, 123456)
+    t = Time.xmlschema('2012-01-05T23:58:07.123456000+09:00')
+    # t = Time.local(2012, 1, 5, 23, 58, 7, 123456)
     json = Oj.dump(t, :mode => :compat)
     assert_equal(%{"2012-01-05 23:58:07 +0900"}, json)
   end
@@ -205,8 +198,9 @@ class CompatJuice < Minitest::Test
   def test_non_str_hash
     json = Oj.dump({ 1 => true, 0 => false }, :mode => :compat)
     h = Oj.load(json, :mode => :strict)
-    assert_equal({ "1" => true, "0" => false }, h)
+    assert_equal({ '1' => true, '0' => false }, h)
   end
+
   def test_hash
     dump_and_load({}, false)
     dump_and_load({ 'true' => true, 'false' => false}, false)
@@ -245,12 +239,12 @@ class CompatJuice < Minitest::Test
   def test_invalid_escapes_handled
     json = '{"subtext":"\"404er\” \w \k \3 \a"}'
     obj = Oj.compat_load(json)
-    assert_equal({"subtext" => "\"404er” w k 3 a"}, obj)
+    assert_equal({'subtext' => '"404er” w k 3 a'}, obj)
   end
 
   def test_hash_escaping
     json = Oj.to_json({'<>' => '<>'}, mode: :compat)
-    assert_equal(json, '{"<>":"<>"}')
+    assert_equal('{"<>":"<>"}', json)
   end
 
   def test_bignum_object
@@ -277,7 +271,7 @@ class CompatJuice < Minitest::Test
   def test_bignum_compat
     json = Oj.dump(7 ** 55, :mode => :compat)
     b = Oj.load(json, :mode => :strict)
-    assert_equal(30226801971775055948247051683954096612865741943, b)
+    assert_equal(30_226_801_971_775_055_948_247_051_683_954_096_612_865_741_943, b)
   end
 
   # BigDecimal
@@ -319,7 +313,7 @@ class CompatJuice < Minitest::Test
     if x.is_a?(String)
       assert_equal(orig.to_s, x)
     else # better be a Hash
-      assert_equal({"year" => orig.year, "month" => orig.month, "day" => orig.day, "start" => orig.start}, x)
+      assert_equal({'year' => orig.year, 'month' => orig.month, 'day' => orig.day, 'start' => orig.start}, x)
     end
   end
 
@@ -346,15 +340,13 @@ class CompatJuice < Minitest::Test
   end
 
   def test_io_file
-    filename = File.join(File.dirname(__FILE__), 'open_file_test.json')
-    File.open(filename, 'w') { |f|
-      f.write(%{{
+    filename = File.join(__dir__, 'open_file_test.json')
+    File.write(filename, %{{
   "x":true,
   "y":58,
   "z": [1,2,3]
 }
 })
-    }
     f = File.new(filename)
     obj = Oj.compat_load(f)
     f.close()
@@ -418,7 +410,7 @@ class CompatJuice < Minitest::Test
 
   # A child to_json should not be called.
   def test_json_object_child
-    obj = { "child" => Jeez.new(true, 58) }
+    obj = { 'child' => Jeez.new(true, 58) }
     assert_equal('{"child":{"json_class":"CompatJuice::Jeez","x":true,"y":58}}', Oj.dump(obj))
   end
 
@@ -439,10 +431,10 @@ class CompatJuice < Minitest::Test
     begin
       Oj.compat_load(json, :create_additions => true)
     rescue Exception => e
-      assert_equal("ArgumentError", e.class().name)
+      assert_equal('ArgumentError', e.class().name)
       return
     end
-    assert(false, "*** expected an exception")
+    assert(false, '*** expected an exception')
   end
 
   def test_json_object_create_cache
@@ -458,7 +450,7 @@ class CompatJuice < Minitest::Test
     expected = Jeez.new(true, 58)
     json = Oj.to_json(expected)
     json.gsub!('json_class', '_class_')
-    obj = Oj.compat_load(json, :create_id => "_class_", :create_additions => true)
+    obj = Oj.compat_load(json, :create_id => '_class_', :create_additions => true)
     assert_equal(expected, obj)
   end
 
@@ -498,10 +490,10 @@ class CompatJuice < Minitest::Test
 
   def test_parse_large_string
     error = assert_raises() { Oj.load(%|{"a":"aaaaaaaaaa\0aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}|) }
-    assert(error.message.include?('NULL byte in string'))
+    assert_includes(error.message, 'NULL byte in string')
 
     error = assert_raises() { Oj.load(%|{"a":"aaaaaaaaaaaaaaaaaaaa                       }|) }
-    assert(error.message.include?('quoted string not terminated'))
+    assert_includes(error.message, 'quoted string not terminated')
 
     json =<<~JSON
       {
@@ -509,15 +501,15 @@ class CompatJuice < Minitest::Test
         "b": "aaaaaaaaaaaaaaaaaaaaaaaaaaaa"
       }
     JSON
-    assert_equal("ぴーたー", Oj.load(json)['a'])
+    assert_equal('ぴーたー', Oj.load(json)['a'])
   end
 
   def test_parse_large_escaped_string
-    invalid_json = %|{"a":\"aaaa\\nbbbb\\rcccc\\tddd\\feee\\bf\/\\\\\\u3074\\u30fc\\u305f\\u30fc                             }|
+    invalid_json = %|{"a":"aaaa\\nbbbb\\rcccc\\tddd\\feee\\bf/\\\\\\u3074\\u30fc\\u305f\\u30fc                             }|
     error = assert_raises() { Oj.load(invalid_json) }
-    assert(error.message.include?('quoted string not terminated'))
+    assert_includes(error.message, 'quoted string not terminated')
 
-    json = "\"aaaa\\nbbbb\\rcccc\\tddd\\feee\\bf\/\\\\\\u3074\\u30fc\\u305f\\u30fc             \""
+    json = '"aaaa\\nbbbb\\rcccc\\tddd\\feee\\bf/\\\\\\u3074\\u30fc\\u305f\\u30fc             "'
     assert_equal("aaaa\nbbbb\rcccc\tddd\feee\bf/\\ぴーたー             ", Oj.load(json))
   end
 
@@ -533,7 +525,7 @@ class CompatJuice < Minitest::Test
   def dump_and_load(obj, trace=false)
     json = Oj.dump(obj)
     puts json if trace
-    loaded = Oj.compat_load(json, :create_additions => true);
+    loaded = Oj.compat_load(json, :create_additions => true)
     if obj.nil?
       assert_nil(loaded)
     else
@@ -545,7 +537,7 @@ class CompatJuice < Minitest::Test
   def dump_to_json_and_load(obj, trace=false)
     json = Oj.to_json(obj, :indent => '  ')
     puts json if trace
-    loaded = Oj.compat_load(json, :create_additions => true);
+    loaded = Oj.compat_load(json, :create_additions => true)
     if obj.nil?
       assert_nil(loaded)
     else

@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
-# encoding: UTF-8
+# frozen_string_literal: true
 
-$: << File.dirname(__FILE__)
+$LOAD_PATH << __dir__
 
 require 'helper'
 
@@ -22,32 +22,26 @@ class FileJuice < Minitest::Test
   end # Jam
 
   class Jeez < Jam
-    def initialize(x, y)
-      super
-    end
 
     def to_json(*_args)
       %{{"json_class":"#{self.class}","x":#{@x},"y":#{@y}}}
     end
 
     def self.json_create(h)
-      self.new(h['x'], h['y'])
+      new(h['x'], h['y'])
     end
   end # Jeez
 
   class Orange < Jam
-    def initialize(x, y)
-      super
-    end
 
-    def as_json()
+    def as_json
       { :json_class => self.class,
         :x => @x,
         :y => @y }
     end
 
     def self.json_create(h)
-      self.new(h['x'], h['y'])
+      new(h['x'], h['y'])
     end
   end
 
@@ -73,8 +67,8 @@ class FileJuice < Minitest::Test
 
   def test_fixnum
     dump_and_load(0, false)
-    dump_and_load(12345, false)
-    dump_and_load(-54321, false)
+    dump_and_load(12_345, false)
+    dump_and_load(-54_321, false)
     dump_and_load(1, false)
   end
 
@@ -82,9 +76,9 @@ class FileJuice < Minitest::Test
     mode = Oj.default_options()[:mode]
     Oj.default_options = {:mode => :object}
     dump_and_load(0.0, false)
-    dump_and_load(12345.6789, false)
+    dump_and_load(12_345.6789, false)
     dump_and_load(70.35, false)
-    dump_and_load(-54321.012, false)
+    dump_and_load(-54_321.012, false)
     dump_and_load(1.7775, false)
     dump_and_load(2.5024, false)
     dump_and_load(2.48e16, false)
@@ -118,9 +112,9 @@ class FileJuice < Minitest::Test
   # Symbol
   def test_symbol_object
     Oj.default_options = { :mode => :object }
-    #dump_and_load(''.to_sym, false)
+    # dump_and_load(''.to_sym, false)
     dump_and_load(:abc, false)
-    dump_and_load(':xyz'.to_sym, false)
+    dump_and_load(:":xyz", false)
   end
 
   # Time
@@ -129,10 +123,11 @@ class FileJuice < Minitest::Test
     Oj.default_options = { :mode => :object, :time_format => :unix_zone }
     dump_and_load(t, false)
   end
+
   def test_time_object_early
     skip 'Windows does not support dates before 1970.' if RbConfig::CONFIG['host_os'] =~ /(mingw|mswin)/
 
-    t = Time.xmlschema("1954-01-05T00:00:00.123456")
+    t = Time.xmlschema('1954-01-05T00:00:00.123456')
     Oj.default_options = { :mode => :object, :time_format => :unix_zone }
     dump_and_load(t, false)
   end
@@ -165,7 +160,7 @@ class FileJuice < Minitest::Test
     if $ruby == 'ruby'
       assert_equal(%{{"^u":["Range",1,7,false]}}, json)
     else
-      assert(%{{"^O":"Range","begin":1,"end":7,"exclude_end?":false}} == json)
+      assert_equal(%{{"^O":"Range","begin":1,"end":7,"exclude_end?":false}}, json)
     end
     dump_and_load(1..7, false)
     dump_and_load(1..1, false)
@@ -229,8 +224,8 @@ class FileJuice < Minitest::Test
   end
 
   def dump_and_load(obj, trace=false)
-    filename = File.join(File.dirname(__FILE__), 'file_test.json')
-    File.open(filename, "w") { |f|
+    filename = File.join(__dir__, 'file_test.json')
+    File.open(filename, 'w') { |f|
       Oj.to_stream(f, obj, :indent => 2)
     }
     puts "\n*** file: '#{File.read(filename)}'" if trace

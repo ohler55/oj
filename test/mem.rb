@@ -1,16 +1,17 @@
 #!/usr/bin/env ruby
-# encoding: UTF-8
+# frozen_string_literal: true
 
-$: << '.'
-$: << File.join(File.dirname(__FILE__), "../lib")
-$: << File.join(File.dirname(__FILE__), "../ext")
+require 'English'
+$LOAD_PATH << '.'
+$LOAD_PATH << File.join(__dir__, '../lib')
+$LOAD_PATH << File.join(__dir__, '../ext')
 
 require 'oj'
 
 Oj.default_options = { mode: :rails, cache_keys: false, cache_str: -1 }
 
 def mem
-  `ps -o rss= -p #{$$}`.to_i
+  `ps -o rss= -p #{$PROCESS_ID}`.to_i
 end
 
 ('a'..'z').each { |a|
@@ -20,8 +21,8 @@ end
         ('a'..'z').each { |e|
           ('a'..'z').each { |f|
             key = "#{a}#{b}#{c}#{d}#{e}#{f}"
-            x = Oj.load(%|{ "#{key}": 101}|)
-            #Oj.dump(x)
+            Oj.load(%|{ "#{key}": 101}|)
+            # Oj.dump(x)
           }
         }
       }

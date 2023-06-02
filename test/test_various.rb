@@ -1,14 +1,14 @@
 #!/usr/bin/env ruby
-# encoding: utf-8
+# frozen_string_literal: false
 
-$: << File.dirname(__FILE__)
+$LOAD_PATH << __dir__
 
 require 'helper'
 
 class Juice < Minitest::Test
-  def gen_whitespaced_string(length = Random.new.rand(100))
-    whitespace_chars = [" ", "\t", "\f", "\n", "\r"]
-    result = ""
+  def gen_whitespaced_string(length=Random.new.rand(100))
+    whitespace_chars = [' ', "\t", "\f", "\n", "\r"]
+    result = ''
     length.times { result << whitespace_chars.sample }
     result
   end
@@ -32,59 +32,49 @@ class Juice < Minitest::Test
   end # Jam
 
   class Jeez < Jam
-    def initialize(x, y)
-      super
-    end
 
     def to_json(*_args)
       %{{"json_class":"#{self.class}","x":#{@x},"y":#{@y}}}
     end
 
     def self.json_create(h)
-      self.new(h['x'], h['y'])
+      new(h['x'], h['y'])
     end
   end # Jeez
 
   # contributed by sauliusg to fix as_json
   class Orange < Jam
-    def initialize(x, y)
-      super
-    end
 
-    def as_json()
+    def as_json
       { :json_class => self.class,
         :x => @x,
         :y => @y }
     end
 
     def self.json_create(h)
-      self.new(h['x'], h['y'])
+      new(h['x'], h['y'])
     end
   end
 
   class Melon < Jam
-    def initialize(x, y)
-      super
-    end
 
-    def as_json(options)
+    def as_json(_options)
       "#{x} #{y}"
     end
 
     def self.json_create(h)
-      self.new(h['x'], h['y'])
+      new(h['x'], h['y'])
     end
   end
 
   class Jazz < Jam
-    def initialize(x, y)
-      super
-    end
-    def to_hash()
+
+    def to_hash
       { 'json_class' => self.class.to_s, 'x' => @x, 'y' => @y }
     end
+
     def self.json_create(h)
-      self.new(h['x'], h['y'])
+      new(h['x'], h['y'])
     end
   end # Jazz
 
@@ -99,7 +89,7 @@ class Juice < Minitest::Test
   def test_set_options
     orig = Oj.default_options()
     alt ={
-      indent: " - ",
+      indent: ' - ',
       second_precision: 5,
       circular: true,
       class_cache: false,
@@ -139,18 +129,18 @@ class Juice < Minitest::Test
       ignore_under: true,
       trace: true,
       safe: true,
-      skip_null_byte: false
+      omit_null_byte: false,
     }
     Oj.default_options = alt
-    #keys = alt.keys
-    #Oj.default_options.keys.each { |k| puts k unless keys.include? k}
+    # keys = alt.keys
+    # Oj.default_options.keys.each { |k| puts k unless keys.include? k}
     opts = Oj.default_options()
-    assert_equal(alt, opts);
+    assert_equal(alt, opts)
 
     Oj.default_options = orig # return to original
     # verify back to original
     opts = Oj.default_options()
-    assert_equal(orig, opts);
+    assert_equal(orig, opts)
   end
 
   def test_nil
@@ -167,8 +157,8 @@ class Juice < Minitest::Test
 
   def test_fixnum
     dump_and_load(0, false)
-    dump_and_load(12345, false)
-    dump_and_load(-54321, false)
+    dump_and_load(12_345, false)
+    dump_and_load(-54_321, false)
     dump_and_load(1, false)
   end
 
@@ -176,11 +166,11 @@ class Juice < Minitest::Test
     Oj.default_options = { :float_precision => 16, :bigdecimal_load => :auto }
     n = Oj.load('0.00001234567890123456')
     assert_equal(Float, n.class)
-    assert_equal('1.234567890123456e-05', "%0.15e" % [n])
+    assert_equal('1.234567890123456e-05', '%0.15e' % [n])
 
     n = Oj.load('-0.00001234567890123456')
     assert_equal(Float, n.class)
-    assert_equal('-1.234567890123456e-05', "%0.15e" % [n])
+    assert_equal('-1.234567890123456e-05', '%0.15e' % [n])
 
     n = Oj.load('1000.0000123456789')
     assert_equal(BigDecimal, n.class)
@@ -228,12 +218,12 @@ class Juice < Minitest::Test
   def test_encode
     opts = Oj.default_options
     Oj.default_options = { :ascii_only => false }
-    dump_and_load("ぴーたー", false)
+    dump_and_load('ぴーたー', false)
 
     Oj.default_options = { :ascii_only => true }
-    json = Oj.dump("ぴーたー")
+    json = Oj.dump('ぴーたー')
     assert_equal(%{"\\u3074\\u30fc\\u305f\\u30fc"}, json)
-    dump_and_load("ぴーたー", false)
+    dump_and_load('ぴーたー', false)
     Oj.default_options = opts
   end
 
@@ -254,7 +244,7 @@ class Juice < Minitest::Test
       assert(true)
       return
     end
-    assert(false, "*** expected an exception")
+    assert(false, '*** expected an exception')
   end
 
   def test_invalid_unicode_ok
@@ -268,11 +258,11 @@ class Juice < Minitest::Test
   def test_dump_options
     json = Oj.dump({ 'a' => 1, 'b' => [true, false]},
                    :mode => :compat,
-                   :indent => "--",
+                   :indent => '--',
                    :array_nl => "\n",
                    :object_nl => "#\n",
-                   :space => "*",
-                   :space_before => "~")
+                   :space => '*',
+                   :space_before => '~')
     assert(%{{#
 --"a"~:*1,#
 --"b"~:*[
@@ -301,6 +291,7 @@ class Juice < Minitest::Test
     dump_and_load([[nil]], false)
     dump_and_load([[nil], 58], false)
   end
+
   def test_array_not_closed
     begin
       Oj.load('[')
@@ -308,7 +299,7 @@ class Juice < Minitest::Test
       assert(true)
       return
     end
-    assert(false, "*** expected an exception")
+    assert(false, '*** expected an exception')
   end
 
   # multiple JSON in one string
@@ -319,7 +310,7 @@ class Juice < Minitest::Test
 }
     results = []
     Oj.load(json, :mode => :strict) { |x, start, len| results << [x, start, len] }
-    assert_equal([[{"a"=>1}, 0, 7], [[1, 2], 7, 6], [[3, 4], 13, 5], [{"b"=>2}, 18, 8]], results)
+    assert_equal([[{'a'=>1}, 0, 7], [[1, 2], 7, 6], [[3, 4], 13, 5], [{'b'=>2}, 18, 8]], results)
   end
 
   def test_multiple_json_no_callback
@@ -339,33 +330,39 @@ class Juice < Minitest::Test
     out = Oj.dump(hash)
     assert_equal(json, out)
   end
+
   def test_escapes_entities_by_default_when_configured_to_do_so
-    hash = {'key' => "I <3 this"}
+    hash = {'key' => 'I <3 this'}
     Oj.default_options = {:escape_mode => :xss_safe}
     out = Oj.dump hash
     assert_equal(%{{"key":"I \\u003c3 this"}}, out)
   end
+
   def test_escapes_slashes_by_default_when_configured_to_do_so
-    hash = {'key' => "I <3 this </script>"}
+    hash = {'key' => 'I <3 this </script>'}
     Oj.default_options = {:escape_mode => :slash}
     out = Oj.dump hash
     assert_equal(%{{"key":"I <3 this <\\/script>"}}, out)
   end
+
   def test_escapes_entities_when_asked_to
-    hash = {'key' => "I <3 this"}
+    hash = {'key' => 'I <3 this'}
     out = Oj.dump(hash, :escape_mode => :xss_safe)
     assert_equal(%{{"key":"I \\u003c3 this"}}, out)
   end
+
   def test_does_not_escape_entities_when_not_asked_to
-    hash = {'key' => "I <3 this"}
+    hash = {'key' => 'I <3 this'}
     out = Oj.dump(hash, :escape_mode => :json)
     assert_equal(%{{"key":"I <3 this"}}, out)
   end
+
   def test_escapes_common_xss_vectors
-    hash = {'key' => "<script>alert(123) && formatHD()</script>"}
+    hash = {'key' => '<script>alert(123) && formatHD()</script>'}
     out = Oj.dump(hash, :escape_mode => :xss_safe)
     assert_equal(%{{"key":"\\u003cscript\\u003ealert(123) \\u0026\\u0026 formatHD()\\u003c\\/script\\u003e"}}, out)
   end
+
   def test_escape_newline_by_default
     Oj.default_options = { :escape_mode => :json }
     json = %{["one","two\\n2"]}
@@ -373,6 +370,7 @@ class Juice < Minitest::Test
     out = Oj.dump(x)
     assert_equal(json, out)
   end
+
   def test_does_not_escape_newline
     Oj.default_options = { :escape_mode => :newline }
     json = %{["one","two\n2"]}
@@ -380,6 +378,7 @@ class Juice < Minitest::Test
     out = Oj.dump(x)
     assert_equal(json, out)
   end
+
   def test_dump_invalid_utf8
     Oj.default_options = { :escape_mode => :ascii }
     assert_raises(EncodingError) {
@@ -401,14 +400,14 @@ class Juice < Minitest::Test
   end
 
   def test_time_neg
-    t = Time.parse("1900-01-01 00:18:59 UTC")
+    t = Time.parse('1900-01-01 00:18:59 UTC')
     json = Oj.dump(t, :mode => :custom, :time_format => :unix)
     assert_equal('-2208987661.000000000', json)
   end
 
   def test_time_years
     (-2020..2020).each { |year|
-      s = "%04d-03-01T15:14:13Z" % [year]
+      s = '%04d-03-01T15:14:13Z' % [year]
       json = Oj.dump(Time.parse(s), mode: :custom, time_format: :xmlschema, second_precision: -1)
       assert_equal(s, json[1..-2])
 
@@ -437,7 +436,7 @@ class Juice < Minitest::Test
       assert(true)
       return
     end
-    assert(false, "*** expected an exception")
+    assert(false, '*** expected an exception')
   end
 
   def test_hash_not_closed
@@ -447,7 +446,7 @@ class Juice < Minitest::Test
       assert(true)
       return
     end
-    assert(false, "*** expected an exception")
+    assert(false, '*** expected an exception')
   end
 
   # Object with to_json()
@@ -457,7 +456,7 @@ class Juice < Minitest::Test
     assert_equal('null', json)
   end
 
-# Object with to_hash()
+  # Object with to_hash()
   def test_to_hash_object_null
     obj = Jazz.new(true, 58)
     json = Oj.dump(obj, :mode => :null)
@@ -505,7 +504,7 @@ class Juice < Minitest::Test
 
   def test_infinity
     n = Oj.load('Infinity', :mode => :object)
-    assert_equal(BigDecimal('Infinity').to_f, n);
+    assert_equal(BigDecimal('Infinity').to_f, n)
     x = Oj.load('Infinity', :mode => :compat)
     assert_equal('Infinity', x.to_s)
   end
@@ -530,7 +529,7 @@ class Juice < Minitest::Test
   "y":58 }}
     obj = Oj.load(json, :mode => :object, :auto_define => true)
     assert_equal('Juice::Jem', obj.class.name)
-    assert_equal(true, obj.x)
+    assert(obj.x)
     assert_equal(58, obj.y)
   end
 
@@ -538,19 +537,19 @@ class Juice < Minitest::Test
   def test_deep_nest_dump
     begin
       a = []
-      10000.times { a << [a] }
+      10_000.times { a << [a] }
       Oj.dump(a)
     rescue Exception
       assert(true)
       return
     end
-    assert(false, "*** expected an exception")
+    assert(false, '*** expected an exception')
   end
 
   # Stream IO
   def test_io_string
     src = { 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}
-    output = StringIO.open("", "w+")
+    output = StringIO.open('', 'w+')
     Oj.to_stream(output, src)
 
     input = StringIO.new(output.string())
@@ -560,8 +559,8 @@ class Juice < Minitest::Test
 
   def test_io_file
     src = { 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}
-    filename = File.join(File.dirname(__FILE__), 'open_file_test.json')
-    File.open(filename, "w") { |f|
+    filename = File.join(__dir__, 'open_file_test.json')
+    File.open(filename, 'w') { |f|
       Oj.to_stream(f, src)
     }
     f = File.new(filename)
@@ -576,7 +575,7 @@ class Juice < Minitest::Test
     IO.pipe do |r, w|
       if fork
         r.close
-        #w.nonblock = false
+        # w.nonblock = false
         a = []
         10_000.times do |i|
           a << i
@@ -594,7 +593,7 @@ class Juice < Minitest::Test
     end
   end
 
-# comments
+  # comments
   def test_comment_slash
     json = %{{
   "x":true,//three
@@ -638,7 +637,7 @@ class Juice < Minitest::Test
       assert(true)
       return
     end
-    assert(false, "*** expected an exception")
+    assert(false, '*** expected an exception')
   end
 
   def test_nilnil_true
@@ -661,27 +660,27 @@ class Juice < Minitest::Test
       assert(Oj::ParseError == e.class || EncodingError == e.class)
       return
     end
-    assert(false, "*** expected an exception")
+    assert(false, '*** expected an exception')
   end
 
   def test_quirks_null_mode
-    assert_raises(Oj::ParseError) { Oj.load("null", :quirks_mode => false) }
-    assert_nil(Oj.load("null", :quirks_mode => true))
+    assert_raises(Oj::ParseError) { Oj.load('null', :quirks_mode => false) }
+    assert_nil(Oj.load('null', :quirks_mode => true))
   end
 
   def test_quirks_bool_mode
-    assert_raises(Oj::ParseError) { Oj.load("true", :quirks_mode => false) }
-    assert_equal(true, Oj.load("true", :quirks_mode => true))
+    assert_raises(Oj::ParseError) { Oj.load('true', :quirks_mode => false) }
+    assert(Oj.load('true', :quirks_mode => true))
   end
 
   def test_quirks_number_mode
-    assert_raises(Oj::ParseError) { Oj.load("123", :quirks_mode => false) }
-    assert_equal(123, Oj.load("123", :quirks_mode => true))
+    assert_raises(Oj::ParseError) { Oj.load('123', :quirks_mode => false) }
+    assert_equal(123, Oj.load('123', :quirks_mode => true))
   end
 
   def test_quirks_decimal_mode
-    assert_raises(Oj::ParseError) { Oj.load("123.45", :quirks_mode => false) }
-    assert_equal(123.45, Oj.load("123.45", :quirks_mode => true))
+    assert_raises(Oj::ParseError) { Oj.load('123.45', :quirks_mode => false) }
+    assert_in_delta(123.45, Oj.load('123.45', :quirks_mode => true))
   end
 
   def test_quirks_string_mode
@@ -713,13 +712,13 @@ class Juice < Minitest::Test
   end
 
   def test_quirks_array_mode
-    assert_equal([], Oj.load("[]", :quirks_mode => false))
-    assert_equal([], Oj.load("[]", :quirks_mode => true))
+    assert_empty(Oj.load('[]', :quirks_mode => false))
+    assert_empty(Oj.load('[]', :quirks_mode => true))
   end
 
   def test_quirks_object_mode
-    assert_equal({}, Oj.load("{}", :quirks_mode => false))
-    assert_equal({}, Oj.load("{}", :quirks_mode => true))
+    assert_empty(Oj.load('{}', :quirks_mode => false))
+    assert_empty(Oj.load('{}', :quirks_mode => true))
   end
 
   def test_omit_nil
@@ -735,8 +734,8 @@ class Juice < Minitest::Test
     assert_equal(%|{"x":{"a":1}}|, json)
   end
 
-  def test_skip_null_byte
-    Oj.default_options = { :skip_null_byte => true }
+  def test_omit_null_byte
+    Oj.default_options = { :omit_null_byte => true }
 
     json = Oj.dump({ "fo\x00o" => "b\x00ar" })
     assert_equal(%|{"foo":"bar"}|, json)
@@ -765,18 +764,19 @@ class Juice < Minitest::Test
     json = Oj.dump({ "\u0000foo" => "bar\u0000" })
     assert_equal(%|{"foo":"bar"}|, json)
 
-    json = Oj.dump({ "\x00foo" => "bar\x00" }, :skip_null_byte => false)
+    json = Oj.dump({ "\x00foo" => "bar\x00" }, :omit_null_byte => false)
     assert_equal(%|{"\\u0000foo":"bar\\u0000"}|, json)
 
-    json = Oj.dump({ "\x00foo" => "bar\x00" }, :skip_null_byte => nil)
-    assert_equal(%|{"\\u0000foo":"bar\\u0000"}|, json)
+    # no change from default set earlier so :omit_null_byte is still true
+    json = Oj.dump({ "\x00foo" => "bar\x00" }, :omit_null_byte => nil)
+    assert_equal(%|{"foo":"bar"}|, json)
 
-    Oj.default_options = { :skip_null_byte => false }
+    Oj.default_options = { :omit_null_byte => false }
 
     json = Oj.dump({ "\x00foo" => "bar\x00" })
     assert_equal(%|{"\\u0000foo":"bar\\u0000"}|, json)
 
-    json = Oj.dump({ "\x00foo" => "bar\x00" }, :skip_null_byte => true)
+    json = Oj.dump({ "\x00foo" => "bar\x00" }, :omit_null_byte => true)
     assert_equal(%|{"foo":"bar"}|, json)
   end
 

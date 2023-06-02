@@ -1,10 +1,11 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
-if $0 == __FILE__
-  $: << '.'
-  $: << '..'
-  $: << '../lib'
-  $: << '../ext'
+if $PROGRAM_NAME == __FILE__
+  $LOAD_PATH << '.'
+  $LOAD_PATH << '..'
+  $LOAD_PATH << '../lib'
+  $LOAD_PATH << '../ext'
 end
 
 require 'oj'
@@ -31,6 +32,6 @@ def sample_json(size=3)
   container
 end
 
-if $0 == __FILE__
-  File.open('sample.json', "w") { |f| f.write(Oj.dump(sample_json(3), :indent => 2)) }
+if $PROGRAM_NAME == __FILE__
+  File.write('sample.json', Oj.dump(sample_json(3), :indent => 2))
 end

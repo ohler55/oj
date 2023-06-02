@@ -1,10 +1,10 @@
 #!/usr/bin/env ruby
-# encoding: utf-8
+# frozen_string_literal: true
 
-$: << File.dirname(__FILE__)
-$oj_dir = File.dirname(File.expand_path(File.dirname(__FILE__)))
+$LOAD_PATH << __dir__
+@oj_dir = File.dirname(File.expand_path(__dir__))
 %w(lib ext).each do |dir|
-  $: << File.join($oj_dir, dir)
+  $LOAD_PATH << File.join(@oj_dir, dir)
 end
 
 require 'minitest'
@@ -52,16 +52,16 @@ class StrictJuice < Minitest::Test
 
   def test_fixnum
     dump_and_load(0, false)
-    dump_and_load(12345, false)
-    dump_and_load(-54321, false)
+    dump_and_load(12_345, false)
+    dump_and_load(-54_321, false)
     dump_and_load(1, false)
   end
 
   def test_float
     dump_and_load(0.0, false)
-    dump_and_load(12345.6789, false)
+    dump_and_load(12_345.6789, false)
     dump_and_load(70.35, false)
-    dump_and_load(-54321.012, false)
+    dump_and_load(-54_321.012, false)
     dump_and_load(1.7775, false)
     dump_and_load(2.5024, false)
     dump_and_load(2.48e16, false)
@@ -78,7 +78,7 @@ class StrictJuice < Minitest::Test
       assert(true)
       return
     end
-    assert(false, "*** expected an exception")
+    assert(false, '*** expected an exception')
   end
 
   def test_infinity_dump
@@ -90,7 +90,7 @@ class StrictJuice < Minitest::Test
       assert(true)
       return
     end
-    assert(false, "*** expected an exception")
+    assert(false, '*** expected an exception')
   end
 
   def test_neg_infinity_dump
@@ -102,7 +102,7 @@ class StrictJuice < Minitest::Test
       assert(true)
       return
     end
-    assert(false, "*** expected an exception")
+    assert(false, '*** expected an exception')
   end
 
   def test_string
@@ -115,15 +115,11 @@ class StrictJuice < Minitest::Test
   def test_encode
     opts = Oj.default_options
     Oj.default_options = { :ascii_only => false }
-    unless 'jruby' == $ruby
-      dump_and_load("ぴーたー", false)
-    end
+    dump_and_load('ぴーたー', false)
     Oj.default_options = { :ascii_only => true }
-    json = Oj.dump("ぴーたー")
+    json = Oj.dump('ぴーたー')
     assert_equal(%{"\\u3074\\u30fc\\u305f\\u30fc"}, json)
-    unless 'jruby' == $ruby
-      dump_and_load("ぴーたー", false)
-    end
+    dump_and_load('ぴーたー', false)
     Oj.default_options = opts
   end
 
@@ -159,10 +155,10 @@ class StrictJuice < Minitest::Test
     skip 'TruffleRuby causes SEGV' if RUBY_ENGINE == 'truffleruby'
 
     begin
-      n = 10000
+      n = 10_000
       Oj.strict_load(('[' * n) + (']' * n))
     rescue Exception => e
-      assert(false, e.message)
+      refute(e.message)
     end
   end
 
@@ -209,7 +205,7 @@ class StrictJuice < Minitest::Test
       assert(true)
       return
     end
-    assert(false, "*** expected an exception")
+    assert(false, '*** expected an exception')
   end
 
   def test_bignum_object
@@ -238,7 +234,7 @@ class StrictJuice < Minitest::Test
       assert(true)
       return
     end
-    assert(false, "*** expected an exception")
+    assert(false, '*** expected an exception')
   end
 
   def test_range
@@ -248,7 +244,7 @@ class StrictJuice < Minitest::Test
       assert(true)
       return
     end
-    assert(false, "*** expected an exception")
+    assert(false, '*** expected an exception')
   end
 
   # Stream IO
@@ -265,15 +261,13 @@ class StrictJuice < Minitest::Test
   end
 
   def test_io_file
-    filename = File.join(File.dirname(__FILE__), 'open_file_test.json')
-    File.open(filename, 'w') { |f|
-      f.write(%{{
+    filename = File.join(__dir__, 'open_file_test.json')
+    File.write(filename, %{{
   "x":true,
   "y":58,
   "z": [1,2,3]
 }
 })
-    }
     f = File.new(filename)
     obj = Oj.strict_load(f)
     f.close()
@@ -293,7 +287,7 @@ class StrictJuice < Minitest::Test
       assert(true)
       return
     end
-    assert(false, "*** expected an exception")
+    assert(false, '*** expected an exception')
   end
 
   def test_class
@@ -303,7 +297,7 @@ class StrictJuice < Minitest::Test
       assert(true)
       return
     end
-    assert(false, "*** expected an exception")
+    assert(false, '*** expected an exception')
   end
 
   def test_module
@@ -313,7 +307,7 @@ class StrictJuice < Minitest::Test
       assert(true)
       return
     end
-    assert(false, "*** expected an exception")
+    assert(false, '*** expected an exception')
   end
 
   # symbol_keys option
@@ -425,7 +419,7 @@ class StrictJuice < Minitest::Test
   def dump_and_load(obj, trace=false)
     json = Oj.dump(obj, :indent => 2)
     puts json if trace
-    loaded = Oj.strict_load(json);
+    loaded = Oj.strict_load(json)
     if obj.nil?
       assert_nil(loaded)
     else

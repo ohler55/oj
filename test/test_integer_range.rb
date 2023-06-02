@@ -1,10 +1,10 @@
 #!/usr/bin/env ruby
-# encoding: utf-8
+# frozen_string_literal: true
 
-$: << File.dirname(__FILE__)
-$oj_dir = File.dirname(File.expand_path(File.dirname(__FILE__)))
+$LOAD_PATH << __dir__
+@oj_dir = File.dirname(File.expand_path(__dir__))
 %w(lib ext).each do |dir|
-  $: << File.join($oj_dir, dir)
+  $LOAD_PATH << File.join(@oj_dir, dir)
 end
 
 require 'minitest'
@@ -23,19 +23,19 @@ class IntegerRangeTest < Minitest::Test
   end
 
   def test_range
-    test = {s: 0, s2: -1, s3: 1, u: -2, u2: 2, u3: 9007199254740993}
+    test = {s: 0, s2: -1, s3: 1, u: -2, u2: 2, u3: 9_007_199_254_740_993}
     exp = '{"s":0,"s2":-1,"s3":1,"u":"-2","u2":"2","u3":"9007199254740993"}'
     assert_equal(exp, Oj.dump(test, integer_range: (-1..1)))
   end
 
   def test_bignum
-    test = {u: -10000000000000000000, u2: 10000000000000000000}
+    test = {u: -10_000_000_000_000_000_000, u2: 10_000_000_000_000_000_000}
     exp = '{"u":"-10000000000000000000","u2":"10000000000000000000"}'
     assert_equal(exp, Oj.dump(test, integer_range: (-1..1)))
   end
 
   def test_valid_modes
-    test = {safe: 0, unsafe: 9007199254740993}
+    test = {safe: 0, unsafe: 9_007_199_254_740_993}
     exp  = '{"safe":0,"unsafe":"9007199254740993"}'
 
     [:strict, :null, :compat, :rails, :custom].each do |mode|
@@ -49,7 +49,7 @@ class IntegerRangeTest < Minitest::Test
   end
 
   def test_modes_without_opt
-    test = {safe: 0, unsafe: 10000000000000000000}
+    test = {safe: 0, unsafe: 10_000_000_000_000_000_000}
     exp = '{"safe":0,"unsafe":10000000000000000000}'
 
     [:strict, :null, :compat, :rails, :custom].each do |mode|
@@ -63,7 +63,7 @@ class IntegerRangeTest < Minitest::Test
   end
 
   def test_accept_nil_and_false
-    test = {safe: 0, unsafe: 10000000000000000000}
+    test = {safe: 0, unsafe: 10_000_000_000_000_000_000}
     exp = '{"safe":0,"unsafe":10000000000000000000}'
 
     assert_equal(exp, Oj.dump(test, integer_range: nil))

@@ -1,10 +1,10 @@
 #!/usr/bin/env ruby
-# encoding: UTF-8
+# frozen_string_literal: true
 
-$: << File.dirname(__FILE__)
-$oj_dir = File.dirname(File.expand_path(File.dirname(__FILE__)))
+$LOAD_PATH << __dir__
+@oj_dir = File.dirname(File.expand_path(__dir__))
 %w(lib ext).each do |dir|
-  $: << File.join($oj_dir, dir)
+  $LOAD_PATH << File.join(@oj_dir, dir)
 end
 
 require 'minitest'
@@ -19,13 +19,16 @@ require 'oj'
 module WAB
   class UUID
     attr_reader :id
+
     def initialize(id)
       @id = id.downcase
-      raise Exception.new("Invalid UUID format.") if /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.match(@id).nil?
+      raise StandardError.new('Invalid UUID format.') if /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.match(@id).nil?
     end
+
     def to_s
       @id
     end
+
     def ==(other)
       other.is_a?(self.class) && @id == other.id
     end
@@ -51,16 +54,16 @@ class WabJuice < Minitest::Test
 
   def test_fixnum
     dump_and_load(0, false)
-    dump_and_load(12345, false)
-    dump_and_load(-54321, false)
+    dump_and_load(12_345, false)
+    dump_and_load(-54_321, false)
     dump_and_load(1, false)
   end
 
   def test_float
     dump_and_load(0.0, false)
-    dump_and_load(12345.6789, false)
+    dump_and_load(12_345.6789, false)
     dump_and_load(70.35, false)
-    dump_and_load(-54321.012, false)
+    dump_and_load(-54_321.012, false)
     dump_and_load(1.7775, false)
     dump_and_load(2.5024, false)
     dump_and_load(2.48e16, false)
@@ -88,7 +91,7 @@ class WabJuice < Minitest::Test
   end
 
   def test_encode
-    dump_and_load("ぴーたー", false)
+    dump_and_load('ぴーたー', false)
   end
 
   def test_array
@@ -107,18 +110,18 @@ class WabJuice < Minitest::Test
     skip 'TruffleRuby causes SEGV' if RUBY_ENGINE == 'truffleruby'
 
     begin
-      n = 10000
+      n = 10_000
       Oj.wab_load(('[' * n) + (']' * n))
     rescue Exception => e
-      assert(false, e.message)
+      refute(e.message)
     end
   end
 
   # Hash
   def test_hash
     dump_and_load({}, false)
-    dump_and_load({ true: true, false: false}, false)
-    dump_and_load({ true: true, array: [], hash: { }}, false)
+    dump_and_load({ tru: true, fals: false}, false)
+    dump_and_load({ tru: true, array: [], hash: {}}, false)
   end
 
   def test_hash_non_sym_keys
@@ -127,25 +130,25 @@ class WabJuice < Minitest::Test
 
   def test_hash_deep
     dump_and_load({x1: {
-                      x2: {
-                        x3: {
-                          x4: {
-                            x5: {
-                              x6: {
-                                x7: {
-                                  x8: {
-                                    x9: {
-                                      x10: {
-                                        x11: {
-                                          x12: {
-                                            x13: {
-                                              x14: {
-                                                x15: {
-                                                  x16: {
-                                                    x17: {
-                                                      x18: {
-                                                        x19: {
-                                                          x20: {}}}}}}}}}}}}}}}}}}}}}, false)
+                     x2: {
+                       x3: {
+                         x4: {
+                           x5: {
+                             x6: {
+                               x7: {
+                                 x8: {
+                                   x9: {
+                                     x10: {
+                                       x11: {
+                                         x12: {
+                                           x13: {
+                                             x14: {
+                                               x15: {
+                                                 x16: {
+                                                   x17: {
+                                                     x18: {
+                                                       x19: {
+                                                         x20: {}}}}}}}}}}}}}}}}}}}}}, false)
   end
 
   def test_non_str_hash
@@ -153,7 +156,7 @@ class WabJuice < Minitest::Test
   end
 
   def test_bignum_object
-    dump_and_load(7 ** 55, false)
+    dump_and_load(7**55, false)
   end
 
   # BigDecimal
@@ -187,15 +190,13 @@ class WabJuice < Minitest::Test
   end
 
   def test_io_file
-    filename = File.join(File.dirname(__FILE__), 'open_file_test.json')
-    File.open(filename, 'w') { |f|
-      f.write(%{{
+    filename = File.join(__dir__, 'open_file_test.json')
+    File.write(filename, %{{
   "x":true,
   "y":58,
   "z": [1,2,3]
 }
 })
-    }
     f = File.new(filename)
     obj = Oj.wab_load(f)
     f.close()
@@ -208,13 +209,13 @@ class WabJuice < Minitest::Test
   end
 
   def test_time
-    t = Time.gm(2017, 1, 5, 23, 58, 7, 123456.789)
+    t = Time.gm(2017, 1, 5, 23, 58, 7, 123_456.789)
     json = Oj.dump(t, mode: :wab)
     assert_equal('"2017-01-05T23:58:07.123456789Z"', json)
     # must load and convert to json as the Time#== does not match identical
     # times due to the way it tracks fractional seconds.
-    loaded = Oj.wab_load(json);
-    assert_equal(json, Oj.dump(loaded, mode: :wab), "json mismatch after load")
+    loaded = Oj.wab_load(json)
+    assert_equal(json, Oj.dump(loaded, mode: :wab), 'json mismatch after load')
   end
 
   def test_uuid
@@ -298,7 +299,7 @@ class WabJuice < Minitest::Test
   def dump_and_load(obj, trace=false)
     json = Oj.dump(obj, mode: :wab, indent: 2)
     puts json if trace
-    loaded = Oj.wab_load(json);
+    loaded = Oj.wab_load(json)
     if obj.nil?
       assert_nil(loaded)
     else

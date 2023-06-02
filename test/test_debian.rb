@@ -1,4 +1,4 @@
-# encoding: UTF-8
+# frozen_string_literal: true
 
 require 'helper'
 
@@ -20,18 +20,15 @@ class DebJuice < Minitest::Test
 
   # contributed by sauliusg to fix as_json
   class Orange < Jam
-    def initialize(x, y)
-      super
-    end
 
-    def as_json()
+    def as_json
       { :json_class => self.class,
         :x => @x,
         :y => @y }
     end
 
     def self.json_create(h)
-      self.new(h['x'], h['y'])
+      new(h['x'], h['y'])
     end
   end
 
@@ -39,13 +36,13 @@ class DebJuice < Minitest::Test
     Oj.default_options = { :mode => :compat, :class_cache => true, :use_as_json => true }
     obj = Orange.new(true, 58)
     json = Oj.dump(obj, :indent => 2)
-    assert(!json.nil?)
+    refute_nil(json)
     dump_and_load(obj, true)
   end
 
-  def dump_and_load(obj, trace=false)
+  def dump_and_load(obj, _trace=false)
     json = Oj.dump(obj, :indent => 2)
-    loaded = Oj.load(json);
+    loaded = Oj.load(json)
     assert_equal(obj, loaded)
     loaded
   end

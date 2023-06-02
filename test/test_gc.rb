@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
-# encoding: UTF-8
+# frozen_string_literal: true
 
-$: << File.dirname(__FILE__)
+$LOAD_PATH << __dir__
 
 require 'helper'
 
@@ -14,13 +14,13 @@ class GCTest < Minitest::Test
       @child = child
     end
 
-    def to_hash()
-      { 'json_class' => "#{self.class}", 'x' => x, 'child' => child }
+    def to_hash
+      { 'json_class' => self.class.to_s, 'x' => x, 'child' => child }
     end
 
     def self.json_create(h)
       GC.start
-      self.new(h['x'], h['child'])
+      new(h['x'], h['child'])
     end
   end # Goo
 

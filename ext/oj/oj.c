@@ -97,7 +97,6 @@ VALUE oj_nanosecond_sym;
 VALUE oj_object_class_sym;
 VALUE oj_quirks_mode_sym;
 VALUE oj_safe_sym;
-VALUE oj_skip_null_byte_sym;
 VALUE oj_symbolize_names_sym;
 VALUE oj_trace_sym;
 
@@ -136,6 +135,7 @@ static VALUE newline_sym;
 static VALUE nilnil_sym;
 static VALUE null_sym;
 static VALUE object_sym;
+static VALUE omit_null_byte_sym;
 static VALUE omit_nil_sym;
 static VALUE rails_sym;
 static VALUE raise_sym;
@@ -208,7 +208,6 @@ struct _options oj_default_options = {
     "%0.15g",       // float_fmt
     Qnil,           // hash_class
     Qnil,           // array_class
-    No,             // skip_null_byte
     {
         // dump_opts
         false,      // use
@@ -224,6 +223,7 @@ struct _options oj_default_options = {
         0,          // array_size
         AutoNan,    // nan_dump
         false,      // omit_nil
+        false,      // omit_null_byte
         MAX_DEPTH,  // max_depth
     },
     {
@@ -293,6 +293,7 @@ struct _options oj_default_options = {
  *used
  * - *:array_class* [_Class_|_nil_] Class to use instead of Array on load
  * - *:omit_nil* [_true_|_false_] if true Hash and Object attributes with nil values are omitted
+ * - *:omit_null_byte* [_true_|_false_] if true null bytes in strings will be omitted when dumping
  * - *:ignore* [_nil_|_Array_] either nil or an Array of classes to ignore when dumping
  * - *:ignore_under* [_Boolean_] if true then attributes that start with _ are ignored when dumping in
  *object or custom mode.
@@ -301,7 +302,6 @@ struct _options oj_default_options = {
  * - *:integer_range* [_Range_] Dump integers outside range as strings.
  * - *:trace* [_true,_|_false_] Trace all load and dump calls, default is false (trace is off)
  * - *:safe* [_true,_|_false_] Safe mimic breaks JSON mimic to be safer, default is false (safe is
- * - *:skip_null_byte* [_true_|_false_] if true null bytes in strings will be omitted when dumping
  *off)
  *
  * Return [_Hash_] all current option settings.
@@ -387,11 +387,6 @@ static VALUE get_def_opts(VALUE self) {
         opts,
         cache_keys_sym,
         (Yes == oj_default_options.cache_keys) ? Qtrue : ((No == oj_default_options.cache_keys) ? Qfalse : Qnil));
-    rb_hash_aset(opts,
-                 oj_skip_null_byte_sym,
-                 (Yes == oj_default_options.skip_null_byte)
-                     ? Qtrue
-                     : ((No == oj_default_options.skip_null_byte) ? Qfalse : Qnil));
 
     switch (oj_default_options.mode) {
     case StrictMode: rb_hash_aset(opts, mode_sym, strict_sym); break;
@@ -468,6 +463,7 @@ static VALUE get_def_opts(VALUE self) {
     default: rb_hash_aset(opts, nan_sym, auto_sym); break;
     }
     rb_hash_aset(opts, omit_nil_sym, oj_default_options.dump_opts.omit_nil ? Qtrue : Qfalse);
+    rb_hash_aset(opts, omit_null_byte_sym, oj_default_options.dump_opts.omit_null_byte ? Qtrue : Qfalse);
     rb_hash_aset(opts, oj_hash_class_sym, oj_default_options.hash_class);
     rb_hash_aset(opts, oj_array_class_sym, oj_default_options.array_class);
 
@@ -594,7 +590,6 @@ bool set_yesno_options(VALUE key, VALUE value, Options copts) {
                                {ignore_under_sym, &copts->ignore_under},
                                {oj_create_additions_sym, &copts->create_ok},
                                {cache_keys_sym, &copts->cache_keys},
-                               {oj_skip_null_byte_sym, &copts->skip_null_byte},
                                {Qnil, 0}};
     YesNoOpt         o;
 
@@ -874,6 +869,17 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
             copts->dump_opts.omit_nil = false;
         } else {
             rb_raise(rb_eArgError, ":omit_nil must be true or false.");
+        }
+    } else if (omit_null_byte_sym == k) {
+        if (Qnil == v) {
+            return ST_CONTINUE;
+        }
+        if (Qtrue == v) {
+            copts->dump_opts.omit_null_byte = true;
+        } else if (Qfalse == v) {
+            copts->dump_opts.omit_null_byte = false;
+        } else {
+            rb_raise(rb_eArgError, ":omit_null_byte must be true or false.");
         }
     } else if (oj_ascii_only_sym == k) {
         // This is here only for backwards compatibility with the original Oj.
@@ -1289,6 +1295,7 @@ static VALUE dump(int argc, VALUE *argv, VALUE self) {
     oj_out_init(arg.out);
 
     arg.out->omit_nil = copts.dump_opts.omit_nil;
+    arg.out->omit_null_byte = copts.dump_opts.omit_null_byte;
     arg.out->caller   = CALLER_DUMP;
 
     return rb_ensure(dump_body, (VALUE)&arg, dump_ensure, (VALUE)&arg);
@@ -1337,6 +1344,7 @@ static VALUE to_json(int argc, VALUE *argv, VALUE self) {
     oj_out_init(&out);
 
     out.omit_nil = copts.dump_opts.omit_nil;
+    out.omit_null_byte = copts.dump_opts.omit_null_byte;
     // For obj.to_json or generate nan is not allowed but if called from dump
     // it is.
     oj_dump_obj_to_json_using_params(*argv, &copts, &out, argc - 1, argv + 1);
@@ -1977,8 +1985,8 @@ void Init_oj(void) {
     rb_gc_register_address(&oj_quirks_mode_sym);
     oj_safe_sym = ID2SYM(rb_intern("safe"));
     rb_gc_register_address(&oj_safe_sym);
-    oj_skip_null_byte_sym = ID2SYM(rb_intern("skip_null_byte"));
-    rb_gc_register_address(&oj_skip_null_byte_sym);
+    omit_null_byte_sym = ID2SYM(rb_intern("omit_null_byte"));
+    rb_gc_register_address(&omit_null_byte_sym);
     oj_space_before_sym = ID2SYM(rb_intern("space_before"));
     rb_gc_register_address(&oj_space_before_sym);
     oj_space_sym = ID2SYM(rb_intern("space"));

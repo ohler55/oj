@@ -1,10 +1,10 @@
 #!/usr/bin/env ruby
-# encoding: utf-8
+# frozen_string_literal: true
 
-$: << File.dirname(__FILE__)
-$oj_dir = File.dirname(File.expand_path(File.dirname(__FILE__)))
+$LOAD_PATH << __dir__
+@oj_dir = File.dirname(File.expand_path(__dir__))
 %w(lib ext).each do |dir|
-  $: << File.join($oj_dir, dir)
+  $LOAD_PATH << File.join(@oj_dir, dir)
 end
 
 require 'minitest'
@@ -27,19 +27,24 @@ class CustomJuice < Minitest::Test
       @y = y
       @_z = x.to_s
     end
+
     def ==(o)
       self.class == o.class && @x == o.x && @y = o.y
     end
-    def to_json(*args)
+
+    def to_json(*_args)
       %|{"xx":#{@x},"yy":#{y}}|
     end
-    def raw_json(depth, indent)
+
+    def raw_json(_depth, _indent)
       %|{"xxx":#{@x},"yyy":#{y}}|
     end
-    def as_json(*args)
+
+    def as_json(*_args)
       {'a' => @x, :b => @y }
     end
-    def to_hash()
+
+    def to_hash
       {'b' => @x, 'n' => @y }
     end
   end
@@ -51,10 +56,12 @@ class CustomJuice < Minitest::Test
       @x = x
       @y = y
     end
+
     def ==(o)
       self.class == o.class && @x == o.x && @y = o.y
     end
-    def as_json(*args)
+
+    def as_json(*_args)
       {'a' => @x, :b => @y }
     end
   end
@@ -66,10 +73,12 @@ class CustomJuice < Minitest::Test
       @x = x
       @y = y
     end
+
     def ==(o)
       self.class == o.class && @x == o.x && @y = o.y
     end
-    def as_json(*args)
+
+    def as_json(*_args)
       a = @x
       a = a.as_json if a.respond_to?('as_json')
       b = @y
@@ -101,16 +110,16 @@ class CustomJuice < Minitest::Test
 
   def test_fixnum
     dump_and_load(0, false)
-    dump_and_load(12345, false)
-    dump_and_load(-54321, false)
+    dump_and_load(12_345, false)
+    dump_and_load(-54_321, false)
     dump_and_load(1, false)
   end
 
   def test_float
     dump_and_load(0.0, false)
-    dump_and_load(12345.6789, false)
+    dump_and_load(12_345.6789, false)
     dump_and_load(70.35, false)
-    dump_and_load(-54321.012, false)
+    dump_and_load(-54_321.012, false)
     dump_and_load(1.7775, false)
     dump_and_load(2.5024, false)
     dump_and_load(2.48e16, false)
@@ -119,12 +128,12 @@ class CustomJuice < Minitest::Test
   end
 
   def test_float_parse
-    f = Oj.load("12.123456789012345678", mode: :custom, bigdecimal_load: :float);
+    f = Oj.load('12.123456789012345678', mode: :custom, bigdecimal_load: :float)
     assert_equal(Float, f.class)
   end
 
   def test_float_parse_fast
-    f = Oj.load("12.123456789012345678", mode: :custom, bigdecimal_load: :fast);
+    f = Oj.load('12.123456789012345678', mode: :custom, bigdecimal_load: :fast)
     assert_equal(Float, f.class)
     assert(12.12345678901234 <= f && f < 12.12345678901236)
   end
@@ -139,7 +148,7 @@ class CustomJuice < Minitest::Test
       assert(true)
       return
     end
-    assert(false, "*** expected an exception")
+    assert(false, '*** expected an exception')
   end
 
   def test_infinity_dump
@@ -152,7 +161,7 @@ class CustomJuice < Minitest::Test
       assert(true)
       return
     end
-    assert(false, "*** expected an exception")
+    assert(false, '*** expected an exception')
   end
 
   def test_neg_infinity_dump
@@ -165,7 +174,7 @@ class CustomJuice < Minitest::Test
       assert(true)
       return
     end
-    assert(false, "*** expected an exception")
+    assert(false, '*** expected an exception')
   end
 
   def test_string
@@ -176,15 +185,15 @@ class CustomJuice < Minitest::Test
   end
 
   def test_string_ascii
-    json = Oj.dump("ぴーたー", :escape_mode => :ascii)
+    json = Oj.dump('ぴーたー', :escape_mode => :ascii)
     assert_equal(%{"\\u3074\\u30fc\\u305f\\u30fc"}, json)
-    dump_and_load("ぴーたー", false, :escape_mode => :ascii)
+    dump_and_load('ぴーたー', false, :escape_mode => :ascii)
   end
 
   def test_string_json
-    json = Oj.dump("ぴーたー", :escape_mode => :json)
+    json = Oj.dump('ぴーたー', :escape_mode => :json)
     assert_equal(%{"ぴーたー"}, json)
-    dump_and_load("ぴーたー", false, :escape_mode => :json)
+    dump_and_load('ぴーたー', false, :escape_mode => :json)
   end
 
   def test_array
@@ -203,10 +212,10 @@ class CustomJuice < Minitest::Test
     skip 'TruffleRuby causes SEGV' if RUBY_ENGINE == 'truffleruby'
 
     begin
-      n = 10000
+      n = 10_000
       Oj.strict_load(('[' * n) + (']' * n))
     rescue Exception => e
-      assert(false, e.message)
+      refute(e.message)
     end
   end
 
@@ -261,11 +270,11 @@ class CustomJuice < Minitest::Test
 
   def test_object
     obj = Jeez.new(true, 58)
-    json = Oj.dump(obj, create_id: "^o", use_to_json: false, use_as_json: false, use_to_hash: false)
+    json = Oj.dump(obj, create_id: '^o', use_to_json: false, use_as_json: false, use_to_hash: false)
     assert_equal(%|{"x":true,"y":58,"_z":"true"}|, json)
-    json = Oj.dump(obj, create_id: "^o", use_to_json: false, use_as_json: false, use_to_hash: false, ignore_under: true)
+    json = Oj.dump(obj, create_id: '^o', use_to_json: false, use_as_json: false, use_to_hash: false, ignore_under: true)
     assert_equal(%|{"x":true,"y":58}|, json)
-    dump_and_load(obj, false, :create_id => "^o", :create_additions => true)
+    dump_and_load(obj, false, :create_id => '^o', :create_additions => true)
   end
 
   def test_object_to_json
@@ -393,29 +402,29 @@ class CustomJuice < Minitest::Test
     assert_equal(%|{"x":{"a":1}}|, json)
   end
 
-  def test_skip_null_byte
-    json = Oj.dump({ "fo\x00o" => "b\x00ar" }, :skip_null_byte => true)
+  def test_omit_null_byte
+    json = Oj.dump({ "fo\x00o" => "b\x00ar" }, :omit_null_byte => true)
     assert_equal(%|{"foo":"bar"}|, json)
   end
 
   def test_complex
     obj = Complex(2, 9)
-    dump_and_load(obj, false, :create_id => "^o", :create_additions => true)
+    dump_and_load(obj, false, :create_id => '^o', :create_additions => true)
   end
 
   def test_rational
     obj = Rational(2, 9)
-    dump_and_load(obj, false, :create_id => "^o", :create_additions => true)
+    dump_and_load(obj, false, :create_id => '^o', :create_additions => true)
   end
 
   def test_range
     obj = 3..8
-    dump_and_load(obj, false, :create_id => "^o", :create_additions => true)
+    dump_and_load(obj, false, :create_id => '^o', :create_additions => true)
   end
 
   def test_date
     obj = Date.new(2017, 1, 5)
-    dump_and_load(obj, false, :create_id => "^o", :create_additions => true)
+    dump_and_load(obj, false, :create_id => '^o', :create_additions => true)
   end
 
   def test_date_unix
@@ -444,7 +453,7 @@ class CustomJuice < Minitest::Test
 
   def test_datetime
     obj = DateTime.new(2017, 1, 5, 10, 20, 30)
-    dump_and_load(obj, false, :create_id => "^o", :create_additions => true)
+    dump_and_load(obj, false, :create_id => '^o', :create_additions => true)
   end
 
   def test_datetime_unix
@@ -474,12 +483,12 @@ class CustomJuice < Minitest::Test
   def test_regexp
     # this notation must be used to get an == match later
     obj = /(?ix-m:^yes$)/
-    dump_and_load(obj, false, :create_id => "^o", :create_additions => true)
+    dump_and_load(obj, false, :create_id => '^o', :create_additions => true)
   end
 
   def test_openstruct
     obj = OpenStruct.new(:a => 1, 'b' => 2)
-    dump_and_load(obj, false, :create_id => "^o", :create_additions => true)
+    dump_and_load(obj, false, :create_id => '^o', :create_additions => true)
   end
 
   def test_time
@@ -489,14 +498,14 @@ class CustomJuice < Minitest::Test
     # These two forms should be able to recreate the time precisely,
     # so we check they can load a dumped version and recreate the
     # original object correctly.
-    dump_and_load(obj, false, :time_format => :unix, :create_id => "^o", :create_additions => true)
-    dump_and_load(obj, false, :time_format => :unix_zone, :create_id => "^o", :create_additions => true)
+    dump_and_load(obj, false, :time_format => :unix, :create_id => '^o', :create_additions => true)
+    dump_and_load(obj, false, :time_format => :unix_zone, :create_id => '^o', :create_additions => true)
     # These two forms will lose precision while dumping as they don't
     # preserve full precision. We check that a dumped version is equal
     # to that version loaded and dumped a second time, but don't check
     # that the loaded Ruby objects is still the same as the original.
-    dump_load_dump(obj, false, :time_format => :xmlschema, :create_id => "^o", :create_additions => true)
-    dump_load_dump(obj, false, :time_format => :ruby, :create_id => "^o", :create_additions => true)
+    dump_load_dump(obj, false, :time_format => :xmlschema, :create_id => '^o', :create_additions => true)
+    dump_load_dump(obj, false, :time_format => :ruby, :create_id => '^o', :create_additions => true)
   end
 
   def dump_and_load(obj, trace=false, options={})
@@ -504,7 +513,7 @@ class CustomJuice < Minitest::Test
     json = Oj.dump(obj, options)
     puts json if trace
 
-    loaded = Oj.load(json, options);
+    loaded = Oj.load(json, options)
     if obj.nil?
       assert_nil(loaded)
     else
@@ -518,7 +527,7 @@ class CustomJuice < Minitest::Test
     json = Oj.dump(obj, options)
     puts json if trace
 
-    loaded = Oj.load(json, options);
+    loaded = Oj.load(json, options)
     if obj.nil?
       assert_nil(loaded)
     else
@@ -532,7 +541,7 @@ class CustomJuice < Minitest::Test
     json = Oj.dump(obj, options)
     puts json if trace
 
-    loaded = Oj.load(json, options);
+    loaded = Oj.load(json, options)
     if obj.nil?
       assert_nil(loaded)
     else

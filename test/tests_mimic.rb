@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
-# encoding: UTF-8
+# frozen_string_literal: true
 
-$: << File.dirname(__FILE__)
-$: << File.join(File.dirname(__FILE__), 'json_gem')
+$LOAD_PATH << __dir__
+$LOAD_PATH << File.join(__dir__, 'json_gem')
 
 require 'json_common_interface_test'
 require 'json_encoding_test'
@@ -15,9 +15,9 @@ require 'json_string_matching_test'
 
 at_exit do
   require 'helper'
-  if '3.1.0' <= RUBY_VERSION && !(RbConfig::CONFIG['host_os'] =~ /(mingw|mswin)/)
-    #Oj::debug_odd("teardown before GC.verify_compaction_references")
+  if '3.1.0' <= RUBY_VERSION && RbConfig::CONFIG['host_os'] !~ /(mingw|mswin)/
+    # Oj::debug_odd("teardown before GC.verify_compaction_references")
     verify_gc_compaction
-    #Oj::debug_odd("teardown after GC.verify_compaction_references")
+    # Oj::debug_odd("teardown after GC.verify_compaction_references")
   end
 end

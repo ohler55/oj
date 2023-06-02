@@ -1,9 +1,9 @@
 #!/usr/bin/env ruby
-# encoding: UTF-8
+# frozen_string_literal: true
 
-$: << '.'
-$: << File.join(File.dirname(__FILE__), "../lib")
-$: << File.join(File.dirname(__FILE__), "../ext")
+$LOAD_PATH << '.'
+$LOAD_PATH << File.join(__dir__, '../lib')
+$LOAD_PATH << File.join(__dir__, '../ext')
 
 require 'optparse'
 require 'perf'
@@ -11,25 +11,23 @@ require 'oj'
 
 $verbose = false
 $indent = 0
-$iter = 20000
+$iter = 20_000
 $size = 0
 
 opts = OptionParser.new
-opts.on("-v", "verbose")                                    { $verbose = true }
-opts.on("-c", "--count [Int]", Integer, "iterations")       { |i| $iter = i }
-opts.on("-i", "--indent [Int]", Integer, "indentation")     { |i| $indent = i }
-opts.on("-s", "--size [Int]", Integer, "size (~Kbytes)")    { |i| $size = i }
-opts.on("-h", "--help", "Show this display")                { puts opts; Process.exit!(0) }
-files = opts.parse(ARGV)
+opts.on('-v', 'verbose')                                    { $verbose = true }
+opts.on('-c', '--count [Int]', Integer, 'iterations')       { |i| $iter = i }
+opts.on('-i', '--indent [Int]', Integer, 'indentation')     { |i| $indent = i }
+opts.on('-s', '--size [Int]', Integer, 'size (~Kbytes)')    { |i| $size = i }
+opts.on('-h', '--help', 'Show this display')                { puts opts; Process.exit!(0) }
+opts.parse(ARGV)
 
 def capture_error(tag, orig, load_key, dump_key, &blk)
-  begin
-    obj = blk.call(orig)
-    puts obj unless orig == obj
-    raise "#{tag} #{dump_key} and #{load_key} did not return the same object as the original." unless orig == obj
-  rescue Exception => e
-    $failed[tag] = "#{e.class}: #{e.message}"
-  end
+  obj = blk.call(orig)
+  puts obj unless orig == obj
+  raise "#{tag} #{dump_key} and #{load_key} did not return the same object as the original." unless orig == obj
+rescue Exception => e
+  $failed[tag] = "#{e.class}: #{e.message}"
 end
 
 # Verify that all packages dump and load correctly and return the same Object as the original.
@@ -39,7 +37,7 @@ capture_error('JSON::Ext', $obj, 'generate', 'parse') { |o|
   require 'json/ext'
   JSON.generator = JSON::Ext::Generator
   JSON.parser = JSON::Ext::Parser
-  JSON.load(JSON.generate(o))
+  JSON.parse(JSON.generate(o))
 }
 
 module One
@@ -47,7 +45,7 @@ module One
     module Three
       class Empty
 
-        def initialize()
+        def initialize
           @a = 1
           @b = 2
           @c = 3
@@ -58,16 +56,16 @@ module One
         end
         alias == eql?
 
-        def as_json(*a)
+        def as_json(*_a)
           {JSON.create_id => self.class.name, 'a' => @a, 'b' => @b, 'c' => @c }
         end
-        
-        def to_json(*a)
+
+        def to_json(*_a)
           JSON.generate(as_json())
         end
 
-        def self.json_create(h)
-          self.new()
+        def self.json_create(_h)
+          new()
         end
       end # Empty
     end # Three
@@ -77,8 +75,8 @@ end # One
 $obj = {
   'a' => 'Alpha', # string
   'b' => true,    # boolean
-  'c' => 12345,   # number
-  'd' => [ true, [false, [-123456789, nil], 3.9676, ['Something else.', false], nil]], # mix it up array
+  'c' => 12_345,   # number
+  'd' => [ true, [false, [-123_456_789, nil], 3.9676, ['Something else.', false], nil]], # mix it up array
   'e' => { 'zero' => nil, 'one' => 1, 'two' => 2, 'three' => [3], 'four' => [0, 1, 2, 3, 4] }, # hash
   'f' => nil,     # nil
   'g' => One::Two::Three::Empty.new(),
@@ -109,13 +107,13 @@ if $verbose
 end
 
 puts '-' * 80
-puts "Compat Parse Performance"
+puts 'Compat Parse Performance'
 perf = Perf.new()
-unless $failed.has_key?('JSON::Ext')
-  perf.add('JSON::Ext', 'parse') { JSON.load($json) }
+unless $failed.key?('JSON::Ext')
+  perf.add('JSON::Ext', 'parse') { JSON.parse($json) }
   perf.before('JSON::Ext') { JSON.parser = JSON::Ext::Parser }
 end
-unless $failed.has_key?('Oj:compat')
+unless $failed.key?('Oj:compat')
   perf.add('Oj:compat', 'compat_load') { Oj.compat_load($json) }
 end
 perf.run($iter)
@@ -125,6 +123,6 @@ puts '-' * 80
 puts
 
 unless $failed.empty?
-  puts "The following packages were not included for the reason listed"
+  puts 'The following packages were not included for the reason listed'
   $failed.each { |tag, msg| puts "***** #{tag}: #{msg}" }
 end

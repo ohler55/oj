@@ -1,6 +1,8 @@
+# frozen_string_literal: true
+
 class Perf
 
-  def initialize()
+  def initialize
     @items = []
   end
 
@@ -18,7 +20,7 @@ class Perf
   end
 
   def run(iter)
-    base = Item.new(nil, nil) { }
+    base = Item.new(nil, nil) {}
     base.run(iter, 0.0)
     @items.each do |i|
       i.run(iter, base.duration)
@@ -31,9 +33,7 @@ class Perf
     summary()
   end
 
-  def summary()
-    fastest = nil
-    slowest = nil
+  def summary
     width = 6
     @items.each do |i|
       next if i.duration.nil?
@@ -44,23 +44,20 @@ class Perf
     iva.delete_if { |i| i.duration.nil? }
     iva = iva.sort_by { |i| i.duration }
     puts
-    puts "Summary:"
-    puts "%*s  time (secs)  rate (ops/sec)" % [width, 'System']
+    puts 'Summary:'
+    puts '%*s  time (secs)  rate (ops/sec)' % [width, 'System']
     puts "#{'-' * width}  -----------  --------------"
     iva.each do |i|
-      if i.duration.nil?
-      else
-        puts "%*s %11.3f  %14.3f" % [width, i.title, i.duration, i.rate ]
-      end
+      puts '%*s %11.3f  %14.3f' % [width, i.title, i.duration, i.rate ] unless i.duration.nil?
     end
     puts
     puts "Comparison Matrix\n(performance factor, 2.0 means row is twice as fast as column)"
-    puts ([' ' * width] + iva.map { |i| "%*s" % [width, i.title] }).join('  ')
-    puts (['-' * width] + iva.map { |i| '-' * width }).join('  ')
+    puts ([' ' * width] + iva.map { |i| '%*s' % [width, i.title] }).join('  ')
+    puts (['-' * width] + iva.map { |_i| '-' * width }).join('  ')
     iva.each do |i|
-      line = ["%*s" % [width, i.title]]
+      line = ['%*s' % [width, i.title]]
       iva.each do |o|
-        line << ("%*.2f" % [width, o.duration / i.duration])
+        line << ('%*.2f' % [width, o.duration / i.duration])
       end
       puts line.join('  ')
     end
@@ -90,17 +87,15 @@ class Perf
     end
 
     def run(iter, base)
-      begin
-        GC.start
-        @before.call unless @before.nil?
-        start = Time.now
-        iter.times { @blk.call }
-        @duration = Time.now - start - base
-        @duration = 0.0 if @duration < 0.0
-        @rate = iter / @duration
-      rescue Exception => e
-        @error = "#{e.class}: #{e.message}"
-      end
+      GC.start
+      @before.call unless @before.nil?
+      start = Time.now
+      iter.times { @blk.call }
+      @duration = Time.now - start - base
+      @duration = 0.0 if @duration < 0.0
+      @rate = iter / @duration
+    rescue Exception => e
+      @error = "#{e.class}: #{e.message}"
     end
 
   end # Item
