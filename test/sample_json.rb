@@ -1,10 +1,10 @@
 #!/usr/bin/env ruby
 
 if $0 == __FILE__
-  $: << '.'
-  $: << '..'
-  $: << '../lib'
-  $: << '../ext'
+  $LOAD_PATH << '.'
+  $LOAD_PATH << '..'
+  $LOAD_PATH << '../lib'
+  $LOAD_PATH << '../ext'
 end
 
 require 'oj'

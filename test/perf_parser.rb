@@ -1,9 +1,8 @@
 #!/usr/bin/env ruby
-# encoding: UTF-8
 
-$: << '.'
-$: << File.join(File.dirname(__FILE__), "../lib")
-$: << File.join(File.dirname(__FILE__), "../ext")
+$LOAD_PATH << '.'
+$LOAD_PATH << File.join(__dir__, "../lib")
+$LOAD_PATH << File.join(__dir__, "../ext")
 
 require 'optparse'
 require 'perf'

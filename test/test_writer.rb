@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # encoding: utf-8
 
-$: << File.dirname(__FILE__)
+$LOAD_PATH << __dir__
 
 require 'helper'
 
@@ -272,7 +272,7 @@ class OjWriter < Minitest::Test
   end
 
   def test_stream_writer_mixed_file
-    filename = File.join(File.dirname(__FILE__), 'open_file_test.json')
+    filename = File.join(__dir__, 'open_file_test.json')
     File.open(filename, "w") do |f|
       w = Oj::StreamWriter.new(f, :indent => 0)
       w.push_object()

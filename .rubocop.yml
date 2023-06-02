@@ -123,3 +123,9 @@ Layout/SpaceAroundOperators:
 
 Layout/SpaceBeforeBlockBraces:
   EnforcedStyle: space
+
+Layout/TrailingEmptyLines:
+  EnforcedStyle: final_newline
+
+Lint/EmptyBlock:
+  Enabled: false

@@ -1,7 +1,6 @@
 #!/usr/bin/env ruby
-# encoding: UTF-8
 
-$: << File.dirname(__FILE__)
+$LOAD_PATH << __dir__
 
 require 'helper'
 
@@ -19,7 +18,7 @@ class HashTest < Minitest::Test
 
   def test_load
     obj = Oj.load(%|{"abc":3}|, :mode => :compat, :hash_class => Oj::EasyHash)
-    
+
     assert_equal(Oj::EasyHash, obj.class)
     assert_equal(3, obj['abc'])
     assert_equal(3, obj[:abc])
@@ -35,5 +34,5 @@ class HashTest < Minitest::Test
     assert_equal(Oj::EasyHash, obj.class)
     assert_equal(3, obj[:abc])
   end
-  
+
 end # HashTest

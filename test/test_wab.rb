@@ -1,10 +1,9 @@
 #!/usr/bin/env ruby
-# encoding: UTF-8
 
-$: << File.dirname(__FILE__)
-$oj_dir = File.dirname(File.expand_path(File.dirname(__FILE__)))
+$LOAD_PATH << __dir__
+@oj_dir = File.dirname(File.expand_path(__dir__))
 %w(lib ext).each do |dir|
-  $: << File.join($oj_dir, dir)
+  $LOAD_PATH << File.join(@oj_dir, dir)
 end
 
 require 'minitest'
@@ -22,7 +21,7 @@ module WAB
 
     def initialize(id)
       @id = id.downcase
-      raise Exception.new("Invalid UUID format.") if /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.match(@id).nil?
+      raise StandardError.new("Invalid UUID format.") if /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.match(@id).nil?
     end
 
     def to_s
@@ -120,8 +119,8 @@ class WabJuice < Minitest::Test
   # Hash
   def test_hash
     dump_and_load({}, false)
-    dump_and_load({ true: true, false: false}, false)
-    dump_and_load({ true: true, array: [], hash: { }}, false)
+    dump_and_load({ tru: true, fals: false}, false)
+    dump_and_load({ tru: true, array: [], hash: {}}, false)
   end
 
   def test_hash_non_sym_keys
@@ -190,7 +189,7 @@ class WabJuice < Minitest::Test
   end
 
   def test_io_file
-    filename = File.join(File.dirname(__FILE__), 'open_file_test.json')
+    filename = File.join(__dir__, 'open_file_test.json')
     File.open(filename, 'w') { |f|
       f.write(%{{
   "x":true,

@@ -1,40 +1,36 @@
 #!/usr/bin/env ruby -wW1
-# encoding: UTF-8
 
-$: << '.'
-$: << File.join(File.dirname(__FILE__), "../lib")
-$: << File.join(File.dirname(__FILE__), "../ext")
+$LOAD_PATH << '.'
+$LOAD_PATH << File.join(__dir__, '../lib')
+$LOAD_PATH << File.join(__dir__, '../ext')
 
 require 'optparse'
-require 'yajl'
+# require 'yajl'
 require 'perf'
 require 'json'
 require 'json/ext'
 require 'oj'
 
-$verbose = false
-$indent = 0
-$iter = 10000
-$gets = 0
-$fetch = false
-$write = false
-$read = false
+@verbose = false
+@indent = 0
+@iter = 10000
+@gets = 0
+@fetch = false
+@write = false
+@read = false
 
 opts = OptionParser.new
-opts.on("-v", "verbose")                                  { $verbose = true }
-opts.on("-c", "--count [Int]", Integer, "iterations")     { |i| $iter = i }
-opts.on("-i", "--indent [Int]", Integer, "indentation")   { |i| $indent = i }
-opts.on("-g", "--gets [Int]", Integer, "number of gets")  { |i| $gets = i }
-opts.on("-f", "fetch")                                    { $fetch = true }
-opts.on("-w", "write")                                    { $write = true }
-opts.on("-r", "read")                                     { $read = true }
-opts.on("-h", "--help", "Show this display")              { puts opts; Process.exit!(0) }
+opts.on('-v', 'verbose')                                  { @verbose = true }
+opts.on('-c', '--count [Int]', Integer, 'iterations')     { |i| @iter = i }
+opts.on('-i', '--indent [Int]', Integer, 'indentation')   { |i| @indent = i }
+opts.on('-g', '--gets [Int]', Integer, 'number of gets')  { |i| @gets = i }
+opts.on('-f', 'fetch')                                    { @fetch = true }
+opts.on('-w', 'write')                                    { @write = true }
+opts.on('-r', 'read')                                     { @read = true }
+opts.on('-h', '--help', 'Show this display')              { puts opts; Process.exit!(0) }
 files = opts.parse(ARGV)
 
 class AllSaj < Oj::Saj
-  def initialize()
-  end
-
   def hash_start(key)
   end
 
@@ -52,14 +48,12 @@ class AllSaj < Oj::Saj
 end # AllSaj
 
 class NoSaj < Oj::Saj
-  def initialize()
-  end
 end # NoSaj
 
 saj_handler = AllSaj.new()
 no_saj = NoSaj.new()
 
-$obj = {
+@obj = {
   'a' => 'Alpha', # string
   'b' => true,    # boolean
   'c' => 12345,   # number
@@ -71,38 +65,38 @@ $obj = {
   'i' => [[[[[[[nil]]]]]]]  # deep array, again, not that deep
 }
 
-Oj.default_options = { :indent => $indent, :mode => :compat }
+Oj.default_options = { :indent => @indent, :mode => :compat }
 
-$json = Oj.dump($obj)
-$failed = {} # key is same as String used in tests later
+@json = Oj.dump(@obj)
+@failed = {} # key is same as String used in tests later
 
 def capture_error(tag, orig, load_key, dump_key, &blk)
   begin
     obj = blk.call(orig)
     raise "#{tag} #{dump_key} and #{load_key} did not return the same object as the original." unless orig == obj
   rescue Exception => e
-    $failed[tag] = "#{e.class}: #{e.message}"
+    @failed[tag] = "#{e.class}: #{e.message}"
   end
 end
 
 # Verify that all packages dump and load correctly and return the same Object as the original.
-capture_error('Yajl', $obj, 'encode', 'parse') { |o| Yajl::Parser.parse(Yajl::Encoder.encode(o)) }
-capture_error('JSON::Ext', $obj, 'generate', 'parse') { |o| JSON.generator = JSON::Ext::Generator; JSON::Ext::Parser.new(JSON.generate(o)).parse }
+# capture_error('Yajl', @obj, 'encode', 'parse') { |o| Yajl::Parser.parse(Yajl::Encoder.encode(o)) }
+capture_error('JSON::Ext', @obj, 'generate', 'parse') { |o| JSON.generator = JSON::Ext::Generator; JSON::Ext::Parser.new(JSON.generate(o)).parse }
 
-if $verbose
-  puts "json:\n#{$json}\n"
+if @verbose
+  puts "json:\n#{@json}\n"
 end
 
 puts '-' * 80
-puts "Parse Performance"
+puts 'Parse Performance'
 perf = Perf.new()
-perf.add('Oj::Saj', 'all') { Oj.saj_parse(saj_handler, $json) }
-perf.add('Oj::Saj', 'none') { Oj.saj_parse(no_saj, $json) }
-perf.add('Yajl', 'parse') { Yajl::Parser.parse($json) } unless $failed.has_key?('Yajl')
-perf.add('JSON::Ext', 'parse') { JSON::Ext::Parser.new($json).parse } unless $failed.has_key?('JSON::Ext')
-perf.run($iter)
+perf.add('Oj::Saj', 'all') { Oj.saj_parse(saj_handler, @json) }
+perf.add('Oj::Saj', 'none') { Oj.saj_parse(no_saj, @json) }
+# perf.add('Yajl', 'parse') { Yajl::Parser.parse(@json) } unless @failed.has_key?('Yajl')
+perf.add('JSON::Ext', 'parse') { JSON::Ext::Parser.new(@json).parse } unless @failed.has_key?('JSON::Ext')
+perf.run(@iter)
 
-unless $failed.empty?
-  puts "The following packages were not included for the reason listed"
-  $failed.each { |tag, msg| puts "***** #{tag}: #{msg}" }
+unless @failed.empty?
+  puts 'The following packages were not included for the reason listed'
+  @failed.each { |tag, msg| puts "***** #{tag}: #{msg}" }
 end

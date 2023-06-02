@@ -1,13 +1,12 @@
 #!/usr/bin/env ruby
-# encoding: UTF-8
 
-$: << File.dirname(__FILE__)
+$LOAD_PATH << __dir__
 
 require 'helper'
 require 'socket'
 require 'stringio'
 
-$json = %{{
+@json = %{{
   "array": [
     {
       "num"   : 3,
@@ -23,14 +22,13 @@ $json = %{{
 }}
 
 class NoHandler < Oj::ScHandler
-  def initialize()
-  end
 end
 
 class AllHandler < Oj::ScHandler
   attr_accessor :calls
 
   def initialize()
+    super
     @calls = []
   end
 
@@ -226,7 +224,7 @@ class ScpTest < Minitest::Test
 
   def test_full
     handler = AllHandler.new()
-    Oj.sc_parse(handler, $json)
+    Oj.sc_parse(handler, @json)
     assert_equal([[:hash_start],
                   [:hash_key, 'array'],
                   [:array_start],
@@ -302,7 +300,7 @@ class ScpTest < Minitest::Test
 
   def test_none
     handler = NoHandler.new()
-    Oj.sc_parse(handler, $json)
+    Oj.sc_parse(handler, @json)
   end
 
   def test_fixnum_bad

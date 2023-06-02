@@ -1,8 +1,7 @@
 #!/usr/bin/env ruby -wW1
-# encoding: UTF-8
 
-$: << File.join(File.dirname(__FILE__), "../lib")
-$: << File.join(File.dirname(__FILE__), "../ext")
+$LOAD_PATH << File.join(__dir__, "../lib")
+$LOAD_PATH << File.join(__dir__, "../ext")
 
 require 'optparse'
 require 'yajl'
@@ -181,7 +180,7 @@ puts "%d Ox.load()s in %0.3f seconds or %0.1f loads/msec" % [$iter, dt, $iter/dt
 puts "Parser results:"
 puts "gem       seconds  parses/msec  X faster than #{base_name} (higher is better)"
 parse_results.each do |name, dt|
-  if 0.0 == dt
+  if dt <= 0.0
     puts "#{name} failed to generate JSON"
     next
   end
@@ -280,7 +279,7 @@ puts "%d Ox.dump()s in %0.3f seconds or %0.1f dumps/msec" % [$iter, dt, $iter/dt
 puts "Parser results:"
 puts "gem       seconds  dumps/msec  X faster than #{base_name} (higher is better)"
 parse_results.each do |name, dt|
-  if 0.0 == dt
+  if dt <= 0.0
     puts "#{name} failed to generate JSON"
     next
   end

@@ -18,7 +18,7 @@ class Perf
   end
 
   def run(iter)
-    base = Item.new(nil, nil) { }
+    base = Item.new(nil, nil) {}
     base.run(iter, 0.0)
     @items.each do |i|
       i.run(iter, base.duration)
@@ -48,10 +48,7 @@ class Perf
     puts "%*s  time (secs)  rate (ops/sec)" % [width, 'System']
     puts "#{'-' * width}  -----------  --------------"
     iva.each do |i|
-      if i.duration.nil?
-      else
-        puts "%*s %11.3f  %14.3f" % [width, i.title, i.duration, i.rate ]
-      end
+      puts "%*s %11.3f  %14.3f" % [width, i.title, i.duration, i.rate ] unless i.duration.nil?
     end
     puts
     puts "Comparison Matrix\n(performance factor, 2.0 means row is twice as fast as column)"

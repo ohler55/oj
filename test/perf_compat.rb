@@ -1,9 +1,9 @@
 #!/usr/bin/env ruby
 # encoding: UTF-8
 
-$: << '.'
-$: << File.join(File.dirname(__FILE__), "../lib")
-$: << File.join(File.dirname(__FILE__), "../ext")
+$LOAD_PATH << '.'
+$LOAD_PATH << File.join(File.dirname(__FILE__), "../lib")
+$LOAD_PATH << File.join(File.dirname(__FILE__), "../ext")
 
 require 'optparse'
 require 'perf'
@@ -61,7 +61,7 @@ module One
         def as_json(*a)
           {JSON.create_id => self.class.name, 'a' => @a, 'b' => @b, 'c' => @c }
         end
-        
+
         def to_json(*a)
           JSON.generate(as_json())
         end

@@ -796,7 +796,7 @@ class ObjectJuice < Minitest::Test
     end
   end
 
-  class SubX < Exception
+  class SubX < StandardError
     def initialize
       super("sub")
       @xyz = 123

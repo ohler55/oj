@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-$: << File.dirname(__FILE__)
+$LOAD_PATH << __dir__
 
 require 'helper'
 
@@ -229,7 +229,7 @@ class FileJuice < Minitest::Test
   end
 
   def dump_and_load(obj, trace=false)
-    filename = File.join(File.dirname(__FILE__), 'file_test.json')
+    filename = File.join(__dir__, 'file_test.json')
     File.open(filename, "w") { |f|
       Oj.to_stream(f, obj, :indent => 2)
     }

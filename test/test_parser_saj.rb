@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-$: << File.dirname(__FILE__)
+$LOAD_PATH << __dir__
 
 require 'helper'
 
