@@ -6,7 +6,7 @@ require 'helper'
 require 'socket'
 require 'stringio'
 
-@json = %{{
+$json = %{{
   "array": [
     {
       "num"   : 3,
@@ -224,7 +224,7 @@ class ScpTest < Minitest::Test
 
   def test_full
     handler = AllHandler.new()
-    Oj.sc_parse(handler, @json)
+    Oj.sc_parse(handler, $json)
     assert_equal([[:hash_start],
                   [:hash_key, 'array'],
                   [:array_start],
@@ -300,7 +300,7 @@ class ScpTest < Minitest::Test
 
   def test_none
     handler = NoHandler.new()
-    Oj.sc_parse(handler, @json)
+    Oj.sc_parse(handler, $json)
   end
 
   def test_fixnum_bad
