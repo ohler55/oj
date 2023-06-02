@@ -1,7 +1,6 @@
 #!/usr/bin/env ruby
-# encoding: utf-8
 
-$: << File.dirname(__FILE__)
+$LOAD_PATH << __dir__
 
 require 'helper'
 
@@ -48,9 +47,11 @@ class ObjectJuice < Minitest::Test
     def initialize(x, y)
       super
     end
+
     def to_hash()
       { 'json_class' => self.class.to_s, 'x' => @x, 'y' => @y }
     end
+
     def self.json_create(h)
       self.new(h['x'], h['y'])
     end
@@ -102,7 +103,6 @@ class ObjectJuice < Minitest::Test
 
     class Stuck2 < Struct.new(:a, :b)
     end
-
   end # One
 
   class Stuck < Struct.new(:a, :b)
@@ -256,7 +256,7 @@ class ObjectJuice < Minitest::Test
     # NaN does not always == NaN
     json = Oj.dump(0/0.0, :mode => :object)
     assert_equal('3.3e14159265358979323846', json)
-    loaded = Oj.load(json);
+    loaded = Oj.load(json)
     assert_equal(true, loaded.nan?)
   end
 
@@ -466,8 +466,8 @@ class ObjectJuice < Minitest::Test
     # mismatch so instead the seconds, nsecs, and gmt_offset are checked
     # separately along with utc.
     json = Oj.dump(t, :mode => :object, :time_format => :xmlschema)
-    #puts "*** json for test_xml_time '#{json}'"
-    loaded = Oj.object_load(json);
+    # puts "*** json for test_xml_time '#{json}'"
+    loaded = Oj.object_load(json)
     assert_equal(t.tv_sec, loaded.tv_sec)
     if t.respond_to?(:tv_nsec)
       assert_equal(t.tv_nsec, loaded.tv_nsec)
@@ -484,7 +484,7 @@ class ObjectJuice < Minitest::Test
     # mismatch so instead the seconds, nsecs, and gmt_offset are checked
     # separately along with utc.
     json = Oj.dump(t, :mode => :object, :time_format => :xmlschema)
-    loaded = Oj.object_load(json);
+    loaded = Oj.object_load(json)
     assert_equal(t.tv_sec, loaded.tv_sec)
     if t.respond_to?(:tv_nsec)
       assert_equal(t.tv_nsec, loaded.tv_nsec)
@@ -501,8 +501,8 @@ class ObjectJuice < Minitest::Test
     # mismatch so instead the seconds, nsecs, and gmt_offset are checked
     # separately along with utc.
     json = Oj.dump(t, :mode => :object, :time_format => :ruby)
-    #puts "*** json for test_ruby_time '#{json}'"
-    loaded = Oj.object_load(json);
+    # puts "*** json for test_ruby_time '#{json}'"
+    loaded = Oj.object_load(json)
     assert_equal(t.tv_sec, loaded.tv_sec)
     if t.respond_to?(:tv_nsec)
       assert_equal(t.tv_nsec, loaded.tv_nsec)
@@ -519,9 +519,9 @@ class ObjectJuice < Minitest::Test
     # mismatch so instead the seconds, nsecs, and gmt_offset are checked
     # separately along with utc.
     json = Oj.dump(t, :mode => :object, :time_format => :ruby)
-    #puts "*** json for test_ruby_time '#{json}'"
-    loaded = Oj.object_load(json);
-    #puts "*** loaded: #{loaded}"
+    # puts "*** json for test_ruby_time '#{json}'"
+    loaded = Oj.object_load(json)
+    # puts "*** loaded: #{loaded}"
     assert_equal(t.tv_sec, loaded.tv_sec)
     if t.respond_to?(:tv_nsec)
       assert_equal(t.tv_nsec, loaded.tv_nsec)
@@ -538,8 +538,8 @@ class ObjectJuice < Minitest::Test
     # mismatch so instead the seconds, nsecs, and gmt_offset are checked
     # separately along with utc.
     json = Oj.dump(t, :mode => :object, :time_format => :ruby)
-    #puts json
-    loaded = Oj.object_load(json);
+    # puts json
+    loaded = Oj.object_load(json)
     assert_equal(t.tv_sec, loaded.tv_sec)
     if t.respond_to?(:tv_nsec)
       assert_equal(t.tv_nsec, loaded.tv_nsec)
@@ -559,8 +559,8 @@ class ObjectJuice < Minitest::Test
     # mismatch so instead the seconds, nsecs, and gmt_offset are checked
     # separately along with utc.
     json = Oj.dump(t, :mode => :object, :time_format => :unix_zone)
-    #puts json
-    loaded = Oj.object_load(json);
+    # puts json
+    loaded = Oj.object_load(json)
     assert_equal(t.tv_sec, loaded.tv_sec)
     if t.respond_to?(:tv_nsec)
       assert_equal(t.tv_nsec, loaded.tv_nsec)
@@ -577,8 +577,8 @@ class ObjectJuice < Minitest::Test
     # mismatch so instead the seconds, nsecs, and gmt_offset are checked
     # separately along with utc.
     json = Oj.dump(t, :mode => :object, :time_format => :unix_zone)
-    #puts json
-    loaded = Oj.object_load(json);
+    # puts json
+    loaded = Oj.object_load(json)
     assert_equal(t.tv_sec, loaded.tv_sec)
     if t.respond_to?(:tv_nsec)
       assert_equal(t.tv_nsec, loaded.tv_nsec)
@@ -595,8 +595,8 @@ class ObjectJuice < Minitest::Test
     # mismatch so instead the seconds, nsecs, and gmt_offset are checked
     # separately along with utc.
     json = Oj.dump(t, :mode => :object, :time_format => :unix_zone)
-    #puts json
-    loaded = Oj.object_load(json);
+    # puts json
+    loaded = Oj.object_load(json)
     assert_equal(t.tv_sec, loaded.tv_sec)
     if t.respond_to?(:tv_nsec)
       assert_equal(t.tv_nsec, loaded.tv_nsec)
@@ -613,8 +613,8 @@ class ObjectJuice < Minitest::Test
     # mismatch so instead the seconds, nsecs, and gmt_offset are checked
     # separately along with utc.
     json = Oj.dump(t, :mode => :object, :time_format => :unix_zone)
-    #puts json
-    loaded = Oj.object_load(json);
+    # puts json
+    loaded = Oj.object_load(json)
     assert_equal(t.tv_sec, loaded.tv_sec)
     if t.respond_to?(:tv_nsec)
       assert_equal(t.tv_nsec, loaded.tv_nsec)
@@ -649,11 +649,11 @@ class ObjectJuice < Minitest::Test
   def test_json_object_not_hat_hash
     json = %{{"^#x":[1,2]}}
     h = Oj.object_load(json)
-    assert_equal({1 => 2}, h);
+    assert_equal({1 => 2}, h)
 
     json = %{{"~#x":[1,2]}}
     h = Oj.object_load(json)
-    assert_equal({'~#x' => [1, 2]}, h);
+    assert_equal({'~#x' => [1, 2]}, h)
   end
 
   def test_json_struct
@@ -670,8 +670,8 @@ class ObjectJuice < Minitest::Test
     s = Struct.new(:x, :y)
     obj = s.new(1, 2)
     json = Oj.dump(obj, :indent => 2, :mode => :object)
-    #puts json
-    loaded = Oj.object_load(json);
+    # puts json
+    loaded = Oj.object_load(json)
     assert_equal(obj.members, loaded.members)
     assert_equal(obj.values, loaded.values)
   end
@@ -781,18 +781,18 @@ class ObjectJuice < Minitest::Test
       err = e
     end
     json = Oj.dump(err, :mode => :object, :indent => 2)
-    #puts "*** #{json}"
+    # puts "*** #{json}"
     e2 = Oj.load(json, :mode => :strict)
     assert_equal(err.class.to_s, e2['^o'])
     assert_equal(err.message, e2['~mesg'])
     assert_equal(err.backtrace, e2['~bt'])
     e2 = Oj.load(json, :mode => :object)
     if 'rubinius' == $ruby
-      assert_equal(e.class, e2.class);
-      assert_equal(e.message, e2.message);
-      assert_equal(e.backtrace, e2.backtrace);
+      assert_equal(e.class, e2.class)
+      assert_equal(e.message, e2.message)
+      assert_equal(e.backtrace, e2.backtrace)
     else
-      assert_equal(e, e2);
+      assert_equal(e, e2)
     end
   end
 
@@ -811,13 +811,13 @@ class ObjectJuice < Minitest::Test
       err = e
     end
     json = Oj.dump(err, :mode => :object, :indent => 2)
-    #puts "*** #{json}"
+    # puts "*** #{json}"
     e2 = Oj.load(json, :mode => :strict)
     assert_equal(err.class.to_s, e2['^o'])
     assert_equal(err.message, e2['~mesg'])
     assert_equal(err.backtrace, e2['~bt'])
     e2 = Oj.load(json, :mode => :object)
-    assert_equal(e, e2);
+    assert_equal(e, e2)
   end
 
   def test_range_object
@@ -1014,7 +1014,7 @@ class ObjectJuice < Minitest::Test
   def dump_and_load(obj, trace=false)
     json = Oj.dump(obj, :indent => 2, :mode => :object)
     puts json if trace
-    loaded = Oj.object_load(json);
+    loaded = Oj.object_load(json)
     if obj.nil?
       assert_nil(loaded)
     else

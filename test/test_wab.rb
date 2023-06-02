@@ -19,13 +19,16 @@ require 'oj'
 module WAB
   class UUID
     attr_reader :id
+
     def initialize(id)
       @id = id.downcase
       raise Exception.new("Invalid UUID format.") if /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.match(@id).nil?
     end
+
     def to_s
       @id
     end
+
     def ==(other)
       other.is_a?(self.class) && @id == other.id
     end
@@ -127,25 +130,25 @@ class WabJuice < Minitest::Test
 
   def test_hash_deep
     dump_and_load({x1: {
-                      x2: {
-                        x3: {
-                          x4: {
-                            x5: {
-                              x6: {
-                                x7: {
-                                  x8: {
-                                    x9: {
-                                      x10: {
-                                        x11: {
-                                          x12: {
-                                            x13: {
-                                              x14: {
-                                                x15: {
-                                                  x16: {
-                                                    x17: {
-                                                      x18: {
-                                                        x19: {
-                                                          x20: {}}}}}}}}}}}}}}}}}}}}}, false)
+                     x2: {
+                       x3: {
+                         x4: {
+                           x5: {
+                             x6: {
+                               x7: {
+                                 x8: {
+                                   x9: {
+                                     x10: {
+                                       x11: {
+                                         x12: {
+                                           x13: {
+                                             x14: {
+                                               x15: {
+                                                 x16: {
+                                                   x17: {
+                                                     x18: {
+                                                       x19: {
+                                                         x20: {}}}}}}}}}}}}}}}}}}}}}, false)
   end
 
   def test_non_str_hash
@@ -153,7 +156,7 @@ class WabJuice < Minitest::Test
   end
 
   def test_bignum_object
-    dump_and_load(7 ** 55, false)
+    dump_and_load(7**55, false)
   end
 
   # BigDecimal
@@ -213,7 +216,7 @@ class WabJuice < Minitest::Test
     assert_equal('"2017-01-05T23:58:07.123456789Z"', json)
     # must load and convert to json as the Time#== does not match identical
     # times due to the way it tracks fractional seconds.
-    loaded = Oj.wab_load(json);
+    loaded = Oj.wab_load(json)
     assert_equal(json, Oj.dump(loaded, mode: :wab), "json mismatch after load")
   end
 
@@ -298,7 +301,7 @@ class WabJuice < Minitest::Test
   def dump_and_load(obj, trace=false)
     json = Oj.dump(obj, mode: :wab, indent: 2)
     puts json if trace
-    loaded = Oj.wab_load(json);
+    loaded = Oj.wab_load(json)
     if obj.nil?
       assert_nil(loaded)
     else

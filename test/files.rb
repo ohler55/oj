@@ -1,10 +1,10 @@
 #!/usr/bin/env ruby -wW2
 
 if $0 == __FILE__
-  $: << '.'
-  $: << '..'
-  $: << '../lib'
-  $: << '../ext'
+  $LOAD_PATH << '.'
+  $LOAD_PATH << '..'
+  $LOAD_PATH << '../lib'
+  $LOAD_PATH << '../ext'
 end
 
 require 'sample/file'
@@ -16,14 +16,13 @@ def files(dir)
     next if fn.start_with?('.')
 
     filename = File.join(dir, fn)
-    #filename = '.' == dir ? fn : File.join(dir, fn)
+    # filename = '.' == dir ? fn : File.join(dir, fn)
     if File.directory?(filename)
       d << files(filename)
     else
       d << ::Sample::File.new(filename)
     end
   end
-  #pp d
+  # pp d
   d
 end
-

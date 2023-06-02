@@ -7,8 +7,8 @@
 
 $VERBOSE = true
 
-#$: << File.join(File.dirname(__FILE__), "../lib")
-#$: << File.join(File.dirname(__FILE__), "../ext")
+# $LOAD_PATH << File.join(File.dirname(__FILE__), "../lib")
+# $LOAD_PATH << File.join(File.dirname(__FILE__), "../ext")
 
 require 'oj'
 
@@ -56,4 +56,3 @@ puts "dumped, loaded, and dumped again:\n#{Oj.dump(e2, :mode => :object)}"
 # original: {"^o":"WrapException","original":{"^o":"RuntimeError","~mesg":"Something broke.","~bt":null},"~mesg":"Something broke.","~bt":null}
 # dumped, loaded, and dumped again:
 # {"^o":"WrapException","original":{"^o":"RuntimeError","~mesg":"Something broke.","~bt":null},"~mesg":"Something broke.","~bt":null}
-

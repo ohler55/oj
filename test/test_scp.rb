@@ -76,6 +76,7 @@ end # AllHandler
 
 class Closer < AllHandler
   attr_accessor :io
+
   def initialize(io)
     super()
     @io = io
@@ -378,7 +379,7 @@ class ScpTest < Minitest::Test
         write_io.write json[0..11]
         sleep(0.1)
         begin
-          write_io.write json[12..-1]
+          write_io.write json[12..]
         rescue Exception => e
           # ignore, should fail to write
         end
@@ -405,7 +406,7 @@ class ScpTest < Minitest::Test
         sleep(0.1)
       }
       unless c.closed?
-        c.puts json[12..-1]
+        c.puts json[12..]
         c.close
       end
     end

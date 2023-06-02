@@ -27,18 +27,23 @@ class CustomJuice < Minitest::Test
       @y = y
       @_z = x.to_s
     end
+
     def ==(o)
       self.class == o.class && @x == o.x && @y = o.y
     end
+
     def to_json(*args)
       %|{"xx":#{@x},"yy":#{y}}|
     end
+
     def raw_json(depth, indent)
       %|{"xxx":#{@x},"yyy":#{y}}|
     end
+
     def as_json(*args)
       {'a' => @x, :b => @y }
     end
+
     def to_hash()
       {'b' => @x, 'n' => @y }
     end
@@ -51,9 +56,11 @@ class CustomJuice < Minitest::Test
       @x = x
       @y = y
     end
+
     def ==(o)
       self.class == o.class && @x == o.x && @y = o.y
     end
+
     def as_json(*args)
       {'a' => @x, :b => @y }
     end
@@ -66,9 +73,11 @@ class CustomJuice < Minitest::Test
       @x = x
       @y = y
     end
+
     def ==(o)
       self.class == o.class && @x == o.x && @y = o.y
     end
+
     def as_json(*args)
       a = @x
       a = a.as_json if a.respond_to?('as_json')
@@ -119,12 +128,12 @@ class CustomJuice < Minitest::Test
   end
 
   def test_float_parse
-    f = Oj.load("12.123456789012345678", mode: :custom, bigdecimal_load: :float);
+    f = Oj.load("12.123456789012345678", mode: :custom, bigdecimal_load: :float)
     assert_equal(Float, f.class)
   end
 
   def test_float_parse_fast
-    f = Oj.load("12.123456789012345678", mode: :custom, bigdecimal_load: :fast);
+    f = Oj.load("12.123456789012345678", mode: :custom, bigdecimal_load: :fast)
     assert_equal(Float, f.class)
     assert(12.12345678901234 <= f && f < 12.12345678901236)
   end
@@ -504,7 +513,7 @@ class CustomJuice < Minitest::Test
     json = Oj.dump(obj, options)
     puts json if trace
 
-    loaded = Oj.load(json, options);
+    loaded = Oj.load(json, options)
     if obj.nil?
       assert_nil(loaded)
     else
@@ -518,7 +527,7 @@ class CustomJuice < Minitest::Test
     json = Oj.dump(obj, options)
     puts json if trace
 
-    loaded = Oj.load(json, options);
+    loaded = Oj.load(json, options)
     if obj.nil?
       assert_nil(loaded)
     else
@@ -532,7 +541,7 @@ class CustomJuice < Minitest::Test
     json = Oj.dump(obj, options)
     puts json if trace
 
-    loaded = Oj.load(json, options);
+    loaded = Oj.load(json, options)
     if obj.nil?
       assert_nil(loaded)
     else

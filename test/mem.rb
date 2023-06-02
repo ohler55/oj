@@ -1,9 +1,8 @@
 #!/usr/bin/env ruby
-# encoding: UTF-8
 
-$: << '.'
-$: << File.join(File.dirname(__FILE__), "../lib")
-$: << File.join(File.dirname(__FILE__), "../ext")
+$LOAD_PATH << '.'
+$LOAD_PATH << File.join(File.dirname(__FILE__), "../lib")
+$LOAD_PATH << File.join(File.dirname(__FILE__), "../ext")
 
 require 'oj'
 
@@ -21,7 +20,7 @@ end
           ('a'..'z').each { |f|
             key = "#{a}#{b}#{c}#{d}#{e}#{f}"
             x = Oj.load(%|{ "#{key}": 101}|)
-            #Oj.dump(x)
+            # Oj.dump(x)
           }
         }
       }

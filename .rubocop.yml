@@ -7,9 +7,10 @@ AllCops:
   TargetRubyVersion: 2.7
   NewCops: enable
   Exclude:
+    - 'test/json_gem/**/*'
+    - 'test/activerecord/**/*'
     - 'test/activesupport6/**/*'
     - 'test/activesupport7/**/*'
-    - 'vendor/**/*'
 
 Style/QuotedSymbols:
   EnforcedStyle: double_quotes
@@ -19,3 +20,106 @@ Style/SymbolArray:
 
 Style/FormatStringToken:
   EnforcedStyle: unannotated
+
+Style/FrozenStringLiteralComment:
+  EnforcedStyle: always
+
+Layout/EmptyLinesAroundClassBody:
+  Enabled: false
+
+Style/MethodCallWithoutArgsParentheses:
+  Enabled: false
+
+Style/PercentLiteralDelimiters:
+  Enabled: false
+
+Layout/SpaceInsideHashLiteralBraces:
+  Enabled: false
+  EnforcedStyle: compact
+  EnforcedStyleForEmptyBraces: no_space
+
+Layout/SpaceInsideArrayLiteralBrackets:
+  Enabled: false
+  EnforcedStyle: compact
+  EnforcedStyleForEmptyBrackets: no_space
+
+Style/YodaCondition:
+  Enabled: false
+
+Style/FormatString:
+  Enabled: false
+
+Style/NumericPredicate:
+  Enabled: false
+
+Style/HashSyntax:
+  Enabled: false
+
+Layout/ExtraSpacing:
+  AllowForAlignment: true,
+  AllowBeforeTrailingComments: true
+  ForceEqualSignAlignment: false
+
+Style/Semicolon:
+  AllowAsExpressionSeparator: true
+
+Style/SafeNavigation:
+  Enabled: false
+
+Layout/LineLength:
+  Max: 160
+  Exclude:
+    - 'test/_test_active.rb'
+    - 'test/test_gc.rb'
+
+Style/WordArray:
+  Enabled: false
+
+Style/TrailingCommaInHashLiteral:
+  Enabled: false
+
+Style/TrailingCommaInArrayLiteral:
+  Enabled: false
+
+Style/SymbolProc:
+  Enabled: false
+
+Style/StructInheritance:
+  Enabled: false
+
+Layout/EmptyLineBetweenDefs:
+  EmptyLineBetweenMethodDefs: true
+  EmptyLineBetweenClassDefs: true
+  EmptyLineBetweenModuleDefs: true
+  AllowAdjacentOneLineDefs: true
+  NumberOfEmptyLines: 1
+
+Layout/EmptyLinesAroundModuleBody:
+  EnforcedStyle: no_empty_lines
+
+# Could not get the indentation the way I like it so disable.
+Layout/FirstHashElementIndentation:
+  Enabled: false
+  EnforcedStyle: consistent
+  IndentationWidth: 2
+
+Layout/MultilineHashBraceLayout:
+  # test are easier to read with a mix
+  Exclude:
+    - 'test/perf_simple.rb'
+    - 'test/sample/file.rb'
+    - 'test/test_compat.rb'
+    - 'test/test_custom.rb'
+    - 'test/test_null.rb'
+    - 'test/test_object.rb'
+    - 'test/test_strict.rb'
+    - 'test/test_wab.rb'
+
+Layout/SpaceAroundEqualsInParameterDefault:
+  EnforcedStyle: no_space
+
+Layout/SpaceAroundOperators:
+  Enabled: false
+
+Layout/SpaceBeforeBlockBraces:
+  EnforcedStyle: space

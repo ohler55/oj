@@ -1,10 +1,9 @@
 #!/usr/bin/env ruby
-# encoding: UTF-8
 
-$: << File.dirname(__FILE__)
-$oj_dir = File.dirname(File.expand_path(File.dirname(__FILE__)))
+$LOAD_PATH << __dir__
+@oj_dir = File.dirname(File.expand_path(__dir__))
 %w(lib ext).each do |dir|
-  $: << File.join($oj_dir, dir)
+  $LOAD_PATH << File.join(@oj_dir, dir)
 end
 
 require 'test_compat'
@@ -26,8 +25,8 @@ require 'test_integer_range'
 at_exit do
   require 'helper'
   if '3.1.0' <= RUBY_VERSION && !(RbConfig::CONFIG['host_os'] =~ /(mingw|mswin)/)
-    #Oj::debug_odd("teardown before GC.verify_compaction_references")
+    # Oj::debug_odd("teardown before GC.verify_compaction_references")
     verify_gc_compaction
-    #Oj::debug_odd("teardown after GC.verify_compaction_references")
+    # Oj::debug_odd("teardown after GC.verify_compaction_references")
   end
 end

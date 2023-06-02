@@ -366,7 +366,7 @@ class NullJuice < Minitest::Test
   def dump_and_load(obj, trace=false)
     json = Oj.dump(obj, :indent => 2)
     puts json if trace
-    loaded = Oj.strict_load(json);
+    loaded = Oj.strict_load(json)
     if obj.nil?
       assert_nil(loaded)
     else

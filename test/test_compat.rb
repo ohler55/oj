@@ -1,10 +1,9 @@
 #!/usr/bin/env ruby
-# encoding: utf-8
 
-$: << File.dirname(__FILE__)
-$oj_dir = File.dirname(File.expand_path(File.dirname(__FILE__)))
+$LOAD_PATH << __dir__
+@oj_dir = File.dirname(File.expand_path(__dir__))
 %w(lib ext).each do |dir|
-  $: << File.join($oj_dir, dir)
+  $LOAD_PATH << File.join(@oj_dir, dir)
 end
 
 require 'minitest'
@@ -186,7 +185,7 @@ class CompatJuice < Minitest::Test
 
   def test_time_xml_schema
     t = Time.xmlschema("2012-01-05T23:58:07.123456000+09:00")
-    #t = Time.local(2012, 1, 5, 23, 58, 7, 123456)
+    # t = Time.local(2012, 1, 5, 23, 58, 7, 123456)
     json = Oj.dump(t, :mode => :compat)
     assert_equal(%{"2012-01-05 23:58:07 +0900"}, json)
   end
@@ -207,6 +206,7 @@ class CompatJuice < Minitest::Test
     h = Oj.load(json, :mode => :strict)
     assert_equal({ "1" => true, "0" => false }, h)
   end
+
   def test_hash
     dump_and_load({}, false)
     dump_and_load({ 'true' => true, 'false' => false}, false)
@@ -533,7 +533,7 @@ class CompatJuice < Minitest::Test
   def dump_and_load(obj, trace=false)
     json = Oj.dump(obj)
     puts json if trace
-    loaded = Oj.compat_load(json, :create_additions => true);
+    loaded = Oj.compat_load(json, :create_additions => true)
     if obj.nil?
       assert_nil(loaded)
     else
@@ -545,7 +545,7 @@ class CompatJuice < Minitest::Test
   def dump_to_json_and_load(obj, trace=false)
     json = Oj.to_json(obj, :indent => '  ')
     puts json if trace
-    loaded = Oj.compat_load(json, :create_additions => true);
+    loaded = Oj.compat_load(json, :create_additions => true)
     if obj.nil?
       assert_nil(loaded)
     else

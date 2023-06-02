@@ -1,7 +1,6 @@
 #!/usr/bin/env ruby
-# encoding: UTF-8
 
-$: << File.dirname(__FILE__)
+$LOAD_PATH << File.dirname(__FILE__)
 %w(lib ext test).each do |dir|
   $LOAD_PATH.unshift File.expand_path("../../#{dir}", __FILE__)
 end
@@ -13,10 +12,10 @@ require 'sqlite3'
 require 'active_record'
 require 'oj'
 
-#Oj.mimic_JSON()
+# Oj.mimic_JSON()
 Oj.default_options = {mode: :compat, indent: 2}
 
-#ActiveRecord::Base.logger = Logger.new(STDERR)
+# ActiveRecord::Base.logger = Logger.new(STDERR)
 
 ActiveRecord::Base.establish_connection(
   :adapter => "sqlite3",

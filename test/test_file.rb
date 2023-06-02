@@ -1,5 +1,4 @@
 #!/usr/bin/env ruby
-# encoding: UTF-8
 
 $: << File.dirname(__FILE__)
 
@@ -118,7 +117,7 @@ class FileJuice < Minitest::Test
   # Symbol
   def test_symbol_object
     Oj.default_options = { :mode => :object }
-    #dump_and_load(''.to_sym, false)
+    # dump_and_load(''.to_sym, false)
     dump_and_load(:abc, false)
     dump_and_load(':xyz'.to_sym, false)
   end
@@ -129,6 +128,7 @@ class FileJuice < Minitest::Test
     Oj.default_options = { :mode => :object, :time_format => :unix_zone }
     dump_and_load(t, false)
   end
+
   def test_time_object_early
     skip 'Windows does not support dates before 1970.' if RbConfig::CONFIG['host_os'] =~ /(mingw|mswin)/
 

@@ -1,10 +1,9 @@
 #!/usr/bin/env ruby
-# encoding: UTF-8
 
-$: << File.dirname(__FILE__)
+$LOAD_PATH << File.dirname(__FILE__)
 
 require 'helper'
-#Oj.mimic_JSON
+# Oj.mimic_JSON
 require 'rails/all'
 
 require 'active_model'
@@ -103,7 +102,7 @@ class MimicRails < Minitest::Test
     cat2 = Category.new(2, 'test')
     a = Array.wrap([cat1, cat2])
 
-    #serializer = CategorySerializer.new(a)
+    # serializer = CategorySerializer.new(a)
 
     puts "*** a.to_json() #{a.to_json()}"
     puts "*** a.as_json() #{a.as_json()}"
@@ -115,10 +114,10 @@ class MimicRails < Minitest::Test
     Oj.default_options= {:indent => 2}
     now = ActiveSupport::TimeZone['America/Chicago'].parse("2014-11-01 13:20:47")
     json = Oj.dump(now, mode: :object, time_format: :xmlschema)
-    #puts "*** json: #{json}"
+    # puts "*** json: #{json}"
 
     oj_dump = Oj.load(json, mode: :object, time_format: :xmlschema)
-    #puts "Now: #{now}\n Oj: #{oj_dump}"
+    # puts "Now: #{now}\n Oj: #{oj_dump}"
     assert_equal("2014-11-01T13:20:47-05:00", oj_dump.xmlschema)
   end
 

@@ -1,13 +1,13 @@
 #!/usr/bin/env ruby -wW1
 
-$: << '.'
-$: << '../lib'
-$: << '../ext'
+$LOAD_PATH << '.'
+$LOAD_PATH << '../lib'
+$LOAD_PATH << '../ext'
 
 if __FILE__ == $0
   if (i = ARGV.index('-I'))
     x, path = ARGV.slice!(i, 2)
-    $: << path
+    $LOAD_PATH << path
   end
 end
 
@@ -36,7 +36,7 @@ $obj = {
   'd' => [ true, [false, [-123456789, nil], 3.9676, ['Something else.', false], nil]], # mix it up array
   'e' => { 'zero' => nil, 'one' => 1, 'two' => 2, 'three' => [3], 'four' => [0, 1, 2, 3, 4] }, # hash
   'f' => nil,     # nil
-  'g' => 12345678901234567890123456789, #_bignum
+  'g' => 12345678901234567890123456789, # _bignum
   'h' => { 'a' => { 'b' => { 'c' => { 'd' => {'e' => { 'f' => { 'g' => nil }}}}}}}, # deep hash, not that deep
   'i' => [[[[[[[nil]]]]]]]  # deep array, again, not that deep
 }
@@ -61,4 +61,3 @@ perf.add('Oj.load_file', '') { Oj.load_file(filename) }
 perf.add('Oj.load(string)', '') { Oj.load(File.read(filename)) }
 perf.add('Oj.load(file)', '') { File.open(filename, 'r') { |f| Oj.load(f) } }
 perf.run($iter)
-

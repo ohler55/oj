@@ -1,12 +1,12 @@
 #!/usr/bin/env ruby -wW1
 # encoding: UTF-8
 
-$: << '.'
-$: << File.join(File.dirname(__FILE__), "../lib")
-$: << File.join(File.dirname(__FILE__), "../ext")
+$LOAD_PATH << '.'
+$LOAD_PATH << File.join(File.dirname(__FILE__), "../lib")
+$LOAD_PATH << File.join(File.dirname(__FILE__), "../ext")
 
 require 'optparse'
-#require 'yajl'
+# require 'yajl'
 require 'perf'
 require 'json'
 require 'json/ext'
@@ -71,7 +71,7 @@ end
 
 # Verify that all packages dump and load correctly and return the same Object as the original.
 capture_error('Oj::Doc', $obj, 'load', 'dump') { |o| Oj::Doc.open(Oj.dump(o, :mode => :strict)) { |f| f.fetch() } }
-#capture_error('Yajl', $obj, 'encode', 'parse') { |o| Yajl::Parser.parse(Yajl::Encoder.encode(o)) }
+# capture_error('Yajl', $obj, 'encode', 'parse') { |o| Yajl::Parser.parse(Yajl::Encoder.encode(o)) }
 capture_error('JSON::Ext', $obj, 'generate', 'parse') { |o| JSON.generator = JSON::Ext::Generator; JSON::Ext::Parser.new(JSON.generate(o)).parse }
 
 if $verbose
@@ -82,7 +82,7 @@ puts '-' * 80
 puts "Parse Performance"
 perf = Perf.new()
 perf.add('Oj::Doc', 'parse') { Oj::Doc.open($json) {|f| } } unless $failed.has_key?('Oj::Doc')
-#perf.add('Yajl', 'parse') { Yajl::Parser.parse($json) } unless $failed.has_key?('Yajl')
+# perf.add('Yajl', 'parse') { Yajl::Parser.parse($json) } unless $failed.has_key?('Yajl')
 perf.add('JSON::Ext', 'parse') { JSON::Ext::Parser.new($json).parse } unless $failed.has_key?('JSON::Ext')
 perf.run($iter)
 
@@ -91,7 +91,7 @@ puts "JSON generation Performance"
 Oj::Doc.open($json) do |doc|
   perf = Perf.new()
   perf.add('Oj::Doc', 'dump') { doc.dump() }
-#  perf.add('Yajl', 'encode') { Yajl::Encoder.encode($obj) }
+  # perf.add('Yajl', 'encode') { Yajl::Encoder.encode($obj) }
   perf.add('JSON::Ext', 'fast_generate') { JSON.fast_generate($obj) }
   perf.before('JSON::Ext') { JSON.generator = JSON::Ext::Generator }
   perf.run($iter)
@@ -102,7 +102,7 @@ if 0 < $gets
   puts "Parse and get all values Performance"
   perf = Perf.new()
   perf.add('Oj::Doc', 'parse') { Oj::Doc.open($json) {|f| $gets.times { f.each_value() {} } } } unless $failed.has_key?('Oj::Doc')
-#  perf.add('Yajl', 'parse') { $gets.times { dig(Yajl::Parser.parse($json)) {} } } unless $failed.has_key?('Yajl')
+  # perf.add('Yajl', 'parse') { $gets.times { dig(Yajl::Parser.parse($json)) {} } } unless $failed.has_key?('Yajl')
   perf.add('JSON::Ext', 'parse') { $gets.times { dig(JSON::Ext::Parser.new($json).parse) {} } } unless $failed.has_key?('JSON::Ext')
   perf.run($iter)
 end
@@ -112,8 +112,8 @@ if $fetch
   puts "fetch nested Performance"
   json_hash = Oj.load($json, :mode => :strict)
   Oj::Doc.open($json) do |fast|
-    #puts "*** C fetch: #{fast.fetch('/d/2/4/y')}"
-    #puts "*** Ruby fetch: #{json_hash.fetch('d', []).fetch(1, []).fetch(3, []).fetch('x', nil)}"
+    # puts "*** C fetch: #{fast.fetch('/d/2/4/y')}"
+    # puts "*** Ruby fetch: #{json_hash.fetch('d', []).fetch(1, []).fetch(3, []).fetch('x', nil)}"
     perf = Perf.new()
     perf.add('Oj::Doc', 'fetch') { fast.fetch('/d/2/4/x'); fast.fetch('/h/a/b/c/d/e/f/g'); fast.fetch('/i/1/1/1/1/1/1/1') }
     # version that fails gracefully
@@ -123,7 +123,7 @@ if $fetch
       json_hash.fetch('i', []).fetch(0, []).fetch(0, []).fetch(0, []).fetch(0, []).fetch(0, []).fetch(0, []).fetch(0, nil)
     end
     # version that raises if the path is incorrect
-#    perf.add('Ruby', 'fetch') { $fetch.times { json_hash['d'][1][3][1] } }
+    # perf.add('Ruby', 'fetch') { $fetch.times { json_hash['d'][1][3][1] } }
     perf.run($iter)
   end
 end
@@ -134,7 +134,7 @@ if $write
   Oj::Doc.open($json) do |doc|
     perf = Perf.new()
     perf.add('Oj::Doc', 'dump') { doc.dump(nil, 'oj.json') }
-#    perf.add('Yajl', 'encode') { File.open('yajl.json', 'w') { |f| Yajl::Encoder.encode($obj, f) } }
+    # perf.add('Yajl', 'encode') { File.open('yajl.json', 'w') { |f| Yajl::Encoder.encode($obj, f) } }
     perf.add('JSON::Ext', 'fast_generate') { File.open('json_ext.json', 'w') { |f| f.write(JSON.fast_generate($obj)) } }
     perf.before('JSON::Ext') { JSON.generator = JSON::Ext::Generator }
     perf.run($iter)
@@ -145,13 +145,13 @@ if $read
   puts '-' * 80
   puts "JSON read from file Performance"
   Oj::Doc.open($json) { |doc| doc.dump(nil, 'oj.json') }
-#  File.open('yajl.json', 'w') { |f| Yajl::Encoder.encode($obj, f) }
+  # File.open('yajl.json', 'w') { |f| Yajl::Encoder.encode($obj, f) }
   JSON.generator = JSON::Ext::Generator
   File.open('json_ext.json', 'w') { |f| f.write(JSON.fast_generate($obj)) }
   Oj::Doc.open($json) do |doc|
     perf = Perf.new()
     perf.add('Oj::Doc', 'open_file') { ::Oj::Doc.open_file('oj.json') }
-#    perf.add('Yajl', 'decode') { Yajl::decoder.decode(File.read('yajl.json')) }
+    # perf.add('Yajl', 'decode') { Yajl::decoder.decode(File.read('yajl.json')) }
     perf.add('JSON::Ext', '') { JSON.parse(File.read('json_ext.json')) }
     perf.before('JSON::Ext') { JSON.parser = JSON::Ext::Parser }
     perf.run($iter)

@@ -1,13 +1,13 @@
 #!/usr/bin/env ruby
 
-$: << '.'
-$: << '../lib'
-$: << '../ext'
+$LOAD_PATH << '.'
+$LOAD_PATH << '../lib'
+$LOAD_PATH << '../ext'
 
 if __FILE__ == $0
   if (i = ARGV.index('-I'))
     x, path = ARGV.slice!(i, 2)
-    $: << path
+    $LOAD_PATH << path
   end
 end
 
@@ -82,16 +82,16 @@ else
   puts "loading and parsing #{files}\n\n"
   data = files.map do |f|
     $xml = File.read(f)
-    $obj = Ox.load($xml);
+    $obj = Ox.load($xml)
     $mars = Marshal.dump($obj)
     $json = Oj.dump($obj, :indent => $indent, :circular => $circular)
   end
 end
 
 Oj.default_options = { :mode => :object, :indent => $indent, :circular => $circular, :allow_gc => $allow_gc }
-#puts "json: #{$json.size}"
-#puts "xml: #{$xml.size}"
-#puts "marshal: #{$mars.size}"
+# puts "json: #{$json.size}"
+# puts "xml: #{$xml.size}"
+# puts "marshal: #{$mars.size}"
 
 if do_load
   puts '-' * 80
@@ -118,7 +118,7 @@ if do_read
   puts "Read from file Performance"
   perf = Perf.new()
   perf.add('Oj', 'load') { Oj.load_file('sample.json') }
-  #perf.add('Oj', 'load') { Oj.load(File.read('sample.json')) }
+  # perf.add('Oj', 'load') { Oj.load(File.read('sample.json')) }
   perf.add('Ox', 'load_file') { Ox.load_file('sample.xml', :mode => :object) }
   perf.add('Marshal', 'load') { Marshal.load(File.new('sample.marshal')) }
   perf.run($iter)
@@ -133,5 +133,3 @@ if do_write
   perf.add('Marshal', 'dump') { Marshal.dump($obj, File.new('sample.marshal', 'w')) }
   perf.run($iter)
 end
-
-

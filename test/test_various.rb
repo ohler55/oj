@@ -1,12 +1,11 @@
 #!/usr/bin/env ruby
-# encoding: utf-8
 
-$: << File.dirname(__FILE__)
+$LOAD_PATH << __dir__
 
 require 'helper'
 
 class Juice < Minitest::Test
-  def gen_whitespaced_string(length = Random.new.rand(100))
+  def gen_whitespaced_string(length=Random.new.rand(100))
     whitespace_chars = [" ", "\t", "\f", "\n", "\r"]
     result = ""
     length.times { result << whitespace_chars.sample }
@@ -77,12 +76,15 @@ class Juice < Minitest::Test
   end
 
   class Jazz < Jam
+
     def initialize(x, y)
       super
     end
+
     def to_hash()
       { 'json_class' => self.class.to_s, 'x' => @x, 'y' => @y }
     end
+
     def self.json_create(h)
       self.new(h['x'], h['y'])
     end
@@ -139,18 +141,18 @@ class Juice < Minitest::Test
       ignore_under: true,
       trace: true,
       safe: true,
-      skip_null_byte: false
+      skip_null_byte: false,
     }
     Oj.default_options = alt
-    #keys = alt.keys
-    #Oj.default_options.keys.each { |k| puts k unless keys.include? k}
+    # keys = alt.keys
+    # Oj.default_options.keys.each { |k| puts k unless keys.include? k}
     opts = Oj.default_options()
-    assert_equal(alt, opts);
+    assert_equal(alt, opts)
 
     Oj.default_options = orig # return to original
     # verify back to original
     opts = Oj.default_options()
-    assert_equal(orig, opts);
+    assert_equal(orig, opts)
   end
 
   def test_nil
@@ -301,6 +303,7 @@ class Juice < Minitest::Test
     dump_and_load([[nil]], false)
     dump_and_load([[nil], 58], false)
   end
+
   def test_array_not_closed
     begin
       Oj.load('[')
@@ -339,33 +342,39 @@ class Juice < Minitest::Test
     out = Oj.dump(hash)
     assert_equal(json, out)
   end
+
   def test_escapes_entities_by_default_when_configured_to_do_so
     hash = {'key' => "I <3 this"}
     Oj.default_options = {:escape_mode => :xss_safe}
     out = Oj.dump hash
     assert_equal(%{{"key":"I \\u003c3 this"}}, out)
   end
+
   def test_escapes_slashes_by_default_when_configured_to_do_so
     hash = {'key' => "I <3 this </script>"}
     Oj.default_options = {:escape_mode => :slash}
     out = Oj.dump hash
     assert_equal(%{{"key":"I <3 this <\\/script>"}}, out)
   end
+
   def test_escapes_entities_when_asked_to
     hash = {'key' => "I <3 this"}
     out = Oj.dump(hash, :escape_mode => :xss_safe)
     assert_equal(%{{"key":"I \\u003c3 this"}}, out)
   end
+
   def test_does_not_escape_entities_when_not_asked_to
     hash = {'key' => "I <3 this"}
     out = Oj.dump(hash, :escape_mode => :json)
     assert_equal(%{{"key":"I <3 this"}}, out)
   end
+
   def test_escapes_common_xss_vectors
     hash = {'key' => "<script>alert(123) && formatHD()</script>"}
     out = Oj.dump(hash, :escape_mode => :xss_safe)
     assert_equal(%{{"key":"\\u003cscript\\u003ealert(123) \\u0026\\u0026 formatHD()\\u003c\\/script\\u003e"}}, out)
   end
+
   def test_escape_newline_by_default
     Oj.default_options = { :escape_mode => :json }
     json = %{["one","two\\n2"]}
@@ -373,6 +382,7 @@ class Juice < Minitest::Test
     out = Oj.dump(x)
     assert_equal(json, out)
   end
+
   def test_does_not_escape_newline
     Oj.default_options = { :escape_mode => :newline }
     json = %{["one","two\n2"]}
@@ -380,6 +390,7 @@ class Juice < Minitest::Test
     out = Oj.dump(x)
     assert_equal(json, out)
   end
+
   def test_dump_invalid_utf8
     Oj.default_options = { :escape_mode => :ascii }
     assert_raises(EncodingError) {
@@ -457,7 +468,7 @@ class Juice < Minitest::Test
     assert_equal('null', json)
   end
 
-# Object with to_hash()
+  # Object with to_hash()
   def test_to_hash_object_null
     obj = Jazz.new(true, 58)
     json = Oj.dump(obj, :mode => :null)
@@ -505,7 +516,7 @@ class Juice < Minitest::Test
 
   def test_infinity
     n = Oj.load('Infinity', :mode => :object)
-    assert_equal(BigDecimal('Infinity').to_f, n);
+    assert_equal(BigDecimal('Infinity').to_f, n)
     x = Oj.load('Infinity', :mode => :compat)
     assert_equal('Infinity', x.to_s)
   end
@@ -576,7 +587,7 @@ class Juice < Minitest::Test
     IO.pipe do |r, w|
       if fork
         r.close
-        #w.nonblock = false
+        # w.nonblock = false
         a = []
         10_000.times do |i|
           a << i
@@ -594,7 +605,7 @@ class Juice < Minitest::Test
     end
   end
 
-# comments
+  # comments
   def test_comment_slash
     json = %{{
   "x":true,//three
