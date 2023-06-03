@@ -12,4 +12,3 @@ module Sample
 
   end # Group
 end # Sample
-
