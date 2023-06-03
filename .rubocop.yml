@@ -154,6 +154,12 @@ Lint/UselessAssignment:
 Lint/UselessMethodDefinition:
   Enabled: true
 
+Metrics/CyclomaticComplexity:
+  Max: 20
+
+Metrics/PerceivedComplexity:
+  Max: 20
+
 Metrics/ModuleLength:
   Enabled: false
 
@@ -326,6 +332,10 @@ Style/IfUnlessModifier:
 
 Style/IfUnlessModifierOfIfUnless:
   Enabled: true
+
+Style/InverseMethods:
+  InverseMethods: true
+  InverseBlocks: true
 
 Style/LineEndConcatenation:
   Enabled: true
