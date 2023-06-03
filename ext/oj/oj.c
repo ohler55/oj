@@ -232,7 +232,7 @@ struct _options oj_default_options = {
         NULL,    // tail
         {'\0'},  // err
     },
-    NULL,  // ignore
+    NULL,        // ignore
 };
 
 /* Document-method: default_options()
@@ -1294,9 +1294,9 @@ static VALUE dump(int argc, VALUE *argv, VALUE self) {
 
     oj_out_init(arg.out);
 
-    arg.out->omit_nil = copts.dump_opts.omit_nil;
+    arg.out->omit_nil       = copts.dump_opts.omit_nil;
     arg.out->omit_null_byte = copts.dump_opts.omit_null_byte;
-    arg.out->caller   = CALLER_DUMP;
+    arg.out->caller         = CALLER_DUMP;
 
     return rb_ensure(dump_body, (VALUE)&arg, dump_ensure, (VALUE)&arg);
 }
@@ -1343,7 +1343,7 @@ static VALUE to_json(int argc, VALUE *argv, VALUE self) {
 
     oj_out_init(&out);
 
-    out.omit_nil = copts.dump_opts.omit_nil;
+    out.omit_nil       = copts.dump_opts.omit_nil;
     out.omit_null_byte = copts.dump_opts.omit_null_byte;
     // For obj.to_json or generate nan is not allowed but if called from dump
     // it is.
