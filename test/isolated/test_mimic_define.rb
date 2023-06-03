@@ -5,7 +5,7 @@ require 'helper'
 
 class MimicDefine < Minitest::Test
   def test_mimic_define
-    assert(defined?(JSON).nil?)
+    assert_nil(defined?(JSON))
     Oj.mimic_JSON
 
     # Test constants
