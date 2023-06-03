@@ -84,16 +84,16 @@ module JSON
 
         @source
       end
-      
+
       def parse()
         raise TypeError.new("already initialized") if @source.nil?
 
         JSON.parse(@source)
       end
-      
+
     end # Parser
   end # Ext
-  
+
   State = ::JSON::Ext::Generator::State unless defined?(::JSON::State)
 
   begin
@@ -109,7 +109,7 @@ module JSON
   class GenericObject < OpenStruct
     class << self
       alias [] new
-      
+
       def json_creatable?
         @json_creatable
       end
@@ -174,5 +174,4 @@ module JSON
       as_json.to_json(*a)
     end
   end
-  
 end # JSON

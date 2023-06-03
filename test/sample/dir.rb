@@ -9,7 +9,7 @@ module Sample
       super
       @files = []
     end
-    
+
     def <<(f)
       @files << f
     end
