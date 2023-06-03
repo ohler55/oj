@@ -32,7 +32,7 @@ class SharedMimicTest < Minitest::Test
 
   def setup
     @default_options = Oj.default_options
-    @time = Time.at(1400000000).utc
+    @time = Time.at(1_400_000_000).utc
     @expected_time_string =
       if defined?(Rails)
         %{"2014-05-13T16:53:20.000Z"}
