@@ -142,9 +142,9 @@ class SharedMimicTest < Minitest::Test
     children = []
     json = %{{"a":1,"b":[true,false]}}
     if 'rubinius' == $ruby
-      obj = JSON.load(json) {|x| children << x }
+      obj = JSON.load(json) { |x| children << x }
     else
-      p = Proc.new {|x| children << x }
+      p = Proc.new { |x| children << x }
       obj = JSON.load(json, p)
     end
     assert_equal({ 'a' => 1, 'b' => [true, false]}, obj)
