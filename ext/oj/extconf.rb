@@ -56,7 +56,7 @@ dflags.each do |k, v|
 end
 
 $CPPFLAGS += ' -Wall'
-#puts "*** $CPPFLAGS: #{$CPPFLAGS}"
+# puts "*** $CPPFLAGS: #{$CPPFLAGS}"
 # Adding the __attribute__ flag only works with gcc compilers and even then it
 # does not work to check args with varargs so just remove the check.
 CONFIG['warnflags'].slice!(/ -Wsuggest-attribute=format/)
