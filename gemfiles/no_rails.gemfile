@@ -1,3 +1,5 @@
-source "https://rubygems.org"
+# frozen_string_literal: true
 
-gemspec :path => "../"
+source 'https://rubygems.org'
+
+gemspec :path => '../'

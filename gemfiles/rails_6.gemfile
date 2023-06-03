@@ -1,6 +1,8 @@
-source "https://rubygems.org"
+# frozen_string_literal: true
 
-gem "rails", "6.0.3.6"
-gem "sqlite3"
+source 'https://rubygems.org'
 
-gemspec :path => "../"
+gem 'rails', '6.0.3.6'
+gem 'sqlite3'
+
+gemspec :path => '../'
