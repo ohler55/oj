@@ -45,7 +45,7 @@ class SharedMimicTest < Minitest::Test
     Oj.default_options = @default_options
   end
 
-# exception
+  # exception
   def test_exception
     begin
       JSON.parse("{")
@@ -57,7 +57,7 @@ class SharedMimicTest < Minitest::Test
     end
   end
 
-# dump
+  # dump
   def test_dump_string
     json = JSON.dump([1, true, nil, @time])
     if $rails_monkey
@@ -126,7 +126,7 @@ class SharedMimicTest < Minitest::Test
     end
   end
 
-# load
+  # load
   def test_load_string
     json = %{{"a":1,"b":[true,false]}}
     obj = JSON.load(json)
@@ -168,7 +168,7 @@ class SharedMimicTest < Minitest::Test
     assert_raises(JSON::ParserError) { JSON.parse("\t\t\n   ") }
   end
 
-# []
+  # []
   def test_bracket_load
     json = %{{"a":1,"b":[true,false]}}
     obj = JSON[json]
@@ -180,7 +180,7 @@ class SharedMimicTest < Minitest::Test
     assert_equal(%{[1,true,null]}, json)
   end
 
-# generate
+  # generate
   def test_generate
     json = JSON.generate({ 'a' => 1, 'b' => [true, false]})
     assert(%{{"a":1,"b":[true,false]}} == json ||
@@ -209,14 +209,14 @@ class SharedMimicTest < Minitest::Test
 }} == json)
   end
 
-# fast_generate
+  # fast_generate
   def test_fast_generate
     json = JSON.generate({ 'a' => 1, 'b' => [true, false]})
     assert(%{{"a":1,"b":[true,false]}} == json ||
            %{{"b":[true,false],"a":1}} == json)
   end
 
-# pretty_generate
+  # pretty_generate
   def test_pretty_generate
     json = JSON.pretty_generate({ 'a' => 1, 'b' => [true, false]})
     assert(%{{
@@ -235,7 +235,7 @@ class SharedMimicTest < Minitest::Test
 }} == json)
   end
 
-# parse
+  # parse
   def test_parse
     json = %{{"a":1,"b":[true,false]}}
     obj = JSON.parse(json)
@@ -269,7 +269,7 @@ class SharedMimicTest < Minitest::Test
     assert_equal({ 'a' => 1, 'b' => [true, false]}, obj)
   end
 
-# recurse_proc
+  # recurse_proc
   def test_recurse_proc
     children = []
     JSON.recurse_proc({ 'a' => 1, 'b' => [true, false]}) { |x| children << x }
@@ -280,7 +280,7 @@ class SharedMimicTest < Minitest::Test
     end
   end
 
-# make sure to_json is defined for object.
+  # make sure to_json is defined for object.
   def test_mimic_to_json
     {'a' => 1}.to_json()
     Object.new().to_json()
