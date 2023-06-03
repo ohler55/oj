@@ -6,6 +6,7 @@ AllCops:
   TargetRubyVersion: 2.7
   NewCops: enable
   Exclude:
+    - 'vendor/**/*'
     - 'test/json_gem/**/*'
     - 'test/activerecord/**/*'
     - 'test/activesupport6/**/*'
