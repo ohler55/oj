@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 3.15.0 - 2023-06-03
+## 3.15.0 - 2023-06-02
 
 - Added `omit_null_byte` option when dumping.
 
