@@ -40,7 +40,7 @@ typedef struct _doc {
     Leaf         *where;                  // points to current location
     Leaf          where_path[MAX_STACK];  // points to head of path
     char         *json;
-    unsigned long size;  // number of leaves/branches in the doc
+    unsigned long size;                   // number of leaves/branches in the doc
     VALUE         self;
     Batch         batches;
     struct _batch batch0;
@@ -576,7 +576,7 @@ static char *read_quoted_value(ParseInfo pi) {
     char *h     = pi->s;  // head
     char *t     = h;      // tail
 
-    h++;  // skip quote character
+    h++;                  // skip quote character
     t++;
     value = h;
     for (; '"' != *h; h++, t++) {

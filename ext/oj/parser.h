@@ -32,9 +32,9 @@ typedef struct _num {
     long double dub;
     int64_t     fixnum;  // holds all digits
     uint32_t    len;
-    int16_t     div;  // 10^div
+    int16_t     div;     // 10^div
     int16_t     exp;
-    uint8_t     shift;  // shift of fixnum to get decimal
+    uint8_t     shift;   // shift of fixnum to get decimal
     bool        neg;
     bool        exp_neg;
     // for numbers as strings, reuse buf

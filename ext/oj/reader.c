@@ -101,7 +101,7 @@ int oj_reader_read(Reader reader) {
         } else {
             shift = reader->pro - reader->head - 1;  // leave one character so we can backup one
         }
-        if (0 >= shift) { /* no space left so allocate more */
+        if (0 >= shift) {                            /* no space left so allocate more */
             const char *old  = reader->head;
             size_t      size = reader->end - reader->head + BUF_PAD;
 
