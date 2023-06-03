@@ -1,5 +1,3 @@
-# encoding: UTF-8
-
 # The rails tests set this to true. Both Rails and the JSON gem monkey patch the
 # as_json methods on several base classes. Depending on which one replaces the
 # method last the behavior will be different. Oj.mimic_JSON abides by the same
