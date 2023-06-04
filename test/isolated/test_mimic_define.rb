@@ -9,12 +9,12 @@ class MimicDefine < Minitest::Test
     Oj.mimic_JSON
 
     # Test constants
-    assert(!defined?(JSON).nil?)
-    assert(!defined?(JSON::ParserError).nil?)
+    refute_nil(defined?(JSON))
+    refute_nil(defined?(JSON::ParserError))
     assert(Object.respond_to?(:to_json))
 
     # Test loaded features
-    assert(!require('json'))
+    refute(require('json'))
 
     begin
       require('json_spec')
