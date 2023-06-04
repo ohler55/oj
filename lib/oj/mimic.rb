@@ -266,7 +266,7 @@ module Oj
         end
       end
       def self.json_create(h)
-        if usec = h.delete('u')
+        if (usec = h.delete('u'))
           h['n'] = usec * 1000
         end
         if instance_methods.include?(:tv_nsec)
