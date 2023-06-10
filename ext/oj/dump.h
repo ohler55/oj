@@ -93,10 +93,7 @@ inline static void dump_ulong(unsigned long num, Out out) {
 
     *b-- = '\0';
     if (0 < num) {
-        for (; 0 < num; num /= 10, b--) {
-            *b = (num % 10) + '0';
-        }
-        b++;
+        b = oj_longlong_to_string((long long)num, false, b);
     } else {
         *b = '0';
     }
