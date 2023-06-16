@@ -1010,11 +1010,33 @@ static const char digits_table[] = "\
 80818283848586878889\
 90919293949596979899";
 
+char *oj_longlong_to_string(long long num, bool negative, char *buf) {
+    while (100 <= num) {
+        unsigned idx = num % 100 * 2;
+        *buf--       = digits_table[idx + 1];
+        *buf--       = digits_table[idx];
+        num /= 100;
+    }
+    if (num < 10) {
+        *buf-- = num + '0';
+    } else {
+        *buf-- = digits_table[num * 2 + 1];
+        *buf-- = digits_table[num * 2];
+    }
+
+    if (negative) {
+        *buf = '-';
+    } else {
+        buf++;
+    }
+    return buf;
+}
+
 void oj_dump_fixnum(VALUE obj, int depth, Out out, bool as_ok) {
     char      buf[32];
     char     *b              = buf + sizeof(buf) - 1;
     long long num            = NUM2LL(obj);
-    int       neg            = 0;
+    bool      neg            = false;
     size_t    cnt            = 0;
     bool      dump_as_string = false;
 
@@ -1023,7 +1045,7 @@ void oj_dump_fixnum(VALUE obj, int depth, Out out, bool as_ok) {
         dump_as_string = true;
     }
     if (0 > num) {
-        neg = 1;
+        neg = true;
         num = -num;
     }
     *b-- = '\0';
@@ -1032,24 +1054,7 @@ void oj_dump_fixnum(VALUE obj, int depth, Out out, bool as_ok) {
         *b-- = '"';
     }
     if (0 < num) {
-        while (100 <= num) {
-            unsigned idx = num % 100 * 2;
-            *b--         = digits_table[idx + 1];
-            *b--         = digits_table[idx];
-            num /= 100;
-        }
-        if (num < 10) {
-            *b-- = num + '0';
-        } else {
-            *b-- = digits_table[num * 2 + 1];
-            *b-- = digits_table[num * 2];
-        }
-
-        if (neg) {
-            *b = '-';
-        } else {
-            b++;
-        }
+        b = oj_longlong_to_string(num, neg, b);
     } else {
         *b = '0';
     }

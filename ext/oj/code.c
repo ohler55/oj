@@ -185,24 +185,17 @@ void oj_code_attrs(VALUE obj, Attr attrs, int depth, Out out, bool with_class) {
             } else {
                 char   buf[32];
                 char  *b   = buf + sizeof(buf) - 1;
-                int    neg = 0;
+                bool   neg = false;
                 long   num = attrs->num;
                 size_t cnt = 0;
 
                 if (0 > num) {
-                    neg = 1;
+                    neg = true;
                     num = -num;
                 }
                 *b-- = '\0';
                 if (0 < num) {
-                    for (; 0 < num; num /= 10, b--) {
-                        *b = (num % 10) + '0';
-                    }
-                    if (neg) {
-                        *b = '-';
-                    } else {
-                        b++;
-                    }
+                    b = oj_longlong_to_string(num, neg, b);
                 } else {
                     *b = '0';
                 }

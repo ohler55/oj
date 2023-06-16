@@ -114,10 +114,7 @@ inline static char *ulong_fill(char *s, size_t num) {
     char *b = buf + sizeof(buf) - 1;
 
     *b-- = '\0';
-    for (; 0 < num; num /= 10, b--) {
-        *b = (num % 10) + '0';
-    }
-    b++;
+    b    = oj_longlong_to_string((long long)num, false, b);
     if ('\0' == *b) {
         b--;
         *b = '0';
