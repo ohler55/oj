@@ -709,10 +709,7 @@ void oj_parse2(ParseInfo pi) {
         case '[': array_start(pi); break;
         case ']': array_end(pi); break;
         case ',': comma(pi); break;
-        case '"':
-            read_str(pi);
-            break;
-            // case '+':
+        case '"': read_str(pi); break;
         case '+':
             if (CompatMode == pi->options.mode) {
                 oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "unexpected character");

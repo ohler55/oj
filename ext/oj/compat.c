@@ -13,32 +13,19 @@
 #include "trace.h"
 
 static void hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *orig) {
-    const char    *key    = kval->key;
-    int            klen   = kval->klen;
-    Val            parent = stack_peek(&pi->stack);
-    volatile VALUE rkey   = kval->key_val;
+    const char *key    = kval->key;
+    int         klen   = kval->klen;
+    Val         parent = stack_peek(&pi->stack);
 
-    if (Qundef == rkey && Yes == pi->options.create_ok && NULL != pi->options.create_id &&
+    if (Qundef == kval->key_val && Yes == pi->options.create_ok && NULL != pi->options.create_id &&
         *pi->options.create_id == *key && (int)pi->options.create_id_len == klen &&
         0 == strncmp(pi->options.create_id, key, klen)) {
         parent->classname = oj_strndup(str, len);
         parent->clen      = len;
     } else {
         volatile VALUE rstr = oj_cstr_to_value(str, len, (size_t)pi->options.cache_str);
+        volatile VALUE rkey = oj_calc_hash_key(pi, kval);
 
-        if (Qundef == rkey) {
-            if (Yes != pi->options.cache_keys) {
-                if (Yes == pi->options.sym_key) {
-                    rkey = ID2SYM(rb_intern3(key, klen, oj_utf8_encoding));
-                } else {
-                    rkey = rb_utf8_str_new(key, klen);
-                }
-            } else if (Yes == pi->options.sym_key) {
-                rkey = oj_sym_intern(key, klen);
-            } else {
-                rkey = oj_str_intern(key, klen);
-            }
-        }
         if (Yes == pi->options.create_ok && NULL != pi->options.str_rx.head) {
             VALUE clas = oj_rxclass_match(&pi->options.str_rx, str, (int)len);
 
