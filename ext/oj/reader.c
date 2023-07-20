@@ -164,7 +164,6 @@ static VALUE partial_io_cb(VALUE rbuf) {
     }
     str = StringValuePtr(rstr);
     cnt = RSTRING_LEN(rstr);
-    // printf("*** partial read %lu bytes, str: '%s'\n", cnt, str);
     strcpy(reader->tail, str);
     reader->read_end = reader->tail + cnt;
 
@@ -185,7 +184,6 @@ static VALUE io_cb(VALUE rbuf) {
     }
     str = StringValuePtr(rstr);
     cnt = RSTRING_LEN(rstr);
-    // printf("*** read %lu bytes, str: '%s'\n", cnt, str);
     strcpy(reader->tail, str);
     reader->read_end = reader->tail + cnt;
 
