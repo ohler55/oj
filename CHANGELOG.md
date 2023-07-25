@@ -1,8 +1,10 @@
 # CHANGELOG
 
-## 3.15.1 - 2023-07-21
+## 3.15.1 - 2023-07-27
 
 - Add protection against some using `require 'oj/json`, an internal file.
+
+- Fixed non-json errors when in compat mode.
 
 ## 3.15.0 - 2023-06-02
 

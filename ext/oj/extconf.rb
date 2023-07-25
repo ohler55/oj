@@ -67,4 +67,4 @@ CONFIG['warnflags'].slice!(/ -Wmissing-noreturn/)
 
 create_makefile(File.join(extension_name, extension_name))
 
-`{make clean}`
+%x{make clean}
