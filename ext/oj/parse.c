@@ -426,6 +426,7 @@ static void read_num(ParseInfo pi) {
     struct _numInfo ni;
     Val             parent = stack_peek(&pi->stack);
 
+    ni.pi       = pi;
     ni.str      = pi->cur;
     ni.i        = 0;
     ni.num      = 0;
@@ -874,7 +875,8 @@ oj_num_as_value(NumInfo ni) {
             double d = strtod(ni->str, &end);
 
             if ((long)ni->len != (long)(end - ni->str)) {
-                rb_raise(oj_parse_error_class, "Invalid float");
+                rb_raise(ni->pi->err_class, "Invalid float");
+                //rb_raise(oj_parse_error_class, "Invalid float");
             }
             rnum = rb_float_new(d);
         }

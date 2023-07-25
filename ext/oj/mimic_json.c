@@ -574,7 +574,6 @@ static VALUE mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
         if (T_HASH != rb_type(ropts)) {
             rb_raise(rb_eArgError, "options must be a hash.");
         }
-
         rb_hash_foreach(ropts, parse_options_cb, (VALUE)&pi);
         v = rb_hash_lookup(ropts, oj_max_nesting_sym);
         if (Qtrue == v) {

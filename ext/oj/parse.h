@@ -16,22 +16,24 @@
 #include "val_stack.h"
 
 struct _rxClass;
+struct _parseInfo;
 
 typedef struct _numInfo {
-    int64_t     i;
-    int64_t     num;
-    int64_t     div;
-    int64_t     di;
-    const char *str;
-    size_t      len;
-    long        exp;
-    int         big;
-    int         infinity;
-    int         nan;
-    int         neg;
-    int         has_exp;
-    int         no_big;
-    int         bigdec_load;
+    int64_t            i;
+    int64_t            num;
+    int64_t            div;
+    int64_t            di;
+    const char        *str;
+    size_t             len;
+    long               exp;
+    struct _parseInfo *pi;
+    int                big;
+    int                infinity;
+    int                nan;
+    int                neg;
+    int                has_exp;
+    int                no_big;
+    int                bigdec_load;
 } *NumInfo;
 
 typedef struct _parseInfo {
