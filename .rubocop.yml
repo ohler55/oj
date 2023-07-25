@@ -59,6 +59,9 @@ Style/NumericPredicate:
 Style/HashSyntax:
   Enabled: false
 
+Style/TernaryParentheses:
+  Enabled: false
+
 Layout/ExtraSpacing:
   AllowForAlignment: true,
   AllowBeforeTrailingComments: true

@@ -104,6 +104,7 @@ unless defined?(JSON::PRETTY_STATE_PROTOTYPE)
     begin
       send(:remove_const, :Parser)
     rescue
+      # ignore and move on
     end
     Parser = ::JSON::Ext::Parser unless defined?(::JSON::Parser)
     self.parser = ::JSON::Ext::Parser

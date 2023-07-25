@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'mkmf'
 require 'rbconfig'
 
@@ -6,7 +8,7 @@ dir_config(extension_name)
 
 parts = RUBY_DESCRIPTION.split(' ')
 type = parts[0]
-type = type[4..-1] if type.start_with?('tcs-')
+type = type[4..] if type.start_with?('tcs-')
 is_windows = RbConfig::CONFIG['host_os'] =~ /(mingw|mswin)/
 platform = RUBY_PLATFORM
 version = RUBY_VERSION.split('.')
@@ -56,7 +58,7 @@ dflags.each do |k, v|
 end
 
 $CPPFLAGS += ' -Wall'
-#puts "*** $CPPFLAGS: #{$CPPFLAGS}"
+# puts "*** $CPPFLAGS: #{$CPPFLAGS}"
 # Adding the __attribute__ flag only works with gcc compilers and even then it
 # does not work to check args with varargs so just remove the check.
 CONFIG['warnflags'].slice!(/ -Wsuggest-attribute=format/)
@@ -65,4 +67,4 @@ CONFIG['warnflags'].slice!(/ -Wmissing-noreturn/)
 
 create_makefile(File.join(extension_name, extension_name))
 
-%x{make clean}
+`{make clean}`
