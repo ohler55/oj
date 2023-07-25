@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.15.1 - 2023-07-21
+
+- Add protection against some using `require 'oj/json`, an internal file.
+
 ## 3.15.0 - 2023-06-02
 
 - Added `omit_null_byte` option when dumping.
