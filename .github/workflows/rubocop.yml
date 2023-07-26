@@ -8,7 +8,8 @@ on:
     paths:
       - ".rubocop*.yml"
       - ".github/workflows/rubocop.yml"
-      - "**/*.rb"
+      - "lib/**/*.rb"
+      - "test/*.rb"
       - "**/*.gemspec"
       - "**/*.gemfile"
       - "Gemfile"
@@ -16,7 +17,8 @@ on:
     paths:
       - ".rubocop*.yml"
       - ".github/workflows/rubocop.yml"
-      - "**/*.rb"
+      - "lib/**/*.rb"
+      - "test/*.rb"
       - "**/*.gemspec"
       - "**/*.gemfile"
       - "Gemfile"
