@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 3.15.1 - 2023-07-27
+## 3.15.1 - 2023-07-30
 
 - Add protection against some using `require 'oj/json`, an internal file.
 
