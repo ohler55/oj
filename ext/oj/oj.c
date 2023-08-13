@@ -623,7 +623,6 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
     if (set_yesno_options(k, v, copts)) {
         return ST_CONTINUE;
     }
-
     if (oj_indent_sym == k) {
         switch (rb_type(v)) {
         case T_NIL:
@@ -954,6 +953,18 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
             return ST_CONTINUE;
         }
         copts->sym_key = (Qtrue == v) ? Yes : No;
+
+    } else if (oj_max_nesting_sym == k) {
+				if (Qtrue == v) {
+						copts->dump_opts.max_depth = 100;
+				} else if (Qfalse == v || Qnil == v) {
+						copts->dump_opts.max_depth = MAX_DEPTH;
+				} else if (T_FIXNUM == rb_type(v)) {
+						copts->dump_opts.max_depth = NUM2INT(v);
+						if (0 >= copts->dump_opts.max_depth) {
+								copts->dump_opts.max_depth = MAX_DEPTH;
+						}
+				}
     } else if (float_format_sym == k) {
         rb_check_type(v, T_STRING);
         if (6 < (int)RSTRING_LEN(v)) {
@@ -961,8 +972,6 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
         }
         strncpy(copts->float_fmt, RSTRING_PTR(v), (size_t)RSTRING_LEN(v));
         copts->float_fmt[RSTRING_LEN(v)] = '\0';
-
-        // TBD
     }
     return ST_CONTINUE;
 }
@@ -971,7 +980,6 @@ void oj_parse_options(VALUE ropts, Options copts) {
     if (T_HASH != rb_type(ropts)) {
         return;
     }
-
     rb_hash_foreach(ropts, parse_options_cb, (VALUE)copts);
     oj_parse_opt_match_string(&copts->str_rx, ropts);
 
@@ -1322,8 +1330,9 @@ static VALUE dump(int argc, VALUE *argv, VALUE self) {
  * will be called. The mode is set to :compat.
  * - *obj* [_Object_] Object to serialize as an JSON document String
  * - *options* [_Hash_]
- *   - *:max_nesting* [_boolean_] It true nesting is limited to 100. The option to detect circular
- * references is available but is not compatible with the json gem., default is false
+ *   - *:max_nesting* [_Fixnum_|_boolean_] It true nesting is limited to 100. If a Fixnum nesting
+ * is set to the provided value. The option to detect circular references is available but is not
+ * compatible with the json gem., default is false or unlimited.
  *   - *:allow_nan* [_boolean_] If true non JSON compliant words such as Nan and Infinity will be
  * used as appropriate, default is true.
  *   - *:quirks_mode* [_boolean_] Allow single JSON values instead of documents, default is true

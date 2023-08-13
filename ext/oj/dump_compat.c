@@ -851,14 +851,19 @@ static DumpFunc compat_funcs[] = {
 };
 
 static void set_state_depth(VALUE state, int depth) {
-    VALUE json_module = rb_const_get_at(rb_cObject, rb_intern("JSON"));
-    VALUE ext         = rb_const_get(json_module, rb_intern("Ext"));
-    VALUE generator   = rb_const_get(ext, rb_intern("Generator"));
-    VALUE state_class = rb_const_get(generator, rb_intern("State"));
+		if (0 == rb_const_defined(rb_cObject, rb_intern("JSON"))) {
+				rb_require("oj/json");
+		}
+		{
+				VALUE json_module = rb_const_get_at(rb_cObject, rb_intern("JSON"));
+				VALUE ext         = rb_const_get(json_module, rb_intern("Ext"));
+				VALUE generator   = rb_const_get(ext, rb_intern("Generator"));
+				VALUE state_class = rb_const_get(generator, rb_intern("State"));
 
-    if (state_class == rb_obj_class(state)) {
-        rb_funcall(state, rb_intern("depth="), 1, INT2NUM(depth));
-    }
+				if (state_class == rb_obj_class(state)) {
+						rb_funcall(state, rb_intern("depth="), 1, INT2NUM(depth));
+				}
+		}
 }
 
 void oj_dump_compat_val(VALUE obj, int depth, Out out, bool as_ok) {

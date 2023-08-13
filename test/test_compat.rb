@@ -467,8 +467,13 @@ class CompatJuice < Minitest::Test
   end
 
   def test_arg_passing
-    json = Oj.to_json(Argy.new(), :max_nesting=> 40)
+    json = Oj.to_json(Argy.new(), :max_nesting => 40)
     assert_equal(%|{"args":"[{:max_nesting=>40}]"}|, json)
+  end
+
+  def test_max_nesting
+    assert_raises() { Oj.to_json([[[[[]]]]], :max_nesting => 3) }
+    assert_raises() { Oj.dump([[[[[]]]]], :max_nesting => 3, :mode=>:compat) }
   end
 
   def test_bad_unicode
