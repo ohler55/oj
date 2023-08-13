@@ -1,3 +1,8 @@
+
+# Don't bother with rubocop. It is too opinionated and the opinions
+# change. It's not worth chasing when the code is perfectly acceptable
+# otherwise.
+
 name: Rubocop Check
 
 on:

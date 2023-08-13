@@ -105,6 +105,7 @@ class Juice < Minitest::Test
       allow_gc: false,
       quirks_mode: false,
       allow_invalid_unicode: true,
+      float_format: '%0.13g',
       float_precision: 13,
       mode: :strict,
       escape_mode: :ascii,
@@ -414,6 +415,11 @@ class Juice < Minitest::Test
       json = Oj.dump(Time.parse(s), mode: :custom, time_format: :xmlschema, second_precision: 3)
       assert_equal(s[0..-2] + '.000Z', json[1..-2])
     }
+  end
+
+  def test_dump_float
+    json = Oj.dump(1.23e-2, :mode => :null, :float_format => '%0.4f')
+    assert_equal('0.0123', json)
   end
 
   # Class

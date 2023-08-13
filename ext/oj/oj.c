@@ -123,6 +123,7 @@ static VALUE escape_mode_sym;
 static VALUE integer_range_sym;
 static VALUE fast_sym;
 static VALUE float_prec_sym;
+static VALUE float_format_sym;
 static VALUE float_sym;
 static VALUE huge_sym;
 static VALUE ignore_sym;
@@ -232,7 +233,7 @@ struct _options oj_default_options = {
         NULL,    // tail
         {'\0'},  // err
     },
-    NULL,        // ignore
+    NULL,  // ignore
 };
 
 /* Document-method: default_options()
@@ -267,6 +268,8 @@ struct _options oj_default_options = {
  *seconds portion of time
  * - *:float_precision* [_Fixnum_|_nil_] number of digits of precision when dumping floats, 0
  *indicates use Ruby
+ * - *:float_format* [_String_] the C printf format string for printing floats. Default follows
+ * the float_precision and will be changed if float_precision is changed. The string can be no more than 6 bytes.
  * - *:use_to_json* [_Boolean_|_nil_] call to_json() methods on dump, default is false
  * - *:use_as_json* [_Boolean_|_nil_] call as_json() methods on dump, default is false
  * - *:use_raw_json* [_Boolean_|_nil_] call raw_json() methods on dump, default is false
@@ -378,6 +381,7 @@ static VALUE get_def_opts(VALUE self) {
                  oj_safe_sym,
                  (Yes == oj_default_options.safe) ? Qtrue : ((No == oj_default_options.safe) ? Qfalse : Qnil));
     rb_hash_aset(opts, float_prec_sym, INT2FIX(oj_default_options.float_prec));
+    rb_hash_aset(opts, float_format_sym, rb_str_new_cstr(oj_default_options.float_fmt));
     rb_hash_aset(opts, cache_str_sym, INT2FIX(oj_default_options.cache_str));
     rb_hash_aset(
         opts,
@@ -519,6 +523,8 @@ static VALUE get_def_opts(VALUE self) {
  *load.
  *   - *:second_precision* [_Fixnum_|_nil_] number of digits after the decimal when dumping the
  *seconds portion of time.
+ *   - *:float_format* [_String_] the C printf format string for printing floats. Default follows
+ * the float_precision and will be changed if float_precision is changed. The string can be no more than 6 bytes.
  *   - *:float_precision* [_Fixnum_|_nil_] number of digits of precision when dumping floats, 0
  *indicates use Ruby.
  *   - *:use_to_json* [_Boolean_|_nil_] call to_json() methods on dump, default is false.
@@ -757,7 +763,6 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
         if (Qnil == v) {
             return ST_CONTINUE;
         }
-
         copts->compat_bigdec = (Qtrue == v);
     } else if (oj_decimal_class_sym == k) {
         if (rb_cFloat == v) {
@@ -949,6 +954,15 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
             return ST_CONTINUE;
         }
         copts->sym_key = (Qtrue == v) ? Yes : No;
+    } else if (float_format_sym == k) {
+        rb_check_type(v, T_STRING);
+        if (6 < (int)RSTRING_LEN(v)) {
+            rb_raise(rb_eArgError, ":float_format must be 6 bytes or less.");
+        }
+        strncpy(copts->float_fmt, RSTRING_PTR(v), (size_t)RSTRING_LEN(v));
+        copts->float_fmt[RSTRING_LEN(v)] = '\0';
+
+        // TBD
     }
     return ST_CONTINUE;
 }
@@ -1929,6 +1943,8 @@ void Init_oj(void) {
     rb_gc_register_address(&integer_range_sym);
     fast_sym = ID2SYM(rb_intern("fast"));
     rb_gc_register_address(&fast_sym);
+    float_format_sym = ID2SYM(rb_intern("float_format"));
+    rb_gc_register_address(&float_format_sym);
     float_prec_sym = ID2SYM(rb_intern("float_precision"));
     rb_gc_register_address(&float_prec_sym);
     float_sym = ID2SYM(rb_intern("float"));
