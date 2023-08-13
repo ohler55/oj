@@ -2,7 +2,10 @@ require 'ostruct'
 require 'oj/state'
 
 if defined?(JSON::PRETTY_STATE_PROTOTYPE)
-  warn "WARNING: oj/json is a compatability shim used by Oj. Requiring the file explicitly is no recommended."
+  # There are enough people that try to use both the json gen and oj in mimic
+  # mode so don't display the warning.
+
+  # warn "WARNING: oj/json is a compatability shim used by Oj. Requiring the file explicitly is not recommended."
 end
 
 unless defined?(JSON::PRETTY_STATE_PROTOTYPE)
