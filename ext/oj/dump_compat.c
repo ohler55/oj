@@ -870,7 +870,12 @@ void oj_dump_compat_val(VALUE obj, int depth, Out out, bool as_ok) {
     int type = rb_type(obj);
 
     TRACE(out->opts->trace, "dump", obj, depth, TraceIn);
+		// The max_nesting logic is that an empty Array or Hash is assumed to have
+		// content so the max_nesting should fail but a non-collection value is
+		// okay. That means a check for a collectable value is needed before
+		// raising.
     if (out->opts->dump_opts.max_depth <= depth) {
+#if 0
         // When JSON.dump is called then an ArgumentError is expected and the
         // limit is the depth inclusive. If JSON.generate is called then a
         // NestingError is expected and the limit is inclusive. Worse than
@@ -886,6 +891,14 @@ void oj_dump_compat_val(VALUE obj, int depth, Out out, bool as_ok) {
             }
             raise_json_err("Too deeply nested", "NestingError");
         }
+#else
+				if (RUBY_T_ARRAY == type || RUBY_T_HASH == type) {
+						if (0 < out->argc) {
+								set_state_depth(*out->argv, depth);
+						}
+						raise_json_err("Too deeply nested", "NestingError");
+				}
+#endif
     }
     if (0 < type && type <= RUBY_T_FIXNUM) {
         DumpFunc f = compat_funcs[type];

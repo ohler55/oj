@@ -6,6 +6,12 @@
 - skip_null_byte => omit_null_byte
  - and move to dump parameters
 
+- max_nesting
+ - JSON.dump([[]], n) - n = 2 ok, n = 1 fails
+ - generate is the same
+ - fast_generate is the same
+ - pretty_generate is the same
+ - [[]].to_json same
 
 
 - stream writes
