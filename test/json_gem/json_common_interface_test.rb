@@ -128,8 +128,8 @@ class JSONCommonInterfaceTest < Test::Unit::TestCase
     too_deep = '[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]'
     assert_equal too_deep, JSON.dump(eval(too_deep))
     assert_kind_of String, Marshal.dump(eval(too_deep))
-    assert_raise(ArgumentError) { JSON.dump(eval(too_deep), 100) }
-    assert_raise(ArgumentError) { Marshal.dump(eval(too_deep), 100) }
+    assert_raise(NestingError) { JSON.dump(eval(too_deep), 100) }
+    assert_raise(NestingError) { Marshal.dump(eval(too_deep), 100) }
     assert_equal too_deep, JSON.dump(eval(too_deep), 101)
     assert_kind_of String, Marshal.dump(eval(too_deep), 101)
     output = StringIO.new
