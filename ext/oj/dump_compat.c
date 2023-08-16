@@ -896,11 +896,7 @@ void oj_dump_compat_val(VALUE obj, int depth, Out out, bool as_ok) {
 						if (0 < out->argc) {
 								set_state_depth(*out->argv, depth);
 						}
-#ifdef TRUFFLERUBY
-            rb_raise(rb_eArgError, "Too deeply nested.");
-#else
 						raise_json_err("Too deeply nested", "NestingError");
-#endif
 				}
 #endif
     }
