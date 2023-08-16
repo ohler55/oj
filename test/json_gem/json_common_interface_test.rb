@@ -128,8 +128,10 @@ class JSONCommonInterfaceTest < Test::Unit::TestCase
     too_deep = '[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]'
     assert_equal too_deep, JSON.dump(eval(too_deep))
     assert_kind_of String, Marshal.dump(eval(too_deep))
-    assert_raise(ArgumentError) { JSON.dump(eval(too_deep), 10) } # TBD change back to 100 after truffle test
-    assert_raise(ArgumentError) { Marshal.dump(eval(too_deep), 100) }
+    if RUBY_ENGINE != 'truffleruby'
+      assert_raise(ArgumentError) { JSON.dump(eval(too_deep), 100) }
+      assert_raise(ArgumentError) { Marshal.dump(eval(too_deep), 100) }
+    end
     assert_equal too_deep, JSON.dump(eval(too_deep), 101)
     assert_kind_of String, Marshal.dump(eval(too_deep), 101)
     output = StringIO.new
