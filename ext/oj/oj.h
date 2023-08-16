@@ -181,22 +181,22 @@ typedef struct _rOptTable {
 } *ROptTable;
 
 typedef struct _out {
-    char       stack_buffer[4096];
-    char      *buf;
-    char      *end;
-    char      *cur;
-    Cache8     circ_cache;
-    slot_t     circ_cnt;
-    int        indent;
-    int        depth;  // used by dump_hash
-    Options    opts;
-    uint32_t   hash_cnt;
-    bool       allocated;
-    bool       omit_nil;
-    bool       omit_null_byte;
-    int        argc;
-    VALUE     *argv;
-    ROptTable  ropts;
+    char      stack_buffer[4096];
+    char     *buf;
+    char     *end;
+    char     *cur;
+    Cache8    circ_cache;
+    slot_t    circ_cnt;
+    int       indent;
+    int       depth;  // used by dump_hash
+    Options   opts;
+    uint32_t  hash_cnt;
+    bool      allocated;
+    bool      omit_nil;
+    bool      omit_null_byte;
+    int       argc;
+    VALUE    *argv;
+    ROptTable ropts;
 } *Out;
 
 typedef struct _strWriter {

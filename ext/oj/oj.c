@@ -955,16 +955,16 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
         copts->sym_key = (Qtrue == v) ? Yes : No;
 
     } else if (oj_max_nesting_sym == k) {
-				if (Qtrue == v) {
-						copts->dump_opts.max_depth = 100;
-				} else if (Qfalse == v || Qnil == v) {
-						copts->dump_opts.max_depth = MAX_DEPTH;
-				} else if (T_FIXNUM == rb_type(v)) {
-						copts->dump_opts.max_depth = NUM2INT(v);
-						if (0 >= copts->dump_opts.max_depth) {
-								copts->dump_opts.max_depth = MAX_DEPTH;
-						}
-				}
+        if (Qtrue == v) {
+            copts->dump_opts.max_depth = 100;
+        } else if (Qfalse == v || Qnil == v) {
+            copts->dump_opts.max_depth = MAX_DEPTH;
+        } else if (T_FIXNUM == rb_type(v)) {
+            copts->dump_opts.max_depth = NUM2INT(v);
+            if (0 >= copts->dump_opts.max_depth) {
+                copts->dump_opts.max_depth = MAX_DEPTH;
+            }
+        }
     } else if (float_format_sym == k) {
         rb_check_type(v, T_STRING);
         if (6 < (int)RSTRING_LEN(v)) {
