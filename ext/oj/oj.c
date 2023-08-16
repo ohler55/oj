@@ -233,7 +233,7 @@ struct _options oj_default_options = {
         NULL,    // tail
         {'\0'},  // err
     },
-    NULL,  // ignore
+    NULL,
 };
 
 /* Document-method: default_options()
