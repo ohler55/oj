@@ -890,7 +890,6 @@ static VALUE encode(VALUE obj, ROptTable ropts, Options opts, int argc, VALUE *a
     oj_out_init(&out);
 
     out.omit_nil = copts.dump_opts.omit_nil;
-    out.caller   = 0;
     out.cur      = out.buf;
     out.circ_cnt = 0;
     out.opts     = &copts;

@@ -1318,7 +1318,6 @@ static VALUE dump(int argc, VALUE *argv, VALUE self) {
 
     arg.out->omit_nil       = copts.dump_opts.omit_nil;
     arg.out->omit_null_byte = copts.dump_opts.omit_null_byte;
-    arg.out->caller         = CALLER_DUMP;
 
     return rb_ensure(dump_body, (VALUE)&arg, dump_ensure, (VALUE)&arg);
 }

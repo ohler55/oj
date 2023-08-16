@@ -875,30 +875,12 @@ void oj_dump_compat_val(VALUE obj, int depth, Out out, bool as_ok) {
 		// okay. That means a check for a collectable value is needed before
 		// raising.
     if (out->opts->dump_opts.max_depth <= depth) {
-#if 0
-        // When JSON.dump is called then an ArgumentError is expected and the
-        // limit is the depth inclusive. If JSON.generate is called then a
-        // NestingError is expected and the limit is inclusive. Worse than
-        // that there are unit tests for both.
-        if (CALLER_DUMP == out->caller) {
-            if (0 < out->argc) {
-                set_state_depth(*out->argv, depth);
-            }
-            rb_raise(rb_eArgError, "Too deeply nested.");
-        } else if (out->opts->dump_opts.max_depth < depth) {
-            if (0 < out->argc) {
-                set_state_depth(*out->argv, depth - 1);
-            }
-            raise_json_err("Too deeply nested", "NestingError");
-        }
-#else
 				if (RUBY_T_ARRAY == type || RUBY_T_HASH == type) {
 						if (0 < out->argc) {
 								set_state_depth(*out->argv, depth);
 						}
 						raise_json_err("Too deeply nested", "NestingError");
 				}
-#endif
     }
     if (0 < type && type <= RUBY_T_FIXNUM) {
         DumpFunc f = compat_funcs[type];

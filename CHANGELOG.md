@@ -1,11 +1,13 @@
 # CHANGELOG
 
-## 3.16.0 - 2023-08-15 [unreleased]
+## 3.16.0 - 2023-08-16
 
-- Added the `flaot_format` option.
+- Added the `float_format` option.
 
 - Expanded the `max_nesting` option to allow integer values as well as
   the previous boolean (true or nil).
+
+- Skip nesting tests with Truffle Ruby in the json gem tests.
 
 ## 3.15.1 - 2023-07-30
 
