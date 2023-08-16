@@ -103,13 +103,6 @@ typedef enum {
     FILE_IO   = 'f',
 } StreamWriterType;
 
-typedef enum {
-    CALLER_DUMP     = 'd',
-    CALLER_TO_JSON  = 't',
-    CALLER_GENERATE = 'g',
-    // Add the fast versions if necessary. Maybe unparse as well if needed.
-} DumpCaller;
-
 typedef struct _dumpOpts {
     bool    use;
     char    indent_str[16];
@@ -203,7 +196,6 @@ typedef struct _out {
     bool       omit_null_byte;
     int        argc;
     VALUE     *argv;
-    DumpCaller caller;  // used for the mimic json only
     ROptTable  ropts;
 } *Out;
 

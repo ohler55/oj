@@ -70,7 +70,6 @@ void oj_str_writer_init(StrWriter sw, int buf_size) {
     sw->out.depth      = 0;
     sw->out.argc       = 0;
     sw->out.argv       = NULL;
-    sw->out.caller     = 0;
     sw->out.ropts      = NULL;
     sw->out.omit_nil   = oj_default_options.dump_opts.omit_nil;
 }

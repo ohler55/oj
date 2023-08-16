@@ -209,7 +209,6 @@ static VALUE mimic_dump(int argc, VALUE *argv, VALUE self) {
 
     oj_out_init(&out);
 
-    out.caller        = CALLER_DUMP;
     copts.escape_mode = JXEsc;
     copts.mode        = CompatMode;
 
@@ -368,7 +367,6 @@ static VALUE mimic_generate_core(int argc, VALUE *argv, Options copts) {
     oj_out_init(&out);
 
     out.omit_nil = copts->dump_opts.omit_nil;
-    out.caller   = CALLER_GENERATE;
     // For obj.to_json or generate nan is not allowed but if called from dump
     // it is.
     copts->dump_opts.nan_dump = RaiseNan;

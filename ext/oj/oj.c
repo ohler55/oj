@@ -123,6 +123,7 @@ static VALUE escape_mode_sym;
 static VALUE integer_range_sym;
 static VALUE fast_sym;
 static VALUE float_prec_sym;
+static VALUE float_format_sym;
 static VALUE float_sym;
 static VALUE huge_sym;
 static VALUE ignore_sym;
@@ -232,7 +233,7 @@ struct _options oj_default_options = {
         NULL,    // tail
         {'\0'},  // err
     },
-    NULL,        // ignore
+    NULL,  // ignore
 };
 
 /* Document-method: default_options()
@@ -267,6 +268,8 @@ struct _options oj_default_options = {
  *seconds portion of time
  * - *:float_precision* [_Fixnum_|_nil_] number of digits of precision when dumping floats, 0
  *indicates use Ruby
+ * - *:float_format* [_String_] the C printf format string for printing floats. Default follows
+ * the float_precision and will be changed if float_precision is changed. The string can be no more than 6 bytes.
  * - *:use_to_json* [_Boolean_|_nil_] call to_json() methods on dump, default is false
  * - *:use_as_json* [_Boolean_|_nil_] call as_json() methods on dump, default is false
  * - *:use_raw_json* [_Boolean_|_nil_] call raw_json() methods on dump, default is false
@@ -378,6 +381,7 @@ static VALUE get_def_opts(VALUE self) {
                  oj_safe_sym,
                  (Yes == oj_default_options.safe) ? Qtrue : ((No == oj_default_options.safe) ? Qfalse : Qnil));
     rb_hash_aset(opts, float_prec_sym, INT2FIX(oj_default_options.float_prec));
+    rb_hash_aset(opts, float_format_sym, rb_str_new_cstr(oj_default_options.float_fmt));
     rb_hash_aset(opts, cache_str_sym, INT2FIX(oj_default_options.cache_str));
     rb_hash_aset(
         opts,
@@ -519,6 +523,8 @@ static VALUE get_def_opts(VALUE self) {
  *load.
  *   - *:second_precision* [_Fixnum_|_nil_] number of digits after the decimal when dumping the
  *seconds portion of time.
+ *   - *:float_format* [_String_] the C printf format string for printing floats. Default follows
+ * the float_precision and will be changed if float_precision is changed. The string can be no more than 6 bytes.
  *   - *:float_precision* [_Fixnum_|_nil_] number of digits of precision when dumping floats, 0
  *indicates use Ruby.
  *   - *:use_to_json* [_Boolean_|_nil_] call to_json() methods on dump, default is false.
@@ -617,7 +623,6 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
     if (set_yesno_options(k, v, copts)) {
         return ST_CONTINUE;
     }
-
     if (oj_indent_sym == k) {
         switch (rb_type(v)) {
         case T_NIL:
@@ -757,7 +762,6 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
         if (Qnil == v) {
             return ST_CONTINUE;
         }
-
         copts->compat_bigdec = (Qtrue == v);
     } else if (oj_decimal_class_sym == k) {
         if (rb_cFloat == v) {
@@ -949,6 +953,25 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
             return ST_CONTINUE;
         }
         copts->sym_key = (Qtrue == v) ? Yes : No;
+
+    } else if (oj_max_nesting_sym == k) {
+				if (Qtrue == v) {
+						copts->dump_opts.max_depth = 100;
+				} else if (Qfalse == v || Qnil == v) {
+						copts->dump_opts.max_depth = MAX_DEPTH;
+				} else if (T_FIXNUM == rb_type(v)) {
+						copts->dump_opts.max_depth = NUM2INT(v);
+						if (0 >= copts->dump_opts.max_depth) {
+								copts->dump_opts.max_depth = MAX_DEPTH;
+						}
+				}
+    } else if (float_format_sym == k) {
+        rb_check_type(v, T_STRING);
+        if (6 < (int)RSTRING_LEN(v)) {
+            rb_raise(rb_eArgError, ":float_format must be 6 bytes or less.");
+        }
+        strncpy(copts->float_fmt, RSTRING_PTR(v), (size_t)RSTRING_LEN(v));
+        copts->float_fmt[RSTRING_LEN(v)] = '\0';
     }
     return ST_CONTINUE;
 }
@@ -957,7 +980,6 @@ void oj_parse_options(VALUE ropts, Options copts) {
     if (T_HASH != rb_type(ropts)) {
         return;
     }
-
     rb_hash_foreach(ropts, parse_options_cb, (VALUE)copts);
     oj_parse_opt_match_string(&copts->str_rx, ropts);
 
@@ -1296,7 +1318,6 @@ static VALUE dump(int argc, VALUE *argv, VALUE self) {
 
     arg.out->omit_nil       = copts.dump_opts.omit_nil;
     arg.out->omit_null_byte = copts.dump_opts.omit_null_byte;
-    arg.out->caller         = CALLER_DUMP;
 
     return rb_ensure(dump_body, (VALUE)&arg, dump_ensure, (VALUE)&arg);
 }
@@ -1308,8 +1329,9 @@ static VALUE dump(int argc, VALUE *argv, VALUE self) {
  * will be called. The mode is set to :compat.
  * - *obj* [_Object_] Object to serialize as an JSON document String
  * - *options* [_Hash_]
- *   - *:max_nesting* [_boolean_] It true nesting is limited to 100. The option to detect circular
- * references is available but is not compatible with the json gem., default is false
+ *   - *:max_nesting* [_Fixnum_|_boolean_] It true nesting is limited to 100. If a Fixnum nesting
+ * is set to the provided value. The option to detect circular references is available but is not
+ * compatible with the json gem., default is false or unlimited.
  *   - *:allow_nan* [_boolean_] If true non JSON compliant words such as Nan and Infinity will be
  * used as appropriate, default is true.
  *   - *:quirks_mode* [_boolean_] Allow single JSON values instead of documents, default is true
@@ -1929,6 +1951,8 @@ void Init_oj(void) {
     rb_gc_register_address(&integer_range_sym);
     fast_sym = ID2SYM(rb_intern("fast"));
     rb_gc_register_address(&fast_sym);
+    float_format_sym = ID2SYM(rb_intern("float_format"));
+    rb_gc_register_address(&float_format_sym);
     float_prec_sym = ID2SYM(rb_intern("float_precision"));
     rb_gc_register_address(&float_prec_sym);
     float_sym = ID2SYM(rb_intern("float"));

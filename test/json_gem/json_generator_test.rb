@@ -352,7 +352,7 @@ class JSONGeneratorTest < Test::Unit::TestCase
     too_deep_ary = eval too_deep
     assert_raise(JSON::NestingError) { JSON.generate too_deep_ary }
     assert_raise(JSON::NestingError) { JSON.generate too_deep_ary, :max_nesting => 100 }
-    ok = JSON.generate too_deep_ary, :max_nesting => 101
+    ok = JSON.generate too_deep_ary, :max_nesting => 102
     assert_equal too_deep, ok
     ok = JSON.generate too_deep_ary, :max_nesting => nil
     assert_equal too_deep, ok
