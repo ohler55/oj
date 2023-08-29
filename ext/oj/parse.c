@@ -875,7 +875,11 @@ oj_num_as_value(NumInfo ni) {
             double d = strtod(ni->str, &end);
 
             if ((long)ni->len != (long)(end - ni->str)) {
+              if (Qnil == ni->pi->err_class) {
+                rb_raise(oj_parse_error_class, "Invalid float");
+              } else {
                 rb_raise(ni->pi->err_class, "Invalid float");
+              }
             }
             rnum = rb_float_new(d);
         }
