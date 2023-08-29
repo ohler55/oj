@@ -69,6 +69,16 @@ class StrictJuice < Minitest::Test
     dump_and_load(-2.48e100 * 1.0e10, false)
   end
 
+  def test_invalid_float
+    begin
+      Oj.load("64ecb72d29191067f91ff95b")
+    rescue Oj::ParseError => e
+      assert(e.message == "Invalid float")
+      return
+    end
+    assert(false, "*** expected an exception")
+  end
+
   def test_nan_dump
     assert_equal('null', Oj.dump(0/0.0, :nan => :null))
     assert_equal('3.3e14159265358979323846', Oj.dump(0/0.0, :nan => :huge))
