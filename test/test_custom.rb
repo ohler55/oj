@@ -503,8 +503,9 @@ class CustomJuice < Minitest::Test
     # These two forms will lose precision while dumping as they don't
     # preserve full precision. We check that a dumped version is equal
     # to that version loaded and dumped a second time, but don't check
-    # that the loaded Ruby objects is still the same as the original.
+    # that the loaded Ruby object is still the same as the original.
     dump_load_dump(obj, false, :time_format => :xmlschema, :create_id => '^o', :create_additions => true)
+    dump_load_dump(obj, false, :time_format => :xmlschema, :create_id => '^o', :create_additions => true, second_precision: 3)
     dump_load_dump(obj, false, :time_format => :ruby, :create_id => '^o', :create_additions => true)
   end
 

@@ -51,6 +51,7 @@ ID oj_json_create_id;
 ID oj_length_id;
 ID oj_new_id;
 ID oj_parse_id;
+ID oj_plus_id;
 ID oj_pos_id;
 ID oj_raw_json_id;
 ID oj_read_id;
@@ -1861,6 +1862,7 @@ void Init_oj(void) {
     oj_length_id       = rb_intern("length");
     oj_new_id          = rb_intern("new");
     oj_parse_id        = rb_intern("parse");
+    oj_plus_id         = rb_intern("+");
     oj_pos_id          = rb_intern("pos");
     oj_raw_json_id     = rb_intern("raw_json");
     oj_read_id         = rb_intern("read");

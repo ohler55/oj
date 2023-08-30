@@ -951,6 +951,20 @@ class ObjectJuice < Minitest::Test
     dump_and_load(DateTime.new(2012, 6, 19, 13, 5, Rational(7_123_456_789, 1_000_000_000)), false)
   end
 
+  def test_odd_xml_time
+    str = "2023-01-01T00:00:00Z"
+    assert_equal(Time.parse(str), Oj.load('{"^t":"' + str + '"}', mode: :object))
+
+    str = "2023-01-01T00:00:00.3Z"
+    assert_equal(Time.parse(str), Oj.load('{"^t":"' + str + '"}', mode: :object))
+
+    str = "2023-01-01T00:00:00.123456789123456789Z"
+    assert_equal(Time.parse(str), Oj.load('{"^t":"' + str + '"}', mode: :object))
+
+    str = "2023-01-01T00:00:00.123456789123456789123456789Z"
+    assert_equal(Time.parse(str), Oj.load('{"^t":"' + str + '"}', mode: :object))
+  end
+
   def test_bag
     json = %{{
   "^o":"ObjectJuice::Jem",

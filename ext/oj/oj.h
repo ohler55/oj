@@ -349,6 +349,7 @@ extern ID oj_json_create_id;
 extern ID oj_length_id;
 extern ID oj_new_id;
 extern ID oj_parse_id;
+extern ID oj_plus_id;
 extern ID oj_pos_id;
 extern ID oj_read_id;
 extern ID oj_readpartial_id;
