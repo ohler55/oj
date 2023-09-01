@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.16.1 - 2023-09-01
+
+- Fixed exception type on number parsing. (thank you @jasonpenny)
+
 ## 3.16.0 - 2023-08-16
 
 - Added the `float_format` option.
