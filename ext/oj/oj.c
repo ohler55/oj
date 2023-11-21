@@ -240,72 +240,82 @@ struct _options oj_default_options = {
  *	call-seq: default_options()
  *
  * Returns the default load and dump options as a Hash. The options are
- * - *:indent* [_Fixnum_|_String_|_nil_] number of spaces to indent each element in an JSON
- *document, zero or nil is no newline between JSON elements, negative indicates no newline between
- *top level JSON elements in a stream, a String indicates the string should be used for indentation
- * - *:circular* [_Boolean_|_nil_] support circular references while dumping as well as shared
- *references
+ * - *:indent* [_Fixnum_|_String_|_nil_] number of spaces to indent each element
+ *   in an JSON document, zero or nil is no newline between JSON elements,
+ *   negative indicates no newline between top level JSON elements in a stream,
+ *   a String indicates the string should be used for indentation
+ * - *:circular* [_Boolean_|_nil_] support circular references while dumping as
+ *   well as shared references
  * - *:auto_define* [_Boolean_|_nil_] automatically define classes if they do not exist
  * - *:symbol_keys* [_Boolean_|_nil_] use symbols instead of strings for hash keys
- * - *:escape_mode* [_:newline_|_:json_|_:slash_|_:xss_safe_|_:ascii_|_:unicode_xss_|_nil_] determines the
- *characters to escape
- * - *:class_cache* [_Boolean_|_nil_] cache classes for faster parsing (if dynamically modifying
- *classes or reloading classes then don't use this)
- * - *:mode* [_:object_|_:strict_|_:compat_|_:null_|_:custom_|_:rails_|_:wab_] load and dump modes
- *to use for JSON
+ * - *:escape_mode* [_:newline_|_:json_|_:slash_|_:xss_safe_|_:ascii_|_:unicode_xss_|_nil_]
+ *   determines the characters to escape
+ * - *:class_cache* [_Boolean_|_nil_] cache classes for faster parsing (if dynamically
+ *   modifying classes or reloading classes then don't use this)
+ * - *:mode* [_:object_|_:strict_|_:compat_|_:null_|_:custom_|_:rails_|_:wab_] load and
+ *   dump modes to use for JSON
  * - *:time_format* [_:unix_|_:unix_zone_|_:xmlschema_|_:ruby_] time format when dumping
- * - *:bigdecimal_as_decimal* [_Boolean_|_nil_] dump BigDecimal as a decimal number or as a String
- * - *:bigdecimal_load* [_:bigdecimal_|_:float_|_:auto_|_:fast_|_:ruby_] load decimals as BigDecimal instead
- *of as a Float. :auto pick the most precise for the number of digits. :float should be the same as
- *ruby. :fast may require rounding but is must faster.
- * - *:compat_bigdecimal* [_true_|_false_] load decimals as BigDecimal instead of as a Float when in
- *compat or rails mode.
- * - *:create_id* [_String_|_nil_] create id for json compatible object encoding, default is
- *'json_class'
- * - *:create_additions* [_Boolean_|_nil_] if true allow creation of instances using create_id on
- *load.
- * - *:second_precision* [_Fixnum_|_nil_] number of digits after the decimal when dumping the
- *seconds portion of time
- * - *:float_precision* [_Fixnum_|_nil_] number of digits of precision when dumping floats, 0
- *indicates use Ruby
- * - *:float_format* [_String_] the C printf format string for printing floats. Default follows
- * the float_precision and will be changed if float_precision is changed. The string can be no more than 6 bytes.
+ * - *:bigdecimal_as_decimal* [_Boolean_|_nil_] dump BigDecimal as a decimal number or
+ *   as a String
+ * - *:bigdecimal_load* [_:bigdecimal_|_:float_|_:auto_|_:fast_|_:ruby_] load decimals
+ *   as BigDecimal instead of as a Float. :auto pick the most precise for the number
+ *   of digits. :float should be the same as ruby. :fast may require rounding but is
+ *   must faster.
+ * - *:compat_bigdecimal* [_true_|_false_] load decimals as BigDecimal instead of as
+ *   a Float when in compat or rails mode.
+ * - *:create_id* [_String_|_nil_] create id for json compatible object encoding,
+ *   default is 'json_class'
+ * - *:create_additions* [_Boolean_|_nil_] if true allow creation of instances using
+ *   create_id on load.
+ * - *:second_precision* [_Fixnum_|_nil_] number of digits after the decimal when
+ *   dumping the seconds portion of time
+ * - *:float_precision* [_Fixnum_|_nil_] number of digits of precision when dumping
+ *   floats, 0 indicates use Ruby
+ * - *:float_format* [_String_] the C printf format string for printing floats.
+ *   Default follows the float_precision and will be changed if float_precision is
+ *   changed. The string can be no more than 6 bytes.
  * - *:use_to_json* [_Boolean_|_nil_] call to_json() methods on dump, default is false
  * - *:use_as_json* [_Boolean_|_nil_] call as_json() methods on dump, default is false
  * - *:use_raw_json* [_Boolean_|_nil_] call raw_json() methods on dump, default is false
- * - *:nilnil* [_Boolean_|_nil_] if true a nil input to load will return nil and not raise an
- *Exception
+ * - *:nilnil* [_Boolean_|_nil_] if true a nil input to load will return nil and
+ *   not raise an Exception
  * - *:empty_string* [_Boolean_|_nil_] if true an empty input will not raise an Exception
  * - *:allow_gc* [_Boolean_|_nil_] allow or prohibit GC during parsing, default is true (allow)
- * - *:quirks_mode* [_true,_|_false_|_nil_] Allow single JSON values instead of documents, default
- *is true (allow)
- * - *:allow_invalid_unicode* [_true,_|_false_|_nil_] Allow invalid unicode, default is false (don't
- *allow)
- * - *:allow_nan* [_true,_|_false_|_nil_] Allow Nan, Infinity, and -Infinity to be parsed, default
- *is true (allow)
- * - *:indent_str* [_String_|_nil_] String to use for indentation, overriding the indent option is
- *not nil
- * - *:space* [_String_|_nil_] String to use for the space after the colon in JSON object fields
- * - *:space_before* [_String_|_nil_] String to use before the colon separator in JSON object fields
+ * - *:quirks_mode* [_true,_|_false_|_nil_] Allow single JSON values instead of
+ *   documents, default is true (allow)
+ * - *:allow_invalid_unicode* [_true,_|_false_|_nil_] Allow invalid unicode,
+ *   default is false (don't allow)
+ * - *:allow_nan* [_true,_|_false_|_nil_] Allow Nan, Infinity, and -Infinity to
+ *   be parsed, default is true (allow)
+ * - *:indent_str* [_String_|_nil_] String to use for indentation, overriding the
+ *   indent option is not nil
+ * - *:space* [_String_|_nil_] String to use for the space after the colon in JSON
+ *   object fields
+ * - *:space_before* [_String_|_nil_] String to use before the colon separator in
+ *   JSON object fields
  * - *:object_nl* [_String_|_nil_] String to use after a JSON object field value
  * - *:array_nl* [_String_|_nil_] String to use after a JSON array value
- * - *:nan* [_:null_|_:huge_|_:word_|_:raise_|_:auto_] how to dump Infinity and NaN. :null places a
- *null, :huge places a huge number, :word places Infinity or NaN, :raise raises and exception, :auto
- *uses default for each mode.
- * - *:hash_class* [_Class_|_nil_] Class to use instead of Hash on load, :object_class can also be
- *used
+ * - *:nan* [_:null_|_:huge_|_:word_|_:raise_|_:auto_] how to dump Infinity and
+ *   NaN. :null places a null, :huge places a huge number, :word places Infinity
+ *   or NaN, :raise raises and exception, :auto uses default for each mode.
+ * - *:hash_class* [_Class_|_nil_] Class to use instead of Hash on load,
+ *   :object_class can also be used
  * - *:array_class* [_Class_|_nil_] Class to use instead of Array on load
- * - *:omit_nil* [_true_|_false_] if true Hash and Object attributes with nil values are omitted
- * - *:omit_null_byte* [_true_|_false_] if true null bytes in strings will be omitted when dumping
+ * - *:omit_nil* [_true_|_false_] if true Hash and Object attributes with nil
+ *   values are omitted
+ * - *:omit_null_byte* [_true_|_false_] if true null bytes in strings will be
+ *   omitted when dumping
  * - *:ignore* [_nil_|_Array_] either nil or an Array of classes to ignore when dumping
- * - *:ignore_under* [_Boolean_] if true then attributes that start with _ are ignored when dumping in
- *object or custom mode.
+ * - *:ignore_under* [_Boolean_] if true then attributes that start with _ are
+ *   ignored when dumping in object or custom mode.
  * - *:cache_keys* [_Boolean_] if true then hash keys are cached if less than 35 bytes.
- * - *:cache_str* [_Fixnum_] maximum string value length to cache (strings less than this are cached)
+ * - *:cache_str* [_Fixnum_] maximum string value length to cache (strings less
+ *   than this are cached)
  * - *:integer_range* [_Range_] Dump integers outside range as strings.
- * - *:trace* [_true,_|_false_] Trace all load and dump calls, default is false (trace is off)
- * - *:safe* [_true,_|_false_] Safe mimic breaks JSON mimic to be safer, default is false (safe is
- *off)
+ * - *:trace* [_true,_|_false_] Trace all load and dump calls, default is false
+ *   (trace is off)
+ * - *:safe* [_true,_|_false_] Safe mimic breaks JSON mimic to be safer, default
+ *   is false (safe is off)
  *
  * Return [_Hash_] all current option settings.
  */
@@ -490,70 +500,67 @@ static VALUE get_def_opts(VALUE self) {
  *
  * Sets the default options for load and dump.
  * - *opts* [_Hash_] options to change
- *   - *:indent* [_Fixnum_|_String_|_nil_] number of spaces to indent each element in a JSON
- *document or the String to use for indentation.
+ *   - *:indent* [_Fixnum_|_String_|_nil_] number of spaces to indent each element
+ *     in a JSON document or the String to use for indentation.
  *   - :circular [_Boolean_|_nil_] support circular references while dumping.
  *   - *:auto_define* [_Boolean_|_nil_] automatically define classes if they do not exist.
  *   - *:symbol_keys* [_Boolean_|_nil_] convert hash keys to symbols.
  *   - *:class_cache* [_Boolean_|_nil_] cache classes for faster parsing.
- *   - *:escape* [_:newline_|_:json_|_:xss_safe_|_:ascii_|_unicode_xss_|_nil_] mode encodes all
- *high-bit characters as escaped sequences if :ascii, :json is standand UTF-8 JSON encoding,
- *:newline is the same as :json but newlines are not escaped, :unicode_xss allows unicode but
- *escapes &, <, and >, and any \u20xx characters along with some others, and :xss_safe escapes &, <,
- *and >, and some others.
- *   - *:bigdecimal_as_decimal* [_Boolean_|_nil_] dump BigDecimal as a decimal number or as a
- *String.
- *   - *:bigdecimal_load* [_:bigdecimal_|_:float_|_:auto_|_nil_] load decimals as BigDecimal instead
- *of as a Float. :auto pick the most precise for the number of digits.
- *   - *:compat_bigdecimal* [_true_|_false_] load decimals as BigDecimal instead of as a Float in
- *compat mode.
- *   - *:mode* [_:object_|_:strict_|_:compat_|_:null_|_:custom_|_:rails_|_:wab_] load and dump mode
- *to use for JSON :strict raises an exception when a non-supported Object is encountered. :compat
- *attempts to extract variable values from an Object using to_json() or to_hash() then it walks the
- *Object's variables if neither is found. The :object mode ignores to_hash() and to_json() methods
- *and encodes variables using code internal to the Oj gem. The :null mode ignores non-supported
- *Objects and replaces them with a null. The :custom mode honors all dump options. The :rails more
- *mimics rails and Active behavior.
- *   - *:time_format* [_:unix_|_:xmlschema_|_:ruby_] time format when dumping in :compat mode :unix
- *decimal number denoting the number of seconds since 1/1/1970, :unix_zone decimal number denoting
- *the number of seconds since 1/1/1970 plus the utc_offset in the exponent, :xmlschema date-time
- *format taken from XML Schema as a String, :ruby Time.to_s formatted String.
+ *   - *:escape* [_:newline_|_:json_|_:xss_safe_|_:ascii_|_unicode_xss_|_nil_]
+ *     mode encodes all high-bit characters as escaped sequences if :ascii, :json
+ *     is standand UTF-8 JSON encoding, :newline is the same as :json but newlines
+ *     are not escaped, :unicode_xss allows unicode but escapes &, <, and >, and
+ *     any \u20xx characters along with some others, and :xss_safe escapes &, <,
+ *     and >, and some others.
+ *   - *:bigdecimal_as_decimal* [_Boolean_|_nil_] dump BigDecimal as a decimal
+ *     number or as a String.
+ *   - *:bigdecimal_load* [_:bigdecimal_|_:float_|_:auto_|_nil_] load decimals as
+ *     BigDecimal instead of as a Float. :auto pick the most precise for the number of digits.
+ *   - *:compat_bigdecimal* [_true_|_false_] load decimals as BigDecimal instead
+ *     of as a Float in compat mode.
+ *   - *:mode* [_:object_|_:strict_|_:compat_|_:null_|_:custom_|_:rails_|_:wab_] load
+ *     and dump mode to use for JSON :strict raises an exception when a non-supported
+ *     Object is encountered. :compat attempts to extract variable values from an
+ *     Object using to_json() or to_hash() then it walks the Object's variables if
+ *     neither is found. The :object mode ignores to_hash() and to_json() methods
+ *     and encodes variables using code internal to the Oj gem. The :null mode
+ *     ignores non-supported Objects and replaces them with a null. The :custom
+ *     mode honors all dump options. The :rails more mimics rails and Active behavior.
+ *   - *:time_format* [_:unix_|_:xmlschema_|_:ruby_] time format when dumping in :compat
+ *     mode :unix decimal number denoting the number of seconds since 1/1/1970,
+ *     :unix_zone decimal number denoting the number of seconds since 1/1/1970
+ *     plus the utc_offset in the exponent, :xmlschema date-time format taken
+ *     from XML Schema as a String, :ruby Time.to_s formatted String.
  *   - *:create_id* [_String_|_nil_] create id for json compatible object encoding
- *   - *:create_additions* [_Boolean_|_nil_] if true allow creation of instances using create_id on
- *load.
- *   - *:second_precision* [_Fixnum_|_nil_] number of digits after the decimal when dumping the
- *seconds portion of time.
- *   - *:float_format* [_String_] the C printf format string for printing floats. Default follows
- * the float_precision and will be changed if float_precision is changed. The string can be no more than 6 bytes.
- *   - *:float_precision* [_Fixnum_|_nil_] number of digits of precision when dumping floats, 0
- *indicates use Ruby.
+ *   - *:create_additions* [_Boolean_|_nil_] if true allow creation of instances using create_id on load.
+ *   - *:second_precision* [_Fixnum_|_nil_] number of digits after the decimal
+ *     when dumping the seconds portion of time.
+ *   - *:float_format* [_String_] the C printf format string for printing floats.
+ *     Default follows the float_precision and will be changed if float_precision
+ *     is changed. The string can be no more than 6 bytes.
+ *   - *:float_precision* [_Fixnum_|_nil_] number of digits of precision when dumping floats, 0 indicates use Ruby.
  *   - *:use_to_json* [_Boolean_|_nil_] call to_json() methods on dump, default is false.
  *   - *:use_as_json* [_Boolean_|_nil_] call as_json() methods on dump, default is false.
  *   - *:use_to_hash* [_Boolean_|_nil_] call to_hash() methods on dump, default is false.
  *   - *:use_raw_json* [_Boolean_|_nil_] call raw_json() methods on dump, default is false.
- *   - *:nilnil* [_Boolean_|_nil_] if true a nil input to load will return nil and not raise an
- *Exception.
+ *   - *:nilnil* [_Boolean_|_nil_] if true a nil input to load will return nil and not raise an Exception.
  *   - *:allow_gc* [_Boolean_|_nil_] allow or prohibit GC during parsing, default is true (allow).
- *   - *:quirks_mode* [_Boolean_|_nil_] allow single JSON values instead of documents, default is
- *true (allow).
- *   - *:allow_invalid_unicode* [_Boolean_|_nil_] allow invalid unicode, default is false (don't
- *allow).
+ *   - *:quirks_mode* [_Boolean_|_nil_] allow single JSON values instead of documents, default is true (allow).
+ *   - *:allow_invalid_unicode* [_Boolean_|_nil_] allow invalid unicode, default is false (don't allow).
  *   - *:allow_nan* [_Boolean_|_nil_] allow Nan, Infinity, and -Infinity, default is true (allow).
  *   - *:space* [_String_|_nil_] String to use for the space after the colon in JSON object fields.
- *   - *:space_before* [_String_|_nil_] String to use before the colon separator in JSON object
- *fields.
+ *   - *:space_before* [_String_|_nil_] String to use before the colon separator in JSON object fields.
  *   - *:object_nl* [_String_|_nil_] String to use after a JSON object field value.
  *   - *:array_nl* [_String_|_nil_] String to use after a JSON array value
- *   - *:nan* [_:null_|_:huge_|_:word_|_:raise_] how to dump Infinity and NaN in null, strict, and
- *compat mode. :null places a null, :huge places a huge number, :word places Infinity or NaN, :raise
- *raises and exception, :auto uses default for each mode.
- *   - *:hash_class* [_Class_|_nil_] Class to use instead of Hash on load, :object_class can also be
- *used.
+ *   - *:nan* [_:null_|_:huge_|_:word_|_:raise_] how to dump Infinity and NaN in null,
+ *     strict, and compat mode. :null places a null, :huge places a huge number, :word
+ *     places Infinity or NaN, :raise raises and exception, :auto uses default for each mode.
+ *   - *:hash_class* [_Class_|_nil_] Class to use instead of Hash on load, :object_class can also be used.
  *   - *:array_class* [_Class_|_nil_] Class to use instead of Array on load.
  *   - *:omit_nil* [_true_|_false_] if true Hash and Object attributes with nil values are omitted.
  *   - *:ignore* [_nil_|Array] either nil or an Array of classes to ignore when dumping
- *   - *:ignore_under* [_Boolean_] if true then attributes that start with _ are ignored when
- *dumping in object or custom mode.
+ *   - *:ignore_under* [_Boolean_] if true then attributes that start with _ are
+ *     ignored when dumping in object or custom mode.
  *   - *:cache_keys* [_Boolean_] if true then hash keys are cached
  *   - *:cache_str* [_Fixnum_] maximum string value length to cache (strings less than this are cached)
  *   - *:integer_range* [_Range_] Dump integers outside range as strings.
@@ -1329,18 +1336,16 @@ static VALUE dump(int argc, VALUE *argv, VALUE self) {
  * will be called. The mode is set to :compat.
  * - *obj* [_Object_] Object to serialize as an JSON document String
  * - *options* [_Hash_]
- *   - *:max_nesting* [_Fixnum_|_boolean_] It true nesting is limited to 100. If a Fixnum nesting
- * is set to the provided value. The option to detect circular references is available but is not
- * compatible with the json gem., default is false or unlimited.
- *   - *:allow_nan* [_boolean_] If true non JSON compliant words such as Nan and Infinity will be
- * used as appropriate, default is true.
- *   - *:quirks_mode* [_boolean_] Allow single JSON values instead of documents, default is true
- * (allow).
- *   - *:indent* [_String_|_nil_] String to use for indentation, overriding the indent option if not
- * nil.
+ *   - *:max_nesting* [_Fixnum_|_boolean_] It true nesting is limited to 100.
+ *     If a Fixnum nesting is set to the provided value. The option to detect
+ *     circular references is available but is not compatible with the json gem.,
+ *     default is false or unlimited.
+ *   - *:allow_nan* [_boolean_] If true non JSON compliant words such as Nan and
+ *     Infinity will be used as appropriate, default is true.
+ *   - *:quirks_mode* [_boolean_] Allow single JSON values instead of documents, default is true (allow).
+ *   - *:indent* [_String_|_nil_] String to use for indentation, overriding the indent option if not nil.
  *   - *:space* [_String_|_nil_] String to use for the space after the colon in JSON object fields.
- *   - *:space_before* [_String_|_nil_] String to use before the colon separator in JSON object
- * fields.
+ *   - *:space_before* [_String_|_nil_] String to use before the colon separator in JSON object fields.
  *   - *:object_nl* [_String_|_nil_] String to use after a JSON object field value.
  *   - *:array_nl* [_String_|_nil_] String to use after a JSON array value.
  *   - *:trace* [_Boolean_] If true trace is turned on.
@@ -1435,10 +1440,10 @@ static VALUE to_stream(int argc, VALUE *argv, VALUE self) {
  *
  * - *clas* [_Class__|_Module_] Class or Module to be made special
  * - *create_object* [_Object_]  object to call the create method on
- * - *create_method* [_Symbol_] method on the clas that will create a new instance of the clas when
- * given all the member values in the order specified.
- * - *members* [_Symbol__|_String_] methods used to get the member values from instances of the
- * clas.
+ * - *create_method* [_Symbol_] method on the clas that will create a new instance
+ *   of the clas when given all the member values in the order specified.
+ * - *members* [_Symbol__|_String_] methods used to get the member values from
+ *   instances of the clas.
  */
 static VALUE register_odd(int argc, VALUE *argv, VALUE self) {
     if (3 > argc) {
@@ -1471,10 +1476,10 @@ static VALUE register_odd(int argc, VALUE *argv, VALUE self) {
  *
  * - *clas* [_Class_|_Module_] Class or Module to be made special
  * - *create_object* [_Object_] object to call the create method on
- * - *create_method* [_Symbol_] method on the clas that will create a new instance of the clas when
- *given all the member values in the order specified.
- * - *dump_method* [_Symbol_|_String_] method to call on the object being serialized to generate the
- *raw JSON.
+ * - *create_method* [_Symbol_] method on the clas that will create a new instance
+ *   of the clas when given all the member values in the order specified.
+ * - *dump_method* [_Symbol_|_String_] method to call on the object being
+ *   serialized to generate the raw JSON.
  */
 static VALUE register_odd_raw(int argc, VALUE *argv, VALUE self) {
     if (3 > argc) {
@@ -1700,8 +1705,8 @@ extern VALUE oj_define_mimic_json(int argc, VALUE *argv, VALUE self);
  *   - *:space_before* [_String_] String placed before a : delimiter
  *   - *:object_nl* [_String_] String placed after a JSON object
  *   - *:array_nl* [_String_] String placed after a JSON array
- *   - *:ascii_only* [_Boolean_] if not nil or false then use only ascii characters in the output.
- * Note JSON.generate does support this even if it is not documented.
+ *   - *:ascii_only* [_Boolean_] if not nil or false then use only ascii characters
+ *     in the output. Note JSON.generate does support this even if it is not documented.
  *
  * Returns [_String_]generated JSON.
  */
@@ -1758,8 +1763,8 @@ static VALUE mem_report(VALUE self) {
  * global and options to methods allow additional behavior modifications. The
  * modes are:
  *
- * - *:strict* mode will only allow the 7 basic JSON types to be serialized. Any other Object
- *   will raise an Exception.
+ * - *:strict* mode will only allow the 7 basic JSON types to be serialized.
+ *   Any other Object will raise an Exception.
  *
  * - *:null* mode is similar to the :strict mode except any Object that is not
  *   one of the JSON base types is replaced by a JSON null.

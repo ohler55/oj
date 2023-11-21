@@ -1294,46 +1294,32 @@ void oj_parser_set_option(ojParser p, VALUE ropts) {
  *   - no options
  *
  * - *:saj*
- *   - _cache_keys=_ sets the value of the _cache_keys_ flag.
- *   - _cache_keys_ returns the value of the _cache_keys_ flag.
- *   - _cache_strings=_ sets the value of the _cache_strings_ to an positive integer less than 35. Strings shorter than
- * that length are cached.
- *   - _cache_strings_ returns the value of the _cache_strings_ integer value.
- *   - _handler=_ sets the SAJ handler
- *   - _handler_ returns the SAJ handler
+ *   - _cache_keys_ is a flag indicating hash keys should be cached.
+ *   - _cache_strings_ is a positive integer less than 35. Strings shorter than that length are cached.
+ *   - _handler_ is the SAJ handler
  *
  * - *:usual*
- *   - _cache_keys=_ sets the value of the _cache_keys_ flag.
- *   - _cache_keys_ returns the value of the _cache_keys_ flag.
- *   - _cache_strings=_ sets the value of the _cache_strings_ to a positive integer less than 35. Strings shorter than
- * that length are cached.
- *   - _cache_strings_ returns the value of the _cache_strings_ integer value.
- *   - _cache_expunge=_ sets the value of the _cache_expunge_ where 0 never expunges, 1 expunges slowly, 2 expunges
- * faster, and 3 or higher expunges agressively.
- *   - _cache_expunge_ returns the value of the _cache_expunge_ integer value.
- *   - _capacity=_ sets the capacity of the parser. The parser grows automatically but can be updated directly with this
- * call.
- *   - _capacity_ returns the current capacity of the parser's internal stack.
- *   - _create_id_ returns the value _create_id_ or _nil_ if there is no _create_id_.
- *   - _create_id=_ sets the value _create_id_ or if _nil_ unsets it. Parsed JSON objects that include the specified
- * element use the element value as the name of the class to create an object from instead of a Hash.
- *   - _decimal=_ sets the approach to how decimals are parser. If _:auto_ then the decimals with significant digits are
- * 16 or less are Floats and long ones are BigDecimal. _:ruby_ uses a call to Ruby to convert a string to a Float.
- * _:float_ always generates a Float. _:bigdecimal_ always results in a BigDecimal.
- *   - _decimal_ returns the value of the decimal conversion option which can be :auto (default), :ruby, :float, or
- * :bigdecimal.
- *   - _ignore_json_create_ returns the value of the _ignore_json_create_ flag.
- *   - _ignore_json_create=_ sets the value of the _ignore_json_create_ flag. When set the class json_create method is
- * ignored on parsing in favor of creating an instance and populating directly.
- *   - _missing_class_ return the value of the _missing_class_ indicator.
- *   - _missing_class=_ sets the value of the _missing_class_ flag. Valid values are _:auto_ which creates any missing
- * classes on parse, :ignore which ignores and continues as a Hash (default), and :raise which raises an exception if
- * the class is not found.
- *   - _omit_null=_ sets the _omit_null_ flag. If true then null values in a map or object are omitted from the
- * resulting Hash or Object.
- *   - _omit_null_ returns the value of the _omit_null_ flag.
- *   - _symbol_keys=_ sets the flag that indicates Hash keys should be parsed to Symbols versus Strings.
- *   - _symbol_keys_ returns the value of the _symbol_keys_ flag.
+ *   - _cache_keys_ is a flag indicating hash keys should be cached.
+ *   - _cache_strings_ is a positive integer less than 35. Strings shorter than that length are cached.
+ *   - _cache_expunge_ dictates when the cache will be expunged where 0 never expunges,
+ *     1 expunges slowly, 2 expunges faster, and 3 or higher expunges agressively.
+ *   - _capacity_ is the capacity of the parser's internal stack. The parser grows automatically
+ *     but can be updated directly with this call.
+ *   - _create_id_ if non-nil is the key that is used to specify the type of object to create
+ *     when parsing. Parsed JSON objects that include the specified element use the element
+ *     value as the name of the class to create an object from instead of a Hash.
+ *   - _decimal_ is the approach to how decimals are parsed. If _:auto_ then
+ *     the decimals with significant digits are 16 or less are Floats and long
+ *     ones are BigDecimal. _:ruby_ uses a call to Ruby to convert a string to a Float.
+ *     _:float_ always generates a Float. _:bigdecimal_ always results in a BigDecimal.
+ *   - _ignore_json_create_ is a flag that when set the class json_create method is
+ *     ignored on parsing in favor of creating an instance and populating directly.
+ *   - _missing_class_ is an indicator that determines how unknown class names are handled.
+ *     Valid values are _:auto_ which creates any missing classes on parse, :ignore which ignores
+ *     and continues as a Hash (default), and :raise which raises an exception if the class is not found.
+ *   - _omit_null_ is a flag that if true then null values in a map or object are omitted
+ *     from the resulting Hash or Object.
+ *   - _symbol_keys_ is a flag that indicates Hash keys should be parsed to Symbols versus Strings.
  */
 static VALUE parser_missing(int argc, VALUE *argv, VALUE self) {
     ojParser       p    = (ojParser)DATA_PTR(self);

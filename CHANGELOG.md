@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.16.2 - 2023-11-21
+
+- Fixed documentation formatting.
+
 ## 3.16.1 - 2023-09-01
 
 - Fixed exception type on number parsing. (thank you @jasonpenny)

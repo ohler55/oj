@@ -425,7 +425,7 @@ static VALUE mimic_generate_core(int argc, VALUE *argv, Options copts) {
  *   - *:object_nl* [_String_] String placed after a JSON object
  *   - *:array_nl* [_String_] String placed after a JSON array
  *   - *:ascii_only* [_Boolean_] if not nil or false then use only ascii characters in the output.
- * Note JSON.generate does support this even if it is not documented.
+ *     Note JSON.generate does support this even if it is not documented.
  *
  * Returns [_String_] generated JSON.
  */
@@ -605,9 +605,9 @@ static VALUE mimic_parse_core(int argc, VALUE *argv, VALUE self, bool bang) {
  * - *source* [_String_|IO] source to parse
  * - *opts* [_Hash_] options
  *   - *:symbolize* [Boolean] _names flag indicating JSON object keys should be Symbols instead of
- * Strings
+ *     Strings
  *   - *:create_additions* [Boolean] flag indicating a key matching +create_id+ in a JSON object
- * should trigger the creation of Ruby Object
+ *     should trigger the creation of Ruby Object
  *
  * Returns [Object]
  * @see create_id=
