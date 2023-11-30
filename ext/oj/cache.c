@@ -260,7 +260,8 @@ void cache_set_expunge_rate(Cache c, int rate) {
     c->xrate = (uint8_t)rate;
 }
 
-void cache_free(Cache c) {
+void cache_free(void *data) {
+    Cache c = (Cache)data;
     uint64_t i;
 
     for (i = 0; i < c->size; i++) {
@@ -276,7 +277,8 @@ void cache_free(Cache c) {
     OJ_FREE(c);
 }
 
-void cache_mark(Cache c) {
+void cache_mark(void *data) {
+    Cache c = (Cache)data;
     uint64_t i;
 
 #if !HAVE_PTHREAD_MUTEX_INIT
