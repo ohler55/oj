@@ -639,6 +639,17 @@ static void encoder_mark(void *ptr) {
     }
 }
 
+static const rb_data_type_t oj_encoder_type = {
+    "Oj/encoder",
+    {
+        encoder_mark,
+        encoder_free,
+        NULL,
+    },
+    0,
+    0,
+};
+
 /* Document-method: new
  *	call-seq: new(options=nil)
  *
@@ -656,7 +667,7 @@ static VALUE encoder_new(int argc, VALUE *argv, VALUE self) {
         oj_parse_options(*argv, &e->opts);
         e->arg = *argv;
     }
-    return Data_Wrap_Struct(encoder_class, encoder_mark, encoder_free, e);
+    return TypedData_Wrap_Struct(encoder_class, &oj_encoder_type, e);
 }
 
 static VALUE resolve_classpath(const char *name) {
@@ -748,7 +759,8 @@ static void optimize(int argc, VALUE *argv, ROptTable rot, bool on) {
  * - *classes* [_Class_] a list of classes to optimize
  */
 static VALUE encoder_optimize(int argc, VALUE *argv, VALUE self) {
-    Encoder e = (Encoder)DATA_PTR(self);
+    Encoder e;
+    TypedData_Get_Struct(self, struct _encoder, &oj_encoder_type, e);
 
     optimize(argc, argv, &e->ropts, true);
 
@@ -804,7 +816,8 @@ rails_mimic_json(VALUE self) {
  * - *classes* [_Class_] a list of classes to deoptimize
  */
 static VALUE encoder_deoptimize(int argc, VALUE *argv, VALUE self) {
-    Encoder e = (Encoder)DATA_PTR(self);
+    Encoder e;
+    TypedData_Get_Struct(self, struct _encoder, &oj_encoder_type, e);
 
     optimize(argc, argv, &e->ropts, false);
 
@@ -833,7 +846,8 @@ static VALUE rails_deoptimize(int argc, VALUE *argv, VALUE self) {
  * @return true if the class is being optimized for rails and false otherwise
  */
 static VALUE encoder_optimized(VALUE self, VALUE clas) {
-    Encoder e  = (Encoder)DATA_PTR(self);
+    Encoder e;
+    TypedData_Get_Struct(self, struct _encoder, &oj_encoder_type, e);
     ROpt    ro = oj_rails_get_opt(&e->ropts, clas);
 
     if (NULL == ro) {
@@ -940,7 +954,8 @@ static VALUE encode(VALUE obj, ROptTable ropts, Options opts, int argc, VALUE *a
  * Returns encoded object as a JSON string.
  */
 static VALUE encoder_encode(VALUE self, VALUE obj) {
-    Encoder e = (Encoder)DATA_PTR(self);
+    Encoder e;
+    TypedData_Get_Struct(self, struct _encoder, &oj_encoder_type, e);
 
     if (Qnil != e->arg) {
         VALUE argv[1] = {e->arg};
