@@ -262,6 +262,7 @@ extern void  oj_dump_leaf_to_json(Leaf leaf, Options copts, Out out);
 extern void  oj_write_leaf_to_file(Leaf leaf, const char *path, Options copts);
 extern char *oj_longlong_to_string(long long num, bool negative, char *buf);
 
+extern StrWriter oj_str_writer_unwrap(VALUE writer);
 extern void oj_str_writer_push_key(StrWriter sw, const char *key);
 extern void oj_str_writer_push_object(StrWriter sw, const char *key);
 extern void oj_str_writer_push_array(StrWriter sw, const char *key);

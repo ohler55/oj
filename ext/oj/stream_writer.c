@@ -21,6 +21,17 @@ static void stream_writer_free(void *ptr) {
     OJ_R_FREE(ptr);
 }
 
+static const rb_data_type_t oj_stream_writer_type = {
+    "Oj/stream_writer",
+    {
+        NULL,
+        stream_writer_free,
+        NULL,
+    },
+    0,
+    0,
+};
+
 static void stream_writer_reset_buf(StreamWriter sw) {
     sw->sw.out.cur  = sw->sw.out.buf;
     *sw->sw.out.cur = '\0';
@@ -120,7 +131,7 @@ static VALUE stream_writer_new(int argc, VALUE *argv, VALUE self) {
     sw->type          = type;
     sw->fd            = fd;
 
-    return Data_Wrap_Struct(oj_stream_writer_class, 0, stream_writer_free, sw);
+    return TypedData_Wrap_Struct(oj_stream_writer_class, &oj_stream_writer_type, sw);
 }
 
 /* Document-method: push_key
@@ -133,7 +144,8 @@ static VALUE stream_writer_new(int argc, VALUE *argv, VALUE self) {
  * - *key* [_String_] the key pending for the next push
  */
 static VALUE stream_writer_push_key(VALUE self, VALUE key) {
-    StreamWriter sw = (StreamWriter)DATA_PTR(self);
+    StreamWriter sw;
+    TypedData_Get_Struct(self, struct _streamWriter, &oj_stream_writer_type, sw);
 
     oj_str_writer_push_key(&sw->sw, StringValuePtr(key));
     if (sw->flush_limit < sw->sw.out.cur - sw->sw.out.buf) {
@@ -151,7 +163,8 @@ static VALUE stream_writer_push_key(VALUE self, VALUE key) {
  * - *key* [_String_] the key if adding to an object in the JSON document
  */
 static VALUE stream_writer_push_object(int argc, VALUE *argv, VALUE self) {
-    StreamWriter sw = (StreamWriter)DATA_PTR(self);
+    StreamWriter sw;
+    TypedData_Get_Struct(self, struct _streamWriter, &oj_stream_writer_type, sw);
 
     switch (argc) {
     case 0: oj_str_writer_push_object(&sw->sw, 0); break;
@@ -179,7 +192,8 @@ static VALUE stream_writer_push_object(int argc, VALUE *argv, VALUE self) {
  * - *key* [_String_] the key if adding to an object in the JSON document
  */
 static VALUE stream_writer_push_array(int argc, VALUE *argv, VALUE self) {
-    StreamWriter sw = (StreamWriter)DATA_PTR(self);
+    StreamWriter sw;
+    TypedData_Get_Struct(self, struct _streamWriter, &oj_stream_writer_type, sw);
 
     switch (argc) {
     case 0: oj_str_writer_push_array(&sw->sw, 0); break;
@@ -206,15 +220,16 @@ static VALUE stream_writer_push_array(int argc, VALUE *argv, VALUE self) {
  * - *key* [_String_] the key if adding to an object in the JSON document
  */
 static VALUE stream_writer_push_value(int argc, VALUE *argv, VALUE self) {
-    StreamWriter sw = (StreamWriter)DATA_PTR(self);
+    StreamWriter sw;
+    TypedData_Get_Struct(self, struct _streamWriter, &oj_stream_writer_type, sw);
 
     switch (argc) {
-    case 1: oj_str_writer_push_value((StrWriter)DATA_PTR(self), *argv, 0); break;
+    case 1: oj_str_writer_push_value((StrWriter)sw, *argv, 0); break;
     case 2:
         if (Qnil == argv[1]) {
-            oj_str_writer_push_value((StrWriter)DATA_PTR(self), *argv, 0);
+            oj_str_writer_push_value((StrWriter)sw, *argv, 0);
         } else {
-            oj_str_writer_push_value((StrWriter)DATA_PTR(self), *argv, StringValuePtr(argv[1]));
+            oj_str_writer_push_value((StrWriter)sw, *argv, StringValuePtr(argv[1]));
         }
         break;
     default: rb_raise(rb_eArgError, "Wrong number of argument to 'push_value'."); break;
@@ -235,15 +250,16 @@ static VALUE stream_writer_push_value(int argc, VALUE *argv, VALUE self) {
  * - *key* [_String_] the key if adding to an object in the JSON document
  */
 static VALUE stream_writer_push_json(int argc, VALUE *argv, VALUE self) {
-    StreamWriter sw = (StreamWriter)DATA_PTR(self);
+    StreamWriter sw;
+    TypedData_Get_Struct(self, struct _streamWriter, &oj_stream_writer_type, sw);
 
     switch (argc) {
-    case 1: oj_str_writer_push_json((StrWriter)DATA_PTR(self), StringValuePtr(*argv), 0); break;
+    case 1: oj_str_writer_push_json((StrWriter)sw, StringValuePtr(*argv), 0); break;
     case 2:
         if (Qnil == argv[1]) {
-            oj_str_writer_push_json((StrWriter)DATA_PTR(self), StringValuePtr(*argv), 0);
+            oj_str_writer_push_json((StrWriter)sw, StringValuePtr(*argv), 0);
         } else {
-            oj_str_writer_push_json((StrWriter)DATA_PTR(self), StringValuePtr(*argv), StringValuePtr(argv[1]));
+            oj_str_writer_push_json((StrWriter)sw, StringValuePtr(*argv), StringValuePtr(argv[1]));
         }
         break;
     default: rb_raise(rb_eArgError, "Wrong number of argument to 'push_json'."); break;
@@ -261,7 +277,8 @@ static VALUE stream_writer_push_json(int argc, VALUE *argv, VALUE self) {
  * currently open.
  */
 static VALUE stream_writer_pop(VALUE self) {
-    StreamWriter sw = (StreamWriter)DATA_PTR(self);
+    StreamWriter sw;
+    TypedData_Get_Struct(self, struct _streamWriter, &oj_stream_writer_type, sw);
 
     oj_str_writer_pop(&sw->sw);
     if (sw->flush_limit < sw->sw.out.cur - sw->sw.out.buf) {
@@ -277,7 +294,8 @@ static VALUE stream_writer_pop(VALUE self) {
  * currently open.
  */
 static VALUE stream_writer_pop_all(VALUE self) {
-    StreamWriter sw = (StreamWriter)DATA_PTR(self);
+    StreamWriter sw;
+    TypedData_Get_Struct(self, struct _streamWriter, &oj_stream_writer_type, sw);
 
     oj_str_writer_pop_all(&sw->sw);
     stream_writer_write(sw);
@@ -291,7 +309,9 @@ static VALUE stream_writer_pop_all(VALUE self) {
  * Flush any remaining characters in the buffer.
  */
 static VALUE stream_writer_flush(VALUE self) {
-    stream_writer_write((StreamWriter)DATA_PTR(self));
+    StreamWriter sw;
+    TypedData_Get_Struct(self, struct _streamWriter, &oj_stream_writer_type, sw);
+    stream_writer_write(sw);
 
     return Qnil;
 }

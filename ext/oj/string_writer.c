@@ -225,7 +225,7 @@ void oj_str_writer_pop_all(StrWriter sw) {
     }
 }
 
-static void str_writer_free(void *ptr) {
+static void string_writer_free(void *ptr) {
     StrWriter sw;
 
     if (0 == ptr) {
@@ -237,6 +237,23 @@ static void str_writer_free(void *ptr) {
 
     OJ_R_FREE(sw->types);
     OJ_R_FREE(ptr);
+}
+
+static const rb_data_type_t oj_string_writer_type = {
+    "Oj/string_writer",
+    {
+        NULL,
+        string_writer_free,
+        NULL,
+    },
+    0,
+    0,
+};
+
+StrWriter oj_str_writer_unwrap(VALUE writer) {
+    StrWriter sw;
+    TypedData_Get_Struct(writer, struct _strWriter, &oj_string_writer_type, sw);
+    return sw;
 }
 
 /* Document-method: new
@@ -266,7 +283,7 @@ static VALUE str_writer_new(int argc, VALUE *argv, VALUE self) {
     sw->out.argv   = argv + 1;
     sw->out.indent = sw->opts.indent;
 
-    return Data_Wrap_Struct(oj_string_writer_class, 0, str_writer_free, sw);
+    return TypedData_Wrap_Struct(oj_string_writer_class, &oj_string_writer_type, sw);
 }
 
 /* Document-method: push_key
@@ -278,7 +295,8 @@ static VALUE str_writer_new(int argc, VALUE *argv, VALUE self) {
  * - *key* [_String_] the key pending for the next push
  */
 static VALUE str_writer_push_key(VALUE self, VALUE key) {
-    StrWriter sw = (StrWriter)DATA_PTR(self);
+    StrWriter sw;
+    TypedData_Get_Struct(self, struct _strWriter, &oj_string_writer_type, sw);
 
     oj_str_writer_push_key(sw, StringValuePtr(key));
 
@@ -293,7 +311,8 @@ static VALUE str_writer_push_key(VALUE self, VALUE key) {
  * - *key* [_String_] the key if adding to an object in the JSON document
  */
 static VALUE str_writer_push_object(int argc, VALUE *argv, VALUE self) {
-    StrWriter sw = (StrWriter)DATA_PTR(self);
+    StrWriter sw;
+    TypedData_Get_Struct(self, struct _strWriter, &oj_string_writer_type, sw);
 
     switch (argc) {
     case 0: oj_str_writer_push_object(sw, 0); break;
@@ -321,7 +340,8 @@ static VALUE str_writer_push_object(int argc, VALUE *argv, VALUE self) {
  * - *key* [_String_] the key if adding to an object in the JSON document
  */
 static VALUE str_writer_push_array(int argc, VALUE *argv, VALUE self) {
-    StrWriter sw = (StrWriter)DATA_PTR(self);
+    StrWriter sw;
+    TypedData_Get_Struct(self, struct _strWriter, &oj_string_writer_type, sw);
 
     switch (argc) {
     case 0: oj_str_writer_push_array(sw, 0); break;
@@ -349,13 +369,16 @@ static VALUE str_writer_push_array(int argc, VALUE *argv, VALUE self) {
  * - *key* [_String_] the key if adding to an object in the JSON document
  */
 static VALUE str_writer_push_value(int argc, VALUE *argv, VALUE self) {
+    StrWriter sw;
+    TypedData_Get_Struct(self, struct _strWriter, &oj_string_writer_type, sw);
+
     switch (argc) {
-    case 1: oj_str_writer_push_value((StrWriter)DATA_PTR(self), *argv, 0); break;
+    case 1: oj_str_writer_push_value(sw, *argv, 0); break;
     case 2:
         if (Qnil == argv[1]) {
-            oj_str_writer_push_value((StrWriter)DATA_PTR(self), *argv, 0);
+            oj_str_writer_push_value(sw, *argv, 0);
         } else {
-            oj_str_writer_push_value((StrWriter)DATA_PTR(self), *argv, StringValuePtr(argv[1]));
+            oj_str_writer_push_value(sw, *argv, StringValuePtr(argv[1]));
         }
         break;
     default: rb_raise(rb_eArgError, "Wrong number of argument to 'push_value'."); break;
@@ -373,13 +396,16 @@ static VALUE str_writer_push_value(int argc, VALUE *argv, VALUE self) {
  * - *key* [_String_] the key if adding to an object in the JSON document
  */
 static VALUE str_writer_push_json(int argc, VALUE *argv, VALUE self) {
+    StrWriter sw;
+    TypedData_Get_Struct(self, struct _strWriter, &oj_string_writer_type, sw);
+
     switch (argc) {
-    case 1: oj_str_writer_push_json((StrWriter)DATA_PTR(self), StringValuePtr(*argv), 0); break;
+    case 1: oj_str_writer_push_json(sw, StringValuePtr(*argv), 0); break;
     case 2:
         if (Qnil == argv[1]) {
-            oj_str_writer_push_json((StrWriter)DATA_PTR(self), StringValuePtr(*argv), 0);
+            oj_str_writer_push_json(sw, StringValuePtr(*argv), 0);
         } else {
-            oj_str_writer_push_json((StrWriter)DATA_PTR(self), StringValuePtr(*argv), StringValuePtr(argv[1]));
+            oj_str_writer_push_json(sw, StringValuePtr(*argv), StringValuePtr(argv[1]));
         }
         break;
     default: rb_raise(rb_eArgError, "Wrong number of argument to 'push_json'."); break;
@@ -393,7 +419,10 @@ static VALUE str_writer_push_json(int argc, VALUE *argv, VALUE self) {
  * currently open.
  */
 static VALUE str_writer_pop(VALUE self) {
-    oj_str_writer_pop((StrWriter)DATA_PTR(self));
+    StrWriter sw;
+    TypedData_Get_Struct(self, struct _strWriter, &oj_string_writer_type, sw);
+
+    oj_str_writer_pop(sw);
     return Qnil;
 }
 
@@ -404,7 +433,10 @@ static VALUE str_writer_pop(VALUE self) {
  * currently open.
  */
 static VALUE str_writer_pop_all(VALUE self) {
-    oj_str_writer_pop_all((StrWriter)DATA_PTR(self));
+    StrWriter sw;
+    TypedData_Get_Struct(self, struct _strWriter, &oj_string_writer_type, sw);
+
+    oj_str_writer_pop_all(sw);
 
     return Qnil;
 }
@@ -415,7 +447,8 @@ static VALUE str_writer_pop_all(VALUE self) {
  * Reset the writer back to the empty state.
  */
 static VALUE str_writer_reset(VALUE self) {
-    StrWriter sw = (StrWriter)DATA_PTR(self);
+    StrWriter sw;
+    TypedData_Get_Struct(self, struct _strWriter, &oj_string_writer_type, sw);
 
     sw->depth      = 0;
     *sw->types     = '\0';
@@ -434,7 +467,8 @@ static VALUE str_writer_reset(VALUE self) {
  * *return* [_String_]
  */
 static VALUE str_writer_to_s(VALUE self) {
-    StrWriter sw   = (StrWriter)DATA_PTR(self);
+    StrWriter sw;
+    TypedData_Get_Struct(self, struct _strWriter, &oj_string_writer_type, sw);
     VALUE     rstr = rb_str_new(sw->out.buf, sw->out.cur - sw->out.buf);
 
     return oj_encode(rstr);
