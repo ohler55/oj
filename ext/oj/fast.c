@@ -780,11 +780,10 @@ static VALUE parse_json(VALUE clas, char *json, bool given) {
         }
     }
 #endif
-    doc->json           = json;
-    self                = TypedData_Wrap_Struct(clas, &oj_doc_type, doc);
-    doc->self           = self;
-    DATA_PTR(doc->self) = doc;
-    result              = rb_protect(protect_open_proc, (VALUE)&pi, &ex);
+    doc->json = json;
+    self      = TypedData_Wrap_Struct(clas, &oj_doc_type, doc);
+    doc->self = self;
+    result    = rb_protect(protect_open_proc, (VALUE)&pi, &ex);
     if (given || 0 != ex) {
         DATA_PTR(doc->self) = NULL;
         // TBD is this needed?
@@ -1609,7 +1608,9 @@ static VALUE doc_dump(int argc, VALUE *argv, VALUE self) {
  *   Oj::Doc.open('[1,2,3]') { |doc| doc.size() }  #=> 4
  */
 static VALUE doc_size(VALUE self) {
-    return ULONG2NUM(((Doc)DATA_PTR(self))->size);
+    Doc d;
+    TypedData_Get_Struct(self, struct _doc, &oj_doc_type, d);
+    return ULONG2NUM(d->size);
 }
 
 /* @overload close() => nil

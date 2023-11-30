@@ -847,8 +847,10 @@ static VALUE rails_deoptimize(int argc, VALUE *argv, VALUE self) {
  */
 static VALUE encoder_optimized(VALUE self, VALUE clas) {
     Encoder e;
+    ROpt    ro;
+
     TypedData_Get_Struct(self, struct _encoder, &oj_encoder_type, e);
-    ROpt    ro = oj_rails_get_opt(&e->ropts, clas);
+    ro = oj_rails_get_opt(&e->ropts, clas);
 
     if (NULL == ro) {
         return Qfalse;

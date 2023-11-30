@@ -1334,10 +1334,11 @@ void oj_parser_set_option(ojParser p, VALUE ropts) {
  */
 static VALUE parser_missing(int argc, VALUE *argv, VALUE self) {
     ojParser       p;
-    TypedData_Get_Struct(self, struct _ojParser, &oj_parser_type, p);
     const char    *key  = NULL;
     volatile VALUE rkey = *argv;
     volatile VALUE rv   = Qnil;
+
+    TypedData_Get_Struct(self, struct _ojParser, &oj_parser_type, p);
 
 #if HAVE_RB_EXT_RACTOR_SAFE
     // This doesn't seem to do anything.
@@ -1365,8 +1366,9 @@ static VALUE parser_missing(int argc, VALUE *argv, VALUE self) {
  */
 static VALUE parser_parse(VALUE self, VALUE json) {
     ojParser    p;
-    TypedData_Get_Struct(self, struct _ojParser, &oj_parser_type, p);
     const byte *ptr = (const byte *)StringValuePtr(json);
+
+    TypedData_Get_Struct(self, struct _ojParser, &oj_parser_type, p);
 
     parser_reset(p);
     p->start(p);
@@ -1382,8 +1384,9 @@ static VALUE load_rescue(VALUE self, VALUE x) {
 
 static VALUE load(VALUE self) {
     ojParser       p;
-    TypedData_Get_Struct(self, struct _ojParser, &oj_parser_type, p);
     volatile VALUE rbuf = rb_str_new2("");
+
+    TypedData_Get_Struct(self, struct _ojParser, &oj_parser_type, p);
 
     p->start(p);
     while (true) {
@@ -1404,6 +1407,7 @@ static VALUE load(VALUE self) {
  */
 static VALUE parser_load(VALUE self, VALUE reader) {
     ojParser p;
+
     TypedData_Get_Struct(self, struct _ojParser, &oj_parser_type, p);
 
     parser_reset(p);
@@ -1422,9 +1426,10 @@ static VALUE parser_load(VALUE self, VALUE reader) {
  */
 static VALUE parser_file(VALUE self, VALUE filename) {
     ojParser    p;
-    TypedData_Get_Struct(self, struct _ojParser, &oj_parser_type, p);
     const char *path;
     int         fd;
+
+    TypedData_Get_Struct(self, struct _ojParser, &oj_parser_type, p);
 
     path = StringValuePtr(filename);
 
@@ -1470,6 +1475,7 @@ static VALUE parser_file(VALUE self, VALUE filename) {
  */
 static VALUE parser_just_one(VALUE self) {
     ojParser p;
+
     TypedData_Get_Struct(self, struct _ojParser, &oj_parser_type, p);
 
     return p->just_one ? Qtrue : Qfalse;
@@ -1485,6 +1491,7 @@ static VALUE parser_just_one(VALUE self) {
  */
 static VALUE parser_just_one_set(VALUE self, VALUE v) {
     ojParser p;
+
     TypedData_Get_Struct(self, struct _ojParser, &oj_parser_type, p);
 
     p->just_one = (Qtrue == v);

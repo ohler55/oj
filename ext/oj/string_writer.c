@@ -469,7 +469,7 @@ static VALUE str_writer_reset(VALUE self) {
 static VALUE str_writer_to_s(VALUE self) {
     StrWriter sw;
     TypedData_Get_Struct(self, struct _strWriter, &oj_string_writer_type, sw);
-    VALUE     rstr = rb_str_new(sw->out.buf, sw->out.cur - sw->out.buf);
+    VALUE rstr = rb_str_new(sw->out.buf, sw->out.cur - sw->out.buf);
 
     return oj_encode(rstr);
 }
