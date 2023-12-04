@@ -4,6 +4,8 @@
 
 - Fixed documentation formatting.
 
+- Added option to the "usual" parser to raise an error on an empty input string.
+
 ## 3.16.1 - 2023-09-01
 
 - Fixed exception type on number parsing. (thank you @jasonpenny)

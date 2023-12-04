@@ -60,6 +60,7 @@ typedef struct _usual {
     uint8_t miss_class;
     bool    cache_keys;
     bool    ignore_json_create;
+    bool    raise_on_empty;
 } *Usual;
 
 // Initialize the parser with the usual delegate. If the usual delegate is

@@ -601,6 +601,9 @@ static VALUE result(ojParser p) {
     if (d->vhead < d->vtail) {
         return *d->vhead;
     }
+    if (d->raise_on_empty) {
+	rb_raise(oj_parse_error_class, "empty string");
+    }
     return Qnil;
 }
 
@@ -1066,6 +1069,20 @@ static VALUE opt_symbol_keys_set(ojParser p, VALUE value) {
     return (NULL != d->sym_cache) ? Qtrue : Qfalse;
 }
 
+static VALUE opt_raise_on_empty(ojParser p, VALUE value) {
+    Usual d = (Usual)p->ctx;
+
+    return d->raise_on_empty ? Qtrue : Qfalse;
+}
+
+static VALUE opt_raise_on_empty_set(ojParser p, VALUE value) {
+    Usual d = (Usual)p->ctx;
+
+    d->raise_on_empty = (Qtrue == value);
+
+    return d->raise_on_empty ? Qtrue : Qfalse;
+}
+
 static VALUE option(ojParser p, const char *key, VALUE value) {
     struct opt *op;
     struct opt  opts[] = {
@@ -1095,6 +1112,8 @@ static VALUE option(ojParser p, const char *key, VALUE value) {
         {.name = "omit_null=", .func = opt_omit_null_set},
         {.name = "symbol_keys", .func = opt_symbol_keys},
         {.name = "symbol_keys=", .func = opt_symbol_keys_set},
+        {.name = "raise_on_empty", .func = opt_raise_on_empty},
+        {.name = "raise_on_empty=", .func = opt_raise_on_empty_set},
         {.name = NULL},
     };
 
@@ -1129,6 +1148,7 @@ void oj_init_usual(ojParser p, Usual d) {
     d->get_key            = cache_key;
     d->cache_keys         = true;
     d->ignore_json_create = false;
+    d->raise_on_empty     = false;
     d->cache_str          = 6;
     d->array_class        = Qnil;
     d->hash_class         = Qnil;
