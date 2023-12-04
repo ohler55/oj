@@ -83,8 +83,9 @@ static int parse_num(const char *str, const char *end, int cnt) {
 
 VALUE
 oj_parse_xml_time(const char *str, int len) {
-    VALUE       args[8];
-    const char *end = str + len;
+    VALUE       args[7];
+    const char *end  = str + len;
+    const char *orig = str;
     int         n;
 
     // year
@@ -144,7 +145,9 @@ oj_parse_xml_time(const char *str, int len) {
         char c = *str++;
 
         if ('.' == c) {
-            long long nsec = 0;
+            unsigned long long       num            = 0;
+            unsigned long long       den            = 1;
+            const unsigned long long last_den_limit = ULLONG_MAX / 10;
 
             for (; str < end; str++) {
                 c = *str;
@@ -152,9 +155,14 @@ oj_parse_xml_time(const char *str, int len) {
                     str++;
                     break;
                 }
-                nsec = nsec * 10 + (c - '0');
+                if (den > last_den_limit) {
+                    // bail to Time.parse if there are more fractional digits than a ULLONG rational can hold
+                    return rb_funcall(rb_cTime, oj_parse_id, 1, rb_str_new(orig, len));
+                }
+                num = num * 10 + (c - '0');
+                den *= 10;
             }
-            args[5] = rb_float_new((double)n + ((double)nsec + 0.5) / 1000000000.0);
+            args[5] = rb_funcall(INT2NUM(n), oj_plus_id, 1, rb_rational_new(ULL2NUM(num), ULL2NUM(den)));
         } else {
             args[5] = rb_ll2inum(n);
         }
