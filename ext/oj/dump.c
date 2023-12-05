@@ -727,8 +727,11 @@ static void debug_raise(const char *orig, size_t cnt, int line) {
 
 void oj_dump_raw_json(VALUE obj, int depth, Out out) {
     if (oj_string_writer_class == rb_obj_class(obj)) {
-        StrWriter sw  = (StrWriter)DATA_PTR(obj);
-        size_t    len = sw->out.cur - sw->out.buf;
+        StrWriter sw;
+        size_t    len;
+
+        sw  = oj_str_writer_unwrap(obj);
+        len = sw->out.cur - sw->out.buf;
 
         if (0 < len) {
             len--;

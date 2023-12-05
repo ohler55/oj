@@ -8,7 +8,7 @@
 #include "odd.h"
 #include "oj.h"
 
-static void mark(void *ptr) {
+static void stack_mark(void *ptr) {
     ValStack stack = (ValStack)ptr;
     Val      v;
 
@@ -46,6 +46,17 @@ static void mark(void *ptr) {
 #endif
 }
 
+static const rb_data_type_t oj_stack_type = {
+    "Oj/stack",
+    {
+        stack_mark,
+        NULL,
+        NULL,
+    },
+    0,
+    0,
+};
+
 VALUE
 oj_stack_init(ValStack stack) {
 #ifdef HAVE_PTHREAD_MUTEX_INIT
@@ -70,7 +81,7 @@ oj_stack_init(ValStack stack) {
     stack->head->clen      = 0;
     stack->head->next      = NEXT_NONE;
 
-    return Data_Wrap_Struct(oj_cstack_class, mark, 0, stack);
+    return TypedData_Wrap_Struct(oj_cstack_class, &oj_stack_type, stack);
 }
 
 const char *oj_stack_next_string(ValNext n) {

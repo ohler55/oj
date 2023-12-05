@@ -85,20 +85,31 @@ static VALUE form_attr(const char *str, size_t len) {
     return (VALUE)rb_intern3(buf, len + 1, oj_utf8_encoding);
 }
 
+static const rb_data_type_t oj_cache_type = {
+    "Oj/cache",
+    {
+        cache_mark,
+        cache_free,
+        NULL,
+    },
+    0,
+    0,
+};
+
 void oj_hash_init(void) {
     VALUE cache_class = rb_define_class_under(Oj, "Cache", rb_cObject);
     rb_undef_alloc_func(cache_class);
 
     struct _cache *str_cache = cache_create(0, form_str, true, true);
-    str_cache_obj            = Data_Wrap_Struct(cache_class, cache_mark, cache_free, str_cache);
+    str_cache_obj            = TypedData_Wrap_Struct(cache_class, &oj_cache_type, str_cache);
     rb_gc_register_address(&str_cache_obj);
 
     struct _cache *sym_cache = cache_create(0, form_sym, true, true);
-    sym_cache_obj            = Data_Wrap_Struct(cache_class, cache_mark, cache_free, sym_cache);
+    sym_cache_obj            = TypedData_Wrap_Struct(cache_class, &oj_cache_type, sym_cache);
     rb_gc_register_address(&sym_cache_obj);
 
     struct _cache *attr_cache = cache_create(0, form_attr, false, true);
-    attr_cache_obj            = Data_Wrap_Struct(cache_class, cache_mark, cache_free, attr_cache);
+    attr_cache_obj            = TypedData_Wrap_Struct(cache_class, &oj_cache_type, attr_cache);
     rb_gc_register_address(&attr_cache_obj);
 
     memset(class_hash.slots, 0, sizeof(class_hash.slots));
@@ -118,17 +129,23 @@ oj_str_intern(const char *key, size_t len) {
 #if HAVE_RB_ENC_INTERNED_STR && 0
     return rb_enc_interned_str(key, len, rb_utf8_encoding());
 #else
-    return cache_intern(DATA_PTR(str_cache_obj), key, len);
+    Cache c;
+    TypedData_Get_Struct(str_cache_obj, struct _cache, &oj_cache_type, c);
+    return cache_intern(c, key, len);
 #endif
 }
 
 VALUE
 oj_sym_intern(const char *key, size_t len) {
-    return cache_intern(DATA_PTR(sym_cache_obj), key, len);
+    Cache c;
+    TypedData_Get_Struct(sym_cache_obj, struct _cache, &oj_cache_type, c);
+    return cache_intern(c, key, len);
 }
 
 ID oj_attr_intern(const char *key, size_t len) {
-    return cache_intern(DATA_PTR(attr_cache_obj), key, len);
+    Cache c;
+    TypedData_Get_Struct(attr_cache_obj, struct _cache, &oj_cache_type, c);
+    return cache_intern(c, key, len);
 }
 
 static uint64_t hash_calc(const uint8_t *key, size_t len) {

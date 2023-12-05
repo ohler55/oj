@@ -1164,6 +1164,17 @@ static void parser_mark(void *ptr) {
     }
 }
 
+static const rb_data_type_t oj_parser_type = {
+    "Oj/parser",
+    {
+        parser_mark,
+        parser_free,
+        NULL,
+    },
+    0,
+    0,
+};
+
 extern void oj_set_parser_validator(ojParser p);
 extern void oj_set_parser_saj(ojParser p);
 extern void oj_set_parser_usual(ojParser p);
@@ -1255,7 +1266,7 @@ static VALUE parser_new(int argc, VALUE *argv, VALUE self) {
             rb_hash_foreach(ropts, opt_cb, (VALUE)p);
         }
     }
-    return Data_Wrap_Struct(parser_class, parser_mark, parser_free, p);
+    return TypedData_Wrap_Struct(parser_class, &oj_parser_type, p);
 }
 
 // Create a new parser without setting the delegate. The parser is
@@ -1275,7 +1286,7 @@ VALUE oj_parser_new(void) {
     buf_init(&p->buf);
     p->map = value_map;
 
-    return Data_Wrap_Struct(parser_class, parser_mark, parser_free, p);
+    return TypedData_Wrap_Struct(parser_class, &oj_parser_type, p);
 }
 
 // Set set the options from a hash (ropts).
@@ -1322,10 +1333,12 @@ void oj_parser_set_option(ojParser p, VALUE ropts) {
  *   - _symbol_keys_ is a flag that indicates Hash keys should be parsed to Symbols versus Strings.
  */
 static VALUE parser_missing(int argc, VALUE *argv, VALUE self) {
-    ojParser       p    = (ojParser)DATA_PTR(self);
+    ojParser       p;
     const char    *key  = NULL;
     volatile VALUE rkey = *argv;
     volatile VALUE rv   = Qnil;
+
+    TypedData_Get_Struct(self, struct _ojParser, &oj_parser_type, p);
 
 #if HAVE_RB_EXT_RACTOR_SAFE
     // This doesn't seem to do anything.
@@ -1352,8 +1365,10 @@ static VALUE parser_missing(int argc, VALUE *argv, VALUE self) {
  * Returns the result according to the delegate of the parser.
  */
 static VALUE parser_parse(VALUE self, VALUE json) {
-    ojParser    p   = (ojParser)DATA_PTR(self);
+    ojParser    p;
     const byte *ptr = (const byte *)StringValuePtr(json);
+
+    TypedData_Get_Struct(self, struct _ojParser, &oj_parser_type, p);
 
     parser_reset(p);
     p->start(p);
@@ -1368,8 +1383,10 @@ static VALUE load_rescue(VALUE self, VALUE x) {
 }
 
 static VALUE load(VALUE self) {
-    ojParser       p    = (ojParser)DATA_PTR(self);
+    ojParser       p;
     volatile VALUE rbuf = rb_str_new2("");
+
+    TypedData_Get_Struct(self, struct _ojParser, &oj_parser_type, p);
 
     p->start(p);
     while (true) {
@@ -1389,7 +1406,9 @@ static VALUE load(VALUE self) {
  * Returns the result according to the delegate of the parser.
  */
 static VALUE parser_load(VALUE self, VALUE reader) {
-    ojParser p = (ojParser)DATA_PTR(self);
+    ojParser p;
+
+    TypedData_Get_Struct(self, struct _ojParser, &oj_parser_type, p);
 
     parser_reset(p);
     p->reader = reader;
@@ -1406,9 +1425,11 @@ static VALUE parser_load(VALUE self, VALUE reader) {
  * Returns the result according to the delegate of the parser.
  */
 static VALUE parser_file(VALUE self, VALUE filename) {
-    ojParser    p = (ojParser)DATA_PTR(self);
+    ojParser    p;
     const char *path;
     int         fd;
+
+    TypedData_Get_Struct(self, struct _ojParser, &oj_parser_type, p);
 
     path = StringValuePtr(filename);
 
@@ -1453,7 +1474,9 @@ static VALUE parser_file(VALUE self, VALUE filename) {
  * Returns the current state of the just_one [_Boolean_] option.
  */
 static VALUE parser_just_one(VALUE self) {
-    ojParser p = (ojParser)DATA_PTR(self);
+    ojParser p;
+
+    TypedData_Get_Struct(self, struct _ojParser, &oj_parser_type, p);
 
     return p->just_one ? Qtrue : Qfalse;
 }
@@ -1467,7 +1490,9 @@ static VALUE parser_just_one(VALUE self) {
  * Returns the current state of the just_one [_Boolean_] option.
  */
 static VALUE parser_just_one_set(VALUE self, VALUE v) {
-    ojParser p = (ojParser)DATA_PTR(self);
+    ojParser p;
+
+    TypedData_Get_Struct(self, struct _ojParser, &oj_parser_type, p);
 
     p->just_one = (Qtrue == v);
 
@@ -1491,7 +1516,7 @@ static VALUE parser_usual(VALUE self) {
         buf_init(&p->buf);
         p->map = value_map;
         oj_set_parser_usual(p);
-        usual_parser = Data_Wrap_Struct(parser_class, parser_mark, parser_free, p);
+        usual_parser = TypedData_Wrap_Struct(parser_class, &oj_parser_type, p);
         rb_gc_register_address(&usual_parser);
     }
     return usual_parser;
@@ -1514,7 +1539,7 @@ static VALUE parser_saj(VALUE self) {
         buf_init(&p->buf);
         p->map = value_map;
         oj_set_parser_saj(p);
-        saj_parser = Data_Wrap_Struct(parser_class, parser_mark, parser_free, p);
+        saj_parser = TypedData_Wrap_Struct(parser_class, &oj_parser_type, p);
         rb_gc_register_address(&saj_parser);
     }
     return saj_parser;
@@ -1536,7 +1561,7 @@ static VALUE parser_validate(VALUE self) {
         buf_init(&p->buf);
         p->map = value_map;
         oj_set_parser_validator(p);
-        validate_parser = Data_Wrap_Struct(parser_class, parser_mark, parser_free, p);
+        validate_parser = TypedData_Wrap_Struct(parser_class, &oj_parser_type, p);
         rb_gc_register_address(&validate_parser);
     }
     return validate_parser;
