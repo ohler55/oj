@@ -1,8 +1,10 @@
 # CHANGELOG
 
-## 3.16.2 - 2023-11-21
+## 3.16.2 - 2023-12-06
 
 - Fixed documentation formatting.
+
+- Added option to the "usual" parser to raise an error on an empty input string.
 
 ## 3.16.1 - 2023-09-01
 

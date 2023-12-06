@@ -142,6 +142,8 @@ class JSONGeneratorTest < Test::Unit::TestCase
     # seems to occur on travis but not locally.
     actual = state.to_h
     actual.delete(:escape_slash)
+    actual.delete(:strict)
+    actual.delete(:script_safe)
     assert_equal({
       :allow_nan             => false,
       :array_nl              => "\n",
@@ -162,6 +164,8 @@ class JSONGeneratorTest < Test::Unit::TestCase
     # seems to occur on travis but not locally.
     actual = state.to_h
     actual.delete(:escape_slash)
+    actual.delete(:strict)
+    actual.delete(:script_safe)
     assert_equal({
       :allow_nan             => false,
       :array_nl              => "",
@@ -182,6 +186,8 @@ class JSONGeneratorTest < Test::Unit::TestCase
     # seems to occur on travis but not locally.
     actual = state.to_h
     actual.delete(:escape_slash)
+    actual.delete(:strict)
+    actual.delete(:script_safe)
     assert_equal({
       :allow_nan             => false,
       :array_nl              => "",

@@ -147,6 +147,16 @@ class UsualTest < Minitest::Test
     assert_equal(MyHash, doc.class)
   end
 
+  def test_empty
+    p = Oj::Parser.new(:usual)
+    p.raise_on_empty = false
+    doc = p.parse('  ')
+    assert_nil(doc)
+
+    p.raise_on_empty = true
+    assert_raises(Oj::ParseError) { p.parse('  ') }
+  end
+
   class MyClass
     attr_accessor :a
     attr_accessor :b
