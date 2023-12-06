@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 3.16.2 - 2023-11-21
+## 3.16.2 - 2023-12-06
 
 - Fixed documentation formatting.
 
