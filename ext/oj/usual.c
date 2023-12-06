@@ -602,7 +602,7 @@ static VALUE result(ojParser p) {
         return *d->vhead;
     }
     if (d->raise_on_empty) {
-	rb_raise(oj_parse_error_class, "empty string");
+        rb_raise(oj_parse_error_class, "empty string");
     }
     return Qnil;
 }
