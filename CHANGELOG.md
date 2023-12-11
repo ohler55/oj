@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.16.3 - 2023-12-11
+
+- Fixed the gemspec to allow earlier versions of the bigdecimal gem.
+
 ## 3.16.2 - 2023-12-06
 
 - Fixed documentation formatting.
