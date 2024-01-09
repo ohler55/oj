@@ -26,7 +26,6 @@ dflags = {
 }
 
 # Support for compaction.
-have_func('rb_gc_mark_movable')
 have_func('stpcpy')
 have_func('pthread_mutex_init')
 have_func('rb_enc_interned_str')
