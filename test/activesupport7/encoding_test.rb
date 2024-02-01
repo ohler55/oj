@@ -8,8 +8,17 @@ require "active_support/time"
 require_relative "time_zone_test_helpers"
 require_relative "encoding_test_cases"
 
+require 'oj'
+# Sets the ActiveSupport encoder to be Oj and also wraps the setting of globals.
+Oj::Rails.set_encoder()
+Oj::Rails.optimize()
+
 class TestJSONEncoding < ActiveSupport::TestCase
   include TimeZoneTestHelpers
+
+  def test_is_actually_oj
+    assert_equal Oj::Rails::Encoder, ActiveSupport.json_encoder
+  end
 
   def sorted_json(json)
     if json.start_with?("{") && json.end_with?("}")
