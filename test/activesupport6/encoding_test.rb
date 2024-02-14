@@ -74,41 +74,76 @@ class TestJSONEncoding < ActiveSupport::TestCase
     ActiveSupport.escape_html_entities_in_json = false
   end
 
-  def test_utf8_string_encoded_properly
-    # The original test seems to expect that
-    # ActiveSupport.escape_html_entities_in_json reverts to true even after
-    # being set to false. I haven't been able to figure that out so the value is
-    # set to true, the default, before running the test. This might be wrong but
-    # for now it will have to do.
-    ActiveSupport.escape_html_entities_in_json = true
-    result = ActiveSupport::JSON.encode("€2.99")
-    assert_equal '"€2.99"', result
-    assert_equal(Encoding::UTF_8, result.encoding)
-
-    result = ActiveSupport::JSON.encode("✎☺")
-    assert_equal '"✎☺"', result
-    assert_equal(Encoding::UTF_8, result.encoding)
+  def test_hash_keys_encoding_without_escaping
+    assert_equal "{\"<>\":\"<>\"}", ActiveSupport::JSON.encode("<>" => "<>")
   end
 
-  def test_non_utf8_string_transcodes
-    s = "二".encode("Shift_JIS")
-    result = ActiveSupport::JSON.encode(s)
-    assert_equal '"二"', result
-    assert_equal Encoding::UTF_8, result.encoding
+  module UnicodeTests
+    def test_utf8_string_encoded_properly
+      result = ActiveSupport::JSON.encode("€2.99")
+      assert_equal '"€2.99"', result
+      assert_equal(Encoding::UTF_8, result.encoding)
+
+      result = ActiveSupport::JSON.encode("✎☺")
+      assert_equal '"✎☺"', result
+      assert_equal(Encoding::UTF_8, result.encoding)
+    end
+
+    def test_non_utf8_string_transcodes
+      s = "二".encode("Shift_JIS")
+      result = ActiveSupport::JSON.encode(s)
+      assert_equal '"二"', result
+      assert_equal Encoding::UTF_8, result.encoding
+    end
+
+    def test_wide_utf8_chars
+      w = "𠜎"
+      result = ActiveSupport::JSON.encode(w)
+      assert_equal '"𠜎"', result
+    end
+
+    def test_wide_utf8_roundtrip
+      hash = { string: "𐒑" }
+      json = ActiveSupport::JSON.encode(hash)
+      decoded_hash = ActiveSupport::JSON.decode(json)
+      assert_equal "𐒑", decoded_hash["string"]
+    end
+
+    def test_invalid_encoding_raises
+      s = "\xAE\xFF\x9F"
+      refute s.valid_encoding?
+
+      # n.b. this raises EncodingError, because we didn't call Oj.mimic_JSON in the test setup; but,
+      # if you do that (even indirectly through Oj.optimize_rails), then this raises a
+      # JSON::GeneratorError instead of an EncodingError.
+      assert_raises(EncodingError) do
+        ActiveSupport::JSON.encode([s])
+      end
+    end
   end
 
-  def test_wide_utf8_chars
-    w = "𠜎"
-    result = ActiveSupport::JSON.encode(w)
-    assert_equal '"𠜎"', result
+  module UnicodeTestsWithEscapingOn
+    def setup
+      ActiveSupport.escape_html_entities_in_json = true
+    end
+
+    def teardown
+      ActiveSupport.escape_html_entities_in_json = false
+    end
+
+    include UnicodeTests
   end
 
-  def test_wide_utf8_roundtrip
-    hash = { string: "𐒑" }
-    json = ActiveSupport::JSON.encode(hash)
-    decoded_hash = ActiveSupport::JSON.decode(json)
-    assert_equal "𐒑", decoded_hash["string"]
+  module UnicodeTestsWithEscapingOff
+    def setup
+      ActiveSupport.escape_html_entities_in_json = false
+    end
+
+    include UnicodeTests
   end
+
+  include UnicodeTestsWithEscapingOn
+  include UnicodeTestsWithEscapingOff
 
   def test_hash_key_identifiers_are_always_quoted
     values = { 0 => 0, 1 => 1, :_ => :_, "$" => "$", "a" => "a", :A => :A, :A0 => :A0, "A0B" => "A0B" }
