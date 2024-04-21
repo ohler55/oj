@@ -29,6 +29,7 @@ dflags = {
 have_func('rb_gc_mark_movable')
 have_func('stpcpy')
 have_func('pthread_mutex_init')
+have_func('getrlimit', 'sys/resource.h')
 have_func('rb_enc_interned_str')
 have_func('rb_ext_ractor_safe', 'ruby.h')
 

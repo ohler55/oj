@@ -765,7 +765,7 @@ static VALUE parse_json(VALUE clas, char *json, bool given) {
     pi.s = pi.str;
     doc_init(doc);
     pi.doc = doc;
-#if IS_WINDOWS
+#if IS_WINDOWS || !defined(HAVE_GETRLIMIT)
     // assume a 1M stack and give half to ruby
     pi.stack_min = (void *)((char *)&pi - (512L * 1024L));
 #else

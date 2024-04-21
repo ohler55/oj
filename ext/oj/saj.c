@@ -578,7 +578,7 @@ static void saj_parse(VALUE handler, char *json) {
     /* initialize parse info */
     pi.str = json;
     pi.s   = json;
-#if IS_WINDOWS
+#if IS_WINDOWS || !defined(HAVE_GETRLIMIT)
     pi.stack_min = (void *)((char *)&obj - (512L * 1024L)); /* assume a 1M stack and give half to ruby */
 #else
     {
