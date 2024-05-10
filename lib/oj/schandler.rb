@@ -64,13 +64,14 @@ module Oj
   #
   #    hash_end
   #
-  # When a hash key is encountered the hash_key method is called with the parsed
-  # hash value key. The return value from the call is then used as the key in
-  # the key-value pair that follows.
+  #  At the end of a JSON object element the hash_end() callback is called if
+  #  public.
   #
   #    hash_key
   #
-  # At the end of a JSON object element the hash_end() callback is called if public.
+  # When a hash key is encountered the hash_key() method is called with the
+  # parsed hash value key. The return value from the call is then used as the
+  # key in the key-value pair that follows.
   #
   #    hash_set
   #
