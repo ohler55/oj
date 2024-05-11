@@ -578,7 +578,7 @@ static void saj_parse(VALUE handler, char *json) {
     /* initialize parse info */
     pi.str = json;
     pi.s   = json;
-#if IS_WINDOWS
+#if IS_WINDOWS || !defined(HAVE_GETRLIMIT)
     pi.stack_min = (void *)((char *)&obj - (512L * 1024L)); /* assume a 1M stack and give half to ruby */
 #else
     {
@@ -587,7 +587,7 @@ static void saj_parse(VALUE handler, char *json) {
         if (0 == getrlimit(RLIMIT_STACK, &lim) && RLIM_INFINITY != lim.rlim_cur) {
             pi.stack_min = (void *)((char *)&obj - (lim.rlim_cur / 4 * 3)); /* let 3/4ths of the stack be used only */
         } else {
-            pi.stack_min = 0;                                               /* indicates not to check stack limit */
+            pi.stack_min = 0; /* indicates not to check stack limit */
         }
     }
 #endif

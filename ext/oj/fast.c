@@ -40,7 +40,7 @@ typedef struct _doc {
     Leaf         *where;                  // points to current location
     Leaf          where_path[MAX_STACK];  // points to head of path
     char         *json;
-    unsigned long size;                   // number of leaves/branches in the doc
+    unsigned long size;  // number of leaves/branches in the doc
     VALUE         self;
     Batch         batches;
     struct _batch batch0;
@@ -573,7 +573,7 @@ static char *read_quoted_value(ParseInfo pi) {
     char *h     = pi->s;  // head
     char *t     = h;      // tail
 
-    h++;                  // skip quote character
+    h++;  // skip quote character
     t++;
     value = h;
     for (; '"' != *h; h++, t++) {
@@ -765,7 +765,7 @@ static VALUE parse_json(VALUE clas, char *json, bool given) {
     pi.s = pi.str;
     doc_init(doc);
     pi.doc = doc;
-#if IS_WINDOWS
+#if IS_WINDOWS || !defined(HAVE_GETRLIMIT)
     // assume a 1M stack and give half to ruby
     pi.stack_min = (void *)((char *)&pi - (512L * 1024L));
 #else
