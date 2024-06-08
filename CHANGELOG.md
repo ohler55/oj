@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.16.4 - unreleased
+
+- Fixed Oj::Parse EOF issue on larger stream input.
+
 ## 3.16.3 - 2023-12-11
 
 - Fixed the gemspec to allow earlier versions of the bigdecimal gem.

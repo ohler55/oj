@@ -36,6 +36,7 @@ ID oj_as_json_id;
 ID oj_begin_id;
 ID oj_bigdecimal_id;
 ID oj_end_id;
+ID oj_eofq_id;
 ID oj_exclude_end_id;
 ID oj_error_id;
 ID oj_file_id;
@@ -1849,6 +1850,7 @@ void Init_oj(void) {
     oj_begin_id        = rb_intern("begin");
     oj_bigdecimal_id   = rb_intern("BigDecimal");
     oj_end_id          = rb_intern("end");
+    oj_eofq_id         = rb_intern("eof?");
     oj_error_id        = rb_intern("error");
     oj_exclude_end_id  = rb_intern("exclude_end?");
     oj_file_id         = rb_intern("file?");

@@ -1114,9 +1114,6 @@ static void parse(ojParser p, const byte *json) {
             p->map = trail_map;
         }
     }
-    if (0 < p->depth) {
-        parse_error(p, "parse error, not closed");
-    }
     if (0 == p->depth) {
         switch (p->map[256]) {
         case '0':
@@ -1390,10 +1387,16 @@ static VALUE load(VALUE self) {
 
     p->start(p);
     while (true) {
-        rb_funcall(p->reader, oj_readpartial_id, 2, INT2NUM(16385), rbuf);
+	rb_funcall(p->reader, oj_readpartial_id, 2, INT2NUM(16385), rbuf);
         if (0 < RSTRING_LEN(rbuf)) {
             parse(p, (byte *)StringValuePtr(rbuf));
         }
+	if (Qtrue == rb_funcall(p->reader, oj_eofq_id, 0)) {
+	    if (0 < p->depth) {
+		parse_error(p, "parse error, not closed");
+	    }
+	    break;
+	}
     }
     return Qtrue;
 }
