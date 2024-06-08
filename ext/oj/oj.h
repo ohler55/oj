@@ -334,6 +334,7 @@ extern ID oj_as_json_id;
 extern ID oj_begin_id;
 extern ID oj_bigdecimal_id;
 extern ID oj_end_id;
+extern ID oj_eofq_id;
 extern ID oj_error_id;
 extern ID oj_exclude_end_id;
 extern ID oj_file_id;
