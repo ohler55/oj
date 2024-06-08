@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 3.16.4 - unreleased
+## 3.16.4 - 2024-06-08
 
 - Fixed Oj::Parse EOF issue on larger stream input.
 
