@@ -1,11 +1,7 @@
 # frozen_string_literal: false
 
 require 'bigdecimal'
-begin
-  require 'ostruct'
-rescue Exception
-  # ignore
-end
+require 'ostruct'
 
 module Oj
 
