@@ -289,6 +289,12 @@ static void close_object(ojParser p) {
     }
     rb_hash_bulk_insert(d->vtail - head, head, obj);
     d->ktail = d->khead + c->ki;
+	if (0 == head - d->vhead && rb_block_given_p()) {
+		rb_yield(obj);
+		// TBD decrement vtail?
+		d->vtail--;
+		return;
+	}
     d->vtail = head;
     head--;
     *head = obj;
@@ -572,7 +578,18 @@ static VALUE result(ojParser p) {
     Usual d = (Usual)p->ctx;
 
     if (d->vhead < d->vtail) {
-        return *d->vhead;
+		long			cnt = d->vtail - d->vhead;
+		volatile VALUE	ary;
+		volatile VALUE	*vp;
+
+		if (1 == cnt) {
+			return *d->vhead;
+		}
+		ary = rb_ary_new();
+		for (vp = d->vhead; vp < d->vtail; vp++) {
+			rb_ary_push(ary, *vp);
+		}
+        return ary;
     }
     if (d->raise_on_empty) {
         rb_raise(oj_parse_error_class, "empty string");

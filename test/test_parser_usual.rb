@@ -114,6 +114,13 @@ class UsualTest < Minitest::Test
     assert_equal(Float, doc.class)
   end
 
+  def test_multi
+    p = Oj::Parser.new(:usual)
+    puts p.just_one
+    #puts p.parse('{"b":{"x":2}}')
+    puts p.parse('{"a":1}{"b":{"x":2}} {"c":3}') { |j| puts j }
+  end
+
   def test_omit_null
     p = Oj::Parser.new(:usual)
     p.omit_null = true
