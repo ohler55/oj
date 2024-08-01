@@ -289,7 +289,9 @@ static void close_object(ojParser p) {
     }
     rb_hash_bulk_insert(d->vtail - head, head, obj);
     d->ktail = d->khead + c->ki;
-	if (0 == head - d->vhead && rb_block_given_p()) {
+
+	// printf("*** close %ld - %d\n", head - d->vhead, rb_block_given_p());
+	if (1 == head - d->vhead && rb_block_given_p()) {
 		rb_yield(obj);
 		// TBD decrement vtail?
 		d->vtail--;

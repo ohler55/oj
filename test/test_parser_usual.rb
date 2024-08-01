@@ -116,9 +116,17 @@ class UsualTest < Minitest::Test
 
   def test_multi
     p = Oj::Parser.new(:usual)
-    puts p.just_one
     #puts p.parse('{"b":{"x":2}}')
-    puts p.parse('{"a":1}{"b":{"x":2}} {"c":3}') { |j| puts j }
+    #puts p.parse('{"a":1}{"b":{"x":2}} {"c":3}') { |j| puts j }
+
+    reader, writer = IO.pipe
+    writer.write('{"a":1}')
+    writer.write('{"b":{"x":2}}')
+    writer.write('{"c":3}')
+    writer.close
+
+    p.load(reader) { |data| puts data }
+    reader.close
   end
 
   def test_omit_null
