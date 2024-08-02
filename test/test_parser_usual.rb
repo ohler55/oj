@@ -114,19 +114,28 @@ class UsualTest < Minitest::Test
     assert_equal(Float, doc.class)
   end
 
-  def test_multi
+  def test_multi_parse
     p = Oj::Parser.new(:usual)
-    #puts p.parse('{"b":{"x":2}}')
-    #puts p.parse('{"a":1}{"b":{"x":2}} {"c":3}') { |j| puts j }
+    out = []
+    p.parse('{"a":1}{"b":{"x":2}} {"c":3}') { |j| out.push(j) }
+    assert_equal([{'a'=>1}, {'b'=>{'x'=>2}},{'c'=>3}], out)
+  end
 
-    reader, writer = IO.pipe
-    writer.write('{"a":1}')
-    writer.write('{"b":{"x":2}}')
-    writer.write('{"c":3}')
-    writer.close
-
-    p.load(reader) { |data| puts data }
-    reader.close
+  def test_multi_load
+    p = Oj::Parser.new(:usual)
+    out = []
+    r, w = IO.pipe
+    thread = Thread.new do
+      ['{"a":1}', '{"b":{"x"', ':2}}{"c":', '3}'].each { |seg|
+        w.write(seg)
+        sleep(0.1)
+      }
+      w.close
+    end
+    p.load(r) { |j| out.push(j) }
+    r.close
+    thread.join
+    assert_equal([{'a'=>1}, {'b'=>{'x'=>2}},{'c'=>3}], out)
   end
 
   def test_omit_null
