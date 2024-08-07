@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 3.16.5 - 2024-07-07
+## 3.16.5 - 2024-08-07
 
 - Fixed Oj::Parser so that block procedures work correctly.
 
