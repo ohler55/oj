@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.16.5 - 2024-07-07
+
+- Fixed Oj::Parser so that block procedures work correctly.
+
 ## 3.16.4 - 2024-06-08
 
 - Fixed Oj::Parse EOF issue on larger stream input.
