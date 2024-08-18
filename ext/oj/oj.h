@@ -323,7 +323,6 @@ extern VALUE oj_space_before_sym;
 extern VALUE oj_space_sym;
 extern VALUE oj_symbolize_names_sym;
 extern VALUE oj_trace_sym;
-extern VALUE oj_to_json_sym;
 
 extern VALUE oj_slash_string;
 
@@ -371,7 +370,6 @@ extern ID oj_utc_id;
 extern ID oj_utc_offset_id;
 extern ID oj_utcq_id;
 extern ID oj_write_id;
-extern ID oj_method_defined_p_id;
 
 extern bool oj_use_hash_alt;
 extern bool oj_use_array_alt;
