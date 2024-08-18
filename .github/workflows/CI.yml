@@ -33,6 +33,10 @@ jobs:
           - rails_7.1
           - rails_7.2
         exclude:
+          - ruby: 2.7
+            gemfile: rails_7.2
+          - ruby: 3.0
+            gemfile: rails_7.2
           - os: macos
             ruby: head
           - os: windows
