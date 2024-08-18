@@ -72,6 +72,7 @@ ID oj_utc_id;
 ID oj_utc_offset_id;
 ID oj_utcq_id;
 ID oj_write_id;
+ID oj_method_defined_p_id;
 
 VALUE oj_bag_class;
 VALUE oj_bigdecimal_class;
@@ -98,6 +99,7 @@ VALUE oj_quirks_mode_sym;
 VALUE oj_safe_sym;
 VALUE oj_symbolize_names_sym;
 VALUE oj_trace_sym;
+VALUE oj_to_json_sym;
 
 static VALUE allow_blank_sym;
 static VALUE allow_gc_sym;
@@ -1887,6 +1889,8 @@ void Init_oj(void) {
     oj_utcq_id         = rb_intern("utc?");
     oj_write_id        = rb_intern("write");
 
+    oj_method_defined_p_id = rb_intern("method_defined?");
+
     rb_require("oj/bag");
     rb_require("oj/error");
     rb_require("oj/mimic");
@@ -2060,6 +2064,9 @@ void Init_oj(void) {
     rb_gc_register_address(&xmlschema_sym);
     xss_safe_sym = ID2SYM(rb_intern("xss_safe"));
     rb_gc_register_address(&xss_safe_sym);
+
+    oj_to_json_sym = ID2SYM(oj_to_json_id);
+    rb_gc_register_address(&oj_to_json_sym);
 
     oj_slash_string = rb_str_new2("/");
     rb_gc_register_address(&oj_slash_string);
