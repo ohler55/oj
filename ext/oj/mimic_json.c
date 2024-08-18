@@ -905,7 +905,9 @@ oj_define_mimic_json(int argc, VALUE *argv, VALUE self) {
     }
     oj_mimic_json_methods(json);
 
-    rb_define_method(rb_cObject, "to_json", mimic_object_to_json, -1);
+    if (!rb_const_defined(rb_cObject, rb_intern("ActiveSupport"))) {
+        rb_define_method(rb_cObject, "to_json", mimic_object_to_json, -1);
+    }
 
     rb_gv_set("$VERBOSE", verbose);
 
