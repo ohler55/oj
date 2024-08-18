@@ -30,7 +30,13 @@ jobs:
           - no_rails
           - rails_6.1
           - rails_7
+          - rails_7.1
+          - rails_7.2
         exclude:
+          - ruby: 2.7
+            gemfile: rails_7.2
+          - ruby: 3.0
+            gemfile: rails_7.2
           - os: macos
             ruby: head
           - os: windows
@@ -39,6 +45,10 @@ jobs:
             gemfile: rails_6.1
           - os: windows
             gemfile: rails_7
+          - os: windows
+            gemfile: rails_7.1
+          - os: windows
+            gemfile: rails_7.2
         include:
           - ruby: '2.7'
             gemfile: rails_6 # End of life June 1, 2023

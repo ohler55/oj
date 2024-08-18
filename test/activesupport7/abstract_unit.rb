@@ -19,7 +19,10 @@ require "active_support"
 Thread.abort_on_exception = true
 
 # Show backtraces for deprecated behavior for quicker cleanup.
-ActiveSupport::Deprecation.debug = true
+if ActiveSupport::Deprecation.respond_to?(:debug)
+  # Rails 7.2 does not have ActiveSupport::Deprecation.debug
+  ActiveSupport::Deprecation.debug = true
+end
 
 # Default to old to_time behavior but allow running tests with new behavior
 ActiveSupport.to_time_preserves_timezone = ENV["PRESERVE_TIMEZONES"] == "1"
