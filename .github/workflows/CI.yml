@@ -30,6 +30,8 @@ jobs:
           - no_rails
           - rails_6.1
           - rails_7
+          - rails_7.1
+          - rails_7.2
         exclude:
           - os: macos
             ruby: head
