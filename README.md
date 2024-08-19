@@ -19,8 +19,8 @@ json = Oj.dump(h)
 
 h2 = Oj.load(json)
 
-puts "Same? #{h == h2}"
-# Same? true
+h == h2
+# true
 ```
 
 ## Installation
