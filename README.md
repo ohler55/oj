@@ -17,18 +17,10 @@ require 'oj'
 h = { 'one' => 1, 'array' => [ true, false ] }
 json = Oj.dump(h)
 
-# json =
-# {
-#   "one":1,
-#   "array":[
-#     true,
-#     false
-#   ]
-# }
-
 h2 = Oj.load(json)
+
 puts "Same? #{h == h2}"
-# true
+# Same? true
 ```
 
 ## Installation
