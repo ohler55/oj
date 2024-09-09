@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.16.6 - 2024-09-09
+
+- Fixed issue with Rails 7.2 that changed the order of calls to to_json and as_json.
+
 ## 3.16.5 - 2024-08-07
 
 - Fixed Oj::Parser so that block procedures work correctly.
