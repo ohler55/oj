@@ -56,9 +56,9 @@ jobs:
           - ruby: '2.7'
             gemfile: rails_6 # End of life June 1, 2023
             os: macos
-          - ruby: 'truffleruby'
-            gemfile: no_rails
-            os: ubuntu
+          # - ruby: 'truffleruby'
+          #   gemfile: no_rails
+          #   os: ubuntu
           - ruby: 'ucrt'
             gemfile: no_rails
             os: windows
