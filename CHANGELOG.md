@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.16.7 - unreleased
+
+- Changed string_writer_as_json to allow multiple arguments.
+
 ## 3.16.6 - 2024-09-09
 
 - Fixed issue with Rails 7.2 that changed the order of calls to to_json and as_json.
