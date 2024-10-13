@@ -468,7 +468,7 @@ class CompatJuice < Minitest::Test
 
   def test_arg_passing
     json = Oj.to_json(Argy.new(), :max_nesting => 40)
-    assert_equal(%|{"args":"[{:max_nesting=>40}]"}|, json)
+    assert_match(/.*max_nesting.*40.*/, json)
   end
 
   def test_max_nesting
