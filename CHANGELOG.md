@@ -1,8 +1,10 @@
 # CHANGELOG
 
-## 3.16.7 - unreleased
+## 3.16.7 - 2024-11-01
 
 - Changed string_writer_as_json to allow multiple arguments.
+
+- Fixed Global variable registration added to mimic_json and rails code thanks to @byroot.
 
 ## 3.16.6 - 2024-09-09
 
