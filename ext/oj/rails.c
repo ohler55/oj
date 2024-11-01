@@ -1101,6 +1101,8 @@ static VALUE rails_set_decoder(VALUE self) {
     } else {
         json_error = rb_define_class_under(json, "JSONError", rb_eStandardError);
     }
+
+    rb_global_variable(&oj_json_parser_error_class);
     if (rb_const_defined_at(json, rb_intern("ParserError"))) {
         oj_json_parser_error_class = rb_const_get(json, rb_intern("ParserError"));
     } else {
