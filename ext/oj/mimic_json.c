@@ -837,11 +837,15 @@ void oj_mimic_json_methods(VALUE json) {
     } else {
         json_error = rb_define_class_under(json, "JSONError", rb_eStandardError);
     }
+
+    rb_global_variable(&oj_json_parser_error_class);
     if (rb_const_defined_at(json, rb_intern("ParserError"))) {
         oj_json_parser_error_class = rb_const_get(json, rb_intern("ParserError"));
     } else {
         oj_json_parser_error_class = rb_define_class_under(json, "ParserError", json_error);
     }
+
+    rb_global_variable(&oj_json_generator_error_class);
     if (rb_const_defined_at(json, rb_intern("GeneratorError"))) {
         oj_json_generator_error_class = rb_const_get(json, rb_intern("GeneratorError"));
     } else {
@@ -867,8 +871,8 @@ void oj_mimic_json_methods(VALUE json) {
         rb_require("oj/state");
     }
     // Pull in the JSON::State mimic file.
+    rb_global_variable(&state_class);
     state_class = rb_const_get_at(generator, rb_intern("State"));
-    rb_gc_register_mark_object(state_class);
 }
 
 /* Document-module: JSON
