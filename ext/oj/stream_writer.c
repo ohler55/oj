@@ -42,7 +42,8 @@ static void stream_writer_write(StreamWriter sw) {
 
     switch (sw->type) {
     case STRING_IO:
-    case STREAM_IO: {
+    case STREAM_IO:
+    case FILE_IO: {
         volatile VALUE rs = rb_str_new(sw->sw.out.buf, size);
 
         // Oddly enough, when pushing ASCII characters with UTF-8 encoding or
@@ -53,11 +54,6 @@ static void stream_writer_write(StreamWriter sw) {
         rb_funcall(sw->stream, oj_write_id, 1, rs);
         break;
     }
-    case FILE_IO:
-        if (size != write(sw->fd, sw->sw.out.buf, size)) {
-            rb_raise(rb_eIOError, "Write failed. [_%d_:%s]\n", errno, strerror(errno));
-        }
-        break;
     default: rb_raise(rb_eArgError, "expected an IO Object.");
     }
     stream_writer_reset_buf(sw);
