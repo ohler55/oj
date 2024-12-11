@@ -38,12 +38,12 @@ static void stream_writer_reset_buf(StreamWriter sw) {
 }
 
 static void stream_writer_write(StreamWriter sw) {
-    ssize_t size = sw->sw.out.cur - sw->sw.out.buf;
+    const char* buf = sw->sw.out.buf;
 
     switch (sw->type) {
     case STRING_IO:
     case STREAM_IO: {
-        volatile VALUE rs = rb_str_new(sw->sw.out.buf, size);
+        volatile VALUE rs = rb_str_new(buf, sw->sw.out.cur - buf);
 
         // Oddly enough, when pushing ASCII characters with UTF-8 encoding or
         // even ASCII-8BIT does not change the output encoding. Pushing any
@@ -54,8 +54,17 @@ static void stream_writer_write(StreamWriter sw) {
         break;
     }
     case FILE_IO:
-        if (size != write(sw->fd, sw->sw.out.buf, size)) {
-            rb_raise(rb_eIOError, "Write failed. [_%d_:%s]\n", errno, strerror(errno));
+        while (buf < sw->sw.out.cur) {
+            ssize_t num_written = write(sw->fd, buf, sw->sw.out.cur - buf);
+            if (num_written == -1) {
+                if (errno == EAGAIN) {
+                    continue;
+                } else {
+                    rb_raise(rb_eIOError, "Write failed. [_%d_:%s]\n", errno, strerror(errno));
+                    break;
+                }
+            }
+            buf += num_written;
         }
         break;
     default: rb_raise(rb_eArgError, "expected an IO Object.");
