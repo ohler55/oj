@@ -380,6 +380,8 @@ class OjWriter < Minitest::Test
   end
 
   def test_stream_writer_subprocess
+    skip if RbConfig::CONFIG['host_os'] =~ /(mingw|mswin)/
+
     Open3.popen3("/bin/bash", "-c", "cat > /dev/null") do |stdin, _stdout, _stderr, _wait_thr|
       w = Oj::StreamWriter.new(stdin, :indent => 0)
       w.push_array()
