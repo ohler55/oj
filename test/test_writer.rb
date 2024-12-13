@@ -4,6 +4,7 @@
 $LOAD_PATH << __dir__
 
 require 'helper'
+require 'open3'
 
 class OjWriter < Minitest::Test
 
@@ -376,5 +377,20 @@ class OjWriter < Minitest::Test
     w.push_value(nil, 'nothing')
     w.pop()
     assert_equal(%|{"nothing":null}\n|, output.string())
+  end
+
+  def test_stream_writer_subprocess
+    skip if RbConfig::CONFIG['host_os'] =~ /(mingw|mswin)/
+
+    Open3.popen3("/bin/bash", "-c", "cat > /dev/null") do |stdin, _stdout, _stderr, _wait_thr|
+      w = Oj::StreamWriter.new(stdin, :indent => 0)
+      w.push_array()
+      chunk = "{\"foo\":\"#{"bar"*1000}\"}"
+      1000.times do |_|
+        w.push_json(chunk)
+      end
+      w.pop()
+      stdin.close
+    end
   end
 end # OjWriter
