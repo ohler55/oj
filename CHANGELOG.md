@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.16.8 - 2024-12-14
+
+- Fixed StreamWriter to write to non-file IO thanks to @jscheid.
+
 ## 3.16.7 - 2024-11-01
 
 - Changed string_writer_as_json to allow multiple arguments.
