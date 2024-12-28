@@ -834,8 +834,8 @@ static VALUE opt_create_id_set(ojParser p, VALUE value) {
         rb_check_type(value, T_STRING);
         size_t len = RSTRING_LEN(value);
 
-        if (1 << sizeof(d->create_id_len) <= len) {
-            rb_raise(rb_eArgError, "The create_id values is limited to %d bytes.", 1 << sizeof(d->create_id_len));
+        if (1 << (8 * sizeof(d->create_id_len)) <= len) {
+            rb_raise(rb_eArgError, "The create_id values is limited to %d bytes.", 1 << (8 * sizeof(d->create_id_len)));
         }
         d->create_id_len                  = (uint8_t)len;
         d->create_id                      = str_dup(RSTRING_PTR(value), len);

@@ -217,6 +217,10 @@ class UsualTest < Minitest::Test
 
     doc = p.parse('{"a":true,"^":"UsualTest::MyClass","b":false}')
     assert_equal('UsualTest::MyClass{a: true b: false}', doc.to_s)
+
+    p.create_id = 'class'
+    doc = p.parse('{"a":true,"class":"UsualTest::MyClass","b":false}')
+    assert_equal('UsualTest::MyClass{a: true b: false}', doc.to_s)
   end
 
   def test_missing_class

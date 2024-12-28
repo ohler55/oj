@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.16.9 - 2024-12-28
+
+- Fixed `Oj::Parser` create_id size issue #931.
+
+- Changed parser to be more optimized (PR from @Watson1978)
+
 ## 3.16.8 - 2024-12-14
 
 - Fixed StreamWriter to write to non-file IO thanks to @jscheid.
