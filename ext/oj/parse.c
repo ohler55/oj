@@ -681,7 +681,7 @@ void oj_parse2(ParseInfo pi) {
     pi->cur = pi->json;
     err_init(&pi->err);
     while (1) {
-        if (0 < pi->max_depth && pi->max_depth <= pi->stack.tail - pi->stack.head - 1) {
+        if (RB_UNLIKELY(0 < pi->max_depth && pi->max_depth <= pi->stack.tail - pi->stack.head - 1)) {
             VALUE err_clas = oj_get_json_err_class("NestingError");
 
             oj_set_error_at(pi, err_clas, __FILE__, __LINE__, "Too deeply nested.");
@@ -689,18 +689,20 @@ void oj_parse2(ParseInfo pi) {
             return;
         }
         next_non_white(pi);
-        if (!first && '\0' != *pi->cur) {
-            oj_set_error_at(pi,
-                            oj_parse_error_class,
-                            __FILE__,
-                            __LINE__,
-                            "unexpected characters after the JSON document");
-        }
-
-        // If no tokens are consumed (i.e. empty string), throw a parse error
-        // this is the behavior of JSON.parse in both Ruby and JS.
-        if (No == pi->options.empty_string && 1 == first && '\0' == *pi->cur) {
-            oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "unexpected character");
+        if (first) {
+            // If no tokens are consumed (i.e. empty string), throw a parse error
+            // this is the behavior of JSON.parse in both Ruby and JS.
+            if (RB_UNLIKELY('\0' == *pi->cur && No == pi->options.empty_string)) {
+                oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "unexpected character");
+            }
+        } else {
+            if (RB_UNLIKELY('\0' != *pi->cur)) {
+                oj_set_error_at(pi,
+                                oj_parse_error_class,
+                                __FILE__,
+                                __LINE__,
+                                "unexpected characters after the JSON document");
+            }
         }
 
         switch (*pi->cur++) {
@@ -761,7 +763,7 @@ void oj_parse2(ParseInfo pi) {
         case '\0': pi->cur--; return;
         default: oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "unexpected character"); return;
         }
-        if (err_has(&pi->err)) {
+        if (RB_UNLIKELY(err_has(&pi->err))) {
             return;
         }
         if (stack_empty(&pi->stack)) {
