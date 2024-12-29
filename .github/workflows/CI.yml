@@ -32,11 +32,18 @@ jobs:
           - rails_7
           - rails_7.1
           - rails_7.2
+          - rails_8
         exclude:
           - ruby: 2.7
             gemfile: rails_7.2
           - ruby: 3.0
             gemfile: rails_7.2
+          - ruby: 2.7
+            gemfile: rails_8
+          - ruby: 3.0
+            gemfile: rails_8
+          - ruby: 3.1
+            gemfile: rails_8
           - os: macos
             ruby: head
           - os: windows
