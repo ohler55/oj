@@ -104,7 +104,11 @@ puts '-' * 80
 puts 'Strict Parse Performance'
 perf = Perf.new()
 unless @failed.key?('JSON::Ext')
-  perf.add('JSON::Ext', 'parse') { JSON.parse(@json, symbolize_names: @symbolize) }
+  if @symbolize
+    perf.add('JSON::Ext', 'parse') { JSON.parse(@json, symbolize_names: true) }
+  else
+    perf.add('JSON::Ext', 'parse') { JSON.parse(@json) }
+  end
   perf.before('JSON::Ext') { JSON.parser = JSON::Ext::Parser }
 end
 unless @failed.key?('Oj:strict')
