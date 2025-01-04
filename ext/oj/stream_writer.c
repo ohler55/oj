@@ -44,13 +44,7 @@ static void stream_writer_write(StreamWriter sw) {
     case STRING_IO:
     case STREAM_IO:
     case FILE_IO: {
-        volatile VALUE rs = rb_str_new(sw->sw.out.buf, size);
-
-        // Oddly enough, when pushing ASCII characters with UTF-8 encoding or
-        // even ASCII-8BIT does not change the output encoding. Pushing any
-        // non-ASCII no matter what the encoding changes the output encoding
-        // to ASCII-8BIT if it the string is not forced to UTF-8 here.
-        rs = oj_encode(rs);
+        volatile VALUE rs = rb_utf8_str_new(sw->sw.out.buf, size);
         rb_funcall(sw->stream, oj_write_id, 1, rs);
         break;
     }

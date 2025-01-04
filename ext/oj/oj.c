@@ -1277,8 +1277,7 @@ static VALUE dump_body(VALUE a) {
     if (0 == arg->out->buf) {
         rb_raise(rb_eNoMemError, "Not enough memory.");
     }
-    rstr = rb_str_new2(arg->out->buf);
-    rstr = oj_encode(rstr);
+    rstr = rb_utf8_str_new_cstr(arg->out->buf);
 
     return rstr;
 }
@@ -1378,8 +1377,7 @@ static VALUE to_json(int argc, VALUE *argv, VALUE self) {
     if (0 == out.buf) {
         rb_raise(rb_eNoMemError, "Not enough memory.");
     }
-    rstr = rb_str_new2(out.buf);
-    rstr = oj_encode(rstr);
+    rstr = rb_utf8_str_new_cstr(out.buf);
 
     oj_out_free(&out);
 

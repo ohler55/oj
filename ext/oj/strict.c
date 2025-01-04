@@ -19,8 +19,7 @@ VALUE oj_cstr_to_value(const char *str, size_t len, size_t cache_str) {
     if (len < cache_str) {
         rstr = oj_str_intern(str, len);
     } else {
-        rstr = rb_str_new(str, len);
-        rstr = oj_encode(rstr);
+        rstr = rb_utf8_str_new(str, len);
     }
     return rstr;
 }
@@ -35,8 +34,7 @@ VALUE oj_calc_hash_key(ParseInfo pi, Val parent) {
         if (Yes == pi->options.sym_key) {
             rkey = ID2SYM(rb_intern3(parent->key, parent->klen, oj_utf8_encoding));
         } else {
-            rkey = rb_str_new(parent->key, parent->klen);
-            rkey = oj_encode(rkey);
+            rkey = rb_utf8_str_new(parent->key, parent->klen);
             OBJ_FREEZE(rkey);  // frozen when used as a Hash key anyway
         }
         return rkey;
