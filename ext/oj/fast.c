@@ -193,8 +193,7 @@ static VALUE leaf_value(Doc doc, Leaf leaf) {
         case T_FIXNUM: leaf_fixnum_value(leaf); break;
         case T_FLOAT: leaf_float_value(leaf); break;
         case T_STRING:
-            leaf->value      = rb_str_new2(leaf->str);
-            leaf->value      = oj_encode(leaf->value);
+            leaf->value      = rb_utf8_str_new_cstr(leaf->str);
             leaf->value_type = RUBY_VAL;
             break;
         case T_ARRAY: return leaf_array_value(doc, leaf); break;
@@ -309,8 +308,7 @@ static VALUE leaf_hash_value(Doc doc, Leaf leaf) {
         volatile VALUE key;
 
         do {
-            key = rb_str_new2(e->key);
-            key = oj_encode(key);
+            key = rb_utf8_str_new_cstr(e->key);
             rb_hash_aset(h, key, leaf_value(doc, e));
             e = e->next;
         } while (e != first);
@@ -1257,8 +1255,7 @@ static VALUE doc_local_key(VALUE self) {
     volatile VALUE key  = Qnil;
 
     if (T_HASH == leaf->parent_type) {
-        key = rb_str_new2(leaf->key);
-        key = oj_encode(key);
+        key = rb_utf8_str_new_cstr(leaf->key);
     } else if (T_ARRAY == leaf->parent_type) {
         key = LONG2NUM(leaf->index);
     }

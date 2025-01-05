@@ -56,9 +56,8 @@ static void add_value(ParseInfo pi, VALUE val) {
 }
 
 static void add_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
-    volatile VALUE rstr = rb_str_new(str, len);
+    volatile VALUE rstr = rb_utf8_str_new(str, len);
 
-    rstr = oj_encode(rstr);
     rb_funcall(pi->handler, oj_add_value_id, 1, rstr);
 }
 
@@ -87,9 +86,8 @@ static VALUE hash_key(ParseInfo pi, const char *key, size_t klen) {
 }
 
 static void hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *orig) {
-    volatile VALUE rstr = rb_str_new(str, len);
+    volatile VALUE rstr = rb_utf8_str_new(str, len);
 
-    rstr = oj_encode(rstr);
     rb_funcall(pi->handler, oj_hash_set_id, 3, stack_peek(&pi->stack)->val, oj_calc_hash_key(pi, kval), rstr);
 }
 
@@ -107,9 +105,8 @@ static void hash_set_value(ParseInfo pi, Val kval, VALUE value) {
 }
 
 static void array_append_cstr(ParseInfo pi, const char *str, size_t len, const char *orig) {
-    volatile VALUE rstr = rb_str_new(str, len);
+    volatile VALUE rstr = rb_utf8_str_new(str, len);
 
-    rstr = oj_encode(rstr);
     rb_funcall(pi->handler, oj_array_append_id, 2, stack_peek(&pi->stack)->val, rstr);
 }
 

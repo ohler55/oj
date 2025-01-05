@@ -246,8 +246,7 @@ static VALUE mimic_dump(int argc, VALUE *argv, VALUE self) {
     if (0 == out.buf) {
         rb_raise(rb_eNoMemError, "Not enough memory.");
     }
-    rstr = rb_str_new2(out.buf);
-    rstr = oj_encode(rstr);
+    rstr = rb_utf8_str_new_cstr(out.buf);
     if (2 <= argc && Qnil != argv[1] && rb_respond_to(argv[1], oj_write_id)) {
         VALUE io = argv[1];
         VALUE args[1];
@@ -396,8 +395,7 @@ static VALUE mimic_generate_core(int argc, VALUE *argv, Options copts) {
     if (0 == out.buf) {
         rb_raise(rb_eNoMemError, "Not enough memory.");
     }
-    rstr = rb_str_new2(out.buf);
-    rstr = oj_encode(rstr);
+    rstr = rb_utf8_str_new_cstr(out.buf);
 
     oj_out_free(&out);
 
@@ -768,8 +766,7 @@ static VALUE mimic_object_to_json(int argc, VALUE *argv, VALUE self) {
     if (NULL == out.buf) {
         rb_raise(rb_eNoMemError, "Not enough memory.");
     }
-    rstr = rb_str_new2(out.buf);
-    rstr = oj_encode(rstr);
+    rstr = rb_utf8_str_new_cstr(out.buf);
 
     oj_out_free(&out);
 

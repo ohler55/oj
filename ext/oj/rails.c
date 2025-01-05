@@ -933,8 +933,7 @@ static VALUE encode(VALUE obj, ROptTable ropts, Options opts, int argc, VALUE *a
         if (0 == out.buf) {
             rb_raise(rb_eNoMemError, "Not enough memory.");
         }
-        rstr = rb_str_new2(out.buf);
-        rstr = oj_encode(rstr);
+        rstr = rb_utf8_str_new_cstr(out.buf);
     }
     if (Yes == copts.circular) {
         oj_cache8_delete(out.circ_cache);

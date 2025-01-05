@@ -94,8 +94,7 @@ inline static void call_add_value(VALUE handler, VALUE value, const char *key) {
     if (0 == key) {
         k = Qnil;
     } else {
-        k = rb_str_new2(key);
-        k = oj_encode(k);
+        k = rb_utf8_str_new_cstr(key);
     }
     rb_funcall(handler, oj_add_value_id, 2, value, k);
 }
@@ -106,8 +105,7 @@ inline static void call_no_value(VALUE handler, ID method, const char *key) {
     if (0 == key) {
         k = Qnil;
     } else {
-        k = rb_str_new2(key);
-        k = oj_encode(k);
+        k = rb_utf8_str_new_cstr(key);
     }
     rb_funcall(handler, method, 1, k);
 }
@@ -257,9 +255,8 @@ static void read_str(ParseInfo pi, const char *key) {
 
     text = read_quoted_value(pi);
     if (pi->has_add_value) {
-        VALUE s = rb_str_new2(text);
+        VALUE s = rb_utf8_str_new_cstr(text);
 
-        s = oj_encode(s);
         call_add_value(pi->handler, s, key);
     }
 }

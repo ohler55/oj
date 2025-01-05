@@ -1133,12 +1133,12 @@ CLEANUP:
             // The json gem requires the error message be UTF-8 encoded. In
             // additional the complete JSON source must be returned. There
             // does not seem to be a size limit.
-            VALUE msg = oj_encode(rb_str_new2(pi->err.msg));
+            VALUE msg = rb_utf8_str_new_cstr(pi->err.msg);
             VALUE args[1];
 
             if (NULL != pi->json) {
-                msg = rb_str_append(msg, oj_encode(rb_str_new2(" in '")));
-                msg = rb_str_append(msg, oj_encode(rb_str_new2(pi->json)));
+                msg = rb_str_append(msg, rb_utf8_str_new_cstr(" in '"));
+                msg = rb_str_append(msg, rb_utf8_str_new_cstr(pi->json));
             }
             args[0] = msg;
             if (pi->err.clas == oj_parse_error_class) {
