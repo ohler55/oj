@@ -79,6 +79,16 @@ class UsualTest < Minitest::Test
     assert_equal({'ぴ' => '', 'ぴ ' => 'x', 'c' => 'ぴーたー', 'd' => ' ぴーたー '}, doc)
   end
 
+  def test_unescaped_ASCII_control_characters
+    p = Oj::Parser.new(:usual)
+
+    (0..31).each do |control_ord|
+      assert_raises(Oj::ParseError) do
+        p.parse(%{"invalid character: #{control_ord.chr}"})
+      end
+    end
+  end
+
   def test_capacity
     p = Oj::Parser.new(:usual, capacity: 1000)
     assert_equal(4096, p.capacity)
