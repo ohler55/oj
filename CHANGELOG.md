@@ -64,6 +64,7 @@
 ## 3.14.3 - 2023-04-07
 
 - Fixed compat parse with optimized Hash when parsing a JSON::GenericObject.
+- Deprecated Ruby <= 2.6.
 
 ## 3.14.2 - 2023-02-10
 
