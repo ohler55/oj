@@ -133,6 +133,14 @@ class StrictJuice < Minitest::Test
     Oj.default_options = opts
   end
 
+  def test_unescaped_ASCII_control_characters
+    (0..31).each do |control_ord|
+      assert_raises(Oj::ParseError) do
+        Oj.load(%{"invalid character: #{control_ord.chr}"})
+      end
+    end
+  end
+
   def test_unicode
     # hits the 3 normal ranges and one extended surrogate pair
     json = %{"\\u019f\\u05e9\\u3074\\ud834\\udd1e"}
