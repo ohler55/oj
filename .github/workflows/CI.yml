@@ -28,7 +28,6 @@ jobs:
           - windows
         gemfile:
           - no_rails
-          - rails_7
           - rails_7.1
           - rails_7.2
           - rails_8
@@ -47,8 +46,6 @@ jobs:
             ruby: head
           - os: windows
             ruby: head
-          - os: windows
-            gemfile: rails_7
           - os: windows
             gemfile: rails_7.1
           - os: windows
