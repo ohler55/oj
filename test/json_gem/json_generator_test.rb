@@ -144,7 +144,8 @@ class JSONGeneratorTest < Test::Unit::TestCase
     actual.delete(:escape_slash)
     actual.delete(:strict)
     actual.delete(:script_safe)
-    assert_equal({
+
+    expected = {
       :allow_nan             => false,
       :array_nl              => "\n",
       :ascii_only            => false,
@@ -155,7 +156,12 @@ class JSONGeneratorTest < Test::Unit::TestCase
       :object_nl             => "\n",
       :space                 => " ",
       :space_before          => "",
-    }.sort_by { |n,| n.to_s }, actual.sort_by { |n,| n.to_s })
+    }
+    if REAL_JSON_GEM && Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('3.5.0')
+      expected[:as_json] = false
+    end
+
+    assert_equal(expected.sort_by { |n,| n.to_s }, actual.sort_by { |n,| n.to_s })
   end
 
   def test_safe_state
@@ -166,7 +172,8 @@ class JSONGeneratorTest < Test::Unit::TestCase
     actual.delete(:escape_slash)
     actual.delete(:strict)
     actual.delete(:script_safe)
-    assert_equal({
+
+    expected = {
       :allow_nan             => false,
       :array_nl              => "",
       :ascii_only            => false,
@@ -177,7 +184,12 @@ class JSONGeneratorTest < Test::Unit::TestCase
       :object_nl             => "",
       :space                 => "",
       :space_before          => "",
-    }.sort_by { |n,| n.to_s }, actual.sort_by { |n,| n.to_s })
+    }
+    if REAL_JSON_GEM && Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('3.5.0')
+      expected[:as_json] = false
+    end
+
+    assert_equal(expected.sort_by { |n,| n.to_s }, actual.sort_by { |n,| n.to_s })
   end
 
   def test_fast_state
@@ -188,7 +200,8 @@ class JSONGeneratorTest < Test::Unit::TestCase
     actual.delete(:escape_slash)
     actual.delete(:strict)
     actual.delete(:script_safe)
-    assert_equal({
+
+    expected = {
       :allow_nan             => false,
       :array_nl              => "",
       :ascii_only            => false,
@@ -199,7 +212,12 @@ class JSONGeneratorTest < Test::Unit::TestCase
       :object_nl             => "",
       :space                 => "",
       :space_before          => "",
-    }.sort_by { |n,| n.to_s }, actual.sort_by { |n,| n.to_s })
+    }
+    if REAL_JSON_GEM && Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('3.5.0')
+      expected[:as_json] = false
+    end
+
+    assert_equal(expected.sort_by { |n,| n.to_s }, actual.sort_by { |n,| n.to_s })
   end
 
   def test_allow_nan
