@@ -42,6 +42,8 @@ typedef struct _num {
 
 struct _ojParser;
 
+extern const rb_data_type_t oj_parser_type;
+
 typedef struct _funcs {
     void (*add_null)(struct _ojParser *p);
     void (*add_true)(struct _ojParser *p);
