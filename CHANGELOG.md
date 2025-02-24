@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.16.10 - 2025-02-24
+
+- Changed oj_parser_type to be non-static.
+
 ## 3.16.9 - 2024-12-28
 
 - Fixed `Oj::Parser` create_id size issue #931.
