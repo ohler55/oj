@@ -1161,7 +1161,7 @@ static void parser_mark(void *ptr) {
     }
 }
 
-static const rb_data_type_t oj_parser_type = {
+const rb_data_type_t oj_parser_type = {
     "Oj/parser",
     {
         parser_mark,
