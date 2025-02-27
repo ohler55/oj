@@ -15,7 +15,7 @@ in a JSON document. The formatting follows these rules.
  * The `'^'` character denotes a special key value when in a JSON Object sequence.
 
  * A Ruby String that starts with `':'`or the sequence `'^i'` or `'^r'` are
-   encoded by excaping the first character so that it appears as `'\u005e'` or
+   encoded by escaping the first character so that it appears as `'\u005e'` or
    `'\u003a'` instead of `':'` or `'^'`.
 
  * A `"^c"` JSON Object key indicates the value should be converted to a Ruby
