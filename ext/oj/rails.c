@@ -1058,22 +1058,22 @@ static VALUE rails_set_encoder(VALUE self) {
     verbose = rb_gv_get("$VERBOSE");
     rb_gv_set("$VERBOSE", Qfalse);
     rb_undef_method(encoding, "use_standard_json_time_format=");
-    rb_define_module_function(encoding, "use_standard_json_time_format=", rails_use_standard_json_time_format, 1);
+    rb_define_module_function(encoding, "use_standard_json_time_format=", RUBY_METHOD_FUNC(rails_use_standard_json_time_format), 1);
     rb_undef_method(encoding, "use_standard_json_time_format");
-    rb_define_module_function(encoding, "use_standard_json_time_format", rails_use_standard_json_time_format_get, 0);
+    rb_define_module_function(encoding, "use_standard_json_time_format", RUBY_METHOD_FUNC(rails_use_standard_json_time_format_get), 0);
 
     pv          = rb_iv_get(encoding, "@escape_html_entities_in_json");
     escape_html = Qtrue == pv;
     rb_undef_method(encoding, "escape_html_entities_in_json=");
-    rb_define_module_function(encoding, "escape_html_entities_in_json=", rails_escape_html_entities_in_json, 1);
+    rb_define_module_function(encoding, "escape_html_entities_in_json=", RUBY_METHOD_FUNC(rails_escape_html_entities_in_json), 1);
     rb_undef_method(encoding, "escape_html_entities_in_json");
-    rb_define_module_function(encoding, "escape_html_entities_in_json", rails_escape_html_entities_in_json_get, 0);
+    rb_define_module_function(encoding, "escape_html_entities_in_json", RUBY_METHOD_FUNC(rails_escape_html_entities_in_json_get), 0);
 
     pv                              = rb_iv_get(encoding, "@time_precision");
     oj_default_options.sec_prec     = NUM2INT(pv);
     oj_default_options.sec_prec_set = true;
     rb_undef_method(encoding, "time_precision=");
-    rb_define_module_function(encoding, "time_precision=", rails_time_precision, 1);
+    rb_define_module_function(encoding, "time_precision=", RUBY_METHOD_FUNC(rails_time_precision), 1);
     rb_gv_set("$VERBOSE", verbose);
 
     return Qnil;
@@ -1112,7 +1112,7 @@ static VALUE rails_set_decoder(VALUE self) {
     verbose = rb_gv_get("$VERBOSE");
     rb_gv_set("$VERBOSE", Qfalse);
     rb_undef_method(json, "parse");
-    rb_define_module_function(json, "parse", oj_mimic_parse, -1);
+    rb_define_module_function(json, "parse", RUBY_METHOD_FUNC(oj_mimic_parse), -1);
     rb_gv_set("$VERBOSE", verbose);
 
     return Qnil;
@@ -1144,25 +1144,25 @@ oj_optimize_rails(VALUE self) {
 void oj_mimic_rails_init(void) {
     VALUE rails = rb_define_module_under(Oj, "Rails");
 
-    rb_define_module_function(rails, "encode", rails_encode, -1);
+    rb_define_module_function(rails, "encode", RUBY_METHOD_FUNC(rails_encode), -1);
 
     encoder_class = rb_define_class_under(rails, "Encoder", rb_cObject);
     rb_gc_register_address(&encoder_class);
     rb_undef_alloc_func(encoder_class);
 
-    rb_define_module_function(encoder_class, "new", encoder_new, -1);
-    rb_define_module_function(rails, "optimize", rails_optimize, -1);
-    rb_define_module_function(rails, "deoptimize", rails_deoptimize, -1);
-    rb_define_module_function(rails, "optimized?", rails_optimized, 1);
-    rb_define_module_function(rails, "mimic_JSON", rails_mimic_json, 0);
+    rb_define_module_function(encoder_class, "new", RUBY_METHOD_FUNC(encoder_new), -1);
+    rb_define_module_function(rails, "optimize", RUBY_METHOD_FUNC(rails_optimize), -1);
+    rb_define_module_function(rails, "deoptimize", RUBY_METHOD_FUNC(rails_deoptimize), -1);
+    rb_define_module_function(rails, "optimized?", RUBY_METHOD_FUNC(rails_optimized), 1);
+    rb_define_module_function(rails, "mimic_JSON", RUBY_METHOD_FUNC(rails_mimic_json), 0);
 
-    rb_define_module_function(rails, "set_encoder", rails_set_encoder, 0);
-    rb_define_module_function(rails, "set_decoder", rails_set_decoder, 0);
+    rb_define_module_function(rails, "set_encoder", RUBY_METHOD_FUNC(rails_set_encoder), 0);
+    rb_define_module_function(rails, "set_decoder", RUBY_METHOD_FUNC(rails_set_decoder), 0);
 
-    rb_define_method(encoder_class, "encode", encoder_encode, 1);
-    rb_define_method(encoder_class, "optimize", encoder_optimize, -1);
-    rb_define_method(encoder_class, "deoptimize", encoder_deoptimize, -1);
-    rb_define_method(encoder_class, "optimized?", encoder_optimized, 1);
+    rb_define_method(encoder_class, "encode", RUBY_METHOD_FUNC(encoder_encode), 1);
+    rb_define_method(encoder_class, "optimize", RUBY_METHOD_FUNC(encoder_optimize), -1);
+    rb_define_method(encoder_class, "deoptimize", RUBY_METHOD_FUNC(encoder_deoptimize), -1);
+    rb_define_method(encoder_class, "optimized?", RUBY_METHOD_FUNC(encoder_optimized), 1);
 }
 
 static void dump_to_hash(VALUE obj, int depth, Out out) {

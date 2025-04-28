@@ -1804,41 +1804,41 @@ void Init_oj(void) {
     oj_utf8_encoding       = rb_enc_from_index(oj_utf8_encoding_index);
 
     // rb_define_module_function(Oj, "hash_test", hash_test, 0);
-    rb_define_module_function(Oj, "debug_odd", debug_odd, 1);
+    rb_define_module_function(Oj, "debug_odd", RUBY_METHOD_FUNC(debug_odd), 1);
 
-    rb_define_module_function(Oj, "default_options", get_def_opts, 0);
-    rb_define_module_function(Oj, "default_options=", set_def_opts, 1);
+    rb_define_module_function(Oj, "default_options", RUBY_METHOD_FUNC(get_def_opts), 0);
+    rb_define_module_function(Oj, "default_options=", RUBY_METHOD_FUNC(set_def_opts), 1);
 
-    rb_define_module_function(Oj, "mimic_JSON", oj_define_mimic_json, -1);
-    rb_define_module_function(Oj, "load", load, -1);
-    rb_define_module_function(Oj, "load_file", load_file, -1);
-    rb_define_module_function(Oj, "safe_load", safe_load, 1);
-    rb_define_module_function(Oj, "strict_load", oj_strict_parse, -1);
-    rb_define_module_function(Oj, "compat_load", oj_compat_parse, -1);
-    rb_define_module_function(Oj, "object_load", oj_object_parse, -1);
-    rb_define_module_function(Oj, "wab_load", oj_wab_parse, -1);
+    rb_define_module_function(Oj, "mimic_JSON", RUBY_METHOD_FUNC(oj_define_mimic_json), -1);
+    rb_define_module_function(Oj, "load", RUBY_METHOD_FUNC(load), -1);
+    rb_define_module_function(Oj, "load_file", RUBY_METHOD_FUNC(load_file), -1);
+    rb_define_module_function(Oj, "safe_load", RUBY_METHOD_FUNC(safe_load), 1);
+    rb_define_module_function(Oj, "strict_load", RUBY_METHOD_FUNC(oj_strict_parse), -1);
+    rb_define_module_function(Oj, "compat_load", RUBY_METHOD_FUNC(oj_compat_parse), -1);
+    rb_define_module_function(Oj, "object_load", RUBY_METHOD_FUNC(oj_object_parse), -1);
+    rb_define_module_function(Oj, "wab_load", RUBY_METHOD_FUNC(oj_wab_parse), -1);
 
-    rb_define_module_function(Oj, "dump", dump, -1);
+    rb_define_module_function(Oj, "dump", RUBY_METHOD_FUNC(dump), -1);
 
-    rb_define_module_function(Oj, "to_file", to_file, -1);
-    rb_define_module_function(Oj, "to_stream", to_stream, -1);
+    rb_define_module_function(Oj, "to_file", RUBY_METHOD_FUNC(to_file), -1);
+    rb_define_module_function(Oj, "to_stream", RUBY_METHOD_FUNC(to_stream), -1);
     // JSON gem compatibility
-    rb_define_module_function(Oj, "to_json", to_json, -1);
-    rb_define_module_function(Oj, "generate", oj_mimic_generate, -1);
-    rb_define_module_function(Oj, "fast_generate", oj_mimic_generate, -1);
+    rb_define_module_function(Oj, "to_json", RUBY_METHOD_FUNC(to_json), -1);
+    rb_define_module_function(Oj, "generate", RUBY_METHOD_FUNC(oj_mimic_generate), -1);
+    rb_define_module_function(Oj, "fast_generate", RUBY_METHOD_FUNC(oj_mimic_generate), -1);
 
-    rb_define_module_function(Oj, "add_to_json", oj_add_to_json, -1);
-    rb_define_module_function(Oj, "remove_to_json", oj_remove_to_json, -1);
+    rb_define_module_function(Oj, "add_to_json", RUBY_METHOD_FUNC(oj_add_to_json), -1);
+    rb_define_module_function(Oj, "remove_to_json", RUBY_METHOD_FUNC(oj_remove_to_json), -1);
 
-    rb_define_module_function(Oj, "register_odd", register_odd, -1);
-    rb_define_module_function(Oj, "register_odd_raw", register_odd_raw, -1);
+    rb_define_module_function(Oj, "register_odd", RUBY_METHOD_FUNC(register_odd), -1);
+    rb_define_module_function(Oj, "register_odd_raw", RUBY_METHOD_FUNC(register_odd_raw), -1);
 
-    rb_define_module_function(Oj, "saj_parse", oj_saj_parse, -1);
-    rb_define_module_function(Oj, "sc_parse", oj_sc_parse, -1);
+    rb_define_module_function(Oj, "saj_parse", RUBY_METHOD_FUNC(oj_saj_parse), -1);
+    rb_define_module_function(Oj, "sc_parse", RUBY_METHOD_FUNC(oj_sc_parse), -1);
 
-    rb_define_module_function(Oj, "optimize_rails", oj_optimize_rails, 0);
+    rb_define_module_function(Oj, "optimize_rails", RUBY_METHOD_FUNC(oj_optimize_rails), 0);
 
-    rb_define_module_function(Oj, "mem_report", mem_report, 0);
+    rb_define_module_function(Oj, "mem_report", RUBY_METHOD_FUNC(mem_report), 0);
 
     oj_add_value_id    = rb_intern("add_value");
     oj_array_append_id = rb_intern("array_append");

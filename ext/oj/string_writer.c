@@ -502,16 +502,16 @@ void oj_string_writer_init(void) {
     oj_string_writer_class = rb_define_class_under(Oj, "StringWriter", rb_cObject);
     rb_gc_register_address(&oj_string_writer_class);
     rb_undef_alloc_func(oj_string_writer_class);
-    rb_define_module_function(oj_string_writer_class, "new", str_writer_new, -1);
-    rb_define_method(oj_string_writer_class, "push_key", str_writer_push_key, 1);
-    rb_define_method(oj_string_writer_class, "push_object", str_writer_push_object, -1);
-    rb_define_method(oj_string_writer_class, "push_array", str_writer_push_array, -1);
-    rb_define_method(oj_string_writer_class, "push_value", str_writer_push_value, -1);
-    rb_define_method(oj_string_writer_class, "push_json", str_writer_push_json, -1);
-    rb_define_method(oj_string_writer_class, "pop", str_writer_pop, 0);
-    rb_define_method(oj_string_writer_class, "pop_all", str_writer_pop_all, 0);
-    rb_define_method(oj_string_writer_class, "reset", str_writer_reset, 0);
-    rb_define_method(oj_string_writer_class, "to_s", str_writer_to_s, 0);
-    rb_define_method(oj_string_writer_class, "raw_json", str_writer_to_s, 0);
-    rb_define_method(oj_string_writer_class, "as_json", str_writer_as_json, -1);
+    rb_define_module_function(oj_string_writer_class, "new", RUBY_METHOD_FUNC(str_writer_new), -1);
+    rb_define_method(oj_string_writer_class, "push_key", RUBY_METHOD_FUNC(str_writer_push_key), 1);
+    rb_define_method(oj_string_writer_class, "push_object", RUBY_METHOD_FUNC(str_writer_push_object), -1);
+    rb_define_method(oj_string_writer_class, "push_array", RUBY_METHOD_FUNC(str_writer_push_array), -1);
+    rb_define_method(oj_string_writer_class, "push_value", RUBY_METHOD_FUNC(str_writer_push_value), -1);
+    rb_define_method(oj_string_writer_class, "push_json", RUBY_METHOD_FUNC(str_writer_push_json), -1);
+    rb_define_method(oj_string_writer_class, "pop", RUBY_METHOD_FUNC(str_writer_pop), 0);
+    rb_define_method(oj_string_writer_class, "pop_all", RUBY_METHOD_FUNC(str_writer_pop_all), 0);
+    rb_define_method(oj_string_writer_class, "reset", RUBY_METHOD_FUNC(str_writer_reset), 0);
+    rb_define_method(oj_string_writer_class, "to_s", RUBY_METHOD_FUNC(str_writer_to_s), 0);
+    rb_define_method(oj_string_writer_class, "raw_json", RUBY_METHOD_FUNC(str_writer_to_s), 0);
+    rb_define_method(oj_string_writer_class, "as_json", RUBY_METHOD_FUNC(str_writer_as_json), -1);
 }

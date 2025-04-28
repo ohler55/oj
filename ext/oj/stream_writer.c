@@ -317,13 +317,13 @@ void oj_stream_writer_init(void) {
     oj_stream_writer_class = rb_define_class_under(Oj, "StreamWriter", rb_cObject);
     rb_gc_register_address(&oj_stream_writer_class);
     rb_undef_alloc_func(oj_stream_writer_class);
-    rb_define_module_function(oj_stream_writer_class, "new", stream_writer_new, -1);
-    rb_define_method(oj_stream_writer_class, "push_key", stream_writer_push_key, 1);
-    rb_define_method(oj_stream_writer_class, "push_object", stream_writer_push_object, -1);
-    rb_define_method(oj_stream_writer_class, "push_array", stream_writer_push_array, -1);
-    rb_define_method(oj_stream_writer_class, "push_value", stream_writer_push_value, -1);
-    rb_define_method(oj_stream_writer_class, "push_json", stream_writer_push_json, -1);
-    rb_define_method(oj_stream_writer_class, "pop", stream_writer_pop, 0);
-    rb_define_method(oj_stream_writer_class, "pop_all", stream_writer_pop_all, 0);
-    rb_define_method(oj_stream_writer_class, "flush", stream_writer_flush, 0);
+    rb_define_module_function(oj_stream_writer_class, "new", RUBY_METHOD_FUNC(stream_writer_new), -1);
+    rb_define_method(oj_stream_writer_class, "push_key", RUBY_METHOD_FUNC(stream_writer_push_key), 1);
+    rb_define_method(oj_stream_writer_class, "push_object", RUBY_METHOD_FUNC(stream_writer_push_object), -1);
+    rb_define_method(oj_stream_writer_class, "push_array", RUBY_METHOD_FUNC(stream_writer_push_array), -1);
+    rb_define_method(oj_stream_writer_class, "push_value", RUBY_METHOD_FUNC(stream_writer_push_value), -1);
+    rb_define_method(oj_stream_writer_class, "push_json", RUBY_METHOD_FUNC(stream_writer_push_json), -1);
+    rb_define_method(oj_stream_writer_class, "pop", RUBY_METHOD_FUNC(stream_writer_pop), 0);
+    rb_define_method(oj_stream_writer_class, "pop_all", RUBY_METHOD_FUNC(stream_writer_pop_all), 0);
+    rb_define_method(oj_stream_writer_class, "flush", RUBY_METHOD_FUNC(stream_writer_flush), 0);
 }

@@ -1586,15 +1586,15 @@ void oj_parser_init(void) {
     rb_gc_register_address(&parser_class);
     rb_undef_alloc_func(parser_class);
 
-    rb_define_module_function(parser_class, "new", parser_new, -1);
-    rb_define_method(parser_class, "parse", parser_parse, 1);
-    rb_define_method(parser_class, "load", parser_load, 1);
-    rb_define_method(parser_class, "file", parser_file, 1);
-    rb_define_method(parser_class, "just_one", parser_just_one, 0);
-    rb_define_method(parser_class, "just_one=", parser_just_one_set, 1);
-    rb_define_method(parser_class, "method_missing", parser_missing, -1);
+    rb_define_module_function(parser_class, "new", RUBY_METHOD_FUNC(parser_new), -1);
+    rb_define_method(parser_class, "parse", RUBY_METHOD_FUNC(parser_parse), 1);
+    rb_define_method(parser_class, "load", RUBY_METHOD_FUNC(parser_load), 1);
+    rb_define_method(parser_class, "file", RUBY_METHOD_FUNC(parser_file), 1);
+    rb_define_method(parser_class, "just_one", RUBY_METHOD_FUNC(parser_just_one), 0);
+    rb_define_method(parser_class, "just_one=", RUBY_METHOD_FUNC(parser_just_one_set), 1);
+    rb_define_method(parser_class, "method_missing", RUBY_METHOD_FUNC(parser_missing), -1);
 
-    rb_define_module_function(parser_class, "usual", parser_usual, 0);
-    rb_define_module_function(parser_class, "saj", parser_saj, 0);
-    rb_define_module_function(parser_class, "validate", parser_validate, 0);
+    rb_define_module_function(parser_class, "usual", RUBY_METHOD_FUNC(parser_usual), 0);
+    rb_define_module_function(parser_class, "saj", RUBY_METHOD_FUNC(parser_saj), 0);
+    rb_define_module_function(parser_class, "validate", RUBY_METHOD_FUNC(parser_validate), 0);
 }

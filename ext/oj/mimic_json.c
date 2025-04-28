@@ -794,39 +794,39 @@ void oj_mimic_json_methods(VALUE json) {
     rb_gv_set("$VERBOSE", Qfalse);
 
     rb_undef_method(json, "create_id=");
-    rb_define_module_function(json, "create_id=", mimic_set_create_id, 1);
+    rb_define_module_function(json, "create_id=", RUBY_METHOD_FUNC(mimic_set_create_id), 1);
     rb_undef_method(json, "create_id");
-    rb_define_module_function(json, "create_id", mimic_create_id, 0);
+    rb_define_module_function(json, "create_id", RUBY_METHOD_FUNC(mimic_create_id), 0);
 
     rb_undef_method(json, "dump");
-    rb_define_module_function(json, "dump", mimic_dump, -1);
+    rb_define_module_function(json, "dump", RUBY_METHOD_FUNC(mimic_dump), -1);
     rb_undef_method(json, "load");
-    rb_define_module_function(json, "load", mimic_load, -1);
-    rb_define_module_function(json, "restore", mimic_load, -1);
+    rb_define_module_function(json, "load", RUBY_METHOD_FUNC(mimic_load), -1);
+    rb_define_module_function(json, "restore", RUBY_METHOD_FUNC(mimic_load), -1);
     rb_undef_method(json, "recurse_proc");
-    rb_define_module_function(json, "recurse_proc", mimic_recurse_proc, 1);
+    rb_define_module_function(json, "recurse_proc", RUBY_METHOD_FUNC(mimic_recurse_proc), 1);
     rb_undef_method(json, "[]");
-    rb_define_module_function(json, "[]", mimic_dump_load, -1);
+    rb_define_module_function(json, "[]", RUBY_METHOD_FUNC(mimic_dump_load), -1);
 
     rb_undef_method(json, "generate");
-    rb_define_module_function(json, "generate", oj_mimic_generate, -1);
+    rb_define_module_function(json, "generate", RUBY_METHOD_FUNC(oj_mimic_generate), -1);
     rb_undef_method(json, "fast_generate");
-    rb_define_module_function(json, "fast_generate", oj_mimic_generate, -1);
+    rb_define_module_function(json, "fast_generate", RUBY_METHOD_FUNC(oj_mimic_generate), -1);
     rb_undef_method(json, "pretty_generate");
-    rb_define_module_function(json, "pretty_generate", oj_mimic_pretty_generate, -1);
+    rb_define_module_function(json, "pretty_generate", RUBY_METHOD_FUNC(oj_mimic_pretty_generate), -1);
     // For older versions of JSON, the deprecated unparse methods.
     rb_undef_method(json, "unparse");
-    rb_define_module_function(json, "unparse", oj_mimic_generate, -1);
-    rb_define_module_function(json, "fast_unparse", oj_mimic_generate, -1);
-    rb_define_module_function(json, "pretty_unparse", oj_mimic_pretty_generate, -1);
+    rb_define_module_function(json, "unparse", RUBY_METHOD_FUNC(oj_mimic_generate), -1);
+    rb_define_module_function(json, "fast_unparse", RUBY_METHOD_FUNC(oj_mimic_generate), -1);
+    rb_define_module_function(json, "pretty_unparse", RUBY_METHOD_FUNC(oj_mimic_pretty_generate), -1);
 
     rb_undef_method(json, "parse");
-    rb_define_module_function(json, "parse", oj_mimic_parse, -1);
+    rb_define_module_function(json, "parse", RUBY_METHOD_FUNC(oj_mimic_parse), -1);
     rb_undef_method(json, "parse!");
-    rb_define_module_function(json, "parse!", mimic_parse_bang, -1);
+    rb_define_module_function(json, "parse!", RUBY_METHOD_FUNC(mimic_parse_bang), -1);
 
     rb_undef_method(json, "state");
-    rb_define_module_function(json, "state", mimic_state, 0);
+    rb_define_module_function(json, "state", RUBY_METHOD_FUNC(mimic_state), 0);
     rb_gv_set("$VERBOSE", verbose);
 
     if (rb_const_defined_at(json, rb_intern("JSONError"))) {
@@ -891,7 +891,7 @@ oj_define_mimic_json(int argc, VALUE *argv, VALUE self) {
     }
     verbose = rb_gv_get("$VERBOSE");
     rb_gv_set("$VERBOSE", Qfalse);
-    rb_define_module_function(rb_cObject, "JSON", mimic_dump_load, -1);
+    rb_define_module_function(rb_cObject, "JSON", RUBY_METHOD_FUNC(mimic_dump_load), -1);
     dummy = rb_gv_get("$LOADED_FEATURES");
     if (rb_type(dummy) == T_ARRAY) {
         rb_ary_push(dummy, rb_str_new2("json"));
@@ -907,7 +907,7 @@ oj_define_mimic_json(int argc, VALUE *argv, VALUE self) {
     oj_mimic_json_methods(json);
 
     if (!rb_const_defined(rb_cObject, rb_intern("ActiveSupport"))) {
-        rb_define_method(rb_cObject, "to_json", mimic_object_to_json, -1);
+        rb_define_method(rb_cObject, "to_json", RUBY_METHOD_FUNC(mimic_object_to_json), -1);
     }
 
     rb_gv_set("$VERBOSE", verbose);
