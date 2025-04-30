@@ -137,6 +137,8 @@ class JSONGeneratorTest < Test::Unit::TestCase
   end
 
   def test_pretty_state
+    skip 'JSON after xxx no longer has JSON::PRETTY_STATE_PROTOTYPE' if "2.9.1" < JSON::VERSION
+
     state = JSON::PRETTY_STATE_PROTOTYPE.dup
     # In come cases in Ruby 3.0 an :escape_slash is included in the state. It
     # seems to occur on travis but not locally.
@@ -165,8 +167,10 @@ class JSONGeneratorTest < Test::Unit::TestCase
   end
 
   def test_safe_state
+    skip 'JSON after xxx no longer has JSON::PRETTY_STATE_PROTOTYPE' if "2.9.1" < JSON::VERSION
+
     state = JSON::SAFE_STATE_PROTOTYPE.dup
-    # In come cases in Ruby 3.0 an :escape_slash is included in the state. It
+    # In some cases in Ruby 3.0 an :escape_slash is included in the state. It
     # seems to occur on travis but not locally.
     actual = state.to_h
     actual.delete(:escape_slash)
@@ -193,6 +197,8 @@ class JSONGeneratorTest < Test::Unit::TestCase
   end
 
   def test_fast_state
+    skip 'JSON after xxx no longer has JSON::PRETTY_STATE_PROTOTYPE' if "2.9.1" < JSON::VERSION
+
     state = JSON::FAST_STATE_PROTOTYPE.dup
     # In come cases in Ruby 3.0 an :escape_slash is included in the state. It
     # seems to occur on travis but not locally.
