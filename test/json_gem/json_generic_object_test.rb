@@ -28,7 +28,7 @@ class JSONGenericObjectTest < Test::Unit::TestCase
   end
 
   def test_parse_json
-    puts "*** REAL_JSON_GEM: #{REAL_JSON_GEM}"
+    puts "*** REAL_JSON_GEM: #{REAL_JSON_GEM} version: #{JSON::VERSION}"
     x = JSON(
         '{ "json_class": "JSON::GenericObject", "a": 1, "b": 2 }',
         :create_additions => true
