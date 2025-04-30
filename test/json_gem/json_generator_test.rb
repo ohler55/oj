@@ -167,7 +167,7 @@ class JSONGeneratorTest < Test::Unit::TestCase
   end
 
   def test_safe_state
-    skip 'JSON after xxx no longer has JSON::PRETTY_STATE_PROTOTYPE' if "2.9.1" < JSON::VERSION
+    skip 'JSON after xxx no longer has JSON::SAFE_STATE_PROTOTYPE' if "2.9.1" < JSON::VERSION
 
     state = JSON::SAFE_STATE_PROTOTYPE.dup
     # In some cases in Ruby 3.0 an :escape_slash is included in the state. It
@@ -197,7 +197,7 @@ class JSONGeneratorTest < Test::Unit::TestCase
   end
 
   def test_fast_state
-    skip 'JSON after xxx no longer has JSON::PRETTY_STATE_PROTOTYPE' if "2.9.1" < JSON::VERSION
+    skip 'JSON after xxx no longer has JSON::FAST_STATE_PROTOTYPE' if "2.9.1" < JSON::VERSION
 
     state = JSON::FAST_STATE_PROTOTYPE.dup
     # In come cases in Ruby 3.0 an :escape_slash is included in the state. It
@@ -245,6 +245,8 @@ class JSONGeneratorTest < Test::Unit::TestCase
   end
 
   def test_depth
+    skip 'JSON after xxx no longer has JSON::SAFE_STATE_PROTOTYPE' if "2.9.1" < JSON::VERSION
+
     ary = []; ary << ary
     assert_equal 0, JSON::SAFE_STATE_PROTOTYPE.depth
     assert_raise(JSON::NestingError) { JSON.generate(ary) }
