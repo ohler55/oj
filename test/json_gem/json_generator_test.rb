@@ -137,94 +137,93 @@ class JSONGeneratorTest < Test::Unit::TestCase
   end
 
   def test_pretty_state
-    skip 'JSON after xxx no longer has JSON::PRETTY_STATE_PROTOTYPE' if "2.9.1" < JSON::VERSION
+    if JSON::VERSION < "2.11.0" # JSON after 2.10 no longer has JSON::PRETTY_STATE_PROTOTYPE
+      state = JSON::PRETTY_STATE_PROTOTYPE.dup
+      # In come cases in Ruby 3.0 an :escape_slash is included in the state. It
+      # seems to occur on travis but not locally.
+      actual = state.to_h
+      actual.delete(:escape_slash)
+      actual.delete(:strict)
+      actual.delete(:script_safe)
 
-    state = JSON::PRETTY_STATE_PROTOTYPE.dup
-    # In come cases in Ruby 3.0 an :escape_slash is included in the state. It
-    # seems to occur on travis but not locally.
-    actual = state.to_h
-    actual.delete(:escape_slash)
-    actual.delete(:strict)
-    actual.delete(:script_safe)
+      expected = {
+        :allow_nan             => false,
+        :array_nl              => "\n",
+        :ascii_only            => false,
+        :buffer_initial_length => 1024,
+        :depth                 => 0,
+        :indent                => "  ",
+        :max_nesting           => 100,
+        :object_nl             => "\n",
+        :space                 => " ",
+        :space_before          => "",
+      }
+      if REAL_JSON_GEM && Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('3.5.0')
+        expected[:as_json] = false
+      end
 
-    expected = {
-      :allow_nan             => false,
-      :array_nl              => "\n",
-      :ascii_only            => false,
-      :buffer_initial_length => 1024,
-      :depth                 => 0,
-      :indent                => "  ",
-      :max_nesting           => 100,
-      :object_nl             => "\n",
-      :space                 => " ",
-      :space_before          => "",
-    }
-    if REAL_JSON_GEM && Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('3.5.0')
-      expected[:as_json] = false
-    end
-
-    assert_equal(expected.sort_by { |n,| n.to_s }, actual.sort_by { |n,| n.to_s })
+      assert_equal(expected.sort_by { |n,| n.to_s }, actual.sort_by { |n,| n.to_s })
+      end
   end
 
   def test_safe_state
-    skip 'JSON after xxx no longer has JSON::SAFE_STATE_PROTOTYPE' if "2.9.1" < JSON::VERSION
+    if JSON::VERSION < "2.11.0" # JSON after 2.10 no longer has JSON::SAFE_STATE_PROTOTYPE
+      state = JSON::SAFE_STATE_PROTOTYPE.dup
+      # In some cases in Ruby 3.0 an :escape_slash is included in the state. It
+      # seems to occur on travis but not locally.
+      actual = state.to_h
+      actual.delete(:escape_slash)
+      actual.delete(:strict)
+      actual.delete(:script_safe)
 
-    state = JSON::SAFE_STATE_PROTOTYPE.dup
-    # In some cases in Ruby 3.0 an :escape_slash is included in the state. It
-    # seems to occur on travis but not locally.
-    actual = state.to_h
-    actual.delete(:escape_slash)
-    actual.delete(:strict)
-    actual.delete(:script_safe)
+      expected = {
+        :allow_nan             => false,
+        :array_nl              => "",
+        :ascii_only            => false,
+        :buffer_initial_length => 1024,
+        :depth                 => 0,
+        :indent                => "",
+        :max_nesting           => 100,
+        :object_nl             => "",
+        :space                 => "",
+        :space_before          => "",
+      }
+      if REAL_JSON_GEM && Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('3.5.0')
+        expected[:as_json] = false
+      end
 
-    expected = {
-      :allow_nan             => false,
-      :array_nl              => "",
-      :ascii_only            => false,
-      :buffer_initial_length => 1024,
-      :depth                 => 0,
-      :indent                => "",
-      :max_nesting           => 100,
-      :object_nl             => "",
-      :space                 => "",
-      :space_before          => "",
-    }
-    if REAL_JSON_GEM && Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('3.5.0')
-      expected[:as_json] = false
+      assert_equal(expected.sort_by { |n,| n.to_s }, actual.sort_by { |n,| n.to_s })
     end
-
-    assert_equal(expected.sort_by { |n,| n.to_s }, actual.sort_by { |n,| n.to_s })
   end
 
   def test_fast_state
-    puts "*** JSON::VERSION: #{JSON::VERSION}"
-    skip 'JSON after xxx no longer has JSON::FAST_STATE_PROTOTYPE' if "2.9.1" < JSON::VERSION
+    if JSON::VERSION < "2.11.0" # JSON after 2.10 no longer has JSON::FAST_STATE_PROTOTYPE
+      state = JSON::FAST_STATE_PROTOTYPE.dup
+      # In come cases in Ruby 3.0 an :escape_slash is included in the state. It
+      # seems to occur on travis but not locally.
+      actual = state.to_h
+      actual.delete(:escape_slash)
+      actual.delete(:strict)
+      actual.delete(:script_safe)
 
-    state = JSON::FAST_STATE_PROTOTYPE.dup
-    # In come cases in Ruby 3.0 an :escape_slash is included in the state. It
-    # seems to occur on travis but not locally.
-    actual = state.to_h
-    actual.delete(:escape_slash)
-    actual.delete(:strict)
-    actual.delete(:script_safe)
+      expected = {
+        :allow_nan             => false,
+        :array_nl              => "",
+        :ascii_only            => false,
+        :buffer_initial_length => 1024,
+        :depth                 => 0,
+        :indent                => "",
+        :max_nesting           => 0,
+        :object_nl             => "",
+        :space                 => "",
+        :space_before          => "",
+      }
+      if REAL_JSON_GEM && Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('3.5.0')
+        expected[:as_json] = false
+      end
 
-    expected = {
-      :allow_nan             => false,
-      :array_nl              => "",
-      :ascii_only            => false,
-      :buffer_initial_length => 1024,
-      :depth                 => 0,
-      :indent                => "",
-      :max_nesting           => 0,
-      :object_nl             => "",
-      :space                 => "",
-      :space_before          => "",
-    }
-    if REAL_JSON_GEM && Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('3.5.0')
-      expected[:as_json] = false
+      assert_equal(expected.sort_by { |n,| n.to_s }, actual.sort_by { |n,| n.to_s })
     end
-
-    assert_equal(expected.sort_by { |n,| n.to_s }, actual.sort_by { |n,| n.to_s })
   end
 
   def test_allow_nan
@@ -246,20 +245,19 @@ class JSONGeneratorTest < Test::Unit::TestCase
   end
 
   def test_depth
-    puts "*** JSON::VERSION: #{JSON::VERSION} - #{"2.11.0" <= JSON::VERSION}"
-    skip 'JSON after xxx no longer has JSON::SAFE_STATE_PROTOTYPE' if "2.9.1" < JSON::VERSION
-
-    ary = []; ary << ary
-    assert_equal 0, JSON::SAFE_STATE_PROTOTYPE.depth
-    assert_raise(JSON::NestingError) { JSON.generate(ary) }
-    assert_equal 0, JSON::SAFE_STATE_PROTOTYPE.depth
-    assert_equal 0, JSON::PRETTY_STATE_PROTOTYPE.depth
-    assert_raise(JSON::NestingError) { JSON.pretty_generate(ary) }
-    assert_equal 0, JSON::PRETTY_STATE_PROTOTYPE.depth
-    s = JSON.state.new
-    assert_equal 0, s.depth
-    assert_raise(JSON::NestingError) { ary.to_json(s) }
-    assert_equal 100, s.depth
+    if JSON::VERSION < "2.11.0" # JSON after 2.10 no longer has JSON::SAFE_STATE_PROTOTYPE
+      ary = []; ary << ary
+      assert_equal 0, JSON::SAFE_STATE_PROTOTYPE.depth
+      assert_raise(JSON::NestingError) { JSON.generate(ary) }
+      assert_equal 0, JSON::SAFE_STATE_PROTOTYPE.depth
+      assert_equal 0, JSON::PRETTY_STATE_PROTOTYPE.depth
+      assert_raise(JSON::NestingError) { JSON.pretty_generate(ary) }
+      assert_equal 0, JSON::PRETTY_STATE_PROTOTYPE.depth
+      s = JSON.state.new
+      assert_equal 0, s.depth
+      assert_raise(JSON::NestingError) { ary.to_json(s) }
+      assert_equal 100, s.depth
+    end
   end
 
   def test_buffer_initial_length
