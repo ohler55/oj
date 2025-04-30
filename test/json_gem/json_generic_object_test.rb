@@ -36,6 +36,7 @@ class JSONGenericObjectTest < Test::Unit::TestCase
     ch = Hash
     # JSON after 2.10 no longer allows GenericObject creatable to be turned off
     ch = JSON::GenericObject if REAL_JSON_GEM && JSON::VERSION < "2.11.0"
+    puts "*** REAL_JSON_GEM: #{REAL_JSON_GEM} new version: #{JSON::VERSION < "2.11.0"} - #{ch}"
     assert_kind_of ch,
                    JSON(
                      '{ "json_class": "JSON::GenericObject", "a": 1, "b": 2 }',
