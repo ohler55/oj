@@ -246,7 +246,7 @@ class JSONGeneratorTest < Test::Unit::TestCase
   end
 
   def test_depth
-    puts "*** JSON::VERSION: #{JSON::VERSION}"
+    puts "*** JSON::VERSION: #{JSON::VERSION} - #{"2.11.0" <= JSON::VERSION}"
     skip 'JSON after xxx no longer has JSON::SAFE_STATE_PROTOTYPE' if "2.9.1" < JSON::VERSION
 
     ary = []; ary << ary
