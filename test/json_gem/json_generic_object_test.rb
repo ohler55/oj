@@ -5,8 +5,6 @@
 
 require 'json_gem/test_helper'
 
-JSON::GenericObject.json_creatable = true
-
 class JSONGenericObjectTest < Test::Unit::TestCase
   include Test::Unit::TestCaseOmissionSupport
 
@@ -30,6 +28,7 @@ class JSONGenericObjectTest < Test::Unit::TestCase
   end
 
   def test_parse_json
+    puts "*** REAL_JSON_GEM: #{REAL_JSON_GEM}"
     x = JSON(
         '{ "json_class": "JSON::GenericObject", "a": 1, "b": 2 }',
         :create_additions => true
