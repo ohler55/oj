@@ -197,6 +197,7 @@ class JSONGeneratorTest < Test::Unit::TestCase
   end
 
   def test_fast_state
+    puts "*** JSON::VERSION: #{JSON::VERSION}"
     skip 'JSON after xxx no longer has JSON::FAST_STATE_PROTOTYPE' if "2.9.1" < JSON::VERSION
 
     state = JSON::FAST_STATE_PROTOTYPE.dup
@@ -245,6 +246,7 @@ class JSONGeneratorTest < Test::Unit::TestCase
   end
 
   def test_depth
+    puts "*** JSON::VERSION: #{JSON::VERSION}"
     skip 'JSON after xxx no longer has JSON::SAFE_STATE_PROTOTYPE' if "2.9.1" < JSON::VERSION
 
     ary = []; ary << ary
