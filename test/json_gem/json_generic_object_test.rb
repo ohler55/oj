@@ -32,8 +32,11 @@ class JSONGenericObjectTest < Test::Unit::TestCase
     x = JSON(
         '{ "json_class": "JSON::GenericObject", "a": 1, "b": 2 }',
         :create_additions => true
-      )
-    assert_kind_of Hash,
+    )
+    ch = Hash
+    # JSON after 2.10 no longer allows GenericObject creatable to be turned off
+    ch = JSON::GenericObject if JSON::VERSION < "2.11.0"
+    assert_kind_of ch,
                    JSON(
                      '{ "json_class": "JSON::GenericObject", "a": 1, "b": 2 }',
                      :create_additions => true
