@@ -11,7 +11,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "simd.h"
 #include "dump.h"
 #include "encode.h"
 #include "intern.h"
@@ -19,6 +18,7 @@
 #include "odd.h"
 #include "parse.h"
 #include "rails.h"
+#include "simd.h"
 
 typedef struct _yesNoOpt {
     VALUE sym;
@@ -1189,7 +1189,7 @@ static VALUE load_file(int argc, VALUE *argv, VALUE self) {
         OJ_FREE(wide_path);
     }
 #else
-    fd             = open(path, O_RDONLY);
+    fd = open(path, O_RDONLY);
 #endif
     if (0 == fd) {
         rb_raise(rb_eIOError, "%s", strerror(errno));
