@@ -1,8 +1,14 @@
 # CHANGELOG
 
+## 3.16.11 - unreleased
+
+- Fixed range encoding with the :circular option
+
 ## 3.16.10 - 2025-02-24
 
 - Changed oj_parser_type to be non-static.
+
+- Changed ARM versions to used Neon instructions thanks to @samyron.
 
 ## 3.16.9 - 2024-12-28
 

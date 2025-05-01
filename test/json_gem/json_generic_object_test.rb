@@ -19,7 +19,7 @@ class JSONGenericObjectTest < Test::Unit::TestCase
     assert_equal 2, @go[:b]
     assert_nil @go.c
     assert_nil @go[:c]
-  end 
+  end
 
   def test_generate_json
     switch_json_creatable do
@@ -31,8 +31,11 @@ class JSONGenericObjectTest < Test::Unit::TestCase
     x = JSON(
         '{ "json_class": "JSON::GenericObject", "a": 1, "b": 2 }',
         :create_additions => true
-      )
-    assert_kind_of Hash,
+    )
+    ch = Hash
+    # JSON after 2.10 no longer allows GenericObject creatable to be turned off or so it appears
+    ch = JSON::GenericObject if REAL_JSON_GEM && ([2, 11, 0] <=> JSON::VERSION.split('.').map { |v| v.to_i }) <= 0
+    assert_kind_of ch,
                    JSON(
                      '{ "json_class": "JSON::GenericObject", "a": 1, "b": 2 }',
                      :create_additions => true

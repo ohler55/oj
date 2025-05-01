@@ -698,9 +698,8 @@ oj_object_parse(int argc, VALUE *argv, VALUE self) {
 
     if (T_STRING == rb_type(*argv)) {
         return oj_pi_parse(argc, argv, &pi, 0, 0, 1);
-    } else {
-        return oj_pi_sparse(argc, argv, &pi, 0);
     }
+    return oj_pi_sparse(argc, argv, &pi, 0);
 }
 
 VALUE
