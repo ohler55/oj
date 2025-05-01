@@ -21,8 +21,6 @@
 #include "trace.h"
 #include "util.h"
 
-#include <arm_neon.h>
-
 // Workaround in case INFINITY is not defined in math.h or if the OS is CentOS
 #define OJ_INFINITY (1.0 / 0.0)
 
