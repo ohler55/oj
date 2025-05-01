@@ -7,11 +7,16 @@
 #include <ruby.h>
 
 #include "oj.h"
+#include "simd.h"
 
 #define MAX_DEPTH 1000
 
 // Extra padding at end of buffer.
 #define BUFFER_EXTRA 64
+
+#ifdef HAVE_SIMD_NEON
+extern void initialize_neon(void);
+#endif /* HAVE_SIMD_NEON */
 
 extern void oj_dump_nil(VALUE obj, int depth, Out out, bool as_ok);
 extern void oj_dump_true(VALUE obj, int depth, Out out, bool as_ok);
