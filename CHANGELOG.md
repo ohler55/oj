@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.16.11 - unreleased
+
+- Fixed range encoding with the :circular option
+
 ## 3.16.10 - 2025-02-24
 
 - Changed oj_parser_type to be non-static.
