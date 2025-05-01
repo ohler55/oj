@@ -35,8 +35,8 @@ class JSONGenericObjectTest < Test::Unit::TestCase
     )
     ch = Hash
     # JSON after 2.10 no longer allows GenericObject creatable to be turned off
-    ch = JSON::GenericObject if REAL_JSON_GEM && (['2', '11', '0'] <=> JSON::VERSION.split('.')) <= 0
-    puts "*** REAL_JSON_GEM: #{REAL_JSON_GEM} new version: #{(['2', '11', '0'] <=> JSON::VERSION.split('.')) <= 0} - #{ch}"
+    ch = JSON::GenericObject if REAL_JSON_GEM && ([2, 11, 0] <=> JSON::VERSION.split('.').map { |v| v.to_i }) <= 0
+    puts "*** REAL_JSON_GEM: #{REAL_JSON_GEM} new: #{([2, 11, 0] <=> JSON::VERSION.split('.').map { |v| v.to_i }) <= 0 } - #{ch}"
     assert_kind_of ch,
                    JSON(
                      '{ "json_class": "JSON::GenericObject", "a": 1, "b": 2 }',
