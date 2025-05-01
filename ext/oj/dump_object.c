@@ -565,10 +565,10 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
     VALUE       clas       = rb_obj_class(obj);
     const char *class_name = rb_class2name(clas);
     int         i;
-    int         d2   = depth + 1;
-    int         d3   = d2 + 1;
-    size_t      len  = strlen(class_name);
-    size_t      size = d2 * out->indent + d3 * out->indent + 10 + len;
+    int         d2       = depth + 1;
+    int         d3       = d2 + 1;
+    size_t      len      = strlen(class_name);
+    size_t      size     = d2 * out->indent + d3 * out->indent + 10 + len;
     char        circular = out->opts->circular;
 
     assure_size(out, size);
@@ -615,9 +615,9 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
         cnt = (int)RSTRUCT_LEN(obj);
 #endif  // RSTRUCT_LEN_RETURNS_INTEGER_OBJECT
 
-	if (0 == strcmp(class_name, "Range")) {
-	    out->opts->circular = 'n';
-	}
+        if (0 == strcmp(class_name, "Range")) {
+            out->opts->circular = 'n';
+        }
         for (i = 0; i < cnt; i++) {
             v = RSTRUCT_GET(obj, i);
             if (dump_ignore(out->opts, v)) {
@@ -635,9 +635,9 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
         // class in interpreted Ruby so length() may not be defined.
         int slen = FIX2INT(rb_funcall2(obj, oj_length_id, 0, 0));
 
-	if (0 == strcmp(class_name, "Range")) {
-	    out->opts->circular = 'n';
-	}
+        if (0 == strcmp(class_name, "Range")) {
+            out->opts->circular = 'n';
+        }
         for (i = 0; i < slen; i++) {
             assure_size(out, size);
             fill_indent(out, d3);
