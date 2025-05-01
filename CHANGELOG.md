@@ -8,6 +8,8 @@
 
 - Changed oj_parser_type to be non-static.
 
+- Changed ARM versions to used Neon instructions thanks to @samyron.
+
 ## 3.16.9 - 2024-12-28
 
 - Fixed `Oj::Parser` create_id size issue #931.
