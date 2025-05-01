@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "simd.h"
 #include "dump.h"
 #include "encode.h"
 #include "intern.h"
@@ -2081,4 +2082,8 @@ void Init_oj(void) {
 
     oj_parser_init();
     oj_scanner_init();
+
+#ifdef HAVE_SIMD_NEON
+    initialize_neon();
+#endif /* HAVE_SIMD_NEON */
 }

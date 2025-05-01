@@ -21,6 +21,8 @@
 #include "trace.h"
 #include "util.h"
 
+#include <arm_neon.h>
+
 // Workaround in case INFINITY is not defined in math.h or if the OS is CentOS
 #define OJ_INFINITY (1.0 / 0.0)
 
@@ -152,8 +154,61 @@ inline static size_t newline_friendly_size(const uint8_t *str, size_t len) {
     return calculate_string_size(str, len, newline_friendly_chars);
 }
 
+#ifdef HAVE_SIMD_NEON
+inline static uint8x16x4_t load_uint8x16_4(const unsigned char *table) {
+    uint8x16x4_t tab;
+    tab.val[0] = vld1q_u8(table);
+    tab.val[1] = vld1q_u8(table+16);
+    tab.val[2] = vld1q_u8(table+32);
+    tab.val[3] = vld1q_u8(table+48);
+    return tab;
+}
+
+static uint8x16x4_t hibit_friendly_chars_neon[2];
+
+void initialize_neon(void) {
+    hibit_friendly_chars_neon[0] = load_uint8x16_4((const unsigned char *) hibit_friendly_chars);
+    hibit_friendly_chars_neon[1] = load_uint8x16_4((const unsigned char *) hibit_friendly_chars + 64);
+
+    // All bytes should be 0 except for those that need more than 1 byte of output. This will allow the
+    // code to limit the lookups to the first 128 bytes (values 0 - 127). Bytes above 127 will result
+    // in 0 with the vqtbl4q_u8 instruction.
+    hibit_friendly_chars_neon[0].val[0] = vsubq_u8(hibit_friendly_chars_neon[0].val[0], vdupq_n_u8('1'));
+    hibit_friendly_chars_neon[0].val[1] = vsubq_u8(hibit_friendly_chars_neon[0].val[1], vdupq_n_u8('1'));
+    hibit_friendly_chars_neon[0].val[2] = vsubq_u8(hibit_friendly_chars_neon[0].val[2], vdupq_n_u8('1'));
+    hibit_friendly_chars_neon[0].val[3] = vsubq_u8(hibit_friendly_chars_neon[0].val[3], vdupq_n_u8('1'));
+
+    hibit_friendly_chars_neon[1].val[0] = vsubq_u8(hibit_friendly_chars_neon[1].val[0], vdupq_n_u8('1'));
+    hibit_friendly_chars_neon[1].val[1] = vsubq_u8(hibit_friendly_chars_neon[1].val[1], vdupq_n_u8('1'));
+    hibit_friendly_chars_neon[1].val[2] = vsubq_u8(hibit_friendly_chars_neon[1].val[2], vdupq_n_u8('1'));
+    hibit_friendly_chars_neon[1].val[3] = vsubq_u8(hibit_friendly_chars_neon[1].val[3], vdupq_n_u8('1'));
+}
+#endif 
+
 inline static size_t hibit_friendly_size(const uint8_t *str, size_t len) {
+#ifdef HAVE_SIMD_NEON
+    size_t size = 0;
+    size_t i = 0;
+
+    for(; i+sizeof(uint8x16_t) < len; i += sizeof(uint8x16_t)) {
+        size += sizeof(uint8x16_t);
+
+        // See https://lemire.me/blog/2019/07/23/arbitrary-byte-to-byte-maps-using-arm-neon/
+        uint8x16_t chunk  = vld1q_u8(str);
+        uint8x16_t tmp1   = vqtbl4q_u8(hibit_friendly_chars_neon[0], chunk);
+        uint8x16_t tmp2   = vqtbl4q_u8(hibit_friendly_chars_neon[1], veorq_u8(chunk, vdupq_n_u8(0x40)));
+        uint8x16_t result = vorrq_u8(tmp1, tmp2);
+        uint8_t tmp       = vaddvq_u8(result);
+        size              += tmp;
+    }
+
+    const uint8_t *rem = (const uint8_t *)(str + i);
+
+    size_t total =  size + calculate_string_size(rem, len-i, hibit_friendly_chars);
+    return total;
+#else
     return calculate_string_size(str, len, hibit_friendly_chars);
+#endif
 }
 
 inline static size_t slash_friendly_size(const uint8_t *str, size_t len) {
