@@ -18,6 +18,7 @@
 #include "odd.h"
 #include "parse.h"
 #include "rails.h"
+#include "simd.h"
 
 typedef struct _yesNoOpt {
     VALUE sym;
@@ -2081,4 +2082,8 @@ void Init_oj(void) {
 
     oj_parser_init();
     oj_scanner_init();
+
+#ifdef HAVE_SIMD_NEON
+    initialize_neon();
+#endif /* HAVE_SIMD_NEON */
 }
