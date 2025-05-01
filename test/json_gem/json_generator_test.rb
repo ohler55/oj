@@ -137,7 +137,8 @@ class JSONGeneratorTest < Test::Unit::TestCase
   end
 
   def test_pretty_state
-    if JSON::VERSION < "2.11.0" # JSON after 2.10 no longer has JSON::PRETTY_STATE_PROTOTYPE
+    # JSON after 2.10 no longer has JSON::PRETTY_STATE_PROTOTYPE
+    if 0 < ([2, 11, 0] <=> JSON::VERSION.split('.').map { |v| v.to_i })
       state = JSON::PRETTY_STATE_PROTOTYPE.dup
       # In come cases in Ruby 3.0 an :escape_slash is included in the state. It
       # seems to occur on travis but not locally.
@@ -167,7 +168,8 @@ class JSONGeneratorTest < Test::Unit::TestCase
   end
 
   def test_safe_state
-    if JSON::VERSION < "2.11.0" # JSON after 2.10 no longer has JSON::SAFE_STATE_PROTOTYPE
+    # JSON after 2.10 no longer has JSON::SAFE_STATE_PROTOTYPE
+    if 0 < ([2, 11, 0] <=> JSON::VERSION.split('.').map { |v| v.to_i })
       state = JSON::SAFE_STATE_PROTOTYPE.dup
       # In some cases in Ruby 3.0 an :escape_slash is included in the state. It
       # seems to occur on travis but not locally.
@@ -197,7 +199,8 @@ class JSONGeneratorTest < Test::Unit::TestCase
   end
 
   def test_fast_state
-    if JSON::VERSION < "2.11.0" # JSON after 2.10 no longer has JSON::FAST_STATE_PROTOTYPE
+    # JSON after 2.10 no longer has JSON::FAST_STATE_PROTOTYPE
+    if 0 < ([2, 11, 0] <=> JSON::VERSION.split('.').map { |v| v.to_i })
       state = JSON::FAST_STATE_PROTOTYPE.dup
       # In come cases in Ruby 3.0 an :escape_slash is included in the state. It
       # seems to occur on travis but not locally.
@@ -245,7 +248,8 @@ class JSONGeneratorTest < Test::Unit::TestCase
   end
 
   def test_depth
-    if JSON::VERSION < "2.11.0" # JSON after 2.10 no longer has JSON::SAFE_STATE_PROTOTYPE
+    # JSON after 2.10 no longer has JSON::SAFE_STATE_PROTOTYPE
+    if 0 < ([2, 11, 0] <=> JSON::VERSION.split('.').map { |v| v.to_i })
       ary = []; ary << ary
       assert_equal 0, JSON::SAFE_STATE_PROTOTYPE.depth
       assert_raise(JSON::NestingError) { JSON.generate(ary) }
