@@ -258,7 +258,7 @@ inline static long rails_xss_friendly_size(const uint8_t *str, size_t len) {
 
         uint8x16_t chunk = vld1q_u8(str);
 
-        // Check to see if any of these bits have the high bit set.
+        // Check to see if any of these bytes have the high bit set.
         has_some_hibit = vorrq_u8(has_some_hibit, vandq_u8(chunk, hibit));
 
         uint8x16_t tmp1   = vqtbl4q_u8(rails_xss_friendly_chars_neon[0], chunk);
