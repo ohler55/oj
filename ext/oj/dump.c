@@ -163,23 +163,34 @@ inline static uint8x16x4_t load_uint8x16_4(const unsigned char *table) {
 }
 
 static uint8x16x4_t hibit_friendly_chars_neon[2];
+static uint8x16x4_t rails_xss_friendly_chars_neon[4];
 
 void initialize_neon(void) {
+    // We only need the first 128 bytes of the hibit friendly chars table. Everything above 127 is
+    // set to 1. If that ever changes, the code will need to be updated.
     hibit_friendly_chars_neon[0] = load_uint8x16_4((const unsigned char *)hibit_friendly_chars);
     hibit_friendly_chars_neon[1] = load_uint8x16_4((const unsigned char *)hibit_friendly_chars + 64);
+
+    rails_xss_friendly_chars_neon[0] = load_uint8x16_4((const unsigned char *)rails_xss_friendly_chars);
+    rails_xss_friendly_chars_neon[1] = load_uint8x16_4((const unsigned char *)rails_xss_friendly_chars + 64);
+    rails_xss_friendly_chars_neon[2] = load_uint8x16_4((const unsigned char *)rails_xss_friendly_chars + 128);
+    rails_xss_friendly_chars_neon[3] = load_uint8x16_4((const unsigned char *)rails_xss_friendly_chars + 192);
 
     // All bytes should be 0 except for those that need more than 1 byte of output. This will allow the
     // code to limit the lookups to the first 128 bytes (values 0 - 127). Bytes above 127 will result
     // in 0 with the vqtbl4q_u8 instruction.
-    hibit_friendly_chars_neon[0].val[0] = vsubq_u8(hibit_friendly_chars_neon[0].val[0], vdupq_n_u8('1'));
-    hibit_friendly_chars_neon[0].val[1] = vsubq_u8(hibit_friendly_chars_neon[0].val[1], vdupq_n_u8('1'));
-    hibit_friendly_chars_neon[0].val[2] = vsubq_u8(hibit_friendly_chars_neon[0].val[2], vdupq_n_u8('1'));
-    hibit_friendly_chars_neon[0].val[3] = vsubq_u8(hibit_friendly_chars_neon[0].val[3], vdupq_n_u8('1'));
+    uint8x16_t one = vdupq_n_u8('1');
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 4; j++) {
+            hibit_friendly_chars_neon[i].val[j] = vsubq_u8(hibit_friendly_chars_neon[i].val[j], one);
+        }
+    }
 
-    hibit_friendly_chars_neon[1].val[0] = vsubq_u8(hibit_friendly_chars_neon[1].val[0], vdupq_n_u8('1'));
-    hibit_friendly_chars_neon[1].val[1] = vsubq_u8(hibit_friendly_chars_neon[1].val[1], vdupq_n_u8('1'));
-    hibit_friendly_chars_neon[1].val[2] = vsubq_u8(hibit_friendly_chars_neon[1].val[2], vdupq_n_u8('1'));
-    hibit_friendly_chars_neon[1].val[3] = vsubq_u8(hibit_friendly_chars_neon[1].val[3], vdupq_n_u8('1'));
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            rails_xss_friendly_chars_neon[i].val[j] = vsubq_u8(rails_xss_friendly_chars_neon[i].val[j], one);
+        }
+    }
 }
 #endif
 
@@ -188,7 +199,7 @@ inline static size_t hibit_friendly_size(const uint8_t *str, size_t len) {
     size_t size = 0;
     size_t i    = 0;
 
-    for (; i + sizeof(uint8x16_t) < len; i += sizeof(uint8x16_t)) {
+    for (; i + sizeof(uint8x16_t) < len; i += sizeof(uint8x16_t), str += sizeof(uint8x16_t)) {
         size += sizeof(uint8x16_t);
 
         // See https://lemire.me/blog/2019/07/23/arbitrary-byte-to-byte-maps-using-arm-neon/
@@ -200,9 +211,7 @@ inline static size_t hibit_friendly_size(const uint8_t *str, size_t len) {
         size += tmp;
     }
 
-    const uint8_t *rem = (const uint8_t *)(str + i);
-
-    size_t total = size + calculate_string_size(rem, len - i, hibit_friendly_chars);
+    size_t total = size + calculate_string_size(str, len - i, hibit_friendly_chars);
     return total;
 #else
     return calculate_string_size(str, len, hibit_friendly_chars);
@@ -237,9 +246,43 @@ inline static size_t hixss_friendly_size(const uint8_t *str, size_t len) {
 
 inline static long rails_xss_friendly_size(const uint8_t *str, size_t len) {
     long    size = 0;
-    size_t  i    = len;
     uint8_t hi   = 0;
 
+#ifdef HAVE_SIMD_NEON
+    size_t i = 0;
+
+    uint8x16_t has_some_hibit = vdupq_n_u8(0);
+    uint8x16_t hibit          = vdupq_n_u8(0x80);
+    for (; i + sizeof(uint8x16_t) < len; i += sizeof(uint8x16_t), str += sizeof(uint8x16_t)) {
+        size += sizeof(uint8x16_t);
+
+        uint8x16_t chunk = vld1q_u8(str);
+
+        // Check to see if any of these bits have the high bit set.
+        has_some_hibit = vorrq_u8(has_some_hibit, vandq_u8(chunk, hibit));
+
+        uint8x16_t tmp1   = vqtbl4q_u8(rails_xss_friendly_chars_neon[0], chunk);
+        uint8x16_t tmp2   = vqtbl4q_u8(rails_xss_friendly_chars_neon[1], veorq_u8(chunk, vdupq_n_u8(0x40)));
+        uint8x16_t tmp3   = vqtbl4q_u8(rails_xss_friendly_chars_neon[2], veorq_u8(chunk, vdupq_n_u8(0x80)));
+        uint8x16_t tmp4   = vqtbl4q_u8(rails_xss_friendly_chars_neon[3], veorq_u8(chunk, vdupq_n_u8(0xc0)));
+        uint8x16_t result = vorrq_u8(tmp4, vorrq_u8(tmp3, vorrq_u8(tmp1, tmp2)));
+        uint8_t    tmp    = vaddvq_u8(result);
+        size += tmp;
+    }
+
+    // 'hi' should be set if any of the bytes we processed have the high bit set. It doesn't matter which ones.
+    hi = vmaxvq_u8(has_some_hibit) != 0;
+
+    for (; i < len; str++, i++) {
+        size += rails_xss_friendly_chars[*str] - '0';
+        hi |= *str & 0x80;
+    }
+    if (0 == hi) {
+        return size;
+    }
+    return -(size);
+#else
+    size_t i = len;
     for (; 0 < i; str++, i--) {
         size += rails_xss_friendly_chars[*str];
         hi |= *str & 0x80;
@@ -248,6 +291,7 @@ inline static long rails_xss_friendly_size(const uint8_t *str, size_t len) {
         return size - len * (size_t)'0';
     }
     return -(size - len * (size_t)'0');
+#endif /* HAVE_SIMD_NEON */
 }
 
 inline static size_t rails_friendly_size(const uint8_t *str, size_t len) {
