@@ -188,7 +188,7 @@ inline static size_t hibit_friendly_size(const uint8_t *str, size_t len) {
     size_t size = 0;
     size_t i    = 0;
 
-    for (; i + sizeof(uint8x16_t) < len; i += sizeof(uint8x16_t)) {
+    for (; i + sizeof(uint8x16_t) < len; i += sizeof(uint8x16_t), str += sizeof(uint8x16_t)) {
         size += sizeof(uint8x16_t);
 
         // See https://lemire.me/blog/2019/07/23/arbitrary-byte-to-byte-maps-using-arm-neon/
@@ -200,9 +200,7 @@ inline static size_t hibit_friendly_size(const uint8_t *str, size_t len) {
         size += tmp;
     }
 
-    const uint8_t *rem = (const uint8_t *)(str + i);
-
-    size_t total = size + calculate_string_size(rem, len - i, hibit_friendly_chars);
+    size_t total = size + calculate_string_size(str, len - i, hibit_friendly_chars);
     return total;
 #else
     return calculate_string_size(str, len, hibit_friendly_chars);
