@@ -18,14 +18,13 @@ class LongStringsTest < Minitest::Test
     run_basic_tests(:rails)
 
     # This is to force testing 'rails_friendly_size'.
-    # begin
-    #   require 'active_support'
-    #   Oj.optimize_rails()
-    #   ActiveSupport::JSON::Encoding.escape_html_entities_in_json = false
-    #   run_basic_tests(:rails)
-    # rescue LoadError
-    #   puts 'ActiveSupport not found. Skipping ActiveSupport tests.'
-    # end
+    begin
+      Oj.optimize_rails()
+      ActiveSupport::JSON::Encoding.escape_html_entities_in_json = false
+      run_basic_tests(:rails)
+    rescue LoadError
+      puts 'ActiveSupport not found. Skipping ActiveSupport tests.'
+    end
   end
 
   def run_basic_tests(mode)
@@ -44,6 +43,11 @@ class LongStringsTest < Minitest::Test
     out = Oj.dump(str, mode: mode)
     assert_equal(expected, out)
 
+    str = '\n'*1700
+    expected = "\"#{'\\\\n'*1700}\""
+    out = Oj.dump(str, mode: mode)
+    assert_equal(expected, out)
+
     str = '\n'*32
     expected = "\"#{'\\\\n'*32}\""
     out = Oj.dump(str, mode: mode)
@@ -59,14 +63,29 @@ class LongStringsTest < Minitest::Test
     out = Oj.dump(str, mode: mode)
     assert_equal(expected, out)
 
+    str = '\t'*500
+    expected = "\"#{'\\\\t'*500}\""
+    out = Oj.dump(str, mode: mode)
+    assert_equal(expected, out)
+
     str = "\u0001" * 16
     out = Oj.dump(str, mode: mode)
     expected = "\"#{"\\u0001" * 16}\""
     assert_equal(expected, out)
 
+    str = "\u0001" * 1024
+    out = Oj.dump(str, mode: mode)
+    expected = "\"#{"\\u0001" * 1024}\""
+    assert_equal(expected, out)
+
     str = "\u0001\u0002" * 8
     out = Oj.dump(str, mode: mode)
     expected = "\"#{"\\u0001\\u0002" * 8}\""
+    assert_equal(expected, out)
+
+    str = "\u0001\u0002" * 2000
+    out = Oj.dump(str, mode: mode)
+    expected = "\"#{"\\u0001\\u0002" * 2000}\""
     assert_equal(expected, out)
 
     str = "\u0001a" * 8
@@ -87,6 +106,11 @@ class LongStringsTest < Minitest::Test
     str = "\u0001\u0002" * 9
     out = Oj.dump(str, mode: mode)
     expected = "\"#{"\\u0001\\u0002" * 9}\""
+    assert_equal(expected, out)
+
+    str = "\u0001\u0002" * 2048
+    out = Oj.dump(str, mode: mode)
+    expected = "\"#{"\\u0001\\u0002" * 2048}\""
     assert_equal(expected, out)
 
     str = '\"'
@@ -177,6 +201,13 @@ class LongStringsTest < Minitest::Test
     out = Oj.dump(str, mode: :rails)
     assert_equal(expected, out)
 
+    str = "€"*1700
+    out = Oj.dump(str)
+    expected = %["#{"€"*1700}"]
+    assert_equal(expected, out)
+    out = Oj.dump(str, mode: :rails)
+    assert_equal(expected, out)
+
     str = "€abcdefghijklmnop"
     out = Oj.dump(str)
     expected = %["#{"€abcdefghijklmnop"}"]
@@ -184,16 +215,23 @@ class LongStringsTest < Minitest::Test
     out = Oj.dump(str, mode: :rails)
     assert_equal(expected, out)
 
-    str = "€abcdefghijklmnop€"
+    str = "€" + "abcdefghijklmnop"*1000
     out = Oj.dump(str)
-    expected = %["#{"€abcdefghijklmnop€"}"]
+    expected = %["#{"€" + "abcdefghijklmnop"*1000}"]
     assert_equal(expected, out)
     out = Oj.dump(str, mode: :rails)
     assert_equal(expected, out)
 
-    str = "abcdefghijklmnop€"
+    str = "€" + "abcdefghijklmnop" * 2000 + "€"
     out = Oj.dump(str)
-    expected = %["#{"abcdefghijklmnop€"}"]
+    expected = %["#{"€" + "abcdefghijklmnop" * 2000 + "€"}"]
+    assert_equal(expected, out)
+    out = Oj.dump(str, mode: :rails)
+    assert_equal(expected, out)
+
+    str = "abcdefghijklmnop"*3000 + "€"
+    out = Oj.dump(str)
+    expected = %["#{"abcdefghijklmnop"*3000 + "€"}"]
     assert_equal(expected, out)
     out = Oj.dump(str, mode: :rails)
     assert_equal(expected, out)
