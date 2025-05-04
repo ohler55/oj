@@ -1044,7 +1044,7 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
         *out->cur++ = '"';
     }
     if (do_unicode_validation && 0 < str - orig && 0 != (0x80 & *(str - 1))) {
-        uint8_t c = (uint8_t)*(str - 1);
+        uint8_t c = (uint8_t) * (str - 1);
         int     i;
         int     scnt = (int)(str - orig);
 
