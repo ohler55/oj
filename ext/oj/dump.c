@@ -163,6 +163,7 @@ inline static uint8x16x4_t load_uint8x16_4(const unsigned char *table) {
 }
 
 static uint8x16x4_t hibit_friendly_chars_neon[2];
+static uint8x16x4_t rails_friendly_chars_neon[2];
 static uint8x16x4_t rails_xss_friendly_chars_neon[4];
 
 void initialize_neon(void) {
@@ -170,6 +171,11 @@ void initialize_neon(void) {
     // set to 1. If that ever changes, the code will need to be updated.
     hibit_friendly_chars_neon[0] = load_uint8x16_4((const unsigned char *)hibit_friendly_chars);
     hibit_friendly_chars_neon[1] = load_uint8x16_4((const unsigned char *)hibit_friendly_chars + 64);
+
+    // rails_friendly_chars is the same as hibit_friendly_chars. Only the first 128 bytes have values
+    // that are not '1'. If that ever changes, the code will need to be updated.
+    rails_friendly_chars_neon[0] = load_uint8x16_4((const unsigned char *)rails_friendly_chars);
+    rails_friendly_chars_neon[1] = load_uint8x16_4((const unsigned char *)rails_friendly_chars + 64);
 
     rails_xss_friendly_chars_neon[0] = load_uint8x16_4((const unsigned char *)rails_xss_friendly_chars);
     rails_xss_friendly_chars_neon[1] = load_uint8x16_4((const unsigned char *)rails_xss_friendly_chars + 64);
@@ -183,6 +189,7 @@ void initialize_neon(void) {
     for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 4; j++) {
             hibit_friendly_chars_neon[i].val[j] = vsubq_u8(hibit_friendly_chars_neon[i].val[j], one);
+            rails_friendly_chars_neon[i].val[j] = vsubq_u8(rails_friendly_chars_neon[i].val[j], one);
         }
     }
 
@@ -296,9 +303,42 @@ inline static long rails_xss_friendly_size(const uint8_t *str, size_t len) {
 
 inline static size_t rails_friendly_size(const uint8_t *str, size_t len) {
     long    size = 0;
-    size_t  i    = len;
     uint8_t hi   = 0;
+#ifdef HAVE_SIMD_NEON
+    size_t i = 0;
 
+    uint8x16_t has_some_hibit = vdupq_n_u8(0);
+    uint8x16_t hibit          = vdupq_n_u8(0x80);
+
+    for (; i + sizeof(uint8x16_t) < len; i += sizeof(uint8x16_t), str += sizeof(uint8x16_t)) {
+        size += sizeof(uint8x16_t);
+
+        // See https://lemire.me/blog/2019/07/23/arbitrary-byte-to-byte-maps-using-arm-neon/
+        uint8x16_t chunk = vld1q_u8(str);
+
+        // Check to see if any of these bytes have the high bit set.
+        has_some_hibit = vorrq_u8(has_some_hibit, vandq_u8(chunk, hibit));
+
+        uint8x16_t tmp1   = vqtbl4q_u8(rails_friendly_chars_neon[0], chunk);
+        uint8x16_t tmp2   = vqtbl4q_u8(rails_friendly_chars_neon[1], veorq_u8(chunk, vdupq_n_u8(0x40)));
+        uint8x16_t result = vorrq_u8(tmp1, tmp2);
+        uint8_t    tmp    = vaddvq_u8(result);
+        size += tmp;
+    }
+
+    // 'hi' should be set if any of the bytes we processed have the high bit set. It doesn't matter which ones.
+    hi = vmaxvq_u8(has_some_hibit) != 0;
+
+    for (; i < len; str++, i++) {
+        size += rails_friendly_chars[*str] - '0';
+        hi |= *str & 0x80;
+    }
+    if (0 == hi) {
+        return size;
+    }
+    return -(size);
+#else
+    size_t i = len;
     for (; 0 < i; str++, i--) {
         size += rails_friendly_chars[*str];
         hi |= *str & 0x80;
@@ -307,6 +347,7 @@ inline static size_t rails_friendly_size(const uint8_t *str, size_t len) {
         return size - len * (size_t)'0';
     }
     return -(size - len * (size_t)'0');
+#endif /* HAVE_SIMD_NEON */
 }
 
 const char *oj_nan_str(VALUE obj, int opt, int mode, bool plus, int *lenp) {
@@ -1003,7 +1044,7 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
         *out->cur++ = '"';
     }
     if (do_unicode_validation && 0 < str - orig && 0 != (0x80 & *(str - 1))) {
-        uint8_t c = (uint8_t) * (str - 1);
+        uint8_t c = (uint8_t)*(str - 1);
         int     i;
         int     scnt = (int)(str - orig);
 
