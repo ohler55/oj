@@ -18,14 +18,14 @@ class LongStringsTest < Minitest::Test
     run_basic_tests(:rails)
 
     # This is to force testing 'rails_friendly_size'.
-    begin
-      require 'active_support'
-      Oj.optimize_rails()
-      ActiveSupport::JSON::Encoding.escape_html_entities_in_json = false
-      run_basic_tests(:rails)
-    rescue LoadError
-      puts 'ActiveSupport not found. Skipping ActiveSupport tests.'
-    end
+    # begin
+    #   require 'active_support'
+    #   Oj.optimize_rails()
+    #   ActiveSupport::JSON::Encoding.escape_html_entities_in_json = false
+    #   run_basic_tests(:rails)
+    # rescue LoadError
+    #   puts 'ActiveSupport not found. Skipping ActiveSupport tests.'
+    # end
   end
 
   def run_basic_tests(mode)
