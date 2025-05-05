@@ -22,6 +22,7 @@ require 'test_rails'
 require 'test_wab'
 require 'test_writer'
 require 'test_integer_range'
+require 'test_long_strings'
 
 at_exit do
   require 'helper'
