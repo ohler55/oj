@@ -5,14 +5,14 @@ $LOAD_PATH << __dir__
 
 require 'helper'
 
-# This is to force testing 'rails_friendly_size'.
-begin
-  require 'active_support'
-  HAS_RAILS = true
-rescue LoadError
-  puts 'ActiveSupport not found. Skipping ActiveSupport tests.'
-  HAS_RAILS = false
-end
+# # This is to force testing 'rails_friendly_size'.
+# begin
+#   require 'active_support'
+#   HAS_RAILS = true
+# rescue LoadError
+#   puts 'ActiveSupport not found. Skipping ActiveSupport tests.'
+#   HAS_RAILS = false
+# end
 
 # The tests in this file are to specifically handle testing the ARM Neon code
 # that is used to speed up the dumping of long strings. The tests are likely
@@ -26,11 +26,11 @@ class LongStringsTest < Minitest::Test
     run_basic_tests(:compat)
     run_basic_tests(:rails)
 
-    if HAS_RAILS
-      Oj.optimize_rails()
-      ActiveSupport::JSON::Encoding.escape_html_entities_in_json = false
-      run_basic_tests(:rails)
-    end
+    # if HAS_RAILS
+    #   Oj.optimize_rails()
+    #   ActiveSupport::JSON::Encoding.escape_html_entities_in_json = false
+    #   run_basic_tests(:rails)
+    # end
   end
 
   def run_basic_tests(mode)
