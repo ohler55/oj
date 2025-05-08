@@ -34,6 +34,41 @@ class LongStringsTest < Minitest::Test
   end
 
   def run_basic_tests(mode)
+    str = 'A'*4
+    expected = "\"#{'A'*4}\""
+    out = Oj.dump(str, mode: mode)
+    assert_equal(expected, out)
+
+    str = 'A'*6
+    expected = "\"#{'A'*6}\""
+    out = Oj.dump(str, mode: mode)
+    assert_equal(expected, out)
+
+    str = 'A'*7
+    expected = "\"#{'A'*7}\""
+    out = Oj.dump(str, mode: mode)
+    assert_equal(expected, out)
+
+    str = 'A'*15
+    expected = "\"#{'A'*15}\""
+    out = Oj.dump(str, mode: mode)
+    assert_equal(expected, out)
+
+    str = 'A'*16
+    expected = "\"#{'A'*16}\""
+    out = Oj.dump(str, mode: mode)
+    assert_equal(expected, out)
+
+    str = 'A'*17
+    expected = "\"#{'A'*17}\""
+    out = Oj.dump(str, mode: mode)
+    assert_equal(expected, out)
+
+    str = 'A'*31
+    expected = "\"#{'A'*31}\""
+    out = Oj.dump(str, mode: mode)
+    assert_equal(expected, out)
+
     str = '\n'*15
     expected = "\"#{'\\\\n'*15}\""
     out = Oj.dump(str, mode: mode)
