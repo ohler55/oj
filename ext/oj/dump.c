@@ -1068,51 +1068,37 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
 #define NEON_RETURN_TO_STATE(state) neon_state = state;
             switch (neon_state) {
             case 1: {
-                while (str + sizeof(uint8x16_t) <= end) {
-                    neon_match_result result = neon_update(str,
+                while (true) {
+                    const char *chunk_ptr = NULL;
+                    if (str + sizeof(uint8x16_t) <= end) {
+                        chunk_ptr   = str;
+                        chunk_start = str;
+                        chunk_end   = str + sizeof(uint8x16_t);
+                    } else if ((end - str) >= SIMD_MINIMUM_THRESHOLD) {
+                        memset(out->cur, 'A', sizeof(uint8x16_t));
+                        memcpy(out->cur, str, (end - str));
+                        chunk_ptr   = out->cur;
+                        chunk_start = str;
+                        chunk_end   = end;
+                    } else {
+                        SEARCH_FLUSH;
+                        NEON_SET_STATE(4);
+                        break; /* Unreachable */
+                    }
+                    neon_match_result result = neon_update(chunk_ptr,
                                                            cmap_neon,
                                                            neon_table_size,
                                                            do_unicode_validation,
                                                            has_hi);
                     if ((result.do_unicode_validation) || vmaxvq_u8(result.needs_escape) != 0) {
                         SEARCH_FLUSH;
-                        chunk_start        = str;
-                        chunk_end          = str + sizeof(uint8x16_t);
                         uint8x16_t actions = vaddq_u8(result.needs_escape, vdupq_n_u8('1'));
                         do_hi_validation   = result.do_unicode_validation;
                         vst1q_u8((unsigned char *)matches, actions);
                         NEON_SET_STATE(2);
+                        break; /* Unreachable */
                     }
-                    str += sizeof(uint8x16_t);
-                }
-                SEARCH_FLUSH;
-                // If we have at least SIMD_MINIMUM_THRESHOLD bytes of data and there is enough space
-                // in the output buffer (which we use as temporary storage) then we can use SIMD.
-                size_t remaining_bytes = end - str;
-                if (remaining_bytes >= SIMD_MINIMUM_THRESHOLD &&
-                    ((unsigned long)(out->end - out->cur)) >= sizeof(uint8x16_t)) {
-                    // We set sizeof(uint8x16_t) 'A' bytes to the end of the output buffer. We do this so anything past
-                    // the remaining_bytes of the str does not trigger the need to be escaped.
-                    memset(out->cur, 'A', sizeof(uint8x16_t));
-                    memcpy(out->cur, str, remaining_bytes);
-                    neon_match_result result = neon_update(out->cur,
-                                                           cmap_neon,
-                                                           neon_table_size,
-                                                           do_unicode_validation,
-                                                           has_hi);
-                    if ((result.do_unicode_validation) || vmaxvq_u8(result.needs_escape) != 0) {
-                        chunk_start        = str;
-                        chunk_end          = end;
-                        uint8x16_t actions = vaddq_u8(result.needs_escape, vdupq_n_u8('1'));
-                        do_hi_validation   = result.do_unicode_validation;
-                        vst1q_u8((unsigned char *)matches, actions);
-                        NEON_SET_STATE(2);
-                    } else {
-                        // No matches found. Conveniently the data has already been copied to the output buffer.
-                        str = end;
-                        out->cur += remaining_bytes;
-                        goto loop;
-                    }
+                    str = chunk_end;
                 }
                 // We must have run out of data to use SIMD. Go to state 4.
                 SEARCH_FLUSH;
@@ -1128,7 +1114,6 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
                 if (str >= chunk_end) {
                     NEON_SET_STATE(1);
                 }
-                // if (!has_hi /*|| (do_unicode_validation && !chunk_has_hibit)*/) {
                 if (!do_hi_validation) {
                     long i = str - chunk_start;
                     for (; str < chunk_end; i++) {
