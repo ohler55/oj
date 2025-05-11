@@ -206,7 +206,7 @@ inline static size_t hibit_friendly_size(const uint8_t *str, size_t len) {
     size_t size = 0;
     size_t i    = 0;
 
-    for (; i + sizeof(uint8x16_t) < len; i += sizeof(uint8x16_t), str += sizeof(uint8x16_t)) {
+    for (; i + sizeof(uint8x16_t) <= len; i += sizeof(uint8x16_t), str += sizeof(uint8x16_t)) {
         size += sizeof(uint8x16_t);
 
         // See https://lemire.me/blog/2019/07/23/arbitrary-byte-to-byte-maps-using-arm-neon/
@@ -260,7 +260,7 @@ inline static long rails_xss_friendly_size(const uint8_t *str, size_t len) {
 
     uint8x16_t has_some_hibit = vdupq_n_u8(0);
     uint8x16_t hibit          = vdupq_n_u8(0x80);
-    for (; i + sizeof(uint8x16_t) < len; i += sizeof(uint8x16_t), str += sizeof(uint8x16_t)) {
+    for (; i + sizeof(uint8x16_t) <= len; i += sizeof(uint8x16_t), str += sizeof(uint8x16_t)) {
         size += sizeof(uint8x16_t);
 
         uint8x16_t chunk = vld1q_u8(str);
@@ -310,7 +310,7 @@ inline static size_t rails_friendly_size(const uint8_t *str, size_t len) {
     uint8x16_t has_some_hibit = vdupq_n_u8(0);
     uint8x16_t hibit          = vdupq_n_u8(0x80);
 
-    for (; i + sizeof(uint8x16_t) < len; i += sizeof(uint8x16_t), str += sizeof(uint8x16_t)) {
+    for (; i + sizeof(uint8x16_t) <= len; i += sizeof(uint8x16_t), str += sizeof(uint8x16_t)) {
         size += sizeof(uint8x16_t);
 
         // See https://lemire.me/blog/2019/07/23/arbitrary-byte-to-byte-maps-using-arm-neon/
@@ -896,9 +896,49 @@ void oj_dump_raw_json(VALUE obj, int depth, Out out) {
     }
 }
 
+#ifdef HAVE_SIMD_NEON
+typedef struct _neon_match_result {
+    uint8x16_t needs_escape;
+    bool       has_some_hibit;
+    bool       do_unicode_validation;
+} neon_match_result;
+
+#if defined(__clang__) || defined(__GNUC__)
+#define FORCE_INLINE __attribute__((always_inline))
+#else
+#define FORCE_INLINE
+#endif
+
+static inline FORCE_INLINE neon_match_result
+neon_update(const char *str, uint8x16x4_t *cmap_neon, int neon_table_size, bool do_unicode_validation, bool has_hi) {
+    neon_match_result result = {.has_some_hibit = false, .do_unicode_validation = false};
+
+    uint8x16_t chunk    = vld1q_u8((const unsigned char *)str);
+    uint8x16_t tmp1     = vqtbl4q_u8(cmap_neon[0], chunk);
+    uint8x16_t tmp2     = vqtbl4q_u8(cmap_neon[1], veorq_u8(chunk, vdupq_n_u8(0x40)));
+    result.needs_escape = vorrq_u8(tmp1, tmp2);
+    if (neon_table_size > 2) {
+        uint8x16_t tmp3     = vqtbl4q_u8(cmap_neon[2], veorq_u8(chunk, vdupq_n_u8(0x80)));
+        uint8x16_t tmp4     = vqtbl4q_u8(cmap_neon[3], veorq_u8(chunk, vdupq_n_u8(0xc0)));
+        result.needs_escape = vorrq_u8(result.needs_escape, vorrq_u8(tmp4, tmp3));
+    }
+    if (has_hi && do_unicode_validation) {
+        uint8x16_t has_some_hibit    = vandq_u8(chunk, vdupq_n_u8(0x80));
+        result.has_some_hibit        = vmaxvq_u8(has_some_hibit) != 0;
+        result.do_unicode_validation = has_hi && do_unicode_validation && result.has_some_hibit;
+    }
+    return result;
+}
+
+#endif /* HAVE_SIMD_NEON */
+
 void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
-    size_t      size;
-    char       *cmap;
+    size_t size;
+    char  *cmap;
+#ifdef HAVE_SIMD_NEON
+    uint8x16x4_t *cmap_neon = NULL;
+    int           neon_table_size;
+#endif /* HAVE_SIMD_NEON */
     const char *orig                  = str;
     bool        has_hi                = false;
     bool        do_unicode_validation = false;
@@ -930,7 +970,11 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
         long sz;
 
         cmap = rails_xss_friendly_chars;
-        sz   = rails_xss_friendly_size((uint8_t *)str, cnt);
+#ifdef HAVE_SIMD_NEON
+        cmap_neon       = rails_xss_friendly_chars_neon;
+        neon_table_size = 4;
+#endif /* HAVE_NEON_SIMD */
+        sz = rails_xss_friendly_size((uint8_t *)str, cnt);
         if (sz < 0) {
             has_hi = true;
             size   = (size_t)-sz;
@@ -943,7 +987,11 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
     case RailsEsc: {
         long sz;
         cmap = rails_friendly_chars;
-        sz   = rails_friendly_size((uint8_t *)str, cnt);
+#ifdef HAVE_SIMD_NEON
+        cmap_neon       = rails_friendly_chars_neon;
+        neon_table_size = 2;
+#endif /* HAVE_NEON_SIMD */
+        sz = rails_friendly_size((uint8_t *)str, cnt);
         if (sz < 0) {
             has_hi = true;
             size   = (size_t)-sz;
@@ -954,7 +1002,12 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
         break;
     }
     case JSONEsc:
-    default: cmap = hibit_friendly_chars; size = hibit_friendly_size((uint8_t *)str, cnt);
+    default: cmap = hibit_friendly_chars;
+#ifdef HAVE_SIMD_NEON
+        cmap_neon       = hibit_friendly_chars_neon;
+        neon_table_size = 2;
+#endif /* HAVE_NEON_SIMD */
+        size = hibit_friendly_size((uint8_t *)str, cnt);
     }
     assure_size(out, size + BUFFER_EXTRA);
     *out->cur++ = '"';
@@ -980,8 +1033,116 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
         if (is_sym) {
             *out->cur++ = ':';
         }
+#ifdef HAVE_SIMD_NEON
+        const char *chunk_start;
+        const char *chunk_end;
+        const char *cursor     = str;
+        int         neon_state = (cmap_neon != NULL) ? 1 : 4;
+        char        matches[16];
+        bool        do_hi_validation = false;
+        // uint64_t neon_match_mask = 0;
+#define SEARCH_FLUSH                                  \
+    if (str > cursor) {                               \
+        APPEND_CHARS(out->cur, cursor, str - cursor); \
+        cursor = str;                                 \
+    }
+
+    loop:
+#endif /* HAVE_SIMD_NEON */
         for (; str < end; str++) {
-            switch (cmap[(uint8_t)*str]) {
+            char action = 0;
+#ifdef HAVE_SIMD_NEON
+            /* neon_state:
+             * 1: Scanning for matches. There must be at least 
+                  sizeof(uint8x16_t) bytes of input data to use SIMD and
+                  cmap_neon must be non-null.
+             * 2: Matches have been found. Will set str to the position of the 
+             *    next match and set the state to 3.
+             *    If there are no more matches it will transition to state 1.
+             * 4: Fallback to the scalar algorithm. Not enough data to use 
+             *    SIMD.
+             */
+#define NEON_SET_STATE(state) \
+    neon_state = state;       \
+    goto loop;
+#define NEON_RETURN_TO_STATE(state) neon_state = state;
+            switch (neon_state) {
+            case 1: {
+                while (true) {
+                    const char *chunk_ptr = NULL;
+                    if (str + sizeof(uint8x16_t) <= end) {
+                        chunk_ptr   = str;
+                        chunk_start = str;
+                        chunk_end   = str + sizeof(uint8x16_t);
+                    } else if ((end - str) >= SIMD_MINIMUM_THRESHOLD) {
+                        memset(out->cur, 'A', sizeof(uint8x16_t));
+                        memcpy(out->cur, str, (end - str));
+                        chunk_ptr   = out->cur;
+                        chunk_start = str;
+                        chunk_end   = end;
+                    } else {
+                        SEARCH_FLUSH;
+                        NEON_SET_STATE(4);
+                        break; /* Unreachable */
+                    }
+                    neon_match_result result = neon_update(chunk_ptr,
+                                                           cmap_neon,
+                                                           neon_table_size,
+                                                           do_unicode_validation,
+                                                           has_hi);
+                    if ((result.do_unicode_validation) || vmaxvq_u8(result.needs_escape) != 0) {
+                        SEARCH_FLUSH;
+                        uint8x16_t actions = vaddq_u8(result.needs_escape, vdupq_n_u8('1'));
+                        do_hi_validation   = result.do_unicode_validation;
+                        vst1q_u8((unsigned char *)matches, actions);
+                        NEON_SET_STATE(2);
+                        break; /* Unreachable */
+                    }
+                    str = chunk_end;
+                }
+                // We must have run out of data to use SIMD. Go to state 4.
+                SEARCH_FLUSH;
+                NEON_SET_STATE(4);
+            } break;
+            case 3:
+                cursor = str;
+                // This fall through is intentional. We return to state 3 after we process
+                // a byte (or multiple). We return to this state to ensure the cursor is
+                // pointing to the correct location. We then resume looking for matches
+                // within the previously processed chunk.
+            case 2:
+                if (str >= chunk_end) {
+                    NEON_SET_STATE(1);
+                }
+                if (!do_hi_validation) {
+                    long i = str - chunk_start;
+                    for (; str < chunk_end; i++) {
+                        if ((action = matches[i]) != '1') {
+                            break;
+                        }
+                        *out->cur++ = *str++;
+                    }
+                    // The loop above may have advanced str and directly output them to out->cur.
+                    // Ensure cursor is set appropriately.
+                    cursor = str;
+                    if (str >= chunk_end) {
+                        // We must have advanced past the end... we are done.
+                        NEON_SET_STATE(1);
+                    }
+                } else {
+                    long match_index = str - chunk_start;
+                    action           = matches[match_index];
+                }
+                NEON_RETURN_TO_STATE(3);
+                break;
+            case 4: action = cmap[(uint8_t)*str];
+            }
+#undef NEON_SET_STATE
+#undef NEON_RETURN_TO_STATE
+#else
+            action = cmap[(uint8_t)*str];
+#endif /* HAVE_SIMD_NEON */
+            switch (action) {
             case '1':
                 if (do_unicode_validation && check_start <= str) {
                     if (0 != (0x80 & (uint8_t)*str)) {
