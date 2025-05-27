@@ -33,7 +33,7 @@ static void dump_data(VALUE obj, int depth, Out out, bool as_ok) {
         if (oj_bigdecimal_class == clas) {
             volatile VALUE rstr = oj_safe_string_convert(obj);
             const char    *str  = RSTRING_PTR(rstr);
-            int            len  = (int)RSTRING_LEN(rstr);
+            size_t         len  = RSTRING_LEN(rstr);
 
             if (No != out->opts->bigdec_as_num) {
                 oj_dump_raw(str, len, out);
@@ -62,7 +62,7 @@ static void dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
     if (oj_bigdecimal_class == clas) {
         volatile VALUE rstr = oj_safe_string_convert(obj);
         const char    *str  = RSTRING_PTR(rstr);
-        int            len  = (int)RSTRING_LEN(rstr);
+        size_t         len  = RSTRING_LEN(rstr);
 
         if (0 == strcasecmp("Infinity", str)) {
             str = oj_nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, true, &len);
@@ -181,7 +181,7 @@ static void dump_str_class(VALUE obj, VALUE clas, int depth, Out out) {
         dump_obj_attrs(obj, clas, 0, depth, out);
     } else {
         const char *s   = RSTRING_PTR(obj);
-        size_t      len = (int)RSTRING_LEN(obj);
+        size_t      len = RSTRING_LEN(obj);
         char        s1  = s[1];
 
         oj_dump_cstr(s, len, 0, (':' == *s || ('^' == *s && ('r' == s1 || 'i' == s1))), out);
@@ -195,7 +195,7 @@ static void dump_str(VALUE obj, int depth, Out out, bool as_ok) {
 static void dump_sym(VALUE obj, int depth, Out out, bool as_ok) {
     volatile VALUE s = rb_sym2str(obj);
 
-    oj_dump_cstr(RSTRING_PTR(s), (int)RSTRING_LEN(s), 1, 0, out);
+    oj_dump_cstr(RSTRING_PTR(s), RSTRING_LEN(s), 1, 0, out);
 }
 
 static int hash_cb(VALUE key, VALUE value, VALUE ov) {
@@ -389,7 +389,7 @@ static void dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
             rb_raise(rb_eEncodingError, "Invalid type for raw JSON.");
         } else {
             const char *s    = RSTRING_PTR(v);
-            int         len  = (int)RSTRING_LEN(v);
+            size_t      len  = RSTRING_LEN(v);
             const char *name = rb_id2name(*odd->attrs);
             size_t      nlen = strlen(name);
 
@@ -489,7 +489,7 @@ static void dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out)
         *out->cur++ = ',';
         fill_indent(out, d2);
         APPEND_CHARS(out->cur, "\"self\":", 7);
-        oj_dump_cstr(RSTRING_PTR(obj), (int)RSTRING_LEN(obj), 0, 0, out);
+        oj_dump_cstr(RSTRING_PTR(obj), RSTRING_LEN(obj), 0, 0, out);
         break;
     case T_ARRAY:
         assure_size(out, d2 * out->indent + 14);
@@ -585,7 +585,7 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
             volatile VALUE s = rb_sym2str(RARRAY_AREF(ma, i));
 
             name = RSTRING_PTR(s);
-            len  = (int)RSTRING_LEN(s);
+            len  = RSTRING_LEN(s);
             size = len + 3;
             assure_size(out, size);
             if (0 < i) {

@@ -140,7 +140,7 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
     volatile VALUE v;
     int            cnt;
     int            i;
-    int            len;
+    size_t         len;
     const char    *name;
 
 #ifdef RSTRUCT_LEN
@@ -161,7 +161,7 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
         volatile VALUE s = rb_sym2str(RARRAY_AREF(ma, i));
 
         name = RSTRING_PTR(s);
-        len  = (int)RSTRING_LEN(s);
+        len  = RSTRING_LEN(s);
         assure_size(out, size + sep_len + 6);
         if (0 < i) {
             *out->cur++ = ',';
@@ -205,11 +205,11 @@ static void dump_bigdecimal(VALUE obj, int depth, Out out, bool as_ok) {
     if ('I' == *str || 'N' == *str || ('-' == *str && 'I' == str[1])) {
         oj_dump_nil(Qnil, depth, out, false);
     } else if (out->opts->int_range_max != 0 || out->opts->int_range_min != 0) {
-        oj_dump_cstr(str, (int)RSTRING_LEN(rstr), 0, 0, out);
+        oj_dump_cstr(str, RSTRING_LEN(rstr), 0, 0, out);
     } else if (Yes == out->opts->bigdec_as_num) {
-        oj_dump_raw(str, (int)RSTRING_LEN(rstr), out);
+        oj_dump_raw(str, RSTRING_LEN(rstr), out);
     } else {
-        oj_dump_cstr(str, (int)RSTRING_LEN(rstr), 0, 0, out);
+        oj_dump_cstr(str, RSTRING_LEN(rstr), 0, 0, out);
     }
 }
 
@@ -330,14 +330,14 @@ static void dump_timewithzone(VALUE obj, int depth, Out out, bool as_ok) {
 static void dump_to_s(VALUE obj, int depth, Out out, bool as_ok) {
     volatile VALUE rstr = oj_safe_string_convert(obj);
 
-    oj_dump_cstr(RSTRING_PTR(rstr), (int)RSTRING_LEN(rstr), 0, 0, out);
+    oj_dump_cstr(RSTRING_PTR(rstr), RSTRING_LEN(rstr), 0, 0, out);
 }
 
 static ID parameters_id = 0;
 
 typedef struct _strLen {
     const char *str;
-    int         len;
+    size_t      len;
 } *StrLen;
 
 static void dump_actioncontroller_parameters(VALUE obj, int depth, Out out, bool as_ok) {
@@ -363,7 +363,7 @@ static StrLen columns_array(VALUE rcols, int *ccnt) {
             v = oj_safe_string_convert(v);
         }
         cp->str = StringValuePtr(v);
-        cp->len = (int)RSTRING_LEN(v);
+        cp->len = RSTRING_LEN(v);
     }
     return cols;
 }
@@ -1173,7 +1173,7 @@ static void dump_float(VALUE obj, int depth, Out out, bool as_ok) {
     char   buf[64];
     char  *b;
     double d   = rb_num2dbl(obj);
-    int    cnt = 0;
+    size_t cnt = 0;
 
     if (0.0 == d) {
         b    = buf;
@@ -1194,7 +1194,7 @@ static void dump_float(VALUE obj, int depth, Out out, bool as_ok) {
             volatile VALUE rstr = oj_safe_string_convert(obj);
 
             strcpy(buf, RSTRING_PTR(rstr));
-            cnt = (int)RSTRING_LEN(rstr);
+            cnt = RSTRING_LEN(rstr);
         }
     }
     assure_size(out, cnt);

@@ -974,7 +974,7 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
         }
     } else if (float_format_sym == k) {
         rb_check_type(v, T_STRING);
-        if (6 < (int)RSTRING_LEN(v)) {
+        if (6 < RSTRING_LEN(v)) {
             rb_raise(rb_eArgError, ":float_format must be 6 bytes or less.");
         }
         strncpy(copts->float_fmt, RSTRING_PTR(v), (size_t)RSTRING_LEN(v));
