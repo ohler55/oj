@@ -352,10 +352,10 @@ static StrLen columns_array(VALUE rcols, int *ccnt) {
     volatile VALUE v;
     StrLen         cp;
     StrLen         cols;
-    int            i;
-    int            cnt = (int)RARRAY_LEN(rcols);
+    size_t         i;
+    size_t         cnt = RARRAY_LEN(rcols);
 
-    *ccnt = cnt;
+    *ccnt = (int)cnt;
     cols  = OJ_R_ALLOC_N(struct _strLen, cnt);
     for (i = 0, cp = cols; i < cnt; i++, cp++) {
         v = RARRAY_AREF(rcols, i);
@@ -424,7 +424,8 @@ static void dump_activerecord_result(VALUE obj, int depth, Out out, bool as_ok) 
     volatile VALUE rows;
     StrLen         cols;
     int            ccnt = 0;
-    int            i, rcnt;
+    size_t         i;
+    size_t         rcnt;
     size_t         size;
     int            d2 = depth + 1;
 
@@ -435,7 +436,7 @@ static void dump_activerecord_result(VALUE obj, int depth, Out out, bool as_ok) 
     out->argc = 0;
     cols      = columns_array(rb_ivar_get(obj, columns_id), &ccnt);
     rows      = rb_ivar_get(obj, rows_id);
-    rcnt      = (int)RARRAY_LEN(rows);
+    rcnt      = RARRAY_LEN(rows);
     assure_size(out, 2);
     *out->cur++ = '[';
     if (out->opts->dump_opts.use) {
@@ -1206,7 +1207,8 @@ static void dump_float(VALUE obj, int depth, Out out, bool as_ok) {
 
 static void dump_array(VALUE a, int depth, Out out, bool as_ok) {
     size_t size;
-    int    i, cnt;
+    size_t i;
+    size_t cnt;
     int    d2 = depth + 1;
 
     if (Yes == out->opts->circular) {
@@ -1220,7 +1222,7 @@ static void dump_array(VALUE a, int depth, Out out, bool as_ok) {
         dump_as_json(a, depth, out, false);
         return;
     }
-    cnt         = (int)RARRAY_LEN(a);
+    cnt         = RARRAY_LEN(a);
     *out->cur++ = '[';
     size        = 2;
     assure_size(out, size);

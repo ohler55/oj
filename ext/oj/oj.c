@@ -924,12 +924,12 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
         OJ_R_FREE(copts->ignore);
         copts->ignore = NULL;
         if (Qnil != v) {
-            int cnt;
+            size_t cnt;
 
             rb_check_type(v, T_ARRAY);
-            cnt = (int)RARRAY_LEN(v);
+            cnt = RARRAY_LEN(v);
             if (0 < cnt) {
-                int i;
+                size_t i;
 
                 copts->ignore = OJ_R_ALLOC_N(VALUE, cnt + 1);
                 for (i = 0; i < cnt; i++) {

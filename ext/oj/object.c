@@ -305,7 +305,7 @@ static int hat_num(ParseInfo pi, Val parent, Val kval, NumInfo ni) {
 
 static int hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, volatile VALUE value) {
     if (T_ARRAY == rb_type(value)) {
-        int len = (int)RARRAY_LEN(value);
+        size_t len = RARRAY_LEN(value);
 
         if (2 == klen && 'u' == key[1]) {
             volatile VALUE sc;
@@ -321,19 +321,20 @@ static int hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, vol
             if (T_ARRAY == rb_type(e1)) {
                 VALUE          args[1024];
                 volatile VALUE rstr;
-                int            i, cnt = (int)RARRAY_LEN(e1);
+                size_t         i;
+                size_t         cnt = RARRAY_LEN(e1);
 
                 for (i = 0; i < cnt; i++) {
                     rstr    = RARRAY_AREF(e1, i);
                     args[i] = rb_funcall(rstr, oj_to_sym_id, 0);
                 }
-                sc = rb_funcall2(rb_cStruct, oj_new_id, cnt, args);
+                sc = rb_funcall2(rb_cStruct, oj_new_id, (int)cnt, args);
             } else {
                 // If struct is not defined then we let this fail and raise an exception.
                 sc = oj_name2struct(pi, *RARRAY_CONST_PTR(value), rb_eArgError);
             }
             if (sc == rb_cRange) {
-                parent->val = rb_class_new_instance(len - 1, RARRAY_CONST_PTR(value) + 1, rb_cRange);
+                parent->val = rb_class_new_instance((int)(len - 1), RARRAY_CONST_PTR(value) + 1, rb_cRange);
             } else {
                 // Create a properly initialized struct instance without calling the initialize method.
                 parent->val = rb_obj_alloc(sc);
@@ -348,10 +349,10 @@ static int hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, vol
                 slen = FIX2INT(rb_funcall2(parent->val, oj_length_id, 0, 0));
 #endif
                 // MRI >= 1.9
-                if (len - 1 > slen) {
+                if (len - 1 > (size_t)slen) {
                     oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "Invalid struct data");
                 } else {
-                    int i;
+                    size_t i;
 
                     for (i = 0; i < len - 1; i++) {
                         rb_struct_aset(parent->val, INT2FIX(i), RARRAY_CONST_PTR(value)[i + 1]);

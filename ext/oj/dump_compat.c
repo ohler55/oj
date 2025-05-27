@@ -124,7 +124,8 @@ static void dump_to_json(VALUE obj, Out out) {
 
 static void dump_array(VALUE a, int depth, Out out, bool as_ok) {
     size_t size;
-    int    i, cnt;
+    size_t i;
+    size_t cnt;
     int    d2 = depth + 1;
     long   id = oj_check_circular(a, out);
 
@@ -136,7 +137,7 @@ static void dump_array(VALUE a, int depth, Out out, bool as_ok) {
         dump_to_json(a, out);
         return;
     }
-    cnt         = (int)RARRAY_LEN(a);
+    cnt         = RARRAY_LEN(a);
     *out->cur++ = '[';
     assure_size(out, 2);
     if (0 == cnt) {

@@ -109,7 +109,8 @@ static void dump_float(VALUE obj, int depth, Out out, bool as_ok) {
 
 static void dump_array(VALUE a, int depth, Out out, bool as_ok) {
     size_t size;
-    int    i, cnt;
+    size_t i;
+    size_t cnt;
     int    d2 = depth + 1;
 
     if (Yes == out->opts->circular) {
@@ -118,7 +119,7 @@ static void dump_array(VALUE a, int depth, Out out, bool as_ok) {
             return;
         }
     }
-    cnt         = (int)RARRAY_LEN(a);
+    cnt         = RARRAY_LEN(a);
     *out->cur++ = '[';
     size        = 2;
     assure_size(out, size);

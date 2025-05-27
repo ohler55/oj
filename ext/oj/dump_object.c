@@ -95,7 +95,8 @@ static void dump_class(VALUE obj, int depth, Out out, bool as_ok) {
 
 static void dump_array_class(VALUE a, VALUE clas, int depth, Out out) {
     size_t size;
-    int    i, cnt;
+    size_t i;
+    size_t cnt;
     int    d2 = depth + 1;
     long   id = oj_check_circular(a, out);
 
@@ -106,7 +107,7 @@ static void dump_array_class(VALUE a, VALUE clas, int depth, Out out) {
         dump_obj_attrs(a, clas, 0, depth, out);
         return;
     }
-    cnt         = (int)RARRAY_LEN(a);
+    cnt         = RARRAY_LEN(a);
     *out->cur++ = '[';
     if (0 < id) {
         assure_size(out, d2 * out->indent + 16);
@@ -564,7 +565,7 @@ static void dump_regexp(VALUE obj, int depth, Out out, bool as_ok) {
 static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
     VALUE       clas       = rb_obj_class(obj);
     const char *class_name = rb_class2name(clas);
-    int         i;
+    size_t      i;
     int         d2       = depth + 1;
     int         d3       = d2 + 1;
     size_t      len      = strlen(class_name);
@@ -578,7 +579,7 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
     if ('#' == *class_name) {
         VALUE       ma = rb_struct_s_members(clas);
         const char *name;
-        int         cnt = (int)RARRAY_LEN(ma);
+        size_t      cnt = RARRAY_LEN(ma);
 
         *out->cur++ = '[';
         for (i = 0; i < cnt; i++) {
@@ -618,8 +619,8 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
         if (0 == strcmp(class_name, "Range")) {
             out->opts->circular = 'n';
         }
-        for (i = 0; i < cnt; i++) {
-            v = RSTRUCT_GET(obj, i);
+        for (i = 0; i < (size_t)cnt; i++) {
+            v = RSTRUCT_GET(obj, (int)i);
             if (dump_ignore(out->opts, v)) {
                 v = Qnil;
             }
