@@ -103,7 +103,7 @@ static void dump_values_array(VALUE *values, int depth, Out out) {
 static void dump_to_json(VALUE obj, Out out) {
     volatile VALUE rs;
     const char    *s;
-    size_t        len;
+    size_t         len;
 
     TRACE(out->opts->trace, "to_json", obj, 0, TraceRubyIn);
     if (0 == rb_obj_method_arity(obj, oj_to_json_id)) {
