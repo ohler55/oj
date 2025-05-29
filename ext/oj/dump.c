@@ -350,7 +350,7 @@ inline static size_t rails_friendly_size(const uint8_t *str, size_t len) {
 #endif /* HAVE_SIMD_NEON */
 }
 
-const char *oj_nan_str(VALUE obj, int opt, int mode, bool plus, int *lenp) {
+const char *oj_nan_str(VALUE obj, int opt, int mode, bool plus, size_t *lenp) {
     const char *str = NULL;
 
     if (AutoNan == opt) {
@@ -615,7 +615,7 @@ void oj_dump_time(VALUE obj, Out out, int withZone) {
 void oj_dump_ruby_time(VALUE obj, Out out) {
     volatile VALUE rstr = oj_safe_string_convert(obj);
 
-    oj_dump_cstr(RSTRING_PTR(rstr), (int)RSTRING_LEN(rstr), 0, 0, out);
+    oj_dump_cstr(RSTRING_PTR(rstr), RSTRING_LEN(rstr), 0, 0, out);
 }
 
 void oj_dump_xml_time(VALUE obj, Out out) {
@@ -849,13 +849,13 @@ void oj_dump_str(VALUE obj, int depth, Out out, bool as_ok) {
         rb_encoding *enc = rb_enc_from_index(idx);
         obj              = rb_str_conv_enc(obj, enc, oj_utf8_encoding);
     }
-    oj_dump_cstr(RSTRING_PTR(obj), (int)RSTRING_LEN(obj), 0, 0, out);
+    oj_dump_cstr(RSTRING_PTR(obj), RSTRING_LEN(obj), 0, 0, out);
 }
 
 void oj_dump_sym(VALUE obj, int depth, Out out, bool as_ok) {
     volatile VALUE s = rb_sym2str(obj);
 
-    oj_dump_cstr(RSTRING_PTR(s), (int)RSTRING_LEN(s), 0, 0, out);
+    oj_dump_cstr(RSTRING_PTR(s), RSTRING_LEN(s), 0, 0, out);
 }
 
 static void debug_raise(const char *orig, size_t cnt, int line) {
@@ -1053,13 +1053,13 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
             char action = 0;
 #ifdef HAVE_SIMD_NEON
             /* neon_state:
-             * 1: Scanning for matches. There must be at least 
+             * 1: Scanning for matches. There must be at least
                   sizeof(uint8x16_t) bytes of input data to use SIMD and
                   cmap_neon must be non-null.
-             * 2: Matches have been found. Will set str to the position of the 
+             * 2: Matches have been found. Will set str to the position of the
              *    next match and set the state to 3.
              *    If there are no more matches it will transition to state 1.
-             * 4: Fallback to the scalar algorithm. Not enough data to use 
+             * 4: Fallback to the scalar algorithm. Not enough data to use
              *    SIMD.
              */
 #define NEON_SET_STATE(state) \
@@ -1205,7 +1205,7 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
         *out->cur++ = '"';
     }
     if (do_unicode_validation && 0 < str - orig && 0 != (0x80 & *(str - 1))) {
-        uint8_t c = (uint8_t) * (str - 1);
+        uint8_t c = (uint8_t)*(str - 1);
         int     i;
         int     scnt = (int)(str - orig);
 
@@ -1256,7 +1256,7 @@ void oj_dump_class(VALUE obj, int depth, Out out, bool as_ok) {
 void oj_dump_obj_to_s(VALUE obj, Out out) {
     volatile VALUE rstr = oj_safe_string_convert(obj);
 
-    oj_dump_cstr(RSTRING_PTR(rstr), (int)RSTRING_LEN(rstr), 0, 0, out);
+    oj_dump_cstr(RSTRING_PTR(rstr), RSTRING_LEN(rstr), 0, 0, out);
 }
 
 void oj_dump_raw(const char *str, size_t cnt, Out out) {
@@ -1391,7 +1391,7 @@ void oj_dump_fixnum(VALUE obj, int depth, Out out, bool as_ok) {
 
 void oj_dump_bignum(VALUE obj, int depth, Out out, bool as_ok) {
     volatile VALUE rs             = rb_big2str(obj, 10);
-    int            cnt            = (int)RSTRING_LEN(rs);
+    size_t         cnt            = RSTRING_LEN(rs);
     bool           dump_as_string = false;
 
     if (out->opts->int_range_max != 0 || out->opts->int_range_min != 0) {  // Bignum cannot be inside of Fixnum range
@@ -1413,7 +1413,7 @@ void oj_dump_float(VALUE obj, int depth, Out out, bool as_ok) {
     char   buf[64];
     char  *b;
     double d   = rb_num2dbl(obj);
-    int    cnt = 0;
+    size_t cnt = 0;
 
     if (0.0 == d) {
         b    = buf;
@@ -1524,7 +1524,7 @@ void oj_dump_float(VALUE obj, int depth, Out out, bool as_ok) {
     } else if (0 == out->opts->float_prec) {
         volatile VALUE rstr = oj_safe_string_convert(obj);
 
-        cnt = (int)RSTRING_LEN(rstr);
+        cnt = RSTRING_LEN(rstr);
         if ((int)sizeof(buf) <= cnt) {
             cnt = sizeof(buf) - 1;
         }
@@ -1538,8 +1538,8 @@ void oj_dump_float(VALUE obj, int depth, Out out, bool as_ok) {
     *out->cur = '\0';
 }
 
-int oj_dump_float_printf(char *buf, size_t blen, VALUE obj, double d, const char *format) {
-    int cnt = snprintf(buf, blen, format, d);
+size_t oj_dump_float_printf(char *buf, size_t blen, VALUE obj, double d, const char *format) {
+    size_t cnt = snprintf(buf, blen, format, d);
 
     // Round off issues at 16 significant digits so check for obvious ones of
     // 0001 and 9999.
@@ -1547,7 +1547,7 @@ int oj_dump_float_printf(char *buf, size_t blen, VALUE obj, double d, const char
         volatile VALUE rstr = oj_safe_string_convert(obj);
 
         strcpy(buf, RSTRING_PTR(rstr));
-        cnt = (int)RSTRING_LEN(rstr);
+        cnt = RSTRING_LEN(rstr);
     }
     return cnt;
 }

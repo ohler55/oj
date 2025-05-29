@@ -35,7 +35,7 @@ extern void oj_dump_xml_time(VALUE obj, Out out);
 extern void oj_dump_time(VALUE obj, Out out, int withZone);
 extern void oj_dump_obj_to_s(VALUE obj, Out out);
 
-extern const char *oj_nan_str(VALUE obj, int opt, int mode, bool plus, int *lenp);
+extern const char *oj_nan_str(VALUE obj, int opt, int mode, bool plus, size_t *lenp);
 
 // initialize an out buffer with the provided stack allocated memory
 extern void oj_out_init(Out out);
@@ -58,7 +58,7 @@ extern void oj_dump_raw_json(VALUE obj, int depth, Out out);
 extern VALUE oj_add_to_json(int argc, VALUE *argv, VALUE self);
 extern VALUE oj_remove_to_json(int argc, VALUE *argv, VALUE self);
 
-extern int oj_dump_float_printf(char *buf, size_t blen, VALUE obj, double d, const char *format);
+extern size_t oj_dump_float_printf(char *buf, size_t blen, VALUE obj, double d, const char *format);
 
 extern time_t oj_sec_from_time_hard_way(VALUE obj);
 

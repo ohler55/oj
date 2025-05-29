@@ -1086,7 +1086,7 @@ static VALUE doc_open(VALUE clas, VALUE str) {
     int            given = rb_block_given_p();
 
     Check_Type(str, T_STRING);
-    len  = (int)RSTRING_LEN(str) + 1;
+    len  = RSTRING_LEN(str) + 1;
     json = OJ_R_ALLOC_N(char, len);
 
     memcpy(json, StringValuePtr(str), len);
