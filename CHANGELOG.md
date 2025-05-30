@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 3.16.11 - unreleased
+## 3.16.11 - 2025-05-29
 
 - Fixed range encoding with the :circular option
 
