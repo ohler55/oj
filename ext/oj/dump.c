@@ -252,38 +252,46 @@ inline static size_t hixss_friendly_size(const uint8_t *str, size_t len) {
 }
 
 inline static long rails_xss_friendly_size(const uint8_t *str, size_t len) {
-    long    size = 0;
-    uint8_t hi   = 0;
+    long     size = 0;
+    uint32_t hi   = 0;
 
 #ifdef HAVE_SIMD_NEON
     size_t i = 0;
 
-    uint8x16_t has_some_hibit = vdupq_n_u8(0);
-    uint8x16_t hibit          = vdupq_n_u8(0x80);
-    for (; i + sizeof(uint8x16_t) <= len; i += sizeof(uint8x16_t), str += sizeof(uint8x16_t)) {
-        size += sizeof(uint8x16_t);
+    if (len >= sizeof(uint8x16_t)) {
+        uint8x16_t has_some_hibit = vdupq_n_u8(0);
+        uint8x16_t hibit          = vdupq_n_u8(0x80);
 
-        uint8x16_t chunk = vld1q_u8(str);
+        for (; i + sizeof(uint8x16_t) <= len; i += sizeof(uint8x16_t), str += sizeof(uint8x16_t)) {
+            size += sizeof(uint8x16_t);
 
-        // Check to see if any of these bytes have the high bit set.
-        has_some_hibit = vorrq_u8(has_some_hibit, vandq_u8(chunk, hibit));
+            uint8x16_t chunk = vld1q_u8(str);
 
-        uint8x16_t tmp1   = vqtbl4q_u8(rails_xss_friendly_chars_neon[0], chunk);
-        uint8x16_t tmp2   = vqtbl4q_u8(rails_xss_friendly_chars_neon[1], veorq_u8(chunk, vdupq_n_u8(0x40)));
-        uint8x16_t tmp3   = vqtbl4q_u8(rails_xss_friendly_chars_neon[2], veorq_u8(chunk, vdupq_n_u8(0x80)));
-        uint8x16_t tmp4   = vqtbl4q_u8(rails_xss_friendly_chars_neon[3], veorq_u8(chunk, vdupq_n_u8(0xc0)));
-        uint8x16_t result = vorrq_u8(tmp4, vorrq_u8(tmp3, vorrq_u8(tmp1, tmp2)));
-        uint8_t    tmp    = vaddvq_u8(result);
-        size += tmp;
+            // Check to see if any of these bytes have the high bit set.
+            has_some_hibit = vorrq_u8(has_some_hibit, vandq_u8(chunk, hibit));
+
+            uint8x16_t tmp1   = vqtbl4q_u8(rails_xss_friendly_chars_neon[0], chunk);
+            uint8x16_t tmp2   = vqtbl4q_u8(rails_xss_friendly_chars_neon[1], veorq_u8(chunk, vdupq_n_u8(0x40)));
+            uint8x16_t tmp3   = vqtbl4q_u8(rails_xss_friendly_chars_neon[2], veorq_u8(chunk, vdupq_n_u8(0x80)));
+            uint8x16_t tmp4   = vqtbl4q_u8(rails_xss_friendly_chars_neon[3], veorq_u8(chunk, vdupq_n_u8(0xc0)));
+            uint8x16_t result = vorrq_u8(tmp4, vorrq_u8(tmp3, vorrq_u8(tmp1, tmp2)));
+            uint8_t    tmp    = vaddvq_u8(result);
+            size += tmp;
+        }
+
+        // 'hi' should be set if any of the bytes we processed have the high bit set. It doesn't matter which ones.
+        hi = vmaxvq_u8(has_some_hibit) != 0;
     }
 
-    // 'hi' should be set if any of the bytes we processed have the high bit set. It doesn't matter which ones.
-    hi = vmaxvq_u8(has_some_hibit) != 0;
+    size_t len_remaining = len - i;
 
     for (; i < len; str++, i++) {
-        size += rails_xss_friendly_chars[*str] - '0';
+        size += rails_xss_friendly_chars[*str];
         hi |= *str & 0x80;
     }
+
+    size -= (len_remaining * ((size_t)'0'));
+
     if (0 == hi) {
         return size;
     }
@@ -302,37 +310,43 @@ inline static long rails_xss_friendly_size(const uint8_t *str, size_t len) {
 }
 
 inline static size_t rails_friendly_size(const uint8_t *str, size_t len) {
-    long    size = 0;
-    uint8_t hi   = 0;
+    long     size = 0;
+    uint32_t hi   = 0;
 #ifdef HAVE_SIMD_NEON
-    size_t i = 0;
+    size_t i     = 0;
+    long   extra = 0;
 
-    uint8x16_t has_some_hibit = vdupq_n_u8(0);
-    uint8x16_t hibit          = vdupq_n_u8(0x80);
+    if (len >= sizeof(uint8x16_t)) {
+        uint8x16_t has_some_hibit = vdupq_n_u8(0);
+        uint8x16_t hibit          = vdupq_n_u8(0x80);
 
-    for (; i + sizeof(uint8x16_t) <= len; i += sizeof(uint8x16_t), str += sizeof(uint8x16_t)) {
-        size += sizeof(uint8x16_t);
+        for (; i + sizeof(uint8x16_t) <= len; i += sizeof(uint8x16_t), str += sizeof(uint8x16_t)) {
+            size += sizeof(uint8x16_t);
 
-        // See https://lemire.me/blog/2019/07/23/arbitrary-byte-to-byte-maps-using-arm-neon/
-        uint8x16_t chunk = vld1q_u8(str);
+            // See https://lemire.me/blog/2019/07/23/arbitrary-byte-to-byte-maps-using-arm-neon/
+            uint8x16_t chunk = vld1q_u8(str);
 
-        // Check to see if any of these bytes have the high bit set.
-        has_some_hibit = vorrq_u8(has_some_hibit, vandq_u8(chunk, hibit));
+            // Check to see if any of these bytes have the high bit set.
+            has_some_hibit = vorrq_u8(has_some_hibit, vandq_u8(chunk, hibit));
 
-        uint8x16_t tmp1   = vqtbl4q_u8(rails_friendly_chars_neon[0], chunk);
-        uint8x16_t tmp2   = vqtbl4q_u8(rails_friendly_chars_neon[1], veorq_u8(chunk, vdupq_n_u8(0x40)));
-        uint8x16_t result = vorrq_u8(tmp1, tmp2);
-        uint8_t    tmp    = vaddvq_u8(result);
-        size += tmp;
+            uint8x16_t tmp1   = vqtbl4q_u8(rails_friendly_chars_neon[0], chunk);
+            uint8x16_t tmp2   = vqtbl4q_u8(rails_friendly_chars_neon[1], veorq_u8(chunk, vdupq_n_u8(0x40)));
+            uint8x16_t result = vorrq_u8(tmp1, tmp2);
+            uint8_t    tmp    = vaddvq_u8(result);
+            size += tmp;
+        }
+
+        // 'hi' should be set if any of the bytes we processed have the high bit set. It doesn't matter which ones.
+        hi = vmaxvq_u8(has_some_hibit) != 0;
     }
 
-    // 'hi' should be set if any of the bytes we processed have the high bit set. It doesn't matter which ones.
-    hi = vmaxvq_u8(has_some_hibit) != 0;
-
-    for (; i < len; str++, i++) {
-        size += rails_friendly_chars[*str] - '0';
+    for (; i < len; str++, i++, extra++) {
+        size += rails_friendly_chars[*str];
         hi |= *str & 0x80;
     }
+
+    size -= (extra * ((size_t)'0'));
+
     if (0 == hi) {
         return size;
     }
@@ -932,6 +946,77 @@ neon_update(const char *str, uint8x16x4_t *cmap_neon, int neon_table_size, bool 
 
 #endif /* HAVE_SIMD_NEON */
 
+static inline FORCE_INLINE const char *process_character(char         action,
+                                                         const char  *str,
+                                                         const char  *end,
+                                                         Out          out,
+                                                         const char  *orig,
+                                                         bool         do_unicode_validation,
+                                                         const char **check_start_) {
+    const char *check_start = *check_start_;
+    switch (action) {
+    case '1':
+        if (do_unicode_validation && check_start <= str) {
+            if (0 != (0x80 & (uint8_t)*str)) {
+                if (0xC0 == (0xC0 & (uint8_t)*str)) {
+                    *check_start_ = check_unicode(str, end, orig);
+                } else {
+                    raise_invalid_unicode(orig, (int)(end - orig), (int)(str - orig));
+                }
+            }
+        }
+        *out->cur++ = *str;
+        break;
+    case '2':
+        *out->cur++ = '\\';
+        switch (*str) {
+        case '\\': *out->cur++ = '\\'; break;
+        case '\b': *out->cur++ = 'b'; break;
+        case '\t': *out->cur++ = 't'; break;
+        case '\n': *out->cur++ = 'n'; break;
+        case '\f': *out->cur++ = 'f'; break;
+        case '\r': *out->cur++ = 'r'; break;
+        default: *out->cur++ = *str; break;
+        }
+        break;
+    case '3':  // Unicode
+        if (0xe2 == (uint8_t)*str && do_unicode_validation && 2 <= end - str) {
+            if (0x80 == (uint8_t)str[1] && (0xa8 == (uint8_t)str[2] || 0xa9 == (uint8_t)str[2])) {
+                str = dump_unicode(str, end, out, orig);
+            } else {
+                *check_start_ = check_unicode(str, end, orig);
+                *out->cur++   = *str;
+            }
+            break;
+        }
+        str = dump_unicode(str, end, out, orig);
+        break;
+    case '6':  // control characters
+        if (*(uint8_t *)str < 0x80) {
+            if (0 == (uint8_t)*str && out->opts->dump_opts.omit_null_byte) {
+                break;
+            }
+            APPEND_CHARS(out->cur, "\\u00", 4);
+            dump_hex((uint8_t)*str, out);
+        } else {
+            if (0xe2 == (uint8_t)*str && do_unicode_validation && 2 <= end - str) {
+                if (0x80 == (uint8_t)str[1] && (0xa8 == (uint8_t)str[2] || 0xa9 == (uint8_t)str[2])) {
+                    str = dump_unicode(str, end, out, orig);
+                } else {
+                    *check_start_ = check_unicode(str, end, orig);
+                    *out->cur++   = *str;
+                }
+                break;
+            }
+            str = dump_unicode(str, end, out, orig);
+        }
+        break;
+    default: break;  // ignore, should never happen if the table is correct
+    }
+
+    return str;
+}
+
 void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out out) {
     size_t size;
     char  *cmap;
@@ -1036,171 +1121,83 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
 #ifdef HAVE_SIMD_NEON
         const char *chunk_start;
         const char *chunk_end;
-        const char *cursor     = str;
-        int         neon_state = (cmap_neon != NULL) ? 1 : 4;
+        const char *cursor   = str;
+        bool        use_neon = (cmap_neon != NULL && cnt >= (sizeof(uint8x16_t))) ? true : false;
         char        matches[16];
-        bool        do_hi_validation = false;
-        // uint64_t neon_match_mask = 0;
 #define SEARCH_FLUSH                                  \
     if (str > cursor) {                               \
         APPEND_CHARS(out->cur, cursor, str - cursor); \
         cursor = str;                                 \
     }
 
-    loop:
 #endif /* HAVE_SIMD_NEON */
-        for (; str < end; str++) {
-            char action = 0;
 #ifdef HAVE_SIMD_NEON
-            /* neon_state:
-             * 1: Scanning for matches. There must be at least 
-                  sizeof(uint8x16_t) bytes of input data to use SIMD and
-                  cmap_neon must be non-null.
-             * 2: Matches have been found. Will set str to the position of the 
-             *    next match and set the state to 3.
-             *    If there are no more matches it will transition to state 1.
-             * 4: Fallback to the scalar algorithm. Not enough data to use 
-             *    SIMD.
-             */
-#define NEON_SET_STATE(state) \
-    neon_state = state;       \
-    goto loop;
-#define NEON_RETURN_TO_STATE(state) neon_state = state;
-            switch (neon_state) {
-            case 1: {
-                while (true) {
-                    const char *chunk_ptr = NULL;
-                    if (str + sizeof(uint8x16_t) <= end) {
-                        chunk_ptr   = str;
-                        chunk_start = str;
-                        chunk_end   = str + sizeof(uint8x16_t);
-                    } else if ((end - str) >= SIMD_MINIMUM_THRESHOLD) {
-                        memset(out->cur, 'A', sizeof(uint8x16_t));
-                        memcpy(out->cur, str, (end - str));
-                        chunk_ptr   = out->cur;
-                        chunk_start = str;
-                        chunk_end   = end;
-                    } else {
-                        SEARCH_FLUSH;
-                        NEON_SET_STATE(4);
-                        break; /* Unreachable */
-                    }
-                    neon_match_result result = neon_update(chunk_ptr,
-                                                           cmap_neon,
-                                                           neon_table_size,
-                                                           do_unicode_validation,
-                                                           has_hi);
-                    if ((result.do_unicode_validation) || vmaxvq_u8(result.needs_escape) != 0) {
-                        SEARCH_FLUSH;
-                        uint8x16_t actions = vaddq_u8(result.needs_escape, vdupq_n_u8('1'));
-                        do_hi_validation   = result.do_unicode_validation;
-                        vst1q_u8((unsigned char *)matches, actions);
-                        NEON_SET_STATE(2);
-                        break; /* Unreachable */
-                    }
-                    str = chunk_end;
-                }
-                // We must have run out of data to use SIMD. Go to state 4.
-                SEARCH_FLUSH;
-                NEON_SET_STATE(4);
-            } break;
-            case 3:
-                cursor = str;
-                // This fall through is intentional. We return to state 3 after we process
-                // a byte (or multiple). We return to this state to ensure the cursor is
-                // pointing to the correct location. We then resume looking for matches
-                // within the previously processed chunk.
-            case 2:
-                if (str >= chunk_end) {
-                    NEON_SET_STATE(1);
-                }
-                if (!do_hi_validation) {
-                    long i = str - chunk_start;
-                    for (; str < chunk_end; i++) {
-                        if ((action = matches[i]) != '1') {
-                            break;
-                        }
-                        *out->cur++ = *str++;
-                    }
-                    // The loop above may have advanced str and directly output them to out->cur.
-                    // Ensure cursor is set appropriately.
-                    cursor = str;
-                    if (str >= chunk_end) {
-                        // We must have advanced past the end... we are done.
-                        NEON_SET_STATE(1);
-                    }
+        if (use_neon) {
+            while (str < end) {
+                const char *chunk_ptr = NULL;
+                if (str + sizeof(uint8x16_t) <= end) {
+                    chunk_ptr   = str;
+                    chunk_start = str;
+                    chunk_end   = str + sizeof(uint8x16_t);
+                } else if ((end - str) >= SIMD_MINIMUM_THRESHOLD) {
+                    memset(out->cur, 'A', sizeof(uint8x16_t));
+                    memcpy(out->cur, str, (end - str));
+                    chunk_ptr   = out->cur;
+                    chunk_start = str;
+                    chunk_end   = end;
                 } else {
-                    long match_index = str - chunk_start;
-                    action           = matches[match_index];
-                }
-                NEON_RETURN_TO_STATE(3);
-                break;
-            case 4: action = cmap[(uint8_t)*str];
-            }
-#undef NEON_SET_STATE
-#undef NEON_RETURN_TO_STATE
-#else
-            action = cmap[(uint8_t)*str];
-#endif /* HAVE_SIMD_NEON */
-            switch (action) {
-            case '1':
-                if (do_unicode_validation && check_start <= str) {
-                    if (0 != (0x80 & (uint8_t)*str)) {
-                        if (0xC0 == (0xC0 & (uint8_t)*str)) {
-                            check_start = check_unicode(str, end, orig);
-                        } else {
-                            raise_invalid_unicode(orig, (int)(end - orig), (int)(str - orig));
-                        }
-                    }
-                }
-                *out->cur++ = *str;
-                break;
-            case '2':
-                *out->cur++ = '\\';
-                switch (*str) {
-                case '\\': *out->cur++ = '\\'; break;
-                case '\b': *out->cur++ = 'b'; break;
-                case '\t': *out->cur++ = 't'; break;
-                case '\n': *out->cur++ = 'n'; break;
-                case '\f': *out->cur++ = 'f'; break;
-                case '\r': *out->cur++ = 'r'; break;
-                default: *out->cur++ = *str; break;
-                }
-                break;
-            case '3':  // Unicode
-                if (0xe2 == (uint8_t)*str && do_unicode_validation && 2 <= end - str) {
-                    if (0x80 == (uint8_t)str[1] && (0xa8 == (uint8_t)str[2] || 0xa9 == (uint8_t)str[2])) {
-                        str = dump_unicode(str, end, out, orig);
-                    } else {
-                        check_start = check_unicode(str, end, orig);
-                        *out->cur++ = *str;
-                    }
                     break;
                 }
-                str = dump_unicode(str, end, out, orig);
-                break;
-            case '6':  // control characters
-                if (*(uint8_t *)str < 0x80) {
-                    if (0 == (uint8_t)*str && out->opts->dump_opts.omit_null_byte) {
-                        break;
-                    }
-                    APPEND_CHARS(out->cur, "\\u00", 4);
-                    dump_hex((uint8_t)*str, out);
-                } else {
-                    if (0xe2 == (uint8_t)*str && do_unicode_validation && 2 <= end - str) {
-                        if (0x80 == (uint8_t)str[1] && (0xa8 == (uint8_t)str[2] || 0xa9 == (uint8_t)str[2])) {
-                            str = dump_unicode(str, end, out, orig);
-                        } else {
-                            check_start = check_unicode(str, end, orig);
-                            *out->cur++ = *str;
+                neon_match_result result = neon_update(chunk_ptr,
+                                                       cmap_neon,
+                                                       neon_table_size,
+                                                       do_unicode_validation,
+                                                       has_hi);
+                if ((result.do_unicode_validation) || vmaxvq_u8(result.needs_escape) != 0) {
+                    SEARCH_FLUSH;
+                    uint8x16_t actions     = vaddq_u8(result.needs_escape, vdupq_n_u8('1'));
+                    uint8_t    num_matches = vaddvq_u8(vandq_u8(result.needs_escape, vdupq_n_u8(0x1)));
+                    vst1q_u8((unsigned char *)matches, actions);
+                    bool process_each = result.do_unicode_validation || (num_matches > sizeof(uint8x16_t) / 2);
+                    // If no byte in this chunk had the high bit set then we can skip
+                    // all of the '1' bytes by directly copying them to the output.
+                    if (!process_each) {
+                        while (str < chunk_end) {
+                            long i = str - chunk_start;
+                            char action;
+                            while (str < chunk_end && (action = matches[i++]) == '1') {
+                                *out->cur++ = *str++;
+                            }
+                            cursor = str;
+                            if (str >= chunk_end) {
+                                break;
+                            }
+                            str = process_character(action, str, end, out, orig, do_unicode_validation, &check_start);
+                            str++;
                         }
-                        break;
+                    } else {
+                        while (str < chunk_end) {
+                            long match_index = str - chunk_start;
+                            str              = process_character(matches[match_index],
+                                                    str,
+                                                    end,
+                                                    out,
+                                                    orig,
+                                                    do_unicode_validation,
+                                                    &check_start);
+                            str++;
+                        }
                     }
-                    str = dump_unicode(str, end, out, orig);
+                    cursor = str;
+                    continue;
                 }
-                break;
-            default: break;  // ignore, should never happen if the table is correct
+                str = chunk_end;
             }
+            SEARCH_FLUSH;
+        }
+#endif /* HAVE_SIMD_NEON */
+        for (; str < end; str++) {
+            str = process_character(cmap[(uint8_t)*str], str, end, out, orig, do_unicode_validation, &check_start);
         }
         *out->cur++ = '"';
     }
