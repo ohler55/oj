@@ -103,7 +103,7 @@ static void dump_values_array(VALUE *values, int depth, Out out) {
 static void dump_to_json(VALUE obj, Out out) {
     volatile VALUE rs;
     const char    *s;
-    int            len;
+    size_t         len;
 
     TRACE(out->opts->trace, "to_json", obj, 0, TraceRubyIn);
     if (0 == rb_obj_method_arity(obj, oj_to_json_id)) {
@@ -115,7 +115,7 @@ static void dump_to_json(VALUE obj, Out out) {
 
     StringValue(rs);
     s   = RSTRING_PTR(rs);
-    len = (int)RSTRING_LEN(rs);
+    len = RSTRING_LEN(rs);
 
     assure_size(out, len + 1);
     APPEND_CHARS(out->cur, s, len);
@@ -124,7 +124,8 @@ static void dump_to_json(VALUE obj, Out out) {
 
 static void dump_array(VALUE a, int depth, Out out, bool as_ok) {
     size_t size;
-    int    i, cnt;
+    size_t i;
+    size_t cnt;
     int    d2 = depth + 1;
     long   id = oj_check_circular(a, out);
 
@@ -136,7 +137,7 @@ static void dump_array(VALUE a, int depth, Out out, bool as_ok) {
         dump_to_json(a, out);
         return;
     }
-    cnt         = (int)RARRAY_LEN(a);
+    cnt         = RARRAY_LEN(a);
     *out->cur++ = '[';
     assure_size(out, 2);
     if (0 == cnt) {
@@ -552,7 +553,7 @@ static void dump_float(VALUE obj, int depth, Out out, bool as_ok) {
     char   buf[64];
     char  *b;
     double d   = rb_num2dbl(obj);
-    int    cnt = 0;
+    size_t cnt = 0;
 
     if (0.0 == d) {
         b    = buf;
@@ -590,7 +591,7 @@ static void dump_float(VALUE obj, int depth, Out out, bool as_ok) {
         volatile VALUE rstr = oj_safe_string_convert(obj);
 
         strcpy(buf, RSTRING_PTR(rstr));
-        cnt = (int)RSTRING_LEN(rstr);
+        cnt = RSTRING_LEN(rstr);
     }
     assure_size(out, cnt);
     APPEND_CHARS(out->cur, buf, cnt);
@@ -800,7 +801,7 @@ static void dump_bignum(VALUE obj, int depth, Out out, bool as_ok) {
     // rb_big2str can not so unless overridden by using add_to_json(Integer)
     // this must use to_s to pass the json gem unit tests.
     volatile VALUE rs;
-    int            cnt;
+    size_t         cnt;
     bool           dump_as_string = false;
 
     if (use_bignum_alt) {
@@ -809,7 +810,7 @@ static void dump_bignum(VALUE obj, int depth, Out out, bool as_ok) {
         rs = oj_safe_string_convert(obj);
     }
     rb_check_type(rs, T_STRING);
-    cnt = (int)RSTRING_LEN(rs);
+    cnt = RSTRING_LEN(rs);
 
     if (out->opts->int_range_min != 0 || out->opts->int_range_max != 0) {
         dump_as_string = true;  // Bignum cannot be inside of Fixnum range

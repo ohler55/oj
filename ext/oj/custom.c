@@ -40,7 +40,7 @@ static void dump_obj_as_str(VALUE obj, int depth, Out out) {
 static void bigdecimal_dump(VALUE obj, int depth, Out out) {
     volatile VALUE rstr = oj_safe_string_convert(obj);
     const char    *str  = RSTRING_PTR(rstr);
-    int            len  = (int)RSTRING_LEN(rstr);
+    size_t         len  = RSTRING_LEN(rstr);
 
     if (0 == strcasecmp("Infinity", str)) {
         str = oj_nan_str(obj, out->opts->dump_opts.nan_dump, out->opts->mode, true, &len);
@@ -123,7 +123,7 @@ static void date_dump(VALUE obj, int depth, Out out) {
         case RubyTime:
         case XmlTime:
             v = rb_funcall(obj, rb_intern("iso8601"), 0);
-            oj_dump_cstr(RSTRING_PTR(v), (int)RSTRING_LEN(v), 0, 0, out);
+            oj_dump_cstr(RSTRING_PTR(v), RSTRING_LEN(v), 0, 0, out);
             break;
         case UnixZTime:
             v = rb_funcall(obj, rb_intern("to_time"), 0);
@@ -405,7 +405,7 @@ static void dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
             rb_raise(rb_eEncodingError, "Invalid type for raw JSON.\n");
         } else {
             const char *s    = RSTRING_PTR(v);
-            int         len  = (int)RSTRING_LEN(v);
+            size_t      len  = RSTRING_LEN(v);
             const char *name = rb_id2name(*odd->attrs);
             size_t      nlen = strlen(name);
 
@@ -478,7 +478,7 @@ static VALUE dump_common(VALUE obj, int depth, Out out) {
     } else if (Yes == out->opts->to_json && rb_respond_to(obj, oj_to_json_id)) {
         volatile VALUE rs;
         const char    *s;
-        int            len;
+        size_t         len;
 
         TRACE(out->opts->trace, "to_json", obj, depth + 1, TraceRubyIn);
         if (0 == rb_obj_method_arity(obj, oj_to_json_id)) {
@@ -488,7 +488,7 @@ static VALUE dump_common(VALUE obj, int depth, Out out) {
         }
         TRACE(out->opts->trace, "to_json", obj, depth + 1, TraceRubyOut);
         s   = RSTRING_PTR(rs);
-        len = (int)RSTRING_LEN(rs);
+        len = RSTRING_LEN(rs);
 
         assure_size(out, len + 1);
         APPEND_CHARS(out->cur, s, len);
@@ -509,7 +509,7 @@ static VALUE dump_common(VALUE obj, int depth, Out out) {
         if (aj == obj) {
             volatile VALUE rstr = oj_safe_string_convert(obj);
 
-            oj_dump_cstr(RSTRING_PTR(rstr), (int)RSTRING_LEN(rstr), false, false, out);
+            oj_dump_cstr(RSTRING_PTR(rstr), RSTRING_LEN(rstr), false, false, out);
         } else {
             oj_dump_custom_val(aj, depth, out, true);
         }
@@ -676,7 +676,8 @@ static void dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
 
 static void dump_array(VALUE a, int depth, Out out, bool as_ok) {
     size_t size;
-    int    i, cnt;
+    size_t i;
+    size_t cnt;
     int    d2 = depth + 1;
     long   id = oj_check_circular(a, out);
 
@@ -684,7 +685,7 @@ static void dump_array(VALUE a, int depth, Out out, bool as_ok) {
         oj_dump_nil(Qnil, depth, out, false);
         return;
     }
-    cnt         = (int)RARRAY_LEN(a);
+    cnt         = RARRAY_LEN(a);
     *out->cur++ = '[';
     assure_size(out, 2);
     if (0 == cnt) {
@@ -795,7 +796,7 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
                 volatile VALUE s = rb_sym2str(RARRAY_AREF(ma, i));
 
                 name = RSTRING_PTR(s);
-                len  = (int)RSTRING_LEN(s);
+                len  = RSTRING_LEN(s);
             } else {
                 len  = snprintf(num_id, sizeof(num_id), "%d", i);
                 name = num_id;

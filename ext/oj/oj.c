@@ -924,12 +924,12 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
         OJ_R_FREE(copts->ignore);
         copts->ignore = NULL;
         if (Qnil != v) {
-            int cnt;
+            size_t cnt;
 
             rb_check_type(v, T_ARRAY);
-            cnt = (int)RARRAY_LEN(v);
+            cnt = RARRAY_LEN(v);
             if (0 < cnt) {
-                int i;
+                size_t i;
 
                 copts->ignore = OJ_R_ALLOC_N(VALUE, cnt + 1);
                 for (i = 0; i < cnt; i++) {
@@ -974,7 +974,7 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
         }
     } else if (float_format_sym == k) {
         rb_check_type(v, T_STRING);
-        if (6 < (int)RSTRING_LEN(v)) {
+        if (6 < RSTRING_LEN(v)) {
             rb_raise(rb_eArgError, ":float_format must be 6 bytes or less.");
         }
         strncpy(copts->float_fmt, RSTRING_PTR(v), (size_t)RSTRING_LEN(v));
@@ -1189,7 +1189,7 @@ static VALUE load_file(int argc, VALUE *argv, VALUE self) {
         OJ_FREE(wide_path);
     }
 #else
-    fd             = open(path, O_RDONLY);
+    fd = open(path, O_RDONLY);
 #endif
     if (0 == fd) {
         rb_raise(rb_eIOError, "%s", strerror(errno));

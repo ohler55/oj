@@ -111,10 +111,11 @@ static void dump_float(VALUE obj, int depth, Out out, bool as_ok) {
 
 static void dump_array(VALUE a, int depth, Out out, bool as_ok) {
     size_t size;
-    int    i, cnt;
+    size_t i;
+    size_t cnt;
     int    d2 = depth + 1;
 
-    cnt         = (int)RARRAY_LEN(a);
+    cnt         = RARRAY_LEN(a);
     *out->cur++ = '[';
     size        = 2;
     assure_size(out, size);
@@ -226,7 +227,7 @@ static void dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
     } else if (oj_bigdecimal_class == clas) {
         volatile VALUE rstr = oj_safe_string_convert(obj);
 
-        oj_dump_raw(RSTRING_PTR(rstr), (int)RSTRING_LEN(rstr), out);
+        oj_dump_raw(RSTRING_PTR(rstr), RSTRING_LEN(rstr), out);
     } else if (resolve_wab_uuid_class() == clas) {
         oj_dump_str(oj_safe_string_convert(obj), depth, out, false);
     } else if (resolve_uri_http_class() == clas) {
