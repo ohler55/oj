@@ -910,18 +910,18 @@ void oj_dump_raw_json(VALUE obj, int depth, Out out) {
     }
 }
 
+#if defined(__clang__) || defined(__GNUC__)
+#define FORCE_INLINE __attribute__((always_inline))
+#else
+#define FORCE_INLINE
+#endif
+
 #ifdef HAVE_SIMD_NEON
 typedef struct _neon_match_result {
     uint8x16_t needs_escape;
     bool       has_some_hibit;
     bool       do_unicode_validation;
 } neon_match_result;
-
-#if defined(__clang__) || defined(__GNUC__)
-#define FORCE_INLINE __attribute__((always_inline))
-#else
-#define FORCE_INLINE
-#endif
 
 static inline FORCE_INLINE neon_match_result
 neon_update(const char *str, uint8x16x4_t *cmap_neon, int neon_table_size, bool do_unicode_validation, bool has_hi) {
@@ -1202,7 +1202,7 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
         *out->cur++ = '"';
     }
     if (do_unicode_validation && 0 < str - orig && 0 != (0x80 & *(str - 1))) {
-        uint8_t c = (uint8_t)*(str - 1);
+        uint8_t c = (uint8_t) * (str - 1);
         int     i;
         int     scnt = (int)(str - orig);
 
