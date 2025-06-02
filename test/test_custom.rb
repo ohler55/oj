@@ -209,8 +209,6 @@ class CustomJuice < Minitest::Test
   end
 
   def test_deep_nest
-    skip 'TruffleRuby causes SEGV' if RUBY_ENGINE == 'truffleruby'
-
     begin
       n = 10_000
       Oj.strict_load(('[' * n) + (']' * n))
@@ -492,8 +490,6 @@ class CustomJuice < Minitest::Test
   end
 
   def test_time
-    skip 'TruffleRuby fails this spec' if RUBY_ENGINE == 'truffleruby'
-
     obj = Time.now()
     # These two forms should be able to recreate the time precisely,
     # so we check they can load a dumped version and recreate the
