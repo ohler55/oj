@@ -140,7 +140,7 @@ class JSONGeneratorTest < Test::Unit::TestCase
     # JSON after 2.10 no longer has JSON::PRETTY_STATE_PROTOTYPE
     if 0 < ([2, 11, 0] <=> JSON::VERSION.split('.').map { |v| v.to_i })
       state = JSON::PRETTY_STATE_PROTOTYPE.dup
-      # In come cases in Ruby 3.0 an :escape_slash is included in the state. It
+      # In some cases in Ruby 3.0 an :escape_slash is included in the state. It
       # seems to occur on travis but not locally.
       actual = state.to_h
       actual.delete(:escape_slash)
