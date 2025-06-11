@@ -2086,4 +2086,11 @@ void Init_oj(void) {
 #ifdef HAVE_SIMD_NEON
     initialize_neon();
 #endif /* HAVE_SIMD_NEON */
+
+#ifdef HAVE_SIMD_X86_64
+    SIMD_Implementation simd_impl = find_simd_implemenation();
+    if (simd_impl == SIMD_X86_64_SSE42) {
+        initialize_sse42();
+    }
+#endif
 }
