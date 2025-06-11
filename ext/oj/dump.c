@@ -201,6 +201,50 @@ void initialize_neon(void) {
 }
 #endif
 
+#ifdef HAVE_SIMD_X86_64
+
+static size_t (*hibit_friendly_size_simd)(const uint8_t *str, size_t len) = NULL;
+static __m128i hibit_friendly_chars_sse42[8];
+static SIMD_Implementation simd_impl = SIMD_X86_64_NONE;
+
+#define SIMD_TARGET __attribute__((target("sse4.2,ssse3")))
+
+// From: https://stackoverflow.com/questions/36998538/fastest-way-to-horizontally-sum-sse-unsigned-byte-vector
+inline uint32_t _mm_sum_epu8(const __m128i v) {
+    __m128i vsum = _mm_sad_epu8(v, _mm_setzero_si128());
+    return _mm_cvtsi128_si32(vsum) + _mm_extract_epi16(vsum, 4);
+}
+
+inline static SIMD_TARGET size_t hibit_friendly_size_sse42(const uint8_t *str, size_t len) {
+    size_t size = 0;
+    size_t i    = 0;
+
+    for (; i + sizeof(__m128i) <= len; i += sizeof(__m128i), str += sizeof(__m128i)) {
+        size += sizeof(__m128i);
+
+        __m128i chunk     = _mm_loadu_si128((__m128i*)str);
+        __m128i tmp       = vector_lookup_sse42(chunk, hibit_friendly_chars_sse42, 8);
+        size              += _mm_sum_epu8(tmp);
+    }
+    size_t total = size + calculate_string_size(str, len - i, hibit_friendly_chars);
+    return total;
+}
+
+void SIMD_TARGET initialize_sse42(void) {
+    hibit_friendly_size_simd = hibit_friendly_size_sse42;
+    simd_impl = SIMD_X86_64_SSE42;
+
+    for (int i = 0; i < 8; i++) {
+        hibit_friendly_chars_sse42[i] = _mm_sub_epi8(_mm_loadu_si128((__m128i*)(hibit_friendly_chars + i * sizeof(__m128i))), _mm_set1_epi8('1'));
+    }
+}
+
+#else 
+
+#define SIMD_TARGET 
+
+#endif /* HAVE_SIMD_X86_64 */
+
 inline static size_t hibit_friendly_size(const uint8_t *str, size_t len) {
 #ifdef HAVE_SIMD_NEON
     size_t size = 0;
@@ -220,6 +264,13 @@ inline static size_t hibit_friendly_size(const uint8_t *str, size_t len) {
 
     size_t total = size + calculate_string_size(str, len - i, hibit_friendly_chars);
     return total;
+#elif defined(HAVE_SIMD_X86_64)
+    if (len >= sizeof(__m128i)) {
+        if (hibit_friendly_size_simd != NULL) {
+            return hibit_friendly_size_simd(str, len);
+        }
+    }
+    return calculate_string_size(str, len, hibit_friendly_chars);
 #else
     return calculate_string_size(str, len, hibit_friendly_chars);
 #endif
@@ -944,6 +995,34 @@ neon_update(const char *str, uint8x16x4_t *cmap_neon, int neon_table_size, bool 
     return result;
 }
 
+#elif defined(HAVE_SIMD_X86_64)
+typedef struct _sse42_match_result {
+    __m128i    actions;
+    bool       needs_escape;
+    int        escape_mask;
+    bool       has_some_hibit;
+    bool       do_unicode_validation;
+} sse42_match_result;
+
+static inline SIMD_TARGET sse42_match_result
+sse42_update(const char *str, __m128i *cmap_sse42, int sse42_tab_size, bool do_unicode_validation, bool has_hi) {
+    sse42_match_result result = {.has_some_hibit = false, .do_unicode_validation = false};
+
+    __m128i chunk        = _mm_loadu_si128((__m128i *)str);
+    __m128i actions      = vector_lookup_sse42(chunk, cmap_sse42, sse42_tab_size);
+    __m128i needs_escape = _mm_xor_si128(_mm_cmpeq_epi8(actions, _mm_setzero_si128()), _mm_set1_epi8(0xFF));
+    result.actions       = _mm_add_epi8(actions, _mm_set1_epi8('1'));
+
+    result.escape_mask   = _mm_movemask_epi8(needs_escape);
+    result.needs_escape  = result.escape_mask != 0;
+    if (has_hi && do_unicode_validation) {
+        __m128i has_some_hibit       = _mm_and_si128(chunk, _mm_set1_epi8(0x80));
+        result.has_some_hibit        = _mm_movemask_epi8(has_some_hibit) != 0;
+        result.do_unicode_validation = has_hi && do_unicode_validation && result.has_some_hibit;
+    }
+    return result;
+}
+
 #endif /* HAVE_SIMD_NEON */
 
 static inline FORCE_INLINE const char *process_character(char         action,
@@ -1023,6 +1102,9 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
 #ifdef HAVE_SIMD_NEON
     uint8x16x4_t *cmap_neon = NULL;
     int           neon_table_size;
+#elif defined(HAVE_SIMD_X86_64)
+    __m128i *cmap_sse42    = NULL;
+    int      sse42_tab_size;
 #endif /* HAVE_SIMD_NEON */
     const char *orig                  = str;
     bool        has_hi                = false;
@@ -1091,6 +1173,9 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
 #ifdef HAVE_SIMD_NEON
         cmap_neon       = hibit_friendly_chars_neon;
         neon_table_size = 2;
+#elif defined(HAVE_SIMD_X86_64)
+        cmap_sse42      = hibit_friendly_chars_sse42;
+        sse42_tab_size  = 8;
 #endif /* HAVE_NEON_SIMD */
         size = hibit_friendly_size((uint8_t *)str, cnt);
     }
@@ -1129,8 +1214,19 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
         APPEND_CHARS(out->cur, cursor, str - cursor); \
         cursor = str;                                 \
     }
-
+#elif defined(HAVE_SIMD_X86_64)
+        const char *chunk_start;
+        const char *chunk_end;
+        const char *cursor   = str;
+        bool        use_simd = (simd_impl == SIMD_X86_64_SSE42 && cmap_sse42 != NULL && cnt >= (sizeof(__m128i))) ? true : false;
+        char        matches[16];
+#define SEARCH_FLUSH                                  \
+    if (str > cursor) {                               \
+        APPEND_CHARS(out->cur, cursor, str - cursor); \
+        cursor = str;                                 \
+    }
 #endif /* HAVE_SIMD_NEON */
+
 #ifdef HAVE_SIMD_NEON
         if (use_neon) {
             while (str < end) {
@@ -1187,6 +1283,49 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
                                                     &check_start);
                             str++;
                         }
+                    }
+                    cursor = str;
+                    continue;
+                }
+                str = chunk_end;
+            }
+            SEARCH_FLUSH;
+        }
+#elif defined(HAVE_SIMD_X86_64)
+        if (use_simd) {
+            while (str < end) {
+                const char *chunk_ptr = NULL;
+                if (str + sizeof(__m128i) <= end) {
+                    chunk_ptr   = str;
+                    chunk_start = str;
+                    chunk_end   = str + sizeof(__m128i);
+                } else if ((end - str) >= SIMD_MINIMUM_THRESHOLD) {
+                    memset(out->cur, 'A', sizeof(__m128i));
+                    memcpy(out->cur, str, (end - str));
+                    chunk_ptr   = out->cur;
+                    chunk_start = str;
+                    chunk_end   = end;
+                } else {
+                    break;
+                }
+                sse42_match_result result = sse42_update(chunk_ptr,
+                                                       cmap_sse42,
+                                                       sse42_tab_size,
+                                                       do_unicode_validation,
+                                                       has_hi);
+                if ((result.do_unicode_validation) || result.needs_escape) {
+                    SEARCH_FLUSH;
+                    _mm_storeu_si128((__m128i*)matches, result.actions);
+                    while (str < chunk_end) {
+                        long match_index = str - chunk_start;
+                        str              = process_character(matches[match_index],
+                                                str,
+                                                end,
+                                                out,
+                                                orig,
+                                                do_unicode_validation,
+                                                &check_start);
+                        str++;
                     }
                     cursor = str;
                     continue;

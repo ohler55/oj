@@ -33,6 +33,10 @@ have_func('getrlimit', 'sys/resource.h')
 have_func('rb_enc_interned_str')
 have_func('rb_ext_ractor_safe', 'ruby.h')
 
+# X86-64 SIMD Support
+have_header('x86intrin.h')
+have_type('__m128i', 'x86intrin.h')
+
 dflags['OJ_DEBUG'] = true unless ENV['OJ_DEBUG'].nil?
 
 if with_config('--with-sse42')
