@@ -1221,7 +1221,7 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
 #if defined(HAVE_SIMD_NEON)
         bool use_simd = (cmap_neon != NULL && cnt >= (sizeof(uint8x16_t))) ? true : false;
 #elif defined(OJ_USE_SSE4_2)
-        bool use_simd  = (cmap_sse42 != NULL && cnt >= (sizeof(__m128i))) ? true : false;
+        bool use_simd = (cmap_sse42 != NULL && cnt >= (sizeof(__m128i))) ? true : false;
 #endif
 
 #ifdef HAVE_SIMD_NEON
@@ -1341,7 +1341,7 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
         *out->cur++ = '"';
     }
     if (do_unicode_validation && 0 < str - orig && 0 != (0x80 & *(str - 1))) {
-        uint8_t c = (uint8_t) * (str - 1);
+        uint8_t c = (uint8_t)*(str - 1);
         int     i;
         int     scnt = (int)(str - orig);
 
