@@ -201,11 +201,10 @@ void initialize_neon(void) {
 }
 #endif
 
-#ifdef HAVE_SIMD_X86_64
+#ifdef OJ_USE_SSE4_2
 
 static size_t (*hibit_friendly_size_simd)(const uint8_t *str, size_t len) = NULL;
 static __m128i hibit_friendly_chars_sse42[8];
-static SIMD_Implementation simd_impl = SIMD_X86_64_NONE;
 
 #define SIMD_TARGET __attribute__((target("sse4.2,ssse3")))
 
@@ -222,9 +221,9 @@ inline static SIMD_TARGET size_t hibit_friendly_size_sse42(const uint8_t *str, s
     for (; i + sizeof(__m128i) <= len; i += sizeof(__m128i), str += sizeof(__m128i)) {
         size += sizeof(__m128i);
 
-        __m128i chunk     = _mm_loadu_si128((__m128i*)str);
-        __m128i tmp       = vector_lookup_sse42(chunk, hibit_friendly_chars_sse42, 8);
-        size              += _mm_sum_epu8(tmp);
+        __m128i chunk = _mm_loadu_si128((__m128i *)str);
+        __m128i tmp   = vector_lookup_sse42(chunk, hibit_friendly_chars_sse42, 8);
+        size += _mm_sum_epu8(tmp);
     }
     size_t total = size + calculate_string_size(str, len - i, hibit_friendly_chars);
     return total;
@@ -232,18 +231,19 @@ inline static SIMD_TARGET size_t hibit_friendly_size_sse42(const uint8_t *str, s
 
 void SIMD_TARGET initialize_sse42(void) {
     hibit_friendly_size_simd = hibit_friendly_size_sse42;
-    simd_impl = SIMD_X86_64_SSE42;
 
     for (int i = 0; i < 8; i++) {
-        hibit_friendly_chars_sse42[i] = _mm_sub_epi8(_mm_loadu_si128((__m128i*)(hibit_friendly_chars + i * sizeof(__m128i))), _mm_set1_epi8('1'));
+        hibit_friendly_chars_sse42[i] = _mm_sub_epi8(
+            _mm_loadu_si128((__m128i *)(hibit_friendly_chars + i * sizeof(__m128i))),
+            _mm_set1_epi8('1'));
     }
 }
 
-#else 
+#else
 
-#define SIMD_TARGET 
+#define SIMD_TARGET
 
-#endif /* HAVE_SIMD_X86_64 */
+#endif /* OJ_USE_SSE4_2 */
 
 inline static size_t hibit_friendly_size(const uint8_t *str, size_t len) {
 #ifdef HAVE_SIMD_NEON
@@ -264,7 +264,7 @@ inline static size_t hibit_friendly_size(const uint8_t *str, size_t len) {
 
     size_t total = size + calculate_string_size(str, len - i, hibit_friendly_chars);
     return total;
-#elif defined(HAVE_SIMD_X86_64)
+#elif defined(OJ_USE_SSE4_2)
     if (len >= sizeof(__m128i)) {
         if (hibit_friendly_size_simd != NULL) {
             return hibit_friendly_size_simd(str, len);
@@ -995,13 +995,13 @@ neon_update(const char *str, uint8x16x4_t *cmap_neon, int neon_table_size, bool 
     return result;
 }
 
-#elif defined(HAVE_SIMD_X86_64)
+#elif defined(OJ_USE_SSE4_2)
 typedef struct _sse42_match_result {
-    __m128i    actions;
-    bool       needs_escape;
-    int        escape_mask;
-    bool       has_some_hibit;
-    bool       do_unicode_validation;
+    __m128i actions;
+    bool    needs_escape;
+    int     escape_mask;
+    bool    has_some_hibit;
+    bool    do_unicode_validation;
 } sse42_match_result;
 
 static inline SIMD_TARGET sse42_match_result
@@ -1013,8 +1013,8 @@ sse42_update(const char *str, __m128i *cmap_sse42, int sse42_tab_size, bool do_u
     __m128i needs_escape = _mm_xor_si128(_mm_cmpeq_epi8(actions, _mm_setzero_si128()), _mm_set1_epi8(0xFF));
     result.actions       = _mm_add_epi8(actions, _mm_set1_epi8('1'));
 
-    result.escape_mask   = _mm_movemask_epi8(needs_escape);
-    result.needs_escape  = result.escape_mask != 0;
+    result.escape_mask  = _mm_movemask_epi8(needs_escape);
+    result.needs_escape = result.escape_mask != 0;
     if (has_hi && do_unicode_validation) {
         __m128i has_some_hibit       = _mm_and_si128(chunk, _mm_set1_epi8(0x80));
         result.has_some_hibit        = _mm_movemask_epi8(has_some_hibit) != 0;
@@ -1102,8 +1102,8 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
 #ifdef HAVE_SIMD_NEON
     uint8x16x4_t *cmap_neon = NULL;
     int           neon_table_size;
-#elif defined(HAVE_SIMD_X86_64)
-    __m128i *cmap_sse42    = NULL;
+#elif defined(OJ_USE_SSE4_2)
+    __m128i *cmap_sse42 = NULL;
     int      sse42_tab_size;
 #endif /* HAVE_SIMD_NEON */
     const char *orig                  = str;
@@ -1173,9 +1173,9 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
 #ifdef HAVE_SIMD_NEON
         cmap_neon       = hibit_friendly_chars_neon;
         neon_table_size = 2;
-#elif defined(HAVE_SIMD_X86_64)
-        cmap_sse42      = hibit_friendly_chars_sse42;
-        sse42_tab_size  = 8;
+#elif defined(OJ_USE_SSE4_2)
+        cmap_sse42     = hibit_friendly_chars_sse42;
+        sse42_tab_size = 8;
 #endif /* HAVE_NEON_SIMD */
         size = hibit_friendly_size((uint8_t *)str, cnt);
     }
@@ -1203,32 +1203,29 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
         if (is_sym) {
             *out->cur++ = ':';
         }
-#ifdef HAVE_SIMD_NEON
-        const char *chunk_start;
-        const char *chunk_end;
-        const char *cursor   = str;
-        bool        use_neon = (cmap_neon != NULL && cnt >= (sizeof(uint8x16_t))) ? true : false;
-        char        matches[16];
+
+#if defined(HAVE_SIMD_NEON) || defined(OJ_USE_SSE4_2)
+
 #define SEARCH_FLUSH                                  \
     if (str > cursor) {                               \
         APPEND_CHARS(out->cur, cursor, str - cursor); \
         cursor = str;                                 \
     }
-#elif defined(HAVE_SIMD_X86_64)
+
         const char *chunk_start;
         const char *chunk_end;
-        const char *cursor   = str;
-        bool        use_simd = (simd_impl == SIMD_X86_64_SSE42 && cmap_sse42 != NULL && cnt >= (sizeof(__m128i))) ? true : false;
+        const char *cursor = str;
         char        matches[16];
-#define SEARCH_FLUSH                                  \
-    if (str > cursor) {                               \
-        APPEND_CHARS(out->cur, cursor, str - cursor); \
-        cursor = str;                                 \
-    }
-#endif /* HAVE_SIMD_NEON */
+#endif /* HAVE_SIMD_NEON || OJ_USE_SSE4_2 */
+
+#if defined(HAVE_SIMD_NEON)
+        bool use_simd = (cmap_neon != NULL && cnt >= (sizeof(uint8x16_t))) ? true : false;
+#elif defined(OJ_USE_SSE4_2)
+        bool use_simd = (cmap_sse42 != NULL && cnt >= (sizeof(__m128i))) ? true : false;
+#endif
 
 #ifdef HAVE_SIMD_NEON
-        if (use_neon) {
+        if (use_simd) {
             while (str < end) {
                 const char *chunk_ptr = NULL;
                 if (str + sizeof(uint8x16_t) <= end) {
@@ -1291,7 +1288,9 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
             }
             SEARCH_FLUSH;
         }
-#elif defined(HAVE_SIMD_X86_64)
+#endif
+
+#ifdef OJ_USE_SSE4_2
         if (use_simd) {
             while (str < end) {
                 const char *chunk_ptr = NULL;
@@ -1309,13 +1308,13 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
                     break;
                 }
                 sse42_match_result result = sse42_update(chunk_ptr,
-                                                       cmap_sse42,
-                                                       sse42_tab_size,
-                                                       do_unicode_validation,
-                                                       has_hi);
+                                                         cmap_sse42,
+                                                         sse42_tab_size,
+                                                         do_unicode_validation,
+                                                         has_hi);
                 if ((result.do_unicode_validation) || result.needs_escape) {
                     SEARCH_FLUSH;
-                    _mm_storeu_si128((__m128i*)matches, result.actions);
+                    _mm_storeu_si128((__m128i *)matches, result.actions);
                     while (str < chunk_end) {
                         long match_index = str - chunk_start;
                         str              = process_character(matches[match_index],
@@ -1334,7 +1333,8 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
             }
             SEARCH_FLUSH;
         }
-#endif /* HAVE_SIMD_NEON */
+#endif /* OJ_USE_SSE4_2 */
+
         for (; str < end; str++) {
             str = process_character(cmap[(uint8_t)*str], str, end, out, orig, do_unicode_validation, &check_start);
         }
