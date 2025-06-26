@@ -9,15 +9,9 @@
 
 #if defined(__x86_64__) && (defined(__GNUC__) || defined(__clang__))
 
-#if defined(HAVE_X86INTRIN_H) && defined(HAVE_TYPE___M128I)
-#define HAVE_SIMD_X86_64 1
+#if defined(OJ_USE_SSE4_2)
 #define SIMD_MINIMUM_THRESHOLD 6
-#include <x86intrin.h>
-
-typedef enum {
-    SIMD_X86_64_NONE,
-    SIMD_X86_64_SSE42
-} SIMD_Implementation;
+#include <nmmintrin.h>
 
 extern void initialize_sse42(void);
 
@@ -44,20 +38,6 @@ static inline __attribute__((target("sse4.2,ssse3"))) __m128i vector_lookup_sse4
     }
     
     return final_result;
-}
-
-inline static SIMD_Implementation find_simd_implemenation(void) {
-#ifdef __GNUC__
-    __builtin_cpu_init();
-#endif
-
-#if defined(__GNUC__) || defined(__clang__)
-    if (__builtin_cpu_supports("sse4.2") && __builtin_cpu_supports("ssse3")) {
-        return SIMD_X86_64_SSE42;
-    }
-#endif
-
-    return SIMD_X86_64_NONE;
 }
 
 #endif /* defined(HAVE_X86INTRIN_H) && defined(HAVE_TYPE___M128I) */
