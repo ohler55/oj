@@ -2086,4 +2086,8 @@ void Init_oj(void) {
 #ifdef HAVE_SIMD_NEON
     initialize_neon();
 #endif /* HAVE_SIMD_NEON */
+
+#ifdef OJ_USE_SSE4_2
+    initialize_sse42();
+#endif /* OJ_USE_SSE4_2 */
 }
