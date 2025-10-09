@@ -148,10 +148,10 @@ static void dump_array(VALUE a, int depth, Out out, bool as_ok) {
         } else {
             size = d2 * out->indent + 2;
         }
-        assure_size(out, size * cnt);
         cnt--;
         for (i = 0; i <= cnt; i++) {
             if (out->opts->dump_opts.use) {
+		assure_size(out, size);
                 if (0 < out->opts->dump_opts.array_size) {
                     APPEND_CHARS(out->cur, out->opts->dump_opts.array_nl, out->opts->dump_opts.array_size);
                 }

@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.16.12 - unreleased
+
+- Fixed dump realloc bug that occurred when using the compat mode dump options.
+
 ## 3.16.11 - 2025-05-29
 
 - Fixed range encoding with the :circular option
