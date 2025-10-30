@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 3.16.12 - unreleased
+## 3.16.12 - 2025-10-29
 
 - Fixed dump realloc bug that occurred when using the compat mode dump options.
 
