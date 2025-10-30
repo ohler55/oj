@@ -1021,7 +1021,7 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
     size_t size;
     char  *cmap;
 #ifdef HAVE_SIMD_NEON
-    uint8x16x4_t *cmap_neon = NULL;
+    uint8x16x4_t *cmap_neon       = NULL;
     int           neon_table_size = 0;
 #endif /* HAVE_SIMD_NEON */
     const char *orig                  = str;
