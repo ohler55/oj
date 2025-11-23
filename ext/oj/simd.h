@@ -9,7 +9,8 @@
 #define HAVE_SIMD_X86 1
 
     // SSE4.2 support (Intel Core i7+, AMD Bulldozer+)
-    #if defined(__SSE4_2__) || defined(OJ_USE_SSE4_2)
+    // Enabled automatically when compiler has -msse4.2 flag
+    #if defined(__SSE4_2__)
     #define HAVE_SIMD_SSE4_2 1
     #include <nmmintrin.h>
     #endif
