@@ -15,11 +15,8 @@
 #include "mem.h"
 #include "oj.h"
 #include "rxclass.h"
+#include "simd.h"
 #include "val_stack.h"
-
-#ifdef OJ_USE_SSE4_2
-#include <nmmintrin.h>
-#endif
 
 // Workaround in case INFINITY is not defined in math.h or if the OS is CentOS
 #define OJ_INFINITY (1.0 / 0.0)
@@ -202,13 +199,15 @@ static inline const char *scan_string_noSIMD(const char *str, const char *end) {
     return str;
 }
 
-#ifdef OJ_USE_SSE4_2
-static inline const char *scan_string_SIMD(const char *str, const char *end) {
+#ifdef HAVE_SIMD_SSE4_2
+// SIMD string scanner using SSE4.2 instructions
+// Scans for null terminator, backslash, or quote characters
+static inline const char *scan_string_SSE42(const char *str, const char *end) {
     static const char chars[16] = "\x00\\\"";
     const __m128i     terminate = _mm_loadu_si128((const __m128i *)&chars[0]);
-    const char       *_end      = (const char *)(end - 16);
+    const char       *safe_end  = end - 16;
 
-    for (; str <= _end; str += 16) {
+    for (; str <= safe_end; str += 16) {
         const __m128i string = _mm_loadu_si128((const __m128i *)str);
         const int     r      = _mm_cmpestri(terminate,
                                    3,
@@ -216,8 +215,7 @@ static inline const char *scan_string_SIMD(const char *str, const char *end) {
                                    16,
                                    _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_LEAST_SIGNIFICANT);
         if (r != 16) {
-            str = (char *)(str + r);
-            return str;
+            return str + r;
         }
     }
 
@@ -225,12 +223,57 @@ static inline const char *scan_string_SIMD(const char *str, const char *end) {
 }
 #endif
 
+#ifdef HAVE_SIMD_SSE2
+// SSE2 string scanner (fallback for older x86_64 CPUs)
+// Uses SSE2 instructions available on all x86_64 processors
+static inline const char *scan_string_SSE2(const char *str, const char *end) {
+    const char *safe_end = end - 16;
+
+    // Create comparison vectors for our three special characters
+    const __m128i null_char  = _mm_setzero_si128();
+    const __m128i backslash  = _mm_set1_epi8('\\');
+    const __m128i quote      = _mm_set1_epi8('"');
+
+    for (; str <= safe_end; str += 16) {
+        const __m128i chunk = _mm_loadu_si128((const __m128i *)str);
+
+        // Compare against each special character
+        __m128i cmp_null = _mm_cmpeq_epi8(chunk, null_char);
+        __m128i cmp_back = _mm_cmpeq_epi8(chunk, backslash);
+        __m128i cmp_quot = _mm_cmpeq_epi8(chunk, quote);
+
+        // Combine all comparisons
+        __m128i matches = _mm_or_si128(_mm_or_si128(cmp_null, cmp_back), cmp_quot);
+
+        // Create a mask from the comparison result
+        int mask = _mm_movemask_epi8(matches);
+
+        if (mask != 0) {
+            // Find the position of the first match using bit scan forward
+            #ifdef _MSC_VER
+            unsigned long pos;
+            _BitScanForward(&pos, mask);
+            return str + pos;
+            #else
+            return str + __builtin_ctz(mask);
+            #endif
+        }
+    }
+
+    // Fall back to scalar scanning for the last < 16 bytes
+    return scan_string_noSIMD(str, end);
+}
+#endif
+
 static const char *(*scan_func)(const char *str, const char *end) = scan_string_noSIMD;
 
 void oj_scanner_init(void) {
-#ifdef OJ_USE_SSE4_2
-    scan_func = scan_string_SIMD;
+#ifdef HAVE_SIMD_SSE4_2
+    scan_func = scan_string_SSE42;
+#elif defined(HAVE_SIMD_SSE2)
+    scan_func = scan_string_SSE2;
 #endif
+    // Note: ARM NEON string scanning would be added here if needed
 }
 
 // entered at /
