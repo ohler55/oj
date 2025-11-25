@@ -8,18 +8,18 @@
 #if defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_X64)
 #define HAVE_SIMD_X86 1
 
-    // SSE4.2 support (Intel Core i7+, AMD Bulldozer+)
-    // Enabled automatically when compiler has -msse4.2 flag
-    #if defined(__SSE4_2__)
-    #define HAVE_SIMD_SSE4_2 1
-    #include <nmmintrin.h>
-    #endif
+// SSE4.2 support (Intel Core i7+, AMD Bulldozer+)
+// Enabled automatically when compiler has -msse4.2 flag
+#if defined(__SSE4_2__)
+#define HAVE_SIMD_SSE4_2 1
+#include <nmmintrin.h>
+#endif
 
-    // SSE2 support (fallback for older x86_64 CPUs - all x86_64 CPUs support SSE2)
-    #if defined(__SSE2__) && !defined(HAVE_SIMD_SSE4_2)
-    #define HAVE_SIMD_SSE2 1
-    #include <emmintrin.h>
-    #endif
+// SSE2 support (fallback for older x86_64 CPUs - all x86_64 CPUs support SSE2)
+#if defined(__SSE2__) && !defined(HAVE_SIMD_SSE4_2)
+#define HAVE_SIMD_SSE2 1
+#include <emmintrin.h>
+#endif
 
 #endif  // x86/x86_64
 
