@@ -203,8 +203,8 @@ static inline const char *scan_string_noSIMD(const char *str, const char *end) {
 // Optimized SIMD string scanner using SSE4.2 instructions
 // Uses prefetching and processes multiple chunks in parallel to reduce latency
 static inline const char *scan_string_SSE42(const char *str, const char *end) {
-    static const char chars[16] = "\x00\\\"";
-    const __m128i     terminate = _mm_loadu_si128((const __m128i *)&chars[0]);
+    static const char chars[16]   = "\x00\\\"";
+    const __m128i     terminate   = _mm_loadu_si128((const __m128i *)&chars[0]);
     const char       *safe_end_64 = end - 64;
     const char       *safe_end_16 = end - 16;
 
@@ -220,21 +220,37 @@ static inline const char *scan_string_SSE42(const char *str, const char *end) {
         const __m128i chunk2 = _mm_loadu_si128((const __m128i *)(str + 32));
         const __m128i chunk3 = _mm_loadu_si128((const __m128i *)(str + 48));
 
-        const int r0 = _mm_cmpestri(terminate, 3, chunk0, 16,
+        const int r0 = _mm_cmpestri(terminate,
+                                    3,
+                                    chunk0,
+                                    16,
                                     _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_LEAST_SIGNIFICANT);
-        if (__builtin_expect(r0 != 16, 0)) return str + r0;
+        if (__builtin_expect(r0 != 16, 0))
+            return str + r0;
 
-        const int r1 = _mm_cmpestri(terminate, 3, chunk1, 16,
+        const int r1 = _mm_cmpestri(terminate,
+                                    3,
+                                    chunk1,
+                                    16,
                                     _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_LEAST_SIGNIFICANT);
-        if (__builtin_expect(r1 != 16, 0)) return str + 16 + r1;
+        if (__builtin_expect(r1 != 16, 0))
+            return str + 16 + r1;
 
-        const int r2 = _mm_cmpestri(terminate, 3, chunk2, 16,
+        const int r2 = _mm_cmpestri(terminate,
+                                    3,
+                                    chunk2,
+                                    16,
                                     _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_LEAST_SIGNIFICANT);
-        if (__builtin_expect(r2 != 16, 0)) return str + 32 + r2;
+        if (__builtin_expect(r2 != 16, 0))
+            return str + 32 + r2;
 
-        const int r3 = _mm_cmpestri(terminate, 3, chunk3, 16,
+        const int r3 = _mm_cmpestri(terminate,
+                                    3,
+                                    chunk3,
+                                    16,
                                     _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_LEAST_SIGNIFICANT);
-        if (__builtin_expect(r3 != 16, 0)) return str + 48 + r3;
+        if (__builtin_expect(r3 != 16, 0))
+            return str + 48 + r3;
 
         str += 64;
     }
@@ -242,9 +258,13 @@ static inline const char *scan_string_SSE42(const char *str, const char *end) {
     // Handle remaining 16-byte chunks
     for (; str <= safe_end_16; str += 16) {
         const __m128i string = _mm_loadu_si128((const __m128i *)str);
-        const int     r      = _mm_cmpestri(terminate, 3, string, 16,
+        const int     r      = _mm_cmpestri(terminate,
+                                   3,
+                                   string,
+                                   16,
                                    _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_LEAST_SIGNIFICANT);
-        if (r != 16) return str + r;
+        if (r != 16)
+            return str + r;
     }
 
     return scan_string_noSIMD(str, end);
@@ -274,43 +294,48 @@ static inline const char *scan_string_SSE2(const char *str, const char *end) {
         const __m128i chunk3 = _mm_loadu_si128((const __m128i *)(str + 48));
 
         // Compare all chunks (allows CPU to parallelize)
-        const __m128i cmp0 = _mm_or_si128(_mm_or_si128(_mm_cmpeq_epi8(chunk0, null_char),
-                                                       _mm_cmpeq_epi8(chunk0, backslash)),
-                                         _mm_cmpeq_epi8(chunk0, quote));
-        const __m128i cmp1 = _mm_or_si128(_mm_or_si128(_mm_cmpeq_epi8(chunk1, null_char),
-                                                       _mm_cmpeq_epi8(chunk1, backslash)),
-                                         _mm_cmpeq_epi8(chunk1, quote));
-        const __m128i cmp2 = _mm_or_si128(_mm_or_si128(_mm_cmpeq_epi8(chunk2, null_char),
-                                                       _mm_cmpeq_epi8(chunk2, backslash)),
-                                         _mm_cmpeq_epi8(chunk2, quote));
-        const __m128i cmp3 = _mm_or_si128(_mm_or_si128(_mm_cmpeq_epi8(chunk3, null_char),
-                                                       _mm_cmpeq_epi8(chunk3, backslash)),
-                                         _mm_cmpeq_epi8(chunk3, quote));
+        const __m128i cmp0 = _mm_or_si128(
+            _mm_or_si128(_mm_cmpeq_epi8(chunk0, null_char), _mm_cmpeq_epi8(chunk0, backslash)),
+            _mm_cmpeq_epi8(chunk0, quote));
+        const __m128i cmp1 = _mm_or_si128(
+            _mm_or_si128(_mm_cmpeq_epi8(chunk1, null_char), _mm_cmpeq_epi8(chunk1, backslash)),
+            _mm_cmpeq_epi8(chunk1, quote));
+        const __m128i cmp2 = _mm_or_si128(
+            _mm_or_si128(_mm_cmpeq_epi8(chunk2, null_char), _mm_cmpeq_epi8(chunk2, backslash)),
+            _mm_cmpeq_epi8(chunk2, quote));
+        const __m128i cmp3 = _mm_or_si128(
+            _mm_or_si128(_mm_cmpeq_epi8(chunk3, null_char), _mm_cmpeq_epi8(chunk3, backslash)),
+            _mm_cmpeq_epi8(chunk3, quote));
 
         // Convert to masks
         int mask0 = _mm_movemask_epi8(cmp0);
-        if (__builtin_expect(mask0 != 0, 0)) return str + __builtin_ctz(mask0);
+        if (__builtin_expect(mask0 != 0, 0))
+            return str + __builtin_ctz(mask0);
 
         int mask1 = _mm_movemask_epi8(cmp1);
-        if (__builtin_expect(mask1 != 0, 0)) return str + 16 + __builtin_ctz(mask1);
+        if (__builtin_expect(mask1 != 0, 0))
+            return str + 16 + __builtin_ctz(mask1);
 
         int mask2 = _mm_movemask_epi8(cmp2);
-        if (__builtin_expect(mask2 != 0, 0)) return str + 32 + __builtin_ctz(mask2);
+        if (__builtin_expect(mask2 != 0, 0))
+            return str + 32 + __builtin_ctz(mask2);
 
         int mask3 = _mm_movemask_epi8(cmp3);
-        if (__builtin_expect(mask3 != 0, 0)) return str + 48 + __builtin_ctz(mask3);
+        if (__builtin_expect(mask3 != 0, 0))
+            return str + 48 + __builtin_ctz(mask3);
 
         str += 64;
     }
 
     // Handle remaining 16-byte chunks
     for (; str <= safe_end_16; str += 16) {
-        const __m128i chunk = _mm_loadu_si128((const __m128i *)str);
-        const __m128i matches = _mm_or_si128(_mm_or_si128(_mm_cmpeq_epi8(chunk, null_char),
-                                                          _mm_cmpeq_epi8(chunk, backslash)),
-                                            _mm_cmpeq_epi8(chunk, quote));
+        const __m128i chunk   = _mm_loadu_si128((const __m128i *)str);
+        const __m128i matches = _mm_or_si128(
+            _mm_or_si128(_mm_cmpeq_epi8(chunk, null_char), _mm_cmpeq_epi8(chunk, backslash)),
+            _mm_cmpeq_epi8(chunk, quote));
         int mask = _mm_movemask_epi8(matches);
-        if (mask != 0) return str + __builtin_ctz(mask);
+        if (mask != 0)
+            return str + __builtin_ctz(mask);
     }
 
     return scan_string_noSIMD(str, end);
