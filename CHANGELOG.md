@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.16.13 - 2025-12-05
+
+- Fixed rails encoding for Hash and Array subclasses.
+
 ## 3.16.12 - 2025-10-29
 
 - Fixed dump realloc bug that occurred when using the compat mode dump options.
