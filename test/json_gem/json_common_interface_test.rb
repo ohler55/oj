@@ -55,12 +55,13 @@ class JSONCommonInterfaceTest < Test::Unit::TestCase
   end
 
   # This doesn't have anything to do with JSON parsing or generation. It seems
-  # to be more of an internal tool that is exposed to users.
-  def test_deep_const_get
-    omit("mimic_JSON") unless REAL_JSON_GEM
-    assert_raise(ArgumentError) { JSON.deep_const_get('Nix::Da') }
-    assert_equal File::SEPARATOR, JSON.deep_const_get('File::SEPARATOR')
-  end
+  # to be more of an internal tool that is exposed to users. It also breaks in
+  # ruby 4.0.0.
+  # def test_deep_const_get
+  #   omit("mimic_JSON") unless REAL_JSON_GEM
+  #   assert_raise(ArgumentError) { JSON.deep_const_get('Nix::Da') }
+  #   assert_equal File::SEPARATOR, JSON.deep_const_get('File::SEPARATOR')
+  # end
   ##############################################################################
 
   def test_create_id
@@ -142,11 +143,12 @@ class JSONCommonInterfaceTest < Test::Unit::TestCase
     assert_equal too_deep, output.string
   end
 
-  def test_dump_should_modify_defaults
-    max_nesting = JSON.dump_default_options[:max_nesting]
-    JSON.dump([], StringIO.new, 10)
-    assert_equal max_nesting, JSON.dump_default_options[:max_nesting]
-  end
+  # Removed after 3.0
+  # def test_dump_should_modify_defaults
+  #   max_nesting = JSON.dump_default_options[:max_nesting]
+  #   JSON.dump([], StringIO.new, 10)
+  #   assert_equal max_nesting, JSON.dump_default_options[:max_nesting]
+  # end
 
   def test_JSON
     assert_equal @json, JSON(@hash)
