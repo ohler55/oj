@@ -55,9 +55,10 @@ jobs:
           - ruby: 'truffleruby'
             gemfile: no_rails
             os: ubuntu
-          - ruby: 'ucrt'
-            gemfile: no_rails
-            os: windows
+          # no longer supported or until min stack size issue can be resolved
+          # - ruby: 'ucrt'
+          #   gemfile: no_rails
+          #   os: windows
 
     env:
       BUNDLE_GEMFILE: gemfiles/${{ matrix.gemfile }}.gemfile
