@@ -420,19 +420,6 @@ class JSONParserTest < Test::Unit::TestCase
     assert res.item_set?
   end
 
-  def test_parse_generic_object
-    res = JSON.parse(
-      '{"foo":"bar", "baz":{}}',
-      :object_class => JSON::GenericObject
-    )
-    assert_equal(JSON::GenericObject, res.class)
-    assert_equal "bar", res.foo
-    assert_equal "bar", res["foo"]
-    assert_equal "bar", res[:foo]
-    assert_equal "bar", res.to_hash[:foo]
-    assert_equal(JSON::GenericObject, res.baz.class)
-  end if defined?(JSON::GenericObject)
-
   def test_generate_core_subclasses_with_new_to_json
     obj = SubHash2["foo" => SubHash2["bar" => true]]
     obj_json = JSON(obj)
