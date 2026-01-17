@@ -1061,6 +1061,26 @@ static void each_value(Doc doc, Leaf leaf) {
 
 // doc functions
 
+/* @overload close() => nil
+ *
+ * Closes an open document. No further calls to the document will be valid
+ * after closing.
+ * @example
+ *   doc = Oj::Doc.open('[1,2,3]')
+ *   doc.size()  #=> 4
+ *   doc.close()
+ */
+static VALUE doc_close(VALUE self) {
+    Doc doc = self_doc(self);
+
+    rb_gc_unregister_address(&doc->self);
+    DATA_PTR(doc->self) = NULL;
+    if (0 != doc) {
+        doc_free(doc);
+    }
+    return Qnil;
+}
+
 /* @overload open(json) { |doc| ... } => Object
  *
  * Parses a JSON document String and then yields to the provided block if one
@@ -1091,12 +1111,9 @@ static VALUE doc_open(VALUE clas, VALUE str) {
 
     memcpy(json, StringValuePtr(str), len);
     obj = parse_json(clas, json, given);
-    // TBD is this needed
-    /*
     if (given) {
-        OJ_R_FREE(json);
+	OJ_R_FREE(json);
     }
-    */
     return obj;
 }
 
@@ -1610,25 +1627,6 @@ static VALUE doc_size(VALUE self) {
     return ULONG2NUM(d->size);
 }
 
-/* @overload close() => nil
- *
- * Closes an open document. No further calls to the document will be valid
- * after closing.
- * @example
- *   doc = Oj::Doc.open('[1,2,3]')
- *   doc.size()  #=> 4
- *   doc.close()
- */
-static VALUE doc_close(VALUE self) {
-    Doc doc = self_doc(self);
-
-    rb_gc_unregister_address(&doc->self);
-    DATA_PTR(doc->self) = NULL;
-    if (0 != doc) {
-        doc_free(doc);
-    }
-    return Qnil;
-}
 #if 0
 // hack to keep the doc generator happy
 Oj = rb_define_module("Oj");
