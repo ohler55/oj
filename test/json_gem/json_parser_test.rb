@@ -294,10 +294,10 @@ class JSONParserTest < Test::Unit::TestCase
     json = '["\""]'
     data = ['"']
     assert_equal data, JSON.parse(json)
-    #
-    json = '["\\\'"]'
-    data = ["'"]
-    assert_equal data, JSON.parse(json)
+    # no longer a valid escape sequence in ruby 4.0
+    # json = '["\\\'"]'
+    # data = ["'"]
+    # assert_equal data, JSON.parse(json)
   end
 
   class SubArray < Array

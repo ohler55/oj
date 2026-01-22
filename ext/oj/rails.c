@@ -661,13 +661,15 @@ static VALUE encoder_new(int argc, VALUE *argv, VALUE self) {
     Encoder e = OJ_R_ALLOC(struct _encoder);
 
     e->opts = oj_default_options;
-    e->arg  = Qnil;
     copy_opts(&ropts, &e->ropts);
 
     if (1 <= argc && Qnil != *argv) {
-        oj_parse_options(*argv, &e->opts);
         e->arg = *argv;
+    } else {
+        e->arg = rb_hash_new();
     }
+    oj_parse_options(e->arg, &e->opts);
+
     return TypedData_Wrap_Struct(encoder_class, &oj_encoder_type, e);
 }
 

@@ -33,7 +33,7 @@ class JSONGenericObjectTest < Test::Unit::TestCase
         :create_additions => true
     )
     ch = Hash
-    # JSON after 2.10 no longer allows GenericObject creatable to be turned off or so it appears
+    # JSON after 2.10 no longer allows GenericObject creatable to be turned off or so it appears.
     ch = JSON::GenericObject if REAL_JSON_GEM && ([2, 11, 0] <=> JSON::VERSION.split('.').map { |v| v.to_i }) <= 0
     assert_kind_of ch,
                    JSON(

@@ -16,7 +16,7 @@ jobs:
       matrix:
         # Due to https://github.com/actions/runner/issues/849, we have to use quotes for '3.0'
         ruby:
-          - head
+          # - head
           - '3.4'
           - '3.3'
           - '3.2'
@@ -55,9 +55,10 @@ jobs:
           - ruby: 'truffleruby'
             gemfile: no_rails
             os: ubuntu
-          - ruby: 'ucrt'
-            gemfile: no_rails
-            os: windows
+          # no longer supported or until min stack size issue can be resolved
+          # - ruby: 'ucrt'
+          #   gemfile: no_rails
+          #   os: windows
 
     env:
       BUNDLE_GEMFILE: gemfiles/${{ matrix.gemfile }}.gemfile
@@ -66,7 +67,7 @@ jobs:
     continue-on-error: ${{ matrix.ruby == 'head'}}
     name: Ruby ${{ matrix.ruby }} (${{ matrix.os }}${{ matrix.gemfile != 'no_rails' && ', ' || '' }}${{ matrix.gemfile != 'no_rails' && matrix.gemfile || '' }})
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby }}

@@ -35,13 +35,12 @@ have_func('rb_ext_ractor_safe', 'ruby.h')
 
 dflags['OJ_DEBUG'] = true unless ENV['OJ_DEBUG'].nil?
 
-if with_config('--with-sse42')
-  if try_cflags('-msse4.2')
-    $CPPFLAGS += ' -msse4.2'
-    dflags['OJ_USE_SSE4_2'] = 1
-  else
-    warn 'SSE 4.2 is not supported on this platform.'
-  end
+# Enable SIMD optimizations - try SSE4.2 on x86_64 for best performance
+# Falls back to SSE2 or compiler defaults if not available
+if try_cflags('-msse4.2')
+  $CPPFLAGS += ' -msse4.2'
+elsif try_cflags('-msse2')
+  $CPPFLAGS += ' -msse2'
 end
 
 if enable_config('trace-log', false)
