@@ -243,7 +243,7 @@ void SIMD_TARGET initialize_sse42(void) {
 
 #define SIMD_TARGET
 
-#endif /* OJ_USE_SSE4_2 */
+#endif /* HAVE_SIMD_SSE4_2 */
 
 inline static size_t hibit_friendly_size(const uint8_t *str, size_t len) {
 #ifdef HAVE_SIMD_NEON
@@ -264,7 +264,7 @@ inline static size_t hibit_friendly_size(const uint8_t *str, size_t len) {
 
     size_t total = size + calculate_string_size(str, len - i, hibit_friendly_chars);
     return total;
-#elif defined(OJ_USE_SSE4_2)
+#elif defined(HAVE_SIMD_SSE4_2)
     if (len >= sizeof(__m128i)) {
         if (hibit_friendly_size_simd != NULL) {
             return hibit_friendly_size_simd(str, len);
@@ -1102,7 +1102,7 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
 #ifdef HAVE_SIMD_NEON
     uint8x16x4_t *cmap_neon       = NULL;
     int           neon_table_size = 0;
-#elif defined(OJ_USE_SSE4_2)
+#elif defined(HAVE_SIMD_SSE4_2)
     __m128i      *cmap_sse42 = NULL;
     int           sse42_tab_size;
 #endif /* HAVE_SIMD_NEON */
