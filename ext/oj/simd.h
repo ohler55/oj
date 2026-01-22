@@ -18,9 +18,7 @@
 
 extern void initialize_sse42(void);
 
-static inline __m128i vector_lookup_sse42(__m128i  input,
-                                                                                  __m128i *lookup_table,
-                                                                                  int      tab_size) {
+static inline __m128i vector_lookup_sse42(__m128i input, __m128i *lookup_table, int tab_size) {
     // Extract high 4 bits to determine which 16-byte chunk (0-15)
     __m128i hi_index = _mm_and_si128(_mm_srli_epi32(input, 4), _mm_set1_epi8(0x0F));
 

@@ -1103,8 +1103,8 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
     uint8x16x4_t *cmap_neon       = NULL;
     int           neon_table_size = 0;
 #elif defined(HAVE_SIMD_SSE4_2)
-    __m128i      *cmap_sse42 = NULL;
-    int           sse42_tab_size;
+    __m128i *cmap_sse42 = NULL;
+    int      sse42_tab_size;
 #endif /* HAVE_SIMD_NEON */
     const char *orig                  = str;
     bool        has_hi                = false;
