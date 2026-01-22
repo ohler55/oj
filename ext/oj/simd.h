@@ -14,6 +14,8 @@
 #define HAVE_SIMD_SSE4_2 1
 #include <nmmintrin.h>
 
+#define SIMD_MINIMUM_THRESHOLD 6
+
 extern void initialize_sse42(void);
 
 static inline __m128i vector_lookup_sse42(__m128i  input,
