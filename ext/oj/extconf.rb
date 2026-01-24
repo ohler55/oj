@@ -35,11 +35,15 @@ have_func('rb_ext_ractor_safe', 'ruby.h')
 
 dflags['OJ_DEBUG'] = true unless ENV['OJ_DEBUG'].nil?
 
-# Enable SIMD optimizations - try SSE4.2 on x86_64 for best performance
-# Falls back to SSE2 or compiler defaults if not available
-if try_cflags('-msse4.2')
-  $CPPFLAGS += ' -msse4.2'
-elsif try_cflags('-msse2')
+# SIMD optimizations use runtime CPU detection and function-level target attributes
+# We do NOT add global -msse4.2/-msse2 flags here because:
+# 1. It would cause illegal instruction errors on CPUs without SSE4.2
+# 2. The code uses __attribute__((target("sse4.2"))) for SSE4.2 functions
+# 3. Runtime detection in oj_get_simd_implementation() selects the right path
+#
+# We only add -msse2 if available, since SSE2 is baseline for all x86_64 CPUs
+# and needed for compiling the SSE2 fallback code on 32-bit x86
+if try_cflags('-msse2')
   $CPPFLAGS += ' -msse2'
 end
 

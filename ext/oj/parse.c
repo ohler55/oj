@@ -202,7 +202,8 @@ static inline const char *scan_string_noSIMD(const char *str, const char *end) {
 #ifdef HAVE_SIMD_SSE4_2
 // Optimized SIMD string scanner using SSE4.2 instructions
 // Uses prefetching and processes multiple chunks in parallel to reduce latency
-static inline const char *scan_string_SSE42(const char *str, const char *end) {
+// Note: OJ_TARGET_SSE42 attribute allows this to compile even without global -msse4.2
+static OJ_TARGET_SSE42 const char *scan_string_SSE42(const char *str, const char *end) {
     static const char chars[16]   = "\x00\\\"";
     const __m128i     terminate   = _mm_loadu_si128((const __m128i *)&chars[0]);
     const char       *safe_end_64 = end - 64;
@@ -212,7 +213,7 @@ static inline const char *scan_string_SSE42(const char *str, const char *end) {
     // This reduces pipeline stalls and improves instruction-level parallelism
     while (str <= safe_end_64) {
         // Prefetch next cache line for better memory throughput
-        __builtin_prefetch(str + 64, 0, 0);
+        OJ_PREFETCH(str + 64);
 
         // Load and compare 4 chunks in parallel
         const __m128i chunk0 = _mm_loadu_si128((const __m128i *)(str));
@@ -225,7 +226,7 @@ static inline const char *scan_string_SSE42(const char *str, const char *end) {
                                     chunk0,
                                     16,
                                     _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_LEAST_SIGNIFICANT);
-        if (__builtin_expect(r0 != 16, 0))
+        if (OJ_UNLIKELY(r0 != 16))
             return str + r0;
 
         const int r1 = _mm_cmpestri(terminate,
@@ -233,7 +234,7 @@ static inline const char *scan_string_SSE42(const char *str, const char *end) {
                                     chunk1,
                                     16,
                                     _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_LEAST_SIGNIFICANT);
-        if (__builtin_expect(r1 != 16, 0))
+        if (OJ_UNLIKELY(r1 != 16))
             return str + 16 + r1;
 
         const int r2 = _mm_cmpestri(terminate,
@@ -241,7 +242,7 @@ static inline const char *scan_string_SSE42(const char *str, const char *end) {
                                     chunk2,
                                     16,
                                     _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_LEAST_SIGNIFICANT);
-        if (__builtin_expect(r2 != 16, 0))
+        if (OJ_UNLIKELY(r2 != 16))
             return str + 32 + r2;
 
         const int r3 = _mm_cmpestri(terminate,
@@ -249,7 +250,7 @@ static inline const char *scan_string_SSE42(const char *str, const char *end) {
                                     chunk3,
                                     16,
                                     _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_LEAST_SIGNIFICANT);
-        if (__builtin_expect(r3 != 16, 0))
+        if (OJ_UNLIKELY(r3 != 16))
             return str + 48 + r3;
 
         str += 64;
@@ -274,7 +275,8 @@ static inline const char *scan_string_SSE42(const char *str, const char *end) {
 #ifdef HAVE_SIMD_SSE2
 // Optimized SSE2 string scanner (fallback for older x86_64 CPUs)
 // Uses SSE2 instructions with prefetching and parallel processing
-static inline const char *scan_string_SSE2(const char *str, const char *end) {
+// Note: OJ_TARGET_SSE2 attribute allows this to compile even without global -msse2
+static OJ_TARGET_SSE2 const char *scan_string_SSE2(const char *str, const char *end) {
     const char *safe_end_64 = end - 64;
     const char *safe_end_16 = end - 16;
 
@@ -285,7 +287,7 @@ static inline const char *scan_string_SSE2(const char *str, const char *end) {
 
     // Process 64 bytes at a time for better throughput
     while (str <= safe_end_64) {
-        __builtin_prefetch(str + 64, 0, 0);
+        OJ_PREFETCH(str + 64);
 
         // Load 4 chunks
         const __m128i chunk0 = _mm_loadu_si128((const __m128i *)(str));
@@ -309,20 +311,20 @@ static inline const char *scan_string_SSE2(const char *str, const char *end) {
 
         // Convert to masks
         int mask0 = _mm_movemask_epi8(cmp0);
-        if (__builtin_expect(mask0 != 0, 0))
-            return str + __builtin_ctz(mask0);
+        if (OJ_UNLIKELY(mask0 != 0))
+            return str + OJ_CTZ(mask0);
 
         int mask1 = _mm_movemask_epi8(cmp1);
-        if (__builtin_expect(mask1 != 0, 0))
-            return str + 16 + __builtin_ctz(mask1);
+        if (OJ_UNLIKELY(mask1 != 0))
+            return str + 16 + OJ_CTZ(mask1);
 
         int mask2 = _mm_movemask_epi8(cmp2);
-        if (__builtin_expect(mask2 != 0, 0))
-            return str + 32 + __builtin_ctz(mask2);
+        if (OJ_UNLIKELY(mask2 != 0))
+            return str + 32 + OJ_CTZ(mask2);
 
         int mask3 = _mm_movemask_epi8(cmp3);
-        if (__builtin_expect(mask3 != 0, 0))
-            return str + 48 + __builtin_ctz(mask3);
+        if (OJ_UNLIKELY(mask3 != 0))
+            return str + 48 + OJ_CTZ(mask3);
 
         str += 64;
     }
@@ -335,7 +337,7 @@ static inline const char *scan_string_SSE2(const char *str, const char *end) {
             _mm_cmpeq_epi8(chunk, quote));
         int mask = _mm_movemask_epi8(matches);
         if (mask != 0)
-            return str + __builtin_ctz(mask);
+            return str + OJ_CTZ(mask);
     }
 
     return scan_string_noSIMD(str, end);
@@ -345,11 +347,25 @@ static inline const char *scan_string_SSE2(const char *str, const char *end) {
 static const char *(*scan_func)(const char *str, const char *end) = scan_string_noSIMD;
 
 void oj_scanner_init(void) {
+    // Use runtime CPU detection to select the best SIMD implementation
+    // This ensures we don't crash on CPUs that don't support SSE4.2
+    SIMD_Implementation impl = oj_get_simd_implementation();
+
+    switch (impl) {
 #ifdef HAVE_SIMD_SSE4_2
-    scan_func = scan_string_SSE42;
-#elif defined(HAVE_SIMD_SSE2)
-    scan_func = scan_string_SSE2;
+    case SIMD_SSE42:
+        scan_func = scan_string_SSE42;
+        break;
 #endif
+#ifdef HAVE_SIMD_SSE2
+    case SIMD_SSE2:
+        scan_func = scan_string_SSE2;
+        break;
+#endif
+    default:
+        scan_func = scan_string_noSIMD;
+        break;
+    }
     // Note: ARM NEON string scanning would be added here if needed
 }
 
