@@ -2087,3 +2087,23 @@ void Init_oj(void) {
     initialize_neon();
 #endif /* HAVE_SIMD_NEON */
 }
+
+SIMD_Implementation find_simd_implementation(void) {
+#if defined(__has_builtin) && __has_builtin(__builtin_cpu_supports)
+#if defined(HAVE_SIMD_SSE4_2)
+    if (__builtin_cpu_supports("sse4.2")) {
+        return SIMD_SSE42;
+    }
+#elif defined(HAVE_SIMD_SSE2)
+    if (__builtin_cpu_supports("sse2")) {
+        return SIMD_SSE2;
+    }
+#endif
+#endif /* __has_builtin */
+
+#if defined(HAVE_SIMD_NEON)
+    return SIMD_NEON;
+#endif
+
+    return SIMD_NONE;
+}

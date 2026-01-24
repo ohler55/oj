@@ -43,6 +43,10 @@ elsif try_cflags('-msse2')
   $CPPFLAGS += ' -msse2'
 end
 
+have_header('x86intrin.h')
+have_header('nmmintrin.h') # SSE4.2
+have_header('emmintrin.h') # SSE2
+
 if enable_config('trace-log', false)
   dflags['OJ_ENABLE_TRACE_LOG'] = 1
 end

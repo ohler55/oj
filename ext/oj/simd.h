@@ -4,21 +4,31 @@
 // SIMD architecture detection and configuration
 // This header provides unified SIMD support across different CPU architectures
 
+typedef enum _simd_implementation { SIMD_NONE, SIMD_NEON, SIMD_SSE2, SIMD_SSE42 } SIMD_Implementation;
+
+SIMD_Implementation find_simd_implementation(void);
+
 // x86/x86_64 SIMD detection
 #if defined(__x86_64__) || defined(__i386__) || defined(_M_IX86) || defined(_M_X64)
 #define HAVE_SIMD_X86 1
+
+#if defined(HAVE_X86INTRIN_H)
+#include <x86intrin.h>
+#elif defined(HAVE_NMMINTRIN_H)
+#include <nmmintrin.h>
+#elif HAVE_EMMINTRIN_H
+#include <emmintrin.h>
+#endif
 
 // SSE4.2 support (Intel Core i7+, AMD Bulldozer+)
 // Enabled automatically when compiler has -msse4.2 flag
 #if defined(__SSE4_2__)
 #define HAVE_SIMD_SSE4_2 1
-#include <nmmintrin.h>
 #endif
 
 // SSE2 support (fallback for older x86_64 CPUs - all x86_64 CPUs support SSE2)
-#if defined(__SSE2__) && !defined(HAVE_SIMD_SSE4_2)
+#if defined(__SSE2__)
 #define HAVE_SIMD_SSE2 1
-#include <emmintrin.h>
 #endif
 
 #endif  // x86/x86_64
@@ -28,20 +38,6 @@
 #define HAVE_SIMD_NEON 1
 #define SIMD_MINIMUM_THRESHOLD 6
 #include <arm_neon.h>
-#endif
-
-// Define which SIMD implementation to use (priority order: SSE4.2 > NEON > SSE2)
-#if defined(HAVE_SIMD_SSE4_2)
-#define HAVE_SIMD_STRING_SCAN 1
-#define SIMD_TYPE "SSE4.2"
-#elif defined(HAVE_SIMD_NEON)
-#define HAVE_SIMD_STRING_SCAN 1
-#define SIMD_TYPE "NEON"
-#elif defined(HAVE_SIMD_SSE2)
-#define HAVE_SIMD_STRING_SCAN 1
-#define SIMD_TYPE "SSE2"
-#else
-#define SIMD_TYPE "none"
 #endif
 
 #endif /* OJ_SIMD_H */

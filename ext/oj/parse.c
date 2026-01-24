@@ -200,9 +200,15 @@ static inline const char *scan_string_noSIMD(const char *str, const char *end) {
 }
 
 #ifdef HAVE_SIMD_SSE4_2
+#if defined(__clang__) || defined(__GNUC__)
+#define TARGET_SSE42 __attribute__((target("sse4.2")))
+#else
+#define TARGET_SSE42
+#endif
+
 // Optimized SIMD string scanner using SSE4.2 instructions
 // Uses prefetching and processes multiple chunks in parallel to reduce latency
-static inline const char *scan_string_SSE42(const char *str, const char *end) {
+static inline TARGET_SSE42 const char *scan_string_SSE42(const char *str, const char *end) {
     static const char chars[16]   = "\x00\\\"";
     const __m128i     terminate   = _mm_loadu_si128((const __m128i *)&chars[0]);
     const char       *safe_end_64 = end - 64;
@@ -269,12 +275,19 @@ static inline const char *scan_string_SSE42(const char *str, const char *end) {
 
     return scan_string_noSIMD(str, end);
 }
+#undef TARGET_SSE42
 #endif
 
 #ifdef HAVE_SIMD_SSE2
+#if defined(__clang__) || defined(__GNUC__)
+#define TARGET_SSE2 __attribute__((target("sse2")))
+#else
+#define TARGET_SSE2
+#endif
+
 // Optimized SSE2 string scanner (fallback for older x86_64 CPUs)
 // Uses SSE2 instructions with prefetching and parallel processing
-static inline const char *scan_string_SSE2(const char *str, const char *end) {
+static inline TARGET_SSE2 const char *scan_string_SSE2(const char *str, const char *end) {
     const char *safe_end_64 = end - 64;
     const char *safe_end_16 = end - 16;
 
@@ -345,11 +358,15 @@ static inline const char *scan_string_SSE2(const char *str, const char *end) {
 static const char *(*scan_func)(const char *str, const char *end) = scan_string_noSIMD;
 
 void oj_scanner_init(void) {
+    switch (find_simd_implementation()) {
 #ifdef HAVE_SIMD_SSE4_2
-    scan_func = scan_string_SSE42;
-#elif defined(HAVE_SIMD_SSE2)
-    scan_func = scan_string_SSE2;
+    case SIMD_SSE42: scan_func = scan_string_SSE42; break;
 #endif
+#ifdef HAVE_SIMD_SSE2
+    case SIMD_SSE2: scan_func = scan_string_SSE2; break;
+#endif
+    default: scan_func = scan_string_noSIMD; break;
+    }
     // Note: ARM NEON string scanning would be added here if needed
 }
 
