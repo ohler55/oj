@@ -6,12 +6,7 @@
 // with cross-platform runtime detection (Windows/Linux/Mac)
 
 // SIMD implementation enum - used for runtime selection
-typedef enum _simd_implementation {
-    SIMD_NONE,
-    SIMD_NEON,
-    SIMD_SSE2,
-    SIMD_SSE42
-} SIMD_Implementation;
+typedef enum _simd_implementation { SIMD_NONE, SIMD_NEON, SIMD_SSE2, SIMD_SSE42 } SIMD_Implementation;
 
 // Runtime CPU detection function (implemented in oj.c)
 SIMD_Implementation oj_get_simd_implementation(void);
@@ -22,10 +17,10 @@ SIMD_Implementation oj_get_simd_implementation(void);
 
 // Branch prediction hints
 #if defined(__GNUC__) || defined(__clang__)
-#define OJ_LIKELY(x)   __builtin_expect(!!(x), 1)
+#define OJ_LIKELY(x) __builtin_expect(!!(x), 1)
 #define OJ_UNLIKELY(x) __builtin_expect(!!(x), 0)
 #else
-#define OJ_LIKELY(x)   (x)
+#define OJ_LIKELY(x) (x)
 #define OJ_UNLIKELY(x) (x)
 #endif
 
@@ -103,7 +98,7 @@ static inline int oj_ctz_fallback(unsigned int x) {
 // Target attribute macros for function-level SIMD enabling
 #if defined(__clang__) || defined(__GNUC__)
 #define OJ_TARGET_SSE42 __attribute__((target("sse4.2")))
-#define OJ_TARGET_SSE2  __attribute__((target("sse2")))
+#define OJ_TARGET_SSE2 __attribute__((target("sse2")))
 #else
 // MSVC doesn't need target attributes - intrinsics are always available
 #define OJ_TARGET_SSE42

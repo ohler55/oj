@@ -353,18 +353,12 @@ void oj_scanner_init(void) {
 
     switch (impl) {
 #ifdef HAVE_SIMD_SSE4_2
-    case SIMD_SSE42:
-        scan_func = scan_string_SSE42;
-        break;
+    case SIMD_SSE42: scan_func = scan_string_SSE42; break;
 #endif
 #ifdef HAVE_SIMD_SSE2
-    case SIMD_SSE2:
-        scan_func = scan_string_SSE2;
-        break;
+    case SIMD_SSE2: scan_func = scan_string_SSE2; break;
 #endif
-    default:
-        scan_func = scan_string_noSIMD;
-        break;
+    default: scan_func = scan_string_noSIMD; break;
     }
     // Note: ARM NEON string scanning would be added here if needed
 }
