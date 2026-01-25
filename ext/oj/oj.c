@@ -1815,9 +1815,6 @@ SIMD_Implementation oj_get_simd_implementation(void) {
 #endif
 
 #ifdef OJ_HAS_BUILTIN_CPU_SUPPORTS
-    // Initialize CPU feature detection (required on some systems)
-    __builtin_cpu_init();
-
 #ifdef HAVE_SIMD_SSE4_2
     if (__builtin_cpu_supports("sse4.2")) {
         return SIMD_SSE42;
