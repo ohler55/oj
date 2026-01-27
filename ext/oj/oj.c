@@ -1780,6 +1780,78 @@ static VALUE mem_report(VALUE self) {
  *
  * - *:wab* specifically for WAB data exchange.
  */
+
+// =============================================================================
+// Runtime SIMD CPU detection
+// Cross-platform support for Windows (MSVC), Linux, and macOS (GCC/Clang)
+// =============================================================================
+SIMD_Implementation oj_get_simd_implementation(void) {
+#ifdef HAVE_SIMD_X86
+    // x86/x86_64 runtime detection
+
+#if defined(_MSC_VER)
+    // MSVC: Use __cpuid intrinsic
+    int cpu_info[4];
+    __cpuid(cpu_info, 1);
+
+    // Check for SSE4.2 (bit 20 of ECX)
+    if (cpu_info[2] & (1 << 20)) {
+        return SIMD_SSE42;
+    }
+    // Check for SSE2 (bit 26 of EDX)
+    if (cpu_info[3] & (1 << 26)) {
+        return SIMD_SSE2;
+    }
+
+#elif defined(__GNUC__) || defined(__clang__)
+    // GCC/Clang: Use __builtin_cpu_supports if available
+#if defined(__has_builtin)
+#if __has_builtin(__builtin_cpu_supports)
+#define OJ_HAS_BUILTIN_CPU_SUPPORTS 1
+#endif
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8))
+    // GCC 4.8+ has __builtin_cpu_supports
+#define OJ_HAS_BUILTIN_CPU_SUPPORTS 1
+#endif
+
+#ifdef OJ_HAS_BUILTIN_CPU_SUPPORTS
+#ifdef HAVE_SIMD_SSE4_2
+    if (__builtin_cpu_supports("sse4.2")) {
+        return SIMD_SSE42;
+    }
+#endif
+#ifdef HAVE_SIMD_SSE2
+    if (__builtin_cpu_supports("sse2")) {
+        return SIMD_SSE2;
+    }
+#endif
+#else
+    // Fallback: Use CPUID instruction directly
+    unsigned int eax, ebx, ecx, edx;
+    if (__get_cpuid(1, &eax, &ebx, &ecx, &edx)) {
+        // Check for SSE4.2 (bit 20 of ECX)
+        if (ecx & (1 << 20)) {
+            return SIMD_SSE42;
+        }
+        // Check for SSE2 (bit 26 of EDX)
+        if (edx & (1 << 26)) {
+            return SIMD_SSE2;
+        }
+    }
+#endif  // OJ_HAS_BUILTIN_CPU_SUPPORTS
+
+#endif  // _MSC_VER vs GCC/Clang
+
+#endif  // HAVE_SIMD_X86
+
+#ifdef HAVE_SIMD_NEON
+    // ARM NEON is always available on ARM64 and detected at compile time
+    return SIMD_NEON;
+#endif
+
+    return SIMD_NONE;
+}
+
 void Init_oj(void) {
     int err = 0;
 
