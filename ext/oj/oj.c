@@ -167,6 +167,8 @@ pthread_mutex_t oj_cache_mutex;
 VALUE oj_cache_mutex = Qnil;
 #endif
 
+SIMD_Implementation SIMD_Impl = SIMD_NONE;
+
 extern void oj_parser_init();
 
 const char oj_json_class[] = "json_class";
@@ -2152,10 +2154,18 @@ void Init_oj(void) {
 #endif
     oj_init_doc();
 
+    SIMD_Impl = oj_get_simd_implementation();
+
     oj_parser_init();
     oj_scanner_init();
 
 #ifdef HAVE_SIMD_NEON
     initialize_neon();
 #endif /* HAVE_SIMD_NEON */
+
+#ifdef HAVE_SIMD_SSE4_2
+    if (SIMD_Impl == SIMD_SSE42) {
+        initialize_sse42();
+    }
+#endif /* HAVE_SIMD_SSE4_2 */
 }
