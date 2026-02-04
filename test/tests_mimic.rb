@@ -9,7 +9,6 @@ require 'json_encoding_test'
 require 'json_ext_parser_test'
 require 'json_fixtures_test'
 require 'json_generator_test'
-require 'json_generic_object_test'
 require 'json_parser_test'
 require 'json_string_matching_test'
 

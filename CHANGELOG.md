@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 3.16.14 - 2026-02-03
+
+-  Fixed SSE issue #989.
+
+- Removed ostruct dependency.
+
+- Removed generic object JSON gem tests.
+
 ## 3.16.13 - 2025-12-05
 
 - Fixed rails encoding for Hash and Array subclasses.
