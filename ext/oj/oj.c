@@ -2163,7 +2163,9 @@ void Init_oj(void) {
     initialize_neon();
 #endif /* HAVE_SIMD_NEON */
 
+#ifdef HAVE_SIMD_SSE4_2
     if (SIMD_Impl == SIMD_SSE42) {
         initialize_sse42();
     }
+#endif /* HAVE_SIMD_SSE4_2 */
 }
