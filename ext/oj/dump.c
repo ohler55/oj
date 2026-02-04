@@ -203,10 +203,7 @@ void initialize_neon(void) {
 
 #ifdef HAVE_SIMD_SSE4_2
 
-static size_t (*hibit_friendly_size_simd)(const uint8_t *str, size_t len) = NULL;
 static __m128i hibit_friendly_chars_sse42[8];
-
-#define SIMD_TARGET __attribute__((target("sse4.2,ssse3")))
 
 // From: https://stackoverflow.com/questions/36998538/fastest-way-to-horizontally-sum-sse-unsigned-byte-vector
 inline uint32_t _mm_sum_epu8(const __m128i v) {
@@ -214,7 +211,7 @@ inline uint32_t _mm_sum_epu8(const __m128i v) {
     return _mm_cvtsi128_si32(vsum) + _mm_extract_epi16(vsum, 4);
 }
 
-inline static SIMD_TARGET size_t hibit_friendly_size_sse42(const uint8_t *str, size_t len) {
+inline static OJ_TARGET_SSE42 size_t hibit_friendly_size_sse42(const uint8_t *str, size_t len) {
     size_t size = 0;
     size_t i    = 0;
 
@@ -229,9 +226,7 @@ inline static SIMD_TARGET size_t hibit_friendly_size_sse42(const uint8_t *str, s
     return total;
 }
 
-void SIMD_TARGET initialize_sse42(void) {
-    hibit_friendly_size_simd = hibit_friendly_size_sse42;
-
+void OJ_TARGET_SSE42 initialize_sse42(void) {
     for (int i = 0; i < 8; i++) {
         hibit_friendly_chars_sse42[i] = _mm_sub_epi8(
             _mm_loadu_si128((__m128i *)(hibit_friendly_chars + i * sizeof(__m128i))),
@@ -265,9 +260,9 @@ inline static size_t hibit_friendly_size(const uint8_t *str, size_t len) {
     size_t total = size + calculate_string_size(str, len - i, hibit_friendly_chars);
     return total;
 #elif defined(HAVE_SIMD_SSE4_2)
-    if (len >= sizeof(__m128i)) {
-        if (hibit_friendly_size_simd != NULL) {
-            return hibit_friendly_size_simd(str, len);
+    if (SIMD_Impl == SIMD_SSE42) {
+        if (len >= sizeof(__m128i)) {
+            return hibit_friendly_size_sse42(str, len);
         }
     }
     return calculate_string_size(str, len, hibit_friendly_chars);
@@ -1004,7 +999,7 @@ typedef struct _sse42_match_result {
     bool    do_unicode_validation;
 } sse42_match_result;
 
-static inline SIMD_TARGET sse42_match_result
+static inline OJ_TARGET_SSE42 sse42_match_result
 sse42_update(const char *str, __m128i *cmap_sse42, int sse42_tab_size, bool do_unicode_validation, bool has_hi) {
     sse42_match_result result = {.has_some_hibit = false, .do_unicode_validation = false};
 
@@ -1221,7 +1216,10 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
 #if defined(HAVE_SIMD_NEON)
         bool use_simd = (cmap_neon != NULL && cnt >= (sizeof(uint8x16_t))) ? true : false;
 #elif defined(HAVE_SIMD_SSE4_2)
-        bool use_simd = (cmap_sse42 != NULL && cnt >= (sizeof(__m128i))) ? true : false;
+        bool use_simd = false;
+        if (SIMD_Impl == SIMD_SSE42) {
+            use_simd = (cmap_sse42 != NULL && cnt >= (sizeof(__m128i))) ? true : false;
+        }
 #endif
 
 #ifdef HAVE_SIMD_NEON
@@ -1291,47 +1289,49 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
 #endif
 
 #ifdef HAVE_SIMD_SSE4_2
-        if (use_simd) {
-            while (str < end) {
-                const char *chunk_ptr = NULL;
-                if (str + sizeof(__m128i) <= end) {
-                    chunk_ptr   = str;
-                    chunk_start = str;
-                    chunk_end   = str + sizeof(__m128i);
-                } else if ((end - str) >= SIMD_MINIMUM_THRESHOLD) {
-                    memset(out->cur, 'A', sizeof(__m128i));
-                    memcpy(out->cur, str, (end - str));
-                    chunk_ptr   = out->cur;
-                    chunk_start = str;
-                    chunk_end   = end;
-                } else {
-                    break;
-                }
-                sse42_match_result result = sse42_update(chunk_ptr,
-                                                         cmap_sse42,
-                                                         sse42_tab_size,
-                                                         do_unicode_validation,
-                                                         has_hi);
-                if ((result.do_unicode_validation) || result.needs_escape) {
-                    SEARCH_FLUSH;
-                    _mm_storeu_si128((__m128i *)matches, result.actions);
-                    while (str < chunk_end) {
-                        long match_index = str - chunk_start;
-                        str              = process_character(matches[match_index],
-                                                str,
-                                                end,
-                                                out,
-                                                orig,
-                                                do_unicode_validation,
-                                                &check_start);
-                        str++;
+        if (SIMD_Impl == SIMD_SSE42) {
+            if (use_simd) {
+                while (str < end) {
+                    const char *chunk_ptr = NULL;
+                    if (str + sizeof(__m128i) <= end) {
+                        chunk_ptr   = str;
+                        chunk_start = str;
+                        chunk_end   = str + sizeof(__m128i);
+                    } else if ((end - str) >= SIMD_MINIMUM_THRESHOLD) {
+                        memset(out->cur, 'A', sizeof(__m128i));
+                        memcpy(out->cur, str, (end - str));
+                        chunk_ptr   = out->cur;
+                        chunk_start = str;
+                        chunk_end   = end;
+                    } else {
+                        break;
                     }
-                    cursor = str;
-                    continue;
+                    sse42_match_result result = sse42_update(chunk_ptr,
+                                                            cmap_sse42,
+                                                            sse42_tab_size,
+                                                            do_unicode_validation,
+                                                            has_hi);
+                    if ((result.do_unicode_validation) || result.needs_escape) {
+                        SEARCH_FLUSH;
+                        _mm_storeu_si128((__m128i *)matches, result.actions);
+                        while (str < chunk_end) {
+                            long match_index = str - chunk_start;
+                            str              = process_character(matches[match_index],
+                                                    str,
+                                                    end,
+                                                    out,
+                                                    orig,
+                                                    do_unicode_validation,
+                                                    &check_start);
+                            str++;
+                        }
+                        cursor = str;
+                        continue;
+                    }
+                    str = chunk_end;
                 }
-                str = chunk_end;
+                SEARCH_FLUSH;
             }
-            SEARCH_FLUSH;
         }
 #endif /* HAVE_SIMD_SSE4_2 */
 

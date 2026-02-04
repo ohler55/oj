@@ -8,6 +8,9 @@
 // SIMD implementation enum - used for runtime selection
 typedef enum _simd_implementation { SIMD_NONE, SIMD_NEON, SIMD_SSE2, SIMD_SSE42 } SIMD_Implementation;
 
+// Define in oj.c.
+extern SIMD_Implementation SIMD_Impl;
+
 // Runtime CPU detection function (implemented in oj.c)
 SIMD_Implementation oj_get_simd_implementation(void);
 
@@ -90,36 +93,6 @@ static inline int oj_ctz_fallback(unsigned int x) {
 #define HAVE_SIMD_SSE2 1
 #elif __has_include(<nmmintrin.h>)
 #include <nmmintrin.h>
-
-#define SIMD_MINIMUM_THRESHOLD 6
-
-extern void initialize_sse42(void);
-
-static inline __m128i vector_lookup_sse42(__m128i input, __m128i *lookup_table, int tab_size) {
-    // Extract high 4 bits to determine which 16-byte chunk (0-15)
-    __m128i hi_index = _mm_and_si128(_mm_srli_epi32(input, 4), _mm_set1_epi8(0x0F));
-
-    // Extract low 4 bits for index within the chunk (0-15)
-    __m128i low_index = _mm_and_si128(input, _mm_set1_epi8(0x0F));
-
-    // Perform lookups in all 16 tables
-    __m128i results[16];
-    for (int i = 0; i < tab_size; i++) {
-        results[i] = _mm_shuffle_epi8(lookup_table[i], low_index);
-    }
-
-    // Create masks for each chunk and blend results
-    __m128i final_result = _mm_setzero_si128();
-
-    for (int i = 0; i < tab_size; i++) {
-        __m128i mask          = _mm_cmpeq_epi8(hi_index, _mm_set1_epi8(i));
-        __m128i masked_result = _mm_and_si128(mask, results[i]);
-        final_result          = _mm_or_si128(final_result, masked_result);
-    }
-
-    return final_result;
-}
-
 #define HAVE_SIMD_SSE4_2 1
 #define HAVE_SIMD_SSE2 1
 #elif __has_include(<emmintrin.h>)
@@ -162,4 +135,38 @@ static inline __m128i vector_lookup_sse42(__m128i input, __m128i *lookup_table, 
 #else
 #define SIMD_TYPE "none"
 #endif
+
+#if defined(HAVE_SIMD_SSE4_2)
+
+#define SIMD_MINIMUM_THRESHOLD 6
+
+extern void initialize_sse42(void);
+
+static inline OJ_TARGET_SSE42 __m128i vector_lookup_sse42(__m128i input, __m128i *lookup_table, int tab_size) {
+    // Extract high 4 bits to determine which 16-byte chunk (0-15)
+    __m128i hi_index = _mm_and_si128(_mm_srli_epi32(input, 4), _mm_set1_epi8(0x0F));
+
+    // Extract low 4 bits for index within the chunk (0-15)
+    __m128i low_index = _mm_and_si128(input, _mm_set1_epi8(0x0F));
+
+    // Perform lookups in all 16 tables
+    __m128i results[16];
+    for (int i = 0; i < tab_size; i++) {
+        results[i] = _mm_shuffle_epi8(lookup_table[i], low_index);
+    }
+
+    // Create masks for each chunk and blend results
+    __m128i final_result = _mm_setzero_si128();
+
+    for (int i = 0; i < tab_size; i++) {
+        __m128i mask          = _mm_cmpeq_epi8(hi_index, _mm_set1_epi8(i));
+        __m128i masked_result = _mm_and_si128(mask, results[i]);
+        final_result          = _mm_or_si128(final_result, masked_result);
+    }
+
+    return final_result;
+}
+
 #endif
+
+#endif /* OJ_SIMD_H */
