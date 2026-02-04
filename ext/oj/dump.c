@@ -1307,10 +1307,10 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
                         break;
                     }
                     sse42_match_result result = sse42_update(chunk_ptr,
-                                                            cmap_sse42,
-                                                            sse42_tab_size,
-                                                            do_unicode_validation,
-                                                            has_hi);
+                                                             cmap_sse42,
+                                                             sse42_tab_size,
+                                                             do_unicode_validation,
+                                                             has_hi);
                     if ((result.do_unicode_validation) || result.needs_escape) {
                         SEARCH_FLUSH;
                         _mm_storeu_si128((__m128i *)matches, result.actions);
