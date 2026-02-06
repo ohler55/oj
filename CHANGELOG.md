@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.16.15 - 2026-02-05
+
+- Fixed by putting the ostruct dependency back until a better way is found to conditionally include it.
+
 ## 3.16.14 - 2026-02-04
 
 -  Fixed SSE issue #989.
