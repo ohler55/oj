@@ -199,6 +199,31 @@ static inline const char *scan_string_noSIMD(const char *str, const char *end) {
     return str;
 }
 
+#ifdef HAVE_SIMD_NEON
+
+static inline const char *string_scan_neon(const char *str, const char *end) {
+    const uint8x16_t null_char = vdupq_n_u8(0);
+    const uint8x16_t backslash = vdupq_n_u8('\\');
+    const uint8x16_t quote     = vdupq_n_u8('"');
+
+    while (str + sizeof(uint8x16_t) <= end) {
+        uint8x16_t      chunk = vld1q_u8((const uint8_t *)str);
+        uint8x16_t      tmp   = vorrq_u8(vorrq_u8(vceqq_u8(chunk, null_char), vceqq_u8(chunk, backslash)),
+                                  vceqq_u8(chunk, quote));
+        const uint8x8_t res   = vshrn_n_u16(vreinterpretq_u16_u8(tmp), 4);
+        uint64_t        mask  = vget_lane_u64(vreinterpret_u64_u8(res), 0);
+        if (mask != 0) {
+            mask &= 0x8888888888888888ull;
+            return str + (OJ_CTZ64(mask) >> 2);
+        }
+        str += sizeof(uint8x16_t);
+    }
+
+    return scan_string_noSIMD(str, end);
+}
+
+#endif
+
 #ifdef HAVE_SIMD_SSE4_2
 // Optimized SIMD string scanner using SSE4.2 instructions
 // Uses prefetching and processes multiple chunks in parallel to reduce latency
@@ -358,9 +383,11 @@ void oj_scanner_init(void) {
 #ifdef HAVE_SIMD_SSE2
     case SIMD_SSE2: scan_func = scan_string_SSE2; break;
 #endif
+#ifdef HAVE_SIMD_NEON
+    case SIMD_NEON: scan_func = string_scan_neon; break;
+#endif
     default: scan_func = scan_string_noSIMD; break;
     }
-    // Note: ARM NEON string scanning would be added here if needed
 }
 
 // entered at /
