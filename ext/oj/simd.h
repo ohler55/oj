@@ -40,14 +40,26 @@ SIMD_Implementation oj_get_simd_implementation(void);
 // Count trailing zeros (for SSE2 mask scanning)
 #if defined(__GNUC__) || defined(__clang__)
 #define OJ_CTZ(x) __builtin_ctz(x)
+#define OJ_CTZ64(x) __builtin_ctzll(x)
 #elif defined(_MSC_VER)
 #include <intrin.h>
 static __inline int oj_ctz_msvc(unsigned int x) {
     unsigned long index;
+    if (0 == x) {
+        return 32;
+    }
     _BitScanForward(&index, x);
     return (int)index;
 }
+static __inline int oj_ctz64_msvc(uint64_t x) {
+    unsigned long index;
+    if (_BitScanForward64(&index, x)) {
+        return (int)index;
+    }
+    return 64;
+}
 #define OJ_CTZ(x) oj_ctz_msvc(x)
+#define OJ_CTZ64(x) oj_ctz64_msvc(x)
 #else
 // Fallback: naive implementation
 static inline int oj_ctz_fallback(unsigned int x) {
@@ -58,7 +70,17 @@ static inline int oj_ctz_fallback(unsigned int x) {
     }
     return count;
 }
+
+static inline int oj_ctz64_fallback(uint64_t x) {
+    int count = 0;
+    while ((x & 1) == 0 && count < 64) {
+        x >>= 1;
+        count++;
+    }
+    return count;
+}
 #define OJ_CTZ(x) oj_ctz_fallback(x)
+#define OJ_CTZ64(x) oj_ctz64_fallback(x)
 #endif
 
 // =============================================================================
