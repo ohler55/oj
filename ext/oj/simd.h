@@ -45,8 +45,12 @@ SIMD_Implementation oj_get_simd_implementation(void);
 #include <intrin.h>
 static __inline int oj_ctz_msvc(unsigned int x) {
     unsigned long index;
-    _BitScanForward(&index, x);
-    return (int)index;
+    if (0 == x) {
+        return 32;
+    } else {
+        _BitScanForward(&index, x);
+        return (int)index;
+    }
 }
 static __inline int oj_ctz64_msvc(uint64_t x) {
     unsigned long index;
