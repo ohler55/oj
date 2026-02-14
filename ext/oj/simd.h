@@ -47,10 +47,9 @@ static __inline int oj_ctz_msvc(unsigned int x) {
     unsigned long index;
     if (0 == x) {
         return 32;
-    } else {
-        _BitScanForward(&index, x);
-        return (int)index;
     }
+    _BitScanForward(&index, x);
+    return (int)index;
 }
 static __inline int oj_ctz64_msvc(uint64_t x) {
     unsigned long index;
