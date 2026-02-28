@@ -206,7 +206,7 @@ void initialize_neon(void) {
 static __m128i hibit_friendly_chars_sse42[8];
 
 // From: https://stackoverflow.com/questions/36998538/fastest-way-to-horizontally-sum-sse-unsigned-byte-vector
-inline uint32_t _mm_sum_epu8(const __m128i v) {
+inline static OJ_TARGET_SSE42 uint32_t _mm_sum_epu8(const __m128i v) {
     __m128i vsum = _mm_sad_epu8(v, _mm_setzero_si128());
     return _mm_cvtsi128_si32(vsum) + _mm_extract_epi16(vsum, 4);
 }
