@@ -13,6 +13,18 @@ class UsualTest < Minitest::Test
     assert_nil(doc)
   end
 
+  def test_not_closed_top_level_object
+    parser = Oj::Parser.new(:usual)
+
+    assert_raises(EncodingError) { parser.parse('{') }
+  end
+
+  def test_not_closed_top_level_array
+    parser = Oj::Parser.new(:usual)
+
+    assert_raises(EncodingError) { parser.parse('[') }
+  end
+
   def test_primitive
     p = Oj::Parser.new(:usual)
     [
