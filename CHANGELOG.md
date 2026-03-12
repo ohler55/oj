@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 3.16.16 - unreleased
+## 3.16.16 - 2026-03-13
 
 - Not closed arrays and objects are reported corrected in the usual parser.
 
