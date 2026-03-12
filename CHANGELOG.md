@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.16.16 - unreleased
+
+- Not closed arrays and objects are reported corrected in the usual parser.
+
 ## 3.16.15 - 2026-02-05
 
 - Fixed by putting the ostruct dependency back until a better way is found to conditionally include it.
