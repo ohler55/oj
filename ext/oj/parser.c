@@ -1354,6 +1354,17 @@ static VALUE parser_missing(int argc, VALUE *argv, VALUE self) {
     return p->option(p, key, rv);
 }
 
+static void validate_final_depth(ojParser parser) {
+    if (0 == parser->depth) {
+        return;
+    }
+
+    switch (parser->stack[parser->depth]) {
+    case OBJECT_FUN: parse_error(parser, "Object is not closed");
+    case ARRAY_FUN: parse_error(parser, "Array is not closed");
+    }
+}
+
 /* Document-method: parse(json)
  * call-seq: parse(json)
  *
@@ -1370,6 +1381,8 @@ static VALUE parser_parse(VALUE self, VALUE json) {
     parser_reset(p);
     p->start(p);
     parse(p, ptr);
+
+    validate_final_depth(p);
 
     return p->result(p);
 }
