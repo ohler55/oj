@@ -257,7 +257,30 @@ inline static size_t hibit_friendly_size(const uint8_t *str, size_t len) {
         size += tmp;
     }
 
+#ifdef HAVE_FAST_MEMCPY
+    size_t total = 0;
+    if (len - i > 4) {
+        size += (len - i);
+        unsigned char buf[sizeof(uint8x16_t)];
+        memset(buf, ' ', sizeof(buf));
+        fast_memcpy16(buf, str, len - i);
+
+        uint8x16_t chunk  = vld1q_u8((const unsigned char *)buf);
+        uint8x16_t tmp1   = vqtbl4q_u8(hibit_friendly_chars_neon[0], chunk);
+        uint8x16_t tmp2   = vqtbl4q_u8(hibit_friendly_chars_neon[1], veorq_u8(chunk, vdupq_n_u8(0x40)));
+        uint8x16_t result = vorrq_u8(tmp1, tmp2);
+        uint8_t    tmp    = vaddvq_u8(result);
+
+        size += tmp;
+
+        total = size;
+    } else {
+        total = size + calculate_string_size(str, len - i, hibit_friendly_chars);
+    }
+#else
     size_t total = size + calculate_string_size(str, len - i, hibit_friendly_chars);
+#endif
+
     return total;
 #elif defined(HAVE_SIMD_SSE4_2)
     if (SIMD_Impl == SIMD_SSE42) {
@@ -967,11 +990,12 @@ typedef struct _neon_match_result {
     uint8x16_t needs_escape;
     bool       has_some_hibit;
     bool       do_unicode_validation;
+    uint64_t   escape_mask;
 } neon_match_result;
 
 static inline FORCE_INLINE neon_match_result
 neon_update(const char *str, uint8x16x4_t *cmap_neon, int neon_table_size, bool do_unicode_validation, bool has_hi) {
-    neon_match_result result = {.has_some_hibit = false, .do_unicode_validation = false};
+    neon_match_result result = {.has_some_hibit = false, .do_unicode_validation = false, .escape_mask = 0};
 
     uint8x16_t chunk    = vld1q_u8((const unsigned char *)str);
     uint8x16_t tmp1     = vqtbl4q_u8(cmap_neon[0], chunk);
@@ -987,6 +1011,9 @@ neon_update(const char *str, uint8x16x4_t *cmap_neon, int neon_table_size, bool 
         result.has_some_hibit        = vmaxvq_u8(has_some_hibit) != 0;
         result.do_unicode_validation = has_hi && do_unicode_validation && result.has_some_hibit;
     }
+    const uint8x8_t res  = vshrn_n_u16(vreinterpretq_u16_u8(vmvnq_u8(vceqq_u8(result.needs_escape, vdupq_n_u8(0)))), 4);
+    const uint64_t  mask = vget_lane_u64(vreinterpret_u64_u8(res), 0);
+    result.escape_mask   = mask & 0x8888888888888888ull;
     return result;
 }
 
@@ -1189,7 +1216,16 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
         if (is_sym) {
             *out->cur++ = ':';
         }
+#ifdef HAVE_FAST_MEMCPY
+        if (cnt <= 16) {
+            fast_memcpy16(out->cur, str, cnt);
+            out->cur += size;
+        } else {
+            APPEND_CHARS(out->cur, str, cnt);
+        }
+#else
         APPEND_CHARS(out->cur, str, cnt);
+#endif
         *out->cur++ = '"';
     } else {
         const char *end         = str + cnt;
@@ -1223,6 +1259,17 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
 #endif
 
 #ifdef HAVE_SIMD_NEON
+
+#ifdef HAVE_FAST_MEMCPY
+#define APPEND_CHARS_SMALL(dst, src, length) \
+    fast_memcpy16((dst), (src), (length));   \
+    (dst) += (length);
+#define MEMCPY16 fast_memcpy16
+#else
+#define APPEND_CHARS_SMALL(dst, src, length) APPEND_CHARS(dst, str, length);
+#define MEMCPY16 memcpy
+#endif
+
         if (use_simd) {
             while (str < end) {
                 const char *chunk_ptr = NULL;
@@ -1231,8 +1278,8 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
                     chunk_start = str;
                     chunk_end   = str + sizeof(uint8x16_t);
                 } else if ((end - str) >= SIMD_MINIMUM_THRESHOLD) {
-                    memset(out->cur, 'A', sizeof(uint8x16_t));
-                    memcpy(out->cur, str, (end - str));
+                    memset(out->cur, ' ', sizeof(uint8x16_t));
+                    MEMCPY16(out->cur, str, (end - str));
                     chunk_ptr   = out->cur;
                     chunk_start = str;
                     chunk_end   = end;
@@ -1244,27 +1291,34 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
                                                        neon_table_size,
                                                        do_unicode_validation,
                                                        has_hi);
-                if ((result.do_unicode_validation) || vmaxvq_u8(result.needs_escape) != 0) {
+                if ((result.do_unicode_validation) || result.escape_mask != 0) {
                     SEARCH_FLUSH;
-                    uint8x16_t actions     = vaddq_u8(result.needs_escape, vdupq_n_u8('1'));
-                    uint8_t    num_matches = vaddvq_u8(vandq_u8(result.needs_escape, vdupq_n_u8(0x1)));
+                    bool       process_each = result.do_unicode_validation;
+                    uint8x16_t actions      = vaddq_u8(result.needs_escape, vdupq_n_u8('1'));
                     vst1q_u8((unsigned char *)matches, actions);
-                    bool process_each = result.do_unicode_validation || (num_matches > sizeof(uint8x16_t) / 2);
                     // If no byte in this chunk had the high bit set then we can skip
                     // all of the '1' bytes by directly copying them to the output.
                     if (!process_each) {
-                        while (str < chunk_end) {
-                            long i = str - chunk_start;
-                            char action;
-                            while (str < chunk_end && (action = matches[i++]) == '1') {
-                                *out->cur++ = *str++;
+                        while (result.escape_mask) {
+                            int  esc_pos = OJ_CTZ64(result.escape_mask) >> 2;
+                            long run_len = esc_pos - (str - chunk_start);
+                            if (run_len > 0) {
+                                APPEND_CHARS_SMALL(out->cur, str, run_len);
+                                str += run_len;
                             }
-                            cursor = str;
-                            if (str >= chunk_end) {
-                                break;
-                            }
-                            str = process_character(action, str, end, out, orig, do_unicode_validation, &check_start);
+                            str = process_character(matches[esc_pos],
+                                                    str,
+                                                    end,
+                                                    out,
+                                                    orig,
+                                                    do_unicode_validation,
+                                                    &check_start);
                             str++;
+                            result.escape_mask &= result.escape_mask - 1;
+                        }
+                        if (str < chunk_end) {
+                            APPEND_CHARS_SMALL(out->cur, str, chunk_end - str);
+                            str = chunk_end;
                         }
                     } else {
                         while (str < chunk_end) {

@@ -191,4 +191,29 @@ static inline OJ_TARGET_SSE42 __m128i vector_lookup_sse42(__m128i input, __m128i
 
 #endif
 
+#ifndef __has_builtin
+#define __has_builtin(x) 0
+#endif
+
+#if __has_builtin(__builtin_memcpy)
+#define HAVE_FAST_MEMCPY 1
+
+inline static void fast_memcpy16(void *dest, const void *src, size_t n) {
+    char *d = (char *)dest;
+    char *s = (char *)src;
+    if (n >= 8) {
+        __builtin_memcpy(d, s, 8);
+        __builtin_memcpy(d + n - 8, s + n - 8, 8);
+    } else if (n >= 4) {
+        __builtin_memcpy(d, s, 4);
+        __builtin_memcpy(d + n - 4, s + n - 4, 4);
+    } else if (n >= 2) {
+        __builtin_memcpy(d, s, 2);
+        __builtin_memcpy(d + n - 2, s + n - 2, 2);
+    } else if (n >= 1) {
+        *d = *s;
+    }
+}
+#endif
+
 #endif /* OJ_SIMD_H */
