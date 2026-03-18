@@ -920,7 +920,7 @@ static VALUE encode(VALUE obj, ROptTable ropts, Options opts, int argc, VALUE *a
     if (Yes == copts.circular) {
         oj_cache8_new(&out.circ_cache);
     }
-    // dump_rails_val(*argv, 0, &out, true);
+
     rb_protect(protect_dump, (VALUE)&oo, &line);
 
     if (0 == line) {
@@ -1290,6 +1290,13 @@ static int hash_cb(VALUE key, VALUE value, VALUE ov) {
         key   = oj_safe_string_convert(key);
         rtype = rb_type(key);
     }
+    if (Qnil != out->opts->dump_opts.only && Qfalse == rb_ary_includes(out->opts->dump_opts.only, key)) {
+	return ST_CONTINUE;
+    }
+    if (Qnil != out->opts->dump_opts.except && Qtrue == rb_ary_includes(out->opts->dump_opts.except, key)) {
+	return ST_CONTINUE;
+    }
+
     if (!out->opts->dump_opts.use) {
         size = depth * out->indent + 1;
         assure_size(out, size);

@@ -120,6 +120,7 @@ static VALUE create_id_sym;
 static VALUE custom_sym;
 static VALUE empty_string_sym;
 static VALUE escape_mode_sym;
+static VALUE except_sym;
 static VALUE integer_range_sym;
 static VALUE fast_sym;
 static VALUE float_prec_sym;
@@ -138,6 +139,7 @@ static VALUE null_sym;
 static VALUE object_sym;
 static VALUE omit_null_byte_sym;
 static VALUE omit_nil_sym;
+static VALUE only_sym;
 static VALUE rails_sym;
 static VALUE raise_sym;
 static VALUE ruby_sym;
@@ -228,6 +230,8 @@ struct _options oj_default_options = {
         false,      // omit_nil
         false,      // omit_null_byte
         MAX_DEPTH,  // max_depth
+        Qnil,       // only
+        Qnil,       // except
     },
     {
         // str_rx
@@ -318,6 +322,8 @@ struct _options oj_default_options = {
  *   (trace is off)
  * - *:safe* [_true,_|_false_] Safe mimic breaks JSON mimic to be safer, default
  *   is false (safe is off)
+ * - *:only* [_nil,_|_Array_] A list of the fields to encode. All others are skipped.
+ * - *:except* [_nil,_|_Array_] A list of the fields to not encode. All others are encoded.
  *
  * Return [_Hash_] all current option settings.
  */
@@ -482,6 +488,8 @@ static VALUE get_def_opts(VALUE self) {
     rb_hash_aset(opts, omit_null_byte_sym, oj_default_options.dump_opts.omit_null_byte ? Qtrue : Qfalse);
     rb_hash_aset(opts, oj_hash_class_sym, oj_default_options.hash_class);
     rb_hash_aset(opts, oj_array_class_sym, oj_default_options.array_class);
+    rb_hash_aset(opts, only_sym, oj_default_options.dump_opts.only);
+    rb_hash_aset(opts, except_sym, oj_default_options.dump_opts.except);
 
     if (NULL == oj_default_options.ignore) {
         rb_hash_aset(opts, ignore_sym, Qnil);
@@ -981,6 +989,20 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
         }
         strncpy(copts->float_fmt, RSTRING_PTR(v), (size_t)RSTRING_LEN(v));
         copts->float_fmt[RSTRING_LEN(v)] = '\0';
+    } else if (only_sym == k) {
+        if (Qnil == v) {
+            copts->dump_opts.only = v;
+        } else {
+            rb_check_type(v, T_ARRAY);
+            copts->dump_opts.only = v;
+        }
+    } else if (except_sym == k) {
+        if (Qnil == v) {
+            copts->dump_opts.except = v;
+        } else {
+            rb_check_type(v, T_ARRAY);
+            copts->dump_opts.except = v;
+        }
     }
     return ST_CONTINUE;
 }
@@ -2133,6 +2155,10 @@ void Init_oj(void) {
     rb_gc_register_address(&xmlschema_sym);
     xss_safe_sym = ID2SYM(rb_intern("xss_safe"));
     rb_gc_register_address(&xss_safe_sym);
+    only_sym = ID2SYM(rb_intern("only"));
+    rb_gc_register_address(&only_sym);
+    except_sym = ID2SYM(rb_intern("except"));
+    rb_gc_register_address(&except_sym);
 
     oj_slash_string = rb_str_new2("/");
     rb_gc_register_address(&oj_slash_string);

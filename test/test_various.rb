@@ -131,6 +131,8 @@ class Juice < Minitest::Test
       trace: true,
       safe: true,
       omit_null_byte: false,
+      only: nil,
+      except: nil,
     }
     Oj.default_options = alt
     # keys = alt.keys

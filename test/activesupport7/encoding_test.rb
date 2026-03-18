@@ -11,7 +11,7 @@ require_relative "encoding_test_cases"
 require 'oj'
 # Sets the ActiveSupport encoder to be Oj and also wraps the setting of globals.
 Oj::Rails.set_encoder()
-#Oj::Rails.optimize()
+Oj::Rails.optimize()
 
 class TestJSONEncoding < ActiveSupport::TestCase
   include TimeZoneTestHelpers

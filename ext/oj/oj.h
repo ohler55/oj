@@ -119,6 +119,8 @@ typedef struct _dumpOpts {
     bool    omit_nil;
     bool    omit_null_byte;
     int     max_depth;
+    VALUE   only;
+    VALUE   except;
 } *DumpOpts;
 
 typedef struct _options {
