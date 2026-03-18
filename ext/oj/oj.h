@@ -145,7 +145,7 @@ typedef struct _options {
     char             quirks_mode;    // allow single JSON values instead of documents
     char             allow_invalid;  // YesNo - allow invalid unicode
     char             create_ok;      // YesNo allow create_id
-    char             allow_nan;      // YEsyNo for parsing only
+    char             allow_nan;      // YesNo for parsing only
     char             trace;          // YesNo
     char             safe;           // YesNo
     char             sec_prec_set;   // boolean (0 or 1)
