@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.16.17 - 2026-03-17
+
+- Rails optimize for Hash and Array now overrides `as_json` for those
+  classes. Note that when either is optimized with `Oj.optimize_rails`
+  the `Array.as_json` and `Hash.as_json` will not be called.
+
 ## 3.16.16 - 2026-03-13
 
 - Not closed arrays and objects are reported corrected in the usual parser.

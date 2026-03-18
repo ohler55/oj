@@ -1219,8 +1219,7 @@ static void dump_array(VALUE a, int depth, Out out, bool as_ok) {
             return;
         }
     }
-    // if (!oj_rails_array_opt && as_ok && 0 < out->argc && rb_respond_to(a, oj_as_json_id)) {
-    if (as_ok && 0 < out->argc && rb_respond_to(a, oj_as_json_id)) {
+    if (!oj_rails_array_opt && as_ok && rb_respond_to(a, oj_as_json_id)) {
         dump_as_json(a, depth, out, false);
         return;
     }
@@ -1345,7 +1344,7 @@ static void dump_hash(VALUE obj, int depth, Out out, bool as_ok) {
             return;
         }
     }
-    if ((!oj_rails_hash_opt || 0 < out->argc) && as_ok && rb_respond_to(obj, oj_as_json_id)) {
+    if (!oj_rails_hash_opt && as_ok && rb_respond_to(obj, oj_as_json_id)) {
         dump_as_json(obj, depth, out, false);
         return;
     }
