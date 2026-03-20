@@ -605,11 +605,10 @@ static int hash_cb(VALUE key, VALUE value, VALUE ov) {
     if (out->omit_nil && Qnil == value) {
         return ST_CONTINUE;
     }
-    if (Qnil != out->opts->dump_opts.only && Qfalse == rb_ary_includes(out->opts->dump_opts.only, key)) {
-	return ST_CONTINUE;
-    }
-    if (Qnil != out->opts->dump_opts.except && Qtrue == rb_ary_includes(out->opts->dump_opts.except, key)) {
-	return ST_CONTINUE;
+    if (NULL != out->opts->dump_opts.only || NULL != out->opts->dump_opts.except) {
+        if (oj_key_skip(key, out->opts->dump_opts.only, out->opts->dump_opts.except)) {
+            return ST_CONTINUE;
+        }
     }
     if (!out->opts->dump_opts.use) {
         assure_size(out, depth * out->indent + 1);

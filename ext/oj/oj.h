@@ -104,23 +104,23 @@ typedef enum {
 } StreamWriterType;
 
 typedef struct _dumpOpts {
-    bool    use;
-    char    indent_str[16];
-    char    before_sep[16];
-    char    after_sep[16];
-    char    hash_nl[16];
-    char    array_nl[16];
-    uint8_t indent_size;
-    uint8_t before_size;
-    uint8_t after_size;
-    uint8_t hash_size;
-    uint8_t array_size;
-    char    nan_dump;  // NanDump
-    bool    omit_nil;
-    bool    omit_null_byte;
-    int     max_depth;
-    VALUE   only;
-    VALUE   except;
+    bool        use;
+    char        indent_str[16];
+    char        before_sep[16];
+    char        after_sep[16];
+    char        hash_nl[16];
+    char        array_nl[16];
+    uint8_t     indent_size;
+    uint8_t     before_size;
+    uint8_t     after_size;
+    uint8_t     hash_size;
+    uint8_t     array_size;
+    char        nan_dump;  // NanDump
+    bool        omit_nil;
+    bool        omit_null_byte;
+    int         max_depth;
+    const char *only;
+    const char *except;
 } *DumpOpts;
 
 typedef struct _options {

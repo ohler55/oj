@@ -62,6 +62,8 @@ extern size_t oj_dump_float_printf(char *buf, size_t blen, VALUE obj, double d, 
 
 extern time_t oj_sec_from_time_hard_way(VALUE obj);
 
+extern bool oj_key_skip(VALUE key, const char *only, const char *except);
+
 inline static void assure_size(Out out, size_t len) {
     if (out->end - out->cur <= (long)len) {
         oj_grow_out(out, len);
