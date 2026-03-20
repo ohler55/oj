@@ -14,41 +14,25 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Due to https://github.com/actions/runner/issues/849, we have to use quotes for '3.0'
         ruby:
           # - head
+          - '4.0'
           - '3.4'
           - '3.3'
           - '3.2'
-          - '3.1'
-          - '3.0'
-          - '2.7'
         os:
           - ubuntu
           - macos
           - windows
         gemfile:
           - no_rails
-          - rails_7.1
           - rails_7.2
           - rails_8
         exclude:
-          - ruby: 2.7
-            gemfile: rails_7.2
-          - ruby: 3.0
-            gemfile: rails_7.2
-          - ruby: 2.7
-            gemfile: rails_8
-          - ruby: 3.0
-            gemfile: rails_8
-          - ruby: 3.1
-            gemfile: rails_8
           - os: macos
             ruby: head
           - os: windows
             ruby: head
-          - os: windows
-            gemfile: rails_7.1
           - os: windows
             gemfile: rails_7.2
         include:
