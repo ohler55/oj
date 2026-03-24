@@ -209,7 +209,7 @@ static inline const char *string_scan_neon(const char *str, const char *end) {
     while (str + sizeof(uint8x16_t) <= end) {
         uint8x16_t      chunk = vld1q_u8((const uint8_t *)str);
         uint8x16_t      tmp   = vorrq_u8(vorrq_u8(vceqq_u8(chunk, null_char), vceqq_u8(chunk, backslash)),
-                                  vceqq_u8(chunk, quote));
+                                         vceqq_u8(chunk, quote));
         const uint8x8_t res   = vshrn_n_u16(vreinterpretq_u16_u8(tmp), 4);
         uint64_t        mask  = vget_lane_u64(vreinterpret_u64_u8(res), 0);
         if (mask != 0) {
@@ -285,10 +285,10 @@ static OJ_TARGET_SSE42 const char *scan_string_SSE42(const char *str, const char
     for (; str <= safe_end_16; str += 16) {
         const __m128i string = _mm_loadu_si128((const __m128i *)str);
         const int     r      = _mm_cmpestri(terminate,
-                                   3,
-                                   string,
-                                   16,
-                                   _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_LEAST_SIGNIFICANT);
+                                            3,
+                                            string,
+                                            16,
+                                            _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_LEAST_SIGNIFICANT);
         if (r != 16)
             return str + r;
     }
@@ -611,7 +611,7 @@ static void read_num(ParseInfo pi) {
         ni.bigdec_load = pi->options.compat_bigdec;
     } else {
         ni.no_big      = (FloatDec == pi->options.bigdec_load || FastDec == pi->options.bigdec_load ||
-                     RubyDec == pi->options.bigdec_load);
+                          RubyDec == pi->options.bigdec_load);
         ni.bigdec_load = pi->options.bigdec_load;
     }
 
