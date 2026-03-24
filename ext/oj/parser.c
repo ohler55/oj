@@ -635,6 +635,9 @@ static void parse(ojParser p, const byte *json) {
             if ('"' == *b) {
                 p->map = colon_map;
                 break;
+            } else if ('\0' == *b) {
+                parse_error(p, "quoted string not terminated");
+                break;
             }
             b--;
             p->map      = string_map;
@@ -658,6 +661,9 @@ static void parse(ojParser p, const byte *json) {
                 p->cur = b - json;
                 p->funcs[p->stack[p->depth]].add_str(p);
                 p->map = (0 == p->depth) ? value_map : after_map;
+                break;
+            } else if ('\0' == *b) {
+                parse_error(p, "quoted string not terminated");
                 break;
             }
             b--;
