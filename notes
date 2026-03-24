@@ -6,12 +6,6 @@
 - skip_null_byte => omit_null_byte
  - and move to dump parameters
 
-
-- stream writes
- - dump.c:685
- - stream_writer.c
- - use io C calls instead
-
  - future
   - object mode delegate
 
@@ -22,44 +16,6 @@
   - read file in separate thread
   - object delegate
 
-- new parser reasons or design notes
- - parser itself is faster due to reduced branching
- - bulk array create - 15x
- - bulk hash - 3x
- - reuse of memory
- - better control over options
- - auto rehash of cache
- - memory use when reading from a file
-
-
-- add default_options[]= method
-
-- big decimal
- - just in custom mode, maybe in strict?
-
- - encode_big_decimal_as_string
-  - add as fix for rails change
-
-- rails
-
- - Process::Status
- - ActiveSupport::TimeWithZone
- - ActiveModel::Errors
- - ActiveSupport::Multibyte::Chars
- - ActiveRecord::Relation
-
-- future
- - option to allow invalid unicode through
- - unit tests for 32 bit - test_float_parse
-  - look at RUBY_PLATFORM maybe?
- - look at env var for OJ_DEBUG when doing ruby extconf.rb
- - add printf for keys spots in parse and dump
-
-- invalid character option
- - don't check options
-  - replace with best attempt such as \ud83d => \xED\xA0\xBD
-  - that would be the normal replacement
- - allow_invalid_unicode
 
 ---------------------------
 Tried a separate thread for the parser and the results were poor. The parsing is
