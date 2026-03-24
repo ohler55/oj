@@ -246,14 +246,14 @@ static VALUE only_array_from_string(const char *str) {
     volatile VALUE a = Qnil;
 
     if (NULL != str && 2 < strlen(str)) {
-	str++;
-	char *cp;
+        str++;
+        char *cp;
 
-	a = rb_ary_new();
-	while (NULL != (cp = strchr(str, ':'))) {
-	    rb_ary_push(a, rb_id2sym(rb_intern2(str, cp - str)));
-	    str = cp + 1;
-	}
+        a = rb_ary_new();
+        while (NULL != (cp = strchr(str, ':'))) {
+            rb_ary_push(a, rb_id2sym(rb_intern2(str, cp - str)));
+            str = cp + 1;
+        }
     }
     return a;
 }

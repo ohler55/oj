@@ -202,16 +202,10 @@ static int hash_cb(VALUE key, VALUE value, VALUE ov) {
         size = depth * out->indent + 1;
         assure_size(out, size);
         fill_indent(out, depth);
-	switch (rtype) {
-	case T_STRING:
-            oj_dump_str(key, 0, out, false);
-	    break;
-	case T_SYMBOL:
-            oj_dump_sym(key, 0, out, false);
-	    break;
-	default:
-            oj_dump_str(oj_safe_string_convert(key), 0, out, false);
-	    break;
+        switch (rtype) {
+        case T_STRING: oj_dump_str(key, 0, out, false); break;
+        case T_SYMBOL: oj_dump_sym(key, 0, out, false); break;
+        default: oj_dump_str(oj_safe_string_convert(key), 0, out, false); break;
         }
         *out->cur++ = ':';
     } else {
@@ -226,16 +220,10 @@ static int hash_cb(VALUE key, VALUE value, VALUE ov) {
                 APPEND_CHARS(out->cur, out->opts->dump_opts.indent_str, out->opts->dump_opts.indent_size);
             }
         }
-	switch (rtype) {
-	case T_STRING:
-            oj_dump_str(key, 0, out, false);
-	    break;
-	case T_SYMBOL:
-            oj_dump_sym(key, 0, out, false);
-	    break;
-	default:
-            oj_dump_str(oj_safe_string_convert(key), 0, out, false);
-	    break;
+        switch (rtype) {
+        case T_STRING: oj_dump_str(key, 0, out, false); break;
+        case T_SYMBOL: oj_dump_sym(key, 0, out, false); break;
+        default: oj_dump_str(oj_safe_string_convert(key), 0, out, false); break;
         }
         size = out->opts->dump_opts.before_size + out->opts->dump_opts.after_size + 2;
         assure_size(out, size);
