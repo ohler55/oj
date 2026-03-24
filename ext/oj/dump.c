@@ -1324,12 +1324,12 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
                         while (str < chunk_end) {
                             long match_index = str - chunk_start;
                             str              = process_character(matches[match_index],
-                                                    str,
-                                                    end,
-                                                    out,
-                                                    orig,
-                                                    do_unicode_validation,
-                                                    &check_start);
+                                                                 str,
+                                                                 end,
+                                                                 out,
+                                                                 orig,
+                                                                 do_unicode_validation,
+                                                                 &check_start);
                             str++;
                         }
                     }
@@ -1371,12 +1371,12 @@ void oj_dump_cstr(const char *str, size_t cnt, bool is_sym, bool escape1, Out ou
                         while (str < chunk_end) {
                             long match_index = str - chunk_start;
                             str              = process_character(matches[match_index],
-                                                    str,
-                                                    end,
-                                                    out,
-                                                    orig,
-                                                    do_unicode_validation,
-                                                    &check_start);
+                                                                 str,
+                                                                 end,
+                                                                 out,
+                                                                 orig,
+                                                                 do_unicode_validation,
+                                                                 &check_start);
                             str++;
                         }
                         cursor = str;
@@ -1740,4 +1740,26 @@ size_t oj_dump_float_printf(char *buf, size_t blen, VALUE obj, double d, const c
         cnt = RSTRING_LEN(rstr);
     }
     return cnt;
+}
+
+bool oj_key_skip(VALUE key, const char *only, const char *except) {
+    const char *skey;
+
+    switch (rb_type(key)) {
+    case RUBY_T_STRING: skey = StringValueCStr(key); break;
+    case RUBY_T_SYMBOL: skey = rb_id2name(rb_sym2id(key)); break;
+    default: skey = NULL; break;
+    }
+    if (NULL != skey && '\0' != *skey) {
+        size_t size = strlen(skey);
+        char  *buf  = alloca(size + 3);
+
+        buf[0] = ':';
+        strcpy(buf + 1, skey);
+        buf[size + 1] = ':';
+        buf[size + 2] = '\0';
+
+        return ((NULL != only && NULL == strstr(only, buf)) || (NULL != except && NULL != strstr(except, buf)));
+    }
+    return NULL != only;
 }

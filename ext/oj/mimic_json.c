@@ -735,6 +735,8 @@ static struct _options mimic_object_to_json_options = {0,              // indent
                                                            false,     // omit_nil
                                                            false,     // omit_null_byte
                                                            100,       // max_depth
+                                                           NULL,      // only
+                                                           NULL,      // except
                                                        },
                                                        {
                                                            // str_rx

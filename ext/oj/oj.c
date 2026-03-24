@@ -120,6 +120,7 @@ static VALUE create_id_sym;
 static VALUE custom_sym;
 static VALUE empty_string_sym;
 static VALUE escape_mode_sym;
+static VALUE except_sym;
 static VALUE integer_range_sym;
 static VALUE fast_sym;
 static VALUE float_prec_sym;
@@ -138,6 +139,7 @@ static VALUE null_sym;
 static VALUE object_sym;
 static VALUE omit_null_byte_sym;
 static VALUE omit_nil_sym;
+static VALUE only_sym;
 static VALUE rails_sym;
 static VALUE raise_sym;
 static VALUE ruby_sym;
@@ -228,6 +230,8 @@ struct _options oj_default_options = {
         false,      // omit_nil
         false,      // omit_null_byte
         MAX_DEPTH,  // max_depth
+        NULL,       // only
+        NULL,       // except
     },
     {
         // str_rx
@@ -237,6 +241,22 @@ struct _options oj_default_options = {
     },
     NULL,
 };
+
+static VALUE only_array_from_string(const char *str) {
+    volatile VALUE a = Qnil;
+
+    if (NULL != str && 2 < strlen(str)) {
+        str++;
+        char *cp;
+
+        a = rb_ary_new();
+        while (NULL != (cp = strchr(str, ':'))) {
+            rb_ary_push(a, rb_id2sym(rb_intern2(str, cp - str)));
+            str = cp + 1;
+        }
+    }
+    return a;
+}
 
 /* Document-method: default_options()
  *	call-seq: default_options()
@@ -318,6 +338,8 @@ struct _options oj_default_options = {
  *   (trace is off)
  * - *:safe* [_true,_|_false_] Safe mimic breaks JSON mimic to be safer, default
  *   is false (safe is off)
+ * - *:only* [_nil,_|_Array_] A list of the fields to encode. All others are skipped.
+ * - *:except* [_nil,_|_Array_] A list of the fields to not encode. All others are encoded.
  *
  * Return [_Hash_] all current option settings.
  */
@@ -483,6 +505,9 @@ static VALUE get_def_opts(VALUE self) {
     rb_hash_aset(opts, oj_hash_class_sym, oj_default_options.hash_class);
     rb_hash_aset(opts, oj_array_class_sym, oj_default_options.array_class);
 
+    rb_hash_aset(opts, only_sym, only_array_from_string(oj_default_options.dump_opts.only));
+    rb_hash_aset(opts, except_sym, only_array_from_string(oj_default_options.dump_opts.except));
+
     if (NULL == oj_default_options.ignore) {
         rb_hash_aset(opts, ignore_sym, Qnil);
     } else {
@@ -623,6 +648,95 @@ bool set_yesno_options(VALUE key, VALUE value, Options copts) {
         }
     }
     return false;
+}
+
+static const char *make_only_value(VALUE v) {
+    switch (rb_type(v)) {
+    case RUBY_T_NIL:
+    case RUBY_T_NONE: return NULL;
+    case RUBY_T_ARRAY: {
+        long  len = rb_array_len(v);
+        long  i;
+        long  size = 0;
+        char *buf;
+        char *bp;
+
+        for (i = 0; i < len; i++) {
+            VALUE x = rb_ary_entry(v, i);
+
+            switch (rb_type(x)) {
+            case RUBY_T_SYMBOL:
+                size += strlen(rb_id2name(rb_sym2id(x)));
+                size++;
+                break;
+            case RUBY_T_STRING:
+                size += strlen(StringValueCStr(x));
+                size++;
+                break;
+            default: rb_raise(rb_eArgError, ":only and :except must be nil, symbol, string, or array."); break;
+            }
+        }
+        if (0 == size) {
+            return NULL;
+        }
+        buf   = OJ_R_ALLOC_N(char, size + 2);
+        bp    = buf;
+        *bp++ = ':';
+        for (i = 0; i < len; i++) {
+            VALUE       x = rb_ary_entry(v, i);
+            const char *str;
+
+            switch (rb_type(x)) {
+            case RUBY_T_SYMBOL:
+                str  = rb_id2name(rb_sym2id(x));
+                size = strlen(str);
+                memcpy(bp, str, size);
+                bp += size;
+                *bp++ = ':';
+                break;
+            case RUBY_T_STRING:
+                str  = StringValueCStr(x);
+                size = strlen(str);
+                memcpy(bp, str, size);
+                bp += size;
+                *bp++ = ':';
+                break;
+            default:
+                // ignore
+                break;
+            }
+        }
+        *bp = '\0';
+
+        return buf;
+    }
+    case RUBY_T_STRING: {
+        const char *str  = StringValueCStr(v);
+        size_t      size = strlen(str);
+        char       *buf  = OJ_R_ALLOC_N(char, size + 3);
+
+        buf[0] = ':';
+        strcpy(buf + 1, str);
+        buf[size + 1] = ':';
+        buf[size + 2] = '\0';
+
+        return buf;
+    }
+    case RUBY_T_SYMBOL: {
+        const char *str  = rb_id2name(rb_sym2id(v));
+        size_t      size = strlen(str);
+        char       *buf  = OJ_R_ALLOC_N(char, size + 3);
+
+        buf[0] = ':';
+        strcpy(buf + 1, str);
+        buf[size + 1] = ':';
+        buf[size + 2] = '\0';
+
+        return buf;
+    }
+    default: rb_raise(rb_eArgError, ":only and zzz :except must be nil, symbol, string, or array."); break;
+    }
+    return NULL;
 }
 
 static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
@@ -981,6 +1095,18 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
         }
         strncpy(copts->float_fmt, RSTRING_PTR(v), (size_t)RSTRING_LEN(v));
         copts->float_fmt[RSTRING_LEN(v)] = '\0';
+    } else if (only_sym == k) {
+        if (NULL != copts->dump_opts.only) {
+            OJ_R_FREE((void *)copts->dump_opts.only);
+            copts->dump_opts.only = NULL;
+        }
+        copts->dump_opts.only = make_only_value(v);
+    } else if (except_sym == k) {
+        if (NULL != copts->dump_opts.except) {
+            OJ_R_FREE((void *)copts->dump_opts.except);
+            copts->dump_opts.except = NULL;
+        }
+        copts->dump_opts.except = make_only_value(v);
     }
     return ST_CONTINUE;
 }
@@ -2133,6 +2259,10 @@ void Init_oj(void) {
     rb_gc_register_address(&xmlschema_sym);
     xss_safe_sym = ID2SYM(rb_intern("xss_safe"));
     rb_gc_register_address(&xss_safe_sym);
+    only_sym = ID2SYM(rb_intern("only"));
+    rb_gc_register_address(&only_sym);
+    except_sym = ID2SYM(rb_intern("except"));
+    rb_gc_register_address(&except_sym);
 
     oj_slash_string = rb_str_new2("/");
     rb_gc_register_address(&oj_slash_string);

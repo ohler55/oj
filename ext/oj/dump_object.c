@@ -210,6 +210,11 @@ static int hash_cb(VALUE key, VALUE value, VALUE ov) {
     if (out->omit_nil && Qnil == value) {
         return ST_CONTINUE;
     }
+    if (NULL != out->opts->dump_opts.only || NULL != out->opts->dump_opts.except) {
+        if (oj_key_skip(key, out->opts->dump_opts.only, out->opts->dump_opts.except)) {
+            return ST_CONTINUE;
+        }
+    }
     assure_size(out, size);
     fill_indent(out, depth);
     switch (rb_type(key)) {

@@ -920,7 +920,7 @@ static VALUE encode(VALUE obj, ROptTable ropts, Options opts, int argc, VALUE *a
     if (Yes == copts.circular) {
         oj_cache8_new(&out.circ_cache);
     }
-    // dump_rails_val(*argv, 0, &out, true);
+
     rb_protect(protect_dump, (VALUE)&oo, &line);
 
     if (0 == line) {
@@ -1286,18 +1286,19 @@ static int hash_cb(VALUE key, VALUE value, VALUE ov) {
     if (out->omit_nil && Qnil == value) {
         return ST_CONTINUE;
     }
-    if (rtype != T_STRING && rtype != T_SYMBOL) {
-        key   = oj_safe_string_convert(key);
-        rtype = rb_type(key);
+    if (NULL != out->opts->dump_opts.only || NULL != out->opts->dump_opts.except) {
+        if (oj_key_skip(key, out->opts->dump_opts.only, out->opts->dump_opts.except)) {
+            return ST_CONTINUE;
+        }
     }
     if (!out->opts->dump_opts.use) {
         size = depth * out->indent + 1;
         assure_size(out, size);
         fill_indent(out, depth);
-        if (rtype == T_STRING) {
-            oj_dump_str(key, 0, out, false);
-        } else {
-            oj_dump_sym(key, 0, out, false);
+        switch (rtype) {
+        case T_STRING: oj_dump_str(key, 0, out, false); break;
+        case T_SYMBOL: oj_dump_sym(key, 0, out, false); break;
+        default: oj_dump_str(oj_safe_string_convert(key), 0, out, false); break;
         }
         *out->cur++ = ':';
     } else {
@@ -1312,10 +1313,10 @@ static int hash_cb(VALUE key, VALUE value, VALUE ov) {
                 APPEND_CHARS(out->cur, out->opts->dump_opts.indent_str, out->opts->dump_opts.indent_size);
             }
         }
-        if (rtype == T_STRING) {
-            oj_dump_str(key, 0, out, false);
-        } else {
-            oj_dump_sym(key, 0, out, false);
+        switch (rtype) {
+        case T_STRING: oj_dump_str(key, 0, out, false); break;
+        case T_SYMBOL: oj_dump_sym(key, 0, out, false); break;
+        default: oj_dump_str(oj_safe_string_convert(key), 0, out, false); break;
         }
         size = out->opts->dump_opts.before_size + out->opts->dump_opts.after_size + 2;
         assure_size(out, size);

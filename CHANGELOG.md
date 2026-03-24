@@ -6,6 +6,8 @@
   classes. Note that when either is optimized with `Oj.optimize_rails`
   the `Array.as_json` and `Hash.as_json` will not be called.
 
+- Add support for the rails encoder `:only` and `:except` options.
+
 ## 3.16.16 - 2026-03-13
 
 - Not closed arrays and objects are reported corrected in the usual parser.

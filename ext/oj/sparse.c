@@ -415,7 +415,7 @@ static void read_num(ParseInfo pi) {
         ni.bigdec_load = pi->options.compat_bigdec;
     } else {
         ni.no_big      = (FloatDec == pi->options.bigdec_load || FastDec == pi->options.bigdec_load ||
-                     RubyDec == pi->options.bigdec_load);
+                          RubyDec == pi->options.bigdec_load);
         ni.bigdec_load = pi->options.bigdec_load;
     }
 
@@ -565,7 +565,7 @@ static void read_nan(ParseInfo pi) {
         ni.bigdec_load = pi->options.compat_bigdec;
     } else {
         ni.no_big      = (FloatDec == pi->options.bigdec_load || FastDec == pi->options.bigdec_load ||
-                     RubyDec == pi->options.bigdec_load);
+                          RubyDec == pi->options.bigdec_load);
         ni.bigdec_load = pi->options.bigdec_load;
     }
 
@@ -761,7 +761,7 @@ void oj_sparse2(ParseInfo pi) {
                     ni.bigdec_load = pi->options.compat_bigdec;
                 } else {
                     ni.no_big      = (FloatDec == pi->options.bigdec_load || FastDec == pi->options.bigdec_load ||
-                                 RubyDec == pi->options.bigdec_load);
+                                      RubyDec == pi->options.bigdec_load);
                     ni.bigdec_load = pi->options.bigdec_load;
                 }
                 add_num_value(pi, &ni);

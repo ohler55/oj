@@ -484,10 +484,11 @@ class CustomJuice < Minitest::Test
     dump_and_load(obj, false, :create_id => '^o', :create_additions => true)
   end
 
-  def test_openstruct
-    obj = OpenStruct.new(:a => 1, 'b' => 2)
-    dump_and_load(obj, false, :create_id => '^o', :create_additions => true)
-  end
+  # not included in the new json gem
+  # def test_openstruct
+  #   obj = OpenStruct.new(:a => 1, 'b' => 2)
+  #   dump_and_load(obj, false, :create_id => '^o', :create_additions => true)
+  # end
 
   def test_time
     obj = Time.now()

@@ -104,21 +104,23 @@ typedef enum {
 } StreamWriterType;
 
 typedef struct _dumpOpts {
-    bool    use;
-    char    indent_str[16];
-    char    before_sep[16];
-    char    after_sep[16];
-    char    hash_nl[16];
-    char    array_nl[16];
-    uint8_t indent_size;
-    uint8_t before_size;
-    uint8_t after_size;
-    uint8_t hash_size;
-    uint8_t array_size;
-    char    nan_dump;  // NanDump
-    bool    omit_nil;
-    bool    omit_null_byte;
-    int     max_depth;
+    bool        use;
+    char        indent_str[16];
+    char        before_sep[16];
+    char        after_sep[16];
+    char        hash_nl[16];
+    char        array_nl[16];
+    uint8_t     indent_size;
+    uint8_t     before_size;
+    uint8_t     after_size;
+    uint8_t     hash_size;
+    uint8_t     array_size;
+    char        nan_dump;  // NanDump
+    bool        omit_nil;
+    bool        omit_null_byte;
+    int         max_depth;
+    const char *only;
+    const char *except;
 } *DumpOpts;
 
 typedef struct _options {
@@ -143,7 +145,7 @@ typedef struct _options {
     char             quirks_mode;    // allow single JSON values instead of documents
     char             allow_invalid;  // YesNo - allow invalid unicode
     char             create_ok;      // YesNo allow create_id
-    char             allow_nan;      // YEsyNo for parsing only
+    char             allow_nan;      // YesNo for parsing only
     char             trace;          // YesNo
     char             safe;           // YesNo
     char             sec_prec_set;   // boolean (0 or 1)

@@ -131,6 +131,8 @@ class Juice < Minitest::Test
       trace: true,
       safe: true,
       omit_null_byte: false,
+      only: nil,
+      except: [:one, :two],
     }
     Oj.default_options = alt
     # keys = alt.keys
@@ -142,6 +144,15 @@ class Juice < Minitest::Test
     # verify back to original
     opts = Oj.default_options()
     assert_equal(orig, opts)
+
+    Oj.default_options = {only: "quux"}
+    assert_equal([:quux], Oj.default_options[:only])
+
+    Oj.default_options = {only: :quux}
+    assert_equal([:quux], Oj.default_options[:only])
+
+    Oj.default_options = {only: [:quux, 'buux']}
+    assert_equal([:quux, :buux], Oj.default_options[:only])
   end
 
   def test_nil
@@ -453,6 +464,34 @@ class Juice < Minitest::Test
       return
     end
     assert(false, '*** expected an exception')
+  end
+
+  def test_hash_only
+    j = Oj.dump({a: 1, b: 2, c: 3}, mode: :custom, only: :b)
+    assert_equal('{"b":2}', j)
+
+    j = Oj.dump({a: 1, b: 2, c: 3}, mode: :custom, only: 'b')
+    assert_equal('{"b":2}', j)
+
+    j = Oj.dump({a: 1, b: 2, c: 3}, mode: :custom, only: ['b'])
+    assert_equal('{"b":2}', j)
+
+    j = Oj.dump({a: 1, b: 2, c: 3}, mode: :custom, only: [:b])
+    assert_equal('{"b":2}', j)
+  end
+
+  def test_hash_except
+    j = Oj.dump({a: 1, b: 2}, mode: :custom, except: :a)
+    assert_equal('{"b":2}', j)
+
+    j = Oj.dump({a: 1, b: 2}, mode: :custom, except: 'a')
+    assert_equal('{"b":2}', j)
+
+    j = Oj.dump({a: 1, b: 2, c: 3}, mode: :custom, except: ['a', 'c'])
+    assert_equal('{"b":2}', j)
+
+    j = Oj.dump({a: 1, b: 2, c: 3}, mode: :custom, except: [:a, :c])
+    assert_equal('{"b":2}', j)
   end
 
   # Object with to_json()
