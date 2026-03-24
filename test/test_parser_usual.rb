@@ -13,6 +13,20 @@ class UsualTest < Minitest::Test
     assert_nil(doc)
   end
 
+  def test_unclosed_string
+    parser = Oj::Parser.new(:usual)
+
+    error = assert_raises(EncodingError) { parser.parse('"foo') }
+    assert_match(/quoted string not terminated/i, error.message)
+  end
+
+  def test_unclosed_object_key
+    parser = Oj::Parser.new(:usual)
+
+    error = assert_raises(EncodingError) { parser.parse('{"foo') }
+    assert_match(/quoted string not terminated/i, error.message)
+  end
+
   def test_not_closed_top_level_object
     parser = Oj::Parser.new(:usual)
 
