@@ -175,6 +175,37 @@ class SajTest < Minitest::Test
                   [:hash_end, nil]], handler.calls)
   end
 
+  def test_file
+    handler = AllSaj.new()
+    filename = File.join(__dir__, 'saj_file_test.json')
+    File.write(filename, $json)
+
+    File.open(filename) do |f|
+      Oj.saj_parse(handler, f)
+    end
+
+    assert_equal([[:hash_start, nil],
+                  [:array_start, 'array'],
+                  [:hash_start, nil],
+                  [:add_value, 3, 'num'],
+                  [:add_value, 'message', 'string'],
+                  [:hash_start, 'hash'],
+                  [:hash_start, 'h2'],
+                  [:array_start, 'a'],
+                  [:add_value, 1, nil],
+                  [:add_value, 2, nil],
+                  [:add_value, 3, nil],
+                  [:array_end, 'a'],
+                  [:hash_end, 'h2'],
+                  [:hash_end, 'hash'],
+                  [:hash_end, nil],
+                  [:array_end, 'array'],
+                  [:add_value, true, 'boolean'],
+                  [:hash_end, nil]], handler.calls)
+  ensure
+    File.delete(filename) if filename && File.exist?(filename)
+  end
+
   def test_fixnum_bad
     handler = AllSaj.new()
     json = %{12345xyz}
