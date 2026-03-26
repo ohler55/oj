@@ -648,8 +648,16 @@ oj_saj_parse(int argc, VALUE *argv, VALUE self) {
             len = lseek(fd, 0, SEEK_END);
             lseek(fd, 0, SEEK_SET);
             json = OJ_R_ALLOC_N(char, len + 1);
-            if (0 >= (cnt = read(fd, json, len)) || cnt != (ssize_t)len) {
-                rb_raise(rb_eIOError, "failed to read from IO Object.");
+            {
+                size_t total = 0;
+
+                while (total < len) {
+                    cnt = read(fd, json + total, len - total);
+                    if (cnt <= 0) {
+                        rb_raise(rb_eIOError, "failed to read from IO Object.");
+                    }
+                    total += cnt;
+                }
             }
             json[len] = '\0';
 #endif

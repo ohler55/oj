@@ -1193,11 +1193,19 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
             buf      = OJ_R_ALLOC_N(char, len + 1);
             pi->json = buf;
             pi->end  = buf + len;
-            if (0 >= (cnt = read(fd, (char *)pi->json, len)) || cnt != (ssize_t)len) {
-                if (0 != buf) {
-                    OJ_R_FREE(buf);
+            {
+                size_t total = 0;
+
+                while (total < len) {
+                    cnt = read(fd, (char *)pi->json + total, len - total);
+                    if (cnt <= 0) {
+                        if (0 != buf) {
+                            OJ_R_FREE(buf);
+                        }
+                        rb_raise(rb_eIOError, "failed to read from IO Object.");
+                    }
+                    total += cnt;
                 }
-                rb_raise(rb_eIOError, "failed to read from IO Object.");
             }
             ((char *)pi->json)[len] = '\0';
             /* skip UTF-8 BOM if present */
