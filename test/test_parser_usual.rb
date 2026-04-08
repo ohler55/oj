@@ -8,9 +8,31 @@ require 'helper'
 class UsualTest < Minitest::Test
 
   def test_nil
-    p = Oj::Parser.new(:usual)
-    doc = p.parse('nil')
-    assert_nil(doc)
+    parser = Oj::Parser.new(:usual)
+
+    error = assert_raises(EncodingError) { parser.parse('nil') }
+    assert_match(/expected null/i, error.message)
+  end
+
+  def test_incomplete_null
+    parser = Oj::Parser.new(:usual)
+
+    error = assert_raises(EncodingError) { parser.parse('nul') }
+    assert_match(/expected null/i, error.message)
+  end
+
+  def test_incomplete_false
+    parser = Oj::Parser.new(:usual)
+
+    error = assert_raises(EncodingError) { parser.parse('fal') }
+    assert_match(/expected false/i, error.message)
+  end
+
+  def test_incomplete_true
+    parser = Oj::Parser.new(:usual)
+
+    error = assert_raises(EncodingError) { parser.parse('tru') }
+    assert_match(/expected true/i, error.message)
   end
 
   def test_unclosed_string

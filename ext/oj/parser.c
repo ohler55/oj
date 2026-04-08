@@ -1360,6 +1360,35 @@ static VALUE parser_missing(int argc, VALUE *argv, VALUE self) {
     return p->option(p, key, rv);
 }
 
+static void validate_primitives_are_complete(ojParser p) {
+    if (0 >= p->ri) {
+        return;
+    }
+
+    switch (p->map[256]) {
+    case 'N': parse_error(p, "expected null"); break;
+    case 'F': parse_error(p, "expected false"); break;
+    case 'T': parse_error(p, "expected true"); break;
+    }
+}
+
+static void validate_non_primitives_are_complete(ojParser p) {
+    if (0 >= p->depth) {
+        return;
+    }
+
+    if (OBJECT_FUN == p->stack[p->depth]) {
+        parse_error(p, "Object is not closed");
+    } else {
+        parse_error(p, "Array is not closed");
+    }
+}
+
+static void validate_document_end(ojParser p) {
+    validate_primitives_are_complete(p);
+    validate_non_primitives_are_complete(p);
+}
+
 /* Document-method: parse(json)
  * call-seq: parse(json)
  *
@@ -1377,13 +1406,8 @@ static VALUE parser_parse(VALUE self, VALUE json) {
     p->start(p);
     parse(p, ptr);
 
-    if (0 < p->depth) {
-        if (OBJECT_FUN == p->stack[p->depth]) {
-            parse_error(p, "Object is not closed");
-        } else {
-            parse_error(p, "Array is not closed");
-        }
-    }
+    validate_document_end(p);
+
     return p->result(p);
 }
 
