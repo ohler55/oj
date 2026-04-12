@@ -8,6 +8,12 @@
 
 - Add support for the rails encoder `:only` and `:except` options.
 
+- Handle unterminated strings in usual parser (#1002)
+
+- Fix read() not handling partial reads for large files (#1004)
+
+- Raise error for incomplete primitive literals (#1005)
+
 ## 3.16.16 - 2026-03-13
 
 - Not closed arrays and objects are reported corrected in the usual parser.
