@@ -1182,6 +1182,8 @@ extern void oj_set_parser_validator(ojParser p);
 extern void oj_set_parser_saj(ojParser p);
 extern void oj_set_parser_usual(ojParser p);
 extern void oj_set_parser_debug(ojParser p);
+extern void oj_set_parser_safe(ojParser p, VALUE options);
+extern void oj_safe_init(VALUE parser_class);
 
 static int opt_cb(VALUE rkey, VALUE value, VALUE ptr) {
     ojParser    p   = (ojParser)ptr;
@@ -1607,6 +1609,28 @@ static VALUE parser_validate(VALUE self) {
     return validate_parser;
 }
 
+static VALUE parser_safe(int argc, VALUE *argv, VALUE self) {
+    VALUE options;
+
+    if (1 == argc) {
+        options = argv[0];
+
+        Check_Type(options, T_HASH);
+    } else {
+        options = rb_hash_new();
+    }
+
+    ojParser p = OJ_R_ALLOC(struct _ojParser);
+
+    memset(p, 0, sizeof(struct _ojParser));
+    buf_init(&p->key);
+    buf_init(&p->buf);
+    p->map = value_map;
+    oj_set_parser_safe(p, options);
+
+    return TypedData_Wrap_Struct(parser_class, &oj_parser_type, p);
+}
+
 /* Document-class: Oj::Parser
  *
  * A reusable parser that makes use of named delegates to determine the
@@ -1634,4 +1658,7 @@ void oj_parser_init(void) {
     rb_define_module_function(parser_class, "usual", parser_usual, 0);
     rb_define_module_function(parser_class, "saj", parser_saj, 0);
     rb_define_module_function(parser_class, "validate", parser_validate, 0);
+    rb_define_module_function(parser_class, "safe", parser_safe, -1);
+
+    oj_safe_init(parser_class);
 }
