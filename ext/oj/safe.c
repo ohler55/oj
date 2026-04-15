@@ -4,8 +4,9 @@ static VALUE max_hash_size_sym, max_array_size_sym, max_depth_sym, max_total_ele
     max_array_size_error_class, max_depth_error_class, max_total_elements_error_class;
 
 static void check_object_size(safe_T safe) {
-    if (NIL_P(safe->max_hash_size))
+    if (NIL_P(safe->max_hash_size)) {
         return;
+    }
 
     struct _usual usual                   = safe->usual;
     Col           current_object_location = usual.ctail - 1;
@@ -13,15 +14,17 @@ static void check_object_size(safe_T safe) {
     long int number_of_items_in_stack = usual.vtail - usual.vhead;
     long int number_of_items_in_hash  = (number_of_items_in_stack - current_object_location->vi - 1) / 2;
 
-    if (safe->max_hash_size > number_of_items_in_hash)
+    if (safe->max_hash_size > number_of_items_in_hash) {
         return;
+    }
 
     rb_raise(max_hash_size_error_class, "Too many object items!");
 }
 
 static void check_array_size(safe_T safe) {
-    if (NIL_P(safe->max_array_size))
+    if (NIL_P(safe->max_array_size)) {
         return;
+    }
 
     struct _usual usual                   = safe->usual;
     Col           current_object_location = usual.ctail - 1;
@@ -29,15 +32,17 @@ static void check_array_size(safe_T safe) {
     long int number_of_items_in_stack = usual.vtail - usual.vhead;
     long int number_of_items_in_array = number_of_items_in_stack - current_object_location->vi - 1;
 
-    if (safe->max_array_size > number_of_items_in_array)
+    if (safe->max_array_size > number_of_items_in_array) {
         return;
+    }
 
     rb_raise(max_array_size_error_class, "Too many array items!");
 }
 
 static void check_max_depth(safe_T safe, ojParser p) {
-    if (NIL_P(safe->max_depth) || safe->max_depth >= (p->depth + 1))
+    if (NIL_P(safe->max_depth) || safe->max_depth >= (p->depth + 1)) {
         return;
+    }
 
     rb_raise(max_depth_error_class, "JSON is too deep!");
 }
@@ -49,8 +54,9 @@ static void check_max_total_elements(safe_T safe) {
     * null, true) are not counted. As a result, `current_elements_count`
     * always holds one less than the actual total.
     */
-    if (NIL_P(safe->max_total_elements) || safe->max_total_elements > safe->current_elements_count)
+    if (NIL_P(safe->max_total_elements) || safe->max_total_elements > safe->current_elements_count) {
         return;
+    }
 
     rb_raise(max_total_elements_error_class, "Too many elements!");
 }
