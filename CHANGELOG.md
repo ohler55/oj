@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.17.0 - 2026-04-19
+
+- A "safe" parser has been added as a variation of the Oj:Parser thanks to @meinac.
+
 ## 3.16.17 - 2026-04-12
 
 - Rails optimize for Hash and Array now overrides `as_json` for those
