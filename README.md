@@ -46,11 +46,6 @@ gem 'oj'
 
 See the Quickstart sections of the [Rails](pages/Rails.md) and [json](pages/JsonGem.md) docs.
 
-## multi_json
-
-Code which uses [multi_json](https://github.com/intridea/multi_json)
-will automatically prefer Oj if it is installed.
-
 ## Support
 
 [Get supported Oj with a Tidelift Subscription.](https://tidelift.com/subscription/pkg/rubygems-oj?utm_source=rubygems-oj&utm_medium=referral&utm_campaign=readme) Security updates are [supported](https://tidelift.com/security).
@@ -83,17 +78,6 @@ See [{file:CHANGELOG.md}](CHANGELOG.md) and [{file:RELEASE_NOTES.md}](RELEASE_NO
 
 - *RubyGems* *repo*: https://rubygems.org/gems/oj
 
-Follow [@peterohler on Twitter](http://twitter.com/peterohler) for announcements and news about the Oj gem.
-
-#### Performance Comparisons
-
- - [Oj Strict Mode Performance](http://www.ohler.com/dev/oj_misc/performance_strict.html) compares Oj strict mode parser performance to other JSON parsers.
-
- - [Oj Compat Mode Performance](http://www.ohler.com/dev/oj_misc/performance_compat.html) compares Oj compat mode parser performance to other JSON parsers.
-
- - [Oj Object Mode Performance](http://www.ohler.com/dev/oj_misc/performance_object.html) compares Oj object mode parser performance to other marshallers.
-
- - [Oj Callback Performance](http://www.ohler.com/dev/oj_misc/performance_callback.html) compares Oj callback parser performance to other JSON parsers.
 
 #### Links of Interest
 
