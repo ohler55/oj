@@ -23,6 +23,7 @@ require 'test_wab'
 require 'test_writer'
 require 'test_integer_range'
 require 'test_long_strings'
+require 'test_max_integer_digits'
 
 at_exit do
   require 'helper'

@@ -399,6 +399,7 @@ static void read_num(ParseInfo pi) {
     char            c;
 
     reader_protect(&pi->rd);
+    ni.pi       = pi;
     ni.i        = 0;
     ni.num      = 0;
     ni.div      = 1;
@@ -549,6 +550,7 @@ static void read_nan(ParseInfo pi) {
     struct _numInfo ni;
     char            c;
 
+    ni.pi       = pi;
     ni.str      = pi->rd.str;
     ni.i        = 0;
     ni.num      = 0;
@@ -745,6 +747,7 @@ void oj_sparse2(ParseInfo pi) {
                     oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "expected NaN");
                     return;
                 }
+                ni.pi       = pi;
                 ni.str      = pi->rd.str;
                 ni.i        = 0;
                 ni.num      = 0;

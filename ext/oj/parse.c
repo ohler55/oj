@@ -971,6 +971,20 @@ static long double exp_plus[] = {
     1.0e39, 1.0e40, 1.0e41, 1.0e42, 1.0e43, 1.0e44, 1.0e45, 1.0e46, 1.0e47, 1.0e48, 1.0e49,
 };
 
+static void validate_integer_size(size_t limit, NumInfo ni) {
+    size_t digit_count = ni->len - (ni->neg ? 1 : 0);
+
+    if (digit_count > limit) {
+        oj_set_error_at(ni->pi,
+                        (Qnil != ni->pi->err_class) ? ni->pi->err_class : oj_parse_error_class,
+                        __FILE__,
+                        __LINE__,
+                        "integer exceeds :max_integer_digits (%lu > %lu)",
+                        (unsigned long)digit_count,
+                        (unsigned long)limit);
+    }
+}
+
 VALUE
 oj_num_as_value(NumInfo ni) {
     VALUE rnum = Qnil;
@@ -984,6 +998,12 @@ oj_num_as_value(NumInfo ni) {
     } else if (ni->nan) {
         rnum = rb_float_new(0.0 / 0.0);
     } else if (1 == ni->div && 0 == ni->exp && !ni->has_exp) {  // fixnum
+        size_t limit = (NULL != ni->pi) ? ni->pi->options.max_integer_digits : 0;
+
+        if (0 < limit) {
+            validate_integer_size(limit, ni);
+        }
+
         if (ni->big) {
             if (256 > ni->len) {
                 char buf[256];

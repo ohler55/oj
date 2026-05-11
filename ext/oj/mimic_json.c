@@ -711,6 +711,7 @@ static struct _options mimic_object_to_json_options = {0,              // indent
                                                        0,              // cache_str
                                                        0,              // int_range_min
                                                        0,              // int_range_max
+                                                       0,              // max_integer_digits
                                                        oj_json_class,  // create_id
                                                        10,             // create_id_len
                                                        3,              // sec_prec
