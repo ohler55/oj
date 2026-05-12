@@ -122,6 +122,7 @@ static VALUE empty_string_sym;
 static VALUE escape_mode_sym;
 static VALUE except_sym;
 static VALUE integer_range_sym;
+static VALUE max_integer_digits_sym;
 static VALUE fast_sym;
 static VALUE float_prec_sym;
 static VALUE float_format_sym;
@@ -206,6 +207,7 @@ struct _options oj_default_options = {
     0,              // cache_str
     0,              // int_range_min
     0,              // int_range_max
+    0,              // max_integer_digits
     oj_json_class,  // create_id
     10,             // create_id_len
     9,              // sec_prec
@@ -334,6 +336,11 @@ static VALUE only_array_from_string(const char *str) {
  * - *:cache_str* [_Fixnum_] maximum string value length to cache (strings less
  *   than this are cached)
  * - *:integer_range* [_Range_] Dump integers outside range as strings.
+ * - *:max_integer_digits* [_Fixnum_] Maximum number of decimal digits allowed in a
+ *   parsed integer. When the limit is exceeded a parse error is raised. 0 (the
+ *   default) disables the limit. Setting a reasonable limit is recommended when
+ *   parsing untrusted input to mitigate CPU-DoS attacks. Only applies to the
+ *   legacy parsers (Oj.load, Oj::Doc, JSON.parse mimic); Oj::Parser is unaffected.
  * - *:trace* [_true,_|_false_] Trace all load and dump calls, default is false
  *   (trace is off)
  * - *:safe* [_true,_|_false_] Safe mimic breaks JSON mimic to be safer, default
@@ -448,6 +455,7 @@ static VALUE get_def_opts(VALUE self) {
     } else {
         rb_hash_aset(opts, integer_range_sym, Qnil);
     }
+    rb_hash_aset(opts, max_integer_digits_sym, LONG2NUM((long)oj_default_options.max_integer_digits));
     switch (oj_default_options.escape_mode) {
     case NLEsc: rb_hash_aset(opts, escape_mode_sym, newline_sym); break;
     case JSONEsc: rb_hash_aset(opts, escape_mode_sym, json_sym); break;
@@ -591,6 +599,8 @@ static VALUE get_def_opts(VALUE self) {
  *   - *:cache_keys* [_Boolean_] if true then hash keys are cached
  *   - *:cache_str* [_Fixnum_] maximum string value length to cache (strings less than this are cached)
  *   - *:integer_range* [_Range_] Dump integers outside range as strings.
+ *   - *:max_integer_digits* [_Fixnum_] Maximum decimal digits in a parsed integer
+ *     (0 = unlimited). Use to mitigate CPU-DoS via huge integer values in JSON.
  *   - *:trace* [_Boolean_] turn trace on or off.
  *   - *:safe* [_Boolean_] turn safe mimic on or off.
  */
@@ -1070,6 +1080,20 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
             copts->int_range_max = FIX2LONG(max);
         } else if (Qfalse != v) {
             rb_raise(rb_eArgError, ":integer_range must be a range of Fixnum.");
+        }
+    } else if (max_integer_digits_sym == k) {
+        if (Qnil == v || Qfalse == v) {
+            copts->max_integer_digits = 0;
+        } else if (T_FIXNUM == rb_type(v)) {
+            long n = FIX2LONG(v);
+
+            if (n < 0) {
+                rb_raise(rb_eArgError, ":max_integer_digits must be >= 0.");
+            }
+
+            copts->max_integer_digits = (size_t)n;
+        } else {
+            rb_raise(rb_eArgError, ":max_integer_digits must be a non-negative Integer.");
         }
     } else if (symbol_keys_sym == k || oj_symbolize_names_sym == k) {
         if (Qnil == v) {
@@ -2153,6 +2177,8 @@ void Init_oj(void) {
     rb_gc_register_address(&escape_mode_sym);
     integer_range_sym = ID2SYM(rb_intern("integer_range"));
     rb_gc_register_address(&integer_range_sym);
+    max_integer_digits_sym = ID2SYM(rb_intern("max_integer_digits"));
+    rb_gc_register_address(&max_integer_digits_sym);
     fast_sym = ID2SYM(rb_intern("fast"));
     rb_gc_register_address(&fast_sym);
     float_format_sym = ID2SYM(rb_intern("float_format"));

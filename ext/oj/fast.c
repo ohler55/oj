@@ -246,6 +246,19 @@ static void skip_comment(ParseInfo pi) {
 #define NUM_MAX (FIXNUM_MAX >> 8)
 #endif
 
+static void validate_integer_size(size_t limit, char *head, char *tail) {
+    size_t total       = (size_t)(tail - head);
+    bool   has_sign    = (head[0] == '-' || head[0] == '+');
+    size_t digit_count = total - (has_sign ? 1 : 0);
+
+    if (digit_count > limit) {
+        rb_raise(oj_parse_error_class,
+                 "integer exceeds :max_integer_digits (%lu > %lu)",
+                 (unsigned long)digit_count,
+                 (unsigned long)limit);
+    }
+}
+
 static void leaf_fixnum_value(Leaf leaf) {
     char   *s   = leaf->str;
     int64_t n   = 0;
@@ -265,7 +278,12 @@ static void leaf_fixnum_value(Leaf leaf) {
         }
     }
     if (big) {
-        char c = *s;
+        size_t limit = oj_default_options.max_integer_digits;
+        char   c     = *s;
+
+        if (0 < limit) {
+            validate_integer_size(limit, leaf->str, s);
+        }
 
         *s          = '\0';
         leaf->value = rb_cstr_to_inum(leaf->str, 10, 0);
