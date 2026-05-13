@@ -89,7 +89,7 @@ VALUE oj_doc_class = Qundef;
 char *stpcpy(char *dest, const char *src) {
     size_t cnt = strlen(src);
 
-    memcpy(dest, src, cnt + 1);
+    strcpy(dest, src);
 
     return dest + cnt;
 }
