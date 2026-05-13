@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.17.1 - unreleased
+
+- Fixed "quoted string not terminated" error.
+
 ## 3.17.0 - 2026-04-19
 
 - A "safe" parser has been added as a variation of the Oj:Parser thanks to @meinac.

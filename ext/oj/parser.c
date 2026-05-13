@@ -594,7 +594,7 @@ static void big_change(ojParser p) {
     }
 }
 
-static void parse(ojParser p, const byte *json) {
+static void parse(ojParser p, const byte *json, bool more) {
     const byte *start;
     const byte *b = json;
     int         i;
@@ -635,7 +635,7 @@ static void parse(ojParser p, const byte *json) {
             if ('"' == *b) {
                 p->map = colon_map;
                 break;
-            } else if ('\0' == *b) {
+            } else if ('\0' == *b && !more) {
                 parse_error(p, "quoted string not terminated");
                 break;
             }
@@ -662,7 +662,7 @@ static void parse(ojParser p, const byte *json) {
                 p->funcs[p->stack[p->depth]].add_str(p);
                 p->map = (0 == p->depth) ? value_map : after_map;
                 break;
-            } else if ('\0' == *b) {
+            } else if ('\0' == *b && !more) {
                 parse_error(p, "quoted string not terminated");
                 break;
             }
@@ -1378,7 +1378,6 @@ static void validate_non_primitives_are_complete(ojParser p) {
     if (0 >= p->depth) {
         return;
     }
-
     if (OBJECT_FUN == p->stack[p->depth]) {
         parse_error(p, "Object is not closed");
     } else {
@@ -1406,7 +1405,7 @@ static VALUE parser_parse(VALUE self, VALUE json) {
 
     parser_reset(p);
     p->start(p);
-    parse(p, ptr);
+    parse(p, ptr, false);
 
     validate_document_end(p);
 
@@ -1428,7 +1427,7 @@ static VALUE load(VALUE self) {
     while (true) {
         rb_funcall(p->reader, oj_readpartial_id, 2, INT2NUM(16385), rbuf);
         if (0 < RSTRING_LEN(rbuf)) {
-            parse(p, (byte *)StringValuePtr(rbuf));
+            parse(p, (byte *)StringValuePtr(rbuf), true);
         }
         if (Qtrue == rb_funcall(p->reader, oj_eofq_id, 0)) {
             if (0 < p->depth) {
@@ -1498,7 +1497,7 @@ static VALUE parser_file(VALUE self, VALUE filename) {
     while (true) {
         if (0 < (rsize = read(fd, buf, size))) {
             buf[rsize] = '\0';
-            parse(p, buf);
+            parse(p, buf, true);
         }
         if (rsize <= 0) {
             if (0 != rsize) {
