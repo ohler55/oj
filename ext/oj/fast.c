@@ -84,17 +84,6 @@ static void  each_value(Doc doc, Leaf leaf);
 
 VALUE oj_doc_class = Qundef;
 
-// This is only for CentOS 5.4 with Ruby 1.9.3-p0.
-#ifndef HAVE_STPCPY
-char *stpcpy(char *dest, const char *src) {
-    size_t cnt = strlen(src);
-
-    strcpy(dest, src);
-
-    return dest + cnt;
-}
-#endif
-
 inline static void next_non_white(ParseInfo pi) {
     for (; 1; pi->s++) {
         switch (*pi->s) {

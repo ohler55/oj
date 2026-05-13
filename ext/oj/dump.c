@@ -40,7 +40,7 @@ static size_t ascii_friendly_size(const uint8_t *str, size_t len);
 static const char hex_chars[17] = "0123456789abcdef";
 
 // JSON standard except newlines are no escaped
-static char newline_friendly_chars[256] = "\
+static char newline_friendly_chars[257] = "\
 66666666221622666666666666666666\
 11211111111111111111111111111111\
 11111111111111111111111111112111\
@@ -51,7 +51,7 @@ static char newline_friendly_chars[256] = "\
 11111111111111111111111111111111";
 
 // JSON standard
-static char hibit_friendly_chars[256] = "\
+static char hibit_friendly_chars[257] = "\
 66666666222622666666666666666666\
 11211111111111111111111111111111\
 11111111111111111111111111112111\
@@ -62,7 +62,7 @@ static char hibit_friendly_chars[256] = "\
 11111111111111111111111111111111";
 
 // JSON standard but escape forward slashes `/`
-static char slash_friendly_chars[256] = "\
+static char slash_friendly_chars[257] = "\
 66666666222622666666666666666666\
 11211111111111121111111111111111\
 11111111111111111111111111112111\
@@ -74,7 +74,7 @@ static char slash_friendly_chars[256] = "\
 
 // High bit set characters are always encoded as unicode. Worse case is 3
 // bytes per character in the output. That makes this conservative.
-static char ascii_friendly_chars[256] = "\
+static char ascii_friendly_chars[257] = "\
 66666666222622666666666666666666\
 11211111111111111111111111111111\
 11111111111111111111111111112111\
@@ -85,7 +85,7 @@ static char ascii_friendly_chars[256] = "\
 33333333333333333333333333333333";
 
 // XSS safe mode
-static char xss_friendly_chars[256] = "\
+static char xss_friendly_chars[257] = "\
 66666666222622666666666666666666\
 11211161111111121111111111116161\
 11111111111111111111111111112111\
@@ -96,7 +96,7 @@ static char xss_friendly_chars[256] = "\
 33333333333333333333333333333333";
 
 // JSON XSS combo
-static char hixss_friendly_chars[256] = "\
+static char hixss_friendly_chars[257] = "\
 66666666222622666666666666666666\
 11211111111111111111111111111111\
 11111111111111111111111111112111\
@@ -107,7 +107,7 @@ static char hixss_friendly_chars[256] = "\
 11611111111111111111111111111111";
 
 // Rails XSS combo
-static char rails_xss_friendly_chars[256] = "\
+static char rails_xss_friendly_chars[257] = "\
 66666666222622666666666666666666\
 11211161111111111111111111116161\
 11111111111111111111111111112111\
@@ -118,7 +118,7 @@ static char rails_xss_friendly_chars[256] = "\
 11611111111111111111111111111111";
 
 // Rails HTML non-escape
-static char rails_friendly_chars[256] = "\
+static char rails_friendly_chars[257] = "\
 66666666222622666666666666666666\
 11211111111111111111111111111111\
 11111111111111111111111111112111\

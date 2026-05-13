@@ -19,7 +19,7 @@
 // Workaround in case INFINITY is not defined in math.h or if the OS is CentOS
 #define OJ_INFINITY (1.0 / 0.0)
 
-static char hex_chars[256] = "\
+static char hex_chars[257] = "\
 ................................\
 ................xxxxxxxxxx......\
 .xxxxxx.........................\
