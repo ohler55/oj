@@ -4,6 +4,7 @@
 $LOAD_PATH << __dir__
 
 require 'helper'
+require 'tempfile'
 
 $json = %|{
   "array": [
@@ -332,6 +333,44 @@ class SajTest < Minitest::Test
                   [:array_end, 'array', 12, 3],
                   [:add_value, true, 'boolean', 13, 18],
                   [:hash_end, nil, 14, 1]], handler.calls)
+  end
+
+  def test_big_value_file
+    # Large files are parsed in blocks of 16384 bytes. Creating a file that is
+    # larger than that verifies the parser is reentrant.
+    Tempfile.create(['big', '.json']) do |f|
+      f.write('"')
+      f.write('x' * 20_000)
+      f.write('"')
+      f.rewind
+      p = Oj::Parser.new(:saj)
+      p.file(f.path)
+      # If there is no error raised claim success.
+
+      # Rewind and parse using load with the temp file treated as a reader.
+      f.rewind
+      p.load(f)
+    end
+  end
+
+  def test_big_key_file
+    # Large files are parsed in blocks of 16384 bytes. Creating a file that is
+    # larger than that verifies the parser is reentrant.
+    Tempfile.create(['big', '.json']) do |f|
+      f.write('{"')
+      f.write('x' * 20_000)
+      f.write('":1}')
+      f.write("\n")
+      f.rewind
+      p = Oj::Parser.new(:saj)
+
+      p.file(f.path)
+      # If there is no error raised claim success.
+
+      # Rewind and parse using load with the temp file treated as a reader.
+      f.rewind
+      p.load(f)
+    end
   end
 
 end
