@@ -504,7 +504,6 @@ static char *read_quoted_value(ParseInfo pi) {
     for (; '"' != *h; h++, t++) {
         if ('\0' == *h) {
             pi->s = h;
-	    printf("*** fail at %s\n", pi->s);
             raise_error("quoted string not terminated", pi->str, pi->s);
         } else if ('\\' == *h) {
             h++;
