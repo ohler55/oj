@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 3.17.1 - unreleased
+## 3.17.1 - 2026-05-15
 
 - Fixed "quoted string not terminated" error.
 
