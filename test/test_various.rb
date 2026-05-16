@@ -133,6 +133,7 @@ class Juice < Minitest::Test
       omit_null_byte: false,
       only: nil,
       except: [:one, :two],
+      max_integer_digits: 0,
     }
     Oj.default_options = alt
     # keys = alt.keys
