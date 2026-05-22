@@ -674,6 +674,10 @@ static void parse(ojParser p, const byte *json, bool more) {
             p->cur = b - json;
             p->funcs[p->stack[p->depth]].open_object(p);
             p->depth++;
+	    if ((int)sizeof(p->stack) <= p->depth) {
+                parse_error(p, "too deeply nested");
+                break;
+            }
             p->stack[p->depth] = OBJECT_FUN;
             p->map             = key1_map;
             break;
@@ -696,6 +700,10 @@ static void parse(ojParser p, const byte *json, bool more) {
             p->cur = b - json;
             p->funcs[p->stack[p->depth]].open_array(p);
             p->depth++;
+	    if ((int)sizeof(p->stack) <= p->depth) {
+                parse_error(p, "too deeply nested");
+                break;
+            }
             p->stack[p->depth] = ARRAY_FUN;
             p->map             = value_map;
             break;

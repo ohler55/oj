@@ -96,7 +96,7 @@ int oj_rxclass_append(RxClass rc, const char *expr, VALUE clas) {
 }
 
 VALUE
-oj_rxclass_match(RxClass rc, const char *str, int len) {
+oj_rxclass_match(RxClass rc, const char *str, size_t len) {
     RxC  rxc;
     char buf[4096];
 

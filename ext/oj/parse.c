@@ -394,7 +394,7 @@ void oj_scanner_init(void) {
 static void read_escaped_str(ParseInfo pi, const char *start) {
     struct _buf buf;
     const char *s;
-    int         cnt = (int)(pi->cur - start);
+    size_t      cnt = pi->cur - start;
     uint32_t    code;
     Val         parent = stack_peek(&pi->stack);
 
@@ -669,7 +669,7 @@ static void read_num(ParseInfo pi) {
             // A trailing . is not a valid decimal but if encountered allow it
             // except when mimicking the JSON gem or in strict mode.
             if (StrictMode == pi->options.mode || CompatMode == pi->options.mode) {
-                int pos = (int)(pi->cur - ni.str);
+                size_t pos = pi->cur - ni.str;
 
                 if (1 == pos || (2 == pos && ni.neg)) {
                     oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number");

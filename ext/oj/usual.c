@@ -608,12 +608,16 @@ static void dfree(ojParser p) {
     Usual d = (Usual)p->ctx;
 
     cache_free(d->str_cache);
+    d->str_cache = NULL;
     cache_free(d->attr_cache);
+    d->attr_cache = NULL;
     if (NULL != d->sym_cache) {
         cache_free(d->sym_cache);
+	d->sym_cache = NULL;
     }
     if (NULL != d->class_cache) {
         cache_free(d->class_cache);
+	d->class_cache = NULL;
     }
     OJ_R_FREE(d->vhead);
     OJ_R_FREE(d->chead);
@@ -639,6 +643,12 @@ static void mark(ojParser p) {
     }
     if (NULL != d->class_cache) {
         cache_mark(d->class_cache);
+    }
+    if (Qnil != d->hash_class) {
+        rb_gc_mark(d->hash_class);
+    }
+    if (Qnil != d->array_class) {
+        rb_gc_mark(d->array_class);
     }
     for (vp = d->vhead; vp < d->vtail; vp++) {
         if (Qundef != *vp) {

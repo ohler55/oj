@@ -19,7 +19,7 @@ typedef struct _rxClass {
 extern void  oj_rxclass_init(RxClass rc);
 extern void  oj_rxclass_cleanup(RxClass rc);
 extern int   oj_rxclass_append(RxClass rc, const char *expr, VALUE clas);
-extern VALUE oj_rxclass_match(RxClass rc, const char *str, int len);
+extern VALUE oj_rxclass_match(RxClass rc, const char *str, size_t len);
 extern void  oj_rxclass_copy(RxClass src, RxClass dest);
 extern void  oj_rxclass_rappend(RxClass rc, VALUE rx, VALUE clas);
 
