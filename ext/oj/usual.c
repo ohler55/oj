@@ -63,7 +63,7 @@ static VALUE form_attr(const char *str, size_t len) {
         memcpy(b + 1, str, len);
         b[len + 1] = '\0';
 
-        id = rb_intern3(buf, len + 1, oj_utf8_encoding);
+        id = rb_intern3(b, len + 1, oj_utf8_encoding);
         OJ_R_FREE(b);
         return id;
     }
@@ -200,7 +200,10 @@ static void push_key(ojParser p) {
         d->ktail = d->khead + pos;
         d->kend  = d->khead + cap;
     }
-    d->ktail->len = klen;
+    if (32000 < klen) {
+        rb_raise(oj_json_parser_error_class, "Key too long. Keys are limited to 32,000 bytes.");
+    }
+    d->ktail->len = (int16_t)klen;
     if (klen < sizeof(d->ktail->buf)) {
         memcpy(d->ktail->buf, key, klen);
         d->ktail->buf[klen] = '\0';
@@ -613,11 +616,11 @@ static void dfree(ojParser p) {
     d->attr_cache = NULL;
     if (NULL != d->sym_cache) {
         cache_free(d->sym_cache);
-	d->sym_cache = NULL;
+        d->sym_cache = NULL;
     }
     if (NULL != d->class_cache) {
         cache_free(d->class_cache);
-	d->class_cache = NULL;
+        d->class_cache = NULL;
     }
     OJ_R_FREE(d->vhead);
     OJ_R_FREE(d->chead);
