@@ -1407,14 +1407,19 @@ static void validate_document_end(ojParser p) {
  */
 static VALUE parser_parse(VALUE self, VALUE json) {
     ojParser    p;
-    const byte *ptr = (const byte *)StringValuePtr(json);
+    int         frozen = OBJ_FROZEN(json);
+    const byte *ptr;
+
+    if (!frozen) {
+	rb_str_freeze(json);
+    }
+    ptr = (const byte *)StringValuePtr(json);
 
     TypedData_Get_Struct(self, struct _ojParser, &oj_parser_type, p);
 
     parser_reset(p);
     p->start(p);
     parse(p, ptr, false);
-
     validate_document_end(p);
 
     return p->result(p);
