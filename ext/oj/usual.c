@@ -1063,10 +1063,10 @@ static VALUE opt_symbol_keys_set(ojParser p, VALUE value) {
         if (NULL != d->sym_cache) {
             cache_free(d->sym_cache);
             d->sym_cache = NULL;
+	    d->key_cache = NULL;
         }
-        if (!d->cache_keys) {
-            d->get_key = str_key;
-        }
+	d->cache_keys = false;
+	d->get_key = str_key;
     }
     return (NULL != d->sym_cache) ? Qtrue : Qfalse;
 }
