@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.17.2 - 2026-05-27
+
+- Fixed multiple issues related to extreme sizes.
+
 ## 3.17.1 - 2026-05-15
 
 - Fixed "quoted string not terminated" error.

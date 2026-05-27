@@ -1,3 +1,4 @@
+
 #include "safe.h"
 
 static VALUE max_hash_size_sym, max_array_size_sym, max_depth_sym, max_total_elements_sym, max_hash_size_error_class,

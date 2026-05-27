@@ -63,7 +63,7 @@ static VALUE form_attr(const char *str, size_t len) {
         memcpy(b + 1, str, len);
         b[len + 1] = '\0';
 
-        id = rb_intern3(buf, len + 1, oj_utf8_encoding);
+        id = rb_intern3(b, len + 1, oj_utf8_encoding);
         OJ_R_FREE(b);
         return id;
     }
@@ -200,7 +200,10 @@ static void push_key(ojParser p) {
         d->ktail = d->khead + pos;
         d->kend  = d->khead + cap;
     }
-    d->ktail->len = klen;
+    if (32000 < klen) {
+        rb_raise(oj_json_parser_error_class, "Key too long. Keys are limited to 32,000 bytes.");
+    }
+    d->ktail->len = (int16_t)klen;
     if (klen < sizeof(d->ktail->buf)) {
         memcpy(d->ktail->buf, key, klen);
         d->ktail->buf[klen] = '\0';
@@ -608,12 +611,16 @@ static void dfree(ojParser p) {
     Usual d = (Usual)p->ctx;
 
     cache_free(d->str_cache);
+    d->str_cache = NULL;
     cache_free(d->attr_cache);
+    d->attr_cache = NULL;
     if (NULL != d->sym_cache) {
         cache_free(d->sym_cache);
+        d->sym_cache = NULL;
     }
     if (NULL != d->class_cache) {
         cache_free(d->class_cache);
+        d->class_cache = NULL;
     }
     OJ_R_FREE(d->vhead);
     OJ_R_FREE(d->chead);
@@ -639,6 +646,12 @@ static void mark(ojParser p) {
     }
     if (NULL != d->class_cache) {
         cache_mark(d->class_cache);
+    }
+    if (Qnil != d->hash_class) {
+        rb_gc_mark(d->hash_class);
+    }
+    if (Qnil != d->array_class) {
+        rb_gc_mark(d->array_class);
     }
     for (vp = d->vhead; vp < d->vtail; vp++) {
         if (Qundef != *vp) {
@@ -1050,10 +1063,10 @@ static VALUE opt_symbol_keys_set(ojParser p, VALUE value) {
         if (NULL != d->sym_cache) {
             cache_free(d->sym_cache);
             d->sym_cache = NULL;
+            d->key_cache = NULL;
         }
-        if (!d->cache_keys) {
-            d->get_key = str_key;
-        }
+        d->cache_keys = false;
+        d->get_key    = str_key;
     }
     return (NULL != d->sym_cache) ? Qtrue : Qfalse;
 }

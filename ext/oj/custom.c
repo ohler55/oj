@@ -915,7 +915,7 @@ static void hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, c
         volatile VALUE rkey = oj_calc_hash_key(pi, kval);
 
         if (Yes == pi->options.create_ok && NULL != pi->options.str_rx.head) {
-            VALUE clas = oj_rxclass_match(&pi->options.str_rx, str, (int)len);
+            VALUE clas = oj_rxclass_match(&pi->options.str_rx, str, len);
 
             if (Qnil != clas) {
                 rstr = rb_funcall(clas, oj_json_create_id, 1, rstr);
@@ -1020,7 +1020,7 @@ static void array_append_cstr(ParseInfo pi, const char *str, size_t len, const c
     volatile VALUE rstr = rb_utf8_str_new(str, len);
 
     if (Yes == pi->options.create_ok && NULL != pi->options.str_rx.head) {
-        VALUE clas = oj_rxclass_match(&pi->options.str_rx, str, (int)len);
+        VALUE clas = oj_rxclass_match(&pi->options.str_rx, str, len);
 
         if (Qnil != clas) {
             rb_ary_push(stack_peek(&pi->stack)->val, rb_funcall(clas, oj_json_create_id, 1, rstr));

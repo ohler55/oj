@@ -20,6 +20,8 @@
 #include "rails.h"
 #include "simd.h"
 
+#define MAX_INDENT 16
+
 typedef struct _yesNoOpt {
     VALUE sym;
     char *attr;
@@ -766,7 +768,10 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
         case T_FIXNUM:
             copts->dump_opts.indent_size = 0;
             *copts->dump_opts.indent_str = '\0';
-            copts->indent                = FIX2INT(v);
+            if (MAX_INDENT < FIX2INT(v)) {
+                rb_raise(rb_eArgError, "indent is limited to %d characters.", MAX_INDENT);
+            }
+            copts->indent = FIX2INT(v);
             break;
         case T_STRING:
             if (sizeof(copts->dump_opts.indent_str) <= (len = RSTRING_LEN(v))) {

@@ -3,6 +3,17 @@
 ^c^d hide subtree
 ^c^s show subtree
 
+oj_report_110_neg_memcpy_compat.md - fixed
+oj_report_117_integer_overflow_2gb.md - fixed
+oj_report_12_uaf_parser_callback.md - hallucination on the fix - fixed
+oj_report_26_uaf_symbol_keys.md - fixed
+oj_report_29_neg_memcpy_create_id.md - hallucination on the cause - fixed
+oj_report_2_stack_overflow_indent.md - fixed
+oj_report_31_uaf_unmarked_class.md - fixed
+oj_report_3_heap_overflow_exception.md - fixed
+oj_report_43_uaf_saj_long_key.md - fixed
+oj_report_4_uaf_doc_iterator.md - hallucination on the cause - fixed
+
 - skip_null_byte => omit_null_byte
  - and move to dump parameters
 
