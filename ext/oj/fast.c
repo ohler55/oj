@@ -957,9 +957,9 @@ static void each_leaf(Doc doc, VALUE self) {
         }
     } else {
         rb_yield(self);
-	if (NULL == DATA_PTR(self)) {
-	    rb_raise(rb_eIOError, "Document closed.");
-	}
+        if (NULL == DATA_PTR(self)) {
+            rb_raise(rb_eIOError, "Document closed.");
+        }
     }
 }
 
@@ -1066,9 +1066,9 @@ static void each_value(Doc doc, Leaf leaf, VALUE self) {
         }
     } else {
         rb_yield(leaf_value(doc, leaf));
-	if (NULL == DATA_PTR(self)) {
-	    rb_raise(rb_eIOError, "Document closed.");
-	}
+        if (NULL == DATA_PTR(self)) {
+            rb_raise(rb_eIOError, "Document closed.");
+        }
     }
 }
 
@@ -1508,9 +1508,9 @@ static VALUE doc_each_child(int argc, VALUE *argv, VALUE self) {
             do {
                 *doc->where = e;
                 rb_yield(self);
-		if (NULL == DATA_PTR(self)) {
-		    rb_raise(rb_eIOError, "Document closed.");
-		}
+                if (NULL == DATA_PTR(self)) {
+                    rb_raise(rb_eIOError, "Document closed.");
+                }
                 e = e->next;
             } while (e != first);
         }
