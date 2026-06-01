@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.17.3 - unreleased
+
+- Fixed issue in intern.c and fast.c.
+
 ## 3.17.2 - 2026-05-27
 
 - Fixed multiple issues related to extreme sizes.
