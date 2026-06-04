@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 3.17.3 - unreleased
+## 3.17.3 - 2026-06-04
 
 - Fixed issue in intern.c and fast.c.
 
