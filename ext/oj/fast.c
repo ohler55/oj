@@ -1504,10 +1504,9 @@ static VALUE doc_each_child(int argc, VALUE *argv, VALUE self) {
             Leaf first = (*doc->where)->elements->next;
             Leaf e     = first;
 
-	    if (MAX_STACK <= (doc->where + 1) - doc->where_path) {
-		rb_raise(rb_const_get_at(Oj, rb_intern("DepthError")),
-			 "Path too deep. Limit is %d levels.", MAX_STACK);
-	    }
+            if (MAX_STACK <= (doc->where + 1) - doc->where_path) {
+                rb_raise(rb_const_get_at(Oj, rb_intern("DepthError")), "Path too deep. Limit is %d levels.", MAX_STACK);
+            }
             doc->where++;
             do {
                 *doc->where = e;
