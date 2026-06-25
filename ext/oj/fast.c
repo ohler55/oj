@@ -946,7 +946,7 @@ static void each_leaf(Doc doc, VALUE self) {
 
             doc->where++;
             if (MAX_STACK <= doc->where - doc->where_path) {
-		doc->where--;
+                doc->where--;
                 rb_raise(rb_const_get_at(Oj, rb_intern("DepthError")), "Path too deep. Limit is %d levels.", MAX_STACK);
             }
             do {
