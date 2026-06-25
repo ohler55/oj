@@ -1,0 +1,86 @@
+From: Ruby 4 Set compatibility fix
+Subject: [PATCH] Fix Set serialization/deserialization on Ruby 4
+
+Ruby 4 made Set a built-in class (T_DATA internally) that no longer
+stores elements in an @hash instance variable. Oj's object mode relies
+on rb_ivar_foreach/rb_ivar_set for serialization, which produces an
+empty {"^o":"Set"} on Ruby 4.
+
+This patch adds special handling for Set:
+- On dump: detect Set objects and emit {"^o":"Set","hash":{el:true,...}}
+  by iterating with rb_funcall(obj, rb_intern("each"), 0)
+- On load: detect when @hash is being set on a Set and use #add instead
+
+This preserves backward compatibility with the existing wire format.
+
+diff --git a/ext/oj/dump_object.c b/ext/oj/dump_object.c
+index abc1234..def5678 100644
+--- a/ext/oj/dump_object.c
++++ b/ext/oj/dump_object.c
+@@ -487,6 +487,7 @@ static void dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out)
+     }
+
+     int d2 = depth + 1;
++    int is_set = (Qtrue == rb_obj_is_kind_of(obj, rb_const_get(rb_cObject, rb_intern("Set"))));
+
+     switch (rb_type(obj)) {
+     case T_ARRAY:
+@@ -516,6 +517,28 @@ static void dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out)
+     {
+         int cnt = (int)rb_ivar_count(obj);
+
++        // Ruby 4: Set is now a built-in class with no @hash ivar.
++        // Emit the legacy format: {"^o":"Set","hash":{"a":true,"b":true,...}}
++        if (is_set && 0 == cnt) {
++            VALUE entries = rb_funcall(obj, rb_intern("to_a"), 0);
++            long  elen    = RARRAY_LEN(entries);
++
++            if (0 < elen) {
++                *out->cur++ = ',';
++                fill_indent(out, d2);
++                oj_dump_cstr("hash", 4, 0, 0, out);
++                *out->cur++ = ':';
++                *out->cur++ = '{';
++                for (long i = 0; i < elen; i++) {
++                    if (0 < i) *out->cur++ = ',';
++                    oj_dump_obj_val(rb_ary_entry(entries, i), d2 + 1, out);
++                    *out->cur++ = ':';
++                    oj_dump_true(out);
++                }
++                *out->cur++ = '}';
++            }
++            goto DONE;
++        }
++
+         if (Qundef != clas && 0 < cnt) {
+             *out->cur++ = ',';
+         }
+@@ -540,6 +563,7 @@ static void dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out)
+         }
+     }
+
++DONE:
+     out->depth = depth;
+     fill_indent(out, depth);
+     *out->cur++ = '}';
+diff --git a/ext/oj/object.c b/ext/oj/object.c
+index abc1234..def5678 100644
+--- a/ext/oj/object.c
++++ b/ext/oj/object.c
+@@ -380,6 +380,15 @@ void oj_set_obj_ivar(Val parent, Val kval, VALUE value) {
+     if (kval->klen == 5 && strncmp("~mesg", kval->key, 5) == 0 && rb_obj_is_kind_of(parent->val, rb_eException)) {
+         parent->val = rb_funcall(parent->val, rb_intern("exception"), 1, value);
+     } else if (kval->klen == 3 && strncmp("~bt", kval->key, 3) == 0 && rb_obj_is_kind_of(parent->val, rb_eException)) {
+         rb_funcall(parent->val, rb_intern("set_backtrace"), 1, value);
++    } else if (kval->klen == 4 && strncmp("hash", kval->key, 4) == 0 &&
++               Qtrue == rb_obj_is_kind_of(parent->val, rb_const_get(rb_cObject, rb_intern("Set")))) {
++        // Ruby 4: Set no longer has @hash ivar. Reconstruct by adding keys from the hash.
++        if (T_HASH == rb_type(value)) {
++            VALUE keys = rb_funcall(value, rb_intern("keys"), 0);
++            for (long i = 0; i < RARRAY_LEN(keys); i++) {
++                rb_funcall(parent->val, rb_intern("add"), 1, rb_ary_entry(keys, i));
++            }
++        }
+     } else {
+         rb_ivar_set(parent->val, oj_attr_intern(kval->key, kval->klen), value);
+     }
