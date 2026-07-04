@@ -656,6 +656,26 @@ class ObjectJuice < Minitest::Test
     dump_and_load(obj, false)
   end
 
+  # An anonymous ^u (Struct) directive with a large member-name list used to
+  # overflow a fixed 1024-entry stack buffer (VALUE args[1024]).
+  def test_json_anonymous_struct_many_members
+    names = (0...3000).map { |i| "\"m#{i}\"" }.join(',')
+    obj   = Oj.load(%({"^u":[[#{names}],1]}), :mode => :object)
+    assert_kind_of(Struct, obj)
+  end
+
+  # A ^u (Struct) directive naming a class that is not defined used to abort the
+  # process with "[BUG] undef leaked to the Ruby space" because the unresolved
+  # (Qundef) class was passed to rb_obj_alloc. It must raise cleanly instead.
+  def test_json_struct_undefined_class
+    assert_raises(ArgumentError) do
+      Oj.load(%({"^u":["NoSuchStructClass99",1,2]}), :mode => :object)
+    end
+    assert_raises(ArgumentError) do
+      Oj.load(%({"^u":["NoSuchStructClass99",1,2]}), :mode => :object, :auto_define => true)
+    end
+  end
+
   def test_json_anonymous_struct
     s = Struct.new(:x, :y)
     obj = s.new(1, 2)

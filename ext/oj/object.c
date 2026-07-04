@@ -319,19 +319,25 @@ static int hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, vol
             e1 = *RARRAY_CONST_PTR(value);
             // check for anonymous Struct
             if (T_ARRAY == rb_type(e1)) {
-                VALUE          args[1024];
-                volatile VALUE rstr;
+                // Build the member-name list in a GC-managed Ruby array. Using a
+                // fixed C buffer (VALUE args[1024]) here overflowed the stack when
+                // the JSON supplied more than 1024 member names.
+                volatile VALUE names = rb_ary_new2(RARRAY_LEN(e1));
                 size_t         i;
                 size_t         cnt = RARRAY_LEN(e1);
 
                 for (i = 0; i < cnt; i++) {
-                    rstr    = RARRAY_AREF(e1, i);
-                    args[i] = rb_funcall(rstr, oj_to_sym_id, 0);
+                    rb_ary_push(names, rb_funcall(RARRAY_AREF(e1, i), oj_to_sym_id, 0));
                 }
-                sc = rb_funcall2(rb_cStruct, oj_new_id, (int)cnt, args);
+                sc = rb_apply(rb_cStruct, oj_new_id, names);
             } else {
                 // If struct is not defined then we let this fail and raise an exception.
                 sc = oj_name2struct(pi, *RARRAY_CONST_PTR(value), rb_eArgError);
+            }
+            if (Qundef == sc || Qnil == sc) {
+                // oj_name2struct already recorded the error; do not pass an
+                // unresolved (Qundef) class on to rb_obj_alloc/rb_class_new_instance.
+                return 1;
             }
             if (sc == rb_cRange) {
                 parent->val = rb_class_new_instance((int)(len - 1), RARRAY_CONST_PTR(value) + 1, rb_cRange);
