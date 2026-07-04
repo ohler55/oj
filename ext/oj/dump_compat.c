@@ -162,6 +162,7 @@ static void dump_array(VALUE a, int depth, Out out, bool as_ok) {
                     }
                 }
             } else {
+                assure_size(out, size);
                 fill_indent(out, d2);
             }
             oj_dump_compat_val(RARRAY_AREF(a, i), d2, out, true);

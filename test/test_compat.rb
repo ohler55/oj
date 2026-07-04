@@ -172,6 +172,21 @@ class CompatJuice < Minitest::Test
     dump_and_load([1, [2, [3, [4, [5, [6, [7, [8, [9, [10, [11, [12, [13, [14, [15, [16, [17, [18, [19, [20]]]]]]]]]]]]]]]]]]]], false)
   end
 
+  # A deeply nested array dumped in compat mode with an integer :indent used to
+  # overflow the output buffer because the integer-indent branch of dump_array
+  # called fill_indent() without a preceding assure_size(). Any nesting deep
+  # enough that depth*indent exceeds the buffer slack corrupted the heap.
+  def test_array_deep_indent
+    [1, 2, 16].each do |indent|
+      [50, 120, 250].each do |depth|
+        nested = eval('[[' * depth + '1' + ']]' * depth)
+        json   = Oj.dump(nested, :mode => :compat, :indent => indent)
+        # round-trips back to the same structure and does not crash
+        assert_equal(nested, Oj.compat_load(json))
+      end
+    end
+  end
+
   def test_symbol
     json = Oj.dump(:abc, :mode => :compat)
     assert_equal('"abc"', json)
