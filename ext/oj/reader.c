@@ -164,8 +164,14 @@ static VALUE partial_io_cb(VALUE rbuf) {
     }
     str = StringValuePtr(rstr);
     cnt = RSTRING_LEN(rstr);
-    strcpy(reader->tail, str);
-    reader->read_end = reader->tail + cnt;
+    if (cnt > (size_t)(reader->end - reader->tail)) {
+        // A misbehaving IO returned more than the requested number of bytes.
+        // Copying it in with strcpy() would overflow the reader buffer.
+        rb_raise(rb_eIOError, "read returned more than the requested number of bytes");
+    }
+    memcpy(reader->tail, str, cnt);
+    reader->tail[cnt] = '\0';
+    reader->read_end  = reader->tail + cnt;
 
     return Qtrue;
 }
@@ -184,8 +190,14 @@ static VALUE io_cb(VALUE rbuf) {
     }
     str = StringValuePtr(rstr);
     cnt = RSTRING_LEN(rstr);
-    strcpy(reader->tail, str);
-    reader->read_end = reader->tail + cnt;
+    if (cnt > (size_t)(reader->end - reader->tail)) {
+        // A misbehaving IO returned more than the requested number of bytes.
+        // Copying it in with strcpy() would overflow the reader buffer.
+        rb_raise(rb_eIOError, "read returned more than the requested number of bytes");
+    }
+    memcpy(reader->tail, str, cnt);
+    reader->tail[cnt] = '\0';
+    reader->read_end  = reader->tail + cnt;
 
     return Qtrue;
 }

@@ -282,6 +282,29 @@ class StrictJuice < Minitest::Test
     assert_equal({ 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}, obj)
   end
 
+  # An object that only responds to read() exercises the io_cb() reader path.
+  def test_io_read_object
+    json = %{{"x":true,"y":58,"z":[1,2,3]}}
+    reader = Object.new
+    reader.instance_variable_set(:@data, json.dup)
+    def reader.read(len = nil)
+      return nil if @data.empty?
+      len ? @data.slice!(0, len) : @data.slice!(0, @data.length)
+    end
+    obj = Oj.strict_load(reader)
+    assert_equal({ 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}, obj)
+  end
+
+  # An IO whose read() returns more than the requested number of bytes used to
+  # overflow the fixed-size reader buffer (SIGSEGV). It must raise cleanly.
+  def test_io_read_over_length
+    bad = Object.new
+    def bad.read(_len = nil)
+      'A' * 100_000
+    end
+    assert_raises(IOError) { Oj.strict_load(bad) }
+  end
+
   def test_symbol
     json = Oj.dump(:abc)
     assert_equal('"abc"', json)
