@@ -5,6 +5,7 @@
 #include <fcntl.h>
 
 #include "oj.h"
+#include "simd.h"
 
 #define DEBUG 0
 
@@ -594,9 +595,64 @@ static void big_change(ojParser p) {
     }
 }
 
-static void parse(ojParser p, const byte *json, bool more) {
+// Scan forward over string content, returning the first byte that is not
+// STR_OK in string_map. This is a pure drop-in for the scalar loop
+//
+//     for (; STR_OK == string_map[*b]; b++) {}
+//
+// and must return the exact same stop position. The stop set (bytes whose
+// string_map class is not 'R'/STR_OK) is:
+//
+//     * control bytes  0x00..0x1F  (class '.', also stops at the NUL terminator)
+//     * the quote      0x22 '"'    (class 'z')
+//     * the backslash  0x5C '\'    (class 'A')
+//     * every high byte 0x80..0xFF (UTF-8 lead/continuation, classes M/P/Q/'.')
+//
+// Note this differs from parse.c's string_scan_neon, which stops only on
+// \0 \\ " -- parser.c hands multi-byte UTF-8 to its state machine, so the
+// scanner must stop on the high bytes too. The predictor below is derived from
+// string_map, not copied from parse.c.
+//
+// The NEON path only loads a full 16-byte vector when [b, b+16) stays within
+// [., end), so it never reads past the string's allocation; the sub-16-byte
+// tail (and the whole scan on non-NEON builds) uses the scalar loop, which
+// stops naturally at the guaranteed NUL terminator.
+static inline const byte *oj_scan_str_simd(const byte *b, const byte *end) {
+#ifdef HAVE_SIMD_NEON
+    if (SIMD_NEON == SIMD_Impl) {
+        const uint8x16_t quote  = vdupq_n_u8('"');
+        const uint8x16_t bslash = vdupq_n_u8('\\');
+        const uint8x16_t space  = vdupq_n_u8(0x20);
+        const uint8x16_t high   = vdupq_n_u8(0x80);
+
+        while (b + sizeof(uint8x16_t) <= end) {
+            const uint8x16_t chunk = vld1q_u8((const uint8_t *)b);
+            // special lane == 0xFF for any byte that stops the scan.
+            const uint8x16_t special = vorrq_u8(vorrq_u8(vceqq_u8(chunk, quote), vceqq_u8(chunk, bslash)),
+                                                vorrq_u8(vcltq_u8(chunk, space), vcgeq_u8(chunk, high)));
+            // Reduce to a 64-bit mask with 4 bits per lane (same idiom as
+            // parse.c's string_scan_neon) and locate the first set lane.
+            const uint8x8_t res  = vshrn_n_u16(vreinterpretq_u16_u8(special), 4);
+            uint64_t        mask = vget_lane_u64(vreinterpret_u64_u8(res), 0);
+            if (0 != mask) {
+                mask &= 0x8888888888888888ull;
+                return b + (OJ_CTZ64(mask) >> 2);
+            }
+            b += sizeof(uint8x16_t);
+        }
+    }
+#else
+    (void)end;
+#endif
+    for (; STR_OK == string_map[*b]; b++) {
+    }
+    return b;
+}
+
+static void parse(ojParser p, const byte *json, size_t len, bool more) {
     const byte *start;
-    const byte *b = json;
+    const byte *b   = json;
+    const byte *end = json + len;
     int         i;
 
     p->line = 1;
@@ -629,8 +685,7 @@ static void parse(ojParser p, const byte *json, bool more) {
             b++;
             p->key.tail = p->key.head;
             start       = b;
-            for (; STR_OK == string_map[*b]; b++) {
-            }
+            b           = oj_scan_str_simd(b, end);
             buf_append_string(&p->key, (const char *)start, b - start);
             if ('"' == *b) {
                 p->map = colon_map;
@@ -654,8 +709,7 @@ static void parse(ojParser p, const byte *json, bool more) {
             b++;
             start       = b;
             p->buf.tail = p->buf.head;
-            for (; STR_OK == string_map[*b]; b++) {
-            }
+            b           = oj_scan_str_simd(b, end);
             buf_append_string(&p->buf, (const char *)start, b - start);
             if ('"' == *b) {
                 p->cur = b - json;
@@ -905,8 +959,7 @@ static void parse(ojParser p, const byte *json, bool more) {
             break;
         case STR_OK:
             start = b;
-            for (; STR_OK == string_map[*b]; b++) {
-            }
+            b     = oj_scan_str_simd(b, end);
             if (':' == p->next_map[256]) {
                 buf_append_string(&p->key, (const char *)start, b - start);
             } else {
@@ -1419,7 +1472,7 @@ static VALUE parser_parse(VALUE self, VALUE json) {
 
     parser_reset(p);
     p->start(p);
-    parse(p, ptr, false);
+    parse(p, ptr, (size_t)RSTRING_LEN(json), false);
     validate_document_end(p);
 
     return p->result(p);
@@ -1440,7 +1493,7 @@ static VALUE load(VALUE self) {
     while (true) {
         rb_funcall(p->reader, oj_readpartial_id, 2, INT2NUM(16385), rbuf);
         if (0 < RSTRING_LEN(rbuf)) {
-            parse(p, (byte *)StringValuePtr(rbuf), true);
+            parse(p, (byte *)StringValuePtr(rbuf), (size_t)RSTRING_LEN(rbuf), true);
         }
         if (Qtrue == rb_funcall(p->reader, oj_eofq_id, 0)) {
             if (0 < p->depth) {
@@ -1510,7 +1563,7 @@ static VALUE parser_file(VALUE self, VALUE filename) {
     while (true) {
         if (0 < (rsize = read(fd, buf, size))) {
             buf[rsize] = '\0';
-            parse(p, buf, true);
+            parse(p, buf, rsize, true);
         }
         if (rsize <= 0) {
             if (0 != rsize) {
