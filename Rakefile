@@ -17,7 +17,11 @@ if RUBY_PLATFORM.include?('linux')
       binary_name: 'oj',
       # Valgrind and YJIT interfere with each other, adding noise and slowdown,
       # so keep YJIT disabled while running under Valgrind.
-      ruby: "#{FileUtils::RUBY} --disable-yjit"
+      ruby: "#{FileUtils::RUBY} --disable-yjit",
+      # Keep the suppression file under test/ (it is only used by this task and
+      # is not part of the packaged gem). ruby_memcheck still loads its own
+      # bundled interpreter suppressions in addition to this directory.
+      valgrind_suppressions_dir: 'test/valgrind'
     )
 
     # ruby_memcheck runs every listed file in a single process. Only the files
