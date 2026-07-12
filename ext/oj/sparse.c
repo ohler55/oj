@@ -907,6 +907,7 @@ CLEANUP:
         oj_circ_array_free(pi->circ_array);
     }
     stack_cleanup(&pi->stack);
+    oj_free_call_options(&pi->options);
     if (0 != fd) {
 #ifdef _WIN32
         rb_w32_close(fd);

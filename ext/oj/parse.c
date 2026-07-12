@@ -1309,6 +1309,7 @@ CLEANUP:
     if (pi->str_rx.head != oj_default_options.str_rx.head) {
         oj_rxclass_cleanup(&pi->str_rx);
     }
+    oj_free_call_options(&pi->options);
     if (err_has(&pi->err)) {
         rb_set_errinfo(Qnil);
         if (Qnil != pi->err_class) {

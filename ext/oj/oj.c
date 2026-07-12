@@ -921,6 +921,9 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
 
             len = RSTRING_LEN(v);
             if (len != copts->create_id_len || 0 != strcmp(copts->create_id, str)) {
+                if (&oj_default_options == copts && oj_json_class != copts->create_id) {
+                    OJ_R_FREE((char *)copts->create_id);
+                }
                 copts->create_id = OJ_R_ALLOC_N(char, len + 1);
                 strcpy((char *)copts->create_id, str);
                 copts->create_id_len = len;
@@ -1052,7 +1055,11 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
             copts->array_class = v;
         }
     } else if (ignore_sym == k) {
-        OJ_R_FREE(copts->ignore);
+        // Only free when replacing the defaults; a per-call copy's ignore still
+        // aliases the default-owned buffer, which oj_free_call_options() frees.
+        if (&oj_default_options == copts) {
+            OJ_R_FREE(copts->ignore);
+        }
         copts->ignore = NULL;
         if (Qnil != v) {
             size_t cnt;
@@ -1125,15 +1132,15 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
         strncpy(copts->float_fmt, RSTRING_PTR(v), (size_t)RSTRING_LEN(v));
         copts->float_fmt[RSTRING_LEN(v)] = '\0';
     } else if (only_sym == k) {
-        if (NULL != copts->dump_opts.only) {
+        // Only free when replacing the defaults; a per-call copy's pointer still
+        // aliases the default-owned buffer, which oj_free_call_options() frees.
+        if (&oj_default_options == copts && NULL != copts->dump_opts.only) {
             OJ_R_FREE((void *)copts->dump_opts.only);
-            copts->dump_opts.only = NULL;
         }
         copts->dump_opts.only = make_only_value(v);
     } else if (except_sym == k) {
-        if (NULL != copts->dump_opts.except) {
+        if (&oj_default_options == copts && NULL != copts->dump_opts.except) {
             OJ_R_FREE((void *)copts->dump_opts.except);
-            copts->dump_opts.except = NULL;
         }
         copts->dump_opts.except = make_only_value(v);
     }
@@ -1151,6 +1158,31 @@ void oj_parse_options(VALUE ropts, Options copts) {
                             0 < copts->dump_opts.before_size || 0 < copts->dump_opts.hash_size ||
                             0 < copts->dump_opts.array_size);
     return;
+}
+
+// Free the option buffers that oj_parse_options() allocated for a single call.
+// A per-call options struct is a copy of oj_default_options, so its create_id,
+// ignore, only, and except members initially alias the ones owned by the
+// defaults. Only free a member when it differs from the default, i.e. when it
+// was allocated for this call; the default-owned buffers must be left alone.
+void oj_free_call_options(Options copts) {
+    if (NULL != copts->create_id && oj_default_options.create_id != copts->create_id) {
+        OJ_R_FREE((char *)copts->create_id);
+        copts->create_id     = NULL;
+        copts->create_id_len = 0;
+    }
+    if (NULL != copts->ignore && oj_default_options.ignore != copts->ignore) {
+        OJ_R_FREE(copts->ignore);
+        copts->ignore = NULL;
+    }
+    if (NULL != copts->dump_opts.only && oj_default_options.dump_opts.only != copts->dump_opts.only) {
+        OJ_R_FREE((void *)copts->dump_opts.only);
+        copts->dump_opts.only = NULL;
+    }
+    if (NULL != copts->dump_opts.except && oj_default_options.dump_opts.except != copts->dump_opts.except) {
+        OJ_R_FREE((void *)copts->dump_opts.except);
+        copts->dump_opts.except = NULL;
+    }
 }
 
 static int match_string_cb(VALUE key, VALUE value, VALUE rx) {
@@ -1444,6 +1476,7 @@ static VALUE dump_ensure(VALUE a) {
     volatile struct dump_arg *arg = (void *)a;
 
     oj_out_free(arg->out);
+    oj_free_call_options(arg->copts);
 
     return Qnil;
 }
@@ -1559,6 +1592,7 @@ static VALUE to_file(int argc, VALUE *argv, VALUE self) {
         oj_parse_options(argv[2], &copts);
     }
     oj_write_obj_to_file(argv[1], StringValuePtr(*argv), &copts);
+    oj_free_call_options(&copts);
 
     return Qnil;
 }
@@ -1580,6 +1614,7 @@ static VALUE to_stream(int argc, VALUE *argv, VALUE self) {
         oj_parse_options(argv[2], &copts);
     }
     oj_write_obj_to_stream(argv[1], *argv, &copts);
+    oj_free_call_options(&copts);
 
     return Qnil;
 }
