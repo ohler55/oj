@@ -256,6 +256,7 @@ extern VALUE oj_custom_parse_cstr(int argc, VALUE *argv, char *json, size_t len)
 
 extern bool oj_hash_has_key(VALUE hash, VALUE key);
 extern void oj_parse_options(VALUE ropts, Options copts);
+extern void oj_free_call_options(Options copts);
 
 extern void  oj_dump_obj_to_json(VALUE obj, Options copts, Out out);
 extern void  oj_dump_obj_to_json_using_params(VALUE obj, Options copts, Out out, int argc, VALUE *argv);
