@@ -790,14 +790,11 @@ static VALUE parse_json(VALUE clas, char *json, bool given) {
     doc->self = self;
     result    = rb_protect(protect_open_proc, (VALUE)&pi, &ex);
     if (given || 0 != ex) {
+        // The doc is detached from its wrapper so the GC will not free it.
+        // doc_free() releases both the doc and its json buffer (doc->json), so
+        // the caller must not free json separately.
         DATA_PTR(doc->self) = NULL;
-        // TBD is this needed?
-        /*
         doc_free(pi.doc);
-        if (0 != ex) {  // will jump so caller will not free
-            OJ_R_FREE(json);
-        }
-        */
     } else {
         result = doc->self;
     }
@@ -1105,12 +1102,7 @@ static VALUE doc_open(VALUE clas, VALUE str) {
 
     memcpy(json, StringValuePtr(str), len);
     obj = parse_json(clas, json, given);
-    // TBD is this needed
-    /*
-    if (given) {
-        OJ_R_FREE(json);
-    }
-    */
+    // json is owned by the doc and freed by doc_free(); do not free it here.
     return obj;
 }
 
@@ -1160,12 +1152,7 @@ static VALUE doc_open_file(VALUE clas, VALUE filename) {
     fclose(f);
     json[len] = '\0';
     obj       = parse_json(clas, json, given);
-    // TBD is this needed
-    /*
-    if (given) {
-        OJ_R_FREE(json);
-    }
-    */
+    // json is owned by the doc and freed by doc_free(); do not free it here.
     return obj;
 }
 
