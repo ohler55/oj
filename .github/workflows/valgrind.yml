@@ -1,0 +1,32 @@
+name: Valgrind
+
+on:
+  push:
+    branches:
+      - '*'
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  valgrind:
+    name: memcheck (ubuntu, ruby ${{ matrix.ruby }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby:
+          - '4.0'
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install Valgrind
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y valgrind
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+      - name: Run the test suite under Valgrind memcheck
+        run: bundle exec rake test:valgrind
