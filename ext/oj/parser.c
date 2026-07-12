@@ -6,6 +6,7 @@
 
 #include "oj.h"
 #include "simd.h"
+#include "swar.h"
 
 #define DEBUG 0
 
@@ -19,6 +20,12 @@
 // 9,223,372,036,854,775,807
 #define BIG_LIMIT LLONG_MAX / 10
 #define FRAC_LIMIT 10000000000000000ULL
+
+// Largest fixnum accumulator for which applying one more SWAR 8-digit chunk
+// (fixnum*1e8 + d8, d8 <= 99999999) is guaranteed to stay below BIG_LIMIT, so
+// the fast path never crosses the Fixnum/Bignum boundary and hands a value
+// bit-identical to the scalar loop to the following code.
+#define SWAR_INT_MAX (((uint64_t)(LLONG_MAX / 10) - 99999999ULL) / 100000000ULL)
 
 // Give better performance with indented JSON but worse with unindented.
 // #define SPACE_JUMP
@@ -649,6 +656,27 @@ static inline const byte *oj_scan_str_simd(const byte *b, const byte *end) {
     return b;
 }
 
+// Consume a run of integer digits into p->num.fixnum, folding whole 8-digit
+// chunks with SWAR first and letting the scalar tail cross into a Bignum via
+// big_change() at BIG_LIMIT. Returns b positioned at the last consumed digit;
+// the caller's state-machine loop performs the trailing b++ (this replaces the
+// b-- that each digit case used to do inline).
+static inline const byte *accum_digits(ojParser p, const byte *b, const byte *end) {
+    b = oj_swar_accum(b, end, &p->num.fixnum, SWAR_INT_MAX, NULL);
+    for (; NUM_DIGIT == digit_map[*b]; b++) {
+        uint64_t x = (uint64_t)p->num.fixnum * 10 + (uint64_t)(*b - '0');
+
+        if (x < BIG_LIMIT) {
+            p->num.fixnum = (int64_t)x;
+        } else {
+            big_change(p);
+            p->map = big_digit_map;
+            break;
+        }
+    }
+    return b - 1;
+}
+
 static void parse(ojParser p, const byte *json, size_t len, bool more) {
     const byte *start;
     const byte *b   = json;
@@ -815,36 +843,9 @@ static void parse(ojParser p, const byte *json, size_t len, bool more) {
             p->num.exp_neg = false;
             p->num.len     = 0;
             p->map         = digit_map;
-            for (; NUM_DIGIT == digit_map[*b]; b++) {
-                uint64_t x = (uint64_t)p->num.fixnum * 10 + (uint64_t)(*b - '0');
-
-                // Tried just checking for an int less than zero but that
-                // fails when optimization is on for some reason with the
-                // clang compiler so us a bit mask instead.
-                if (x < BIG_LIMIT) {
-                    p->num.fixnum = (int64_t)x;
-                } else {
-                    big_change(p);
-                    p->map = big_digit_map;
-                    break;
-                }
-            }
-            b--;
+            b              = accum_digits(p, b, end);
             break;
-        case NUM_DIGIT:
-            for (; NUM_DIGIT == digit_map[*b]; b++) {
-                uint64_t x = p->num.fixnum * 10 + (uint64_t)(*b - '0');
-
-                if (x < BIG_LIMIT) {
-                    p->num.fixnum = (int64_t)x;
-                } else {
-                    big_change(p);
-                    p->map = big_digit_map;
-                    break;
-                }
-            }
-            b--;
-            break;
+        case NUM_DIGIT: b = accum_digits(p, b, end); break;
         case NUM_DOT:
             p->type = OJ_DECIMAL;
             p->map  = dot_map;
@@ -871,18 +872,7 @@ static void parse(ojParser p, const byte *json, size_t len, bool more) {
             break;
         case NUM_ZERO: p->map = zero_map; break;
         case NEG_DIGIT:
-            for (; NUM_DIGIT == digit_map[*b]; b++) {
-                uint64_t x = p->num.fixnum * 10 + (uint64_t)(*b - '0');
-
-                if (x < BIG_LIMIT) {
-                    p->num.fixnum = (int64_t)x;
-                } else {
-                    big_change(p);
-                    p->map = big_digit_map;
-                    break;
-                }
-            }
-            b--;
+            b      = accum_digits(p, b, end);
             p->map = digit_map;
             break;
         case EXP_SIGN:

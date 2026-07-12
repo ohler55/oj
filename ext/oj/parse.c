@@ -16,6 +16,7 @@
 #include "oj.h"
 #include "rxclass.h"
 #include "simd.h"
+#include "swar.h"
 #include "val_stack.h"
 
 // Workaround in case INFINITY is not defined in math.h or if the OS is CentOS
@@ -24,6 +25,12 @@
 // #define EXP_MAX		1023
 #define EXP_MAX 100000
 #define DEC_MAX 15
+
+// Largest ni.i for which applying one more SWAR 8-digit chunk (ni.i*1e8 + d8,
+// d8 <= 99999999) is guaranteed to stay within int64, so the fast path never
+// overflows and stays bit-identical to the scalar loop. Values beyond this are
+// left to the scalar loop, which detects big/overflow exactly as before.
+#define SWAR_LOAD_MAX (((int64_t)INT64_MAX - 99999999LL) / 100000000LL)
 
 static void next_non_white(ParseInfo pi) {
     for (; 1; pi->cur++) {
@@ -648,6 +655,12 @@ static void read_num(ParseInfo pi) {
             zero1 = true;
         }
 
+        // Fold eight in-range digits at a time while it stays within int64 and
+        // bit-identical to the scalar loop below; dec_cnt is kept in step. The
+        // scalar loop that follows handles the remaining digits and the big
+        // detection exactly as before.
+        pi->cur = (const char *)
+            oj_swar_accum((const uint8_t *)pi->cur, (const uint8_t *)pi->end, &ni.i, SWAR_LOAD_MAX, &dec_cnt);
         for (; '0' <= *pi->cur && *pi->cur <= '9'; pi->cur++) {
             int d = (*pi->cur - '0');
 
