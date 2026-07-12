@@ -1,0 +1,32 @@
+# Valgrind suppressions for `rake test:valgrind` (ruby_memcheck).
+#
+# The file name is dictated by ruby_memcheck, which only loads suppression files
+# named after the Ruby engine/version (ruby.supp applies to all MRI versions);
+# the directory is set via valgrind_suppressions_dir in the Rakefile.
+#
+# These stanzas silence memcheck reports that are false positives for the oj
+# extension: allocations that live for the lifetime of a process-global cache
+# and are intentionally never freed (the OS reclaims them at exit). They were
+# each verified to be bounded — re-parsing the same input does not grow them —
+# so suppressing them does not hide a real, growing leak. Every stanza is scoped
+# to a single oj function so unrelated reports are not swallowed.
+#
+# NOTE: this file deliberately does NOT suppress the Oj::Doc (fast.c) allocation
+# reported by the memcheck run. That one reproduces as an O(n) growing leak and
+# is tracked separately as a real bug.
+
+{
+   oj: process-lifetime string intern cache (lockless_intern, cache.c)
+   Memcheck:Leak
+   match-leak-kinds: definite,indirect
+   ...
+   fun:lockless_intern
+}
+
+{
+   oj: process-lifetime string intern cache (locking_intern, cache.c)
+   Memcheck:Leak
+   match-leak-kinds: definite,indirect
+   ...
+   fun:locking_intern
+}

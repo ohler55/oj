@@ -10,4 +10,5 @@ group :development do
   gem 'rubocop', '~> 1.47', require: false
   gem 'rubocop-minitest', '~> 0.28.0', require: false
   gem 'test-unit', '~> 3.0'
+  gem 'ruby_memcheck', '~> 3.0' if RUBY_PLATFORM.include?('linux')
 end

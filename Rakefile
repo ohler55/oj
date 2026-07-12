@@ -9,6 +9,52 @@ Rake::ExtensionTask.new('oj') do |ext|
   ext.lib_dir = 'lib/oj'
 end
 
+if RUBY_PLATFORM.include?('linux')
+  begin
+    require 'ruby_memcheck'
+
+    RubyMemcheck.config(
+      binary_name: 'oj',
+      # Valgrind and YJIT interfere with each other, adding noise and slowdown,
+      # so keep YJIT disabled while running under Valgrind.
+      ruby: "#{FileUtils::RUBY} --disable-yjit",
+      # Keep the suppression file under test/ (it is only used by this task and
+      # is not part of the packaged gem). ruby_memcheck still loads its own
+      # bundled interpreter suppressions in addition to this directory.
+      valgrind_suppressions_dir: 'test/valgrind'
+    )
+
+    # ruby_memcheck runs every listed file in a single process. Only the files
+    # that test/tests.rb loads are known to coexist that way; the other
+    # test_*.rb files mutate global state (Oj.default_options, mimic_JSON, ...)
+    # or fork, and upstream runs those in their own processes. Mirror the
+    # tests.rb set here, minus test_scp which forks and talks over a socket.
+    memcheck_test_files = %w[
+      test_compat test_custom test_fast test_file test_gc test_hash
+      test_integer_range test_long_strings test_max_integer_digits test_null
+      test_object test_rails test_saj test_strict test_wab test_writer
+    ].map { |name| "test/#{name}.rb" }
+
+    namespace :test do
+      task :check_valgrind do
+        unless system('command -v valgrind > /dev/null 2>&1')
+          abort("\nValgrind is required for `rake test:valgrind` but was not found.\n" \
+                "Install it first (Linux only), e.g. `sudo apt-get install valgrind`.\n")
+        end
+      end
+
+      RubyMemcheck::TestTask.new(valgrind: [:check_valgrind, :compile]) do |t|
+        t.libs << 'test'
+        t.test_files = memcheck_test_files
+        t.verbose    = true
+      end
+    end
+  rescue LoadError
+    # ruby_memcheck is an optional, Linux-only development dependency. If it is
+    # not installed just skip defining the task instead of breaking the Rakefile.
+  end
+end
+
 =begin
 Rake::TestTask.new(:test) do |test|
   test.libs << 'test'
