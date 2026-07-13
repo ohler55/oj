@@ -671,6 +671,11 @@ static VALUE encoder_new(int argc, VALUE *argv, VALUE self) {
     Encoder e = OJ_R_ALLOC(struct _encoder);
 
     e->opts = oj_default_options;
+    // Detach from the match_string regexps owned by the defaults before the
+    // options are parsed so that a :match_string option builds a chain of its
+    // own that is freed with the encoder.
+    e->opts.str_rx.head = NULL;
+    e->opts.str_rx.tail = NULL;
     copy_opts(&ropts, &e->ropts);
 
     if (1 <= argc && Qnil != *argv) {

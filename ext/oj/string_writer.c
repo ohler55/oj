@@ -42,12 +42,18 @@ static void maybe_comma(StrWriter sw) {
 
 // Used by stream writer also.
 void oj_str_writer_init(StrWriter sw, int buf_size) {
-    sw->opts       = oj_default_options;
-    sw->depth      = 0;
-    sw->types      = OJ_R_ALLOC_N(char, 256);
-    sw->types_end  = sw->types + 256;
-    *sw->types     = '\0';
-    sw->keyWritten = 0;
+    sw->opts = oj_default_options;
+    // Detach from the match_string regexps owned by the defaults before the
+    // options are parsed. A :match_string option then builds a chain of its own
+    // that is freed with the writer instead of being appended to the chain the
+    // defaults are using.
+    sw->opts.str_rx.head = NULL;
+    sw->opts.str_rx.tail = NULL;
+    sw->depth            = 0;
+    sw->types            = OJ_R_ALLOC_N(char, 256);
+    sw->types_end        = sw->types + 256;
+    *sw->types           = '\0';
+    sw->keyWritten       = 0;
 
     if (0 == buf_size) {
         buf_size = 4096;

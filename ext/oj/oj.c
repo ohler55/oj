@@ -1249,6 +1249,9 @@ void oj_options_release(Options copts) {
         OJ_R_FREE((void *)copts->dump_opts.except);
         copts->dump_opts.except = NULL;
     }
+    // The str_rx chain is detached from the defaults when the owner is created
+    // so the chain, if there is one, was built for this options struct alone.
+    oj_rxclass_cleanup(&copts->str_rx);
 }
 
 // Mark the Ruby objects held by an owned options struct. A long lived object
