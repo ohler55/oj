@@ -623,6 +623,7 @@ static void encoder_free(void *ptr) {
     if (NULL != ptr) {
         Encoder e = (Encoder)ptr;
 
+        oj_options_release(&e->opts);
         if (NULL != e->ropts.table) {
             OJ_R_FREE(e->ropts.table);
         }
@@ -634,6 +635,7 @@ static void encoder_mark(void *ptr) {
     if (NULL != ptr) {
         Encoder e = (Encoder)ptr;
 
+        oj_options_mark(&e->opts);
         if (Qnil != e->arg) {
             rb_gc_mark(e->arg);
         }
@@ -669,6 +671,7 @@ static VALUE encoder_new(int argc, VALUE *argv, VALUE self) {
         e->arg = rb_hash_new();
     }
     oj_parse_options(e->arg, &e->opts);
+    oj_options_take_ownership(&e->opts);
 
     return TypedData_Wrap_Struct(encoder_class, &oj_encoder_type, e);
 }

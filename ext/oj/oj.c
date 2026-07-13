@@ -1185,6 +1185,85 @@ void oj_free_call_options(Options copts) {
     }
 }
 
+static char *dup_option_str(const char *str, size_t len) {
+    char *buf = OJ_R_ALLOC_N(char, len + 1);
+
+    memcpy(buf, str, len);
+    buf[len] = '\0';
+
+    return buf;
+}
+
+// Give an options struct private copies of the option buffers it still shares
+// with the defaults so that it owns all of them.
+//
+// An options struct that outlives the call it was created in can not rely on
+// the default-owned buffers it aliases: Oj.default_options= is free to replace
+// them at any time, which would leave the alias dangling. Call this once, in
+// the call that creates such an object and after oj_parse_options(), then free
+// the buffers with oj_options_release() when the object is collected.
+void oj_options_take_ownership(Options copts) {
+    if (NULL != copts->create_id && oj_default_options.create_id == copts->create_id) {
+        copts->create_id = dup_option_str(copts->create_id, copts->create_id_len);
+    }
+    if (NULL != copts->ignore && oj_default_options.ignore == copts->ignore) {
+        VALUE *vp;
+        VALUE *buf;
+        size_t cnt = 0;
+
+        for (vp = copts->ignore; Qnil != *vp; vp++) {
+            cnt++;
+        }
+        buf = OJ_R_ALLOC_N(VALUE, cnt + 1);
+        memcpy(buf, copts->ignore, sizeof(VALUE) * (cnt + 1));
+        copts->ignore = buf;
+    }
+    if (NULL != copts->dump_opts.only && oj_default_options.dump_opts.only == copts->dump_opts.only) {
+        copts->dump_opts.only = dup_option_str(copts->dump_opts.only, strlen(copts->dump_opts.only));
+    }
+    if (NULL != copts->dump_opts.except && oj_default_options.dump_opts.except == copts->dump_opts.except) {
+        copts->dump_opts.except = dup_option_str(copts->dump_opts.except, strlen(copts->dump_opts.except));
+    }
+}
+
+// Free the option buffers of an options struct that owns all of them, i.e. one
+// that oj_options_take_ownership() was called on. Unlike oj_free_call_options()
+// this never looks at the defaults, so it is safe to call from a GC free
+// function, where the defaults may have been replaced since the object was
+// created.
+void oj_options_release(Options copts) {
+    if (NULL != copts->create_id) {
+        OJ_R_FREE((char *)copts->create_id);
+        copts->create_id     = NULL;
+        copts->create_id_len = 0;
+    }
+    if (NULL != copts->ignore) {
+        OJ_R_FREE(copts->ignore);
+        copts->ignore = NULL;
+    }
+    if (NULL != copts->dump_opts.only) {
+        OJ_R_FREE((void *)copts->dump_opts.only);
+        copts->dump_opts.only = NULL;
+    }
+    if (NULL != copts->dump_opts.except) {
+        OJ_R_FREE((void *)copts->dump_opts.except);
+        copts->dump_opts.except = NULL;
+    }
+}
+
+// Mark the Ruby objects held by an owned options struct. The ignore member is a
+// private array of classes that is not reachable from anywhere else, so without
+// this the classes could be collected while the owner is still alive.
+void oj_options_mark(Options copts) {
+    if (NULL != copts->ignore) {
+        VALUE *vp;
+
+        for (vp = copts->ignore; Qnil != *vp; vp++) {
+            rb_gc_mark(*vp);
+        }
+    }
+}
+
 static int match_string_cb(VALUE key, VALUE value, VALUE rx) {
     RxClass rc = (RxClass)rx;
 

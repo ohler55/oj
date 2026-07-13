@@ -16,15 +16,22 @@ static void stream_writer_free(void *ptr) {
         return;
     }
     sw = (StreamWriter)ptr;
+    oj_options_release(&sw->sw.opts);
     OJ_R_FREE(sw->sw.out.buf);
     OJ_R_FREE(sw->sw.types);
     OJ_R_FREE(ptr);
 }
 
+static void stream_writer_mark(void *ptr) {
+    if (NULL != ptr) {
+        oj_options_mark(&((StreamWriter)ptr)->sw.opts);
+    }
+}
+
 static const rb_data_type_t oj_stream_writer_type = {
     "Oj/stream_writer",
     {
-        NULL,
+        stream_writer_mark,
         stream_writer_free,
         NULL,
     },
@@ -116,6 +123,7 @@ static VALUE stream_writer_new(int argc, VALUE *argv, VALUE self) {
         oj_str_writer_init(&sw->sw, 4096);
         sw->flush_limit = 0;
     }
+    oj_options_take_ownership(&sw->sw.opts);
     sw->sw.out.indent = sw->sw.opts.indent;
     sw->stream        = stream;
     sw->type          = type;

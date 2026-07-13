@@ -234,15 +234,22 @@ static void string_writer_free(void *ptr) {
     sw = (StrWriter)ptr;
 
     oj_out_free(&sw->out);
+    oj_options_release(&sw->opts);
 
     OJ_R_FREE(sw->types);
     OJ_R_FREE(ptr);
 }
 
+static void string_writer_mark(void *ptr) {
+    if (NULL != ptr) {
+        oj_options_mark(&((StrWriter)ptr)->opts);
+    }
+}
+
 static const rb_data_type_t oj_string_writer_type = {
     "Oj/string_writer",
     {
-        NULL,
+        string_writer_mark,
         string_writer_free,
         NULL,
     },
@@ -279,6 +286,7 @@ static VALUE str_writer_new(int argc, VALUE *argv, VALUE self) {
     if (1 == argc) {
         oj_parse_options(argv[0], &sw->opts);
     }
+    oj_options_take_ownership(&sw->opts);
     sw->out.argc   = argc - 1;
     sw->out.argv   = argv + 1;
     sw->out.indent = sw->opts.indent;
