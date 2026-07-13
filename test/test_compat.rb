@@ -12,6 +12,7 @@ require 'minitest/autorun'
 require 'stringio'
 require 'date'
 require 'bigdecimal'
+require 'weakref'
 require 'oj'
 
 class CompatJuice < Minitest::Test
@@ -44,6 +45,18 @@ class CompatJuice < Minitest::Test
       %|{"args":"#{a}"}|
     end
   end # Argy
+
+  class Rex
+    attr_accessor :s
+
+    def self.json_create(s)
+      new(s)
+    end
+
+    def initialize(s)
+      @s = s
+    end
+  end # Rex
 
   class Stringy
 
@@ -83,6 +96,72 @@ class CompatJuice < Minitest::Test
 
   def teardown
     Oj.default_options = @default_options
+    # Oj.default_options does not report :match_string so restoring the saved
+    # options leaves any regexps a test set in place. Clear them explicitly.
+    Oj.default_options = {:match_string => {}}
+  end
+
+  # Overwrite the machine stack before collecting. Without this a stale
+  # reference left on the stack can keep an object alive and hide a missing
+  # mark.
+  def scrub_stack(depth = 128)
+    return 0 if 0 == depth
+
+    pad = 'x' * 64
+    scrub_stack(depth - 1) + pad.size
+  end
+
+  def collect_garbage
+    scrub_stack
+    4.times { GC.start(full_mark: true, immediate_sweep: true) }
+  end
+
+  # A WeakRef reports whether the C level mark kept the object alive on CRuby.
+  # Other engines manage the objects a C extension holds differently so the
+  # tests below check that the option still works instead.
+  def assert_marked(ref, msg)
+    assert(ref.weakref_alive?, msg) if 'ruby' == RUBY_ENGINE
+  end
+
+  # The default options hold the classes of the :hash_class, :array_class and
+  # :ignore options and the regexps of the :match_string option. Nothing else
+  # refers to them so they are collected unless the defaults are marked.
+
+  def test_default_options_marks_hash_class
+    klass = Class.new(Hash)
+    Oj.default_options = {:hash_class => klass}
+    ref = WeakRef.new(klass)
+    klass = nil
+    collect_garbage
+
+    assert_marked(ref, 'the hash_class of the defaults was collected')
+    loaded = Oj.load('{"a":1}')
+    assert_equal(Oj.default_options[:hash_class], loaded.class)
+    assert_equal({'a' => 1}, loaded.to_h)
+  end
+
+  def test_default_options_marks_ignore
+    klass = Class.new
+    Oj.default_options = {:ignore => [klass]}
+    ref = WeakRef.new(klass)
+    klass = nil
+    collect_garbage
+
+    assert_marked(ref, 'a class of the ignore option of the defaults was collected')
+    ignore = Oj.default_options[:ignore]
+    assert_equal(1, ignore.size)
+    assert_kind_of(Class, ignore[0])
+  end
+
+  def test_default_options_marks_match_string
+    # The regexp is not kept in a local variable so the regexps of the defaults
+    # are the only reference to it. Matching calls it, so if it is collected the
+    # load below reads a freed object.
+    Oj.default_options = {:create_additions => true, :match_string => {Regexp.new('^z') => Rex}}
+    collect_garbage
+
+    obj = Oj.load('"zzz"')
+    assert_equal(Rex, obj.class, 'the regexp of the match_string option of the defaults was collected')
   end
 
   def test_nil
