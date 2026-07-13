@@ -606,6 +606,40 @@ static VALUE get_def_opts(VALUE self) {
  *   - *:trace* [_Boolean_] turn trace on or off.
  *   - *:safe* [_Boolean_] turn safe mimic on or off.
  */
+static ID oj_default_options_keeper_id = 0;
+
+// The default options are a plain C global so the Ruby objects in them, the
+// classes of the hash_class, array_class, and ignore options and the regexps
+// and the classes of the match_string option, can not be reached by the GC and
+// are collected while the defaults still refer to them. Holding them in an
+// array the GC does know about keeps them alive. The array is rebuilt whenever
+// the defaults change and replaces the previous one so that only the objects
+// the defaults are currently using are held.
+static void keep_default_options(void) {
+    VALUE keep = rb_ary_new();
+
+    if (0 == oj_default_options_keeper_id) {
+        oj_default_options_keeper_id = rb_intern("@default_options_keeper");
+    }
+    if (Qnil != oj_default_options.hash_class) {
+        rb_ary_push(keep, oj_default_options.hash_class);
+    }
+    if (Qnil != oj_default_options.array_class) {
+        rb_ary_push(keep, oj_default_options.array_class);
+    }
+    if (NULL != oj_default_options.ignore) {
+        VALUE *vp;
+
+        for (vp = oj_default_options.ignore; Qnil != *vp; vp++) {
+            rb_ary_push(keep, *vp);
+        }
+    }
+    oj_rxclass_keep(&oj_default_options.str_rx, keep);
+    // An instance variable of the Oj module is a reference the GC can follow on
+    // every engine, unlike a C global.
+    rb_ivar_set(Oj, oj_default_options_keeper_id, keep);
+}
+
 static VALUE set_def_opts(VALUE self, VALUE opts) {
     Check_Type(opts, T_HASH);
     // A :match_string option replaces the regexps instead of adding to them so
@@ -617,6 +651,7 @@ static VALUE set_def_opts(VALUE self, VALUE opts) {
         oj_default_options.str_rx.tail = NULL;
     }
     oj_parse_options(opts, &oj_default_options);
+    keep_default_options();
 
     return Qnil;
 }
