@@ -1306,8 +1306,14 @@ CLEANUP:
         OJ_R_FREE(json);
     }
     stack_cleanup(&pi->stack);
-    if (pi->str_rx.head != oj_default_options.str_rx.head) {
-        oj_rxclass_cleanup(&pi->str_rx);
+    // The parsers match against pi->options.str_rx. A :match_string option
+    // builds a chain of its own for this call, which has to be freed. Without
+    // the option the member still aliases the chain owned by the defaults and
+    // must be left alone.
+    if (pi->options.str_rx.head != oj_default_options.str_rx.head) {
+        oj_rxclass_cleanup(&pi->options.str_rx);
+        pi->options.str_rx.head = NULL;
+        pi->options.str_rx.tail = NULL;
     }
     oj_free_call_options(&pi->options);
     if (err_has(&pi->err)) {

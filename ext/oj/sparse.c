@@ -907,6 +907,14 @@ CLEANUP:
         oj_circ_array_free(pi->circ_array);
     }
     stack_cleanup(&pi->stack);
+    // A :match_string option builds a chain of regexps for this call that has to
+    // be freed. Without the option the member aliases the chain owned by the
+    // defaults and must be left alone.
+    if (pi->options.str_rx.head != oj_default_options.str_rx.head) {
+        oj_rxclass_cleanup(&pi->options.str_rx);
+        pi->options.str_rx.head = NULL;
+        pi->options.str_rx.tail = NULL;
+    }
     oj_free_call_options(&pi->options);
     if (0 != fd) {
 #ifdef _WIN32
