@@ -1251,10 +1251,17 @@ void oj_options_release(Options copts) {
     }
 }
 
-// Mark the Ruby objects held by an owned options struct. The ignore member is a
-// private array of classes that is not reachable from anywhere else, so without
-// this the classes could be collected while the owner is still alive.
+// Mark the Ruby objects held by an owned options struct. A long lived object
+// such as a writer or an encoder can be the only reference to the classes in
+// the options so without this they could be collected while the owner is still
+// alive leaving the options with dangling VALUEs.
 void oj_options_mark(Options copts) {
+    if (Qnil != copts->hash_class) {
+        rb_gc_mark(copts->hash_class);
+    }
+    if (Qnil != copts->array_class) {
+        rb_gc_mark(copts->array_class);
+    }
     if (NULL != copts->ignore) {
         VALUE *vp;
 

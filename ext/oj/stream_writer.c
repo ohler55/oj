@@ -24,7 +24,14 @@ static void stream_writer_free(void *ptr) {
 
 static void stream_writer_mark(void *ptr) {
     if (NULL != ptr) {
-        oj_options_mark(&((StreamWriter)ptr)->sw.opts);
+        StreamWriter sw = (StreamWriter)ptr;
+
+        oj_options_mark(&sw->sw.opts);
+        // The writer can be the only reference to the stream as in
+        // Oj::StreamWriter.new(StringIO.new) so it must be marked.
+        if (Qnil != sw->stream) {
+            rb_gc_mark(sw->stream);
+        }
     }
 }
 
