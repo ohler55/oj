@@ -608,6 +608,14 @@ static VALUE get_def_opts(VALUE self) {
  */
 static VALUE set_def_opts(VALUE self, VALUE opts) {
     Check_Type(opts, T_HASH);
+    // A :match_string option replaces the regexps instead of adding to them so
+    // the ones the defaults are holding have to be freed here, the only place
+    // that owns them. A per call options struct only aliases them.
+    if (Qnil != rb_hash_lookup(opts, match_string_sym)) {
+        oj_rxclass_cleanup(&oj_default_options.str_rx);
+        oj_default_options.str_rx.head = NULL;
+        oj_default_options.str_rx.tail = NULL;
+    }
     oj_parse_options(opts, &oj_default_options);
 
     return Qnil;

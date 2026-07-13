@@ -19,6 +19,18 @@ class CustomJuice < Minitest::Test
   module TestModule
   end
 
+  class Rex
+    attr_accessor :s
+
+    def self.json_create(s)
+      new(s)
+    end
+
+    def initialize(s)
+      @s = s
+    end
+  end # Rex
+
   class Jeez
     attr_accessor :x, :y, :_z
 
@@ -94,6 +106,9 @@ class CustomJuice < Minitest::Test
 
   def teardown
     Oj.default_options = @default_options
+    # Oj.default_options does not report :match_string so restoring the saved
+    # options leaves any regexps a test set in place. Clear them explicitly.
+    Oj.default_options = {:match_string => {}}
   end
 
   def test_nil
@@ -504,6 +519,41 @@ class CustomJuice < Minitest::Test
     dump_load_dump(obj, false, :time_format => :xmlschema, :create_id => '^o', :create_additions => true)
     dump_load_dump(obj, false, :time_format => :xmlschema, :create_id => '^o', :create_additions => true, second_precision: 3)
     dump_load_dump(obj, false, :time_format => :ruby, :create_id => '^o', :create_additions => true)
+  end
+
+  # A :match_string option builds a chain of compiled regexps for the call that
+  # the call must free. Nothing is kept alive here so that a leak checker sees
+  # the chain as lost.
+
+  def test_match_string
+    obj = Oj.load('"zzz"', :create_additions => true, :match_string => {/^z/ => Rex})
+    assert_equal(Rex, obj.class)
+    assert_equal('zzz', obj.s)
+  end
+
+  def test_match_string_io
+    obj = Oj.load(StringIO.new('"zzz"'), :create_additions => true, :match_string => {/^z/ => Rex})
+    assert_equal(Rex, obj.class)
+  end
+
+  # The regexps of a call are its own but the ones the defaults hold are only
+  # aliased by a call, so a call must not free them.
+  def test_match_string_leaves_default
+    Oj.default_options = {:mode => :custom, :create_additions => true, :match_string => {/^a/ => Rex}}
+    Oj.load('"zzz"', :match_string => {/^z/ => Rex})
+
+    assert_equal(Rex, Oj.load('"aaa"').class, 'the default regexps were freed by the call')
+    assert_equal(String, Oj.load('"zzz"').class, 'the regexps of the call leaked into the defaults')
+  end
+
+  # Setting :match_string replaces the regexps of the defaults instead of adding
+  # to them, so the previous ones are freed. Matching must still work after that.
+  def test_match_string_default_replaced
+    Oj.default_options = {:mode => :custom, :create_additions => true, :match_string => {/^a/ => Rex}}
+    Oj.default_options = {:match_string => {/^b/ => Rex}}
+
+    assert_equal(Rex, Oj.load('"bbb"').class)
+    assert_equal(String, Oj.load('"aaa"').class)
   end
 
   def dump_and_load(obj, trace=false, options={})
