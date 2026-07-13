@@ -32,4 +32,23 @@ class RailsJuice < Minitest::Test
     }
   end
 
+  # ActiveSupport creates a new encoder for every encode call that is given
+  # options, so the buffers the :only and :except options allocate in the
+  # encoder must be freed when the encoder is collected. The encoders are not
+  # kept alive here so that a leak checker sees the buffers as lost.
+
+  def test_encoder_only
+    3.times do
+      json = Oj::Rails::Encoder.new(only: [:id]).encode({id: 1, secret: 2})
+      assert_equal('{"id":1}', json)
+    end
+  end
+
+  def test_encoder_except
+    3.times do
+      json = Oj::Rails::Encoder.new(except: [:secret]).encode({id: 1, secret: 2})
+      assert_equal('{"id":1}', json)
+    end
+  end
+
 end

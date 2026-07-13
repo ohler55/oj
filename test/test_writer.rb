@@ -8,6 +8,15 @@ require 'open3'
 
 class OjWriter < Minitest::Test
 
+  class Jeez
+    attr_accessor :x, :y
+
+    def initialize(x, y)
+      @x = x
+      @y = y
+    end
+  end # Jeez
+
   def setup
     @default_options = Oj.default_options
   end
@@ -216,6 +225,62 @@ class OjWriter < Minitest::Test
     w.push_array()
     w.pop_all()
     assert_equal(%|{"a1":{},"a2":[3,[]]}\n|, w.to_s)
+  end
+
+  # The :only, :except, :create_id, and :ignore options each allocate a buffer
+  # in the writer that the writer must free when it is collected. The writers
+  # are not kept alive here so that a leak checker sees the buffers as lost.
+
+  def test_string_writer_only
+    w = Oj::StringWriter.new(:mode => :compat, :indent => 0, :only => ['a'])
+    w.push_value({'a' => 1, 'b' => 2})
+    assert_equal(%|{"a":1}|, w.to_s)
+  end
+
+  def test_string_writer_except
+    w = Oj::StringWriter.new(:mode => :compat, :indent => 0, :except => ['b'])
+    w.push_value({'a' => 1, 'b' => 2})
+    assert_equal(%|{"a":1}|, w.to_s)
+  end
+
+  def test_string_writer_create_id
+    w = Oj::StringWriter.new(:mode => :custom, :indent => 0, :create_id => '^custom', :create_additions => true)
+    w.push_value(Jeez.new(3, 'z'))
+    assert_equal(%|{"^custom":"OjWriter::Jeez","x":3,"y":"z"}|, w.to_s)
+  end
+
+  def test_string_writer_ignore
+    w = Oj::StringWriter.new(:mode => :object, :indent => 0, :ignore => [Jeez])
+    w.push_value({'a' => Jeez.new(3, 'z'), 'b' => 1})
+    assert_equal(%|{"b":1}|, w.to_s)
+  end
+
+  def test_stream_writer_only
+    output = StringIO.open('', 'w+')
+    w = Oj::StreamWriter.new(output, :mode => :compat, :indent => 0, :only => ['a'])
+    w.push_value({'a' => 1, 'b' => 2})
+    assert_equal(%|{"a":1}|, output.string())
+  end
+
+  def test_stream_writer_create_id
+    output = StringIO.open('', 'w+')
+    w = Oj::StreamWriter.new(output, :mode => :custom, :indent => 0, :create_id => '^custom', :create_additions => true)
+    w.push_value(Jeez.new(3, 'z'))
+    assert_equal(%|{"^custom":"OjWriter::Jeez","x":3,"y":"z"}|, output.string())
+  end
+
+  # A writer keeps the options it was created with, so replacing the defaults
+  # afterwards must neither change what the writer dumps nor free the buffers
+  # the writer is still using.
+  def test_string_writer_default_options_replaced
+    Oj.default_options = {:mode => :custom, :indent => 0, :create_id => '^d', :create_additions => true}
+    w = Oj::StringWriter.new()
+    Oj.default_options = {:create_id => '^e'}
+    w.push_value(Jeez.new(3, 'z'))
+    assert_equal(%|{"^d":"OjWriter::Jeez","x":3,"y":"z"}|, w.to_s)
+
+    w = nil
+    GC.start
   end
 
   def test_string_writer_reset
