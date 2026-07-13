@@ -634,10 +634,18 @@ static void encoder_free(void *ptr) {
 static void encoder_mark(void *ptr) {
     if (NULL != ptr) {
         Encoder e = (Encoder)ptr;
+        int     i;
 
         oj_options_mark(&e->opts);
         if (Qnil != e->arg) {
             rb_gc_mark(e->arg);
+        }
+        // The optimized classes in the encoder table are not reachable from
+        // anywhere else once optimize() is called on the encoder itself.
+        for (i = 0; i < e->ropts.len; i++) {
+            if (Qnil != e->ropts.table[i].clas) {
+                rb_gc_mark(e->ropts.table[i].clas);
+            }
         }
     }
 }

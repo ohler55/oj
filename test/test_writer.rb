@@ -5,6 +5,7 @@ $LOAD_PATH << __dir__
 
 require 'helper'
 require 'open3'
+require 'weakref'
 
 class OjWriter < Minitest::Test
 
@@ -281,6 +282,64 @@ class OjWriter < Minitest::Test
 
     w = nil
     GC.start
+  end
+
+  # Overwrite the machine stack before collecting. Without this a stale
+  # reference left on the stack can keep an object alive and hide a missing
+  # mark.
+  def scrub_stack(depth = 128)
+    return 0 if 0 == depth
+
+    pad = 'x' * 64
+    scrub_stack(depth - 1) + pad.size
+  end
+
+  def collect_garbage
+    scrub_stack
+    4.times { GC.start(full_mark: true, immediate_sweep: true) }
+  end
+
+  # A writer holds the classes from the options and a stream writer holds the
+  # stream as well. If they are not marked they can be collected while the
+  # writer is still alive which leaves the writer with dangling references.
+  def test_stream_writer_marks_stream
+    # The stream is not kept in a local variable so the writer is the only one
+    # holding a reference to it.
+    w = Oj::StreamWriter.new((output = StringIO.new), :mode => :compat, :indent => 0)
+    ref = WeakRef.new(output)
+    output = nil
+    collect_garbage
+    assert(ref.weakref_alive?, 'the stream was collected while the writer was alive')
+
+    w.push_object()
+    w.push_value(1, 'a')
+    w.pop_all()
+    assert_equal(%|{"a":1}\n|, ref.string())
+  end
+
+  def test_string_writer_marks_hash_class
+    klass = Class.new(Hash)
+    w = Oj::StringWriter.new(:mode => :object, :indent => 0, :hash_class => klass)
+    ref = WeakRef.new(klass)
+    klass = nil
+    collect_garbage
+    assert(ref.weakref_alive?, 'the hash_class was collected while the writer was alive')
+
+    w.push_value({'a' => 1})
+    assert_equal(%|{"a":1}|, w.to_s)
+  end
+
+  def test_stream_writer_marks_array_class
+    klass = Class.new(Array)
+    w = Oj::StreamWriter.new((output = StringIO.new), :mode => :object, :indent => 0, :array_class => klass)
+    ref = WeakRef.new(klass)
+    klass = nil
+    collect_garbage
+    assert(ref.weakref_alive?, 'the array_class was collected while the writer was alive')
+
+    w.push_value([1])
+    w.pop_all()
+    assert_equal(%|[1]|, output.string())
   end
 
   def test_string_writer_reset
