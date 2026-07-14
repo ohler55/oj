@@ -82,7 +82,14 @@ inline static void next_non_white(ParseInfo pi) {
         case '\f':
         case '\n':
         case '\r': break;
-        case '/': skip_comment(pi); break;
+        case '/':
+            skip_comment(pi);
+            /* A comment that is not terminated by a newline ends on the null
+             * terminator. Stop here so the loop does not step past it. */
+            if ('\0' == *pi->s) {
+                return;
+            }
+            break;
         default: return;
         }
     }
@@ -118,13 +125,14 @@ static void skip_comment(ParseInfo pi) {
             if ('*' == *pi->s && '/' == *(pi->s + 1)) {
                 pi->s++;
                 return;
-            } else if ('\0' == *pi->s) {
-                if (pi->has_error) {
-                    call_error("comment not terminated", pi, __FILE__, __LINE__);
-                } else {
-                    raise_error("comment not terminated", pi->str, pi->s);
-                }
             }
+        }
+        /* The loop only ends on the null terminator so the comment was never
+         * closed. */
+        if (pi->has_error) {
+            call_error("comment not terminated", pi, __FILE__, __LINE__);
+        } else {
+            raise_error("comment not terminated", pi->str, pi->s);
         }
     } else if ('/' == *pi->s) {
         for (; 1; pi->s++) {

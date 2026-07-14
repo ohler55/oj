@@ -217,10 +217,11 @@ static void skip_comment(ParseInfo pi) {
             if ('*' == *pi->s && '/' == *(pi->s + 1)) {
                 pi->s++;
                 return;
-            } else if ('\0' == *pi->s) {
-                raise_error("comment not terminated", pi->str, pi->s);
             }
         }
+        // The loop only ends on the null terminator so the comment was never
+        // closed.
+        raise_error("comment not terminated", pi->str, pi->s);
     } else if ('/' == *pi->s) {
         for (; 1; pi->s++) {
             switch (*pi->s) {

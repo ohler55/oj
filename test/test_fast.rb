@@ -598,4 +598,19 @@ class DocTest < Minitest::Test
     assert_equal({'/x' => true, '/y' => 58, '/z/1' => 1, '/z/2' => 2, '/z/3' => 3}, results)
   end
 
+  # A line comment may end on the last byte of the document. Scanning it must
+  # stop on the null terminator instead of reading the byte after the buffer.
+  def test_comment_at_end
+    ['//', '// comment', '[1,2] // comment'].each do |json|
+      Oj::Doc.open(json) { |doc| doc.fetch() }
+    end
+    assert_equal([1, 2], Oj::Doc.open('[1,2] // comment') { |doc| doc.fetch() })
+  end
+
+  def test_comment_not_terminated
+    ['/*', '/* comment', '[/* comment'].each do |json|
+      assert_raises(Oj::ParseError, json) { Oj::Doc.open(json) { |doc| doc.fetch() } }
+    end
+  end
+
 end # DocTest

@@ -216,4 +216,20 @@ class SajTest < Minitest::Test
     assert_match(%r{invalid format, extra characters at line 1, column 6 \[(?:[A-Za-z]:/)?(?:[a-z.]+/)*saj\.c:\d+\]}, message)
   end
 
+  # A line comment may end on the last byte of the document. Scanning it must
+  # stop on the null terminator instead of reading the byte after the buffer.
+  def test_comment_at_end
+    ['//', '// comment', '[1,2] // comment'].each do |json|
+      handler = AllSaj.new()
+      Oj.saj_parse(handler, json)
+      refute_includes(handler.calls.map(&:first), :error, json)
+    end
+  end
+
+  def test_comment_not_terminated
+    ['/*', '/* comment', '[1,2] /* comment'].each do |json|
+      assert_raises(Oj::ParseError, json) { Oj.saj_parse(Oj::Saj.new, json) }
+    end
+  end
+
 end
