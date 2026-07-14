@@ -460,6 +460,20 @@ class DocTest < Minitest::Test
     end
   end
 
+  # A file must be read in binary mode. A text mode read on Windows translates
+  # CRLF into LF so fewer bytes are read than the size of the file.
+  def test_file_open_crlf
+    filename = File.join(__dir__, 'open_file_crlf_test.json')
+    File.binwrite(filename, %({\r\n"a":[1,2,3]\r\n}))
+    begin
+      Oj::Doc.open_file(filename) do |doc|
+        assert_equal({'a' => [1, 2, 3]}, doc.fetch())
+      end
+    ensure
+      File.delete(filename) if File.exist?(filename)
+    end
+  end
+
   def test_open_no_close
     json = %{{"a":[1,2,3]}}
     doc = Oj::Doc.open(json)

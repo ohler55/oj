@@ -1137,7 +1137,9 @@ static VALUE doc_open_file(VALUE clas, VALUE filename) {
     int            given = rb_block_given_p();
 
     path = StringValuePtr(filename);
-    if (0 == (f = fopen(path, "r"))) {
+    // Open in binary mode. On Windows a text mode read translates CRLF into LF
+    // so fewer bytes are read than the file size reported by ftell().
+    if (0 == (f = fopen(path, "rb"))) {
         rb_raise(rb_eIOError, "%s", strerror(errno));
     }
     fseek(f, 0, SEEK_END);
