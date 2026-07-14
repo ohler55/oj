@@ -92,7 +92,14 @@ inline static void next_non_white(ParseInfo pi) {
         case '\f':
         case '\n':
         case '\r': break;
-        case '/': skip_comment(pi); break;
+        case '/':
+            skip_comment(pi);
+            // A comment that is not terminated by a newline ends on the null
+            // terminator. Stop here so the loop does not step past it.
+            if ('\0' == *pi->s) {
+                return;
+            }
+            break;
         default: return;
         }
     }
@@ -210,10 +217,11 @@ static void skip_comment(ParseInfo pi) {
             if ('*' == *pi->s && '/' == *(pi->s + 1)) {
                 pi->s++;
                 return;
-            } else if ('\0' == *pi->s) {
-                raise_error("comment not terminated", pi->str, pi->s);
             }
         }
+        // The loop only ends on the null terminator so the comment was never
+        // closed.
+        raise_error("comment not terminated", pi->str, pi->s);
     } else if ('/' == *pi->s) {
         for (; 1; pi->s++) {
             switch (*pi->s) {
@@ -710,21 +718,23 @@ static void mark_doc(void *ptr) {
 }
 #ifdef HAVE_RB_GC_MARK_MOVABLE
 static void compact_leaf(Leaf leaf) {
-    switch (leaf->value_type) {
-    case COL_VAL:
-        if (NULL != leaf->elements) {
-            Leaf first = leaf->elements->next;
-            Leaf e     = first;
+    if (NULL != leaf) {
+        switch (leaf->value_type) {
+        case COL_VAL:
+            if (NULL != leaf->elements) {
+                Leaf first = leaf->elements->next;
+                Leaf e     = first;
 
-            do {
-                compact_leaf(e);
-                e = e->next;
-            } while (e != first);
+                do {
+                    compact_leaf(e);
+                    e = e->next;
+                } while (e != first);
+            }
+            break;
+        case RUBY_VAL: leaf->value = rb_gc_location(leaf->value); break;
+
+        default: break;
         }
-        break;
-    case RUBY_VAL: leaf->value = rb_gc_location(leaf->value); break;
-
-    default: break;
     }
 }
 
@@ -970,8 +980,9 @@ static int move_step(Doc doc, const char *path, int loc) {
     } else {
         Leaf leaf;
 
+        // A document with no root (empty or comment only JSON) has no leaf to
+        // step from so the path can not be located.
         if (0 == doc->where || 0 == (leaf = *doc->where)) {
-            printf("*** Internal error at %s\n", path);
             return loc;
         }
         if ('.' == *path && '.' == *(path + 1)) {
@@ -1134,7 +1145,9 @@ static VALUE doc_open_file(VALUE clas, VALUE filename) {
     int            given = rb_block_given_p();
 
     path = StringValuePtr(filename);
-    if (0 == (f = fopen(path, "r"))) {
+    // Open in binary mode. On Windows a text mode read translates CRLF into LF
+    // so fewer bytes are read than the file size reported by ftell().
+    if (0 == (f = fopen(path, "rb"))) {
         rb_raise(rb_eIOError, "%s", strerror(errno));
     }
     fseek(f, 0, SEEK_END);
@@ -1251,10 +1264,14 @@ static VALUE doc_path(VALUE self) {
  * #=> nil
  */
 static VALUE doc_local_key(VALUE self) {
-    Doc            doc  = self_doc(self);
-    Leaf           leaf = *doc->where;
-    volatile VALUE key  = Qnil;
+    Doc            doc = self_doc(self);
+    Leaf           leaf;
+    volatile VALUE key = Qnil;
 
+    if (NULL == doc->where || NULL == *doc->where) {
+        return Qnil;
+    }
+    leaf = *doc->where;
     if (T_HASH == leaf->parent_type) {
         key = rb_utf8_str_new_cstr(leaf->key);
     } else if (T_ARRAY == leaf->parent_type) {
@@ -1408,6 +1425,9 @@ static VALUE doc_each_leaf(int argc, VALUE *argv, VALUE self) {
                 }
                 return Qnil;
             }
+        }
+        if (NULL == doc->where || NULL == *doc->where) {
+            return Qnil;
         }
         each_leaf(doc, self);
         if (0 < wlen) {

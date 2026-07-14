@@ -82,7 +82,14 @@ inline static void next_non_white(ParseInfo pi) {
         case '\f':
         case '\n':
         case '\r': break;
-        case '/': skip_comment(pi); break;
+        case '/':
+            skip_comment(pi);
+            /* A comment that is not terminated by a newline ends on the null
+             * terminator. Stop here so the loop does not step past it. */
+            if ('\0' == *pi->s) {
+                return;
+            }
+            break;
         default: return;
         }
     }
@@ -118,13 +125,14 @@ static void skip_comment(ParseInfo pi) {
             if ('*' == *pi->s && '/' == *(pi->s + 1)) {
                 pi->s++;
                 return;
-            } else if ('\0' == *pi->s) {
-                if (pi->has_error) {
-                    call_error("comment not terminated", pi, __FILE__, __LINE__);
-                } else {
-                    raise_error("comment not terminated", pi->str, pi->s);
-                }
             }
+        }
+        /* The loop only ends on the null terminator so the comment was never
+         * closed. */
+        if (pi->has_error) {
+            call_error("comment not terminated", pi, __FILE__, __LINE__);
+        } else {
+            raise_error("comment not terminated", pi->str, pi->s);
         }
     } else if ('/' == *pi->s) {
         for (; 1; pi->s++) {
@@ -606,6 +614,19 @@ static void saj_parse(VALUE handler, char *json) {
     }
 }
 
+struct _sajArgs {
+    VALUE handler;
+    char *json;
+};
+
+static VALUE protect_saj_parse(VALUE x) {
+    struct _sajArgs *args = (struct _sajArgs *)x;
+
+    saj_parse(args->handler, args->json);
+
+    return Qnil;
+}
+
 /* call-seq: saj_parse(handler, io)
  *
  * Parses an IO stream or file containing an JSON document. Raises an exception
@@ -670,8 +691,17 @@ oj_saj_parse(int argc, VALUE *argv, VALUE self) {
             rb_raise(rb_eArgError, "saj_parse() expected a String or IO Object.");
         }
     }
-    saj_parse(*argv, json);
-    OJ_R_FREE(json);
+    {
+        // saj_parse() raises on a malformed document so the json buffer has to
+        // be freed even when the parse does not return normally.
+        struct _sajArgs args = {*argv, json};
+        int             ex   = 0;
 
+        rb_protect(protect_saj_parse, (VALUE)&args, &ex);
+        OJ_R_FREE(json);
+        if (0 != ex) {
+            rb_jump_tag(ex);
+        }
+    }
     return Qnil;
 }
