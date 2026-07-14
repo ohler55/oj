@@ -1,8 +1,10 @@
 # CHANGELOG
 
-## 3.17.4 - unreleased
+## 3.17.4 - 2026-07-14
 
 - Fixed issue in fast.c where rescuing from a panic did not reset the where counter.
+
+- Multiple fixes thanks to @Watson1978.
 
 ## 3.17.3 - 2026-06-04
 
