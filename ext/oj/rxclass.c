@@ -142,3 +142,19 @@ void oj_rxclass_copy(RxClass src, RxClass dest) {
         }
     }
 }
+
+// Add the Ruby objects in the chain to an array. The regexps and the classes
+// can be referenced from nowhere else, as with a default match_string option,
+// and are collected unless something holds onto them.
+void oj_rxclass_keep(RxClass rc, VALUE keep) {
+    RxC rxc;
+
+    for (rxc = rc->head; NULL != rxc; rxc = rxc->next) {
+        if (Qnil != rxc->rrx) {
+            rb_ary_push(keep, rxc->rrx);
+        }
+        if (Qnil != rxc->clas) {
+            rb_ary_push(keep, rxc->clas);
+        }
+    }
+}
