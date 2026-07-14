@@ -606,6 +606,19 @@ static void saj_parse(VALUE handler, char *json) {
     }
 }
 
+struct _sajArgs {
+    VALUE handler;
+    char *json;
+};
+
+static VALUE protect_saj_parse(VALUE x) {
+    struct _sajArgs *args = (struct _sajArgs *)x;
+
+    saj_parse(args->handler, args->json);
+
+    return Qnil;
+}
+
 /* call-seq: saj_parse(handler, io)
  *
  * Parses an IO stream or file containing an JSON document. Raises an exception
@@ -670,8 +683,17 @@ oj_saj_parse(int argc, VALUE *argv, VALUE self) {
             rb_raise(rb_eArgError, "saj_parse() expected a String or IO Object.");
         }
     }
-    saj_parse(*argv, json);
-    OJ_R_FREE(json);
+    {
+        // saj_parse() raises on a malformed document so the json buffer has to
+        // be freed even when the parse does not return normally.
+        struct _sajArgs args = {*argv, json};
+        int             ex   = 0;
 
+        rb_protect(protect_saj_parse, (VALUE)&args, &ex);
+        OJ_R_FREE(json);
+        if (0 != ex) {
+            rb_jump_tag(ex);
+        }
+    }
     return Qnil;
 }
