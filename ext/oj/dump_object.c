@@ -10,6 +10,24 @@ static const char hex_chars[17] = "0123456789abcdef";
 
 static void dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out);
 
+// An odd class is dumped as {"^O":class,...} and is rebuilt with a create
+// function when loaded so there is no place to put a "^i" circular id on it.
+// Registering it in the circular cache would consume an id that is never
+// written and any later occurrence would then be dumped as a "^r" that refers
+// to nothing. Instead dump odd classes in full each time they are encountered
+// just like Time, Rational, and Complex are.
+static void dump_circular_obj(VALUE obj, VALUE clas, int depth, Out out) {
+    if (NULL != oj_get_odd(clas)) {
+        dump_obj_attrs(obj, clas, 0, depth, out);
+    } else {
+        long id = oj_check_circular(obj, out);
+
+        if (0 <= id) {
+            dump_obj_attrs(obj, clas, id, depth, out);
+        }
+    }
+}
+
 static void dump_time(VALUE obj, Out out) {
     switch (out->opts->time_format) {
     case RubyTime:
@@ -47,11 +65,7 @@ static void dump_data(VALUE obj, int depth, Out out, bool as_ok) {
                 oj_dump_cstr(str, len, 0, 0, out);
             }
         } else {
-            long id = oj_check_circular(obj, out);
-
-            if (0 <= id) {
-                dump_obj_attrs(obj, clas, id, depth, out);
-            }
+            dump_circular_obj(obj, clas, depth, out);
         }
     }
 }
@@ -74,11 +88,7 @@ static void dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
             oj_dump_raw(str, len, out);
         }
     } else {
-        long id = oj_check_circular(obj, out);
-
-        if (0 <= id) {
-            dump_obj_attrs(obj, clas, id, depth, out);
-        }
+        dump_circular_obj(obj, clas, depth, out);
     }
 }
 

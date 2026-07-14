@@ -207,6 +207,24 @@ class ObjectJuice < Minitest::Test
     end # Ni
   end # Ichi
 
+  class Oddball
+
+    attr_reader :h
+
+    def initialize(h)
+      @h = h
+    end
+
+    def self.create(h)
+      new(h)
+    end
+
+    def ==(other)
+      other.is_a?(Oddball) && other.h == @h
+    end
+
+  end # Oddball
+
   def setup
     @default_options = Oj.default_options
   end
@@ -948,6 +966,58 @@ class ObjectJuice < Minitest::Test
     Oj.load(json, :mode => :object, :circular => true)
     assert_equal(obj.x.__id__, h.__id__)
     assert_equal(h['b'].__id__, obj.__id__)
+  end
+
+  # An odd class such as Date is rebuilt with a create function when loaded so
+  # it can not be the target of a circular reference. It must be dumped in full
+  # each time it is encountered instead of leaving a dangling "^r".
+  def test_circular_shared_date
+    date = Date.new(2026, 7, 6)
+    json = Oj.dump({ 'a' => { 'x' => date }, 'b' => { 'x' => date } }, :mode => :object, :circular => true)
+    refute_match(/\^r/, json)
+    h = Oj.load(json, :mode => :object, :circular => true)
+    assert_equal(date, h['a']['x'])
+    assert_equal(date, h['b']['x'])
+  end
+
+  def test_circular_shared_datetime
+    date = DateTime.new(2026, 7, 6, 12, 30, 0)
+    json = Oj.dump({ 'a' => { 'x' => date }, 'b' => { 'x' => date } }, :mode => :object, :circular => true)
+    refute_match(/\^r/, json)
+    h = Oj.load(json, :mode => :object, :circular => true)
+    assert_equal(date, h['a']['x'])
+    assert_equal(date, h['b']['x'])
+  end
+
+  # Issue #961, a Range with the same Date as the begin and the end.
+  def test_circular_shared_date_in_range
+    date = Date.new(2026, 7, 6)
+    range = date..date
+    json = Oj.dump({ 'r' => range }, :mode => :object, :circular => true)
+    refute_match(/\^r/, json)
+    h = Oj.load(json, :mode => :object, :circular => true)
+    assert_equal(range, h['r'])
+  end
+
+  def test_circular_shared_datetime_in_range
+    date = DateTime.new(2026, 7, 6, 12, 30, 0)
+    range = date..date
+    json = Oj.dump({ 'r' => range }, :mode => :object, :circular => true)
+    refute_match(/\^r/, json)
+    h = Oj.load(json, :mode => :object, :circular => true)
+    assert_equal(range, h['r'])
+  end
+
+  def test_circular_shared_odd
+    Oj.register_odd(Oddball, Oddball, :create, :h)
+    odd = Oddball.new({'a' => 1})
+    json = Oj.dump({ 'a' => odd, 'b' => odd }, :mode => :object, :circular => true)
+    # The odd object itself is dumped in full each time. The hash it is built
+    # from is a plain Hash so it can still be shared with a "^r".
+    assert_equal(%|{"^i":1,"a":{"^O":"ObjectJuice::Oddball","h":{"^i":2,"a":1}},"b":{"^O":"ObjectJuice::Oddball","h":"^r2"}}|, json)
+    h = Oj.load(json, :mode => :object, :circular => true)
+    assert_equal(odd, h['a'])
+    assert_equal(odd, h['b'])
   end
 
   def test_omit_nil
