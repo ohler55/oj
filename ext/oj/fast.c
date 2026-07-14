@@ -92,7 +92,14 @@ inline static void next_non_white(ParseInfo pi) {
         case '\f':
         case '\n':
         case '\r': break;
-        case '/': skip_comment(pi); break;
+        case '/':
+            skip_comment(pi);
+            // A comment that is not terminated by a newline ends on the null
+            // terminator. Stop here so the loop does not step past it.
+            if ('\0' == *pi->s) {
+                return;
+            }
+            break;
         default: return;
         }
     }
