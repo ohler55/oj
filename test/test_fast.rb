@@ -506,6 +506,67 @@ class DocTest < Minitest::Test
     assert_nil(result)
   end
 
+  # A JSON document with no root such as an empty, whitespace only, or comment
+  # only document has no leaf to navigate to. The Doc API should report the
+  # empty document instead of dereferencing the missing root.
+  NO_ROOT_JSON = ['', ' ', "\t\r\n ", '// comment', "// comment\n", '/* comment */', '#', "\xEF\xBB\xBF"].freeze
+
+  def test_no_root_doc
+    NO_ROOT_JSON.each do |json|
+      Oj::Doc.open(json) do |doc|
+        assert_equal('/', doc.where?)
+        assert_equal('/', doc.home)
+        assert_nil(doc.local_key)
+        assert_nil(doc.type)
+        assert_nil(doc.fetch)
+        assert_nil(doc.dump)
+        refute(doc.exists?('/1'))
+        assert_raises(ArgumentError) { doc.move('/1') }
+
+        leaves = []
+        doc.each_leaf { |d| leaves << d.where? }
+        assert_empty(leaves)
+
+        children = []
+        doc.each_child { |d| children << d.where? }
+        assert_empty(children)
+
+        values = []
+        doc.each_value { |v| values << v }
+        assert_empty(values)
+      end
+    end
+  end
+
+  def test_no_root_doc_file
+    NO_ROOT_JSON.each do |json|
+      filename = File.join(__dir__, 'no_root.json')
+      File.binwrite(filename, json)
+      begin
+        Oj::Doc.open_file(filename) do |doc|
+          assert_equal('/', doc.where?)
+          assert_nil(doc.local_key)
+          assert_nil(doc.fetch)
+          doc.each_leaf { |_d| flunk('no leaf expected') }
+        end
+      ensure
+        File.delete(filename) if File.exist?(filename)
+      end
+    end
+  end
+
+  # A no root Doc that is not opened with a block stays alive and must survive a
+  # GC mark and compaction of its missing root.
+  def test_no_root_doc_gc
+    docs = NO_ROOT_JSON.map { |json| Oj::Doc.open(json) }
+    GC.start
+    GC.compact if GC.respond_to?(:compact)
+    docs.each do |doc|
+      assert_nil(doc.local_key)
+      doc.close
+    end
+  end
+
   def test_comment
     json = %{{
   "x"/*one*/:/*two*/true,//three

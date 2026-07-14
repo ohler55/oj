@@ -710,21 +710,23 @@ static void mark_doc(void *ptr) {
 }
 #ifdef HAVE_RB_GC_MARK_MOVABLE
 static void compact_leaf(Leaf leaf) {
-    switch (leaf->value_type) {
-    case COL_VAL:
-        if (NULL != leaf->elements) {
-            Leaf first = leaf->elements->next;
-            Leaf e     = first;
+    if (NULL != leaf) {
+        switch (leaf->value_type) {
+        case COL_VAL:
+            if (NULL != leaf->elements) {
+                Leaf first = leaf->elements->next;
+                Leaf e     = first;
 
-            do {
-                compact_leaf(e);
-                e = e->next;
-            } while (e != first);
+                do {
+                    compact_leaf(e);
+                    e = e->next;
+                } while (e != first);
+            }
+            break;
+        case RUBY_VAL: leaf->value = rb_gc_location(leaf->value); break;
+
+        default: break;
         }
-        break;
-    case RUBY_VAL: leaf->value = rb_gc_location(leaf->value); break;
-
-    default: break;
     }
 }
 
@@ -970,8 +972,9 @@ static int move_step(Doc doc, const char *path, int loc) {
     } else {
         Leaf leaf;
 
+        // A document with no root (empty or comment only JSON) has no leaf to
+        // step from so the path can not be located.
         if (0 == doc->where || 0 == (leaf = *doc->where)) {
-            printf("*** Internal error at %s\n", path);
             return loc;
         }
         if ('.' == *path && '.' == *(path + 1)) {
@@ -1251,10 +1254,14 @@ static VALUE doc_path(VALUE self) {
  * #=> nil
  */
 static VALUE doc_local_key(VALUE self) {
-    Doc            doc  = self_doc(self);
-    Leaf           leaf = *doc->where;
-    volatile VALUE key  = Qnil;
+    Doc            doc = self_doc(self);
+    Leaf           leaf;
+    volatile VALUE key = Qnil;
 
+    if (NULL == doc->where || NULL == *doc->where) {
+        return Qnil;
+    }
+    leaf = *doc->where;
     if (T_HASH == leaf->parent_type) {
         key = rb_utf8_str_new_cstr(leaf->key);
     } else if (T_ARRAY == leaf->parent_type) {
@@ -1408,6 +1415,9 @@ static VALUE doc_each_leaf(int argc, VALUE *argv, VALUE self) {
                 }
                 return Qnil;
             }
+        }
+        if (NULL == doc->where || NULL == *doc->where) {
+            return Qnil;
         }
         each_leaf(doc, self);
         if (0 < wlen) {
