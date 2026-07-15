@@ -500,30 +500,45 @@ static void dump_as_string(VALUE obj, int depth, Out out, bool as_ok) {
 
 static void dump_as_json(VALUE obj, int depth, Out out, bool as_ok) {
     volatile VALUE ja;
+    bool           selected;
 
     TRACE(out->opts->trace, "as_json", obj, depth + 1, TraceRubyIn);
     // Some classes elect to not take an options argument so check the arity
     // of as_json.
     if (0 == rb_obj_method_arity(obj, oj_as_json_id)) {
-        ja = rb_funcall(obj, oj_as_json_id, 0);
+        ja       = rb_funcall(obj, oj_as_json_id, 0);
+        selected = false;  // as_json got no options so it did not do any :only/:except selection
     } else {
-        ja = rb_funcall2(obj, oj_as_json_id, out->argc, out->argv);
+        selected = (0 < out->argc);  // Rails handed the :only/:except options to as_json
+        ja       = rb_funcall2(obj, oj_as_json_id, out->argc, out->argv);
     }
     TRACE(out->opts->trace, "as_json", obj, depth + 1, TraceRubyOut);
 
     out->argc = 0;
-    if (ja == obj || !as_ok) {
-        // Once as_json is called it should never be called again on the same
-        // object with as_ok.
-        dump_rails_val(ja, depth, out, false);
-    } else {
-        int type = rb_type(ja);
+    // When as_json received the options it has already applied the Rails
+    // :only/:except selection at the attribute level (and kept the
+    // include_root_in_json wrapper and any :methods keys), so the Oj dump level
+    // :only/:except key filter must not be applied to the value it returned - a
+    // second pass would drop the wrapper (#1020) and the :methods keys (#1008).
+    // Suppress the filter only for this subtree (save and restore) so sibling
+    // keys outside the as_json result are still filtered. This is a flag on the
+    // dump state, not a change to out->opts: a StringWriter owns its options
+    // struct, so clearing only/except there would leak the buffers and kill the
+    // filter for every later push_value.
+    {
+        bool key_filter_off = out->key_filter_off;
 
-        if (T_HASH == type || T_ARRAY == type) {
-            dump_rails_val(ja, depth, out, true);
+        if (selected) {
+            out->key_filter_off = true;
+        }
+        if (ja == obj || !as_ok) {
+            // Once as_json is called it should never be called again on the same
+            // object with as_ok.
+            dump_rails_val(ja, depth, out, false);
         } else {
             dump_rails_val(ja, depth, out, true);
         }
+        out->key_filter_off = key_filter_off;
     }
 }
 
@@ -1302,7 +1317,7 @@ static int hash_cb(VALUE key, VALUE value, VALUE ov) {
     if (out->omit_nil && Qnil == value) {
         return ST_CONTINUE;
     }
-    if (NULL != out->opts->dump_opts.only || NULL != out->opts->dump_opts.except) {
+    if (!out->key_filter_off && (NULL != out->opts->dump_opts.only || NULL != out->opts->dump_opts.except)) {
         if (oj_key_skip(key, out->opts->dump_opts.only, out->opts->dump_opts.except)) {
             return ST_CONTINUE;
         }

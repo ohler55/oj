@@ -197,6 +197,7 @@ typedef struct _out {
     bool      allocated;
     bool      omit_nil;
     bool      omit_null_byte;
+    bool      key_filter_off;  // rails: suppress the :only/:except key filter for an as_json result
     int       argc;
     VALUE    *argv;
     ROptTable ropts;

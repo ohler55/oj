@@ -78,6 +78,8 @@ void oj_str_writer_init(StrWriter sw, int buf_size) {
     sw->out.argv       = NULL;
     sw->out.ropts      = NULL;
     sw->out.omit_nil   = oj_default_options.dump_opts.omit_nil;
+    // oj_str_writer_init does not call oj_out_init, so clear this here too.
+    sw->out.key_filter_off = false;
 }
 
 void oj_str_writer_push_key(StrWriter sw, const char *key) {
