@@ -1456,10 +1456,11 @@ void oj_dump_raw(const char *str, size_t cnt, Out out) {
 }
 
 void oj_out_init(Out out) {
-    out->buf       = out->stack_buffer;
-    out->cur       = out->buf;
-    out->end       = out->buf + sizeof(out->stack_buffer) - BUFFER_EXTRA;
-    out->allocated = false;
+    out->buf            = out->stack_buffer;
+    out->cur            = out->buf;
+    out->end            = out->buf + sizeof(out->stack_buffer) - BUFFER_EXTRA;
+    out->allocated      = false;
+    out->key_filter_off = false;
 }
 
 void oj_out_free(Out out) {
