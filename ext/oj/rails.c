@@ -341,11 +341,16 @@ typedef struct _strLen {
 } *StrLen;
 
 static void dump_actioncontroller_parameters(VALUE obj, int depth, Out out, bool as_ok) {
+    int    saved_argc = out->argc;
+    VALUE *saved_argv = out->argv;
+
     if (0 == parameters_id) {
         parameters_id = rb_intern("@parameters");
     }
     out->argc = 0;
     dump_rails_val(rb_ivar_get(obj, parameters_id), depth, out, true);
+    out->argc = saved_argc;
+    out->argv = saved_argv;
 }
 
 static StrLen columns_array(VALUE rcols, int *ccnt) {
@@ -423,7 +428,9 @@ static ID columns_id = 0;
 static void dump_activerecord_result(VALUE obj, int depth, Out out, bool as_ok) {
     volatile VALUE rows;
     StrLen         cols;
-    int            ccnt = 0;
+    int            ccnt       = 0;
+    int            saved_argc = out->argc;
+    VALUE         *saved_argv = out->argv;
     size_t         i;
     size_t         rcnt;
     size_t         size;
@@ -483,6 +490,8 @@ static void dump_activerecord_result(VALUE obj, int depth, Out out, bool as_ok) 
         fill_indent(out, depth);
     }
     *out->cur++ = ']';
+    out->argc   = saved_argc;
+    out->argv   = saved_argv;
 }
 
 typedef struct _namedFunc {
@@ -491,8 +500,16 @@ typedef struct _namedFunc {
 } *NamedFunc;
 
 static void dump_as_string(VALUE obj, int depth, Out out, bool as_ok) {
+    int    saved_argc = out->argc;
+    VALUE *saved_argv = out->argv;
+
     if (oj_code_dump(oj_compat_codes, obj, depth, out)) {
-        out->argc = 0;
+        // oj_code_dump() writes the whole value and returns, so there is no
+        // subtree here to keep the options away from. Leave them for the next
+        // sibling. Restore instead of leaving them alone in case the encode
+        // consumed them.
+        out->argc = saved_argc;
+        out->argv = saved_argv;
         return;
     }
     oj_dump_obj_to_s(obj, out);
@@ -501,6 +518,8 @@ static void dump_as_string(VALUE obj, int depth, Out out, bool as_ok) {
 static void dump_as_json(VALUE obj, int depth, Out out, bool as_ok) {
     volatile VALUE ja;
     bool           selected;
+    int            saved_argc = out->argc;
+    VALUE         *saved_argv = out->argv;
 
     TRACE(out->opts->trace, "as_json", obj, depth + 1, TraceRubyIn);
     // Some classes elect to not take an options argument so check the arity
@@ -540,6 +559,11 @@ static void dump_as_json(VALUE obj, int depth, Out out, bool as_ok) {
         }
         out->key_filter_off = key_filter_off;
     }
+    // The options were consumed for this value only. Restore them so that the
+    // next sibling in a container is handed them too, the way ActiveSupport's
+    // Array#as_json and Hash#as_json pass them to every element.
+    out->argc = saved_argc;
+    out->argv = saved_argv;
 }
 
 static void dump_regexp(VALUE obj, int depth, Out out, bool as_ok) {
@@ -566,11 +590,16 @@ static VALUE activerecord_base = Qundef;
 static ID    attributes_id     = 0;
 
 static void dump_activerecord(VALUE obj, int depth, Out out, bool as_ok) {
+    int    saved_argc = out->argc;
+    VALUE *saved_argv = out->argv;
+
     if (0 == attributes_id) {
         attributes_id = rb_intern("@attributes");
     }
     out->argc = 0;
     dump_rails_val(rb_ivar_get(obj, attributes_id), depth, out, true);
+    out->argc = saved_argc;
+    out->argv = saved_argv;
 }
 
 static ROpt create_opt(ROptTable rot, VALUE clas) {
@@ -1415,10 +1444,15 @@ static void dump_hash(VALUE obj, int depth, Out out, bool as_ok) {
 }
 
 static void dump_obj(VALUE obj, int depth, Out out, bool as_ok) {
-    VALUE clas;
+    VALUE  clas;
+    int    saved_argc = out->argc;
+    VALUE *saved_argv = out->argv;
 
     if (oj_code_dump(oj_compat_codes, obj, depth, out)) {
-        out->argc = 0;
+        // Same as in dump_as_string(): the value is complete, so the options
+        // stay available for the next sibling.
+        out->argc = saved_argc;
+        out->argv = saved_argv;
         return;
     }
     clas = rb_obj_class(obj);
