@@ -7,5 +7,12 @@ gem 'sqlite3'
 gem 'mutex_m'
 gem 'base64'
 gem 'drb'
+# Windows has no system zoneinfo, so ActiveSupport::TimeZone cannot resolve a
+# zone without this. The activesupport8 tests need it; rails_7.2 does not
+# because that gemfile is excluded from the Windows jobs. Written as a
+# conditional rather than :platforms so that it works on every bundler: the
+# :windows platform needs bundler 2.5 and the older :mingw/:mswin/:x64_mingw
+# spelling is deprecated.
+gem 'tzinfo-data' if Gem.win_platform?
 
 gemspec :path => '../'
