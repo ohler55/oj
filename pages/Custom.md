@@ -8,9 +8,8 @@ for object dumping and loading. The `:compat` mode mimic the json gem
 including methods called for encoding and inconsistencies between
 `JSON.dump()`, `JSON.generate()`, and `JSON()`.
 
-The `:custom` mode is the default mode. It can be configured either by passing
-options to the `Oj.dump()` and `Oj.load()` methods or by modifying the default
-options.
+The `:custom` mode can be configured either by passing options to the
+`Oj.dump()` and `Oj.load()` methods or by modifying the default options.
 
 The ability to create objects from JSON object elements is supported and
 considers the `:create_additions` option. Special treatment is given to the

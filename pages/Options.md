@@ -213,8 +213,7 @@ for json gem compatibility.
 
 Primary behavior for loading and dumping. The :mode option controls which
 other options are in effect. For more details see the {file:Modes.md} page. By
-default Oj uses the :custom mode which is provides the highest degree of
-customization.
+default Oj uses the :object mode.
 
 ### :nan [Symbol]
 
