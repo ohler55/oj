@@ -2,7 +2,7 @@
 
 **Ruby**
 
-Oj is compatible with Ruby 2.4+ and RBX.
+Oj is compatible with Ruby 2.7+ and RBX.
 Support for JRuby has been removed as JRuby no longer supports C extensions and
 there are bugs in the older versions that are not being fixed.
 
