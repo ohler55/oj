@@ -36,7 +36,12 @@ class ActiveSupport::TestCase
   if Process.respond_to?(:fork) && !Gem.win_platform?
     parallelize
   else
-    parallelize(with: :threads)
+    # These tests flip ActiveSupport globals as they run
+    # (use_standard_json_time_format, escape_html_entities_in_json,
+    # JSON::Encoding.time_precision), so forked workers are fine but threaded
+    # ones race on them. Upstream never hits this because it always forks.
+    # workers: 1 keeps the suite serial; it takes well under a second anyway.
+    parallelize(workers: 1)
   end
 
   include ActiveSupport::Testing::MethodCallAssertions
