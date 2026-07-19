@@ -121,7 +121,7 @@ information.
 | :object_nl             | String  |         |         |       x |       x |         |       x |         |
 | :omit_nil              | Boolean |       x |       x |       x |       x |       x |       x |         |
 | :quirks_mode           | Boolean |         |         |       6 |         |         |       x |         |
-| :safe                  | String  |         |         |       x |         |         |         |         |
+| :safe                  | Boolean |         |         |       x |         |         |         |         |
 | :second_precision      | Fixnum  |         |         |         |         |       x |       x |         |
 | :space                 | String  |         |         |       x |       x |         |       x |         |
 | :space_before          | String  |         |         |       x |       x |         |       x |         |
