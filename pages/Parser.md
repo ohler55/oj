@@ -280,7 +280,7 @@ Oj::Parser.usual       0.452      110544.876
        JSON::Ext       1.009       49555.094
 ```
 
-The `Oj::Parser.new(:saj)` is **1.55** times faster than `Oj.load` and
+The `Oj::Parser.new(:usual)` is **1.55** times faster than `Oj.load` and
 **2.23** times faster than the JSON gem.
 
 ### Object
@@ -298,7 +298,7 @@ Oj::Parser.usual       0.071      703502.033
        JSON::Ext       0.401      124638.859
 ```
 
-The `Oj::Parser.new(:saj)` is **3.17** times faster than
+The `Oj::Parser.new(:usual)` is **3.17** times faster than
 `Oj.compat_load` and **5.64** times faster than the JSON gem.
 
 ## Summary
