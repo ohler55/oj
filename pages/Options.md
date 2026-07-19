@@ -249,6 +249,10 @@ integer gives better performance.
 
 If true, Hash and Object attributes with nil values are omitted.
 
+### :omit_null_byte [Boolean]
+
+If true, null bytes in strings will be omitted when dumping.
+
 ### :quirks_mode [Boolean]
 
 Allow single JSON values instead of documents, default is true (allow). This
@@ -264,10 +268,6 @@ to true.
 ### :second_precision [Fixnum]
 
 The number of digits after the decimal when dumping the seconds of time.
-
-### :skip_null_byte [Boolean]
-
-If true, null bytes in strings will be omitted when dumping.
 
 ### :space
 
