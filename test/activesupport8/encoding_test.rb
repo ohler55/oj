@@ -181,6 +181,10 @@ class TestJSONEncoding < ActiveSupport::TestCase
   end
 
   def test_time_to_json_includes_local_offset
+    # with_env_tz sets ENV["TZ"], which Windows does not use, so Time.local
+    # stays on the machine zone and the offset comes out as +00:00.
+    skip 'Windows ignores the TZ environment variable' if RbConfig::CONFIG['host_os'] =~ /(mingw|mswin)/
+
     with_standard_json_time_format(true) do
       with_env_tz "US/Eastern" do
         assert_equal %("2005-02-01T15:15:10.000-05:00"), ActiveSupport::JSON.encode(Time.local(2005, 2, 1, 15, 15, 10))
