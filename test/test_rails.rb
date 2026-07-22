@@ -27,6 +27,27 @@ class OjSecretProbe
   end
 end
 
+# Reports only whether as_json was handed the per-call options. Putting both keys
+# in :only means the dump level key filter drops nothing, so these tests see the
+# option passing and nothing else.
+class OjOptsProbe
+  def initialize(n)
+    @n = n
+  end
+
+  def as_json(options = nil)
+    {'n' => @n, 'opts' => options.nil? ? 'NONE' : options.keys.map(&:to_s).sort.join('+')}
+  end
+end
+
+# as_json returns a value that itself defines as_json. The options were consumed
+# by the outer call, so the inner one must not see them again.
+class OjNestedOptsProbe
+  def as_json(_options = nil)
+    {'inner' => OjOptsProbe.new(9)}
+  end
+end
+
 class RailsJuice < Minitest::Test
 
   def test_bigdecimal_dump
@@ -114,6 +135,48 @@ class RailsJuice < Minitest::Test
     w.push_value({'name' => 1, 'secret' => 2}, 'b')
     w.pop
     assert_equal(%|{"a":{"name":"v-1"},"b":{"name":1}}\n|, w.to_s)
+  end
+
+  # #1008: the options must reach the as_json of every element of a container,
+  # not just the first. ActiveSupport's Array#as_json is
+  # `map { |v| v.as_json(options) }` and the optimized C loop replaces it, so it
+  # owes the elements the same. Before the fix only element one saw them.
+  def test_1008_array_passes_options_to_every_as_json
+    json = Oj::Rails::Encoder.new(only: ['n', 'opts']).encode([OjOptsProbe.new(1), OjOptsProbe.new(2), OjOptsProbe.new(3)])
+    assert_equal('[{"n":1,"opts":"only"},{"n":2,"opts":"only"},{"n":3,"opts":"only"}]', json)
+  end
+
+  # Not limited to a bare Array - a Hash value hits the same path.
+  def test_1008_hash_values_pass_options_to_every_as_json
+    json = Oj::Rails::Encoder.new(only: ['x', 'y', 'n', 'opts']).encode({'x' => OjOptsProbe.new(1), 'y' => OjOptsProbe.new(2)})
+    assert_equal('{"x":{"n":1,"opts":"only"},"y":{"n":2,"opts":"only"}}', json)
+  end
+
+  def test_1008_nested_array_passes_options_to_every_as_json
+    json = Oj::Rails::Encoder.new(only: ['n', 'opts']).encode([[OjOptsProbe.new(1)], [OjOptsProbe.new(2)]])
+    assert_equal('[[{"n":1,"opts":"only"}],[{"n":2,"opts":"only"}]]', json)
+  end
+
+  # The options are restored for siblings but must still be kept away from the
+  # value as_json returned - it already applied the Rails selection, so handing
+  # the options to an as_json inside that value would apply them twice. This pins
+  # the `out->argc = 0` in dump_as_json: remove that line and this goes red.
+  def test_options_are_not_re_applied_inside_an_as_json_value
+    json = Oj::Rails::Encoder.new(only: ['inner', 'n', 'opts']).encode(OjNestedOptsProbe.new)
+    assert_equal('{"inner":{"n":9,"opts":"NONE"}}', json)
+  end
+
+  # Oj.add_to_json makes oj_code_dump() fire for Rational, which is the only way
+  # to reach the `out->argc = 0` in dump_as_string. rails_funcs dispatches
+  # T_RATIONAL there directly, bypassing dump_obj, so that site needs its own
+  # restore. Before the fix the probes after the Rational lost the options.
+  def test_add_to_json_value_does_not_consume_the_options
+    Oj.add_to_json(Rational)
+    json = Oj::Rails::Encoder.new(only: ['n', 'opts']).encode([Rational(1, 2), OjOptsProbe.new(1), OjOptsProbe.new(2)])
+    assert_equal('[{"json_class":"Rational","n":1,"d":2},{"n":1,"opts":"only"},{"n":2,"opts":"only"}]', json)
+  ensure
+    # oj_compat_codes is global and tests.rb runs every file in one process.
+    Oj.remove_to_json(Rational)
   end
 
 end
