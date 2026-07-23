@@ -872,7 +872,7 @@ static bool key_match(const char *pat, const char *key, int plen) {
 static Leaf get_leaf(Leaf *stack, Leaf *lp, const char *path) {
     Leaf leaf = *lp;
 
-    if (MAX_STACK <= lp - stack) {
+    if (MAX_STACK <= (lp - 1) - stack) {
         rb_raise(rb_const_get_at(Oj, rb_intern("DepthError")), "Path too deep. Limit is %d levels.", MAX_STACK);
     }
     if ('\0' != *path) {
