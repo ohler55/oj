@@ -89,6 +89,8 @@ The classes that can be put in optimized mode and are optimized when
  * any class inheriting from ActiveRecord::Base
  * any other class where all attributes should be dumped
 
+Both `Oj::Rails` and each `Oj::Rails::Encoder` have `optimize()`, `deoptimize()`, and `optimized?()` methods. The module level methods change the setting for the whole process. An encoder follows those process wide settings until `optimize()` or `deoptimize()` is called on the encoder itself. From then on the encoder keeps a set of its own and later module level changes do not reach it.
+
 The ActiveSupport decoder is the `JSON.parse()` method. Calling the
 `Oj::Rails.set_decoder()` method replaces that method with the Oj equivalent.
 

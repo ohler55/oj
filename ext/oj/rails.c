@@ -16,6 +16,10 @@ typedef struct _encoder {
     struct _rOptTable ropts;
     struct _options   opts;
     VALUE             arg;
+    // Each is false while the matching member is unused and the global it
+    // shadows - ropts or oj_default_options - is read instead.
+    bool own_ropts;
+    bool own_opts;
 } *Encoder;
 
 bool oj_rails_hash_opt  = false;
@@ -81,6 +85,32 @@ static ROptTable copy_opts(ROptTable src, ROptTable dest) {
         memcpy(dest->table, src->table, sizeof(struct _rOpt) * dest->alen);
     }
     return NULL;
+}
+
+// The table an encoder reads from. Until the encoder is asked to optimize or
+// deoptimize a class of its own it has no table and follows the global one.
+// NULL is how oj_rails_get_opt() is told to use the global table, so the NULL
+// has to reach it - handing it &e->ropts with an empty table instead would
+// quietly turn every optimization off for this encoder.
+static ROptTable encoder_ropts(Encoder e) {
+    return e->own_ropts ? &e->ropts : NULL;
+}
+
+// The options an encoder encodes with. See encoder_new() for why an encoder
+// built without options follows the defaults instead of holding a copy.
+static Options encoder_opts(Encoder e) {
+    return e->own_opts ? &e->opts : &oj_default_options;
+}
+
+// The table an encoder writes to. Copying the global table is deferred to here
+// because it is a 6KB allocation and ActiveSupport builds an encoder for every
+// encode call, while almost none of them ever optimize a class of their own.
+static ROptTable encoder_own_ropts(Encoder e) {
+    if (!e->own_ropts) {
+        copy_opts(&ropts, &e->ropts);
+        e->own_ropts = true;
+    }
+    return &e->ropts;
 }
 
 static int dump_attr_cb(ID key, VALUE value, VALUE ov) {
@@ -635,6 +665,12 @@ static ROpt create_opt(ROptTable rot, VALUE clas) {
     ro->clas = clas;
     ro->on   = true;
     ro->dump = dump_obj_attrs;
+    if (&ropts == rot) {
+        // Nothing marks the global table, so a class that lives only in it has
+        // to be a root. Encoders used to hold a copy of the table and mark it,
+        // which covered this by accident for as long as one was alive.
+        rb_gc_register_mark_object(clas);
+    }
     for (nf = dump_map; NULL != nf->name; nf++) {
         if (0 == strcmp(nf->name, classname)) {
             ro->dump = nf->func;
@@ -667,7 +703,9 @@ static void encoder_free(void *ptr) {
     if (NULL != ptr) {
         Encoder e = (Encoder)ptr;
 
-        oj_options_release(&e->opts);
+        if (e->own_opts) {
+            oj_options_release(&e->opts);
+        }
         if (NULL != e->ropts.table) {
             OJ_R_FREE(e->ropts.table);
         }
@@ -680,15 +718,21 @@ static void encoder_mark(void *ptr) {
         Encoder e = (Encoder)ptr;
         int     i;
 
-        oj_options_mark(&e->opts);
+        if (e->own_opts) {
+            oj_options_mark(&e->opts);
+        }
         if (Qnil != e->arg) {
             rb_gc_mark(e->arg);
         }
         // The optimized classes in the encoder table are not reachable from
-        // anywhere else once optimize() is called on the encoder itself.
-        for (i = 0; i < e->ropts.len; i++) {
-            if (Qnil != e->ropts.table[i].clas) {
-                rb_gc_mark(e->ropts.table[i].clas);
+        // anywhere else once optimize() is called on the encoder itself. An
+        // encoder that never optimized anything has no table to walk - the
+        // classes in the global table are roots registered by create_opt().
+        if (NULL != e->ropts.table) {
+            for (i = 0; i < e->ropts.len; i++) {
+                if (Qnil != e->ropts.table[i].clas) {
+                    rb_gc_mark(e->ropts.table[i].clas);
+                }
             }
         }
     }
@@ -714,21 +758,35 @@ static const rb_data_type_t oj_encoder_type = {
 static VALUE encoder_new(int argc, VALUE *argv, VALUE self) {
     Encoder e = OJ_R_ALLOC(struct _encoder);
 
-    e->opts = oj_default_options;
-    // Detach from the match_string regexps owned by the defaults before the
-    // options are parsed so that a :match_string option builds a chain of its
-    // own that is freed with the encoder.
-    e->opts.str_rx.head = NULL;
-    e->opts.str_rx.tail = NULL;
-    copy_opts(&ropts, &e->ropts);
+    e->ropts.len   = 0;
+    e->ropts.alen  = 0;
+    e->ropts.table = NULL;
+    e->own_ropts   = false;
 
     if (1 <= argc && Qnil != *argv) {
         e->arg = *argv;
     } else {
         e->arg = rb_hash_new();
     }
-    oj_parse_options(e->arg, &e->opts);
-    oj_options_take_ownership(&e->opts);
+    // An encoder given no options of its own reads oj_default_options at encode
+    // time rather than copying it here. ActiveSupport keeps one option-less
+    // encoder for the life of the process, so a copy taken now would freeze
+    // every later Oj.default_options and ActiveSupport::JSON::Encoding change
+    // out of it - including the time_precision that set_encoder itself writes
+    // after ActiveSupport has already built and cached that encoder.
+    e->own_opts = T_HASH == rb_type(e->arg) && 0 < RHASH_SIZE(e->arg);
+    if (e->own_opts) {
+        e->opts = oj_default_options;
+        // Detach from the match_string regexps owned by the defaults before the
+        // options are parsed so that a :match_string option builds a chain of
+        // its own that is freed with the encoder.
+        e->opts.str_rx.head = NULL;
+        e->opts.str_rx.tail = NULL;
+        oj_parse_options(e->arg, &e->opts);
+        oj_options_take_ownership(&e->opts);
+    } else {
+        memset(&e->opts, 0, sizeof(e->opts));
+    }
 
     return TypedData_Wrap_Struct(encoder_class, &oj_encoder_type, e);
 }
@@ -825,7 +883,7 @@ static VALUE encoder_optimize(int argc, VALUE *argv, VALUE self) {
     Encoder e;
     TypedData_Get_Struct(self, struct _encoder, &oj_encoder_type, e);
 
-    optimize(argc, argv, &e->ropts, true);
+    optimize(argc, argv, encoder_own_ropts(e), true);
 
     return Qnil;
 }
@@ -882,7 +940,7 @@ static VALUE encoder_deoptimize(int argc, VALUE *argv, VALUE self) {
     Encoder e;
     TypedData_Get_Struct(self, struct _encoder, &oj_encoder_type, e);
 
-    optimize(argc, argv, &e->ropts, false);
+    optimize(argc, argv, encoder_own_ropts(e), false);
 
     return Qnil;
 }
@@ -913,7 +971,7 @@ static VALUE encoder_optimized(VALUE self, VALUE clas) {
     ROpt    ro;
 
     TypedData_Get_Struct(self, struct _encoder, &oj_encoder_type, e);
-    ro = oj_rails_get_opt(&e->ropts, clas);
+    ro = oj_rails_get_opt(encoder_ropts(e), clas);
 
     if (NULL == ro) {
         return Qfalse;
@@ -1024,9 +1082,9 @@ static VALUE encoder_encode(VALUE self, VALUE obj) {
     if (Qnil != e->arg) {
         VALUE argv[1] = {e->arg};
 
-        return encode(obj, &e->ropts, &e->opts, 1, argv);
+        return encode(obj, encoder_ropts(e), encoder_opts(e), 1, argv);
     }
-    return encode(obj, &e->ropts, &e->opts, 0, NULL);
+    return encode(obj, encoder_ropts(e), encoder_opts(e), 0, NULL);
 }
 
 /* Document-method: encode
