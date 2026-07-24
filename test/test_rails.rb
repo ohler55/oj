@@ -179,4 +179,85 @@ class RailsJuice < Minitest::Test
     Oj.remove_to_json(Rational)
   end
 
+  # #1048: an encoder no longer copies the optimization table when it is created.
+  # It reads the global table until it optimizes a class of its own, and only
+  # then takes a copy. Range is used because it is one of the classes Oj has a
+  # built-in dump function for, so optimizing it does not need ActiveRecord.
+  #
+  # The ensure blocks put the global table back because Oj::Rails.optimize is
+  # process wide and tests.rb runs every file in one process.
+
+  def test_encoder_optimize_stays_private_to_the_encoder
+    e = Oj::Rails::Encoder.new
+    e.optimize(Range)
+
+    assert(e.optimized?(Range))
+    refute(Oj::Rails.optimized?(Range))
+    refute(Oj::Rails::Encoder.new.optimized?(Range))
+  ensure
+    Oj::Rails.deoptimize(Range)
+  end
+
+  # An encoder that has not optimized anything itself follows the global table,
+  # including changes made after it was created. ActiveSupport caches an encoder
+  # inside json_encoder=, which Oj.optimize_rails calls before Oj::Rails.optimize,
+  # so a table captured at creation left that encoder permanently unoptimized.
+  def test_encoder_follows_a_global_optimize_made_after_it_was_created
+    before = Oj::Rails::Encoder.new
+    Oj::Rails.optimize(Range)
+
+    assert(before.optimized?(Range))
+  ensure
+    Oj::Rails.deoptimize(Range)
+  end
+
+  def test_encoder_with_its_own_table_ignores_later_global_changes
+    e = Oj::Rails::Encoder.new
+    e.optimize(Regexp) # takes the copy
+    Oj::Rails.optimize(Range)
+
+    refute(e.optimized?(Range))
+    assert(Oj::Rails::Encoder.new.optimized?(Range))
+  ensure
+    Oj::Rails.deoptimize(Range)
+  end
+
+  def test_encoder_deoptimize_does_not_touch_the_global_table
+    Oj::Rails.optimize(Range)
+    e = Oj::Rails::Encoder.new
+    e.deoptimize(Range)
+
+    refute(e.optimized?(Range))
+    assert(Oj::Rails.optimized?(Range))
+  ensure
+    Oj::Rails.deoptimize(Range)
+  end
+
+  # The options are shared the same way and for the same reason. The encoder
+  # ActiveSupport caches is built with no options and lives for the life of the
+  # process, so it has to read Oj.default_options when it encodes rather than
+  # copy it when it is created.
+  def test_optionless_encoder_follows_later_default_options
+    orig = Oj.default_options
+    e = Oj::Rails::Encoder.new
+    Oj.default_options = {indent: 2}
+
+    assert_equal(%|{\n  "a":1\n}\n|, e.encode({'a' => 1}))
+  ensure
+    Oj.default_options = orig
+  end
+
+  # An encoder given options of its own keeps the copy it took of the defaults,
+  # which is what ActiveSupport wants for the per-call encoders it builds from
+  # the to_json arguments.
+  def test_encoder_with_options_keeps_its_own_copy
+    orig = Oj.default_options
+    e = Oj::Rails::Encoder.new(only: ['a'])
+    Oj.default_options = {indent: 2}
+
+    assert_equal('{"a":1}', e.encode({'a' => 1, 'b' => 2}))
+  ensure
+    Oj.default_options = orig
+  end
+
 end
