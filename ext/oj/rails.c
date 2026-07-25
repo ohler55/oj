@@ -1080,7 +1080,18 @@ static VALUE encoder_encode(VALUE self, VALUE obj) {
     TypedData_Get_Struct(self, struct _encoder, &oj_encoder_type, e);
 
     if (Qnil != e->arg) {
-        VALUE argv[1] = {e->arg};
+        // as_json is allowed to write into the options hash it is handed, and
+        // the ActiveSupport suite has a test that does exactly that. Handing
+        // out the encoder's own hash lets one such call poison every later
+        // encode by the same encoder, which on ActiveSupport 8.1 is every
+        // option-less to_json in the process because json_encoder= caches one
+        // encoder and keeps it. Rails never exposes a hash it will reuse:
+        // JSONGemEncoder#encode passes options.dup, and only when there are
+        // options at all, so with none as_json writes into its own default.
+        // The copy is not frozen the way Rails 8.0 and later freeze theirs,
+        // because Oj hands as_json the hash even when it is empty and that is
+        // exactly the case Rails leaves writable.
+        VALUE argv[1] = {T_HASH == rb_type(e->arg) ? rb_hash_dup(e->arg) : e->arg};
 
         return encode(obj, encoder_ropts(e), encoder_opts(e), 1, argv);
     }
