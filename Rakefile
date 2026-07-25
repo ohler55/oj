@@ -95,13 +95,24 @@ task :default => :test_all
 begin
   require 'rails/version'
 
-  Rake::TestTask.new "activesupport#{Rails::VERSION::MAJOR}" do |t|
+  # A minor release only gets a suite of its own when its tests diverge enough
+  # from the major one to matter, so prefer test/activesupport<major>.<minor>
+  # and fall back to test/activesupport<major>. Naming the task after whichever
+  # directory is used keeps `rake activesupport8.1` and `rake activesupport8`
+  # pointing at the tests their names promise. A pattern that matches nothing
+  # still exits 0, so an unresolved name would be a silently green job.
+  as_suite = ["#{Rails::VERSION::MAJOR}.#{Rails::VERSION::MINOR}", Rails::VERSION::MAJOR.to_s].find do |v|
+    Dir.exist?("test/activesupport#{v}")
+  end
+  raise "no test/activesupport directory for Rails #{Rails::VERSION::STRING}" if as_suite.nil?
+
+  Rake::TestTask.new "activesupport#{as_suite}" do |t|
     t.libs << 'test'
-    t.pattern = "test/activesupport#{Rails::VERSION::MAJOR}/*_test.rb"
+    t.pattern = "test/activesupport#{as_suite}/*_test.rb"
     t.warning = true
     t.verbose = true
   end
-  Rake::Task[:test_all].enhance ["activesupport#{Rails::VERSION::MAJOR}"]
+  Rake::Task[:test_all].enhance ["activesupport#{as_suite}"]
 
   Rake::TestTask.new 'activerecord' do |t|
     t.libs << 'test'

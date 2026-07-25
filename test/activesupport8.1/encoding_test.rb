@@ -3,6 +3,7 @@
 require "securerandom"
 require_relative "abstract_unit"
 require "active_support/core_ext/string/inflections"
+require "active_support/core_ext/object/with"
 require "active_support/json"
 require "active_support/time"
 require_relative "time_zone_test_helpers"
@@ -20,11 +21,15 @@ class TestJSONEncoding < ActiveSupport::TestCase
     assert_equal Oj::Rails::Encoder, ActiveSupport.json_encoder
   end
 
-  # #985. This pins the plumbing only: ActiveSupport 8.0 builds a new encoder
-  # for every encode, so it cannot show the bug the issue is about. That one
-  # needs the single cached encoder ActiveSupport 8.1 keeps, and is covered by
-  # test_985_bigdecimal_reaches_the_cached_encoder in test/activesupport8.1.
-  def test_985_bigdecimal_honours_the_option
+  # #985. ActiveSupport 8.1 builds an encoder inside json_encoder= and caches it
+  # for the life of the process, so every option-less encode goes through that
+  # one instance. set_encoder runs before optimize, and Oj.default_options can
+  # be set later still, so an encoder that copied either the optimization table
+  # or the default options when it was built stayed stuck with what happened to
+  # exist at that moment: BigDecimal was left unoptimized and fell through to
+  # ActiveSupport's BigDecimal#as_json, which returns to_s, and the option below
+  # never reached it. Both have to be read at encode time.
+  def test_985_bigdecimal_reaches_the_cached_encoder
     prev = Oj.default_options[:bigdecimal_as_decimal]
     Oj.default_options = {bigdecimal_as_decimal: true}
 
@@ -76,6 +81,20 @@ class TestJSONEncoding < ActiveSupport::TestCase
     assert_equal %({\"a\":\"b\",\"c\":\"d\"}), sorted_json(ActiveSupport::JSON.encode(a: :b, c: :d))
   end
 
+  def test_unicode_escape
+    # Rails 8.1 added the escape_js_separators_in_json config and a per-call
+    # :escape option. Oj::Rails::Encoder honours neither and never escapes
+    # U+2028 / U+2029, so all three assertions here disagree with it. Remove
+    # the skip once Oj supports them.
+    skip 'Oj::Rails::Encoder does not support escape_js_separators_in_json or the per-call :escape option'
+
+    assert_equal %{{"\\u2028":"\\u2029"}}, ActiveSupport::JSON.encode("\u2028" => "\u2029")
+    assert_equal %{{"\u2028":"\u2029"}}, ActiveSupport::JSON.encode({ "\u2028" => "\u2029" }, escape: false)
+    ActiveSupport::JSON::Encoding.with(escape_js_separators_in_json: false) do
+      assert_equal %{{"\u2028":"\u2029"}}, ActiveSupport::JSON.encode({ "\u2028" => "\u2029" })
+    end
+  end
+
   def test_hash_keys_encoding
     ActiveSupport.escape_html_entities_in_json = true
     assert_equal "{\"\\u003c\\u003e\":\"\\u003c\\u003e\"}", ActiveSupport::JSON.encode("<>" => "<>")
@@ -109,6 +128,15 @@ class TestJSONEncoding < ActiveSupport::TestCase
     skip 'Oj does not call to_json on a Numeric subclass'
 
     assert_equal %([123]), ActiveSupport::JSON.encode([JSONTest::CustomNumeric.new("123")])
+  end
+
+  # Also pulled out of NumericTests. Rails 8.1 added this pair, where as_json
+  # returns a JSON::Fragment to splice in pre-encoded JSON. Oj has no support
+  # for JSON::Fragment and dumps the object instead, giving {"json":"123"}.
+  def test_numeric_subclass_with_json_fragment
+    skip 'Oj does not support JSON::Fragment'
+
+    assert_equal %([123]), ActiveSupport::JSON.encode([JSONTest::CustomNumericFixed.new("123")])
   end
 
   def test_hash_keys_encoding_without_escaping
@@ -186,6 +214,34 @@ class TestJSONEncoding < ActiveSupport::TestCase
     values = { 0 => 0, 1 => 1, :_ => :_, "$" => "$", "a" => "a", :A => :A, :A0 => :A0, "A0B" => "A0B" }
     assert_equal %w( "$" "A" "A0" "A0B" "_" "a" "0" "1" ).sort, object_keys(ActiveSupport::JSON.encode(values))
   end
+
+  def test_hash_with_object_keys_that_have_complex_as_json
+    skip "JSONGemCoderEncoder not available" unless defined?(ActiveSupport::JSON::Encoding::JSONGemCoderEncoder)
+
+    # Define CustomKey inline (typically this will be a full Class)
+    custom_key_class = Struct.new(:id) do
+      def to_s
+        "custom_#{id}"
+      end
+
+      def as_json(options = nil)
+        { id: id, metadata: { created_at: Time.now.iso8601 } }
+      end
+    end
+
+    key = custom_key_class.new(123)
+    hash = { key => "some_value" }
+
+    assert_equal "custom_123", key.to_s
+    assert_instance_of Hash, key.as_json
+
+    # When serializing to JSON, the key should be converted via to_s
+    json = hash.to_json
+    parsed = JSON.parse(json)
+
+    assert_equal "some_value", parsed["custom_123"]
+  end
+
 
   def test_hash_should_allow_key_filtering_with_only
     assert_equal %({"a":1}), ActiveSupport::JSON.encode({ "a" => 1, :b => 2, :c => 3 }, { only: "a" })
@@ -401,13 +457,14 @@ class TestJSONEncoding < ActiveSupport::TestCase
     assert_equal([:default], json)
   end
 
+  UserNameAndEmail = Struct.new(:name, :email)
+  UserNameAndDate = Struct.new(:name, :date)
+  Custom = Struct.new(:name, :sub)
+
   def test_struct_encoding
-    Struct.new("UserNameAndEmail", :name, :email)
-    Struct.new("UserNameAndDate", :name, :date)
-    Struct.new("Custom", :name, :sub)
-    user_email = Struct::UserNameAndEmail.new "David", "sample@example.com"
-    user_birthday = Struct::UserNameAndDate.new "David", Date.new(2010, 01, 01)
-    custom = Struct::Custom.new "David", user_birthday
+    user_email = UserNameAndEmail.new "David", "sample@example.com"
+    user_birthday = UserNameAndDate.new "David", Date.new(2010, 01, 01)
+    custom = Custom.new "David", user_birthday
 
     json_strings = ""
     json_string_and_date = ""
@@ -568,6 +625,63 @@ EXPECTED
     assert_equal STDOUT.to_s.to_json, STDOUT.to_json
   end
 
+  class AsJSONLoop
+    def initialize(count)
+      @count = count
+    end
+
+    def as_json
+      if @count > 0
+        @count -= 1
+        dup
+      else
+        self
+      end
+    end
+  end
+
+  def test_as_json_infinite_loop
+    assert_raise SystemStackError do
+      AsJSONLoop.new(Float::INFINITY).to_json
+    end
+  end
+
+  def test_as_json_too_recursive
+    # Rails keeps calling as_json until it gets something it can encode, so an
+    # as_json that eventually returns self recurses until the stack runs out.
+    # Oj stops after the first result and encodes it, so nothing is raised.
+    # test_as_json_infinite_loop above still passes because that one returns a
+    # fresh dup every time. Remove the skip once Oj follows the chain.
+    skip 'Oj does not re-enter as_json on the value as_json returned'
+
+    assert_raise SystemStackError do
+      AsJSONLoop.new(20).to_json
+    end
+  end
+
+  def test_no_nesting_error_on_consecutive_encoding_calls
+    # Oj reports a document that is nested too deeply as NoMemoryError
+    # ("Too deeply nested."), not as SystemStackError or JSON::NestingError.
+    # The part this test is really about - that encoding keeps working after
+    # the error - does hold. Remove the skip once Oj raises a nesting error.
+    skip 'Oj raises NoMemoryError rather than SystemStackError or JSON::NestingError when nesting is too deep'
+
+    hash = { a: 1 }
+    assert_equal '{"a":1}', ActiveSupport::JSON.encode(hash)
+
+    # We simulate a circular reference
+    circular_array = []
+    circular_array << circular_array
+
+    assert_raise(SystemStackError, JSON::NestingError) do
+      ActiveSupport::JSON.encode(circular_array)
+    end
+
+    # We should be able to continue to generate JSONs as usual after
+    # encountering a JSON::NestingError
+    assert_equal '{"a":1}', ActiveSupport::JSON.encode(hash)
+  end
+
   private
     def object_keys(json_object)
       json_object[1..-2].scan(/([^{}:,\s]+):/).flatten.sort
@@ -588,3 +702,15 @@ EXPECTED
       ActiveSupport::JSON::Encoding.time_precision = old_value
     end
 end
+
+# Upstream reruns the whole suite through ActiveSupport's own JSONGemEncoder
+# here. That tests Rails against Rails and says nothing about Oj, and because
+# every test above is written for the Oj encoder it fails for reasons that are
+# not Oj's to answer for, so it is dropped the same way the rails-repo-internal
+# requires are.
+#
+# if defined?(::JSON::Coder)
+#   class OldJSONEncodingTest < TestJSONEncoding
+#     ...
+#   end
+# end
