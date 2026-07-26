@@ -641,16 +641,21 @@ EXPECTED
   end
 
   def test_as_json_infinite_loop
-    # An as_json that returns a new object every time recurses through Oj's C
-    # dump without ever coming back, so it is the C stack that runs out, not
-    # Ruby's. On Linux and macOS the interpreter still notices in time and
-    # raises SystemStackError, which is what this asserts. On Windows the
-    # thread stack is far smaller and the overflow lands as a SIGSEGV that
-    # takes the whole process with it, so the test cannot run there. The same
-    # small-stack limit is why the ucrt job is commented out in CI.yml.
-    # Reported as #1052 - remove this skip once the as_json hop counts toward
-    # the MAX_DEPTH guard and the overflow becomes a catchable error.
-    skip 'Unbounded as_json recursion overflows the C stack as a SIGSEGV on Windows' if RbConfig::CONFIG['host_os'] =~ /(mingw|mswin)/
+    # Rails expects an as_json that never returns the receiver to exhaust the
+    # stack and raise SystemStackError. Oj does follow the chain, but nothing
+    # ends it: dump_as_json recurses at the same depth, so the MAX_DEPTH guard
+    # in dump_rails_val can never fire. What happens instead is whatever the
+    # platform does when it runs out of room, and that differs everywhere:
+    #
+    #   linux    SystemStackError after ~150,000 as_json calls - passes
+    #   macos    never finishes; the CI job sat 58 minutes with no output
+    #   windows  SIGSEGV, taking the test process down with it
+    #
+    # Only Linux does what the test asks, and only by accident of how much
+    # stack it happens to have, so this is skipped everywhere rather than per
+    # platform. Reported as #1052 - remove the skip once the as_json hop counts
+    # toward the depth guard and an endless chain raises on every platform.
+    skip 'Oj never terminates an as_json chain that does not return the receiver'
 
     assert_raise SystemStackError do
       AsJSONLoop.new(Float::INFINITY).to_json
