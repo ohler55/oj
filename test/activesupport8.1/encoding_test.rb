@@ -648,6 +648,8 @@ EXPECTED
     # thread stack is far smaller and the overflow lands as a SIGSEGV that
     # takes the whole process with it, so the test cannot run there. The same
     # small-stack limit is why the ucrt job is commented out in CI.yml.
+    # Reported as #1052 - remove this skip once the as_json hop counts toward
+    # the MAX_DEPTH guard and the overflow becomes a catchable error.
     skip 'Unbounded as_json recursion overflows the C stack as a SIGSEGV on Windows' if RbConfig::CONFIG['host_os'] =~ /(mingw|mswin)/
 
     assert_raise SystemStackError do
