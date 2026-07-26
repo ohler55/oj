@@ -48,6 +48,16 @@ class OjNestedOptsProbe
   end
 end
 
+# Writes into the options hash it was handed, the way CustomWithOptions does in
+# the ActiveSupport suite. Rails allows this - its own encoder hands as_json a
+# copy for exactly this reason - so it must not reach the encoder's own hash.
+class OjOptionMutatingProbe
+  def as_json(options = nil)
+    options[:only] = ['foo', 'bar'] unless options.nil?
+    {'foo' => 'hello', 'bar' => 'world'}
+  end
+end
+
 class RailsJuice < Minitest::Test
 
   def test_bigdecimal_dump
@@ -101,6 +111,31 @@ class RailsJuice < Minitest::Test
       json = Oj::Rails::Encoder.new(match_string: {/^x/ => String}).encode({id: 1})
       assert_equal('{"id":1}', json)
     end
+  end
+
+  # An as_json that writes into the options hash it was given must not change
+  # what the encoder hands the next one. ActiveSupport 8.1 keeps a single
+  # option-less encoder for the life of the process, so without a copy one such
+  # call leaves :only set on it and every later plain to_json in the process
+  # comes out filtered - usually as {}.
+  def test_as_json_cannot_write_into_the_encoder_options
+    encoder = Oj::Rails::Encoder.new
+
+    assert_equal('{"foo":"hello","bar":"world"}', encoder.encode(OjOptionMutatingProbe.new))
+    # An encoder built with no options hands as_json an empty hash, so "" here
+    # means nothing leaked. Before the fix this was "only".
+    assert_equal('{"n":1,"opts":""}', encoder.encode(OjOptsProbe.new(1)))
+  end
+
+  # The same for an encoder that was given options: the caller's hash is theirs,
+  # and the mutation must not accumulate on it either.
+  def test_as_json_cannot_write_into_the_callers_options
+    opts = {only: ['foo', 'bar', 'n', 'opts']}
+    encoder = Oj::Rails::Encoder.new(opts)
+
+    encoder.encode(OjOptionMutatingProbe.new)
+    assert_equal({only: ['foo', 'bar', 'n', 'opts']}, opts)
+    assert_equal('{"n":1,"opts":"only"}', encoder.encode(OjOptsProbe.new(1)))
   end
 
   # #1020: to_json(only:) on a record with include_root_in_json wraps each row
