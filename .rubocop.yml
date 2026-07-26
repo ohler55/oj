@@ -12,6 +12,7 @@ AllCops:
     - 'test/activesupport6/**/*'
     - 'test/activesupport7/**/*'
     - 'test/activesupport8/**/*'
+    - 'test/activesupport8.1/**/*'
 
 # This rule suggests a change that will cause CI tests to fail.
 Gemspec/DevelopmentDependencies:

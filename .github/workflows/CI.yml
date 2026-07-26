@@ -28,6 +28,7 @@ jobs:
           - no_rails
           - rails_7.2
           - rails_8
+          - rails_8.1
         exclude:
           - os: macos
             ruby: head
