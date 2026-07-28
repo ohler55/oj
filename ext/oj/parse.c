@@ -1101,7 +1101,9 @@ void oj_set_error_at(ParseInfo pi, VALUE err_clas, const char *file, int line, c
     }
     va_end(ap);
     pi->err.clas = err_clas;
-    if (p + 3 < end) {
+    // The eight bytes below, plus the ')' and the terminator that the two bytes
+    // held back from end are for.
+    if (p + 8 <= end) {
         *p++  = ' ';
         *p++  = '(';
         *p++  = 'a';
