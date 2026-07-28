@@ -54,7 +54,7 @@ static VALUE str_to_value(ParseInfo pi, const char *str, size_t len, const char 
     } else if (pi->circ_array && 3 <= len && '^' == *orig && 'r' == orig[1]) {
         long i = read_long(str + 2, len - 2);
 
-        if (0 > i) {
+        if (0 >= i) {
             oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a valid ID number");
             return Qnil;
         }
