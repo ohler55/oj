@@ -8,11 +8,13 @@
         VALUE rb_##config_name = rb_hash_aref(options, config_name##_sym);             \
                                                                                        \
         if (RB_INTEGER_TYPE_P(rb_##config_name)) {                                     \
-            safe->config_name = NUM2LONG(rb_##config_name);                            \
+            safe->config_name         = NUM2LONG(rb_##config_name);                    \
+            safe->config_name##_isset = true;                                          \
         } else if (!NIL_P(rb_##config_name)) {                                         \
             rb_raise(rb_eArgError, "Incorrect value provided for `" #config_name "`"); \
         } else {                                                                       \
-            safe->config_name = Qnil;                                                  \
+            safe->config_name         = 0;                                             \
+            safe->config_name##_isset = false;                                         \
         }                                                                              \
     } while (0);
 
@@ -48,6 +50,11 @@ typedef struct _safe_S {
     long int max_depth;
     long int max_total_elements;
     long int max_json_size_bytes;
+
+    bool max_hash_size_isset;
+    bool max_array_size_isset;
+    bool max_depth_isset;
+    bool max_total_elements_isset;
 
     long int current_hash_size;
     long int current_array_size;
