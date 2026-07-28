@@ -140,58 +140,72 @@ DEFINE_DELEGATED_OBJECT_FUNCTION(add_float);
 DEFINE_DELEGATED_OBJECT_FUNCTION(add_big);
 DEFINE_DELEGATED_OBJECT_FUNCTION(add_str);
 
+// The counting wrappers live in the parser function table, and the option
+// setters of the usual parser write to the same slots, so an option set after
+// the parser was built puts the unwrapped handler back and the limits stop
+// being applied for that kind of value.
+#define WRAP(funcs, slot, wrapper, saved) \
+    do {                                  \
+        if (wrapper != (funcs)->slot) {   \
+            safe->saved = (funcs)->slot;  \
+        }                                 \
+        (funcs)->slot = wrapper;          \
+    } while (0)
+
+static void wrap_funcs(ojParser p, safe_T safe) {
+    Funcs f = &p->funcs[ARRAY_FUN];
+
+    WRAP(f, open_object, safe_open_object, delegated_open_object_func);
+    WRAP(f, open_array, safe_open_array, delegated_open_array_func);
+    // The following overrides are done for counting objects
+    WRAP(f, add_null, safe_add_null, delegated_add_null_func);
+    WRAP(f, add_true, safe_add_true, delegated_add_true_func);
+    WRAP(f, add_false, safe_add_false, delegated_add_false_func);
+    WRAP(f, add_int, safe_add_int, delegated_add_int_func);
+    WRAP(f, add_float, safe_add_float, delegated_add_float_func);
+    WRAP(f, add_big, safe_add_big, delegated_add_big_func);
+    WRAP(f, add_str, safe_add_str, delegated_add_str_func);
+
+    f = &p->funcs[OBJECT_FUN];
+    WRAP(f, open_object, safe_open_object_key, delegated_open_object_key_func);
+    WRAP(f, open_array, safe_open_array_key, delegated_open_array_key_func);
+    WRAP(f, add_null, safe_add_null_key, delegated_add_null_key_func);
+    WRAP(f, add_true, safe_add_true_key, delegated_add_true_key_func);
+    WRAP(f, add_false, safe_add_false_key, delegated_add_false_key_func);
+    WRAP(f, add_int, safe_add_int_key, delegated_add_int_key_func);
+    WRAP(f, add_float, safe_add_float_key, delegated_add_float_key_func);
+    WRAP(f, add_big, safe_add_big_key, delegated_add_big_key_func);
+    WRAP(f, add_str, safe_add_str_key, delegated_add_str_key_func);
+}
+
+static VALUE safe_option(ojParser p, const char *key, VALUE value) {
+    safe_T safe = (safe_T)p->ctx;
+    VALUE  rv;
+
+    if (0 == strcmp("omit_null", key)) {
+        return safe->omit_null ? Qtrue : Qfalse;
+    }
+    rv = safe->delegated_option_func(p, key, value);
+    if (0 == strcmp("omit_null=", key)) {
+        safe->omit_null = (Qtrue == rv);
+    }
+    wrap_funcs(p, safe);
+
+    return rv;
+}
+
 void oj_init_safe_parser(ojParser p, safe_T safe, VALUE options) {
     // Safe parser inherits all members of usual parser
     oj_init_usual(p, &safe->usual);
 
     safe->delegated_start_func = p->start;
     p->start                   = safe_start;
+    safe->omit_null            = false;
 
-    Funcs f;
+    wrap_funcs(p, safe);
 
-    // Array parser functions
-    f                                = &p->funcs[ARRAY_FUN];
-    safe->delegated_open_object_func = f->open_object;
-    f->open_object                   = safe_open_object;
-    safe->delegated_open_array_func  = f->open_array;
-    f->open_array                    = safe_open_array;
-    // The following overrides are done for counting objects
-    safe->delegated_add_null_func  = f->add_null;
-    f->add_null                    = safe_add_null;
-    safe->delegated_add_true_func  = f->add_true;
-    f->add_true                    = safe_add_true;
-    safe->delegated_add_false_func = f->add_false;
-    f->add_false                   = safe_add_false;
-    safe->delegated_add_int_func   = f->add_int;
-    f->add_int                     = safe_add_int;
-    safe->delegated_add_float_func = f->add_float;
-    f->add_float                   = safe_add_float;
-    safe->delegated_add_big_func   = f->add_big;
-    f->add_big                     = safe_add_big;
-    safe->delegated_add_str_func   = f->add_str;
-    f->add_str                     = safe_add_str;
-
-    // Object parser functions
-    f                                    = &p->funcs[OBJECT_FUN];
-    safe->delegated_open_object_key_func = f->open_object;
-    f->open_object                       = safe_open_object_key;
-    safe->delegated_open_array_key_func  = f->open_array;
-    f->open_array                        = safe_open_array_key;
-    // The following overrides are done for counting objects
-    safe->delegated_add_null_key_func  = f->add_null;
-    f->add_null                        = safe_add_null_key;
-    safe->delegated_add_true_key_func  = f->add_true;
-    f->add_true                        = safe_add_true_key;
-    safe->delegated_add_false_key_func = f->add_false;
-    f->add_false                       = safe_add_false_key;
-    safe->delegated_add_int_key_func   = f->add_int;
-    f->add_int                         = safe_add_int_key;
-    safe->delegated_add_float_key_func = f->add_float;
-    f->add_float                       = safe_add_float_key;
-    safe->delegated_add_big_key_func   = f->add_big;
-    f->add_big                         = safe_add_big_key;
-    safe->delegated_add_str_key_func   = f->add_str;
-    f->add_str                         = safe_add_str_key;
+    safe->delegated_option_func = p->option;
+    p->option                   = safe_option;
 
     SET_CONFIG(max_hash_size);
     SET_CONFIG(max_array_size);

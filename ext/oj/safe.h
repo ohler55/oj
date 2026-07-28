@@ -60,6 +60,11 @@ typedef struct _safe_S {
     long int current_array_size;
     long int current_elements_count;
 
+    // omit_null is kept here because the usual parser reports it by looking at
+    // the add_null slot, which is one of the slots wrapped below.
+    bool omit_null;
+
+    VALUE (*delegated_option_func)(struct _ojParser *p, const char *key, VALUE value);
     void (*delegated_start_func)(struct _ojParser *p);
 
     // Array functions

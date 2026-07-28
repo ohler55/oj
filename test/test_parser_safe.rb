@@ -111,4 +111,40 @@ class ParserSafeTest < Minitest::Test
 
     assert_equal([1, 2, 3, 4, 5], parser.parse('[1, 2, 3, 4, 5]'))
   end
+
+  # The limits are applied by wrapping the parser function table, and the
+  # option setters of the usual parser write to the same slots, so setting an
+  # option used to take the counting back out for that kind of value.
+  def test_limits_survive_setting_an_option
+    floats = "[#{(['1.5'] * 100).join(',')}]"
+    parser = Oj::Parser.safe(max_array_size: 10)
+    parser.decimal = :float
+    assert_raises(Oj::Parser::ArraySizeError) { parser.parse(floats) }
+    assert_equal(Float, parser.parse('[1.234567890123456789]').first.class)
+
+    strings = "{#{(0...100).map { |i| %("k#{i}":"v") }.join(',')}}"
+    parser = Oj::Parser.safe(max_hash_size: 10)
+    parser.create_id = '^'
+    assert_raises(Oj::Parser::HashSizeError) { parser.parse(strings) }
+
+    nulls = "{#{(0...100).map { |i| %("k#{i}":null) }.join(',')}}"
+    parser = Oj::Parser.safe(max_total_elements: 10)
+    parser.omit_null = true
+    assert_raises(Oj::Parser::TotalElementsError) { parser.parse(nulls) }
+  end
+
+  # omit_null is reported by looking at the add_null slot, which is one of the
+  # slots the limits are applied through.
+  def test_omit_null_reports_itself
+    parser = Oj::Parser.safe(max_hash_size: 10)
+    refute(parser.omit_null)
+
+    parser.omit_null = true
+    assert(parser.omit_null)
+    assert_empty(parser.parse('{"a":null,"b":null}'))
+
+    parser.omit_null = false
+    refute(parser.omit_null)
+    assert_equal({'a' => nil, 'b' => nil}, parser.parse('{"a":null,"b":null}'))
+  end
 end
