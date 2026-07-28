@@ -223,6 +223,23 @@ class FileJuice < Minitest::Test
     end
   end
 
+  # An escaped key is decoded into a buffer of its own rather than being used
+  # in place, so the copy it is kept in has to be freed with the Val.
+  def test_escaped_keys_in_a_file
+    count = 200
+    json = '{' + (0...count).map { |i| %("k\\u0041ey#{i}":#{i}) }.join(',') + '}'
+
+    Tempfile.create('file_test_escaped.json') do |f|
+      f.write(json)
+      f.close
+
+      loaded = Oj.load_file(f.path, :mode => :object)
+      assert_equal(count, loaded.size)
+      assert_equal('kAey0', loaded.keys.first)
+      assert_equal(count - 1, loaded["kAey#{count - 1}"])
+    end
+  end
+
   # A key short enough to be kept in the Val itself points into the value
   # stack, which is moved when stack_push grows it.
   def test_deep_keys_survive_the_value_stack_growing
