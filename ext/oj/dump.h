@@ -70,9 +70,19 @@ inline static void assure_size(Out out, size_t len) {
     }
 }
 
+// Bytes that fill_indent(), or the dump_opts equivalent used when :indent is a
+// String, writes at this depth. nl_size is array_size or hash_size.
+inline static size_t indent_len(Out out, int depth, size_t nl_size) {
+    if (out->opts->dump_opts.use) {
+        return depth * out->opts->dump_opts.indent_size + nl_size;
+    }
+    return depth * out->indent + 1;
+}
+
 inline static void fill_indent(Out out, int cnt) {
     if (0 < out->indent) {
         cnt *= out->indent;
+        assure_size(out, cnt + 1);
         *out->cur++ = '\n';
         memset(out->cur, ' ', cnt);
         out->cur += cnt;

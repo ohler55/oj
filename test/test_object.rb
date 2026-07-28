@@ -694,6 +694,24 @@ class ObjectJuice < Minitest::Test
     end
   end
 
+  # dump_obj_attrs() wrote the closing indent, and the exception branch wrote
+  # its own with a size that was never assigned, without assuring the buffer
+  # first. A nested graph with a large :indent then ran past the end of it.
+  def test_deep_graph_with_indent
+    obj = 1
+    30.times { obj = Jam.new(obj, 2) }
+    assert_equal(obj, Oj.load(Oj.dump(obj, :mode => :object, :indent => 16), :mode => :object))
+  end
+
+  def test_deep_graph_with_exception_and_indent
+    obj = RuntimeError.new('boom')
+    40.times { obj = Jam.new(obj, 2) }
+    loaded = Oj.load(Oj.dump(obj, :mode => :object, :indent => 16), :mode => :object)
+    40.times { loaded = loaded.x }
+
+    assert_equal('boom', loaded.message)
+  end
+
   def test_json_anonymous_struct
     s = Struct.new(:x, :y)
     obj = s.new(1, 2)

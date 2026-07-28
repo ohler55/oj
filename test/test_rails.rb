@@ -295,4 +295,18 @@ class RailsJuice < Minitest::Test
     Oj.default_options = orig
   end
 
+  # A String :indent forces the numeric one to zero, but dump_array sized the
+  # closing indent from the numeric one, so a deeply nested array wrote past
+  # the end of the output buffer.
+  def test_deep_array_with_string_indent
+    orig = Oj.default_options
+    Oj.default_options = {indent: '        '}
+    obj = [1]
+    200.times { obj = [obj] }
+
+    assert_equal(obj, Oj.load(Oj.dump(obj, mode: :rails), mode: :strict))
+  ensure
+    Oj.default_options = orig
+  end
+
 end

@@ -410,7 +410,7 @@ static void dump_row(VALUE row, StrLen cols, int ccnt, int depth, Out out) {
 
     assure_size(out, 2);
     *out->cur++ = '{';
-    size        = depth * out->indent + 3;
+    size        = indent_len(out, d2, out->opts->dump_opts.array_size) + 3;
     for (i = 0; i < ccnt; i++, cols++) {
         assure_size(out, size);
         if (out->opts->dump_opts.use) {
@@ -433,7 +433,7 @@ static void dump_row(VALUE row, StrLen cols, int ccnt, int depth, Out out) {
             *out->cur++ = ',';
         }
     }
-    size = depth * out->indent + 1;
+    size = indent_len(out, depth, out->opts->dump_opts.array_size) + 1;
     assure_size(out, size);
     if (out->opts->dump_opts.use) {
         if (0 < out->opts->dump_opts.array_size) {
@@ -476,11 +476,7 @@ static void dump_activerecord_result(VALUE obj, int depth, Out out, bool as_ok) 
     rcnt      = RARRAY_LEN(rows);
     assure_size(out, 2);
     *out->cur++ = '[';
-    if (out->opts->dump_opts.use) {
-        size = d2 * out->opts->dump_opts.indent_size + out->opts->dump_opts.array_size + 1;
-    } else {
-        size = d2 * out->indent + 2;
-    }
+    size        = indent_len(out, d2, out->opts->dump_opts.array_size) + 1;
     assure_size(out, 2);
     for (i = 0; i < rcnt; i++) {
         assure_size(out, size);
@@ -503,7 +499,7 @@ static void dump_activerecord_result(VALUE obj, int depth, Out out, bool as_ok) 
         }
     }
     OJ_R_FREE(cols);
-    size = depth * out->indent + 1;
+    size = indent_len(out, depth, out->opts->dump_opts.array_size) + 1;
     assure_size(out, size);
     if (out->opts->dump_opts.use) {
         if (0 < out->opts->dump_opts.array_size) {
@@ -1359,11 +1355,7 @@ static void dump_array(VALUE a, int depth, Out out, bool as_ok) {
     if (0 == cnt) {
         *out->cur++ = ']';
     } else {
-        if (out->opts->dump_opts.use) {
-            size = d2 * out->opts->dump_opts.indent_size + out->opts->dump_opts.array_size + 1;
-        } else {
-            size = d2 * out->indent + 2;
-        }
+        size = indent_len(out, d2, out->opts->dump_opts.array_size) + 1;
         assure_size(out, size * cnt);
         cnt--;
         for (i = 0; i <= cnt; i++) {
@@ -1385,7 +1377,7 @@ static void dump_array(VALUE a, int depth, Out out, bool as_ok) {
                 *out->cur++ = ',';
             }
         }
-        size = depth * out->indent + 1;
+        size = indent_len(out, depth, out->opts->dump_opts.array_size) + 1;
         assure_size(out, size);
         if (out->opts->dump_opts.use) {
             if (0 < out->opts->dump_opts.array_size) {
