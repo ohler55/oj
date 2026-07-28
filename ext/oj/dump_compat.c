@@ -299,9 +299,10 @@ static ID message_id   = 0;
 static ID backtrace_id = 0;
 
 static void exception_alt(VALUE obj, int depth, Out out) {
-    int    d3      = depth + 2;
-    size_t size    = d3 * out->indent + 2;
-    size_t sep_len = out->opts->dump_opts.before_size + out->opts->dump_opts.after_size + 2;
+    int            d3      = depth + 2;
+    size_t         size    = d3 * out->indent + 2;
+    size_t         sep_len = out->opts->dump_opts.before_size + out->opts->dump_opts.after_size + 2;
+    volatile VALUE bt;
 
     if (0 == message_id) {
         message_id   = rb_intern("message");
@@ -332,7 +333,12 @@ static void exception_alt(VALUE obj, int depth, Out out) {
     if (0 < out->opts->dump_opts.after_size) {
         APPEND_CHARS(out->cur, out->opts->dump_opts.after_sep, out->opts->dump_opts.after_size);
     }
-    dump_array(rb_funcall(obj, backtrace_id, 0), depth, out, false);
+    bt = rb_funcall(obj, backtrace_id, 0);
+    if (T_ARRAY == rb_type(bt)) {
+        dump_array(bt, depth, out, false);
+    } else {
+        oj_dump_nil(Qnil, depth, out, false);
+    }
     fill_indent(out, depth);
     *out->cur++ = '}';
     *out->cur   = '\0';
