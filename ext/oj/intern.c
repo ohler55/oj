@@ -188,6 +188,9 @@ static VALUE resolve_classname(VALUE mod, const char *classname, int auto_define
 
     if (rb_const_defined_at(mod, ci)) {
         clas = rb_const_get_at(mod, ci);
+        if (!RB_TYPE_P(clas, T_CLASS) && !RB_TYPE_P(clas, T_MODULE)) {
+            clas = Qundef;
+        }
     } else if (auto_define) {
         clas = rb_define_class_under(mod, classname, oj_bag_class);
     } else {
