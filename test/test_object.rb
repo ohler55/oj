@@ -283,6 +283,21 @@ class ObjectJuice < Minitest::Test
     dump_and_load(:":xyz", false)
   end
 
+  # The value of a ^m tag is a colon followed by the symbol name. An empty one
+  # left nothing to strip the colon from and rb_intern3() was handed len - 1.
+  def test_empty_symbol_tag
+    assert_equal(:abc, Oj.load('{"^m":":abc"}', :mode => :object))
+    assert_equal({'^m' => ''}, Oj.load('{"^m":""}', :mode => :object))
+  end
+
+  # Val.klen was a uint16_t, so a key of 65,536 bytes wrapped to zero. The key
+  # came back empty and calc_hash_key() handed rb_intern3() a length of -1.
+  def test_long_key
+    name = 'A' * 65_536
+    assert_equal({name.to_sym => 1}, Oj.load(%({":#{name}":1}), :mode => :object))
+    assert_equal({name => 1}, Oj.load(%({"#{name}":1}), :mode => :object))
+  end
+
   def test_encode
     opts = Oj.default_options
     Oj.default_options = { :ascii_only => false }

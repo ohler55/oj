@@ -31,7 +31,7 @@ inline static long read_long(const char *str, size_t len) {
 static VALUE calc_hash_key(ParseInfo pi, Val kval, char k1) {
     volatile VALUE rkey;
 
-    if (':' == k1) {
+    if (':' == k1 && 0 < kval->klen) {
         return ID2SYM(rb_intern3(kval->key + 1, kval->klen - 1, oj_utf8_encoding));
     }
     if (Yes == pi->options.sym_key) {
@@ -207,7 +207,7 @@ oj_parse_xml_time(const char *str, int len) {
 
 static int hat_cstr(ParseInfo pi, Val parent, Val kval, const char *str, size_t len) {
     const char *key  = kval->key;
-    int         klen = kval->klen;
+    size_t      klen = kval->klen;
 
     if (2 == klen) {
         switch (key[1]) {
@@ -230,7 +230,12 @@ static int hat_cstr(ParseInfo pi, Val parent, Val kval, const char *str, size_t 
             parent->odd_args = oj_odd_alloc_args(odd);
             break;
         }
-        case 'm': parent->val = ID2SYM(rb_intern3(str + 1, len - 1, oj_utf8_encoding)); break;
+        case 'm':
+            if (0 == len) {
+                return 0;
+            }
+            parent->val = ID2SYM(rb_intern3(str + 1, len - 1, oj_utf8_encoding));
+            break;
         case 's': parent->val = rb_utf8_str_new(str, len); break;
         case 'c':  // class
         {
@@ -395,7 +400,7 @@ void oj_set_obj_ivar(Val parent, Val kval, VALUE value) {
 
 static void hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *orig) {
     const char    *key    = kval->key;
-    int            klen   = kval->klen;
+    size_t         klen   = kval->klen;
     Val            parent = stack_peek(&pi->stack);
     volatile VALUE rval   = Qnil;
 
@@ -437,7 +442,7 @@ WHICH_TYPE:
             if (0 != oj_odd_set_arg(parent->odd_args, kval->key, kval->klen, rval)) {
                 char buf[256];
 
-                if ((int)sizeof(buf) - 1 <= klen) {
+                if (sizeof(buf) - 1 <= klen) {
                     klen = sizeof(buf) - 2;
                 }
                 memcpy(buf, key, klen);
@@ -466,7 +471,7 @@ WHICH_TYPE:
 
 static void hash_set_num(ParseInfo pi, Val kval, NumInfo ni) {
     const char    *key    = kval->key;
-    int            klen   = kval->klen;
+    size_t         klen   = kval->klen;
     Val            parent = stack_peek(&pi->stack);
     volatile VALUE rval   = Qnil;
 
@@ -506,7 +511,7 @@ WHICH_TYPE:
             if (0 != oj_odd_set_arg(parent->odd_args, key, klen, rval)) {
                 char buf[256];
 
-                if ((int)sizeof(buf) - 1 <= klen) {
+                if (sizeof(buf) - 1 <= klen) {
                     klen = sizeof(buf) - 2;
                 }
                 memcpy(buf, key, klen);
@@ -535,7 +540,7 @@ WHICH_TYPE:
 
 static void hash_set_value(ParseInfo pi, Val kval, VALUE value) {
     const char *key    = kval->key;
-    int         klen   = kval->klen;
+    size_t      klen   = kval->klen;
     Val         parent = stack_peek(&pi->stack);
 
 WHICH_TYPE:
@@ -591,7 +596,7 @@ WHICH_TYPE:
         } else if (0 != oj_odd_set_arg(parent->odd_args, key, klen, value)) {
             char buf[256];
 
-            if ((int)sizeof(buf) - 1 <= klen) {
+            if (sizeof(buf) - 1 <= klen) {
                 klen = sizeof(buf) - 2;
             }
             memcpy(buf, key, klen);

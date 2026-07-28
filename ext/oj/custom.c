@@ -896,11 +896,11 @@ void oj_dump_custom_val(VALUE obj, int depth, Out out, bool as_ok) {
 
 static void hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, const char *orig) {
     const char *key    = kval->key;
-    int         klen   = kval->klen;
+    size_t      klen   = kval->klen;
     Val         parent = stack_peek(&pi->stack);
 
     if (Qundef == kval->key_val && Yes == pi->options.create_ok && NULL != pi->options.create_id &&
-        *pi->options.create_id == *key && (int)pi->options.create_id_len == klen &&
+        *pi->options.create_id == *key && (size_t)pi->options.create_id_len == klen &&
         0 == strncmp(pi->options.create_id, key, klen)) {
         parent->clas = oj_name2class(pi, str, len, false, rb_eArgError);
         if (2 == klen && '^' == *key && 'o' == key[1]) {
