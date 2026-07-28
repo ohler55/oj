@@ -740,6 +740,8 @@ class ObjectJuice < Minitest::Test
     40.times { loaded = loaded.x }
 
     assert_equal('boom', loaded.message)
+  end
+
   # The uncached resolver formatted the raw name pointer with %s. An escaped
   # class name is decoded into read_escaped_str's stack buffer and is not NUL
   # terminated, so the message ran past it into uninitialized stack memory.
