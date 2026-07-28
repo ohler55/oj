@@ -198,6 +198,12 @@ static void read_hash(ParseInfo pi, const char *key) {
     } else {
         while (1) {
             next_non_white(pi);
+            if ('"' != *pi->s) {
+                if (pi->has_error) {
+                    call_error("invalid format, expected a key", pi, __FILE__, __LINE__);
+                }
+                raise_error("invalid format, expected a key", pi->str, pi->s);
+            }
             ks = read_quoted_value(pi);
             next_non_white(pi);
             if (':' == *pi->s) {
