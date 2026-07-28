@@ -240,6 +240,23 @@ class FileJuice < Minitest::Test
     end
   end
 
+  # A token that is being protected from the head of the reader buffer gave
+  # oj_reader_read() a shift of -1, and the shift is unsigned, so instead of
+  # growing the buffer it pushed tail past end.
+  def test_long_number_at_the_start_of_a_file
+    [4093, 100_000].each do |digits|
+      json = '1' * digits
+
+      Tempfile.create('file_test_bignum.json') do |f|
+        f.write(json)
+        f.close
+
+        assert_equal(json.to_i, Oj.load_file(f.path), digits)
+        assert_equal(json.to_i, File.open(f.path) { |io| Oj.load(io) }, digits)
+      end
+    end
+  end
+
   # A key short enough to be kept in the Val itself points into the value
   # stack, which is moved when stack_push grows it.
   def test_deep_keys_survive_the_value_stack_growing

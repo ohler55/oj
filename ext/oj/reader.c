@@ -88,8 +88,8 @@ void oj_reader_init(Reader reader, VALUE io, int fd, bool to_s) {
 }
 
 int oj_reader_read(Reader reader) {
-    int    err;
-    size_t shift = 0;
+    int       err;
+    ptrdiff_t shift = 0;
 
     if (0 == reader->read_func) {
         return -1;
