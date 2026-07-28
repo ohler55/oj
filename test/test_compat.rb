@@ -642,6 +642,26 @@ class CompatJuice < Minitest::Test
     assert_raises(TypeError) { Oj.dump(obj, mode: :compat) }
   end
 
+  # An exception that was never raised has a nil backtrace, and exception_alt()
+  # handed that straight to dump_array().
+  def test_exception_without_a_backtrace
+    Oj.add_to_json(Exception)
+
+    assert_equal('{"json_class":"RuntimeError","m":"boom","b":null}',
+                 Oj.dump(RuntimeError.new('boom'), :mode => :compat))
+
+    raised = begin
+      raise 'raised'
+    rescue StandardError => e
+      e
+    end
+    json = Oj.dump(raised, :mode => :compat)
+    assert_match(/"m":"raised"/, json)
+    assert_match(/"b":\["/, json)
+  ensure
+    Oj.remove_to_json(Exception)
+  end
+
   def dump_and_load(obj, trace=false)
     json = Oj.dump(obj)
     puts json if trace
