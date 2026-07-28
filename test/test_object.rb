@@ -1034,6 +1034,28 @@ class ObjectJuice < Minitest::Test
   # An odd class such as Date is rebuilt with a create function when loaded so
   # it can not be the target of a circular reference. It must be dumped in full
   # each time it is encountered instead of leaving a dangling "^r".
+  # Ids start at 1, so id 0 is not a reference. The guard let it through and
+  # oj_circ_array_get() read objs[-1].
+  def test_circular_ref_zero
+    [%({"a":"^r0"}), %(["^r0"])].each do |json|
+      err = assert_raises(Oj::ParseError, json) do
+        Oj.load(json, :mode => :object, :circular => true)
+      end
+      assert_match(/\Anot a valid ID number/, err.message, json)
+    end
+  end
+
+  # The array is indexed by the id, so an id far past the objects the document
+  # actually has sized an allocation from a number the document picked.
+  def test_circular_id_out_of_sequence
+    json = %([{"^i":1000000,"a":1},"^r1000000"])
+    assert_equal([{'a' => 1}, nil], Oj.load(json, :mode => :object, :circular => true))
+
+    json = %([{"^i":1,"a":1},"^r1"])
+    loaded = Oj.load(json, :mode => :object, :circular => true)
+    assert_same(loaded[0], loaded[1])
+  end
+
   def test_circular_shared_date
     date = Date.new(2026, 7, 6)
     json = Oj.dump({ 'a' => { 'x' => date }, 'b' => { 'x' => date } }, :mode => :object, :circular => true)
