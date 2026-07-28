@@ -365,6 +365,21 @@ class ObjectJuice < Minitest::Test
     assert_equal({"a\nb" => true, "c\td" => false}, obj)
   end
 
+  # A path segment that resolved to something other than a class or module was
+  # passed to rb_const_defined_at() as the scope for the next segment, which
+  # reads whatever it is given as an RClass.
+  def test_non_module_in_class_path
+    [true, false].each do |cache|
+      opts = {:mode => :object, :class_cache => cache}
+      assert_equal({}, Oj.load('{"^o":"Float::DIG::X"}', opts))
+
+      err = assert_raises(ArgumentError) { Oj.load('{"^o":"Float::DIG"}', opts) }
+      assert_match(/is not defined/, err.message)
+
+      assert_equal(Oj, Oj.load('{"^c":"Oj"}', opts))
+    end
+  end
+
   def test_bignum_object
     dump_and_load(7 ** 55, false)
   end
