@@ -32,7 +32,8 @@ static VALUE resolve_classpath(ParseInfo pi, const char *name, size_t len, int a
     VALUE       clas;
     char       *end = class_name + sizeof(class_name) - 1;
     char       *s;
-    const char *n = name;
+    const char *n    = name;
+    size_t      nlen = len;
 
     clas = rb_cObject;
     for (s = class_name; 0 < len; n++, len--) {
@@ -55,7 +56,12 @@ static VALUE resolve_classpath(ParseInfo pi, const char *name, size_t len, int a
     }
     *s = '\0';
     if (Qundef == (clas = resolve_classname(clas, class_name, auto_define))) {
-        oj_set_error_at(pi, error_class, __FILE__, __LINE__, "class %s is not defined", name);
+        if (sizeof(class_name) <= nlen) {
+            nlen = sizeof(class_name) - 1;
+        }
+        memcpy(class_name, name, nlen);
+        class_name[nlen] = '\0';
+        oj_set_error_at(pi, error_class, __FILE__, __LINE__, "class '%s' is not defined", class_name);
         if (Qnil != error_class) {
             pi->err_class = error_class;
         }
