@@ -223,6 +223,30 @@ class FileJuice < Minitest::Test
     end
   end
 
+  # A key short enough to be kept in the Val itself points into the value
+  # stack, which is moved when stack_push grows it.
+  def test_deep_keys_survive_the_value_stack_growing
+    depth = 10_000
+    json = +''
+    depth.times { |i| json << %({"key_at_level_#{i}":) }
+    json << '1' << ('}' * depth)
+
+    Tempfile.create('file_test_deep.json') do |f|
+      f.write(json)
+      f.close
+
+      obj = Oj.load_file(f.path, :mode => :object)
+      keys = []
+      while obj.is_a?(Hash)
+        keys << obj.keys.first
+        obj = obj.values.first
+      end
+      assert_equal(depth, keys.size)
+      assert_equal((0...depth).map { |i| "key_at_level_#{i}" }, keys)
+      assert_equal(1, obj)
+    end
+  end
+
   def dump_and_load(obj, trace=false)
     filename = File.join(__dir__, 'file_test.json')
     File.open(filename, 'w') { |f|

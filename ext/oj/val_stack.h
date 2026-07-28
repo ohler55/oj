@@ -70,9 +70,11 @@ inline static void stack_cleanup(ValStack stack) {
 
 inline static void stack_push(ValStack stack, VALUE val, ValNext next) {
     if (stack->end <= stack->tail) {
-        size_t len  = stack->end - stack->head;
-        size_t toff = stack->tail - stack->head;
-        Val    head = stack->head;
+        size_t      len  = stack->end - stack->head;
+        size_t      toff = stack->tail - stack->head;
+        Val         head = stack->head;
+        const char *old  = (const char *)stack->head;
+        size_t      i;
 
         // A realloc can trigger a GC so make sure it happens outside the lock
         // but lock before changing pointers.
@@ -81,6 +83,13 @@ inline static void stack_push(ValStack stack, VALUE val, ValNext next) {
             memcpy(head, stack->base, sizeof(struct _val) * len);
         } else {
             OJ_R_REALLOC_N(head, struct _val, len + STACK_INC);
+        }
+        // A key short enough to be kept in the Val itself points into the
+        // block that just moved.
+        for (i = 0; i < toff; i++) {
+            if (old <= head[i].key && head[i].key < old + sizeof(struct _val) * len) {
+                head[i].key = head[i].karray;
+            }
         }
 #ifdef HAVE_PTHREAD_MUTEX_INIT
         pthread_mutex_lock(&stack->mutex);
