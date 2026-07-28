@@ -6,8 +6,13 @@
 
 #include <ruby.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #define CACHE_MAX_KEY 35
+
+extern uint64_t oj_hash_seed;
+
+extern void oj_hash_seed_init(void);
 
 struct _cache;
 typedef struct _cache *Cache;

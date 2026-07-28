@@ -97,6 +97,8 @@ static const rb_data_type_t oj_cache_type = {
 };
 
 void oj_hash_init(void) {
+    oj_hash_seed_init();
+
     VALUE cache_class = rb_define_class_under(Oj, "Cache", rb_cObject);
     rb_undef_alloc_func(cache_class);
 
@@ -151,7 +153,7 @@ ID oj_attr_intern(const char *key, size_t len) {
 static uint64_t hash_calc(const uint8_t *key, size_t len) {
     const uint8_t *end     = key + len;
     const uint8_t *endless = key + (len & 0xFFFFFFFC);
-    uint64_t       h       = (uint64_t)len;
+    uint64_t       h       = (uint64_t)len ^ oj_hash_seed;
     uint64_t       k;
 
     while (key < endless) {

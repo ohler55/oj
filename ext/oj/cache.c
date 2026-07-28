@@ -28,6 +28,22 @@
 // almost the Murmur hash algorithm
 #define M 0x5bd1e995
 
+uint64_t oj_hash_seed = 0;
+
+void oj_hash_seed_init(void) {
+    static bool seeded = false;
+
+    if (seeded) {
+        return;
+    }
+    seeded = true;
+#if HAVE_RB_HASH_START
+    oj_hash_seed = (uint64_t)rb_hash_start(0);
+#else
+    oj_hash_seed = (uint64_t)NUM2LL(rb_funcall(rb_str_new_cstr("oj"), rb_intern("hash"), 0));
+#endif
+}
+
 typedef struct _slot {
     struct _slot     *next;
     VALUE             val;
@@ -62,7 +78,7 @@ void cache_set_form(Cache c, VALUE (*form)(const char *str, size_t len)) {
 static uint64_t hash_calc(const uint8_t *key, size_t len) {
     const uint8_t *end     = key + len;
     const uint8_t *endless = key + (len & 0xFFFFFFFC);
-    uint64_t       h       = (uint64_t)len;
+    uint64_t       h       = (uint64_t)len ^ oj_hash_seed;
     uint64_t       k;
 
     while (key < endless) {
