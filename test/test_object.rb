@@ -724,6 +724,21 @@ class ObjectJuice < Minitest::Test
     end
   end
 
+  # The uncached resolver formatted the raw name pointer with %s. An escaped
+  # class name is decoded into read_escaped_str's stack buffer and is not NUL
+  # terminated, so the message ran past it into uninitialized stack memory.
+  def test_class_name_error_stops_at_the_name
+    esc  = 92.chr + 'u0043' # an escaped C, to force the decode onto the stack
+    json = '{"^o":"NoSu' + esc + 'hClass"}'
+
+    [false, true].each do |cache|
+      err = assert_raises(ArgumentError) do
+        Oj.load(json, :mode => :object, :class_cache => cache)
+      end
+      assert_match(/\Aclass 'NoSuChClass' is not defined/, err.message)
+    end
+  end
+
   def test_json_anonymous_struct
     s = Struct.new(:x, :y)
     obj = s.new(1, 2)
