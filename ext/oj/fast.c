@@ -872,7 +872,7 @@ static bool key_match(const char *pat, const char *key, int plen) {
 static Leaf get_leaf(Leaf *stack, Leaf *lp, const char *path) {
     Leaf leaf = *lp;
 
-    if (MAX_STACK <= lp - stack) {
+    if (MAX_STACK <= (lp + 1) - stack) {
         rb_raise(rb_const_get_at(Oj, rb_intern("DepthError")), "Path too deep. Limit is %d levels.", MAX_STACK);
     }
     if ('\0' != *path) {
@@ -972,7 +972,7 @@ static void each_leaf(Doc doc, VALUE self) {
 }
 
 static int move_step(Doc doc, const char *path, int loc) {
-    if (MAX_STACK <= doc->where - doc->where_path) {
+    if (MAX_STACK <= (doc->where + 1) - doc->where_path) {
         rb_raise(rb_const_get_at(Oj, rb_intern("DepthError")), "Path too deep. Limit is %d levels.", MAX_STACK);
     }
     if ('\0' == *path) {
