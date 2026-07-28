@@ -892,10 +892,10 @@ static void parse(ojParser p, const byte *json, size_t len, bool more) {
         case EXP_DIGIT:
             p->map = exp_map;
             for (; NUM_DIGIT == digit_map[*b]; b++) {
-                int16_t x = p->num.exp * 10 + (int16_t)(*b - '0');
+                int x = p->num.exp * 10 + (*b - '0');
 
                 if (x <= MAX_EXP) {
-                    p->num.exp = x;
+                    p->num.exp = (int16_t)x;
                 } else {
                     big_change(p);
                     p->map = big_exp_map;
