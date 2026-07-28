@@ -88,4 +88,27 @@ class ParserSafeTest < Minitest::Test
 
     assert_equal('Too many elements!', error.message)
   end
+
+  # The limits are kept in a long int and Qnil, the value that stood for
+  # unset, is 4 as a number, so a limit of exactly 4 was ignored.
+  def test_limit_of_four_is_still_a_limit
+    assert_raises(Oj::Parser::ArraySizeError) do
+      Oj::Parser.safe(max_array_size: 4).parse('[1, 2, 3, 4, 5]')
+    end
+    assert_raises(Oj::Parser::HashSizeError) do
+      Oj::Parser.safe(max_hash_size: 4).parse('{ "a": 1, "b": 2, "c": 3, "d": 4, "e": 5 }')
+    end
+    assert_raises(Oj::Parser::DepthError) do
+      Oj::Parser.safe(max_depth: 4).parse('[[[[[1]]]]]')
+    end
+    assert_raises(Oj::Parser::TotalElementsError) do
+      Oj::Parser.safe(max_total_elements: 4).parse('[1, 2, 3, 4, 5]')
+    end
+  end
+
+  def test_no_limit_when_not_given
+    parser = Oj::Parser.safe
+
+    assert_equal([1, 2, 3, 4, 5], parser.parse('[1, 2, 3, 4, 5]'))
+  end
 end

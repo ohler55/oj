@@ -5,7 +5,7 @@ static VALUE max_hash_size_sym, max_array_size_sym, max_depth_sym, max_total_ele
     max_array_size_error_class, max_depth_error_class, max_total_elements_error_class;
 
 static void check_object_size(safe_T safe) {
-    if (NIL_P(safe->max_hash_size)) {
+    if (!safe->max_hash_size_isset) {
         return;
     }
 
@@ -23,7 +23,7 @@ static void check_object_size(safe_T safe) {
 }
 
 static void check_array_size(safe_T safe) {
-    if (NIL_P(safe->max_array_size)) {
+    if (!safe->max_array_size_isset) {
         return;
     }
 
@@ -41,7 +41,7 @@ static void check_array_size(safe_T safe) {
 }
 
 static void check_max_depth(safe_T safe, ojParser p) {
-    if (NIL_P(safe->max_depth) || safe->max_depth >= (p->depth + 1)) {
+    if (!safe->max_depth_isset || safe->max_depth >= (p->depth + 1)) {
         return;
     }
 
@@ -55,7 +55,7 @@ static void check_max_total_elements(safe_T safe) {
     * null, true) are not counted. As a result, `current_elements_count`
     * always holds one less than the actual total.
     */
-    if (NIL_P(safe->max_total_elements) || safe->max_total_elements > safe->current_elements_count) {
+    if (!safe->max_total_elements_isset || safe->max_total_elements > safe->current_elements_count) {
         return;
     }
 
