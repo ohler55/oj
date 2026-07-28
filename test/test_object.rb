@@ -757,6 +757,22 @@ class ObjectJuice < Minitest::Test
     end
   end
 
+  # oj_set_error_at() reserved three bytes for the " (after " it then wrote
+  # eight of, so a class name long enough to put the formatted message in that
+  # window wrote past the end of its 256 byte buffer.
+  def test_long_class_name_error_message
+    (220..232).each do |len|
+      name = 'A' * len
+
+      [%({"^c":"#{name}"}), %({"^u":["#{name}",1]})].each do |json|
+        err = assert_raises(ArgumentError, "#{len} #{json[1, 2]}") do
+          Oj.load(json, :mode => :object)
+        end
+        assert_match(/\Aclass 'A+/, err.message, "#{len} #{json[1, 2]}")
+      end
+    end
+  end
+
   def test_json_anonymous_struct
     s = Struct.new(:x, :y)
     obj = s.new(1, 2)
