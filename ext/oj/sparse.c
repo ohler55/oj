@@ -906,6 +906,7 @@ CLEANUP:
     if (0 != pi->circ_array) {
         oj_circ_array_free(pi->circ_array);
     }
+    reader_cleanup(&pi->rd);
     stack_cleanup(&pi->stack);
     // A :match_string option builds a chain of regexps for this call that has to
     // be freed. Without the option the member aliases the chain owned by the
