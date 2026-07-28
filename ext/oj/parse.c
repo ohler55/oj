@@ -414,6 +414,11 @@ static void read_escaped_str(ParseInfo pi, const char *start) {
 
         if ('\\' == *s) {
             s++;
+            if (pi->end <= s) {
+                oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "quoted string not terminated");
+                buf_cleanup(&buf);
+                return;
+            }
             switch (*s) {
             case 'n': buf_append(&buf, '\n'); break;
             case 'r': buf_append(&buf, '\r'); break;
