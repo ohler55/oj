@@ -226,6 +226,16 @@ class SajTest < Minitest::Test
     end
   end
 
+  # read_quoted_value() steps over the opening quote before it checks anything,
+  # so a document that ends where a key belongs has to be rejected before the
+  # call rather than inside it.
+  def test_key_expected_at_end
+    ['{', '{ ', '[{"a":[{', '{"a":1,'].each do |json|
+      err = assert_raises(Oj::ParseError, json) { Oj.saj_parse(Oj::Saj.new, json) }
+      assert_match(/\Ainvalid format, expected a key at line 1, column #{json.size + 1} /, err.message, json)
+    end
+  end
+
   def test_comment_not_terminated
     ['/*', '/* comment', '[1,2] /* comment'].each do |json|
       assert_raises(Oj::ParseError, json) { Oj.saj_parse(Oj::Saj.new, json) }
