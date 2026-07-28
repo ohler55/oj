@@ -35,8 +35,8 @@ typedef struct _val {
     const char    *classname;
     VALUE          clas;
     OddArgs        odd_args;
-    uint16_t       klen;
-    uint16_t       clen;
+    size_t         klen;
+    size_t         clen;
     char           next;  // ValNext
     char           k1;    // first original character in the key
     char           kalloc;
