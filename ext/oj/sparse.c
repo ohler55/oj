@@ -290,13 +290,13 @@ static void read_escaped_str(ParseInfo pi) {
         case NEXT_HASH_NEW:
         case NEXT_HASH_KEY:
             if (Qundef == (parent->key_val = pi->hash_key(pi, buf.head, buf_len(&buf)))) {
-                parent->klen = buf_len(&buf);
-                parent->key  = malloc(parent->klen + 1);
-                memcpy((char *)parent->key, buf.head, parent->klen);
-                *(char *)(parent->key + parent->klen) = '\0';
+                parent->klen   = buf_len(&buf);
+                parent->key    = oj_strndup(buf.head, parent->klen);
+                parent->kalloc = 1;
             } else {
-                parent->key  = "";
-                parent->klen = 0;
+                parent->key    = "";
+                parent->klen   = 0;
+                parent->kalloc = 0;
             }
             parent->k1   = *pi->rd.str;
             parent->next = NEXT_HASH_COLON;
