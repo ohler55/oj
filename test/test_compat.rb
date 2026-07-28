@@ -336,6 +336,14 @@ class CompatJuice < Minitest::Test
     assert_equal({'subtext' => '"404er” w k 3 a'}, obj)
   end
 
+  def test_unterminated_string_ending_in_backslash
+    # unpack1 returns a string whose capacity equals its length, so the byte
+    # after the terminator is outside the allocation and valgrind sees the read.
+    json = ('{"a":"' + ('b' * 700) + '\\').unpack1('a*')
+    err = assert_raises(EncodingError) { Oj.load(json, mode: :compat) }
+    assert_match(/quoted string not terminated/, err.message)
+  end
+
   def test_hash_escaping
     json = Oj.to_json({'<>' => '<>'}, mode: :compat)
     assert_equal('{"<>":"<>"}', json)
