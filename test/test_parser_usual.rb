@@ -83,6 +83,24 @@ class UsualTest < Minitest::Test
     assert_equal(BigDecimal, doc.class)
   end
 
+  # The exponent is an int16_t, and it used to be narrowed before it was
+  # compared against MAX_EXP, so a wrapped value passed the bound and the
+  # digits after the wrap chose the result.
+  def test_exponent_past_the_limit
+    p = Oj::Parser.new(:usual)
+    [
+      ['1e327683', BigDecimal('1e327683')],
+      ['1e32768', BigDecimal('1e32768')],
+      ['1e-327683', BigDecimal('1e-327683')],
+      ['1e-32768', BigDecimal('1e-32768')],
+      ['1e4933', BigDecimal('1e4933')],
+    ].each do |json, expected|
+      doc = p.parse(json)
+      assert_equal(BigDecimal, doc.class, json)
+      assert_equal(expected, doc, json)
+    end
+  end
+
   def test_array
     p = Oj::Parser.new(:usual)
     [
