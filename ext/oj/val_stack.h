@@ -62,6 +62,16 @@ inline static int stack_empty(ValStack stack) {
 }
 
 inline static void stack_cleanup(ValStack stack) {
+    Val v;
+
+    // end_hash() frees the args of a completed odd class. Anything still here
+    // belongs to a parse that was abandoned part way through.
+    for (v = stack->head; v < stack->tail; v++) {
+        if (NULL != v->odd_args) {
+            oj_odd_free(v->odd_args);
+            v->odd_args = NULL;
+        }
+    }
     if (stack->base != stack->head) {
         OJ_R_FREE(stack->head);
         stack->head = NULL;
