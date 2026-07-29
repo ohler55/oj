@@ -953,9 +953,13 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
             rb_raise(rb_eArgError, ":decimal_class must be BigDecimal or Float.");
         }
     } else if (create_id_sym == k) {
+        // A per call copy of the options aliases the buffer the default
+        // options own, so only the defaults may free it.
+        bool owned = (&oj_default_options == copts && NULL != copts->create_id && oj_json_class != copts->create_id);
+
         if (Qnil == v) {
-            if (oj_json_class != oj_default_options.create_id && NULL != copts->create_id) {
-                OJ_R_FREE((char *)oj_default_options.create_id);
+            if (owned) {
+                OJ_R_FREE((char *)copts->create_id);
             }
             copts->create_id     = NULL;
             copts->create_id_len = 0;
@@ -963,8 +967,8 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
             const char *str = StringValuePtr(v);
 
             len = RSTRING_LEN(v);
-            if (len != copts->create_id_len || 0 != strcmp(copts->create_id, str)) {
-                if (&oj_default_options == copts && oj_json_class != copts->create_id) {
+            if (NULL == copts->create_id || len != copts->create_id_len || 0 != strcmp(copts->create_id, str)) {
+                if (owned) {
                     OJ_R_FREE((char *)copts->create_id);
                 }
                 copts->create_id = OJ_R_ALLOC_N(char, len + 1);

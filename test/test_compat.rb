@@ -662,6 +662,29 @@ class CompatJuice < Minitest::Test
     Oj.remove_to_json(Exception)
   end
 
+  # A per call :create_id => nil freed the buffer the default options own, so
+  # the default was left pointing at freed memory and the second call freed it
+  # again.
+  def test_create_id_nil_per_call_leaves_the_default_alone
+    Oj.default_options = {:create_id => 'my_class'}
+
+    2.times { Oj.dump({'a' => 1}, :create_id => nil) }
+    assert_equal('my_class', Oj.default_options[:create_id])
+  end
+
+  # Clearing the create_id leaves it NULL, and a replacement of the same length
+  # as the cleared one reached a strcmp() against that NULL.
+  def test_create_id_set_after_being_cleared
+    Oj.default_options = {:create_id => nil}
+    assert_nil(Oj.default_options[:create_id])
+
+    Oj.default_options = {:create_id => ''}
+    assert_equal('', Oj.default_options[:create_id])
+
+    Oj.default_options = {:create_id => 'back'}
+    assert_equal('back', Oj.default_options[:create_id])
+  end
+
   def dump_and_load(obj, trace=false)
     json = Oj.dump(obj)
     puts json if trace
