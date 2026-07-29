@@ -281,6 +281,13 @@ class FileJuice < Minitest::Test
     end
   end
 
+  # read() returning -1 was stored in a size_t, so the error looked like a
+  # successful read of SIZE_MAX bytes and the uninitialized stack buffer was
+  # parsed over and over.
+  def test_parser_file_on_a_directory
+    assert_raises(IOError) { Oj::Parser.new(:usual).file(__dir__) }
+  end
+
   def dump_and_load(obj, trace=false)
     filename = File.join(__dir__, 'file_test.json')
     File.open(filename, 'w') { |f|
