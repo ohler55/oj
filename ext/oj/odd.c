@@ -195,7 +195,7 @@ int oj_odd_set_arg(OddArgs args, const char *key, size_t klen, VALUE value) {
     int          i;
 
     for (i = args->odd->attr_cnt, np = args->odd->attr_names, vp = args->args; 0 < i; i--, np++, vp++) {
-        if (0 == strncmp(key, *np, klen) && '\0' == *((*np) + klen)) {
+        if (klen == strlen(*np) && 0 == memcmp(key, *np, klen)) {
             *vp = value;
             return 0;
         }

@@ -1189,6 +1189,21 @@ class ObjectJuice < Minitest::Test
     assert_equal({'a' => 1}, h)
   end
 
+  # oj_odd_set_arg() compared the key with strncmp(), which stops at the NUL the
+  # key carries, and then looked for the end of the registered name at the key
+  # length. A key that starts with a registered name, a NUL and any amount of
+  # padding read that many bytes past the name, and was taken for the attribute
+  # whenever the byte it landed on happened to be zero.
+  def test_odd_key_with_an_embedded_nul
+    (0..1000).each do |pad|
+      json = %({"^O":"Rational","numerator\\u0000#{'A' * pad}":3,"denominator":1})
+      assert_raises(Oj::ParseError, "a key holding a NUL was taken as numerator with #{pad} bytes of padding") do
+        Oj.load(json, :mode => :object)
+      end
+    end
+    assert_equal(Rational(3, 1), Oj.load(%({"^O":"Rational","numerator":3,"denominator":1}), :mode => :object))
+  end
+
   def test_auto_string
     s = AutoStrung.new('Pete', true)
     dump_and_load(s, false)
