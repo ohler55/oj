@@ -1732,6 +1732,11 @@ void oj_dump_float(VALUE obj, int depth, Out out, bool as_ok) {
 size_t oj_dump_float_printf(char *buf, size_t blen, VALUE obj, double d, const char *format) {
     size_t cnt = snprintf(buf, blen, format, d);
 
+    // snprintf() returns the length the output would have needed, which is
+    // more than it wrote when the format asks for more room than buf has.
+    if (blen <= cnt) {
+        cnt = blen - 1;
+    }
     // Round off issues at 16 significant digits so check for obvious ones of
     // 0001 and 9999.
     if (17 <= cnt && (0 == strcmp("0001", buf + cnt - 4) || 0 == strcmp("9999", buf + cnt - 4))) {

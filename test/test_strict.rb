@@ -12,6 +12,7 @@ require 'minitest/autorun'
 require 'stringio'
 require 'date'
 require 'bigdecimal'
+require 'tempfile'
 require 'oj'
 
 class StrictJuice < Minitest::Test
@@ -445,6 +446,24 @@ class StrictJuice < Minitest::Test
   def test_omit_nil
     json = Oj.dump({'x' => {'a' => 1, 'b' => nil }, 'y' => nil}, :omit_nil => true)
     assert_equal(%|{"x":{"a":1}}|, json)
+  end
+
+  # snprintf() reports the length the output would have needed, and that was
+  # used as the number of bytes to copy out of a 64 byte stack buffer. The
+  # dumped String stops at the NUL the truncation left, but to_file writes the
+  # whole length and so wrote the stack bytes that followed it.
+  def test_float_format_wider_than_the_buffer
+    json = Oj.dump([1.5, 2, 3], :mode => :strict, :float_format => '%.99f')
+    assert_equal([1.5, 2, 3], Oj.load(json))
+
+    Tempfile.create('strict_float_format.json') do |f|
+      f.close
+
+      Oj.to_file(f.path, [1.5, 2, 3], :mode => :strict, :float_format => '%.99f')
+      written = File.binread(f.path)
+      assert_nil(written.index("\0"), 'wrote past the end of the float buffer')
+      assert_equal(json, written)
+    end
   end
 
   def dump_and_load(obj, trace=false)
