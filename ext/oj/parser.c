@@ -1556,21 +1556,19 @@ static VALUE parser_file(VALUE self, VALUE filename) {
         return p->result(p);
     }
 #endif
-    byte   buf[16385];
-    size_t size = sizeof(buf) - 1;
-    size_t rsize;
+    byte    buf[16385];
+    size_t  size = sizeof(buf) - 1;
+    ssize_t rsize;
 
     while (true) {
-        if (0 < (rsize = read(fd, buf, size))) {
-            buf[rsize] = '\0';
-            parse(p, buf, rsize, true);
+        if (0 > (rsize = read(fd, buf, size))) {
+            rb_raise(rb_eIOError, "error reading from %s", path);
         }
-        if (rsize <= 0) {
-            if (0 != rsize) {
-                rb_raise(rb_eIOError, "error reading from %s", path);
-            }
+        if (0 == rsize) {
             break;
         }
+        buf[rsize] = '\0';
+        parse(p, buf, rsize, true);
     }
     return p->result(p);
 }
