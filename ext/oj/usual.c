@@ -831,6 +831,7 @@ static VALUE opt_create_id_set(ojParser p, VALUE value) {
     Usual d = (Usual)p->ctx;
 
     if (Qnil == value) {
+        OJ_R_FREE(d->create_id);
         d->create_id                 = NULL;
         d->create_id_len             = 0;
         p->funcs[OBJECT_FUN].add_str = add_str_key;
@@ -850,12 +851,15 @@ static VALUE opt_create_id_set(ojParser p, VALUE value) {
         if (1 << (8 * sizeof(d->create_id_len)) <= len) {
             rb_raise(rb_eArgError, "The create_id values is limited to %d bytes.", 1 << (8 * sizeof(d->create_id_len)));
         }
-        d->create_id_len                  = (uint8_t)len;
+        char *prev = d->create_id;
+
         d->create_id                      = str_dup(RSTRING_PTR(value), len);
+        d->create_id_len                  = (uint8_t)len;
         p->funcs[OBJECT_FUN].add_str      = add_str_key_create;
         p->funcs[TOP_FUN].close_object    = close_object_create;
         p->funcs[ARRAY_FUN].close_object  = close_object_create;
         p->funcs[OBJECT_FUN].close_object = close_object_create;
+        OJ_R_FREE(prev);
     }
     return opt_create_id(p, value);
 }

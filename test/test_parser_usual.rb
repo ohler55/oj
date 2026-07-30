@@ -289,6 +289,25 @@ class UsualTest < Minitest::Test
     assert_equal('UsualTest::MyClass{a: true b: false}', doc.to_s)
   end
 
+  # The delegate keeps its own copy of create_id, and setting it again replaced
+  # that copy without freeing the previous one. Setting it to nil dropped it as
+  # well. rake test:valgrind is what catches the leak.
+  def test_create_id_set_again
+    p = Oj::Parser.new(:usual)
+
+    100.times do |i|
+      p.create_id = "id#{i}"
+      assert_equal("id#{i}", p.create_id)
+
+      p.create_id = nil
+      assert_nil(p.create_id)
+    end
+
+    p.create_id = '^'
+    doc = p.parse('{"a":true,"^":"UsualTest::MyClass","b":false}')
+    assert_equal('UsualTest::MyClass{a: true b: false}', doc.to_s)
+  end
+
   def test_missing_class
     p = Oj::Parser.new(:usual, create_id: '^')
     json = '{"a":true,"^":"Auto","b":false}'
