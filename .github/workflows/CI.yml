@@ -49,6 +49,7 @@ jobs:
       BUNDLE_GEMFILE: gemfiles/${{ matrix.gemfile }}.gemfile
       MAKE: make -j 2
     runs-on: ${{ matrix.os }}-latest
+    timeout-minutes: 30
     continue-on-error: ${{ matrix.ruby == 'head'}}
     name: Ruby ${{ matrix.ruby }} (${{ matrix.os }}${{ matrix.gemfile != 'no_rails' && ', ' || '' }}${{ matrix.gemfile != 'no_rails' && matrix.gemfile || '' }})
     steps:
