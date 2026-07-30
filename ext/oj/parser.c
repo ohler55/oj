@@ -1524,6 +1524,39 @@ static VALUE parser_load(VALUE self, VALUE reader) {
     return p->result(p);
 }
 
+struct _fileParse {
+    ojParser    p;
+    const char *path;
+    int         fd;
+};
+
+static VALUE file_parse(VALUE x) {
+    struct _fileParse *fp = (struct _fileParse *)x;
+    byte               buf[16385];
+    size_t             size = sizeof(buf) - 1;
+    ssize_t            rsize;
+
+    while (true) {
+        if (0 > (rsize = read(fp->fd, buf, size))) {
+            rb_raise(rb_eIOError, "error reading from %s", fp->path);
+        }
+        if (0 == rsize) {
+            break;
+        }
+        buf[rsize] = '\0';
+        parse(fp->p, buf, rsize, true);
+    }
+    validate_document_end(fp->p);
+
+    return fp->p->result(fp->p);
+}
+
+static VALUE file_close(VALUE x) {
+    close(((struct _fileParse *)x)->fd);
+
+    return Qnil;
+}
+
 /* Document-method: file(filename)
  * call-seq: file(filename)
  *
@@ -1532,9 +1565,10 @@ static VALUE parser_load(VALUE self, VALUE reader) {
  * Returns the result according to the delegate of the parser.
  */
 static VALUE parser_file(VALUE self, VALUE filename) {
-    ojParser    p;
-    const char *path;
-    int         fd;
+    struct _fileParse fp;
+    ojParser          p;
+    const char       *path;
+    int               fd;
 
     TypedData_Get_Struct(self, struct _ojParser, &oj_parser_type, p);
 
@@ -1553,26 +1587,15 @@ static VALUE parser_file(VALUE self, VALUE filename) {
         // Use threaded version.
         // TBD only if has pthreads
         // TBD parse_large(p, fd);
+        close(fd);
         return p->result(p);
     }
 #endif
-    byte    buf[16385];
-    size_t  size = sizeof(buf) - 1;
-    ssize_t rsize;
+    fp.p    = p;
+    fp.path = path;
+    fp.fd   = fd;
 
-    while (true) {
-        if (0 > (rsize = read(fd, buf, size))) {
-            rb_raise(rb_eIOError, "error reading from %s", path);
-        }
-        if (0 == rsize) {
-            break;
-        }
-        buf[rsize] = '\0';
-        parse(p, buf, rsize, true);
-    }
-    validate_document_end(p);
-
-    return p->result(p);
+    return rb_ensure(file_parse, (VALUE)&fp, file_close, (VALUE)&fp);
 }
 
 /* Document-method: just_one
