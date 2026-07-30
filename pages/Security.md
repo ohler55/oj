@@ -11,10 +11,24 @@ auto defined is used with an untrusted source. The `Oj.safe_load()` method
 sets and uses the most strict and safest options. It should be used by
 developers who find it difficult to understand the options available in Oj.
 
-The options in Oj are designed to provide flexibility to the developer. This
-flexibility allows Objects to be serialized and deserialized. No methods are
-ever called on these created Objects but that does not stop the developer from
-calling methods on them. As in any system, check your inputs before working with
-them. Taking an arbitrary `String` from a user and evaluating it is never a good
-idea from an unsecure source. The same is true for `Object` attributes as they
-are not more than `String`s. Always check inputs from untrusted sources.
+The options in Oj are designed to provide flexibility to the developer. This flexibility allows Objects to be serialized and deserialized. An Object is deserialized by allocating it without calling its initializer and then setting its instance variables. A few methods are called on what that builds: `exception` and `set_backtrace` on an `Exception`, and `replace` on a subclass of `Hash`, `Array` or `String` for a `self` key. As in any system, check your inputs before working with them. Taking an arbitrary `String` from a user and evaluating it is never a good idea from an unsecure source. The same is true for `Object` attributes as they are not more than `String`s. Always check inputs from untrusted sources.
+
+## The mode a document is loaded in
+
+`Oj.load()` uses the `:object` mode unless the mode is changed. That mode takes the class of an Object from the document, so the document decides which of the classes already loaded in the process is allocated and what its instance variables are. Classes are looked up and not created unless `:auto_define` is turned on.
+
+For a document from an untrusted source, ask for a mode that does not do that:
+
+```ruby
+Oj.load(json, mode: :strict)
+Oj.strict_load(json)
+Oj.safe_load(json)
+```
+
+or set it for the process:
+
+```ruby
+Oj.default_options = {mode: :strict}
+```
+
+`Oj.object_load()` is the explicit form of the current default and stays in `:object` mode whatever the default is set to.
