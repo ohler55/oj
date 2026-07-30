@@ -105,6 +105,22 @@ inline static void next_non_white(ParseInfo pi) {
     }
 }
 
+inline static bool is_value_end(char c) {
+    switch (c) {
+    case '\0':
+    case ' ':
+    case '\t':
+    case '\f':
+    case '\n':
+    case '\r':
+    case '/':
+    case ',':
+    case ']':
+    case '}': return true;
+    default: return false;
+    }
+}
+
 inline static char *ulong_fill(char *s, size_t num) {
     char  buf[32];
     char *b = buf + sizeof(buf) - 1;
@@ -463,17 +479,22 @@ static Leaf read_num(ParseInfo pi) {
     char *start = pi->s;
     int   type  = T_FIXNUM;
     Leaf  leaf;
+    int   dcnt = 0;
+    int   ecnt = 1;
 
-    if ('-' == *pi->s) {
+    // read_next() sends a leading '+' here as well, and Oj.load() takes one.
+    if ('-' == *pi->s || '+' == *pi->s) {
         pi->s++;
     }
     // digits
     for (; '0' <= *pi->s && *pi->s <= '9'; pi->s++) {
+        dcnt++;
     }
     if ('.' == *pi->s) {
         type = T_FLOAT;
         pi->s++;
         for (; '0' <= *pi->s && *pi->s <= '9'; pi->s++) {
+            dcnt++;
         }
     }
     if ('e' == *pi->s || 'E' == *pi->s) {
@@ -481,8 +502,14 @@ static Leaf read_num(ParseInfo pi) {
         if ('-' == *pi->s || '+' == *pi->s) {
             pi->s++;
         }
-        for (; '0' <= *pi->s && *pi->s <= '9'; pi->s++) {
+        for (ecnt = 0; '0' <= *pi->s && *pi->s <= '9'; pi->s++) {
+            ecnt++;
         }
+    }
+    // A float is converted with rb_cstr_to_dbl(), which has to be given
+    // something it can convert.
+    if (T_FLOAT == type && (0 == dcnt || 0 == ecnt || !is_value_end(*pi->s))) {
+        raise_error("invalid number", pi->str, pi->s);
     }
     leaf      = leaf_new(pi->doc, type);
     leaf->str = start;
@@ -670,7 +697,11 @@ static void doc_free(Doc doc) {
 static VALUE protect_open_proc(VALUE x) {
     ParseInfo pi = (ParseInfo)x;
 
-    pi->doc->data   = read_next(pi);  // parse
+    pi->doc->data = read_next(pi);  // parse
+    // read_obj() and read_array() terminate each value where it ends. The top
+    // level value has no closing delimiter to do that on, so a number leaf runs
+    // to the end of the document unless it is terminated here.
+    *pi->s          = '\0';
     *pi->doc->where = pi->doc->data;
     pi->doc->where  = pi->doc->where_path;
     if (rb_block_given_p()) {
