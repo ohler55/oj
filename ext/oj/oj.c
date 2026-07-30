@@ -299,7 +299,8 @@ static VALUE only_array_from_string(const char *str) {
  *   floats, 0 indicates use Ruby
  * - *:float_format* [_String_] the C printf format string for printing floats.
  *   Default follows the float_precision and will be changed if float_precision is
- *   changed. The string can be no more than 6 bytes.
+ *   changed. The string can be no more than 6 bytes and can hold at most one
+ *   directive, which must be one of aAeEfgG and take no argument of its own.
  * - *:use_to_json* [_Boolean_|_nil_] call to_json() methods on dump, default is false
  * - *:use_as_json* [_Boolean_|_nil_] call as_json() methods on dump, default is false
  * - *:use_raw_json* [_Boolean_|_nil_] call raw_json() methods on dump, default is false
@@ -574,7 +575,8 @@ static VALUE get_def_opts(VALUE self) {
  *     when dumping the seconds portion of time.
  *   - *:float_format* [_String_] the C printf format string for printing floats.
  *     Default follows the float_precision and will be changed if float_precision
- *     is changed. The string can be no more than 6 bytes.
+ *     is changed. The string can be no more than 6 bytes and can hold at most one
+ *     directive, which must be one of aAeEfgG and take no argument of its own.
  *   - *:float_precision* [_Fixnum_|_nil_] number of digits of precision when dumping floats, 0 indicates use Ruby.
  *   - *:use_to_json* [_Boolean_|_nil_] call to_json() methods on dump, default is false.
  *   - *:use_as_json* [_Boolean_|_nil_] call as_json() methods on dump, default is false.
@@ -703,6 +705,46 @@ bool set_yesno_options(VALUE key, VALUE value, Options copts) {
         }
     }
     return false;
+}
+
+inline static bool in_set(const char *set, char c) {
+    return '\0' != c && NULL != strchr(set, c);
+}
+
+// The format is used with one double and nothing else, so a directive that
+// asks for anything more takes it from whatever is left in the argument
+// registers. %s reads it as a pointer and %n writes through it.
+static void validate_float_format(const char *str, size_t len) {
+    const char *s   = str;
+    const char *end = str + len;
+    int         cnt = 0;
+
+    for (; s < end; s++) {
+        if ('%' != *s) {
+            continue;
+        }
+        s++;
+        if (s < end && '%' == *s) {
+            continue;
+        }
+        if (1 < ++cnt) {
+            rb_raise(rb_eArgError, ":float_format must not have more than one directive.");
+        }
+        for (; s < end && in_set("-+ #0", *s); s++) {
+        }
+        for (; s < end && '0' <= *s && *s <= '9'; s++) {
+        }
+        if (s < end && '.' == *s) {
+            for (s++; s < end && '0' <= *s && *s <= '9'; s++) {
+            }
+        }
+        if (s < end && 'l' == *s) {
+            s++;
+        }
+        if (end <= s || !in_set("aAeEfgG", *s)) {
+            rb_raise(rb_eArgError, ":float_format directive must be one of aAeEfgG and take no argument of its own.");
+        }
+    }
 }
 
 static const char *make_only_value(VALUE v) {
@@ -1176,6 +1218,7 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
         if (6 < RSTRING_LEN(v)) {
             rb_raise(rb_eArgError, ":float_format must be 6 bytes or less.");
         }
+        validate_float_format(RSTRING_PTR(v), (size_t)RSTRING_LEN(v));
         strncpy(copts->float_fmt, RSTRING_PTR(v), (size_t)RSTRING_LEN(v));
         copts->float_fmt[RSTRING_LEN(v)] = '\0';
     } else if (only_sym == k) {
