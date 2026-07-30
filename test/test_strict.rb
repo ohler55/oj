@@ -466,6 +466,33 @@ class StrictJuice < Minitest::Test
     end
   end
 
+  # The format is handed to snprintf() with one double and nothing else, so a
+  # directive asking for anything more took it from whatever was left in the
+  # argument registers. %s read it as a pointer, %n wrote through it, and %p
+  # and %x printed it.
+  def test_float_format_directives
+    ['%0.15g', '%.3f', '%e', '%E', '%g', '%G', '%a', '%A', '%lf', '%+f', '% f', '%#f',
+     '%-9f', '%09f', '%.f', '%99f', '%9999f', 'x%fy', '%f%%', '%%f', '', 'plain'].each do |fmt|
+      Oj.dump(1.5, :mode => :strict, :float_format => fmt)
+    end
+
+    ['%s', '%n', '%p', '%d', '%i', '%x', '%c', '%hn', '%Lf', '%1$f', '%*f', '%f%f', '%', "%\0f"].each do |fmt|
+      assert_raises(ArgumentError, fmt) { Oj.dump(1.5, :mode => :strict, :float_format => fmt) }
+    end
+  end
+
+  # :float_precision of 0 leaves :float_format empty, and Oj.default_options is
+  # commonly saved and put back.
+  def test_float_format_default_options_round_trip
+    Oj.default_options = {:float_precision => 0}
+    assert_equal('', Oj.default_options[:float_format])
+    Oj.default_options = Oj.default_options
+
+    Oj.default_options = {:float_precision => 16}
+    assert_equal('%0.16g', Oj.default_options[:float_format])
+    Oj.default_options = Oj.default_options
+  end
+
   def dump_and_load(obj, trace=false)
     json = Oj.dump(obj, :indent => 2)
     puts json if trace
