@@ -556,6 +556,17 @@ class CustomJuice < Minitest::Test
     assert_equal(String, Oj.load('"aaa"').class)
   end
 
+  # oj_key_skip() sized an alloca() from the key it was given, so a long key
+  # moved the stack pointer past the end of the stack. A thread gets a smaller
+  # one than the main thread, which is where a request is usually served.
+  def test_only_and_except_with_a_long_key
+    key = 'x' * (4 * 1024 * 1024)
+    hash = {'a' => 1, key => 2}
+
+    assert_equal(%({"a":1}), Thread.new { Oj.dump(hash, :mode => :custom, :only => ['a']) }.value)
+    assert_equal(%({"a":1}), Thread.new { Oj.dump(hash, :mode => :custom, :except => [key]) }.value)
+  end
+
   def dump_and_load(obj, trace=false, options={})
     options = options.merge(:indent => 2, :mode => :custom)
     json = Oj.dump(obj, options)
