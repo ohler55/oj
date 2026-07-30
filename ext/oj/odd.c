@@ -166,7 +166,11 @@ Odd oj_get_oddc(const char *classname, size_t len) {
         if (len == odd->clen && 0 == strncmp(classname, odd->classname, len)) {
             return odd;
         }
-        if (odd->is_module && 0 == strncmp(odd->classname, classname, odd->clen) && ':' == classname[odd->clen]) {
+        // The module test needs a "::" after the module name, so the name has
+        // to be shorter than what it is compared against. Without that the
+        // comparison and the character after it both run past len.
+        if (odd->is_module && odd->clen < len && 0 == strncmp(odd->classname, classname, odd->clen) &&
+            ':' == classname[odd->clen]) {
             return odd;
         }
     }

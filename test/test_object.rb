@@ -5,6 +5,15 @@ $LOAD_PATH << __dir__
 
 require 'helper'
 
+# Registered as an odd class by test_odd_mod_shorter_than_the_module_name. It
+# has to be at the top level for its name to be short enough for a value that
+# is a prefix of it to fit in a document.
+module OddMod
+  def self.direct(h)
+    h
+  end
+end
+
 class ObjectJuice < Minitest::Test
   class Jeez
     attr_accessor :x, :y, :_z
@@ -1187,6 +1196,25 @@ class ObjectJuice < Minitest::Test
     assert_equal(%|{"^O":"ObjectJuice::Ichi::Ni::San::Shi","dump":{"a":1}}|, json)
     h = Oj.load(json, :mode => :object)
     assert_equal({'a' => 1}, h)
+  end
+
+  # oj_get_oddc() compared odd->clen bytes of the class name against the value
+  # and then looked at the byte after them, neither of which is bounded by the
+  # length it was given. An escaped value is decoded into a buffer on the stack,
+  # so the bytes after it are what the string before it left there, and a value
+  # of "M" was built as the registered module.
+  def test_odd_mod_shorter_than_the_module_name
+    Oj.register_odd(OddMod, OddMod, :direct, :dump)
+
+    # The first string is decoded into the buffer read_escaped_str() keeps on
+    # its stack, leaving "ddMod:" sitting where the second one, which decodes to
+    # a single "O", does not reach.
+    (0..200).each do |pad|
+      json = %([{"p":"O\\u0064dMod:#{'Z' * pad}"},{"^O":"\\u004f","dump":{"a":1}}])
+      obj = Oj.load(json, :mode => :object)
+
+      assert_equal({'^O' => 'O', 'dump' => {'a' => 1}}, obj[1], "padded with #{pad} bytes")
+    end
   end
 
   # oj_odd_set_arg() compared the key with strncmp(), which stops at the NUL the
