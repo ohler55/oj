@@ -567,6 +567,21 @@ class CustomJuice < Minitest::Test
     assert_equal(%({"a":1}), Thread.new { Oj.dump(hash, :mode => :custom, :except => [key]) }.value)
   end
 
+  # An exception that was never raised has no instance variables, so with no
+  # class name written either there was nothing between the '{' and the comma
+  # that separates the attributes from the message.
+  def test_dump_exception_never_raised
+    assert_equal(%({"~mesg":"boom","~bt":null}), Oj.dump(StandardError.new('boom'), :mode => :custom))
+    assert_equal(%({"~mesg":"boom","~bt":null}), Oj.dump(Exception.new('boom'), :mode => :custom))
+
+    err = StandardError.new('boom')
+    err.instance_variable_set(:@a, 1)
+    assert_equal(%({"a":1,"~mesg":"boom","~bt":null}), Oj.dump(err, :mode => :custom))
+
+    json = Oj.dump(StandardError.new('boom'), :mode => :custom, :create_additions => true)
+    assert_equal(%({"json_class":"StandardError","~mesg":"boom","~bt":null}), json)
+  end
+
   def dump_and_load(obj, trace=false, options={})
     options = options.merge(:indent => 2, :mode => :custom)
     json = Oj.dump(obj, options)

@@ -640,7 +640,9 @@ static void dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out)
     if (rb_obj_is_kind_of(obj, rb_eException)) {
         volatile VALUE rv;
 
-        if (',' != *(out->cur - 1)) {
+        // An exception that was never raised has no instance variables, so
+        // without the class name nothing has been written since the '{'.
+        if (',' != *(out->cur - 1) && '{' != *(out->cur - 1)) {
             *out->cur++ = ',';
         }
         // message
