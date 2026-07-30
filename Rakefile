@@ -29,10 +29,13 @@ if RUBY_PLATFORM.include?('linux')
     # test_*.rb files mutate global state (Oj.default_options, mimic_JSON, ...)
     # or fork, and upstream runs those in their own processes. Mirror the
     # tests.rb set here, minus test_scp which forks and talks over a socket.
+    # test_parser_usual is not in tests.rb but coexists with the rest and is
+    # the only coverage of the Oj::Parser options.
     memcheck_test_files = %w[
       test_compat test_custom test_fast test_file test_gc test_hash
       test_integer_range test_long_strings test_max_integer_digits test_null
-      test_object test_rails test_saj test_strict test_wab test_writer
+      test_object test_parser_usual test_rails test_saj test_strict test_wab
+      test_writer
     ].map { |name| "test/#{name}.rb" }
 
     namespace :test do
