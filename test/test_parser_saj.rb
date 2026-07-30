@@ -4,6 +4,7 @@
 $LOAD_PATH << __dir__
 
 require 'helper'
+require 'saj_handlers'
 require 'tempfile'
 
 $json = %|{
@@ -20,41 +21,6 @@ $json = %|{
   ],
   "boolean" : true
 }|
-
-class AllSaj < Oj::Saj
-  attr_accessor :calls
-
-  def initialize
-    @calls = []
-
-    super
-  end
-
-  def hash_start(key)
-    @calls << [:hash_start, key]
-  end
-
-  def hash_end(key)
-    @calls << [:hash_end, key]
-  end
-
-  def array_start(key)
-    @calls << [:array_start, key]
-  end
-
-  def array_end(key)
-    @calls << [:array_end, key]
-  end
-
-  def add_value(value, key)
-    @calls << [:add_value, value, key]
-  end
-
-  def error(message, line, column)
-    @calls << [:error, message, line, column]
-  end
-
-end # AllSaj
 
 class LocSaj
   attr_accessor :calls
@@ -85,7 +51,7 @@ class LocSaj
 
 end # LocSaj
 
-class SajTest < Minitest::Test
+class ParserSajTest < Minitest::Test
 
   def test_nil
     handler = AllSaj.new()
@@ -290,7 +256,7 @@ class SajTest < Minitest::Test
     handler = AllSaj.new()
     p = Oj::Parser.new(:saj)
     p.handler = handler
-    p.file('saj_test.json')
+    p.file(File.join(__dir__, 'saj_test.json'))
     assert_equal([
                    [:array_start, nil],
                    [:add_value, true, nil],

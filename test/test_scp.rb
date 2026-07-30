@@ -4,6 +4,7 @@
 $LOAD_PATH << __dir__
 
 require 'helper'
+require 'scp_handlers'
 require 'socket'
 require 'stringio'
 
@@ -21,78 +22,6 @@ $json = %{{
   ],
   "boolean" : true
 }}
-
-class NoHandler < Oj::ScHandler
-end
-
-class AllHandler < Oj::ScHandler
-  attr_accessor :calls
-
-  def initialize
-    super
-    @calls = []
-  end
-
-  def hash_start
-    @calls << [:hash_start]
-    {}
-  end
-
-  def hash_end
-    @calls << [:hash_end]
-  end
-
-  def hash_key(key)
-    @calls << [:hash_key, key]
-    return 'too' if 'two' == key
-    return :symbol if 'symbol' == key
-
-    key
-  end
-
-  def array_start
-    @calls << [:array_start]
-    []
-  end
-
-  def array_end
-    @calls << [:array_end]
-  end
-
-  def add_value(value)
-    @calls << [:add_value, value]
-  end
-
-  def hash_set(_h, key, value)
-    @calls << [:hash_set, key, value]
-  end
-
-  def array_append(_a, value)
-    @calls << [:array_append, value]
-  end
-
-end # AllHandler
-
-class Closer < AllHandler
-  attr_accessor :io
-
-  def initialize(io)
-    super()
-    @io = io
-  end
-
-  def hash_start
-    @calls << [:hash_start]
-    @io.close
-    {}
-  end
-
-  def hash_set(_h, key, value)
-    @calls << [:hash_set, key, value]
-    @io.close
-  end
-
-end # Closer
 
 class ScpTest < Minitest::Test
 
@@ -320,71 +249,11 @@ class ScpTest < Minitest::Test
     end
   end
 
-  def test_pipe
-    skip 'needs fork' unless Process.respond_to?(:fork)
-
-    handler = AllHandler.new()
-    json = %{{"one":true,"two":false}}
-    IO.pipe do |read_io, write_io|
-      if fork
-        write_io.close
-        Oj.sc_parse(handler, read_io)
-        read_io.close
-        assert_equal([[:hash_start],
-                      [:hash_key, 'one'],
-                      [:hash_set, 'one', true],
-                      [:hash_key, 'two'],
-                      [:hash_set, 'too', false],
-                      [:hash_end],
-                      [:add_value, {}]], handler.calls)
-      else
-        read_io.close
-        write_io.write json
-        write_io.close
-        Process.exit(0)
-      end
-    end
-  end
-
   def test_bad_bignum
     handler = AllHandler.new()
     json = %|{"big":-e123456789}|
     assert_raises Exception do # Can be either Oj::ParseError or ArgumentError depending on Ruby version
       Oj.sc_parse(handler, json)
-    end
-  end
-
-  def test_pipe_close
-    skip 'needs fork' unless Process.respond_to?(:fork)
-
-    json = %{{"one":true,"two":false}}
-    IO.pipe do |read_io, write_io|
-      if fork
-        write_io.close
-        handler = Closer.new(read_io)
-        err = nil
-        begin
-          Oj.sc_parse(handler, read_io)
-          read_io.close
-        rescue Exception => e
-          err = e.class.to_s
-        end
-        assert_equal('IOError', err)
-        assert_equal([[:hash_start],
-                      [:hash_key, 'one'],
-                      [:hash_set, 'one', true]], handler.calls)
-      else
-        read_io.close
-        write_io.write json[0..11]
-        sleep(0.1)
-        begin
-          write_io.write json[12..]
-        rescue Exception
-          # ignore, should fail to write
-        end
-        write_io.close
-        Process.exit(0)
-      end
     end
   end
 

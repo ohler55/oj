@@ -9,6 +9,13 @@ Rake::ExtensionTask.new('oj') do |ext|
   ext.lib_dir = 'lib/oj'
 end
 
+# The one list both `rake test` and `rake test:valgrind` start from, so a new
+# test/test_*.rb is picked up by both without having to be added by hand
+# anywhere. test/isolated/ is not matched: each of those needs its own process
+# with specific setup. Neither is test/json_gem/ (test_all runs it separately)
+# nor the activesupport suites (they have their own tasks).
+TEST_FILES = FileList['test/test_*.rb'].to_a.sort.freeze
+
 if RUBY_PLATFORM.include?('linux')
   begin
     require 'ruby_memcheck'
@@ -24,20 +31,6 @@ if RUBY_PLATFORM.include?('linux')
       valgrind_suppressions_dir: 'test/valgrind'
     )
 
-    # ruby_memcheck runs every listed file in a single process. Only the files
-    # that test/tests.rb loads are known to coexist that way; the other
-    # test_*.rb files mutate global state (Oj.default_options, mimic_JSON, ...)
-    # or fork, and upstream runs those in their own processes. Mirror the
-    # tests.rb set here, minus test_scp which forks and talks over a socket.
-    # test_parser_usual is not in tests.rb but coexists with the rest and is
-    # the only coverage of the Oj::Parser options.
-    memcheck_test_files = %w[
-      test_compat test_custom test_fast test_file test_gc test_hash
-      test_integer_range test_long_strings test_max_integer_digits test_null
-      test_object test_parser_safe test_parser_usual test_rails test_saj
-      test_strict test_wab test_writer
-    ].map { |name| "test/#{name}.rb" }
-
     namespace :test do
       task :check_valgrind do
         unless system('command -v valgrind > /dev/null 2>&1')
@@ -45,6 +38,29 @@ if RUBY_PLATFORM.include?('linux')
                 "Install it first (Linux only), e.g. `sudo apt-get install valgrind`.\n")
         end
       end
+
+      # Same set as `rake test`, minus two files. ruby_memcheck loads every
+      # file it is given into one process, and these two cannot share one with
+      # the rest:
+      #
+      #   test_generate.rb  Oj.generate calls Oj::Rails.mimic_JSON implicitly,
+      #                     after which a parse error is a JSON::ParserError
+      #                     rather than an Oj::ParseError, so the tests in
+      #                     test_max_integer_digits.rb that name the class fail.
+      #                     Nothing undoes that, which is why the file belongs
+      #                     alongside test/isolated/.
+      #   test_scp_fork.rb  Valgrind traces the child it forks as well and both
+      #                     processes write to the one XML report, which leaves
+      #                     it truncated: "Premature end of data in tag
+      #                     valgrindoutput".
+      #
+      # Both still run under `rake test`, which gives each file its own
+      # process. Removing an entry from this list means fixing what it trips,
+      # not editing the list.
+      memcheck_test_files = TEST_FILES - %w[
+        test/test_generate.rb
+        test/test_scp_fork.rb
+      ]
 
       RubyMemcheck::TestTask.new(valgrind: [:check_valgrind, :compile]) do |t|
         t.libs << 'test'
@@ -58,13 +74,29 @@ if RUBY_PLATFORM.include?('linux')
   end
 end
 
-=begin
-Rake::TestTask.new(:test) do |test|
-  test.libs << 'test'
-  test.pattern = 'test/test_*.rb'
-  test.options = "-v"
+# test_all invokes this. While it was commented out Rake::Task['test'] silently
+# resolved to a synthesized file task for the test/ directory, which has no
+# actions, so none of the test/test_*.rb files ran from rake at all.
+#
+# Each file gets its own process, the same way test_all runs test/json_gem.
+# These tests share process-global state -- Oj.default_options, the
+# Oj::Parser.saj and Oj::Parser.usual singletons, Oj.mimic_JSON -- so loading
+# them all into one process makes the result depend on collection order: with a
+# shared process the suite passes on some seeds and fails on others. Isolating
+# that state is worth doing, but it is a change to the tests rather than to how
+# they are collected.
+desc 'Run the test/test_*.rb files, each in its own process'
+task :test do
+  failed = []
+
+  TEST_FILES.each do |file|
+    cmd = "bundle exec ruby -Itest #{file} -v"
+    $stdout.syswrite "\n#{'#' * 90}\n#{cmd}\n"
+    ok = Bundler.with_original_env { system(cmd) }
+    failed << file unless ok
+  end
+  abort("\nfailed: #{failed.join(' ')}\n") unless failed.empty?
 end
-=end
 
 task :test_all => [:clean, :compile] do
   $stdout.flush
