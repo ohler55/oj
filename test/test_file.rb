@@ -288,6 +288,19 @@ class FileJuice < Minitest::Test
     assert_raises(IOError) { Oj::Parser.new(:usual).file(__dir__) }
   end
 
+  # Without validate_document_end() the Qundef the delegate uses as a place
+  # holder was handed back to Ruby.
+  def test_parser_file_on_a_truncated_document
+    ['{', '{"a":', '{"a":1', '[', '[1,', '[1,2', 'nul', 'tru', 'fals'].each do |json|
+      Tempfile.create('file_test_truncated.json') do |f|
+        f.write(json)
+        f.close
+
+        assert_raises(EncodingError, json) { Oj::Parser.new(:usual).file(f.path) }
+      end
+    end
+  end
+
   def dump_and_load(obj, trace=false)
     filename = File.join(__dir__, 'file_test.json')
     File.open(filename, 'w') { |f|

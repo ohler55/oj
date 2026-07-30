@@ -1570,6 +1570,8 @@ static VALUE parser_file(VALUE self, VALUE filename) {
         buf[rsize] = '\0';
         parse(p, buf, rsize, true);
     }
+    validate_document_end(p);
+
     return p->result(p);
 }
 
