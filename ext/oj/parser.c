@@ -1282,7 +1282,8 @@ static int opt_cb(VALUE rkey, VALUE value, VALUE ptr) {
  * Oj::Parser.new(:usual, cache_keys: true).
  */
 static VALUE parser_new(int argc, VALUE *argv, VALUE self) {
-    ojParser p = OJ_R_ALLOC(struct _ojParser);
+    ojParser       p = OJ_R_ALLOC(struct _ojParser);
+    volatile VALUE pv;
 
 #if HAVE_RB_EXT_RACTOR_SAFE
     // This doesn't seem to do anything.
@@ -1292,6 +1293,10 @@ static VALUE parser_new(int argc, VALUE *argv, VALUE self) {
     buf_init(&p->key);
     buf_init(&p->buf);
     p->map = value_map;
+    // Until the parser is wrapped the GC can not free it, so the mode and the
+    // options, both of which raise on a value they do not take, are handled
+    // after the wrap.
+    pv = TypedData_Wrap_Struct(parser_class, &oj_parser_type, p);
 
     if (argc < 1) {
         oj_set_parser_validator(p);
@@ -1332,7 +1337,7 @@ static VALUE parser_new(int argc, VALUE *argv, VALUE self) {
             rb_hash_foreach(ropts, opt_cb, (VALUE)p);
         }
     }
-    return TypedData_Wrap_Struct(parser_class, &oj_parser_type, p);
+    return pv;
 }
 
 // Create a new parser without setting the delegate. The parser is
@@ -1708,15 +1713,19 @@ static VALUE parser_safe(int argc, VALUE *argv, VALUE self) {
         options = rb_hash_new();
     }
 
-    ojParser p = OJ_R_ALLOC(struct _ojParser);
+    ojParser       p = OJ_R_ALLOC(struct _ojParser);
+    volatile VALUE pv;
 
     memset(p, 0, sizeof(struct _ojParser));
     buf_init(&p->key);
     buf_init(&p->buf);
     p->map = value_map;
+    // The limits raise on a value that is not an Integer, so the parser has to
+    // be wrapped before they are read.
+    pv = TypedData_Wrap_Struct(parser_class, &oj_parser_type, p);
     oj_set_parser_safe(p, options);
 
-    return TypedData_Wrap_Struct(parser_class, &oj_parser_type, p);
+    return pv;
 }
 
 /* Document-class: Oj::Parser
