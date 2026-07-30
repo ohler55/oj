@@ -375,44 +375,41 @@ static const char *read_num(const char *s, int len, int *vp) {
 }
 
 static VALUE time_parse(const char *s, int len) {
-    struct tm tm;
-    bool      neg   = false;
-    long      nsecs = 0;
-    int       i;
-    time_t    secs;
+    struct _timeInfo ti;
+    bool             neg   = false;
+    long             nsecs = 0;
+    int              i;
 
-    memset(&tm, 0, sizeof(tm));
+    memset(&ti, 0, sizeof(ti));
     if ('-' == *s) {
         s++;
         neg = true;
     }
-    if (NULL == (s = read_num(s, 4, &tm.tm_year))) {
+    if (NULL == (s = read_num(s, 4, &ti.year))) {
         return Qnil;
     }
     if (neg) {
-        tm.tm_year = -tm.tm_year;
-        neg        = false;
+        ti.year = -ti.year;
+        neg     = false;
     }
-    tm.tm_year -= 1900;
     s++;
-    if (NULL == (s = read_num(s, 2, &tm.tm_mon))) {
-        return Qnil;
-    }
-    tm.tm_mon--;
-    s++;
-    if (NULL == (s = read_num(s, 2, &tm.tm_mday))) {
+    if (NULL == (s = read_num(s, 2, &ti.mon))) {
         return Qnil;
     }
     s++;
-    if (NULL == (s = read_num(s, 2, &tm.tm_hour))) {
+    if (NULL == (s = read_num(s, 2, &ti.day))) {
         return Qnil;
     }
     s++;
-    if (NULL == (s = read_num(s, 2, &tm.tm_min))) {
+    if (NULL == (s = read_num(s, 2, &ti.hour))) {
         return Qnil;
     }
     s++;
-    if (NULL == (s = read_num(s, 2, &tm.tm_sec))) {
+    if (NULL == (s = read_num(s, 2, &ti.min))) {
+        return Qnil;
+    }
+    s++;
+    if (NULL == (s = read_num(s, 2, &ti.sec))) {
         return Qnil;
     }
     s++;
@@ -424,16 +421,7 @@ static VALUE time_parse(const char *s, int len) {
             return Qnil;
         }
     }
-#if IS_WINDOWS
-    secs = (time_t)mktime(&tm);
-    memset(&tm, 0, sizeof(tm));
-    tm.tm_year = 70;
-    tm.tm_mday = 1;
-    secs -= (time_t)mktime(&tm);
-#else
-    secs = (time_t)timegm(&tm);
-#endif
-    return rb_funcall(rb_time_nano_new(secs, nsecs), oj_utc_id, 0);
+    return rb_funcall(rb_time_nano_new((time_t)time_as_sec(&ti), nsecs), oj_utc_id, 0);
 }
 
 static VALUE protect_uri(VALUE rstr) {

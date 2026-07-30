@@ -134,3 +134,30 @@ void sec_as_time(int64_t secs, TimeInfo ti) {
     secs     = secs - (int64_t)ti->min * 60LL;
     ti->sec  = (int)secs;
 }
+
+// The inverse of sec_as_time(). The days are counted with the civil calendar
+// algorithm from Howard Hinnant's date library so that no libc call is needed.
+// timegm() is not available on Windows and the mktime() based replacement that
+// was used there returned the wrong value in any timezone east of UTC.
+int64_t time_as_sec(TimeInfo ti) {
+    int64_t year = (int64_t)ti->year;
+    int64_t mon  = (int64_t)ti->mon;
+    int64_t era;
+    int64_t yoe;   // year of the era, [0, 399]
+    int64_t doy;   // day of the year, [0, 365]
+    int64_t doe;   // day of the era, [0, 146096]
+    int64_t days;  // days since 1970-01-01
+
+    // Start the year on March 1st so that a leap day falls on the last day of
+    // the year and the day of the year is a simple expression.
+    if (mon <= 2) {
+        year--;
+    }
+    era  = (0 <= year ? year : year - 399) / 400;
+    yoe  = year - era * 400;
+    doy  = (153 * (mon + (2 < mon ? -3 : 9)) + 2) / 5 + (int64_t)ti->day - 1;
+    doe  = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    days = era * 146097 + doe - 719468;
+
+    return days * SECS_PER_DAY + (int64_t)ti->hour * 3600LL + (int64_t)ti->min * 60LL + (int64_t)ti->sec;
+}
