@@ -112,6 +112,24 @@ class DocTest < Minitest::Test
     end
   end
 
+  # read_num() took any token that started like a number, and
+  # leaf_float_value() handed what it collected to rb_cstr_to_dbl().
+  def test_malformed_number
+    ['-.', '0.0.0', '0.0e', '00.0x', '1.2.3.4', '1.5.', '1.0e+', '1.0E'].each do |json|
+      assert_raises(Oj::ParseError, json) { Oj::Doc.open(json) { |doc| doc.fetch } }
+      assert_raises(Oj::ParseError, json) { Oj::Doc.open("[#{json}]") { |doc| doc.fetch } }
+      assert_raises(Oj::ParseError, json) { Oj::Doc.open(%({"a":#{json}})) { |doc| doc.fetch } }
+    end
+  end
+
+  # An element of an array or a member of an object is terminated where it
+  # ends. The top level value has no closing delimiter to be terminated on, so
+  # the leaf for a number ran to the end of the document.
+  def test_top_level_number_is_terminated
+    Oj::Doc.open('1.5 x') { |doc| assert_in_delta(1.5, doc.fetch) }
+    Oj::Doc.open('1.5') { |doc| assert_in_delta(1.5, doc.fetch) }
+  end
+
   def test_array_empty
     json = %{[]}
     Oj::Doc.open(json) do |doc|
