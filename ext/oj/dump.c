@@ -1748,6 +1748,21 @@ size_t oj_dump_float_printf(char *buf, size_t blen, VALUE obj, double d, const c
     return cnt;
 }
 
+// The only and except lists are the keys joined with a ':' and wrapped in one
+// at each end, so a key is in a list when ":key:" is in it. Matching in place
+// finds what searching the list for a copy of the key with the colons on it
+// found, without a buffer sized by the key.
+static bool key_listed(const char *list, const char *key, size_t klen) {
+    const char *s;
+
+    for (s = list; NULL != (s = strchr(s, ':')); s++) {
+        if (0 == strncmp(s + 1, key, klen) && ':' == s[klen + 1]) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool oj_key_skip(VALUE key, const char *only, const char *except) {
     const char *skey;
 
@@ -1757,15 +1772,9 @@ bool oj_key_skip(VALUE key, const char *only, const char *except) {
     default: skey = NULL; break;
     }
     if (NULL != skey && '\0' != *skey) {
-        size_t size = strlen(skey);
-        char  *buf  = alloca(size + 3);
+        size_t klen = strlen(skey);
 
-        buf[0] = ':';
-        strcpy(buf + 1, skey);
-        buf[size + 1] = ':';
-        buf[size + 2] = '\0';
-
-        return ((NULL != only && NULL == strstr(only, buf)) || (NULL != except && NULL != strstr(except, buf)));
+        return ((NULL != only && !key_listed(only, skey, klen)) || (NULL != except && key_listed(except, skey, klen)));
     }
     return NULL != only;
 }
