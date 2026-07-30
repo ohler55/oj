@@ -7,6 +7,20 @@ require 'helper'
 
 class UsualTest < Minitest::Test
 
+  # The parser is allocated before the mode and the options are looked at, and
+  # it used to be handed to the GC only after, so every one of these raises left
+  # the parser and whatever its delegate had allocated behind. rake
+  # test:valgrind is what catches that.
+  def test_new_with_arguments_it_does_not_take
+    20.times do
+      assert_raises(ArgumentError) { Oj::Parser.new(:nope) }
+      assert_raises(ArgumentError) { Oj::Parser.new(1) }
+      assert_raises(ArgumentError) { Oj::Parser.new(:usual, nope: 1) }
+      assert_raises(TypeError) { Oj::Parser.new(:usual, create_id: 12) }
+      assert_raises(TypeError) { Oj::Parser.new(:usual, capacity: :nope) }
+    end
+  end
+
   def test_nil
     parser = Oj::Parser.new(:usual)
 
