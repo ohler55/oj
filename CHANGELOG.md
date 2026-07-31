@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 3.17.5 - unreleased
+## 3.17.5 - 2026-07-31
 
 Most of this release comes out of a security review of the C extension. There are no API changes.
 
