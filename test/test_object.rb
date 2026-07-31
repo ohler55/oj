@@ -598,9 +598,6 @@ class ObjectJuice < Minitest::Test
   end
 
   def test_time_early
-    # Windows does not support dates before 1970.
-    return if RbConfig::CONFIG['host_os'] =~ /(mingw|mswin)/
-
     t = Time.new(1954, 1, 5, 21, 37, 7.123456789, -8 * 3600)
     # The fractional seconds are not always recreated exactly which causes a
     # mismatch so instead the seconds, nsecs, and gmt_offset are checked
