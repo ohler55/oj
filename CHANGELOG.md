@@ -2,7 +2,72 @@
 
 ## 3.17.5 - unreleased
 
-- Fixed multiple issues.
+Most of this release comes out of a security review of the C extension. There are no API changes.
+
+### Memory safety
+
+- Fixed hash flooding by seeding the key hash per process. The hash was decided entirely at compile time, so a document of colliding keys turned key interning into O(n^2) and left the process slow for every later parse. (#1053)
+- Fixed a one byte buffer over-read on a document that ends with a backslash inside an unterminated string. (#1054)
+- Fixed two length underflows that made an empty `^m` value and a key of exactly 65,536 bytes read forward until they left mapped memory. (#1055)
+- Fixed a SEGV from type confusion in class path resolution. A name segment that resolved to something other than a class or module was dereferenced as one. (#1056)
+- Fixed uninitialized stack memory being read into the message of an unresolved class name error. (#1057)
+- Fixed output buffer overflows when writing indentation, where several callers of `fill_indent()` had not assured the buffer first. (#1058)
+- Fixed the `Oj::Doc` path depth limit being checked one level too late. (#1061)
+- Fixed the use-after-free of a key when the value stack grows. (#1062)
+- Fixed the buffer over-read when a document ends where a key belongs. (#1063)
+- Fixed the id from a circular reference being used unchecked. (#1064)
+- Fixed the SEGV dumping an exception that was never raised, where the missing backtrace was read as an Array. (#1068)
+- Fixed the stack buffer overflow writing the error location. (#1071)
+- Fixed a read error in `Oj::Parser#file` being taken as a read of `SIZE_MAX` bytes, which wrote in front of the buffer and then reparsed it forever without checking for interrupts. (#1072)
+- Fixed a `:float_format` too long for the 64 byte buffer copying stack bytes past the end of it into the output. (#1073)
+- Fixed the double free of the default `create_id` when a call passes `:create_id => nil`. (#1074)
+- Fixed the buffer over-read of an odd attribute name and the leak of its arguments. (#1075)
+- Fixed the SEGV reading a truncated document with `Oj::Parser#file` and the descriptor it leaked. (#1076)
+- Fixed the SEGV from a malformed number in `Oj::Doc`. (#1077)
+- Fixed the stack exhaustion from a long key with `:only` or `:except`. (#1078)
+- Fixed the odd module match being decided by uninitialized memory. (#1079)
+- Fixed `:float_format` accepting directives it has no argument for. (#1083)
+
+### Memory leaks
+
+- Fixed the leak of an escaped hash key in the streaming parser. (#1067)
+- Fixed the leak of the parser `create_id` when it is set a second time. (#1085)
+- Fixed the leak of the parser when `Oj::Parser.new` or `Oj::Parser.safe` raises on an argument it does not take. (#1086)
+
+### Parsing and dumping
+
+- Fixed a safe parser limit of 4 being ignored. (#1065)
+- Fixed the exponent bound being checked after it is narrowed. (#1066)
+- Fixed a document being rejected when it opens with a number of 4093 digits or more read through a file descriptor or an IO, and the reader buffer that leaked when it grew. (#1069)
+- Fixed the safe parser limits being dropped when an option is set after the parser is built. (#1070)
+- Fixed the `:custom` mode dump of an exception that was never raised opening with `{,`. (#1082)
+- Fixed the `:wab` mode time load being an offset out on Windows, where `mktime()` stood in for `timegm()` and returned -1 for any time before the epoch. (#1088)
+- Fixed `Oj::Doc` dropping the exponent of a number written without a decimal point, so `1e3` loaded as `1`. (#1089)
+
+### Rails
+
+- Fixed a `to_json(only:)` or `to_json(except:)` dropping the `include_root_in_json` wrapper key and the keys added by `:methods`. (#1039)
+- Fixed the `as_json` options reaching only the first element of a container, so `to_json(only:)`, `to_json(methods:)` and any custom `as_json(opts)` took effect on one row and nowhere else. (#1040)
+- An encoder now reads the global optimized class table and options instead of copying them, saving about 6.7KB of malloc per `ActiveSupport::JSON.encode`, and picks up later `Oj.default_options` and `ActiveSupport::JSON::Encoding` changes. (#1049)
+- Fixed `as_json` being handed the encoder's own options hash. ActiveSupport allows `as_json` to write into it, and ActiveSupport 8.1 caches one encoder per process, so a single such `as_json` could leave `:only` set for every later `to_json`. (#1050)
+
+### Documentation
+
+- Renamed the documented `:skip_null_byte` option to `:omit_null_byte`, which is the name that works. (#1041)
+- Dropped the `--with-sse42` install option from InstallOptions.md. SIMD support is detected at runtime. (#1042)
+- Corrected the documented minimum Ruby version from 2.4+ to 2.7+. (#1043)
+- Corrected the Parser.md benchmark conclusions to reference `:usual` rather than `:saj`. (#1044)
+- Corrected Custom.md and Options.md, which called `:custom` the default mode. The default is `:object`. (#1045)
+- Corrected the documented type of the `:safe` option from String to Boolean. (#1046)
+- Corrected Security.md, which said no methods are ever called on an Object created by a load. `exception`, `set_backtrace` and `replace` are. The page now also says which mode `Oj.load` uses. (#1080)
+
+### Tests and CI
+
+- Added the ActiveSupport 8 test suite. The Rakefile picked the suite by major version, so the rails_8 job had been running zero ActiveSupport tests. (#1047)
+- Added the ActiveSupport 8.1 test suite and pinned the #985 regression. (#1051)
+- Fixed `rake` never running the `test/test_*.rb` suite. The `Rake::TestTask` that defined `test` was commented out, so `test_all` invoked a synthesized no-op file task. (#1084)
+- Added a job timeout to the workflows. (#1087)
+- Removed the pre-1970 time test skips on Windows, which were left from a 32 bit Ruby limit that no longer applies. (#1090)
 
 ## 3.17.4 - 2026-07-14
 
