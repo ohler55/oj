@@ -125,8 +125,6 @@ class FileJuice < Minitest::Test
   end
 
   def test_time_object_early
-    skip 'Windows does not support dates before 1970.' if RbConfig::CONFIG['host_os'] =~ /(mingw|mswin)/
-
     t = Time.xmlschema('1954-01-05T00:00:00.123456')
     Oj.default_options = { :mode => :object, :time_format => :unix_zone }
     dump_and_load(t, false)
