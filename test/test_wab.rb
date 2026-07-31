@@ -216,6 +216,20 @@ class WabJuice < Minitest::Test
     assert_equal(json, Oj.dump(loaded, mode: :wab), 'json mismatch after load')
   end
 
+  def test_time_before_epoch
+    # Loading used to go through a mktime() based replacement for timegm() on
+    # Windows. That replacement returned -1 for any time before the epoch no
+    # matter what the timezone was, so these fail on Windows without the fix
+    # even when the machine is set to UTC.
+    [Time.gm(1969, 7, 20, 20, 17, 40),
+     Time.gm(1900, 1, 1, 0, 0, 0),
+     Time.gm(1, 1, 1, 0, 0, 0)].each do |t|
+      json = Oj.dump(t, mode: :wab)
+      loaded = Oj.wab_load(json)
+      assert_equal(json, Oj.dump(loaded, mode: :wab), 'json mismatch after load')
+    end
+  end
+
   def test_uuid
     u = ::WAB::UUID.new('123e4567-e89b-12d3-a456-426655440000')
     json = Oj.dump(u, mode: :wab)

@@ -15,6 +15,7 @@ typedef struct _timeInfo {
     int year;
 }* TimeInfo;
 
-extern void sec_as_time(int64_t secs, TimeInfo ti);
+extern void    sec_as_time(int64_t secs, TimeInfo ti);
+extern int64_t time_as_sec(TimeInfo ti);
 
 #endif /* OJ_UTIL_H */
