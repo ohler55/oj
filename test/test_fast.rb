@@ -112,6 +112,32 @@ class DocTest < Minitest::Test
     end
   end
 
+  # read_num() only made a leaf a float when it saw a '.', so an exponent on an
+  # integer mantissa was left to leaf_fixnum_value(), which stops reading at the
+  # 'e' and dropped it.
+  def test_exponent_on_an_integer_mantissa
+    [['1e5', 100_000.0], ['1E5', 100_000.0], ['1e+5', 100_000.0], ['1e-5', 0.000_01],
+     ['-1e5', -100_000.0], ['0e0', 0.0], ['12e2', 1200.0], ['1e0', 1.0]].each do |json, expected|
+      Oj::Doc.open(json) do |doc|
+        assert_equal(Float, doc.type, json)
+        assert_in_delta(expected, doc.fetch, expected.abs / 1_000_000_000.0, json)
+      end
+      assert_in_delta(expected, Oj::Doc.open("[#{json}]") { |doc| doc.fetch }.first, expected.abs / 1_000_000_000.0, json)
+    end
+
+    assert_predicate(Oj::Doc.open('1e400') { |doc| doc.fetch }, :infinite?)
+    assert_in_delta(0.0, Oj::Doc.open('1e-400') { |doc| doc.fetch })
+  end
+
+  # An exponent with no digits is not a number. Before it was taken as a fixnum
+  # that ended at the 'e'.
+  def test_exponent_without_digits
+    ['1e', '1E', '1e+', '1e-'].each do |json|
+      assert_raises(Oj::ParseError, json) { Oj::Doc.open(json) { |doc| doc.fetch } }
+      assert_raises(Oj::ParseError, json) { Oj::Doc.open("[#{json}]") { |doc| doc.fetch } }
+    end
+  end
+
   # read_num() took any token that started like a number, and
   # leaf_float_value() handed what it collected to rb_cstr_to_dbl().
   def test_malformed_number

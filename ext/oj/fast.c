@@ -498,6 +498,10 @@ static Leaf read_num(ParseInfo pi) {
         }
     }
     if ('e' == *pi->s || 'E' == *pi->s) {
+        // An exponent makes it a float whether or not a '.' was seen. Without
+        // this leaf_fixnum_value() stops reading at the 'e' and the exponent is
+        // dropped.
+        type = T_FLOAT;
         pi->s++;
         if ('-' == *pi->s || '+' == *pi->s) {
             pi->s++;
