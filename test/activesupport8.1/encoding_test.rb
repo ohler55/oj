@@ -40,6 +40,26 @@ class TestJSONEncoding < ActiveSupport::TestCase
     Oj.default_options = {bigdecimal_as_decimal: prev}
   end
 
+  # #1092. ActiveSupport 8.1 caches a second encoder next to that one, built
+  # with {escape: false}. The hash is not empty but names no option Oj has, and
+  # taking it for options of its own detached that encoder from the defaults,
+  # freezing them as they stood before set_encoder wrote time_precision into
+  # them. Timestamps then came out with 9 fractional digits on the escape: false
+  # path and the configured precision on every other one.
+  def test_1092_escape_false_encoder_tracks_time_precision
+    with_standard_json_time_format(true) do
+      with_time_precision(3) do
+        assert_equal '{"time":"2000-01-01T00:00:00.000Z"}', {time: Time.utc(2000)}.to_json(escape: false)
+      end
+
+      # Both cached encoders follow a later change, so they stay in step.
+      with_time_precision(0) do
+        payload = {time: Time.utc(2000)}
+        assert_equal payload.to_json, payload.to_json(escape: false)
+      end
+    end
+  end
+
   def sorted_json(json)
     if json.start_with?("{") && json.end_with?("}")
       "{" + json[1..-2].split(",").sort.join(",") + "}"

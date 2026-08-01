@@ -836,12 +836,14 @@ static const char *make_only_value(VALUE v) {
     return NULL;
 }
 
-static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
-    Options copts = (Options)opts;
-    size_t  len;
+// Apply one key and value to copts. Returns true if the key named an option Oj
+// knows and false if it did not. An unrecognized key is still ignored rather
+// than an error; the return only lets a caller tell the two cases apart.
+static bool parse_one_option(VALUE k, VALUE v, Options copts) {
+    size_t len;
 
     if (set_yesno_options(k, v, copts)) {
-        return ST_CONTINUE;
+        return true;
     }
     if (oj_indent_sym == k) {
         switch (rb_type(v)) {
@@ -967,7 +969,7 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
         }
     } else if (bigdecimal_load_sym == k) {
         if (Qnil == v) {
-            return ST_CONTINUE;
+            return true;
         }
 
         if (bigdecimal_sym == v || Qtrue == v) {
@@ -983,7 +985,7 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
         }
     } else if (compat_bigdecimal_sym == k) {
         if (Qnil == v) {
-            return ST_CONTINUE;
+            return true;
         }
         copts->compat_bigdec = (Qtrue == v);
     } else if (oj_decimal_class_sym == k) {
@@ -1078,7 +1080,7 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
         }
     } else if (nan_sym == k) {
         if (Qnil == v) {
-            return ST_CONTINUE;
+            return true;
         }
         if (null_sym == v) {
             copts->dump_opts.nan_dump = NullNan;
@@ -1095,7 +1097,7 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
         }
     } else if (omit_nil_sym == k) {
         if (Qnil == v) {
-            return ST_CONTINUE;
+            return true;
         }
         if (Qtrue == v) {
             copts->dump_opts.omit_nil = true;
@@ -1106,7 +1108,7 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
         }
     } else if (omit_null_byte_sym == k) {
         if (Qnil == v) {
-            return ST_CONTINUE;
+            return true;
         }
         if (Qtrue == v) {
             copts->dump_opts.omit_null_byte = true;
@@ -1167,7 +1169,7 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
         }
     } else if (integer_range_sym == k) {
         if (Qnil == v) {
-            return ST_CONTINUE;
+            return true;
         }
         if (rb_obj_class(v) == rb_cRange) {
             VALUE min = rb_funcall(v, oj_begin_id, 0);
@@ -1198,7 +1200,7 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
         }
     } else if (symbol_keys_sym == k || oj_symbolize_names_sym == k) {
         if (Qnil == v) {
-            return ST_CONTINUE;
+            return true;
         }
         copts->sym_key = (Qtrue == v) ? Yes : No;
 
@@ -1233,21 +1235,51 @@ static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
             OJ_R_FREE((void *)copts->dump_opts.except);
         }
         copts->dump_opts.except = make_only_value(v);
+    } else {
+        return false;
+    }
+    return true;
+}
+
+// Collects the return of parse_one_option() over every key in a hash.
+struct _optsParse {
+    Options copts;
+    bool    consumed;
+};
+
+static int parse_options_cb(VALUE k, VALUE v, VALUE opts) {
+    struct _optsParse *op = (struct _optsParse *)opts;
+
+    if (parse_one_option(k, v, op->copts)) {
+        op->consumed = true;
     }
     return ST_CONTINUE;
 }
 
-void oj_parse_options(VALUE ropts, Options copts) {
+// Apply the options in ropts to copts and report whether any key was
+// recognized. A hash of nothing but unknown keys leaves copts untouched and
+// returns false.
+bool oj_parse_options_consumed(VALUE ropts, Options copts) {
+    struct _optsParse op = {copts, false};
+
     if (T_HASH != rb_type(ropts)) {
-        return;
+        return false;
     }
-    rb_hash_foreach(ropts, parse_options_cb, (VALUE)copts);
+    rb_hash_foreach(ropts, parse_options_cb, (VALUE)&op);
+    if (Qnil != rb_hash_lookup(ropts, match_string_sym)) {
+        op.consumed = true;
+    }
     oj_parse_opt_match_string(&copts->str_rx, ropts);
 
     copts->dump_opts.use = (0 < copts->dump_opts.indent_size || 0 < copts->dump_opts.after_size ||
                             0 < copts->dump_opts.before_size || 0 < copts->dump_opts.hash_size ||
                             0 < copts->dump_opts.array_size);
-    return;
+
+    return op.consumed;
+}
+
+void oj_parse_options(VALUE ropts, Options copts) {
+    oj_parse_options_consumed(ropts, copts);
 }
 
 // Free the option buffers that oj_parse_options() allocated for a single call.

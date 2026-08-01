@@ -91,6 +91,10 @@ The classes that can be put in optimized mode and are optimized when
 
 Both `Oj::Rails` and each `Oj::Rails::Encoder` have `optimize()`, `deoptimize()`, and `optimized?()` methods. The module level methods change the setting for the whole process. An encoder follows those process wide settings until `optimize()` or `deoptimize()` is called on the encoder itself. From then on the encoder keeps a set of its own and later module level changes do not reach it.
 
+Options work the same way. An encoder reads `Oj.default_options` when it encodes, so later changes to the defaults reach it, unless it was given options of its own, in which case it keeps the copy it took when it was created. An encoder counts as having options of its own only if the hash it was built with names at least one option Oj knows. A hash of nothing but keys Oj does not have, such as the `escape: false` ActiveSupport 8.1 builds one of its cached encoders with, leaves the encoder on the defaults.
+
+Once a class is optimized its `as_json()` method is no longer called, so an application that defines its own `as_json()` on an optimized class, `BigDecimal` for example, will not see it used. Call `Oj::Rails.deoptimize(BigDecimal)` after `Oj.optimize_rails` to put that one class back on the `as_json()` path and leave the rest optimized.
+
 The ActiveSupport decoder is the `JSON.parse()` method. Calling the
 `Oj::Rails.set_decoder()` method replaces that method with the Oj equivalent.
 
