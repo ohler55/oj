@@ -765,11 +765,15 @@ static VALUE encoder_new(int argc, VALUE *argv, VALUE self) {
         e->arg = rb_hash_new();
     }
     // An encoder given no options of its own reads oj_default_options at encode
-    // time rather than copying it here. ActiveSupport keeps one option-less
-    // encoder for the life of the process, so a copy taken now would freeze
-    // every later Oj.default_options and ActiveSupport::JSON::Encoding change
-    // out of it - including the time_precision that set_encoder itself writes
-    // after ActiveSupport has already built and cached that encoder.
+    // time rather than copying it here. ActiveSupport keeps such an encoder for
+    // the life of the process, so a copy taken now would freeze every later
+    // Oj.default_options and ActiveSupport::JSON::Encoding change out of it -
+    // including the time_precision that set_encoder itself writes after
+    // ActiveSupport has already built and cached that encoder.
+    //
+    // A hash counts as options only if at least one key names an option Oj
+    // knows. Non-empty is not enough: ActiveSupport 8.1 caches a second encoder
+    // built with {escape: false}, a key Oj has never had.
     e->own_opts = T_HASH == rb_type(e->arg) && 0 < RHASH_SIZE(e->arg);
     if (e->own_opts) {
         e->opts = oj_default_options;
@@ -778,9 +782,13 @@ static VALUE encoder_new(int argc, VALUE *argv, VALUE self) {
         // its own that is freed with the encoder.
         e->opts.str_rx.head = NULL;
         e->opts.str_rx.tail = NULL;
-        oj_parse_options(e->arg, &e->opts);
+        e->own_opts         = oj_parse_options_consumed(e->arg, &e->opts);
+    }
+    if (e->own_opts) {
         oj_options_take_ownership(&e->opts);
     } else {
+        // Nothing to free: every option that allocates is reached through a
+        // recognized key, and ownership is not taken until after that check.
         memset(&e->opts, 0, sizeof(e->opts));
     }
 
@@ -1176,8 +1184,6 @@ static VALUE rails_set_encoder(VALUE self) {
     } else {
         rb_raise(rb_eStandardError, "ActiveSupport not loaded.");
     }
-    rb_funcall(active, rb_intern("json_encoder="), 1, encoder_class);
-
     json     = rb_const_get_at(active, rb_intern("JSON"));
     encoding = rb_const_get_at(json, rb_intern("Encoding"));
 
@@ -1203,6 +1209,12 @@ static VALUE rails_set_encoder(VALUE self) {
     rb_undef_method(encoding, "time_precision=");
     rb_define_module_function(encoding, "time_precision=", rails_time_precision, 1);
     rb_gv_set("$VERBOSE", verbose);
+
+    // Last, because ActiveSupport builds and caches encoders inside
+    // json_encoder= and they should see the settings above already in the
+    // defaults. escape_html and xml_time are read ahead of it for the same
+    // reason.
+    rb_funcall(active, rb_intern("json_encoder="), 1, encoder_class);
 
     return Qnil;
 }

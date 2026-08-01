@@ -295,6 +295,55 @@ class RailsJuice < Minitest::Test
     Oj.default_options = orig
   end
 
+  # Only a hash that names at least one option Oj knows counts as options of its
+  # own. ActiveSupport 8.1 caches an encoder built with {escape: false}, a key Oj
+  # has never had, and treating that as options froze the defaults as they were
+  # before set_encoder wrote time_precision into them.
+  def test_encoder_with_no_known_options_follows_later_default_options
+    orig = Oj.default_options
+    e = Oj::Rails::Encoder.new(escape: false)
+    Oj.default_options = {indent: 2}
+
+    assert_equal(%|{\n  "a":1\n}\n|, e.encode({'a' => 1}))
+  ensure
+    Oj.default_options = orig
+  end
+
+  def test_encoder_with_no_known_options_follows_a_later_global_optimize
+    e = Oj::Rails::Encoder.new(escape: false)
+    Oj::Rails.optimize(Range)
+
+    assert(e.optimized?(Range))
+  ensure
+    Oj::Rails.deoptimize(Range)
+  end
+
+  # The same pair for :second_precision, which is what time_precision= writes and
+  # so the option #1092 saw frozen at 9 digits.
+  def test_encoder_with_no_known_options_follows_a_later_second_precision
+    orig = Oj.default_options
+    Oj::Rails.optimize(Time)
+    e = Oj::Rails::Encoder.new(escape: false)
+    Oj.default_options = {second_precision: 3}
+
+    assert_equal('"2026-08-01T15:00:00.000Z"', e.encode(Time.utc(2026, 8, 1, 15)))
+  ensure
+    Oj::Rails.deoptimize(Time)
+    Oj.default_options = orig
+  end
+
+  def test_encoder_with_a_known_option_keeps_its_own_second_precision
+    orig = Oj.default_options
+    Oj::Rails.optimize(Time)
+    e = Oj::Rails::Encoder.new(second_precision: 6)
+    Oj.default_options = {second_precision: 3}
+
+    assert_equal('"2026-08-01T15:00:00.000000Z"', e.encode(Time.utc(2026, 8, 1, 15)))
+  ensure
+    Oj::Rails.deoptimize(Time)
+    Oj.default_options = orig
+  end
+
   # A String :indent forces the numeric one to zero, but dump_array sized the
   # closing indent from the numeric one, so a deeply nested array wrote past
   # the end of the output buffer.
