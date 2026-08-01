@@ -1184,8 +1184,6 @@ static VALUE rails_set_encoder(VALUE self) {
     } else {
         rb_raise(rb_eStandardError, "ActiveSupport not loaded.");
     }
-    rb_funcall(active, rb_intern("json_encoder="), 1, encoder_class);
-
     json     = rb_const_get_at(active, rb_intern("JSON"));
     encoding = rb_const_get_at(json, rb_intern("Encoding"));
 
@@ -1211,6 +1209,12 @@ static VALUE rails_set_encoder(VALUE self) {
     rb_undef_method(encoding, "time_precision=");
     rb_define_module_function(encoding, "time_precision=", rails_time_precision, 1);
     rb_gv_set("$VERBOSE", verbose);
+
+    // Last, because ActiveSupport builds and caches encoders inside
+    // json_encoder= and they should see the settings above already in the
+    // defaults. escape_html and xml_time are read ahead of it for the same
+    // reason.
+    rb_funcall(active, rb_intern("json_encoder="), 1, encoder_class);
 
     return Qnil;
 }
