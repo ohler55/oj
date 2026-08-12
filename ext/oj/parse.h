@@ -5,6 +5,7 @@
 #define OJ_PARSE_H
 
 #include <stdarg.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -90,7 +91,19 @@ extern VALUE oj_cstr_to_value(const char *str, size_t len, size_t cache_str);
 extern VALUE oj_calc_hash_key(ParseInfo pi, Val parent);
 
 static inline void parse_info_init(ParseInfo pi) {
-    memset(pi, 0, sizeof(struct _parseInfo));
+    // Zeroing the whole struct costs more than parsing a small document: the
+    // embedded reader buffer (rd.base, 4KB) and value stack entries
+    // (stack.base, 6.5KB) dominate its 11KB. Both are fully initialized
+    // before use — oj_reader_init() for stream parses, oj_stack_init() and
+    // stack_push() for the value stack — so zero only the scalars around
+    // them.
+    memset(pi, 0, offsetof(struct _parseInfo, rd));
+    memset((char *)pi + offsetof(struct _parseInfo, rd) + offsetof(struct _reader, head),
+           0,
+           offsetof(struct _parseInfo, stack) - offsetof(struct _parseInfo, rd) - offsetof(struct _reader, head));
+    memset((char *)pi + offsetof(struct _parseInfo, stack) + offsetof(struct _valStack, head),
+           0,
+           sizeof(struct _parseInfo) - offsetof(struct _parseInfo, stack) - offsetof(struct _valStack, head));
 }
 
 extern void oj_scanner_init(void);

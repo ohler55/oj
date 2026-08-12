@@ -1033,8 +1033,24 @@ static void array_append_cstr(ParseInfo pi, const char *str, size_t len, const c
     TRACE_PARSE_CALL(pi->options.trace, "append_string", pi, rstr);
 }
 
+// Compat mode defers Hash creation to its end_hash (bulk insert from the
+// buffered pairs) but the custom callbacks below fill the Hash as they go,
+// so hashes must exist from the opening brace here.
+static VALUE start_hash(ParseInfo pi) {
+    volatile VALUE h;
+
+    if (Qnil != pi->options.hash_class) {
+        h = rb_class_new_instance(0, NULL, pi->options.hash_class);
+    } else {
+        h = rb_hash_new();
+    }
+    TRACE_PARSE_IN(pi->options.trace, "start_hash", pi);
+    return h;
+}
+
 void oj_set_custom_callbacks(ParseInfo pi) {
     oj_set_compat_callbacks(pi);
+    pi->start_hash        = start_hash;
     pi->hash_set_cstr     = hash_set_cstr;
     pi->end_hash          = end_hash;
     pi->hash_set_num      = hash_set_num;

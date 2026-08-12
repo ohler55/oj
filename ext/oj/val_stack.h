@@ -37,16 +37,27 @@ typedef struct _val {
     OddArgs        odd_args;
     size_t         klen;
     size_t         clen;
+    size_t         pcnt;  // VALUEs this open hash holds in the stack pair buffer
     char           next;  // ValNext
     char           k1;    // first original character in the key
     char           kalloc;
 } *Val;
 
+#define PAIR_BASE_CNT 64
+
 typedef struct _valStack {
     struct _val base[STACK_INC];
-    Val         head;  // current stack
-    Val         end;   // stack end
-    Val         tail;  // pointer to one past last element name on stack
+    VALUE       pbase[PAIR_BASE_CNT];  // initial buffer for pairs
+    // Flat key/value pair buffer for hash modes that build each Hash in one
+    // rb_hash_bulk_insert at the closing brace instead of one rb_hash_aset
+    // per pair. Nesting is strictly LIFO so each open hash's pairs occupy
+    // the top of the buffer; the per-hash count lives in its Val's clen.
+    VALUE  *pairs;
+    size_t  pcnt;  // number of live VALUEs in pairs
+    size_t  pend;  // capacity of pairs in VALUEs
+    Val     head;  // current stack
+    Val     end;   // stack end
+    Val     tail;  // pointer to one past last element name on stack
 #ifdef HAVE_PTHREAD_MUTEX_INIT
     pthread_mutex_t mutex;
 #else
@@ -76,6 +87,11 @@ inline static void stack_cleanup(ValStack stack) {
         OJ_R_FREE(stack->head);
         stack->head = NULL;
     }
+    if (stack->pbase != stack->pairs) {
+        OJ_R_FREE(stack->pairs);
+        stack->pairs = NULL;
+    }
+    stack->pcnt = 0;
 }
 
 inline static void stack_push(ValStack stack, VALUE val, ValNext next) {
@@ -124,6 +140,7 @@ inline static void stack_push(ValStack stack, VALUE val, ValNext next) {
     stack->tail->key_val   = Qundef;
     stack->tail->clen      = 0;
     stack->tail->klen      = 0;
+    stack->tail->pcnt      = 0;
     stack->tail->kalloc    = 0;
     stack->tail++;
 }
@@ -163,6 +180,40 @@ inline static Val stack_pop(ValStack stack) {
         return stack->tail;
     }
     return 0;
+}
+
+// Append one key/value pair to the pair buffer. The same GC discipline as
+// stack_push: the allocation happens outside the mutex (it can trigger a GC
+// which takes the mutex in stack_mark) and the buffer pointer only changes
+// under the mutex.
+inline static void stack_pair_push(ValStack stack, VALUE key, VALUE value) {
+    if (stack->pend <= stack->pcnt + 2) {
+        size_t cnt = stack->pend * 2;
+        VALUE *pairs;
+
+        if (stack->pbase == stack->pairs) {
+            pairs = OJ_R_ALLOC_N(VALUE, cnt);
+            memcpy(pairs, stack->pairs, sizeof(VALUE) * stack->pcnt);
+        } else {
+            pairs = stack->pairs;
+            OJ_R_REALLOC_N(pairs, VALUE, cnt);
+        }
+#ifdef HAVE_PTHREAD_MUTEX_INIT
+        pthread_mutex_lock(&stack->mutex);
+#else
+        rb_mutex_lock(stack->mutex);
+#endif
+        stack->pairs = pairs;
+        stack->pend  = cnt;
+#ifdef HAVE_PTHREAD_MUTEX_INIT
+        pthread_mutex_unlock(&stack->mutex);
+#else
+        rb_mutex_unlock(stack->mutex);
+#endif
+    }
+    stack->pairs[stack->pcnt]     = key;
+    stack->pairs[stack->pcnt + 1] = value;
+    stack->pcnt += 2;
 }
 
 extern const char *oj_stack_next_string(ValNext n);

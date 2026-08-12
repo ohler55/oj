@@ -21,6 +21,13 @@ static void stack_mark(void *ptr) {
     rb_mutex_lock(stack->mutex);
     rb_gc_mark(stack->mutex);
 #endif
+    {
+        size_t i;
+
+        for (i = 0; i < stack->pcnt; i++) {
+            rb_gc_mark(stack->pairs[i]);
+        }
+    }
     for (v = stack->head; v < stack->tail; v++) {
         if (Qnil != v->val && Qundef != v->val) {
             rb_gc_mark(v->val);
@@ -71,6 +78,9 @@ oj_stack_init(ValStack stack) {
     stack->head            = stack->base;
     stack->end             = stack->base + sizeof(stack->base) / sizeof(struct _val);
     stack->tail            = stack->head;
+    stack->pairs           = stack->pbase;
+    stack->pcnt            = 0;
+    stack->pend            = sizeof(stack->pbase) / sizeof(VALUE);
     stack->head->val       = Qundef;
     stack->head->key       = NULL;
     stack->head->key_val   = Qundef;
@@ -79,6 +89,7 @@ oj_stack_init(ValStack stack) {
     stack->head->clas      = Qundef;
     stack->head->klen      = 0;
     stack->head->clen      = 0;
+    stack->head->pcnt      = 0;
     stack->head->next      = NEXT_NONE;
 
     return TypedData_Wrap_Struct(oj_cstack_class, &oj_stack_type, stack);

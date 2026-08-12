@@ -47,7 +47,29 @@ VALUE oj_calc_hash_key(ParseInfo pi, Val parent) {
     return rkey;
 }
 
+// With the default Hash class the pairs of the just closed hash sit on top
+// of the pair buffer; build the Hash in one bulk insert with the final size
+// known instead of one rb_hash_aset per pair (which converts the small
+// ar_table to an st_table mid-insertion for hashes above 8 entries).
 static void hash_end(ParseInfo pi) {
+    if (Qnil == pi->options.hash_class) {
+        ValStack       stack = &pi->stack;
+        Val            hash  = stack_peek(stack);
+        size_t         cnt   = hash->pcnt;
+        volatile VALUE h;
+
+#if HAVE_RB_HASH_NEW_CAPA
+        h = rb_hash_new_capa((long)(cnt / 2));
+#else
+        h = rb_hash_new();
+#endif
+        if (0 < cnt) {
+            rb_hash_bulk_insert((long)cnt, stack->pairs + stack->pcnt - cnt, h);
+            stack->pcnt -= cnt;
+            hash->pcnt = 0;
+        }
+        hash->val = h;
+    }
     TRACE_PARSE_HASH_END(pi->options.trace, pi);
 }
 
@@ -84,13 +106,19 @@ static VALUE start_hash(ParseInfo pi) {
         return rb_class_new_instance(0, NULL, pi->options.hash_class);
     }
     TRACE_PARSE_IN(pi->options.trace, "start_hash", pi);
-    return rb_hash_new();
+    // The Hash is built at hash_end from the buffered pairs.
+    return Qundef;
 }
 
 static void hash_set_cstr(ParseInfo pi, Val parent, const char *str, size_t len, const char *orig) {
     volatile VALUE rstr = oj_cstr_to_value(str, len, (size_t)pi->options.cache_str);
 
-    rb_hash_aset(stack_peek(&pi->stack)->val, oj_calc_hash_key(pi, parent), rstr);
+    if (Qnil == pi->options.hash_class) {
+        stack_pair_push(&pi->stack, oj_calc_hash_key(pi, parent), rstr);
+        parent->pcnt += 2;
+    } else {
+        rb_hash_aset(stack_peek(&pi->stack)->val, oj_calc_hash_key(pi, parent), rstr);
+    }
     TRACE_PARSE_CALL(pi->options.trace, "set_string", pi, rstr);
 }
 
@@ -101,12 +129,22 @@ static void hash_set_num(ParseInfo pi, Val parent, NumInfo ni) {
         oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number or other value");
     }
     v = oj_num_as_value(ni);
-    rb_hash_aset(stack_peek(&pi->stack)->val, oj_calc_hash_key(pi, parent), v);
+    if (Qnil == pi->options.hash_class) {
+        stack_pair_push(&pi->stack, oj_calc_hash_key(pi, parent), v);
+        parent->pcnt += 2;
+    } else {
+        rb_hash_aset(stack_peek(&pi->stack)->val, oj_calc_hash_key(pi, parent), v);
+    }
     TRACE_PARSE_CALL(pi->options.trace, "set_number", pi, v);
 }
 
 static void hash_set_value(ParseInfo pi, Val parent, VALUE value) {
-    rb_hash_aset(stack_peek(&pi->stack)->val, oj_calc_hash_key(pi, parent), value);
+    if (Qnil == pi->options.hash_class) {
+        stack_pair_push(&pi->stack, oj_calc_hash_key(pi, parent), value);
+        parent->pcnt += 2;
+    } else {
+        rb_hash_aset(stack_peek(&pi->stack)->val, oj_calc_hash_key(pi, parent), value);
+    }
     TRACE_PARSE_CALL(pi->options.trace, "set_value", pi, value);
 }
 

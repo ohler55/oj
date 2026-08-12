@@ -31,6 +31,7 @@ have_func('stpcpy')
 have_func('pthread_mutex_init')
 have_func('getrlimit', 'sys/resource.h')
 have_func('rb_enc_interned_str')
+have_func('rb_hash_new_capa', 'ruby.h')
 have_func('rb_ext_ractor_safe', 'ruby.h')
 have_func('rb_hash_start', 'ruby.h')
 

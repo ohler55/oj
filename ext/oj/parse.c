@@ -1261,7 +1261,11 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
     // value stack (while it is in scope).
     wrapped_stack = oj_stack_init(&pi->stack);
     rb_protect(protect_parse, (VALUE)pi, &line);
-    if (Qundef == pi->stack.head->val && !empty_ok(&pi->options)) {
+    // Only when nothing is on the stack was the input actually empty. A
+    // deferred hash (built at its closing brace from buffered pairs) leaves
+    // head->val Qundef while its entry is still on the stack, e.g. when a
+    // parse error cut the document short; the real error is already set.
+    if (Qundef == pi->stack.head->val && stack_empty(&pi->stack) && !empty_ok(&pi->options)) {
         if (No == pi->options.nilnil || (CompatMode == pi->options.mode && 0 < pi->cur - pi->json)) {
             oj_set_error_at(pi, oj_json_parser_error_class, __FILE__, __LINE__, "Empty input");
         }

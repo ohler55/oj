@@ -33,7 +33,10 @@ static void hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, c
                 rstr = rb_funcall(clas, oj_json_create_id, 1, rstr);
             }
         }
-        if (rb_cHash != rb_obj_class(parent->val)) {
+        if (Qnil == pi->options.hash_class) {
+            stack_pair_push(&pi->stack, rkey, rstr);
+            parent->pcnt += 2;
+        } else if (rb_cHash != rb_obj_class(parent->val)) {
             // The rb_hash_set would still work but the unit tests for the
             // json gem require the less efficient []= method be called to set
             // values. Even using the store method to set the values will fail
@@ -47,20 +50,34 @@ static void hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, c
 }
 
 static VALUE start_hash(ParseInfo pi) {
-    volatile VALUE h;
-
     if (Qnil != pi->options.hash_class) {
-        h = rb_class_new_instance(0, NULL, pi->options.hash_class);
-    } else {
-        h = rb_hash_new();
+        return rb_class_new_instance(0, NULL, pi->options.hash_class);
     }
     TRACE_PARSE_IN(pi->options.trace, "start_hash", pi);
-    return h;
+    // The Hash is built at end_hash from the buffered pairs.
+    return Qundef;
 }
 
 static void end_hash(struct _parseInfo *pi) {
     Val parent = stack_peek(&pi->stack);
 
+    if (Qnil == pi->options.hash_class) {
+        ValStack       stack = &pi->stack;
+        size_t         cnt   = parent->pcnt;
+        volatile VALUE h;
+
+#if HAVE_RB_HASH_NEW_CAPA
+        h = rb_hash_new_capa((long)(cnt / 2));
+#else
+        h = rb_hash_new();
+#endif
+        if (0 < cnt) {
+            rb_hash_bulk_insert((long)cnt, stack->pairs + stack->pcnt - cnt, h);
+            stack->pcnt -= cnt;
+            parent->pcnt = 0;
+        }
+        parent->val = h;
+    }
     if (0 != parent->classname) {
         volatile VALUE clas;
 
@@ -103,7 +120,10 @@ static void add_num(ParseInfo pi, NumInfo ni) {
 static void hash_set_num(struct _parseInfo *pi, Val parent, NumInfo ni) {
     volatile VALUE rval = oj_num_as_value(ni);
 
-    if (rb_cHash != rb_obj_class(parent->val)) {
+    if (Qnil == pi->options.hash_class) {
+        stack_pair_push(&pi->stack, oj_calc_hash_key(pi, parent), rval);
+        parent->pcnt += 2;
+    } else if (rb_cHash != rb_obj_class(parent->val)) {
         // The rb_hash_set would still work but the unit tests for the
         // json gem require the less efficient []= method be called to set
         // values. Even using the store method to set the values will fail
@@ -116,7 +136,10 @@ static void hash_set_num(struct _parseInfo *pi, Val parent, NumInfo ni) {
 }
 
 static void hash_set_value(ParseInfo pi, Val parent, VALUE value) {
-    if (rb_cHash != rb_obj_class(parent->val)) {
+    if (Qnil == pi->options.hash_class) {
+        stack_pair_push(&pi->stack, oj_calc_hash_key(pi, parent), value);
+        parent->pcnt += 2;
+    } else if (rb_cHash != rb_obj_class(parent->val)) {
         // The rb_hash_set would still work but the unit tests for the
         // json gem require the less efficient []= method be called to set
         // values. Even using the store method to set the values will fail
