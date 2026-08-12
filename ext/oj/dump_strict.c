@@ -10,6 +10,7 @@
 #include <unistd.h>
 
 #include "dump.h"
+#include "fp.h"
 #include "trace.h"
 
 // Workaround in case INFINITY is not defined in math.h or if the OS is CentOS
@@ -90,14 +91,7 @@ static void dump_float(VALUE obj, int depth, Out out, bool as_ok) {
         } else if (d == (double)(long long int)d) {
             cnt = snprintf(buf, sizeof(buf), "%.1f", d);
         } else if (0 == out->opts->float_prec) {
-            volatile VALUE rstr = oj_safe_string_convert(obj);
-
-            cnt = RSTRING_LEN(rstr);
-            if ((int)sizeof(buf) <= cnt) {
-                cnt = sizeof(buf) - 1;
-            }
-            memcpy(buf, RSTRING_PTR(rstr), cnt);
-            buf[cnt] = '\0';
+            cnt = oj_dtoa_shortest(d, buf);
         } else {
             cnt = oj_dump_float_printf(buf, sizeof(buf), obj, d, out->opts->float_fmt);
         }

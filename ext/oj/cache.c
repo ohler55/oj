@@ -181,7 +181,8 @@ static VALUE lockless_intern(Cache c, const char *key, size_t len) {
 }
 
 static VALUE locking_intern(Cache c, const char *key, size_t len) {
-    uint64_t       h;
+    // The hash does not depend on cache state so calculate it before locking.
+    uint64_t       h = hash_calc((const uint8_t *)key, len);
     Slot          *bucket;
     Slot           b;
     uint64_t       old_size;
@@ -198,7 +199,6 @@ static VALUE locking_intern(Cache c, const char *key, size_t len) {
             c->rcnt = 0;
         }
     }
-    h      = hash_calc((const uint8_t *)key, len);
     bucket = (Slot *)c->slots + (h & c->mask);
     for (b = *bucket; NULL != b; b = b->next) {
         if ((uint8_t)len == b->klen && 0 == strncmp(b->key, key, len)) {

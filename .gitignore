@@ -15,5 +15,8 @@ doc
 Gemfile.lock
 *.so
 vendor
+# The bundler vendor rule above must not hide the vendored C sources the
+# extension is built from.
+!ext/oj/vendor/
 gemfiles/*.lock
 tmp

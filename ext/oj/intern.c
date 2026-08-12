@@ -46,7 +46,14 @@ static VALUE sym_cache_obj;
 static VALUE attr_cache_obj;
 
 static VALUE form_str(const char *str, size_t len) {
+#if HAVE_RB_ENC_INTERNED_STR
+    // An interned string (fstring), not just a frozen one, so that
+    // rb_hash_aset takes its cheap path: inserting a non-fstring key makes
+    // rb_hash_aset consult the fstring table every time the key is used.
+    return rb_enc_interned_str(str, len, rb_utf8_encoding());
+#else
     return rb_str_freeze(rb_utf8_str_new(str, len));
+#endif
 }
 
 static VALUE form_sym(const char *str, size_t len) {
