@@ -3,6 +3,7 @@
 
 #include "code.h"
 #include "dump.h"
+#include "fp.h"
 #include "rails.h"
 #include "trace.h"
 
@@ -595,10 +596,8 @@ static void dump_float(VALUE obj, int depth, Out out, bool as_ok) {
     } else if (oj_rails_float_opt) {
         cnt = oj_dump_float_printf(buf, sizeof(buf), obj, d, "%0.16g");
     } else {
-        volatile VALUE rstr = oj_safe_string_convert(obj);
-
-        strcpy(buf, RSTRING_PTR(rstr));
-        cnt = RSTRING_LEN(rstr);
+        // Shortest round-trip form, the same conversion the json gem uses.
+        cnt = oj_dtoa_shortest(d, buf);
     }
     assure_size(out, cnt);
     APPEND_CHARS(out->cur, buf, cnt);

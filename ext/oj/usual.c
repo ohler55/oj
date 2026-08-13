@@ -3,6 +3,7 @@
 #include "usual.h"
 
 #include "cache.h"
+#include "fp.h"
 #include "mem.h"
 #include "oj.h"
 #include "parser.h"
@@ -491,17 +492,32 @@ static void add_big_key(ojParser p) {
     push2(p, rb_funcall(rb_cObject, oj_bigdecimal_id, 1, rb_str_new(buf_str(&p->buf), buf_len(&p->buf))));
 }
 
-static void add_big_as_float(ojParser p) {
-    volatile VALUE big = rb_funcall(rb_cObject, oj_bigdecimal_id, 1, rb_str_new(buf_str(&p->buf), buf_len(&p->buf)));
+// The buffered token is a validated JSON number too long for the int64
+// accumulator. The common case (17 significant digits, seen in GPS style
+// data) still fits the fast conversion; only longer or subnormal tokens pay
+// for a BigDecimal round trip.
+static double big_buf_as_dbl(ojParser p) {
+    double d;
 
-    push(p, rb_funcall(big, to_f_id, 0));
+    if (oj_fast_dtod(buf_str(&p->buf), buf_str(&p->buf) + buf_len(&p->buf), &d)) {
+        return d;
+    }
+    {
+        volatile VALUE big = rb_funcall(rb_cObject, oj_bigdecimal_id, 1, rb_str_new(buf_str(&p->buf), buf_len(&p->buf)));
+
+        return rb_num2dbl(rb_funcall(big, to_f_id, 0));
+    }
+}
+
+static void add_big_as_float(ojParser p) {
+    push(p, rb_float_new(big_buf_as_dbl(p)));
 }
 
 static void add_big_as_float_key(ojParser p) {
-    volatile VALUE big = rb_funcall(rb_cObject, oj_bigdecimal_id, 1, rb_str_new(buf_str(&p->buf), buf_len(&p->buf)));
+    double d = big_buf_as_dbl(p);
 
     push_key(p);
-    push2(p, rb_funcall(big, to_f_id, 0));
+    push2(p, rb_float_new(d));
 }
 
 static void add_big_as_ruby(ojParser p) {

@@ -12,6 +12,7 @@
 
 #include "buf.h"
 #include "encode.h"
+#include "fp.h"
 #include "mem.h"
 #include "oj.h"
 #include "rxclass.h"
@@ -725,15 +726,22 @@ static void read_num(ParseInfo pi) {
         }
         ni.len = pi->cur - ni.str;
     }
-    // Check for special reserved values for Infinity and NaN.
+    // Check for special reserved values for Infinity and NaN. Cheap prefix
+    // test first: all the sentinels look like [-]3.[03]e... and the
+    // strcasecmp calls show up in profiles when every big decimal in a
+    // document pays for three of them.
     if (ni.big) {
-        if (0 == strcasecmp(INF_VAL, ni.str)) {
-            ni.infinity = 1;
-        } else if (0 == strcasecmp(NINF_VAL, ni.str)) {
-            ni.infinity = 1;
-            ni.neg      = 1;
-        } else if (0 == strcasecmp(NAN_VAL, ni.str)) {
-            ni.nan = 1;
+        const char *bs = ni.str + (('-' == *ni.str) ? 1 : 0);
+
+        if ('3' == *bs && '.' == bs[1] && ('0' == bs[2] || '3' == bs[2]) && 'e' == (bs[3] | 0x20)) {
+            if (0 == strcasecmp(INF_VAL, ni.str)) {
+                ni.infinity = 1;
+            } else if (0 == strcasecmp(NINF_VAL, ni.str)) {
+                ni.infinity = 1;
+                ni.neg      = 1;
+            } else if (0 == strcasecmp(NAN_VAL, ni.str)) {
+                ni.nan = 1;
+            }
         }
     }
     if (CompatMode == pi->options.mode) {
@@ -969,6 +977,31 @@ static VALUE parse_big_decimal(VALUE str) {
     return rb_funcall(rb_cObject, oj_bigdecimal_id, 1, str);
 }
 
+// Convert the number token in ni to a double, correctly rounded. The fast
+// path re-scans the token for the vendored Ryu conversion, a handful of
+// instructions per digit; the strtod fallback (Ruby redefines strtod to
+// David Gay's bignum-based algorithm) costs microseconds for long mantissas.
+static double ni_as_dbl(NumInfo ni) {
+    double d;
+
+    if (oj_fast_dtod(ni->str, ni->str + ni->len, &d)) {
+        return d;
+    }
+    {
+        char *dend;
+
+        d = strtod(ni->str, &dend);
+        if ((long)ni->len != (long)(dend - ni->str)) {
+            if (NULL == ni->pi || Qnil == ni->pi->err_class) {
+                rb_raise(oj_parse_error_class, "Invalid float");
+            } else {
+                rb_raise(ni->pi->err_class, "Invalid float");
+            }
+        }
+    }
+    return d;
+}
+
 static long double exp_plus[] = {
     1.0,    1.0e1,  1.0e2,  1.0e3,  1.0e4,  1.0e5,  1.0e6,  1.0e7,  1.0e8,  1.0e9,  1.0e10, 1.0e11, 1.0e12,
     1.0e13, 1.0e14, 1.0e15, 1.0e16, 1.0e17, 1.0e18, 1.0e19, 1.0e20, 1.0e21, 1.0e22, 1.0e23, 1.0e24, 1.0e25,
@@ -1065,17 +1098,7 @@ oj_num_as_value(NumInfo ni) {
 
             rnum = rb_funcall(sv, rb_intern("to_f"), 0);
         } else {
-            char  *end;
-            double d = strtod(ni->str, &end);
-
-            if ((long)ni->len != (long)(end - ni->str)) {
-                if (Qnil == ni->pi->err_class) {
-                    rb_raise(oj_parse_error_class, "Invalid float");
-                } else {
-                    rb_raise(ni->pi->err_class, "Invalid float");
-                }
-            }
-            rnum = rb_float_new(d);
+            rnum = rb_float_new(ni_as_dbl(ni));
         }
     }
     return rnum;

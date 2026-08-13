@@ -4,6 +4,7 @@
 
 #include <fcntl.h>
 
+#include "fp.h"
 #include "oj.h"
 #include "simd.h"
 
@@ -503,29 +504,46 @@ static void calc_num(ojParser p) {
         p->funcs[p->stack[p->depth]].add_int(p);
         break;
     case OJ_DECIMAL: {
-        long double d = (long double)p->num.fixnum;
+        int32_t e10    = (p->num.exp_neg ? -p->num.exp : p->num.exp) - p->num.shift;
+        int     digits = 0;
+        int64_t x;
 
-        if (p->num.neg) {
-            d = -d;
+        for (x = p->num.fixnum; 0 < x; x /= 10) {
+            digits++;
         }
-        if (0 < p->num.shift) {
-            d /= pow_map[p->num.shift];
-        }
-        if (0 < p->num.exp) {
-            long double x;
+        if (0 == p->num.fixnum) {
+            p->num.dub = p->num.neg ? -0.0 : 0.0;
+        } else if (-307 < digits + e10) {
+            // Correctly rounded, unlike the long double fallback below which
+            // is plain double math on platforms where long double is 64 bits
+            // (arm64 for one).
+            p->num.dub = oj_s2d_from_parts((uint64_t)p->num.fixnum, digits, e10, p->num.neg);
+        } else {
+            // Possible subnormal, Ryu misrounds near 1e-310.
+            long double d = (long double)p->num.fixnum;
 
-            if (MAX_POW < p->num.exp) {
-                x = powl(10.0L, (long double)p->num.exp);
-            } else {
-                x = pow_map[p->num.exp];
+            if (p->num.neg) {
+                d = -d;
             }
-            if (p->num.exp_neg) {
-                d /= x;
-            } else {
-                d *= x;
+            if (0 < p->num.shift) {
+                d /= pow_map[p->num.shift];
             }
+            if (0 < p->num.exp) {
+                long double xp;
+
+                if (MAX_POW < p->num.exp) {
+                    xp = powl(10.0L, (long double)p->num.exp);
+                } else {
+                    xp = pow_map[p->num.exp];
+                }
+                if (p->num.exp_neg) {
+                    d /= xp;
+                } else {
+                    d *= xp;
+                }
+            }
+            p->num.dub = (double)d;
         }
-        p->num.dub = d;
         p->funcs[p->stack[p->depth]].add_float(p);
         break;
     }
