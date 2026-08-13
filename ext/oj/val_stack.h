@@ -52,12 +52,12 @@ typedef struct _valStack {
     // rb_hash_bulk_insert at the closing brace instead of one rb_hash_aset
     // per pair. Nesting is strictly LIFO so each open hash's pairs occupy
     // the top of the buffer; the per-hash count lives in its Val's clen.
-    VALUE  *pairs;
-    size_t  pcnt;  // number of live VALUEs in pairs
-    size_t  pend;  // capacity of pairs in VALUEs
-    Val     head;  // current stack
-    Val     end;   // stack end
-    Val     tail;  // pointer to one past last element name on stack
+    VALUE *pairs;
+    size_t pcnt;  // number of live VALUEs in pairs
+    size_t pend;  // capacity of pairs in VALUEs
+    Val    head;  // current stack
+    Val    end;   // stack end
+    Val    tail;  // pointer to one past last element name on stack
 #ifdef HAVE_PTHREAD_MUTEX_INIT
     pthread_mutex_t mutex;
 #else
