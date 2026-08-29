@@ -585,6 +585,7 @@ static void big_change(ojParser p) {
                 d = x / div % 10;
                 if (started || 0 < d) {
                     buf_append(&p->buf, '0' + d);
+                    started = true;
                 }
             }
         }
