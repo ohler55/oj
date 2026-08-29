@@ -461,7 +461,7 @@ oj_mimic_pretty_generate(int argc, VALUE *argv, VALUE self) {
     if (1 == argc || Qnil == argv[1]) {
         h = rb_hash_new();
     } else {
-        h = argv[1];
+        h = rb_hash_dup(argv[1]);
     }
     if (!oj_hash_has_key(h, oj_indent_sym)) {
         rb_hash_aset(h, oj_indent_sym, rb_str_new2("  "));
