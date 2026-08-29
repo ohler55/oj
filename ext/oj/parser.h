@@ -34,7 +34,7 @@ typedef struct _num {
     uint32_t    len;
     int16_t     div;  // 10^div
     int16_t     exp;
-    uint8_t     shift;  // shift of fixnum to get decimal
+    uint32_t    shift;  // shift of fixnum to get decimal
     bool        neg;
     bool        exp_neg;
     // for numbers as strings, reuse buf

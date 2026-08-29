@@ -509,20 +509,29 @@ static void calc_num(ojParser p) {
             d = -d;
         }
         if (0 < p->num.shift) {
-            d /= pow_map[p->num.shift];
+            uint32_t shift = p->num.shift;
+
+            while (MAX_POW < shift) {
+                d /= pow_map[MAX_POW];
+                shift -= MAX_POW;
+            }
+            d /= pow_map[shift];
         }
         if (0 < p->num.exp) {
-            long double x;
-
-            if (MAX_POW < p->num.exp) {
-                x = powl(10.0L, (long double)p->num.exp);
-            } else {
-                x = pow_map[p->num.exp];
-            }
             if (p->num.exp_neg) {
-                d /= x;
+                int exp = p->num.exp;
+
+                while (MAX_POW < exp) {
+                    d /= pow_map[MAX_POW];
+                    exp -= MAX_POW;
+                }
+                d /= pow_map[exp];
             } else {
-                d *= x;
+                if (MAX_POW < p->num.exp) {
+                    d *= powl(10.0L, (long double)p->num.exp);
+                } else {
+                    d *= pow_map[p->num.exp];
+                }
             }
         }
         p->num.dub = d;
