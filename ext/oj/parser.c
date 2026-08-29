@@ -559,19 +559,31 @@ static void big_change(ojParser p) {
         break;
     case OJ_DECIMAL: {
         int shift = p->num.shift;
+        int end   = sizeof(buf) - 1;
 
-        for (len = sizeof(buf) - 1; 0 < i; len--, i /= 10, shift--) {
-            if (0 == shift) {
-                buf[len] = '.';
-                len--;
-            }
-            buf[len] = '0' + (i % 10);
-        }
+        len = end;
+        do {
+            buf[--len] = '0' + (i % 10);
+            i /= 10;
+        } while (0 < i);
         if (p->num.neg) {
-            buf[len] = '-';
-            len--;
+            buf_append(&p->buf, '-');
         }
-        buf_append_string(&p->buf, buf + len + 1, sizeof(buf) - len - 1);
+        if (end - len <= shift) {
+            buf_append_string(&p->buf, "0.", 2);
+            for (int cnt = shift - (end - len); 0 < cnt; cnt--) {
+                buf_append(&p->buf, '0');
+            }
+            buf_append_string(&p->buf, buf + len, end - len);
+        } else {
+            int decimal = end - shift;
+
+            buf_append_string(&p->buf, buf + len, decimal - len);
+            if (0 < shift) {
+                buf_append(&p->buf, '.');
+                buf_append_string(&p->buf, buf + decimal, shift);
+            }
+        }
         if (0 < p->num.exp) {
             int  x = p->num.exp;
             int  d, div;
