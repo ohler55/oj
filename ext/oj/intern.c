@@ -50,7 +50,12 @@ static VALUE form_str(const char *str, size_t len) {
 }
 
 static VALUE form_sym(const char *str, size_t len) {
-    return rb_to_symbol(rb_str_intern(rb_utf8_str_new(str, len)));
+    VALUE sym = rb_check_symbol_cstr(str, (long)len, oj_utf8_encoding);
+
+    if (Qnil == sym) {
+        sym = rb_str_intern(rb_utf8_str_new(str, len));
+    }
+    return sym;
 }
 
 static VALUE form_attr(const char *str, size_t len) {

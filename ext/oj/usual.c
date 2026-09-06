@@ -49,7 +49,12 @@ static VALUE form_str(const char *str, size_t len) {
 }
 
 static VALUE form_sym(const char *str, size_t len) {
-    return rb_str_intern(rb_utf8_str_new(str, len));
+    VALUE sym = rb_check_symbol_cstr(str, (long)len, oj_utf8_encoding);
+
+    if (Qnil == sym) {
+        sym = rb_str_intern(rb_utf8_str_new(str, len));
+    }
+    return sym;
 }
 
 static VALUE form_attr(const char *str, size_t len) {
@@ -172,9 +177,9 @@ static VALUE str_key(ojParser p, Key kp) {
 
 static VALUE sym_key(ojParser p, Key kp) {
     if ((size_t)kp->len < sizeof(kp->buf)) {
-        return rb_str_freeze(rb_str_intern(rb_utf8_str_new(kp->buf, kp->len)));
+        return form_sym(kp->buf, kp->len);
     }
-    return rb_str_freeze(rb_str_intern(rb_utf8_str_new(kp->key, kp->len)));
+    return form_sym(kp->key, kp->len);
 }
 
 static ID get_attr_id(ojParser p, Key kp) {
