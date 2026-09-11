@@ -393,6 +393,16 @@ void oj_set_obj_ivar(Val parent, Val kval, VALUE value) {
         parent->val = rb_funcall(parent->val, rb_intern("exception"), 1, value);
     } else if (kval->klen == 3 && strncmp("~bt", kval->key, 3) == 0 && rb_obj_is_kind_of(parent->val, rb_eException)) {
         rb_funcall(parent->val, rb_intern("set_backtrace"), 1, value);
+    } else if (RUBY_VERSION_MAJOR >= 4 && kval->klen == 4 && strncmp("hash", kval->key, 4) == 0 &&
+               Qtrue == rb_obj_is_kind_of(parent->val, rb_const_get(rb_cObject, rb_intern("Set")))) {
+        // Ruby 4: Set no longer has @hash ivar. Reconstruct by adding keys.
+        if (T_HASH == rb_type(value)) {
+            VALUE keys = rb_funcall(value, rb_intern("keys"), 0);
+            long  len  = RARRAY_LEN(keys);
+            for (long i = 0; i < len; i++) {
+                rb_funcall(parent->val, rb_intern("add"), 1, rb_ary_entry(keys, i));
+            }
+        }
     } else {
         rb_ivar_set(parent->val, oj_attr_intern(kval->key, kval->klen), value);
     }
@@ -611,6 +621,12 @@ WHICH_TYPE:
         }
         break;
     default:
+        // Ruby 4: Set is T_DATA, not T_OBJECT. Handle ivar setting via our helper.
+        if (RUBY_VERSION_MAJOR >= 4 &&
+            Qtrue == rb_obj_is_kind_of(parent->val, rb_const_get(rb_cObject, rb_intern("Set")))) {
+            oj_set_obj_ivar(parent, kval, value);
+            break;
+        }
         oj_set_error_at(pi,
                         oj_parse_error_class,
                         __FILE__,
