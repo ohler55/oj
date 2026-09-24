@@ -4,6 +4,7 @@
 $LOAD_PATH << __dir__
 
 require 'helper'
+require 'tmpdir'
 
 # Registered as an odd class by test_odd_mod_shorter_than_the_module_name. It
 # has to be at the top level for its name to be short enough for a value that
@@ -760,6 +761,39 @@ class ObjectJuice < Minitest::Test
         Oj.load(json, :mode => :object, :class_cache => cache)
       end
       assert_match(/\Aclass 'NoSuChClass' is not defined/, err.message)
+    end
+  end
+
+  # An exception raised while a class name was being resolved left the class
+  # cache mutex locked, so the next class lookup waited on it indefinitely.
+  # Here the raise comes from an autoload. The check runs in a child process
+  # so a lookup stuck on the mutex cannot stall the rest of the suite.
+  def test_class_resolve_raise_releases_class_cache
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'raiser.rb')
+      File.write(path, "raise 'raised while resolving'
+")
+      script = <<~RUBY
+        require 'oj'
+        class Jam; def initialize(x); @x = x; end; end
+        autoload :Raiser, #{path.inspect}
+        2.times do
+          Oj.load('{"^o":"Raiser"}', mode: :object, class_cache: true)
+        rescue RuntimeError
+        end
+        print Oj.load('{"^o":"Jam","x":1}', mode: :object, class_cache: true).class
+      RUBY
+      lib = [File.expand_path('../ext', __dir__), File.expand_path('../lib', __dir__)]
+      cmd = [RbConfig.ruby, *lib.flat_map { |d| ['-I', d] }, '-e', script]
+      IO.popen(cmd, err: [:child, :out]) do |io|
+        out = nil
+        reader = Thread.new { out = io.read }
+        unless reader.join(10)
+          Process.kill(:KILL, io.pid)
+          flunk('class cache mutex was left locked')
+        end
+        assert_equal('Jam', out)
+      end
     end
   end
 

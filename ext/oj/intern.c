@@ -248,61 +248,83 @@ static VALUE resolve_classpath(ParseInfo pi, const char *name, size_t len, int a
     return clas;
 }
 
+typedef struct _internArgs {
+    KeyVal      bucket;  // last bucket in the chain for the key's slot
+    const char *key;
+    size_t      len;
+    ParseInfo   pi;
+    int         auto_define;
+    VALUE       error_class;
+} *InternArgs;
+
+// Resolves the class and only then adds it to the cache so a raise while
+// resolving does not leave a key cached with no value.
+static VALUE intern_new_class(VALUE a) {
+    InternArgs args   = (InternArgs)a;
+    KeyVal     bucket = args->bucket;
+    VALUE      clas   = resolve_classpath(args->pi, args->key, args->len, args->auto_define, args->error_class);
+
+    if (NULL != bucket->key) {  // not the top slot
+        KeyVal b = OJ_R_ALLOC(struct _keyVal);
+
+        b->next      = NULL;
+        bucket->next = b;
+        bucket       = b;
+    }
+    bucket->key = oj_strndup(args->key, args->len);
+    bucket->len = args->len;
+    bucket->val = clas;
+
+    return clas;
+}
+
+static KeyVal find_class(KeyVal bucket, const char *key, size_t len, VALUE *clas) {
+    if (NULL != bucket->key) {  // not the top slot
+        for (KeyVal b = bucket; 0 != b; b = b->next) {
+            if (len == b->len && 0 == strncmp(b->key, key, len)) {
+                *clas = b->val;
+                return NULL;
+            }
+            bucket = b;
+        }
+    }
+    return bucket;
+}
+
 VALUE oj_class_intern(const char *key, size_t len, bool safe, ParseInfo pi, int auto_define, VALUE error_class) {
-    uint64_t h      = hash_calc((const uint8_t *)key, len) & HASH_MASK;
-    KeyVal   bucket = class_hash.slots + h;
-    KeyVal   b;
+    uint64_t           h    = hash_calc((const uint8_t *)key, len) & HASH_MASK;
+    struct _internArgs args = {NULL, key, len, pi, auto_define, error_class};
+    VALUE              clas = Qundef;
 
     if (safe) {
+        int state = 0;
+
 #if HAVE_PTHREAD_MUTEX_INIT
         pthread_mutex_lock(&class_hash.mutex);
 #else
         rb_mutex_lock(class_hash.mutex);
 #endif
-        if (NULL != bucket->key) {  // not the top slot
-            for (b = bucket; 0 != b; b = b->next) {
-                if (len == b->len && 0 == strncmp(b->key, key, len)) {
-#if HAVE_PTHREAD_MUTEX_INIT
-                    pthread_mutex_unlock(&class_hash.mutex);
-#else
-                    rb_mutex_unlock(class_hash.mutex);
-#endif
-                    return b->val;
-                }
-                bucket = b;
-            }
-            b            = OJ_R_ALLOC(struct _keyVal);
-            b->next      = NULL;
-            bucket->next = b;
-            bucket       = b;
+        // Resolving calls into Ruby and allocating, either of which can
+        // raise and unwind past the unlock, so the work is protected and any
+        // exception rethrown after the mutex is released.
+        if (NULL != (args.bucket = find_class(class_hash.slots + h, key, len, &clas))) {
+            clas = rb_protect(intern_new_class, (VALUE)&args, &state);
         }
-        bucket->key = oj_strndup(key, len);
-        bucket->len = len;
-        bucket->val = resolve_classpath(pi, key, len, auto_define, error_class);
 #if HAVE_PTHREAD_MUTEX_INIT
         pthread_mutex_unlock(&class_hash.mutex);
 #else
         rb_mutex_unlock(class_hash.mutex);
 #endif
-    } else {
-        if (NULL != bucket->key) {
-            for (b = bucket; 0 != b; b = b->next) {
-                if (len == b->len && 0 == strncmp(b->key, key, len)) {
-                    return (ID)b->val;
-                }
-                bucket = b;
-            }
-            b            = OJ_R_ALLOC(struct _keyVal);
-            b->next      = NULL;
-            bucket->next = b;
-            bucket       = b;
+        if (0 != state) {
+            rb_jump_tag(state);
         }
-        bucket->key = oj_strndup(key, len);
-        bucket->len = len;
-        bucket->val = resolve_classpath(pi, key, len, auto_define, error_class);
+    } else if (NULL != (args.bucket = find_class(class_hash.slots + h, key, len, &clas))) {
+        clas = intern_new_class((VALUE)&args);
     }
-    rb_gc_register_mark_object(bucket->val);
-    return bucket->val;
+    if (NULL != args.bucket) {  // newly added to the cache
+        rb_gc_register_mark_object(clas);
+    }
+    return clas;
 }
 
 char *oj_strndup(const char *s, size_t len) {
