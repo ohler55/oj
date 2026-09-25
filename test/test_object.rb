@@ -771,8 +771,7 @@ class ObjectJuice < Minitest::Test
   def test_class_resolve_raise_releases_class_cache
     Dir.mktmpdir do |dir|
       path = File.join(dir, 'raiser.rb')
-      File.write(path, "raise 'raised while resolving'
-")
+      File.write(path, "raise 'raised while resolving'\n")
       script = <<~RUBY
         require 'oj'
         class Jam; def initialize(x); @x = x; end; end
@@ -785,14 +784,18 @@ class ObjectJuice < Minitest::Test
       RUBY
       lib = [File.expand_path('../ext', __dir__), File.expand_path('../lib', __dir__)]
       cmd = [RbConfig.ruby, *lib.flat_map { |d| ['-I', d] }, '-e', script]
-      IO.popen(cmd, err: [:child, :out]) do |io|
+      # Only stdout is compared. Under ruby_memcheck the child inherits
+      # RUBY_FREE_AT_EXIT and warns about it on stderr, and runs under
+      # valgrind too, which is why the timeout is generous.
+      err = File.join(dir, 'stderr')
+      IO.popen(cmd, err: err) do |io|
         out = nil
         reader = Thread.new { out = io.read }
-        unless reader.join(10)
+        unless reader.join(60)
           Process.kill(:KILL, io.pid)
           flunk('class cache mutex was left locked')
         end
-        assert_equal('Jam', out)
+        assert_equal('Jam', out, File.read(err))
       end
     end
   end
