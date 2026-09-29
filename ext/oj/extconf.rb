@@ -49,6 +49,12 @@ if try_cflags('-msse2')
   $CPPFLAGS += ' -msse2'
 end
 
+# Ensure C99 mode for compilers that default to C90 (e.g. GCC 4.x).
+# simd.h uses C99 for-loop declarations that fail under -std=gnu90.
+if !$CFLAGS.include?('-std=') && try_cflags('-std=gnu99')
+  $CFLAGS += ' -std=gnu99'
+end
+
 if enable_config('trace-log', false)
   dflags['OJ_ENABLE_TRACE_LOG'] = 1
 end

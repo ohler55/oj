@@ -99,8 +99,10 @@ static inline int oj_ctz64_fallback(uint64_t x) {
 // GCC/Clang: check for header availability and include them
 // We include headers but use target attributes to enable instructions per-function
 // Include cpuid.h for __get_cpuid fallback when __builtin_cpu_supports is unavailable
+#ifdef __has_include
 #if __has_include(<cpuid.h>)
 #include <cpuid.h>
+#endif
 #endif
 #if defined(__SSE4_2__) || defined(__SSE2__)
 // If any SSE is enabled globally, x86intrin.h should be available
@@ -109,6 +111,7 @@ static inline int oj_ctz64_fallback(uint64_t x) {
 #define HAVE_SIMD_SSE2 1
 #else
 // Try to include headers anyway for target attribute functions
+#ifdef __has_include
 #if __has_include(<x86intrin.h>)
 #include <x86intrin.h>
 #define HAVE_SIMD_SSE4_2 1
@@ -120,6 +123,7 @@ static inline int oj_ctz64_fallback(uint64_t x) {
 #elif __has_include(<emmintrin.h>)
 #include <emmintrin.h>
 #define HAVE_SIMD_SSE2 1
+#endif
 #endif
 #endif
 #endif
