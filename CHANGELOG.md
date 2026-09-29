@@ -1,8 +1,17 @@
 # CHANGELOG
 
-## 3.17.7 - unreleased
+## 3.17.7 - 2026-09-29
 
-- Fixed issue #1104, where `Oj.dump` in compat and custom mode forwarded its whole options hash to the `to_json` methods it calls, so with json 3.0, whose generator raises `ArgumentError` on options it does not know, dumping a `Time` or any other object whose `to_json` comes from the json gem failed with `unknown keywords: mode, use_to_json`. Nested values reach `to_json` even without `use_to_json`, so `Oj.dump(data, mode: :compat)` failed the same way for data holding a `BigDecimal` or `Time`. The options Oj acts on are now dropped from the hash `to_json` receives, except `:only` and `:except`, which ActiveSupport's `as_json` reads. Keys Oj does not know are passed through untouched.
+### Fixed
+ - issue #1104, where `Oj.dump` in compat and custom mode forwarded its whole options hash to the `to_json` methods it calls, so with json 3.0, whose generator raises `ArgumentError` on options it does not know, dumping a `Time` or any other object whose `to_json` comes from the json gem failed with `unknown keywords: mode, use_to_json`. Nested values reach `to_json` even without `use_to_json`, so `Oj.dump(data, mode: :compat)` failed the same way for data holding a `BigDecimal` or `Time`. The options Oj acts on are now dropped from the hash `to_json` receives, except `:only` and `:except`, which ActiveSupport's `as_json` reads. Keys Oj does not know are passed through untouched.
+ - Speed up hash-heavy documents: skip the 11KB per-parse memset and bulk-insert hashes (#1096)
+ - Preserve decimal placement for large parser numbers (#1099)
+ - Keep zero digits in oversized parser exponents (#1100)
+ - Parse very small usual-mode numbers correctly (#1101)
+ - Speed up symbol keys by interning without a temporary String (#1102)
+ - Keep Oj's own options out of the hash passed to to_json (#1106)
+ - Ensure class-cache mutex is released on exceptions (#1108)
+ - Guard __has_include with an #ifdef to support older GCC versions (4.4.7 etc.) (#1111)
 
 ## 3.17.6 - 2026-08-10
 
