@@ -53,7 +53,7 @@ typedef struct _slot {
     char              key[CACHE_MAX_KEY];
 } *Slot;
 
-typedef struct _cache {
+struct _cache {
     volatile Slot  *slots;
     volatile size_t cnt;
     VALUE (*form)(const char *str, size_t len);
@@ -69,7 +69,7 @@ typedef struct _cache {
 #endif
     uint8_t xrate;
     bool    mark;
-} *Cache;
+};
 
 void cache_set_form(Cache c, VALUE (*form)(const char *str, size_t len)) {
     c->form = form;
