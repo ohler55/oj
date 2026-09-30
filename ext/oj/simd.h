@@ -98,12 +98,10 @@ static inline int oj_ctz64_fallback(uint64_t x) {
 #elif defined(__GNUC__) || defined(__clang__)
 // GCC/Clang: check for header availability and include them
 // We include headers but use target attributes to enable instructions per-function
-// Include cpuid.h for __get_cpuid fallback when __builtin_cpu_supports is unavailable
-#ifdef __has_include
-#if __has_include(<cpuid.h>)
+// Include cpuid.h for __get_cpuid fallback when __builtin_cpu_supports is unavailable.
+// cpuid.h is available on all GCC since 4.3 and all Clang versions, so include
+// it unconditionally rather than gating on __has_include (which GCC < 5 lacks).
 #include <cpuid.h>
-#endif
-#endif
 #if defined(__SSE4_2__) || defined(__SSE2__)
 // If any SSE is enabled globally, x86intrin.h should be available
 #include <x86intrin.h>
