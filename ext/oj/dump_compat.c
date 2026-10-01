@@ -470,9 +470,6 @@ oj_add_to_json(int argc, VALUE *argv, VALUE self) {
 
     if (0 == argc) {
         for (a = oj_compat_codes; NULL != a->name; a++) {
-            if (Qnil == a->clas || Qundef == a->clas) {
-                a->clas = rb_const_get_at(rb_cObject, rb_intern(a->name));
-            }
             a->active = true;
         }
         use_struct_alt    = true;
@@ -503,10 +500,7 @@ oj_add_to_json(int argc, VALUE *argv, VALUE self) {
                 continue;
             }
             for (a = oj_compat_codes; NULL != a->name; a++) {
-                if (Qnil == a->clas || Qundef == a->clas) {
-                    a->clas = rb_const_get_at(rb_cObject, rb_intern(a->name));
-                }
-                if (*argv == a->clas) {
+                if (*argv == oj_code_class(a)) {
                     a->active = true;
                     break;
                 }

@@ -31,7 +31,7 @@ Gem::Specification.new do |s|
 
   s.add_runtime_dependency 'bigdecimal', '>= 3.0'
   s.add_development_dependency 'minitest', '~> 5'
+  s.add_development_dependency 'ostruct', '>= 0.2'
   s.add_development_dependency 'rake-compiler', '>= 0.9', '< 2.0'
   s.add_development_dependency 'test-unit', '~> 3.0'
-  s.add_runtime_dependency 'ostruct', '>= 0.2'
 end

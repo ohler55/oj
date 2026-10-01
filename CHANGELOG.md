@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.17.8 - unreleased
+
+- Fixed issue #988 by no longer requiring `ostruct` when Oj is loaded, and dropping it as a runtime dependency. Like the json gem, `JSON::GenericObject` is now autoloaded and requires `ostruct` on first use, raising a `LoadError` that says so if it is not installed. OpenStruct is still dumped and loaded as before when the application has loaded it. `Oj.mimic_JSON` only adds `OpenStruct.json_create` and `OpenStruct#as_json` if OpenStruct is defined at the time it is called.
+
 ## 3.17.7 - 2026-09-29
 
 ### Fixed

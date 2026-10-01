@@ -28,6 +28,7 @@ typedef struct _attr {
     VALUE       time;
 } *Attr;
 
+extern VALUE oj_code_class(Code c);
 extern bool  oj_code_dump(Code codes, VALUE obj, int depth, Out out);
 extern VALUE oj_code_load(Code codes, VALUE clas, VALUE args);
 extern void  oj_code_set_active(Code codes, VALUE clas, bool active);
