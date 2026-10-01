@@ -46,17 +46,24 @@ static VALUE path2class(const char *name) {
 }
 
 // Returns Qundef while the class is not defined, as OpenStruct is not until
-// ostruct is required. A miss is not cached so the class is found once loaded.
+// ostruct is required. A miss is looked up again on the next call.
 VALUE oj_code_class(Code c) {
-    if (Qnil == c->clas) {
-        VALUE clas = path2class(c->name);
-
-        if (Qundef == clas) {
-            return Qundef;
-        }
-        c->clas = clas;
+    if (Qnil == c->clas || Qundef == c->clas) {
+        c->clas = path2class(c->name);
     }
     return c->clas;
+}
+
+// A miss is remembered while dumping so it is not looked up for every object.
+// Called at the start of each dump so a class defined since then is found.
+void oj_code_reset_missing(Code codes) {
+    Code c = codes;
+
+    for (; NULL != c->name; c++) {
+        if (Qundef == c->clas) {
+            c->clas = Qnil;
+        }
+    }
 }
 
 bool oj_code_dump(Code codes, VALUE obj, int depth, Out out) {
@@ -64,7 +71,7 @@ bool oj_code_dump(Code codes, VALUE obj, int depth, Out out) {
     Code  c    = codes;
 
     for (; NULL != c->name; c++) {
-        if (c->active && clas == oj_code_class(c)) {
+        if (c->active && Qundef != c->clas && clas == oj_code_class(c)) {
             c->encode(obj, depth, out);
             return true;
         }
