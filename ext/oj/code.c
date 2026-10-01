@@ -45,18 +45,33 @@ static VALUE path2class(const char *name) {
     return resolve_classname(clas, class_name);
 }
 
+// Returns Qundef while the class is not defined, as OpenStruct is not until
+// ostruct is required. A miss is looked up again on the next call.
+VALUE oj_code_class(Code c) {
+    if (Qnil == c->clas || Qundef == c->clas) {
+        c->clas = path2class(c->name);
+    }
+    return c->clas;
+}
+
+// A miss is remembered while dumping so it is not looked up for every object.
+// Called at the start of each dump so a class defined since then is found.
+void oj_code_reset_missing(Code codes) {
+    Code c = codes;
+
+    for (; NULL != c->name; c++) {
+        if (Qundef == c->clas) {
+            c->clas = Qnil;
+        }
+    }
+}
+
 bool oj_code_dump(Code codes, VALUE obj, int depth, Out out) {
     VALUE clas = rb_obj_class(obj);
     Code  c    = codes;
 
     for (; NULL != c->name; c++) {
-        if (Qundef == c->clas) {  // indicates not defined
-            continue;
-        }
-        if (Qnil == c->clas) {
-            c->clas = path2class(c->name);
-        }
-        if (clas == c->clas && c->active) {
+        if (c->active && Qundef != c->clas && clas == oj_code_class(c)) {
             c->encode(obj, depth, out);
             return true;
         }
@@ -69,13 +84,7 @@ oj_code_load(Code codes, VALUE clas, VALUE args) {
     Code c = codes;
 
     for (; NULL != c->name; c++) {
-        if (Qundef == c->clas) {  // indicates not defined
-            continue;
-        }
-        if (Qnil == c->clas) {
-            c->clas = path2class(c->name);
-        }
-        if (clas == c->clas) {
+        if (clas == oj_code_class(c)) {
             if (NULL == c->decode) {
                 break;
             }
@@ -89,13 +98,7 @@ void oj_code_set_active(Code codes, VALUE clas, bool active) {
     Code c = codes;
 
     for (; NULL != c->name; c++) {
-        if (Qundef == c->clas) {  // indicates not defined
-            continue;
-        }
-        if (Qnil == c->clas) {
-            c->clas = path2class(c->name);
-        }
-        if (clas == c->clas || Qnil == clas) {
+        if (Qnil == clas || clas == oj_code_class(c)) {
             c->active = active;
             if (Qnil != clas) {
                 break;
@@ -108,13 +111,7 @@ bool oj_code_has(Code codes, VALUE clas, bool encode) {
     Code c = codes;
 
     for (; NULL != c->name; c++) {
-        if (Qundef == c->clas) {  // indicates not defined
-            continue;
-        }
-        if (Qnil == c->clas) {
-            c->clas = path2class(c->name);
-        }
-        if (clas == c->clas) {
+        if (clas == oj_code_class(c)) {
             if (encode) {
                 return c->active && NULL != c->encode;
             } else {

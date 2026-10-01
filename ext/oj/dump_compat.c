@@ -470,9 +470,6 @@ oj_add_to_json(int argc, VALUE *argv, VALUE self) {
 
     if (0 == argc) {
         for (a = oj_compat_codes; NULL != a->name; a++) {
-            if (Qnil == a->clas || Qundef == a->clas) {
-                a->clas = rb_const_get_at(rb_cObject, rb_intern(a->name));
-            }
             a->active = true;
         }
         use_struct_alt    = true;
@@ -503,10 +500,7 @@ oj_add_to_json(int argc, VALUE *argv, VALUE self) {
                 continue;
             }
             for (a = oj_compat_codes; NULL != a->name; a++) {
-                if (Qnil == a->clas || Qundef == a->clas) {
-                    a->clas = rb_const_get_at(rb_cObject, rb_intern(a->name));
-                }
-                if (*argv == a->clas) {
+                if (*argv == oj_code_class(a)) {
                     a->active = true;
                     break;
                 }
@@ -883,6 +877,9 @@ void oj_dump_compat_val(VALUE obj, int depth, Out out, bool as_ok) {
     int type = rb_type(obj);
 
     TRACE(out->opts->trace, "dump", obj, depth, TraceIn);
+    if (0 == depth) {
+        oj_code_reset_missing(oj_compat_codes);
+    }
     // The max_nesting logic is that an empty Array or Hash is assumed to have
     // content so the max_nesting should fail but a non-collection value is
     // okay. That means a check for a collectable value is needed before
