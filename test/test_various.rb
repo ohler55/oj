@@ -175,6 +175,13 @@ class Juice < Minitest::Test
     dump_and_load(1, false)
   end
 
+  def test_negative_zero_dump
+    [:strict, :null, :compat, :rails, :custom, :object, :wab].each do |mode|
+      assert_equal('-0.0', Oj.dump(-0.0, mode: mode), mode)
+      assert_equal('0.0', Oj.dump(0.0, mode: mode), mode)
+    end
+  end
+
   def test_float_parse
     Oj.default_options = { :float_precision => 16, :bigdecimal_load => :auto }
     n = Oj.load('0.00001234567890123456')
