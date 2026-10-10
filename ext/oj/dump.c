@@ -1607,15 +1607,12 @@ void oj_dump_float(VALUE obj, int depth, Out out, bool as_ok) {
     size_t cnt = 0;
 
     if (0.0 == d) {
-        b = buf;
-        if (signbit(d)) {
-            *b++ = '-';
-        }
+        b    = buf;
         *b++ = '0';
         *b++ = '.';
         *b++ = '0';
-        *b   = '\0';
-        cnt  = b - buf;
+        *b++ = '\0';
+        cnt  = 3;
     } else if (OJ_INFINITY == d) {
         if (ObjectMode == out->opts->mode) {
             strcpy(buf, inf_val);

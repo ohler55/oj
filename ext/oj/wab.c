@@ -87,15 +87,12 @@ static void dump_float(VALUE obj, int depth, Out out, bool as_ok) {
     int    cnt = 0;
 
     if (0.0 == d) {
-        b = buf;
-        if (signbit(d)) {
-            *b++ = '-';
-        }
+        b    = buf;
         *b++ = '0';
         *b++ = '.';
         *b++ = '0';
-        *b   = '\0';
-        cnt  = b - buf;
+        *b++ = '\0';
+        cnt  = 3;
     } else {
         if (OJ_INFINITY == d || -OJ_INFINITY == d || isnan(d)) {
             raise_wab(obj);

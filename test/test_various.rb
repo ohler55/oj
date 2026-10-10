@@ -176,9 +176,13 @@ class Juice < Minitest::Test
   end
 
   def test_negative_zero_dump
-    [:strict, :null, :compat, :rails, :custom, :object, :wab].each do |mode|
+    # compat and rails follow the json gem and ActiveSupport, which keep the sign
+    [:compat, :rails].each do |mode|
       assert_equal('-0.0', Oj.dump(-0.0, mode: mode), mode)
       assert_equal('0.0', Oj.dump(0.0, mode: mode), mode)
+    end
+    [:strict, :null, :custom, :object, :wab].each do |mode|
+      assert_equal('0.0', Oj.dump(-0.0, mode: mode), mode)
     end
   end
 
