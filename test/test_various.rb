@@ -175,6 +175,17 @@ class Juice < Minitest::Test
     dump_and_load(1, false)
   end
 
+  def test_negative_zero_dump
+    # compat and rails follow the json gem and ActiveSupport, which keep the sign
+    [:compat, :rails].each do |mode|
+      assert_equal('-0.0', Oj.dump(-0.0, mode: mode), mode)
+      assert_equal('0.0', Oj.dump(0.0, mode: mode), mode)
+    end
+    [:strict, :null, :custom, :object, :wab].each do |mode|
+      assert_equal('0.0', Oj.dump(-0.0, mode: mode), mode)
+    end
+  end
+
   def test_float_parse
     Oj.default_options = { :float_precision => 16, :bigdecimal_load => :auto }
     n = Oj.load('0.00001234567890123456')
