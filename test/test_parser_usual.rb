@@ -97,6 +97,21 @@ class UsualTest < Minitest::Test
     assert_equal(BigDecimal, doc.class)
   end
 
+  def test_big_negative_integer
+    p = Oj::Parser.new(:usual)
+    ['-12345678901234567890', '-9223372036854775809', '-1234567890123456789012345'].each { |s|
+      assert_equal(BigDecimal(s), p.parse(s), s)
+    }
+    assert_equal([BigDecimal('-12345678901234567890'), 1], p.parse('[-12345678901234567890,1]'))
+  end
+
+  def test_big_integer_part_with_fraction
+    p = Oj::Parser.new(:usual)
+    ['123456789012345678.5', '-123456789012345678.5', '1234567890123456.75', '123456789012345680.0'].each { |s|
+      assert_equal(BigDecimal(s), p.parse(s), s)
+    }
+  end
+
   # The exponent is an int16_t, and it used to be narrowed before it was
   # compared against MAX_EXP, so a wrapped value passed the bound and the
   # digits after the wrap chose the result.
