@@ -1017,15 +1017,26 @@ static void parse(ojParser p, const byte *json, size_t len, bool more) {
             p->ri++;
             p->ucode = p->ucode << 4 | (uint32_t)hex_map[*b];
             if (4 <= p->ri) {
-                byte   utf8[8];
-                size_t ulen = unicodeToUtf8(p->ucode, utf8);
+                byte     utf8[8];
+                Buf      buf  = (':' == p->next_map[256]) ? &p->key : &p->buf;
+                uint32_t code = p->ucode;
+
+                // A low surrogate right after a high one, which the previous
+                // escape appended on its own, completes a pair.
+                if (0xDC00 <= code && code <= 0xDFFF && 3 <= buf_len(buf)) {
+                    const byte *hi = (const byte *)buf->tail - 3;
+
+                    if (0xED == hi[0] && 0xA0 <= hi[1] && hi[1] <= 0xAF) {
+                        uint32_t c1 = ((uint32_t)(hi[1] & 0x0F) << 6) | (hi[2] & 0x3F);
+
+                        code = ((c1 << 10) | (code - 0xDC00)) + 0x00010000;
+                        buf->tail -= 3;
+                    }
+                }
+                size_t ulen = unicodeToUtf8(code, utf8);
 
                 if (0 < ulen) {
-                    if (':' == p->next_map[256]) {
-                        buf_append_string(&p->key, (const char *)utf8, ulen);
-                    } else {
-                        buf_append_string(&p->buf, (const char *)utf8, ulen);
-                    }
+                    buf_append_string(buf, (const char *)utf8, ulen);
                 } else {
                     parse_error(p, "invalid unicode");
                     return;

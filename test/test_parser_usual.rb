@@ -75,6 +75,16 @@ class UsualTest < Minitest::Test
     assert_raises(EncodingError) { parser.parse('[') }
   end
 
+  def test_escaped_surrogate_pair
+    parser = Oj::Parser.new(:usual)
+
+    assert_equal("\u{1F600}", parser.parse('"\\uD83D\\uDE00"'))
+    assert_equal("a\u{1F600}b", parser.parse('"a\\ud83d\\ude00b"'))
+    assert_equal({ "\u{1F600}" => 1 }, parser.parse('{"\\uD83D\\uDE00":1}'))
+    assert_equal("\u00e9\u{10437}", parser.parse('"\\u00e9\\uD801\\uDC37"'))
+    assert_predicate(parser.parse('"\\uD83D\\uDE00"'), :valid_encoding?)
+  end
+
   def test_value_after_number_and_space
     parser = Oj::Parser.new(:usual)
 
