@@ -762,6 +762,12 @@ static void parse(ojParser p, const byte *json, size_t len, bool more) {
             calc_num(p);
             // flow through
         case CLOSE_OBJECT:
+            // Inside an object value_map is only in use right after a colon.
+            if (value_map == p->map && 0 < p->depth && OBJECT_FUN == p->stack[p->depth]) {
+                p->col = b - json - p->col + 1;
+                parse_error(p, "expected a value, not an object close");
+                return;
+            }
             p->map = (1 == p->depth) ? value_map : after_map;
             if (p->depth <= 0 || OBJECT_FUN != p->stack[p->depth]) {
                 p->col = b - json - p->col + 1;
