@@ -881,6 +881,11 @@ static void parse(ojParser p, const byte *json, size_t len, bool more) {
                     p->num.shift++;
                 } else {
                     big_change(p);
+                    if (0 == p->num.shift) {
+                        // No fraction digit was read yet so big_change()
+                        // did not add the '.' before the digits that follow.
+                        buf_append(&p->buf, '.');
+                    }
                     p->map = big_frac_map;
                     break;
                 }
@@ -893,6 +898,7 @@ static void parse(ojParser p, const byte *json, size_t len, bool more) {
             break;
         case NUM_ZERO: p->map = zero_map; break;
         case NEG_DIGIT:
+            p->map = digit_map;
             for (; NUM_DIGIT == digit_map[*b]; b++) {
                 uint64_t x = p->num.fixnum * 10 + (uint64_t)(*b - '0');
 
@@ -905,7 +911,6 @@ static void parse(ojParser p, const byte *json, size_t len, bool more) {
                 }
             }
             b--;
-            p->map = digit_map;
             break;
         case EXP_SIGN:
             p->num.exp_neg = ('-' == *b);
