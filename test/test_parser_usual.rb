@@ -75,6 +75,17 @@ class UsualTest < Minitest::Test
     assert_raises(EncodingError) { parser.parse('[') }
   end
 
+  def test_value_after_number_and_space
+    parser = Oj::Parser.new(:usual)
+
+    assert_raises(EncodingError) { parser.parse('[1 2]') }
+    assert_raises(EncodingError) { parser.parse('[1 2,3]') }
+    assert_raises(EncodingError) { parser.parse("[1\n2]") }
+    assert_equal([1, 2], parser.parse("[1 ,2\n]"))
+    assert_equal(1, parser.parse('1 '))
+    assert_equal([1, 2, 3], parser.parse("1 2\n3"))
+  end
+
   def test_primitive
     p = Oj::Parser.new(:usual)
     [

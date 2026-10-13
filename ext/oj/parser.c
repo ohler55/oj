@@ -969,10 +969,12 @@ static void parse(ojParser p, const byte *json, size_t len, bool more) {
         case NUM_SPC:
             p->cur = b - json;
             calc_num(p);
+            p->map = (0 == p->depth) ? value_map : after_map;
             break;
         case NUM_NEWLINE:
             p->cur = b - json;
             calc_num(p);
+            p->map = (0 == p->depth) ? value_map : after_map;
             b++;
 #ifdef SPACE_JUMP
             // for (uint32_t *sj = (uint32_t*)b; 0x20202020 == *sj; sj++) { b += 4; }
