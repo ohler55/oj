@@ -75,6 +75,17 @@ class UsualTest < Minitest::Test
     assert_raises(EncodingError) { parser.parse('[') }
   end
 
+  def test_missing_object_value
+    parser = Oj::Parser.new(:usual)
+
+    assert_raises(EncodingError) { parser.parse('{"a":}') }
+    assert_raises(EncodingError) { parser.parse('{"a":1,"b":}') }
+    assert_raises(EncodingError) { parser.parse('[{"a" : }]') }
+    assert_equal({}, parser.parse('{}'))
+    assert_equal([], parser.parse('[]'))
+    assert_equal({ 'a' => {} }, parser.parse('{"a":{}}'))
+  end
+
   def test_escaped_surrogate_pair
     parser = Oj::Parser.new(:usual)
 
