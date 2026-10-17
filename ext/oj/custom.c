@@ -878,6 +878,9 @@ void oj_dump_custom_val(VALUE obj, int depth, Out out, bool as_ok) {
     int type = rb_type(obj);
 
     TRACE(out->opts->trace, "dump", obj, depth, TraceIn);
+    if (0 == depth) {
+        oj_code_reset_missing(codes);
+    }
     if (MAX_DEPTH < depth) {
         rb_raise(rb_eNoMemError, "Too deeply nested.\n");
     }

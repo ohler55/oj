@@ -3,6 +3,8 @@
 
 #frozen_string_literal: false
 
+# Oj.mimic_JSON only adds OpenStruct.json_create if ostruct is already loaded.
+require 'ostruct'
 require 'json_gem/test_helper'
 require 'date'
 
