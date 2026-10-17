@@ -107,6 +107,18 @@ class UsualTest < Minitest::Test
     assert_equal([1, 2, 3], parser.parse("1 2\n3"))
   end
 
+  def test_zero_with_exponent
+    parser = Oj::Parser.new(:usual)
+
+    ['0e1', '0E1', '0e+1', '0e-1', '0e0', '0e01'].each { |s|
+      assert_equal(0.0, parser.parse(s), s)
+    }
+    assert_equal([0.0, 1], parser.parse('[0e1,1]'))
+    assert_equal({ 'a' => 0.0 }, parser.parse('{"a":0E-2}'))
+    assert_raises(EncodingError) { parser.parse('[0e]') }
+    assert_raises(EncodingError) { parser.parse('[0e+,1]') }
+  end
+
   def test_primitive
     p = Oj::Parser.new(:usual)
     [
