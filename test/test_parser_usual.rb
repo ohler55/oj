@@ -49,6 +49,20 @@ class UsualTest < Minitest::Test
     assert_match(/expected true/i, error.message)
   end
 
+  def test_incomplete_number
+    parser = Oj::Parser.new(:usual)
+
+    ['-', '1.', '-1.', '1e', '1E', '1e+', '1e-', '1.5e', '1.5e-',
+     '12345678901234567890.', '12345678901234567890e', '12345678901234567890e+'].each { |s|
+      error = assert_raises(EncodingError, s) { parser.parse(s) }
+      assert_match(/incomplete number/i, error.message, s)
+    }
+    assert_equal(-1, parser.parse('-1'))
+    assert_equal(1.5, parser.parse('1.5'))
+    assert_equal(1.5e-1, parser.parse('1.5e-1'))
+    assert_equal(BigDecimal('12345678901234567890e+5'), parser.parse('12345678901234567890e+5'))
+  end
+
   def test_unclosed_string
     parser = Oj::Parser.new(:usual)
 

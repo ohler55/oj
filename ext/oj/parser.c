@@ -1232,11 +1232,9 @@ static void parse(ojParser p, const byte *json, size_t len, bool more) {
         case '0':
         case 'd':
         case 'f':
-        case 'z':
         case 'X':
         case 'D':
         case 'g':
-        case 'B':
         case 'Y':
             p->cur = b - json;
             calc_num(p);
@@ -1486,6 +1484,23 @@ static void validate_primitives_are_complete(ojParser p) {
     }
 }
 
+// A top level number that stops after a '-', a '.', an 'e' or an exponent
+// sign is still waiting for a digit.
+static void validate_number_is_complete(ojParser p) {
+    if (0 < p->depth) {
+        return;
+    }
+    switch (p->map[256]) {
+    case '-':
+    case '.':
+    case 'x':
+    case 'z':
+    case 'o':
+    case 'B':
+    case 'Z': parse_error(p, "incomplete number"); break;
+    }
+}
+
 static void validate_non_primitives_are_complete(ojParser p) {
     if (0 >= p->depth) {
         return;
@@ -1499,6 +1514,7 @@ static void validate_non_primitives_are_complete(ojParser p) {
 
 static void validate_document_end(ojParser p) {
     validate_primitives_are_complete(p);
+    validate_number_is_complete(p);
     validate_non_primitives_are_complete(p);
 }
 
