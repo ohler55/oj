@@ -274,6 +274,10 @@ static void read_escaped_str(ParseInfo pi) {
                 buf_cleanup(&buf);
                 return;
             }
+        } else if ((unsigned char)c < 0x20 && (StrictMode == pi->options.mode || CompatMode == pi->options.mode)) {
+            oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "invalid control character in string");
+            buf_cleanup(&buf);
+            return;
         } else {
             buf_append(&buf, c);
         }
@@ -340,6 +344,9 @@ static void read_str(ParseInfo pi) {
             reader_backup(&pi->rd);
             read_escaped_str(pi);
             reader_release(&pi->rd);
+            return;
+        } else if ((unsigned char)c < 0x20 && (StrictMode == pi->options.mode || CompatMode == pi->options.mode)) {
+            oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "invalid control character in string");
             return;
         }
     }

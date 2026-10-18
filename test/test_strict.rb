@@ -202,7 +202,7 @@ class StrictJuice < Minitest::Test
   end
 
   def test_hash_escaped_key
-    json = %{{"a\nb":true,"c\td":false}}
+    json = %{{"a\\nb":true,"c\\td":false}}
     obj = Oj.strict_load(json)
     assert_equal({"a\nb" => true, "c\td" => false}, obj)
   end
@@ -423,6 +423,21 @@ class StrictJuice < Minitest::Test
     assert_raises(Oj::ParseError) {
       Oj.load(json, mode: :strict)
     }
+  end
+
+  def test_unescaped_control_characters
+    (1..0x1f).each do |ord|
+      long = "#{'x' * 21}#{ord.chr}#{'y' * 21}"
+      [%{"a#{ord.chr}b"}, %{"#{long}"}, %{"\\n#{long}"}, %{{"a#{ord.chr}":1}}].each do |json|
+        assert_raises(Oj::ParseError, "0x#{ord.to_s(16)} in #{json.inspect}") {
+          Oj.load(json, mode: :strict)
+        }
+        assert_raises(Oj::ParseError, "0x#{ord.to_s(16)} in #{json.inspect} from an IO") {
+          Oj.load(StringIO.new(json), mode: :strict)
+        }
+      end
+    end
+    assert_equal("a\u0001\tb", Oj.load('"a\\u0001\\tb"', mode: :strict))
   end
 
   def test_invalid_decimal_plus

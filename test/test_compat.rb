@@ -334,7 +334,7 @@ class CompatJuice < Minitest::Test
   end
 
   def test_hash_escaped_key
-    json = %{{"a\nb":true,"c\td":false}}
+    json = %{{"a\\nb":true,"c\\td":false}}
     obj = Oj.compat_load(json)
     assert_equal({"a\nb" => true, "c\td" => false}, obj)
   end
@@ -657,6 +657,23 @@ class CompatJuice < Minitest::Test
   def test_parse_to_s
     s = Stringy.new
     assert_equal([1, 2], Oj.load(s, :mode => :compat))
+  end
+
+  def test_unescaped_control_characters
+    (1..0x1f).each do |ord|
+      long = "#{'x' * 21}#{ord.chr}#{'y' * 21}"
+      [%{["a#{ord.chr}b"]}, %{["#{long}"]}, %{["\\n#{long}"]}, %{{"a#{ord.chr}":1}}].each do |json|
+        assert_raises(EncodingError, "0x#{ord.to_s(16)} in #{json.inspect}") {
+          Oj.load(json, mode: :compat)
+        }
+        assert_raises(EncodingError, "0x#{ord.to_s(16)} in #{json.inspect} from an IO") {
+          Oj.load(StringIO.new(json), mode: :compat)
+        }
+      end
+      # Modes other than strict and compat are left lenient.
+      assert_equal("a#{ord.chr}b", Oj.load(%{"a#{ord.chr}b"}, mode: :object))
+    end
+    assert_equal(["a\u0001\tb"], Oj.load('["a\\u0001\\tb"]', mode: :compat))
   end
 
   def test_parse_large_string
