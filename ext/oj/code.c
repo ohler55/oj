@@ -3,6 +3,8 @@
 
 #include "code.h"
 
+#include <string.h>
+
 #include "dump.h"
 
 inline static VALUE resolve_classname(VALUE mod, const char *classname) {
@@ -45,25 +47,26 @@ static VALUE path2class(const char *name) {
     return resolve_classname(clas, class_name);
 }
 
-// Returns Qundef while the class is not defined, as OpenStruct is not until
-// ostruct is required. A miss is looked up again on the next call.
+// Resolves the class lazily and returns Qundef while it is not defined, as
+// OpenStruct is not until ostruct is required. A miss is checked again on
+// every call so a class loaded later is found by whichever dump comes next,
+// through any entry point. For a top-level name that check is a single
+// constant table probe, so it costs about the same as a cached miss would.
 VALUE oj_code_class(Code c) {
-    if (Qnil == c->clas || Qundef == c->clas) {
+    if (Qnil != c->clas && Qundef != c->clas) {
+        return c->clas;
+    }
+    if (0 == c->id && NULL == strstr(c->name, "::")) {
+        c->id = rb_intern(c->name);
+    }
+    if (0 == c->id) {
         c->clas = path2class(c->name);
+    } else if (rb_const_defined_at(rb_cObject, c->id)) {
+        c->clas = rb_const_get_at(rb_cObject, c->id);
+    } else {
+        c->clas = Qundef;
     }
     return c->clas;
-}
-
-// A miss is remembered while dumping so it is not looked up for every object.
-// Called at the start of each dump so a class defined since then is found.
-void oj_code_reset_missing(Code codes) {
-    Code c = codes;
-
-    for (; NULL != c->name; c++) {
-        if (Qundef == c->clas) {
-            c->clas = Qnil;
-        }
-    }
 }
 
 bool oj_code_dump(Code codes, VALUE obj, int depth, Out out) {
@@ -71,7 +74,7 @@ bool oj_code_dump(Code codes, VALUE obj, int depth, Out out) {
     Code  c    = codes;
 
     for (; NULL != c->name; c++) {
-        if (c->active && Qundef != c->clas && clas == oj_code_class(c)) {
+        if (c->active && clas == oj_code_class(c)) {
             c->encode(obj, depth, out);
             return true;
         }
