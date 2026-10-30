@@ -9,9 +9,6 @@
 #include "mem.h"
 #include "odd.h"
 #include "ruby.h"
-#ifdef HAVE_PTHREAD_MUTEX_INIT
-#include <pthread.h>
-#endif
 
 #define STACK_INC 64
 
@@ -58,12 +55,6 @@ typedef struct _valStack {
     Val    head;  // current stack
     Val    end;   // stack end
     Val    tail;  // pointer to one past last element name on stack
-#ifdef HAVE_PTHREAD_MUTEX_INIT
-    pthread_mutex_t mutex;
-#else
-    VALUE mutex;
-#endif
-
 } *ValStack;
 
 extern VALUE oj_stack_init(ValStack stack);
@@ -102,8 +93,8 @@ inline static void stack_push(ValStack stack, VALUE val, ValNext next) {
         const char *old  = (const char *)stack->head;
         size_t      i;
 
-        // A realloc can trigger a GC so make sure it happens outside the lock
-        // but lock before changing pointers.
+        // A realloc can trigger a GC that marks the stack, so change the
+        // pointers only after it returns.
         if (stack->base == stack->head) {
             head = OJ_R_ALLOC_N(struct _val, len + STACK_INC);
             memcpy(head, stack->base, sizeof(struct _val) * len);
@@ -117,19 +108,9 @@ inline static void stack_push(ValStack stack, VALUE val, ValNext next) {
                 head[i].key = head[i].karray;
             }
         }
-#ifdef HAVE_PTHREAD_MUTEX_INIT
-        pthread_mutex_lock(&stack->mutex);
-#else
-        rb_mutex_lock(stack->mutex);
-#endif
         stack->head = head;
         stack->tail = stack->head + toff;
         stack->end  = stack->head + len + STACK_INC;
-#ifdef HAVE_PTHREAD_MUTEX_INIT
-        pthread_mutex_unlock(&stack->mutex);
-#else
-        rb_mutex_unlock(stack->mutex);
-#endif
     }
     stack->tail->val       = val;
     stack->tail->next      = next;
@@ -183,9 +164,8 @@ inline static Val stack_pop(ValStack stack) {
 }
 
 // Append one key/value pair to the pair buffer. The same GC discipline as
-// stack_push: the allocation happens outside the mutex (it can trigger a GC
-// which takes the mutex in stack_mark) and the buffer pointer only changes
-// under the mutex.
+// stack_push: the allocation can trigger a GC that marks the pairs, so the
+// buffer pointer only changes after it returns.
 inline static void stack_pair_push(ValStack stack, VALUE key, VALUE value) {
     if (stack->pend <= stack->pcnt + 2) {
         size_t cnt = stack->pend * 2;
@@ -198,18 +178,8 @@ inline static void stack_pair_push(ValStack stack, VALUE key, VALUE value) {
             pairs = stack->pairs;
             OJ_R_REALLOC_N(pairs, VALUE, cnt);
         }
-#ifdef HAVE_PTHREAD_MUTEX_INIT
-        pthread_mutex_lock(&stack->mutex);
-#else
-        rb_mutex_lock(stack->mutex);
-#endif
         stack->pairs = pairs;
         stack->pend  = cnt;
-#ifdef HAVE_PTHREAD_MUTEX_INIT
-        pthread_mutex_unlock(&stack->mutex);
-#else
-        rb_mutex_unlock(stack->mutex);
-#endif
     }
     stack->pairs[stack->pcnt]     = key;
     stack->pairs[stack->pcnt + 1] = value;
