@@ -3,8 +3,6 @@
 
 #include "val_stack.h"
 
-#include <string.h>
-
 #include "odd.h"
 #include "oj.h"
 
@@ -15,12 +13,6 @@ static void stack_mark(void *ptr) {
     if (NULL == ptr) {
         return;
     }
-#ifdef HAVE_PTHREAD_MUTEX_INIT
-    pthread_mutex_lock(&stack->mutex);
-#else
-    rb_mutex_lock(stack->mutex);
-    rb_gc_mark(stack->mutex);
-#endif
     {
         size_t i;
 
@@ -46,11 +38,6 @@ static void stack_mark(void *ptr) {
             }
         }
     }
-#ifdef HAVE_PTHREAD_MUTEX_INIT
-    pthread_mutex_unlock(&stack->mutex);
-#else
-    rb_mutex_unlock(stack->mutex);
-#endif
 }
 
 static const rb_data_type_t oj_stack_type = {
@@ -66,15 +53,6 @@ static const rb_data_type_t oj_stack_type = {
 
 VALUE
 oj_stack_init(ValStack stack) {
-#ifdef HAVE_PTHREAD_MUTEX_INIT
-    int err;
-
-    if (0 != (err = pthread_mutex_init(&stack->mutex, 0))) {
-        rb_raise(rb_eException, "failed to initialize a mutex. %s", strerror(err));
-    }
-#else
-    stack->mutex = rb_mutex_new();
-#endif
     stack->head            = stack->base;
     stack->end             = stack->base + sizeof(stack->base) / sizeof(struct _val);
     stack->tail            = stack->head;
