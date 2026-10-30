@@ -203,16 +203,17 @@ void oj_str_writer_push_json(StrWriter sw, const char *json, const char *key) {
 
 void oj_str_writer_pop(StrWriter sw) {
     long     size;
-    DumpType type = sw->types[sw->depth];
+    DumpType type;
 
     if (sw->keyWritten) {
         sw->keyWritten = 0;
         rb_raise(rb_eStandardError, "Can not pop after writing a key but no value.");
     }
-    sw->depth--;
-    if (0 > sw->depth) {
+    if (0 >= sw->depth) {
         rb_raise(rb_eStandardError, "Can not pop with no open array or object.");
     }
+    type = sw->types[sw->depth];
+    sw->depth--;
     size = sw->depth * sw->out.indent + 2;
     assure_size(&sw->out, size);
     fill_indent(&sw->out, sw->depth);
