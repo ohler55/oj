@@ -191,6 +191,32 @@ class OjWriter < Minitest::Test
     assert(false, '*** expected an exception')
   end
 
+  def test_string_writer_reusable_after_excess_pop
+    w = Oj::StringWriter.new(:indent => 0)
+    2.times do
+      assert_raises(StandardError) { w.pop() }
+    end
+
+    w.push_array()
+    w.push_value(1)
+    w.pop()
+    assert_equal("[1]\n", w.to_s)
+  end
+
+  def test_stream_writer_reusable_after_excess_pop
+    output = StringIO.new
+    w = Oj::StreamWriter.new(output, :indent => 0)
+    2.times do
+      assert_raises(StandardError) { w.pop() }
+    end
+
+    w.push_array()
+    w.push_value(1)
+    w.pop()
+    w.flush()
+    assert_equal("[1]\n", output.string)
+  end
+
   def test_string_writer_obj_no_key
     w = Oj::StringWriter.new(:indent => 0)
     w.push_object()
