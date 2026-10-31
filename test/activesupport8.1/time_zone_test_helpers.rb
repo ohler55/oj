@@ -9,7 +9,7 @@ module TimeZoneTestHelpers
     Time.zone = old_tz
   end
 
-  def with_env_tz(new_tz = "US/Eastern")
+  def with_env_tz(new_tz = "America/New_York")
     old_tz, ENV["TZ"] = ENV["TZ"], new_tz
     yield
   ensure

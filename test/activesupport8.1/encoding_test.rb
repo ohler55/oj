@@ -277,7 +277,7 @@ class TestJSONEncoding < ActiveSupport::TestCase
     skip 'Windows ignores the TZ environment variable' if RbConfig::CONFIG['host_os'] =~ /(mingw|mswin)/
 
     with_standard_json_time_format(true) do
-      with_env_tz "US/Eastern" do
+      with_env_tz "America/New_York" do
         assert_equal %("2005-02-01T15:15:10.000-05:00"), ActiveSupport::JSON.encode(Time.local(2005, 2, 1, 15, 15, 10))
       end
     end
