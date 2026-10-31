@@ -526,6 +526,26 @@ static void dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out)
     {
         int cnt = (int)rb_ivar_count(obj);
 
+        // Ruby 4: Set is a built-in class with no @hash ivar.
+        // Emit the legacy format: {"^o":"Set","hash":{"a":true,...}}
+        if (0 == cnt && RUBY_VERSION_MAJOR >= 4 &&
+            Qtrue == rb_obj_is_kind_of(obj, rb_const_get(rb_cObject, rb_intern("Set")))) {
+            VALUE entries = rb_funcall(obj, rb_intern("to_a"), 0);
+            long  elen    = RARRAY_LEN(entries);
+
+            *out->cur++ = ',';
+            fill_indent(out, d2);
+            oj_dump_cstr("hash", 4, 0, 0, out);
+            *out->cur++ = ':';
+            *out->cur++ = '{';
+            for (long i = 0; i < elen; i++) {
+                if (0 < i) *out->cur++ = ',';
+                oj_dump_obj_val(rb_ary_entry(entries, i), d2 + 1, out);
+                *out->cur++ = ':';
+                APPEND_CHARS(out->cur, "true", 4);
+            }
+            *out->cur++ = '}';
+        } else {
         if (Qundef != clas && 0 < cnt) {
             *out->cur++ = ',';
         }
@@ -567,6 +587,7 @@ static void dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out)
             assure_size(out, 2);
         }
         out->depth = depth;
+        } // end else (non-Set path)
     }
     fill_indent(out, depth);
     *out->cur++ = '}';
