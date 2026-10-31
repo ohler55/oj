@@ -57,4 +57,11 @@ class GCTest < Minitest::Test
       assert_equal(json, Oj.dump(data))
     end
   end
+
+  def test_dump_non_utf8_string_gc
+    s = 'é' * 3000
+    expected = Oj.dump({ 'k' => s }, mode: :compat)
+    h = { 'k' => s.encode(Encoding::ISO_8859_1) }
+    5.times { assert_equal(expected, Oj.dump(h, mode: :compat)) }
+  end
 end
