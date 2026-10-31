@@ -1527,19 +1527,20 @@ static void validate_document_end(ojParser p) {
  */
 static VALUE parser_parse(VALUE self, VALUE json) {
     ojParser    p;
-    int         frozen = OBJ_FROZEN(json);
     const byte *ptr;
 
-    if (!frozen) {
+    StringValue(json);
+    if (!OBJ_FROZEN(json)) {
         rb_str_freeze(json);
     }
-    ptr = (const byte *)StringValuePtr(json);
+    ptr = (const byte *)RSTRING_PTR(json);
 
     TypedData_Get_Struct(self, struct _ojParser, &oj_parser_type, p);
 
     parser_reset(p);
     p->start(p);
     parse(p, ptr, (size_t)RSTRING_LEN(json), false);
+    RB_GC_GUARD(json);
     validate_document_end(p);
 
     return p->result(p);

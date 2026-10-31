@@ -451,6 +451,21 @@ class UsualTest < Minitest::Test
     assert_equal({'a'=>true, 'b'=>nil}, doc)
   end
 
+  def test_parse_non_string
+    p = Oj::Parser.new(:usual)
+    [[1, 2, 3], { 'a' => 1 }, Object.new].each do |input|
+      assert_raises(TypeError) { p.parse(input) }
+      refute_predicate(input, :frozen?)
+    end
+
+    input = Object.new
+    def input.to_str
+      +'{"a":1}'
+    end
+    assert_equal({ 'a' => 1 }, p.parse(input))
+    refute_predicate(input, :frozen?)
+  end
+
   def test_cached_keys_with_nul
     [false, true].each do |symbol_keys|
       p = Oj::Parser.new(:usual)
