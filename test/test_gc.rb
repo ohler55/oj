@@ -57,4 +57,19 @@ class GCTest < Minitest::Test
       assert_equal(json, Oj.dump(data))
     end
   end
+
+  def test_load_non_utf8_input_gc
+    [['x', Encoding::ASCII_8BIT, [30, 60, 90]], ['é', Encoding::ISO_8859_1, [1000]]].each do |c, enc, sizes|
+      sizes.each do |n|
+        s = c * n
+        json = %({"a":"#{s}","b":#{n}}).encode(enc)
+        assert_equal({ 'a' => s, 'b' => n }, Oj.load(json, mode: :compat))
+        assert_equal({ 'a' => s, 'b' => n }, Oj.safe_load(StringIO.new(json)))
+
+        bad = %({"a":"#{s}","b":#{n},})
+        err = assert_raises(EncodingError) { Oj.load(bad.encode(enc), mode: :compat) }
+        assert_includes(err.message, "in '#{bad}")
+      end
+    end
+  end
 end
