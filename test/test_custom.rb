@@ -296,6 +296,22 @@ class CustomJuice < Minitest::Test
     assert_equal(%|{"xx":true,"yy":58}|, json)
   end
 
+  def test_object_to_json_not_a_string
+    [1, nil].each do |value|
+      obj = Object.new
+      obj.define_singleton_method(:to_json) { |*| value }
+      assert_raises(TypeError) { Oj.dump(obj, use_to_json: true) }
+    end
+
+    str_like = Object.new
+    def str_like.to_str
+      '"s"'
+    end
+    obj = Object.new
+    obj.define_singleton_method(:to_json) { |*| str_like }
+    assert_equal('"s"', Oj.dump(obj, use_to_json: true))
+  end
+
   def test_object_as_json
     obj = Jeez.new(true, 58)
     json = Oj.dump(obj, :use_to_json => false, :use_as_json => true, :use_to_hash => false)

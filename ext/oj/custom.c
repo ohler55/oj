@@ -492,6 +492,7 @@ static VALUE dump_common(VALUE obj, int depth, Out out) {
             rs = rb_funcall2(obj, oj_to_json_id, out->argc, out->argv);
         }
         TRACE(out->opts->trace, "to_json", obj, depth + 1, TraceRubyOut);
+        StringValue(rs);
         s   = RSTRING_PTR(rs);
         len = RSTRING_LEN(rs);
 
