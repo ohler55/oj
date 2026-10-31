@@ -349,6 +349,10 @@ static int hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, vol
             } else {
                 // Create a properly initialized struct instance without calling the initialize method.
                 parent->val = rb_obj_alloc(sc);
+                if (T_STRUCT != rb_type(parent->val)) {
+                    oj_set_error_at(pi, rb_eArgError, __FILE__, __LINE__, "%s is not a Struct", rb_class2name(sc));
+                    return 1;
+                }
                 // If the JSON array has more entries than the struct class allows, we record an error.
 #ifdef RSTRUCT_LEN
 #if RSTRUCT_LEN_RETURNS_INTEGER_OBJECT

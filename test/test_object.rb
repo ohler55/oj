@@ -110,6 +110,11 @@ class ObjectJuice < Minitest::Test
   class Stuck < Struct.new(:a, :b)
   end
 
+  class RangeSub < Range
+  end
+
+  DataSub = Data.define(:a, :b) if defined?(Data) && Data.respond_to?(:define)
+
   class Strung < String
 
     def initialize(str, safe)
@@ -729,6 +734,40 @@ class ObjectJuice < Minitest::Test
     assert_raises(ArgumentError) do
       Oj.load(%({"^u":["NoSuchStructClass99",1,2]}), :mode => :object, :auto_define => true)
     end
+  end
+
+  def test_json_struct_non_struct_class
+    ['"Hash",1', '"Object",1', '"String"', '"Array",1'].each do |args|
+      err = assert_raises(ArgumentError) do
+        Oj.load(%({"^u":[#{args}]}), :mode => :object)
+      end
+      assert_match(/is not a Struct/, err.message)
+    end
+  end
+
+  def test_json_struct_non_string_name
+    ['1,2', 'null,1', '":Foo",1'].each do |args|
+      err = assert_raises(ArgumentError) do
+        Oj.load(%({"^u":[#{args}]}), :mode => :object)
+      end
+      assert_match(/Invalid struct data/, err.message)
+    end
+  end
+
+  def test_json_struct_range_subclass
+    skip 'TruffleRuby does not dump a Range subclass as a Struct' if 'truffleruby' == RUBY_ENGINE
+    range = RangeSub.new(1, 7)
+    obj   = Oj.load(Oj.dump(range, :mode => :object), :mode => :object)
+    assert_instance_of(RangeSub, obj)
+    assert_equal(range, obj)
+  end
+
+  def test_json_struct_data
+    skip 'Data.define requires Ruby 3.2' unless defined?(DataSub)
+    skip 'TruffleRuby does not dump Data as a Struct' if 'truffleruby' == RUBY_ENGINE
+    data = DataSub.new(a: 1, b: 2)
+    obj  = Oj.load(Oj.dump(data, :mode => :object), :mode => :object)
+    assert_equal(data, obj)
   end
 
   # dump_obj_attrs() wrote the closing indent, and the exception branch wrote

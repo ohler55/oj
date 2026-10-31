@@ -82,8 +82,9 @@ oj_name2class(ParseInfo pi, const char *name, size_t len, int auto_define, VALUE
 
 VALUE
 oj_name2struct(ParseInfo pi, VALUE nameVal, VALUE error_class) {
-    size_t      len = RSTRING_LEN(nameVal);
-    const char *str = StringValuePtr(nameVal);
-
-    return resolve_classpath(pi, str, len, 0, error_class);
+    if (T_STRING != rb_type(nameVal)) {
+        oj_set_error_at(pi, error_class, __FILE__, __LINE__, "Invalid struct data");
+        return Qundef;
+    }
+    return resolve_classpath(pi, RSTRING_PTR(nameVal), RSTRING_LEN(nameVal), 0, error_class);
 }
