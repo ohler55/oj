@@ -814,7 +814,7 @@ static VALUE opt_class_cache_set(ojParser p, VALUE value) {
 
     if (Qtrue == value) {
         if (NULL == d->class_cache) {
-            d->class_cache = cache_create(0, form_class_auto, MISS_AUTO == d->miss_class, false);
+            d->class_cache = cache_create(0, form_class_auto, true, false);
         }
     } else if (NULL != d->class_cache) {
         cache_free(d->class_cache);
