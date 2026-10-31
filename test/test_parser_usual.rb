@@ -436,6 +436,16 @@ class UsualTest < Minitest::Test
     end
   end
 
+  def test_class_cache_compaction
+    json = '{"a":true,"^":"UsualTest::MyClass","b":false}'
+    [:ignore, :raise, :auto].each do |missing_class|
+      p = Oj::Parser.new(:usual, create_id: '^', class_cache: true, missing_class: missing_class)
+      assert_equal(MyClass, p.parse(json).class)
+      verify_gc_compaction
+      assert_equal(MyClass, p.parse(json).class)
+    end
+  end
+
   def test_default_parser
     doc = Oj::Parser.usual.parse('{"a":true,"b":null}')
     assert_equal({'a'=>true, 'b'=>nil}, doc)
