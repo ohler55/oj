@@ -424,4 +424,25 @@ class UsualTest < Minitest::Test
     doc = Oj::Parser.usual.parse('{"a":true,"b":null}')
     assert_equal({'a'=>true, 'b'=>nil}, doc)
   end
+
+  def test_cached_keys_with_nul
+    [false, true].each do |symbol_keys|
+      p = Oj::Parser.new(:usual)
+      p.symbol_keys = true if symbol_keys
+      p.cache_keys  = true
+      300.times do |i|
+        suffix = format('%06d', i)
+        key    = "k\u0000#{suffix}"
+        assert_equal([symbol_keys ? key.to_sym : key], p.parse(%({"k\\u0000#{suffix}":1})).keys)
+      end
+    end
+  end
+
+  def test_cached_strings_with_nul
+    p = Oj::Parser.new(:usual, cache_strings: 6)
+    300.times do |i|
+      suffix = format('%03d', i)
+      assert_equal(["a\u0000#{suffix}"], p.parse(%(["a\\u0000#{suffix}"])))
+    end
+  end
 end

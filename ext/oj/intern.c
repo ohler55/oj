@@ -281,7 +281,7 @@ static VALUE intern_new_class(VALUE a) {
 static KeyVal find_class(KeyVal bucket, const char *key, size_t len, VALUE *clas) {
     if (NULL != bucket->key) {  // not the top slot
         for (KeyVal b = bucket; 0 != b; b = b->next) {
-            if (len == b->len && 0 == strncmp(b->key, key, len)) {
+            if (len == b->len && 0 == memcmp(b->key, key, len)) {
                 *clas = b->val;
                 return NULL;
             }

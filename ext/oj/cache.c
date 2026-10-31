@@ -153,7 +153,7 @@ static VALUE lockless_intern(Cache c, const char *key, size_t len) {
         }
     }
     for (b = *bucket; NULL != b; b = b->next) {
-        if ((uint8_t)len == b->klen && 0 == strncmp(b->key, key, len)) {
+        if ((uint8_t)len == b->klen && 0 == memcmp(b->key, key, len)) {
             b->use_cnt += 16;
             return b->val;
         }
@@ -201,7 +201,7 @@ static VALUE locking_intern(Cache c, const char *key, size_t len) {
     h      = hash_calc((const uint8_t *)key, len);
     bucket = (Slot *)c->slots + (h & c->mask);
     for (b = *bucket; NULL != b; b = b->next) {
-        if ((uint8_t)len == b->klen && 0 == strncmp(b->key, key, len)) {
+        if ((uint8_t)len == b->klen && 0 == memcmp(b->key, key, len)) {
             b->use_cnt += 4;
             CACHE_UNLOCK(c);
 
