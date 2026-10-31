@@ -420,6 +420,22 @@ class UsualTest < Minitest::Test
     assert_equal(Auto2, doc.class)
   end
 
+  def test_create_id_through_a_constant_that_is_not_a_module
+    names = ['Math::PI::X', 'Object::RUBY_VERSION::X', 'Math::PI']
+    [false, true].each do |class_cache|
+      [:ignore, :auto].each do |missing_class|
+        p = Oj::Parser.new(:usual, create_id: '^', missing_class: missing_class, class_cache: class_cache)
+        names.each do |name|
+          assert_equal({'^' => name, 'a' => 1}, p.parse(%({"^":"#{name}","a":1})))
+        end
+      end
+      p = Oj::Parser.new(:usual, create_id: '^', missing_class: :raise, class_cache: class_cache)
+      names.each do |name|
+        assert_raises(LoadError) { p.parse(%({"^":"#{name}","a":1})) }
+      end
+    end
+  end
+
   def test_default_parser
     doc = Oj::Parser.usual.parse('{"a":true,"b":null}')
     assert_equal({'a'=>true, 'b'=>nil}, doc)
