@@ -493,6 +493,24 @@ class StrictJuice < Minitest::Test
     Oj.default_options = Oj.default_options
   end
 
+  def test_cached_keys_with_nul
+    [false, true].each do |symbol_keys|
+      300.times do |i|
+        suffix = format('%06d', i)
+        key    = "k\u0000#{suffix}"
+        doc    = Oj.load(%({"k\\u0000#{suffix}":1}), :mode => :strict, :cache_keys => true, :symbol_keys => symbol_keys)
+        assert_equal([symbol_keys ? key.to_sym : key], doc.keys)
+      end
+    end
+  end
+
+  def test_cached_strings_with_nul
+    300.times do |i|
+      suffix = format('%03d', i)
+      assert_equal(["a\u0000#{suffix}"], Oj.load(%(["a\\u0000#{suffix}"]), :mode => :strict, :cache_str => 6))
+    end
+  end
+
   def dump_and_load(obj, trace=false)
     json = Oj.dump(obj, :indent => 2)
     puts json if trace
