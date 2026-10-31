@@ -933,6 +933,7 @@ void oj_dump_str(VALUE obj, int depth, Out out, bool as_ok) {
         obj              = rb_str_conv_enc(obj, enc, oj_utf8_encoding);
     }
     oj_dump_cstr(RSTRING_PTR(obj), RSTRING_LEN(obj), 0, 0, out);
+    RB_GC_GUARD(obj);
 }
 
 void oj_dump_sym(VALUE obj, int depth, Out out, bool as_ok) {
