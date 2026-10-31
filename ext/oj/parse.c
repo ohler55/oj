@@ -1205,11 +1205,10 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
         }
     } else {
         VALUE clas = rb_obj_class(input);
-        VALUE s;
 
         if (oj_stringio_class == clas) {
-            s = rb_funcall2(input, oj_string_id, 0, 0);
-            oj_pi_set_input_str(pi, &s);
+            input = rb_funcall2(input, oj_string_id, 0, 0);
+            oj_pi_set_input_str(pi, &input);
 #if !IS_WINDOWS
         } else if (rb_cFile == clas && 0 == FIX2INT(rb_funcall(input, oj_pos_id, 0))) {
             int     fd = FIX2INT(rb_funcall(input, oj_fileno_id, 0));
@@ -1342,6 +1341,7 @@ CLEANUP:
             if (NULL != pi->json) {
                 msg = rb_str_append(msg, rb_utf8_str_new_cstr(" in '"));
                 msg = rb_str_append(msg, rb_utf8_str_new_cstr(pi->json));
+                RB_GC_GUARD(input);
             }
             args[0] = msg;
             if (pi->err.clas == oj_parse_error_class) {
@@ -1381,5 +1381,6 @@ CLEANUP:
             break;
         }
     }
+    RB_GC_GUARD(input);
     return result;
 }
