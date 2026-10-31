@@ -208,4 +208,43 @@ class SajTest < Minitest::Test
     end
   end
 
+  def test_io_not_a_string
+    io = StringIO.new('{}')
+    def io.string
+      nil
+    end
+    reader = Object.new
+    def reader.read
+      nil
+    end
+    [io, reader].each do |input|
+      assert_raises(TypeError) { Oj.saj_parse(Oj::Saj.new, input) }
+    end
+  end
+
+  def test_io_to_str
+    json = Object.new
+    def json.to_str
+      '{"a":1}'
+    end
+    io = StringIO.new('{}')
+    io.define_singleton_method(:string) { json }
+    reader = Object.new
+    reader.define_singleton_method(:read) { json }
+    [io, reader].each do |input|
+      handler = AllSaj.new
+      Oj.saj_parse(handler, input)
+      assert_equal([[:hash_start, nil], [:add_value, 1, 'a'], [:hash_end, nil]], handler.calls)
+    end
+  end
+
+  def test_io_with_null_byte
+    json = %({"a":"\u0000"})
+    reader = Object.new
+    reader.define_singleton_method(:read) { json }
+    [StringIO.new(json), reader].each do |input|
+      assert_raises(ArgumentError) { Oj.saj_parse(Oj::Saj.new, input) }
+    end
+  end
+
 end
