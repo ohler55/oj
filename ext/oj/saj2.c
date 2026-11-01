@@ -565,10 +565,8 @@ static void mark(ojParser p) {
     if (Qnil != d->handler) {
         rb_gc_mark(d->handler);
     }
-    if (!d->cache_keys) {
-        for (kp = d->keys; kp < d->tail; kp++) {
-            rb_gc_mark(*kp);
-        }
+    for (kp = d->keys; kp < d->tail; kp++) {
+        rb_gc_mark(*kp);
     }
 }
 

@@ -320,6 +320,23 @@ class ParserSajTest < Minitest::Test
     end
   end
 
+  def test_end_only_handler_keys_survive_gc
+    [10, 40].each do |len|
+      keys = Array.new(3) { |i| "key#{i}".ljust(len, 'k') }
+      json = "{#{keys.map { |k| %("#{k}":{"a":["x","y","z"]}) }.join(',')}}"
+      handler = Class.new(AllSaj) { private(:hash_start, :array_start, :add_value) }.new
+      p = Oj::Parser.new(:saj)
+      p.handler = handler
+      begin
+        GC.stress = true
+        p.parse(json)
+      ensure
+        GC.stress = false
+      end
+      assert_equal(keys + [nil], handler.calls.select { |c| :hash_end == c[0] }.map { |c| c[1] })
+    end
+  end
+
   def test_reentrant_parse_key_stack
     handler_class = Class.new(AllSaj) do
       attr_accessor :parser
