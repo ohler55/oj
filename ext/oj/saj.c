@@ -646,13 +646,14 @@ static VALUE protect_saj_parse(VALUE x) {
  */
 VALUE
 oj_saj_parse(int argc, VALUE *argv, VALUE self) {
-    char  *json  = 0;
-    size_t len   = 0;
-    VALUE  input = argv[1];
+    char  *json = 0;
+    size_t len  = 0;
+    VALUE  input;
 
     if (argc < 2) {
         rb_raise(rb_eArgError, "Wrong number of arguments to saj_parse.\n");
     }
+    input = argv[1];
     if (rb_type(input) == T_STRING) {
         // the json string gets modified so make a copy of it
         len  = RSTRING_LEN(input) + 1;
@@ -663,10 +664,11 @@ oj_saj_parse(int argc, VALUE *argv, VALUE self) {
         volatile VALUE s;
 
         if (oj_stringio_class == clas) {
-            s    = rb_funcall2(input, oj_string_id, 0, 0);
+            s = rb_funcall2(input, oj_string_id, 0, 0);
+            StringValueCStr(s);
             len  = RSTRING_LEN(s) + 1;
             json = OJ_R_ALLOC_N(char, len);
-            strcpy(json, StringValueCStr(s));
+            strcpy(json, RSTRING_PTR(s));
 #if !IS_WINDOWS
         } else if (rb_cFile == clas && 0 == FIX2INT(rb_funcall(input, oj_pos_id, 0))) {
             int     fd = FIX2INT(rb_funcall(input, oj_fileno_id, 0));
@@ -689,10 +691,11 @@ oj_saj_parse(int argc, VALUE *argv, VALUE self) {
             json[len] = '\0';
 #endif
         } else if (rb_respond_to(input, oj_read_id)) {
-            s    = rb_funcall2(input, oj_read_id, 0, 0);
+            s = rb_funcall2(input, oj_read_id, 0, 0);
+            StringValueCStr(s);
             len  = RSTRING_LEN(s) + 1;
             json = OJ_R_ALLOC_N(char, len);
-            strcpy(json, StringValueCStr(s));
+            strcpy(json, RSTRING_PTR(s));
         } else {
             rb_raise(rb_eArgError, "saj_parse() expected a String or IO Object.");
         }
