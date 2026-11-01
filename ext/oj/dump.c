@@ -969,6 +969,7 @@ void oj_dump_raw_json(VALUE obj, int depth, Out out) {
         if (0 < len) {
             len--;
         }
+        assure_size(out, len + 10);
         oj_dump_raw(sw->out.buf, len, out);
     } else {
         volatile VALUE jv;
