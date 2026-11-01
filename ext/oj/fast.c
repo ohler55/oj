@@ -838,8 +838,10 @@ static VALUE parse_json(VALUE clas, char *json, bool given) {
         // The doc is detached from its wrapper so the GC will not free it.
         // doc_free() releases both the doc and its json buffer (doc->json), so
         // the caller must not free json separately.
-        DATA_PTR(doc->self) = NULL;
-        doc_free(pi.doc);
+        if (NULL != DATA_PTR(self)) {
+            DATA_PTR(self) = NULL;
+            doc_free(doc);
+        }
     } else {
         result = doc->self;
     }
