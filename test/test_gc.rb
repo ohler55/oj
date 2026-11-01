@@ -81,6 +81,14 @@ class GCTest < Minitest::Test
     assert_equal({ 'a' => values }, Oj.load(src, mode: :compat))
   end
 
+  def test_load_stringio_string_gc
+    values = (1..80).map { |i| "value#{i}" }
+    json = Oj.dump({ 'a' => values }, mode: :compat)
+    src = StringIO.new(json)
+    src.define_singleton_method(:string) { json + '' }
+    assert_equal({ 'a' => values }, Oj.load(src, mode: :compat))
+  end
+
   def test_dump_non_utf8_string_gc
     s = 'é' * 3000
     expected = Oj.dump({ 'k' => s }, mode: :compat)
