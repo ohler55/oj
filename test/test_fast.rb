@@ -531,6 +531,23 @@ class DocTest < Minitest::Test
     end
   end
 
+  def test_open_file_fifo
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'fifo')
+      begin
+        File.mkfifo(path)
+      rescue NotImplementedError
+        skip 'needs File.mkfifo'
+      end
+      File.open(path, File::RDONLY | File::NONBLOCK) do
+        File.open(path, File::WRONLY) do
+          e = assert_raises(Oj::LoadError) { Oj::Doc.open_file(path) }
+          assert_match(/size/, e.message)
+        end
+      end
+    end
+  end
+
   def test_open_no_close
     json = %{{"a":[1,2,3]}}
     doc = Oj::Doc.open(json)

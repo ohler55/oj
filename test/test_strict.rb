@@ -277,6 +277,13 @@ class StrictJuice < Minitest::Test
     assert_raises(TypeError) { Oj.safe_load(input) }
   end
 
+  def test_safe_load_unseekable_file
+    skip 'needs /proc/self/status' unless File.exist?('/proc/self/status')
+    File.open('/proc/self/status') do |f|
+      assert_raises(IOError) { Oj.safe_load(f) }
+    end
+  end
+
   def test_io_file
     filename = File.join(__dir__, 'open_file_test.json')
     File.write(filename, %{{

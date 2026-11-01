@@ -1216,6 +1216,9 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
             ssize_t cnt;
             size_t  len = lseek(fd, 0, SEEK_END);
 
+            if ((size_t)-1 == len) {
+                rb_raise(rb_eIOError, "failed to read from IO Object.");
+            }
             lseek(fd, 0, SEEK_SET);
             buf      = OJ_R_ALLOC_N(char, len + 1);
             pi->json = buf;
