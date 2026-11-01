@@ -671,14 +671,13 @@ oj_saj_parse(int argc, VALUE *argv, VALUE self) {
             strcpy(json, RSTRING_PTR(s));
 #if !IS_WINDOWS
         } else if (rb_cFile == clas && 0 == FIX2INT(rb_funcall(input, oj_pos_id, 0))) {
-            int     fd  = FIX2INT(rb_funcall(input, oj_fileno_id, 0));
-            off_t   end = lseek(fd, 0, SEEK_END);
+            int     fd = FIX2INT(rb_funcall(input, oj_fileno_id, 0));
             ssize_t cnt;
 
-            if (end < 0) {
+            len = lseek(fd, 0, SEEK_END);
+            if ((size_t)-1 == len) {
                 rb_raise(rb_eIOError, "failed to read from IO Object.");
             }
-            len = (size_t)end;
             lseek(fd, 0, SEEK_SET);
             json = OJ_R_ALLOC_N(char, len + 1);
             {

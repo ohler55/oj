@@ -1212,15 +1212,13 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
             oj_pi_set_input_str(pi, &input);
 #if !IS_WINDOWS
         } else if (rb_cFile == clas && 0 == FIX2INT(rb_funcall(input, oj_pos_id, 0))) {
-            int     fd  = FIX2INT(rb_funcall(input, oj_fileno_id, 0));
-            off_t   end = lseek(fd, 0, SEEK_END);
+            int     fd = FIX2INT(rb_funcall(input, oj_fileno_id, 0));
             ssize_t cnt;
-            size_t  len;
+            size_t  len = lseek(fd, 0, SEEK_END);
 
-            if (end < 0) {
+            if ((size_t)-1 == len) {
                 rb_raise(rb_eIOError, "failed to read from IO Object.");
             }
-            len = (size_t)end;
             lseek(fd, 0, SEEK_SET);
             buf      = OJ_R_ALLOC_N(char, len + 1);
             pi->json = buf;
