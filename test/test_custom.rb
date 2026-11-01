@@ -330,6 +330,24 @@ class CustomJuice < Minitest::Test
     assert_equal(%|{"xxx":true,"yyy":58}|, json)
   end
 
+  def test_object_raw_json_not_a_string
+    str_like = Object.new
+    def str_like.to_str
+      '{"a":1}'
+    end
+    [:custom, :compat, :rails].each do |mode|
+      [1, nil].each do |value|
+        obj = Object.new
+        obj.define_singleton_method(:raw_json) { |*| value }
+        assert_raises(TypeError, "#{mode} #{value.inspect}") { Oj.dump([obj], mode: mode, use_raw_json: true) }
+      end
+
+      obj = Object.new
+      obj.define_singleton_method(:raw_json) { |*| str_like }
+      assert_equal('[{"a":1}]', Oj.dump([obj], mode: mode, use_raw_json: true), mode)
+    end
+  end
+
   def test_raw_json_stringwriter
     obj = Oj::StringWriter.new(:indent => 0)
     obj.push_array()
