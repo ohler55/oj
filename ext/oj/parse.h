@@ -81,6 +81,7 @@ extern VALUE oj_num_as_value(NumInfo ni);
 extern void oj_set_strict_callbacks(ParseInfo pi);
 extern void oj_set_object_callbacks(ParseInfo pi);
 extern void oj_set_compat_callbacks(ParseInfo pi);
+extern void oj_compat_array_append_other(VALUE a, VALUE value);
 extern void oj_set_custom_callbacks(ParseInfo pi);
 extern void oj_set_wab_callbacks(ParseInfo pi);
 
@@ -107,6 +108,14 @@ static inline void parse_info_init(ParseInfo pi) {
 }
 
 extern void oj_scanner_init(void);
+
+static inline void oj_compat_array_append(VALUE a, VALUE value) {
+    if (rb_cArray == RBASIC_CLASS(a)) {
+        rb_ary_push(a, value);
+    } else {
+        oj_compat_array_append_other(a, value);
+    }
+}
 
 static inline bool empty_ok(Options options) {
     switch (options->mode) {

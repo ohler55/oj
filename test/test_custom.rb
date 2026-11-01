@@ -78,6 +78,30 @@ class CustomJuice < Minitest::Test
     end
   end
 
+  class ArrayWrapper
+    def initialize
+      @data = []
+    end
+
+    def <<(v)
+      @data << v
+      self
+    end
+
+    def to_a
+      @data.map { |v| v.is_a?(ArrayWrapper) ? v.to_a : v }
+    end
+  end
+
+  class ArraySub < Array
+    attr_reader :pushed
+
+    def <<(v)
+      (@pushed ||= []) << v
+      super
+    end
+  end
+
   class AsRails
     attr_accessor :x, :y
 
@@ -221,6 +245,17 @@ class CustomJuice < Minitest::Test
 
   def test_array_deep
     dump_and_load([1, [2, [3, [4, [5, [6, [7, [8, [9, [10, [11, [12, [13, [14, [15, [16, [17, [18, [19, [20]]]]]]]]]]]]]]]]]]]], false)
+  end
+
+  def test_array_class_not_an_array
+    obj = Oj.load('[1,"x",[2.5,null],true,{"a":false}]', mode: :custom, array_class: ArrayWrapper)
+    assert_instance_of(ArrayWrapper, obj)
+    assert_equal([1, 'x', [2.5, nil], true, { 'a' => false }], obj.to_a)
+  end
+
+  def test_array_class_subclass
+    obj = Oj.load('[1,"x",[2],null]', mode: :custom, array_class: ArraySub)
+    assert_equal([1, 'x', [2], nil], obj.pushed)
   end
 
   def test_deep_nest

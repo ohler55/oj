@@ -159,18 +159,21 @@ static VALUE start_array(ParseInfo pi) {
     return rb_ary_new();
 }
 
+void oj_compat_array_append_other(VALUE a, VALUE value) {
+    if (rb_cArray == rb_obj_class(a)) {
+        rb_ary_push(a, value);
+    } else {
+        // The array_class may not be an Array, and the json gem calls << even
+        // for Array subclasses.
+        rb_funcall(a, rb_intern("<<"), 1, value);
+    }
+}
+
 static void array_append_num(ParseInfo pi, NumInfo ni) {
     Val            parent = stack_peek(&pi->stack);
     volatile VALUE rval   = oj_num_as_value(ni);
 
-    if (!oj_use_array_alt && rb_cArray != rb_obj_class(parent->val)) {
-        // The rb_ary_push would still work but the unit tests for the json
-        // gem require the less efficient << method be called to push the
-        // values.
-        rb_funcall(parent->val, rb_intern("<<"), 1, rval);
-    } else {
-        rb_ary_push(parent->val, rval);
-    }
+    oj_compat_array_append(parent->val, rval);
     TRACE_PARSE_CALL(pi->options.trace, "append_number", pi, rval);
 }
 
@@ -181,26 +184,32 @@ static void array_append_cstr(ParseInfo pi, const char *str, size_t len, const c
         VALUE clas = oj_rxclass_match(&pi->options.str_rx, str, len);
 
         if (Qnil != clas) {
-            rb_ary_push(stack_peek(&pi->stack)->val, rb_funcall(clas, oj_json_create_id, 1, rstr));
+            oj_compat_array_append(stack_peek(&pi->stack)->val, rb_funcall(clas, oj_json_create_id, 1, rstr));
             return;
         }
     }
-    rb_ary_push(stack_peek(&pi->stack)->val, rstr);
+    oj_compat_array_append(stack_peek(&pi->stack)->val, rstr);
     TRACE_PARSE_CALL(pi->options.trace, "append_string", pi, rstr);
+}
+
+static void array_append_value(ParseInfo pi, VALUE value) {
+    oj_compat_array_append(stack_peek(&pi->stack)->val, value);
+    TRACE_PARSE_CALL(pi->options.trace, "append_value", pi, value);
 }
 
 void oj_set_compat_callbacks(ParseInfo pi) {
     oj_set_strict_callbacks(pi);
-    pi->start_hash        = start_hash;
-    pi->end_hash          = end_hash;
-    pi->hash_set_cstr     = hash_set_cstr;
-    pi->hash_set_num      = hash_set_num;
-    pi->hash_set_value    = hash_set_value;
-    pi->add_num           = add_num;
-    pi->add_cstr          = add_cstr;
-    pi->array_append_cstr = array_append_cstr;
-    pi->start_array       = start_array;
-    pi->array_append_num  = array_append_num;
+    pi->start_hash         = start_hash;
+    pi->end_hash           = end_hash;
+    pi->hash_set_cstr      = hash_set_cstr;
+    pi->hash_set_num       = hash_set_num;
+    pi->hash_set_value     = hash_set_value;
+    pi->add_num            = add_num;
+    pi->add_cstr           = add_cstr;
+    pi->array_append_cstr  = array_append_cstr;
+    pi->array_append_value = array_append_value;
+    pi->start_array        = start_array;
+    pi->array_append_num   = array_append_num;
 }
 
 VALUE
