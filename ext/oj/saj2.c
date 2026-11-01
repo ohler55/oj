@@ -33,7 +33,28 @@ static void push_key(Saj d, VALUE key) {
     d->tail++;
 }
 
+static VALUE pop_key(Saj d) {
+    if (d->tail <= d->keys) {
+        rb_raise(rb_eIndexError, "accessing key stack");
+    }
+    d->tail--;
+
+    return *d->tail;
+}
+
 static void noop(ojParser p) {
+}
+
+static void open_push_key(ojParser p) {
+    push_key((Saj)p->ctx, get_key(p));
+}
+
+static void close_pop_key(ojParser p) {
+    Saj d = (Saj)p->ctx;
+
+    if (d->keys < d->tail) {
+        d->tail--;
+    }
 }
 
 static void open_object(ojParser p) {
@@ -89,11 +110,7 @@ static void close_object(ojParser p) {
     VALUE key = Qnil;
 
     if (OBJECT_FUN == p->stack[p->depth]) {
-        d->tail--;
-        if (d->tail < d->keys) {
-            rb_raise(rb_eIndexError, "accessing key stack");
-        }
-        key = *d->tail;
+        key = pop_key(d);
     }
     rb_funcall(d->handler, oj_hash_end_id, 1, key);
 }
@@ -103,11 +120,7 @@ static void close_object_loc(ojParser p) {
     VALUE key = Qnil;
 
     if (OBJECT_FUN == p->stack[p->depth]) {
-        d->tail--;
-        if (d->tail < d->keys) {
-            rb_raise(rb_eIndexError, "accessing key stack");
-        }
-        key = *d->tail;
+        key = pop_key(d);
     }
     rb_funcall(d->handler, oj_hash_end_id, 3, key, LONG2FIX(p->line), LONG2FIX(p->cur - p->col));
 }
@@ -117,11 +130,7 @@ static void close_array(ojParser p) {
     VALUE key = Qnil;
 
     if (OBJECT_FUN == p->stack[p->depth]) {
-        d->tail--;
-        if (d->tail < d->keys) {
-            rb_raise(rb_eIndexError, "accessing key stack");
-        }
-        key = *d->tail;
+        key = pop_key(d);
     }
     rb_funcall(d->handler, oj_array_end_id, 1, key);
 }
@@ -131,11 +140,7 @@ static void close_array_loc(ojParser p) {
     VALUE key = Qnil;
 
     if (OBJECT_FUN == p->stack[p->depth]) {
-        d->tail--;
-        if (d->tail < d->keys) {
-            rb_raise(rb_eIndexError, "accessing key stack");
-        }
-        key = *d->tail;
+        key = pop_key(d);
     }
     rb_funcall(d->handler, oj_array_end_id, 3, key, LONG2FIX(p->line), LONG2FIX(p->cur - p->col));
 }
@@ -380,10 +385,15 @@ static VALUE option(ojParser p, const char *key, VALUE value) {
         return d->handler;
     }
     if (0 == strcmp(key, "handler=")) {
+        int hash_start  = rb_respond_to(value, oj_hash_start_id);
+        int hash_end    = rb_respond_to(value, oj_hash_end_id);
+        int array_start = rb_respond_to(value, oj_array_start_id);
+        int array_end   = rb_respond_to(value, oj_array_end_id);
+
         d->tail    = d->keys;
         d->handler = value;
         reset(p);
-        if (rb_respond_to(value, oj_hash_start_id)) {
+        if (hash_start) {
             if (1 == rb_obj_method_arity(value, oj_hash_start_id)) {
                 p->funcs[TOP_FUN].open_object    = open_object;
                 p->funcs[ARRAY_FUN].open_object  = open_object;
@@ -393,8 +403,10 @@ static VALUE option(ojParser p, const char *key, VALUE value) {
                 p->funcs[ARRAY_FUN].open_object  = open_object_loc;
                 p->funcs[OBJECT_FUN].open_object = open_object_loc_key;
             }
+        } else if (hash_end) {
+            p->funcs[OBJECT_FUN].open_object = open_push_key;
         }
-        if (rb_respond_to(value, oj_array_start_id)) {
+        if (array_start) {
             if (1 == rb_obj_method_arity(value, oj_array_start_id)) {
                 p->funcs[TOP_FUN].open_array    = open_array;
                 p->funcs[ARRAY_FUN].open_array  = open_array;
@@ -404,8 +416,10 @@ static VALUE option(ojParser p, const char *key, VALUE value) {
                 p->funcs[ARRAY_FUN].open_array  = open_array_loc;
                 p->funcs[OBJECT_FUN].open_array = open_array_loc_key;
             }
+        } else if (array_end) {
+            p->funcs[OBJECT_FUN].open_array = open_push_key;
         }
-        if (rb_respond_to(value, oj_hash_end_id)) {
+        if (hash_end) {
             if (1 == rb_obj_method_arity(value, oj_hash_end_id)) {
                 p->funcs[TOP_FUN].close_object    = close_object;
                 p->funcs[ARRAY_FUN].close_object  = close_object;
@@ -415,8 +429,10 @@ static VALUE option(ojParser p, const char *key, VALUE value) {
                 p->funcs[ARRAY_FUN].close_object  = close_object_loc;
                 p->funcs[OBJECT_FUN].close_object = close_object_loc;
             }
+        } else if (hash_start) {
+            p->funcs[OBJECT_FUN].close_object = close_pop_key;
         }
-        if (rb_respond_to(value, oj_array_end_id)) {
+        if (array_end) {
             if (1 == rb_obj_method_arity(value, oj_array_end_id)) {
                 p->funcs[TOP_FUN].close_array    = close_array;
                 p->funcs[ARRAY_FUN].close_array  = close_array;
@@ -426,6 +442,8 @@ static VALUE option(ojParser p, const char *key, VALUE value) {
                 p->funcs[ARRAY_FUN].close_array  = close_array_loc;
                 p->funcs[OBJECT_FUN].close_array = close_array_loc;
             }
+        } else if (array_start) {
+            p->funcs[OBJECT_FUN].close_array = close_pop_key;
         }
         if (rb_respond_to(value, oj_add_value_id)) {
             if (2 == rb_obj_method_arity(value, oj_add_value_id)) {

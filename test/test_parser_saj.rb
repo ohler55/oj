@@ -325,6 +325,69 @@ class ParserSajTest < Minitest::Test
                   [:hash_end, nil, 14, 1]], handler.calls)
   end
 
+  def test_partial_handler_keys
+    callbacks = [:hash_start, :hash_end, :array_start, :array_end, :add_value]
+    [
+      [[:hash_end], '{"a":{}}', [[:hash_end, 'a'], [:hash_end, nil]]],
+      [[:array_end], '{"obj":{"arr":[]}}', [[:array_end, 'arr']]],
+      [[:hash_start, :array_end], '{"obj":{"arr":[]}}', [[:hash_start, nil], [:hash_start, 'obj'], [:array_end, 'arr']]],
+      [[:array_start, :hash_end], '{"arr":[{"x":{}}]}',
+       [[:array_start, 'arr'], [:hash_end, 'x'], [:hash_end, nil], [:hash_end, nil]]],
+      [[:hash_start, :array_start, :array_end], '{"list":[{"inner":{}}]}',
+       [[:hash_start, nil], [:array_start, 'list'], [:hash_start, nil], [:hash_start, 'inner'], [:array_end, 'list']]],
+    ].each do |names, json, expected|
+      handler = Class.new(AllSaj) { private(*(callbacks - names)) }.new
+      p = Oj::Parser.new(:saj)
+      p.handler = handler
+      p.parse(json)
+      assert_equal(expected, handler.calls, names.inspect)
+    end
+  end
+
+  def test_end_only_handler_keys_survive_gc
+    [10, 40].each do |len|
+      keys = Array.new(3) { |i| "key#{i}".ljust(len, 'k') }
+      json = "{#{keys.map { |k| %("#{k}":{"a":["x","y","z"]}) }.join(',')}}"
+      handler = Class.new(AllSaj) { private(:hash_start, :array_start, :add_value) }.new
+      p = Oj::Parser.new(:saj)
+      p.handler = handler
+      begin
+        GC.stress = true
+        p.parse(json)
+      ensure
+        GC.stress = false
+      end
+      assert_equal(keys + [nil], handler.calls.select { |c| :hash_end == c[0] }.map { |c| c[1] })
+    end
+  end
+
+  def test_reentrant_parse_key_stack
+    handler_class = Class.new(AllSaj) do
+      attr_accessor :parser
+
+      def hash_start(key)
+        super
+        case key
+        when 'a'
+          begin
+            parser.parse('{"b":{}}')
+          rescue IndexError => e
+            @calls << [:rescued, e.class]
+          end
+        when 'b'
+          parser.handler = self
+        end
+      end
+    end
+    handler = handler_class.new
+    p = Oj::Parser.new(:saj)
+    handler.parser = p
+    p.handler = handler
+    assert_raises(IndexError) { p.parse('{"a":{"c":{}}}') }
+    assert_includes(handler.calls, [:rescued, IndexError])
+    assert_equal([[:hash_end, 'c']], handler.calls.select { |c| :hash_end == c[0] })
+  end
+
   def test_big_value_file
     # Large files are parsed in blocks of 16384 bytes. Creating a file that is
     # larger than that verifies the parser is reentrant.
