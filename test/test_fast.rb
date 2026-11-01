@@ -3,6 +3,7 @@
 
 $LOAD_PATH << __dir__
 
+require 'tmpdir'
 require 'helper'
 require 'tempfile'
 
@@ -527,6 +528,23 @@ class DocTest < Minitest::Test
       f.write('{"a":[1,2,3]}')
       f.flush
       assert_equal(:closed, Oj::Doc.open_file(f.path) { |doc| doc.close; :closed })
+    end
+  end
+
+  def test_open_file_fifo
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'fifo')
+      begin
+        File.mkfifo(path)
+      rescue NotImplementedError
+        skip 'needs File.mkfifo'
+      end
+      File.open(path, File::RDONLY | File::NONBLOCK) do
+        File.open(path, File::WRONLY) do
+          e = assert_raises(Oj::LoadError) { Oj::Doc.open_file(path) }
+          assert_match(/size/, e.message)
+        end
+      end
     end
   end
 

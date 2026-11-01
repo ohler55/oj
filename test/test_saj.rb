@@ -5,6 +5,7 @@ $LOAD_PATH << __dir__
 
 require 'helper'
 require 'saj_handlers'
+require 'tempfile'
 
 $json = %{{
   "array": [
@@ -244,6 +245,23 @@ class SajTest < Minitest::Test
     reader.define_singleton_method(:read) { json }
     [StringIO.new(json), reader].each do |input|
       assert_raises(ArgumentError) { Oj.saj_parse(Oj::Saj.new, input) }
+    end
+  end
+
+  def test_unseekable_file
+    skip 'needs /proc/self/status' unless File.exist?('/proc/self/status')
+    File.open('/proc/self/status') do |f|
+      assert_raises(IOError) { Oj.saj_parse(Oj::Saj.new, f) }
+    end
+  end
+
+  def test_unreadable_file
+    Tempfile.create(['saj', '.json']) do |t|
+      t.write('[1,2,3]')
+      t.flush
+      File.open(t.path, File::WRONLY) do |f|
+        assert_raises(IOError) { Oj.saj_parse(Oj::Saj.new, f) }
+      end
     end
   end
 

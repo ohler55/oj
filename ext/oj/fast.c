@@ -1177,6 +1177,7 @@ static VALUE doc_open_file(VALUE clas, VALUE filename) {
     char          *path;
     char          *json;
     FILE          *f;
+    long           end;
     size_t         len;
     volatile VALUE obj;
     int            given = rb_block_given_p();
@@ -1188,12 +1189,18 @@ static VALUE doc_open_file(VALUE clas, VALUE filename) {
         rb_raise(rb_eIOError, "%s", strerror(errno));
     }
     fseek(f, 0, SEEK_END);
-    len  = ftell(f);
+    end = ftell(f);
+    if (end < 0) {
+        fclose(f);
+        rb_raise(rb_const_get_at(Oj, rb_intern("LoadError")), "Failed to get the size of %s.", path);
+    }
+    len  = (size_t)end;
     json = OJ_R_ALLOC_N(char, len + 1);
 
     fseek(f, 0, SEEK_SET);
     if (len != fread(json, 1, len, f)) {
         fclose(f);
+        OJ_R_FREE(json);
         rb_raise(rb_const_get_at(Oj, rb_intern("LoadError")),
                  "Failed to read %lu bytes from %s.",
                  (unsigned long)len,
