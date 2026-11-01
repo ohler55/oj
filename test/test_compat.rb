@@ -74,6 +74,30 @@ class CompatJuice < Minitest::Test
     end
   end # Stringy
 
+  class ArrayWrapper
+    def initialize
+      @data = []
+    end
+
+    def <<(v)
+      @data << v
+      self
+    end
+
+    def to_a
+      @data.map { |v| v.is_a?(ArrayWrapper) ? v.to_a : v }
+    end
+  end # ArrayWrapper
+
+  class ArraySub < Array
+    attr_reader :pushed
+
+    def <<(v)
+      (@pushed ||= []) << v
+      super
+    end
+  end # ArraySub
+
   module One
     module Two
       module Three
@@ -273,6 +297,17 @@ class CompatJuice < Minitest::Test
         assert_equal(nested, Oj.compat_load(json))
       end
     end
+  end
+
+  def test_array_class_not_an_array
+    obj = Oj.load('[1,"x",[2.5,null],true,{"a":false}]', mode: :compat, array_class: ArrayWrapper)
+    assert_instance_of(ArrayWrapper, obj)
+    assert_equal([1, 'x', [2.5, nil], true, { 'a' => false }], obj.to_a)
+  end
+
+  def test_array_class_subclass
+    obj = Oj.load('[1,"x",[2],null]', mode: :compat, array_class: ArraySub)
+    assert_equal([1, 'x', [2], nil], obj.pushed)
   end
 
   def test_symbol
