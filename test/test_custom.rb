@@ -616,6 +616,18 @@ class CustomJuice < Minitest::Test
     assert_equal(%({"json_class":"StandardError","~mesg":"boom","~bt":null}), json)
   end
 
+  def test_nested_arrays_with_string_indent
+    deep = 1
+    pair = 1
+    40.times do
+      deep = [deep]
+      pair = [pair, 1]
+      [deep, pair].each do |obj|
+        assert_equal(obj, Oj.load(Oj.dump(obj, mode: :custom, indent: "\t" * 8), mode: :strict))
+      end
+    end
+  end
+
   def dump_and_load(obj, trace=false, options={})
     options = options.merge(:indent => 2, :mode => :custom)
     json = Oj.dump(obj, options)

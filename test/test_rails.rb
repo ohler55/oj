@@ -358,4 +358,16 @@ class RailsJuice < Minitest::Test
     Oj.default_options = orig
   end
 
+  def test_nested_arrays_with_string_indent
+    deep = 1
+    pair = 1
+    40.times do
+      deep = [deep]
+      pair = [pair, 1]
+      [deep, pair].each do |obj|
+        assert_equal(obj, Oj.load(Oj.dump(obj, mode: :rails, indent: "\t" * 8), mode: :strict))
+      end
+    end
+  end
+
 end
