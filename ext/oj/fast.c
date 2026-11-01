@@ -1346,7 +1346,7 @@ static VALUE doc_home(VALUE self) {
  *   Oj::Doc.open('[1,2]') { |doc| doc.type('/1') }  #=> Fixnum
  */
 static VALUE doc_type(int argc, VALUE *argv, VALUE self) {
-    Doc         doc = self_doc(self);
+    Doc         doc;
     Leaf        leaf;
     const char *path = 0;
     VALUE       type = Qnil;
@@ -1354,6 +1354,7 @@ static VALUE doc_type(int argc, VALUE *argv, VALUE self) {
     if (1 <= argc) {
         path = StringValuePtr(*argv);
     }
+    doc = self_doc(self);
     if (0 != (leaf = get_doc_leaf(doc, path))) {
         switch (leaf->rtype) {
         case T_NIL: type = rb_cNilClass; break;
@@ -1389,13 +1390,13 @@ static VALUE doc_fetch(int argc, VALUE *argv, VALUE self) {
     volatile VALUE val  = Qnil;
     const char    *path = 0;
 
-    doc = self_doc(self);
     if (1 <= argc) {
         path = StringValuePtr(*argv);
         if (2 == argc) {
             val = argv[1];
         }
     }
+    doc = self_doc(self);
     if (0 != (leaf = get_doc_leaf(doc, path))) {
         val = leaf_value(doc, leaf);
     }
@@ -1411,11 +1412,11 @@ static VALUE doc_fetch(int argc, VALUE *argv, VALUE self) {
  *   Oj::Doc.open('[1,2]') { |doc| doc.exists?('/3') }  #=> false
  */
 static VALUE doc_exists(VALUE self, VALUE str) {
-    Doc  doc;
-    Leaf leaf;
+    const char *path = StringValuePtr(str);
+    Doc         doc  = self_doc(self);
+    Leaf        leaf;
 
-    doc = self_doc(self);
-    if (0 != (leaf = get_doc_leaf(doc, StringValuePtr(str)))) {
+    if (0 != (leaf = get_doc_leaf(doc, path))) {
         if (NULL != leaf) {
             return Qtrue;
         }
@@ -1442,16 +1443,19 @@ static VALUE doc_exists(VALUE self, VALUE str) {
 static VALUE doc_each_leaf(int argc, VALUE *argv, VALUE self) {
     if (rb_block_given_p()) {
         Leaf        save_path[MAX_STACK];
-        Doc         doc  = self_doc(self);
+        Doc         doc;
         const char *path = 0;
         size_t      wlen;
 
+        if (1 <= argc) {
+            path = StringValuePtr(*argv);
+        }
+        doc  = self_doc(self);
         wlen = doc->where - doc->where_path;
         if (0 < wlen) {
             memcpy(save_path, doc->where_path, sizeof(Leaf) * (wlen + 1));
         }
-        if (1 <= argc) {
-            path = StringValuePtr(*argv);
+        if (0 != path) {
             if ('/' == *path) {
                 doc->where = doc->where_path;
                 path++;
@@ -1484,11 +1488,10 @@ static VALUE doc_each_leaf(int argc, VALUE *argv, VALUE self) {
  * "/one/2"
  */
 static VALUE doc_move(VALUE self, VALUE str) {
-    Doc         doc = self_doc(self);
-    const char *path;
+    const char *path = StringValuePtr(str);
+    Doc         doc  = self_doc(self);
     int         loc;
 
-    path = StringValuePtr(str);
     if ('/' == *path) {
         doc->where = doc->where_path;
         path++;
@@ -1519,17 +1522,21 @@ static VALUE doc_move(VALUE self, VALUE str) {
 static VALUE doc_each_child(int argc, VALUE *argv, VALUE self) {
     if (rb_block_given_p()) {
         Leaf        save_path[MAX_STACK];
-        Doc         doc  = self_doc(self);
+        Doc         doc;
         const char *path = 0;
         size_t      wlen;
-        Leaf       *where_orig = doc->where;
+        Leaf       *where_orig;
 
-        wlen = doc->where - doc->where_path;
+        if (1 <= argc) {
+            path = StringValuePtr(*argv);
+        }
+        doc        = self_doc(self);
+        where_orig = doc->where;
+        wlen       = doc->where - doc->where_path;
         if (0 < wlen) {
             memcpy(save_path, doc->where_path, sizeof(Leaf) * (wlen + 1));
         }
-        if (1 <= argc) {
-            path = StringValuePtr(*argv);
+        if (0 != path) {
             if ('/' == *path) {
                 doc->where = doc->where_path;
                 path++;
@@ -1597,13 +1604,14 @@ static VALUE doc_each_child(int argc, VALUE *argv, VALUE self) {
  */
 static VALUE doc_each_value(int argc, VALUE *argv, VALUE self) {
     if (rb_block_given_p()) {
-        Doc         doc  = self_doc(self);
+        Doc         doc;
         const char *path = 0;
         Leaf        leaf;
 
         if (1 <= argc) {
             path = StringValuePtr(*argv);
         }
+        doc = self_doc(self);
         if (0 != (leaf = get_doc_leaf(doc, path))) {
             each_value(doc, leaf, self);
         }
@@ -1626,19 +1634,24 @@ static VALUE doc_each_value(int argc, VALUE *argv, VALUE self) {
  *   #=> "[2,1]"
  */
 static VALUE doc_dump(int argc, VALUE *argv, VALUE self) {
-    Doc         doc = self_doc(self);
+    Doc         doc;
     Leaf        leaf;
     const char *path     = 0;
     const char *filename = 0;
 
     if (1 <= argc) {
         if (Qnil != *argv) {
-            path = StringValuePtr(*argv);
+            StringValue(*argv);
         }
         if (2 <= argc) {
-            filename = StringValuePtr(argv[1]);
+            StringValue(argv[1]);
+            filename = RSTRING_PTR(argv[1]);
+        }
+        if (Qnil != *argv) {
+            path = RSTRING_PTR(*argv);
         }
     }
+    doc = self_doc(self);
     if (0 != (leaf = get_doc_leaf(doc, path))) {
         volatile VALUE rjson;
 
@@ -1670,9 +1683,7 @@ static VALUE doc_dump(int argc, VALUE *argv, VALUE self) {
  *   Oj::Doc.open('[1,2,3]') { |doc| doc.size() }  #=> 4
  */
 static VALUE doc_size(VALUE self) {
-    Doc d;
-    TypedData_Get_Struct(self, struct _doc, &oj_doc_type, d);
-    return ULONG2NUM(d->size);
+    return ULONG2NUM(self_doc(self)->size);
 }
 
 /* @overload close() => nil

@@ -3,6 +3,7 @@
 
 $LOAD_PATH << __dir__
 
+require 'tmpdir'
 require 'helper'
 require 'tempfile'
 
@@ -542,6 +543,48 @@ class DocTest < Minitest::Test
     assert_equal(2, doc.fetch('a/2'))
     GC.start
     # a print statement confirms close is called
+  end
+
+  def test_size_after_close
+    doc = Oj::Doc.open('[1,2,3]')
+    doc.close
+    assert_raises(IOError) { doc.size }
+  end
+
+  def test_close_in_path_to_str
+    closer = Class.new do
+      def initialize(doc, path)
+        @doc = doc
+        @path = path
+      end
+
+      def to_str
+        @doc.close
+        @path
+      end
+    end
+    [:type, :fetch, :exists?, :move, :each_child, :each_leaf, :each_value, :dump].each do |m|
+      doc = Oj::Doc.open('{"a":[1,2,{"b":3}]}')
+      assert_raises(IOError, m.inspect) { doc.send(m, closer.new(doc, '/a')) { |_d| nil } }
+    end
+  end
+
+  def test_dump_filename_to_str_changes_path
+    key = 'k' * 2000
+    json = %({"a":{"#{key}":1}})
+    Dir.mktmpdir do |dir|
+      out = File.join(dir, 'out.json')
+      path = +"/a/#{key}"
+      filename = Object.new
+      filename.define_singleton_method(:to_str) do
+        path.clear
+        out
+      end
+      doc = Oj::Doc.open(json)
+      doc.dump(path, filename)
+      doc.close
+      assert_equal(json, File.read(out).chomp)
+    end
   end
 
   def test_dump
