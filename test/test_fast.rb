@@ -4,6 +4,7 @@
 $LOAD_PATH << __dir__
 
 require 'helper'
+require 'tempfile'
 
 class DocTest < Minitest::Test
   def setup
@@ -515,6 +516,17 @@ class DocTest < Minitest::Test
       end
     ensure
       File.delete(filename) if File.exist?(filename)
+    end
+  end
+
+  def test_close_in_block
+    assert_equal(2, Oj::Doc.open('[1,2,3]') { |doc| v = doc.fetch('/2'); doc.close; v })
+    assert_raises(ArgumentError) { Oj::Doc.open('[1]') { |doc| doc.close; raise ArgumentError } }
+
+    Tempfile.create(['close_in_block', '.json']) do |f|
+      f.write('{"a":[1,2,3]}')
+      f.flush
+      assert_equal(:closed, Oj::Doc.open_file(f.path) { |doc| doc.close; :closed })
     end
   end
 
