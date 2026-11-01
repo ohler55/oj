@@ -45,6 +45,7 @@ void oj_reader_init(Reader reader, VALUE io, int fd, bool to_s) {
     reader->line            = 1;
     reader->col             = 0;
     reader->free_head       = 0;
+    reader->in_val          = Qnil;
 
     if (0 != fd) {
         reader->read_func = read_from_fd;
@@ -52,6 +53,7 @@ void oj_reader_init(Reader reader, VALUE io, int fd, bool to_s) {
     } else if (rb_cString == io_class) {
         reader->read_func = 0;
         reader->in_str    = StringValuePtr(io);
+        reader->in_val    = io;
         reader->head      = (char *)reader->in_str;
         reader->tail      = reader->head;
         reader->read_end  = reader->head + RSTRING_LEN(io);
@@ -60,6 +62,7 @@ void oj_reader_init(Reader reader, VALUE io, int fd, bool to_s) {
 
         reader->read_func = 0;
         reader->in_str    = StringValuePtr(s);
+        reader->in_val    = s;
         reader->head      = (char *)reader->in_str;
         reader->tail      = reader->head;
         reader->read_end  = reader->head + RSTRING_LEN(s);
@@ -79,6 +82,7 @@ void oj_reader_init(Reader reader, VALUE io, int fd, bool to_s) {
 
         reader->read_func = 0;
         reader->in_str    = StringValuePtr(rstr);
+        reader->in_val    = rstr;
         reader->head      = (char *)reader->in_str;
         reader->tail      = reader->head;
         reader->read_end  = reader->head + RSTRING_LEN(rstr);
