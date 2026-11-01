@@ -269,6 +269,14 @@ class StrictJuice < Minitest::Test
     assert_equal({ 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}, obj)
   end
 
+  def test_safe_load_stringio_string_nil
+    input = StringIO.new('{}')
+    def input.string
+      nil
+    end
+    assert_raises(TypeError) { Oj.safe_load(input) }
+  end
+
   def test_io_file
     filename = File.join(__dir__, 'open_file_test.json')
     File.write(filename, %{{

@@ -1208,6 +1208,7 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
 
         if (oj_stringio_class == clas) {
             input = rb_funcall2(input, oj_string_id, 0, 0);
+            StringValue(input);
             oj_pi_set_input_str(pi, &input);
 #if !IS_WINDOWS
         } else if (rb_cFile == clas && 0 == FIX2INT(rb_funcall(input, oj_pos_id, 0))) {
