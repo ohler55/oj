@@ -3,6 +3,7 @@
 
 $LOAD_PATH << __dir__
 
+require 'tmpdir'
 require 'helper'
 
 class DocTest < Minitest::Test
