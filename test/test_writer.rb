@@ -153,6 +153,19 @@ class OjWriter < Minitest::Test
     assert_equal(%|[7,true,"a string",{"x":{"a":65}}]\n|, w.to_s)
   end
 
+  def test_string_writer_push_self
+    value = 'x' * 3000
+    [:custom, :compat, :rails].each do |mode|
+      w = Oj::StringWriter.new(mode: mode, use_raw_json: true, indent: 0)
+      _spare = Oj::StringWriter.new(mode: mode)
+      w.push_array
+      w.push_value(value)
+      w.push_value(w)
+      w.pop
+      assert_equal(%|["#{value}",["#{value}"]\n|, w.to_s, mode.inspect)
+    end
+  end
+
   def test_string_writer_pop_excess
     w = Oj::StringWriter.new(:indent => 0)
     begin
