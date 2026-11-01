@@ -135,6 +135,7 @@ static void dump_array(VALUE a, int depth, Out out, bool as_ok) {
         cnt--;
         for (i = 0; i <= cnt; i++) {
             if (out->opts->dump_opts.use) {
+                assure_size(out, size);
                 if (0 < out->opts->dump_opts.array_size) {
                     APPEND_CHARS(out->cur, out->opts->dump_opts.array_nl, out->opts->dump_opts.array_size);
                 }
@@ -156,7 +157,7 @@ static void dump_array(VALUE a, int depth, Out out, bool as_ok) {
                 *out->cur++ = ',';
             }
         }
-        size = depth * out->indent + 1;
+        size = indent_len(out, depth, out->opts->dump_opts.array_size) + 1;
         assure_size(out, size);
         if (out->opts->dump_opts.use) {
             // printf("*** d2: %u  indent: %u '%s'\n", d2, out->opts->dump_opts->indent_size,

@@ -519,6 +519,18 @@ class StrictJuice < Minitest::Test
     end
   end
 
+  def test_nested_arrays_with_string_indent
+    deep = 1
+    pair = 1
+    40.times do
+      deep = [deep]
+      pair = [pair, 1]
+      [deep, pair].each do |obj|
+        assert_equal(obj, Oj.load(Oj.dump(obj, mode: :strict, indent: "\t" * 8), mode: :strict))
+      end
+    end
+  end
+
   def dump_and_load(obj, trace=false)
     json = Oj.dump(obj, :indent => 2)
     puts json if trace
