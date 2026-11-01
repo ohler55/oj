@@ -713,6 +713,26 @@ class CompatJuice < Minitest::Test
     Oj.remove_to_json(Exception)
   end
 
+  def test_exception_message_not_a_string
+    Oj.add_to_json(Exception)
+
+    custom = Object.new
+    def custom.to_json(*)
+      '"custom"'
+    end
+    [[nil, 'null'], [[1, 2], '[1,2]'], [42, '42'], [{ 'a' => 1 }, '{"a":1}'], [custom, '"custom"']].each do |message, json|
+      e = RuntimeError.new('boom')
+      e.define_singleton_method(:message) { message }
+      assert_equal(%({"json_class":"RuntimeError","m":#{json},"b":null}), Oj.dump(e, mode: :compat))
+    end
+
+    e = RuntimeError.new('boom')
+    e.define_singleton_method(:message) { [1, 2] }
+    assert_raises() { Oj.dump(e, mode: :compat, max_nesting: 1) }
+  ensure
+    Oj.remove_to_json(Exception)
+  end
+
   # A per call :create_id => nil freed the buffer the default options own, so
   # the default was left pointing at freed memory and the second call freed it
   # again.

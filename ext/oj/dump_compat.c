@@ -321,7 +321,7 @@ static void exception_alt(VALUE obj, int depth, Out out) {
     if (0 < out->opts->dump_opts.after_size) {
         APPEND_CHARS(out->cur, out->opts->dump_opts.after_sep, out->opts->dump_opts.after_size);
     }
-    oj_dump_str(rb_funcall(obj, message_id, 0), 0, out, false);
+    oj_dump_compat_val(rb_funcall(obj, message_id, 0), depth + 1, out, true);
     assure_size(out, size + sep_len + 6);
     *out->cur++ = ',';
     fill_indent(out, d3);
