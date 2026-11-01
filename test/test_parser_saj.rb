@@ -51,6 +51,30 @@ class LocSaj
 
 end # LocSaj
 
+class HashEndSaj
+  attr_reader :keys
+
+  def initialize
+    @keys = []
+  end
+
+  def hash_start(_key)
+  end
+
+  def hash_end(key)
+    @keys << key unless key.nil?
+  end
+
+  def array_start(_key)
+  end
+
+  def array_end(_key)
+  end
+
+  def add_value(_value, _key)
+  end
+end # HashEndSaj
+
 class ParserSajTest < Minitest::Test
 
   def test_nil
@@ -339,4 +363,20 @@ class ParserSajTest < Minitest::Test
     end
   end
 
+  def test_keys_survive_gc
+    [10, 40].each do |len|
+      keys = Array.new(3) { |i| "key#{i}".ljust(len, 'k') }
+      json = "{#{keys.map { |k| %("#{k}":{"a":["x","y","z"]}) }.join(',')}}"
+      handler = HashEndSaj.new
+      p = Oj::Parser.new(:saj)
+      p.handler = handler
+      begin
+        GC.stress = true
+        p.parse(json)
+      ensure
+        GC.stress = false
+      end
+      assert_equal(keys, handler.keys)
+    end
+  end
 end
