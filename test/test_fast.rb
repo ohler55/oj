@@ -262,6 +262,23 @@ class DocTest < Minitest::Test
     end
   end
 
+  def test_move_relative_up_not_found
+    Oj::Doc.open(@json1) do |doc|
+      [
+        ['/array/1/hash', '../zz'],
+        ['/array/1/hash/h2', '../../zz'],
+        ['/array/1', 'hash/../zz'],
+        ['/', 'array/../zz'],
+      ].each do |start, path|
+        doc.move(start)
+        value = doc.fetch
+        assert_raises(ArgumentError) { doc.move(path) }
+        assert_equal(start, doc.where?)
+        assert_equal(value, doc.fetch)
+      end
+    end
+  end
+
   def test_type
     Oj::Doc.open(@json1) do |doc|
       [

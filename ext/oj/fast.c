@@ -1036,8 +1036,8 @@ static int move_step(Doc doc, const char *path, int loc) {
             doc->where--;
             loc = move_step(doc, path, loc + 1);
             if (0 != loc) {
-                *doc->where = init;
                 doc->where++;
+                *doc->where = init;
             }
         } else if (COL_VAL == leaf->value_type && 0 != leaf->elements) {
             Leaf first = leaf->elements->next;
