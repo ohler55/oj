@@ -1387,7 +1387,12 @@ void oj_options_take_ownership(Options copts) {
     }
 }
 
-static void release_option_buffers(Options copts) {
+// Free the option buffers of an options struct that owns all of them, i.e. one
+// that oj_options_take_ownership() was called on. Unlike oj_free_call_options()
+// this never looks at the defaults, so it is safe to call from a GC free
+// function, where the defaults may have been replaced since the object was
+// created.
+void oj_options_release(Options copts) {
     if (NULL != copts->create_id) {
         OJ_R_FREE((char *)copts->create_id);
         copts->create_id     = NULL;
@@ -1405,15 +1410,6 @@ static void release_option_buffers(Options copts) {
         OJ_R_FREE((void *)copts->dump_opts.except);
         copts->dump_opts.except = NULL;
     }
-}
-
-// Free the option buffers of an options struct that owns all of them, i.e. one
-// that oj_options_take_ownership() was called on. Unlike oj_free_call_options()
-// this never looks at the defaults, so it is safe to call from a GC free
-// function, where the defaults may have been replaced since the object was
-// created.
-void oj_options_release(Options copts) {
-    release_option_buffers(copts);
     // The str_rx chain is detached from the defaults when the owner is created
     // so the chain, if there is one, was built for this options struct alone.
     oj_rxclass_cleanup(&copts->str_rx);
@@ -1824,29 +1820,58 @@ static VALUE to_json(int argc, VALUE *argv, VALUE self) {
     return oj_dump_obj_to_str(*argv, &copts, &out, argc - 1, argv + 1);
 }
 
-struct write_call_arg {
-    Options copts;
-    int     argc;
-    VALUE  *argv;
-    bool    owned;
+struct option_buffers {
+    const char *create_id;
+    VALUE      *ignore;
+    const char *only;
+    const char *except;
 };
 
+struct write_call_arg {
+    Options               copts;
+    int                   argc;
+    VALUE                *argv;
+    struct option_buffers base;
+    struct option_buffers own;
+    bool                  owned;
+};
+
+static void option_buffers_get(Options copts, struct option_buffers *bufs) {
+    bufs->create_id = copts->create_id;
+    bufs->ignore    = copts->ignore;
+    bufs->only      = copts->dump_opts.only;
+    bufs->except    = copts->dump_opts.except;
+}
+
 static void write_call_options(struct write_call_arg *arg) {
+    oj_options_take_ownership(arg->copts);
+    option_buffers_get(arg->copts, &arg->own);
+    arg->owned = true;
     if (3 == arg->argc) {
         oj_parse_options(arg->argv[2], arg->copts);
     }
-    oj_options_take_ownership(arg->copts);
-    arg->owned = true;
+}
+
+static void free_call_buffer(const void *cur, const void *own, const void *base) {
+    if (NULL != cur && base != cur) {
+        OJ_R_FREE((void *)cur);
+    }
+    if (NULL != own && base != own && cur != own) {
+        OJ_R_FREE((void *)own);
+    }
 }
 
 static VALUE write_call_ensure(VALUE a) {
-    struct write_call_arg *arg = (struct write_call_arg *)a;
+    struct write_call_arg *arg   = (struct write_call_arg *)a;
+    Options                copts = arg->copts;
+    struct option_buffers  none  = {NULL, NULL, NULL, NULL};
+    struct option_buffers *base  = arg->owned ? &none : &arg->base;
 
-    if (arg->owned) {
-        release_option_buffers(arg->copts);
-    } else {
-        oj_free_call_options(arg->copts);
-    }
+    free_call_buffer(copts->create_id, arg->own.create_id, base->create_id);
+    free_call_buffer(copts->ignore, arg->own.ignore, base->ignore);
+    free_call_buffer(copts->dump_opts.only, arg->own.only, base->only);
+    free_call_buffer(copts->dump_opts.except, arg->own.except, base->except);
+
     return Qnil;
 }
 
@@ -1870,10 +1895,12 @@ static VALUE to_file_body(VALUE a) {
  *   - *:circular* [_Boolean_] allow circular references, default: false
  */
 static VALUE to_file(int argc, VALUE *argv, VALUE self) {
-    struct _options       copts = oj_default_options;
-    struct write_call_arg arg   = {&copts, argc, argv, false};
+    struct _options       copts;
+    struct write_call_arg arg = {&copts, argc, argv};
 
     StringValueCStr(*argv);
+    copts = oj_default_options;
+    option_buffers_get(&copts, &arg.base);
 
     return rb_ensure(to_file_body, (VALUE)&arg, write_call_ensure, (VALUE)&arg);
 }
@@ -1899,7 +1926,9 @@ static VALUE to_stream_body(VALUE a) {
  */
 static VALUE to_stream(int argc, VALUE *argv, VALUE self) {
     struct _options       copts = oj_default_options;
-    struct write_call_arg arg   = {&copts, argc, argv, false};
+    struct write_call_arg arg   = {&copts, argc, argv};
+
+    option_buffers_get(&copts, &arg.base);
 
     return rb_ensure(to_stream_body, (VALUE)&arg, write_call_ensure, (VALUE)&arg);
 }
