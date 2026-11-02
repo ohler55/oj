@@ -1053,6 +1053,17 @@ class ObjectJuice < Minitest::Test
     assert_nil(e2.backtrace_locations)
   end
 
+  def test_ivars_named_like_exception_internals
+    obj = Object.new
+    obj.instance_variable_set(:@bt, 1)
+    obj.instance_variable_set(:@mesg, 2)
+    obj.instance_variable_set(:@bt_locations, 3)
+    json = Oj.dump(obj, mode: :object)
+    assert_equal({ '^o' => 'Object', 'bt' => 1, 'mesg' => 2, 'bt_locations' => 3 }, Oj.load(json, mode: :strict))
+    loaded = Oj.load(json, mode: :object)
+    assert_equal([1, 2, 3], %i[@bt @mesg @bt_locations].map { |name| loaded.instance_variable_get(name) })
+  end
+
   def test_range_object
     Oj.default_options = { :mode => :object }
     json = Oj.dump(1..7, :mode => :object, :indent => 0)

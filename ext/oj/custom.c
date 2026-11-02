@@ -566,7 +566,7 @@ static int dump_attr_cb(ID key, VALUE value, VALUE ov) {
     } else if (Yes == out->opts->ignore_under && '@' == *attr && '_' == attr[1]) {
         return ST_CONTINUE;
     }
-    if (0 == strcmp("bt", attr) || 0 == strcmp("mesg", attr) || 0 == strcmp("bt_locations", attr)) {
+    if ('@' != *attr && (0 == strcmp("bt", attr) || 0 == strcmp("mesg", attr) || 0 == strcmp("bt_locations", attr))) {
         return ST_CONTINUE;
     }
     assure_size(out, size);

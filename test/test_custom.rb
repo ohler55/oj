@@ -674,6 +674,15 @@ class CustomJuice < Minitest::Test
     assert_nil(loaded.backtrace_locations)
   end
 
+  def test_ivars_named_like_exception_internals
+    obj = Object.new
+    obj.instance_variable_set(:@bt, 1)
+    obj.instance_variable_set(:@mesg, 2)
+    obj.instance_variable_set(:@bt_locations, 3)
+    json = Oj.dump(obj, :mode => :custom)
+    assert_equal({ 'bt' => 1, 'mesg' => 2, 'bt_locations' => 3 }, Oj.load(json, :mode => :strict))
+  end
+
   def test_range_subclass_exclude_end
     skip 'TruffleRuby does not dump a Range subclass as a Struct' if 'truffleruby' == RUBY_ENGINE
 
