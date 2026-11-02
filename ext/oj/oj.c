@@ -1799,7 +1799,6 @@ static VALUE dump(int argc, VALUE *argv, VALUE self) {
 static VALUE to_json(int argc, VALUE *argv, VALUE self) {
     struct _out     out;
     struct _options copts = oj_default_options;
-    VALUE           rstr;
 
     if (1 > argc) {
         rb_raise(rb_eArgError, "wrong number of arguments (0 for 1).");
@@ -1818,16 +1817,71 @@ static VALUE to_json(int argc, VALUE *argv, VALUE self) {
     out.omit_null_byte = copts.dump_opts.omit_null_byte;
     // For obj.to_json or generate nan is not allowed but if called from dump
     // it is.
-    oj_dump_obj_to_json_using_params(*argv, &copts, &out, argc - 1, argv + 1);
+    return oj_dump_obj_to_str(*argv, &copts, &out, argc - 1, argv + 1);
+}
 
-    if (0 == out.buf) {
-        rb_raise(rb_eNoMemError, "Not enough memory.");
+struct option_buffers {
+    const char *create_id;
+    VALUE      *ignore;
+    const char *only;
+    const char *except;
+};
+
+struct write_call_arg {
+    Options               copts;
+    int                   argc;
+    VALUE                *argv;
+    struct option_buffers base;
+    struct option_buffers own;
+    bool                  owned;
+};
+
+static void option_buffers_get(Options copts, struct option_buffers *bufs) {
+    bufs->create_id = copts->create_id;
+    bufs->ignore    = copts->ignore;
+    bufs->only      = copts->dump_opts.only;
+    bufs->except    = copts->dump_opts.except;
+}
+
+static void write_call_options(struct write_call_arg *arg) {
+    oj_options_take_ownership(arg->copts);
+    option_buffers_get(arg->copts, &arg->own);
+    arg->owned = true;
+    if (3 == arg->argc) {
+        oj_parse_options(arg->argv[2], arg->copts);
     }
-    rstr = rb_utf8_str_new_cstr(out.buf);
+}
 
-    oj_out_free(&out);
+static void free_call_buffer(const void *cur, const void *own, const void *base) {
+    if (NULL != cur && base != cur) {
+        OJ_R_FREE((void *)cur);
+    }
+    if (NULL != own && base != own && cur != own) {
+        OJ_R_FREE((void *)own);
+    }
+}
 
-    return rstr;
+static VALUE write_call_ensure(VALUE a) {
+    struct write_call_arg *arg   = (struct write_call_arg *)a;
+    Options                copts = arg->copts;
+    struct option_buffers  none  = {NULL, NULL, NULL, NULL};
+    struct option_buffers *base  = arg->owned ? &none : &arg->base;
+
+    free_call_buffer(copts->create_id, arg->own.create_id, base->create_id);
+    free_call_buffer(copts->ignore, arg->own.ignore, base->ignore);
+    free_call_buffer(copts->dump_opts.only, arg->own.only, base->only);
+    free_call_buffer(copts->dump_opts.except, arg->own.except, base->except);
+
+    return Qnil;
+}
+
+static VALUE to_file_body(VALUE a) {
+    struct write_call_arg *arg = (struct write_call_arg *)a;
+
+    write_call_options(arg);
+    oj_write_obj_to_file(arg->argv[1], StringValueCStr(*arg->argv), arg->copts);
+
+    return Qnil;
 }
 
 /* Document-method: to_file
@@ -1841,14 +1895,21 @@ static VALUE to_json(int argc, VALUE *argv, VALUE self) {
  *   - *:circular* [_Boolean_] allow circular references, default: false
  */
 static VALUE to_file(int argc, VALUE *argv, VALUE self) {
-    struct _options copts = oj_default_options;
+    struct _options       copts;
+    struct write_call_arg arg = {&copts, argc, argv};
 
     StringValueCStr(*argv);
-    if (3 == argc) {
-        oj_parse_options(argv[2], &copts);
-    }
-    oj_write_obj_to_file(argv[1], StringValueCStr(*argv), &copts);
-    oj_free_call_options(&copts);
+    copts = oj_default_options;
+    option_buffers_get(&copts, &arg.base);
+
+    return rb_ensure(to_file_body, (VALUE)&arg, write_call_ensure, (VALUE)&arg);
+}
+
+static VALUE to_stream_body(VALUE a) {
+    struct write_call_arg *arg = (struct write_call_arg *)a;
+
+    write_call_options(arg);
+    oj_write_obj_to_stream(arg->argv[1], *arg->argv, arg->copts);
 
     return Qnil;
 }
@@ -1864,15 +1925,12 @@ static VALUE to_file(int argc, VALUE *argv, VALUE self) {
  *   - *:circular* [_Boolean_] allow circular references, default: false
  */
 static VALUE to_stream(int argc, VALUE *argv, VALUE self) {
-    struct _options copts = oj_default_options;
+    struct _options       copts = oj_default_options;
+    struct write_call_arg arg   = {&copts, argc, argv};
 
-    if (3 == argc) {
-        oj_parse_options(argv[2], &copts);
-    }
-    oj_write_obj_to_stream(argv[1], *argv, &copts);
-    oj_free_call_options(&copts);
+    option_buffers_get(&copts, &arg.base);
 
-    return Qnil;
+    return rb_ensure(to_stream_body, (VALUE)&arg, write_call_ensure, (VALUE)&arg);
 }
 
 /* Document-method: register_odd

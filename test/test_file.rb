@@ -33,6 +33,44 @@ class FileJuice < Minitest::Test
     end
   end # Jeez
 
+  class RaisesInToJson
+    def to_json(*)
+      raise ArgumentError.new('raised in to_json')
+    end
+  end
+
+  class ReplacesDefaults
+    def initialize(raises)
+      @raises = raises
+    end
+
+    def to_json(*)
+      replace_defaults
+      '1'
+    end
+
+    def write(str)
+      replace_defaults
+      str.size
+    end
+
+    def replace_defaults
+      Oj.default_options = { create_id: nil }
+      raise IOError.new('replaced the defaults') if @raises
+    end
+  end
+
+  class PathReplacesDefaults
+    def initialize(path)
+      @path = path
+    end
+
+    def to_str
+      Oj.default_options = { create_id: nil }
+      @path
+    end
+  end
+
   class Orange < Jam
 
     def as_json
@@ -311,6 +349,74 @@ class FileJuice < Minitest::Test
       assert_raises(ArgumentError) { Oj.to_file(out + "\0.txt", [1], ignore: [String]) }
       refute_path_exists(out)
     end
+  end
+
+  def test_write_raising_in_to_json
+    data = ['x' * 5000, RaisesInToJson.new]
+    opts = { mode: :compat, use_to_json: true, create_id: 'raised' }
+    Dir.mktmpdir do |dir|
+      assert_raises(ArgumentError) { Oj.to_file(File.join(dir, 'raised.json'), data, opts) }
+    end
+    assert_raises(ArgumentError) { Oj.to_stream(StringIO.new, data, opts) }
+  end
+
+  def test_write_with_the_default_options_replaced
+    opts = { mode: :compat, use_to_json: true }
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'replaced.json')
+      Oj.default_options = { create_id: 'replaced' }
+      assert_raises(IOError) { Oj.to_file(path, [ReplacesDefaults.new(true)], opts) }
+      Oj.default_options = { create_id: 'replaced' }
+      Oj.to_file(path, [ReplacesDefaults.new(false)], opts)
+      assert_equal('[1]', File.read(path))
+    end
+    Oj.default_options = { create_id: 'replaced' }
+    assert_raises(IOError) { Oj.to_stream(ReplacesDefaults.new(true), [1], opts) }
+    Oj.default_options = { create_id: 'replaced' }
+    Oj.to_stream(ReplacesDefaults.new(false), [1], opts)
+  end
+
+  def test_to_file_with_the_default_options_replaced_by_the_path
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'replaced.json')
+      [{}, { create_id: nil }].each do |opts|
+        Oj.default_options = { create_id: 'replaced' }
+        Oj.to_file(PathReplacesDefaults.new(path), [1], opts)
+        assert_equal('[1]', File.read(path))
+      end
+    end
+  end
+
+  def test_write_with_the_default_options_replaced_while_parsing
+    raises = true
+    Range.alias_method(:oj_test_begin, :begin)
+    Range.define_method(:begin) do
+      Oj.default_options = { create_id: nil }
+      raise IOError.new('replaced the defaults') if raises
+
+      oj_test_begin
+    end
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'replaced.json')
+      Oj.default_options = { create_id: 'replaced' }
+      assert_raises(IOError) { Oj.to_file(path, [1], integer_range: (1..2)) }
+      raises = false
+      Oj.default_options = { create_id: 'replaced' }
+      Oj.to_file(path, [1], integer_range: (1..2))
+      assert_equal('[1]', File.read(path))
+    end
+    raises = true
+    Oj.default_options = { create_id: 'replaced' }
+    assert_raises(IOError) { Oj.to_stream(StringIO.new, [1], integer_range: (1..2)) }
+    raises = false
+    Oj.default_options = { create_id: 'replaced' }
+    sio = StringIO.new
+    Oj.to_stream(sio, [1], integer_range: (1..2))
+    assert_equal('[1]', sio.string)
+  ensure
+    Range.remove_method(:begin)
+    Range.alias_method(:begin, :oj_test_begin)
+    Range.remove_method(:oj_test_begin)
   end
 
   def dump_and_load(obj, trace=false)

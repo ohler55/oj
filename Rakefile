@@ -62,7 +62,13 @@ if RUBY_PLATFORM.include?('linux')
         test/test_scp_fork.rb
       ]
 
-      RubyMemcheck::TestTask.new(valgrind: [:check_valgrind, :compile]) do |t|
+      RubyMemcheck::TestTask.new(valgrind_mimic: [:check_valgrind, :compile]) do |t|
+        t.libs << 'test'
+        t.test_files = %w[test/isolated/test_mimic_leak.rb]
+        t.verbose    = true
+      end
+
+      RubyMemcheck::TestTask.new(valgrind: [:check_valgrind, :compile, :valgrind_mimic]) do |t|
         t.libs << 'test'
         t.test_files = memcheck_test_files
         t.verbose    = true
