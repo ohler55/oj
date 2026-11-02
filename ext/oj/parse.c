@@ -390,6 +390,32 @@ void oj_scanner_init(void) {
     }
 }
 
+// JSON does not allow an unescaped control character (below 0x20) in a
+// string. Like a trailing decimal point, that is only rejected in strict mode
+// and when mimicking the JSON gem.
+static inline bool reject_control_chars(ParseInfo pi) {
+    return StrictMode == pi->options.mode || CompatMode == pi->options.mode;
+}
+
+static const char *find_control_char(const char *s, const char *end) {
+    // Eight bytes at a time first: a byte below 0x20 sets its high bit in
+    // (w - 0x20...) & ~w.
+    for (; s + sizeof(uint64_t) <= end; s += sizeof(uint64_t)) {
+        uint64_t w;
+
+        memcpy(&w, s, sizeof(w));
+        if (0 != ((w - 0x2020202020202020ULL) & ~w & 0x8080808080808080ULL)) {
+            break;
+        }
+    }
+    for (; s < end; s++) {
+        if ((unsigned char)*s < 0x20) {
+            return s;
+        }
+    }
+    return NULL;
+}
+
 // entered at /
 static void read_escaped_str(ParseInfo pi, const char *start) {
     struct _buf buf;
@@ -408,6 +434,16 @@ static void read_escaped_str(ParseInfo pi, const char *start) {
             oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "quoted string not terminated");
             buf_cleanup(&buf);
             return;
+        }
+        if (reject_control_chars(pi)) {
+            const char *ctrl = find_control_char(s, scanned);
+
+            if (NULL != ctrl) {
+                pi->cur = ctrl;
+                oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "invalid control character in string");
+                buf_cleanup(&buf);
+                return;
+            }
         }
         buf_append_string(&buf, s, (size_t)(scanned - s));
         s = scanned;
@@ -542,6 +578,15 @@ static void read_str(ParseInfo pi) {
     if (RB_UNLIKELY('\0' == *pi->cur)) {
         oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "NULL byte in string");
         return;
+    }
+    if (reject_control_chars(pi)) {
+        const char *ctrl = find_control_char(str, pi->cur);
+
+        if (NULL != ctrl) {
+            pi->cur = ctrl;
+            oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "invalid control character in string");
+            return;
+        }
     }
     if ('\\' == *pi->cur) {
         read_escaped_str(pi, str);
