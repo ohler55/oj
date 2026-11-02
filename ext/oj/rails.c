@@ -1062,6 +1062,7 @@ static VALUE encode(VALUE obj, ROptTable ropts, Options opts, int argc, VALUE *a
     }
     if (Yes == copts.circular) {
         oj_cache8_delete(out.circ_cache);
+        out.circ_cache = NULL;
     }
 
     oj_out_free(&out);

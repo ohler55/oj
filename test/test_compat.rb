@@ -98,6 +98,12 @@ class CompatJuice < Minitest::Test
     end
   end # ArraySub
 
+  class RaisesInToJson
+    def to_json(*)
+      raise ArgumentError.new('raised in to_json')
+    end
+  end
+
   module One
     module Two
       module Three
@@ -776,6 +782,16 @@ class CompatJuice < Minitest::Test
 
     2.times { Oj.dump({'a' => 1}, :create_id => nil) }
     assert_equal('my_class', Oj.default_options[:create_id])
+  end
+
+  def test_to_json_raising_in_to_json
+    assert_raises(ArgumentError) { Oj.to_json(['x' * 5000, RaisesInToJson.new]) }
+  end
+
+  def test_dump_circular_raising_in_to_json
+    assert_raises(ArgumentError) {
+      Oj.dump(['x' * 5000, RaisesInToJson.new], mode: :compat, use_to_json: true, circular: true)
+    }
   end
 
   # Clearing the create_id leaves it NULL, and a replacement of the same length

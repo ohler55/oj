@@ -241,12 +241,7 @@ static VALUE mimic_dump(int argc, VALUE *argv, VALUE self) {
     // default ::JSON::State argument is passed in. Basically a hack to get
     // around the active support hack so two wrongs make a right this time.
     active_hack[0] = rb_funcall(state_class, oj_new_id, 0);
-    oj_dump_obj_to_json_using_params(*argv, &copts, &out, 1, active_hack);
-
-    if (0 == out.buf) {
-        rb_raise(rb_eNoMemError, "Not enough memory.");
-    }
-    rstr = rb_utf8_str_new_cstr(out.buf);
+    rstr           = oj_dump_obj_to_str(*argv, &copts, &out, 1, active_hack);
     if (2 <= argc && Qnil != argv[1] && rb_respond_to(argv[1], oj_write_id)) {
         VALUE io = argv[1];
         VALUE args[1];
@@ -255,9 +250,6 @@ static VALUE mimic_dump(int argc, VALUE *argv, VALUE self) {
         rb_funcall2(io, oj_write_id, 1, args);
         rstr = io;
     }
-
-    oj_out_free(&out);
-
     return rstr;
 }
 
@@ -380,7 +372,7 @@ static VALUE mimic_generate_core(int argc, VALUE *argv, Options copts) {
     }
     */
     if (1 < argc) {
-        oj_dump_obj_to_json_using_params(*argv, copts, &out, argc - 1, argv + 1);
+        rstr = oj_dump_obj_to_str(*argv, copts, &out, argc - 1, argv + 1);
     } else {
         VALUE active_hack[1];
 
@@ -390,15 +382,8 @@ static VALUE mimic_generate_core(int argc, VALUE *argv, Options copts) {
             oj_define_mimic_json(0, NULL, Qnil);
         }
         active_hack[0] = rb_funcall(state_class, oj_new_id, 0);
-        oj_dump_obj_to_json_using_params(*argv, copts, &out, 1, active_hack);
+        rstr           = oj_dump_obj_to_str(*argv, copts, &out, 1, active_hack);
     }
-    if (0 == out.buf) {
-        rb_raise(rb_eNoMemError, "Not enough memory.");
-    }
-    rstr = rb_utf8_str_new_cstr(out.buf);
-
-    oj_out_free(&out);
-
     return rstr;
 }
 
@@ -748,7 +733,6 @@ static struct _options mimic_object_to_json_options = {0,              // indent
 
 static VALUE mimic_object_to_json(int argc, VALUE *argv, VALUE self) {
     struct _out     out;
-    VALUE           rstr;
     struct _options copts = oj_default_options;
 
     copts.str_rx.head = NULL;
@@ -765,15 +749,7 @@ static VALUE mimic_object_to_json(int argc, VALUE *argv, VALUE self) {
     // To be strict the mimic_object_to_json_options should be used but people
     // seem to prefer the option of changing that.
     // oj_dump_obj_to_json(self, &mimic_object_to_json_options, &out);
-    oj_dump_obj_to_json_using_params(self, &copts, &out, argc, argv);
-    if (NULL == out.buf) {
-        rb_raise(rb_eNoMemError, "Not enough memory.");
-    }
-    rstr = rb_utf8_str_new_cstr(out.buf);
-
-    oj_out_free(&out);
-
-    return rstr;
+    return oj_dump_obj_to_str(self, &copts, &out, argc, argv);
 }
 
 /* Document-method: state
