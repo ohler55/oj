@@ -803,6 +803,18 @@ class ObjectJuice < Minitest::Test
     end
   end
 
+  def test_class_cache_unresolved_class
+    json = '{"^o":"ObjectJuice::DefinedLater","x":1}'
+
+    2.times do
+      assert_raises(ArgumentError) { Oj.load(json, mode: :object, class_cache: true) }
+    end
+    ObjectJuice.const_set(:DefinedLater, Class.new)
+    assert_equal(ObjectJuice::DefinedLater, Oj.load(json, mode: :object, class_cache: true).class)
+  ensure
+    ObjectJuice.send(:remove_const, :DefinedLater) if ObjectJuice.const_defined?(:DefinedLater, false)
+  end
+
   # An exception raised while a class name was being resolved left the class
   # cache mutex locked, so the next class lookup waited on it indefinitely.
   # Here the raise comes from an autoload. The check runs in a child process

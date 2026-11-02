@@ -227,14 +227,22 @@ static VALUE intern_new_class(VALUE a) {
     KeyVal     bucket = args->bucket;
     VALUE      clas   = resolve_classpath(args->pi, args->key, args->len, args->auto_define, args->error_class);
 
-    if (NULL != bucket->key) {  // not the top slot
-        KeyVal b = OJ_R_ALLOC(struct _keyVal);
-
-        b->next      = NULL;
-        bucket->next = b;
-        bucket       = b;
+    if (Qundef == clas) {
+        return clas;
     }
-    bucket->key = oj_strndup(args->key, args->len);
+    if (NULL != bucket->key) {  // not the top slot
+        KeyVal b   = (KeyVal)OJ_R_ALLOC_N(char, sizeof(struct _keyVal) + args->len + 1);
+        char  *key = (char *)(b + 1);
+
+        memcpy(key, args->key, args->len);
+        key[args->len] = '\0';
+        b->next        = NULL;
+        b->key         = key;
+        bucket->next   = b;
+        bucket         = b;
+    } else {
+        bucket->key = oj_strndup(args->key, args->len);
+    }
     bucket->len = args->len;
     bucket->val = clas;
 
@@ -284,7 +292,7 @@ VALUE oj_class_intern(const char *key, size_t len, bool safe, ParseInfo pi, int 
     } else if (NULL != (args.bucket = find_class(class_hash.slots + h, key, len, &clas))) {
         clas = intern_new_class((VALUE)&args);
     }
-    if (NULL != args.bucket) {  // newly added to the cache
+    if (NULL != args.bucket && Qundef != clas) {  // newly added to the cache
         rb_gc_register_mark_object(clas);
     }
     return clas;
