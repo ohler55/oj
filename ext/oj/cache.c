@@ -289,6 +289,11 @@ void cache_free(void *data) {
             OJ_FREE(s);
         }
     }
+    while (NULL != c->reuse) {
+        Slot s   = c->reuse;
+        c->reuse = s->next;
+        OJ_FREE(s);
+    }
     OJ_FREE((void *)c->slots);
     OJ_FREE(c);
 }
