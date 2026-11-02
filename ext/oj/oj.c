@@ -1589,7 +1589,7 @@ static VALUE load_file(int argc, VALUE *argv, VALUE self) {
     if (1 > argc) {
         rb_raise(rb_eArgError, "Wrong number of arguments to load().");
     }
-    path = StringValuePtr(*argv);
+    path = StringValueCStr(*argv);
     parse_info_init(&pi);
     pi.options   = oj_default_options;
     pi.handler   = Qnil;
@@ -1846,7 +1846,7 @@ static VALUE to_file(int argc, VALUE *argv, VALUE self) {
     if (3 == argc) {
         oj_parse_options(argv[2], &copts);
     }
-    oj_write_obj_to_file(argv[1], StringValuePtr(*argv), &copts);
+    oj_write_obj_to_file(argv[1], StringValueCStr(*argv), &copts);
     oj_free_call_options(&copts);
 
     return Qnil;

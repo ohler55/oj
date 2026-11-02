@@ -548,6 +548,20 @@ class DocTest < Minitest::Test
     end
   end
 
+  def test_path_with_nul
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'nul.json')
+      File.write(path, '[1]')
+      assert_raises(ArgumentError) { Oj::Doc.open_file(path + "\0.txt") }
+
+      out = File.join(dir, 'out.json')
+      Oj::Doc.open('[1]') do |doc|
+        assert_raises(ArgumentError) { doc.dump(nil, out + "\0.txt") }
+      end
+      refute_path_exists(out)
+    end
+  end
+
   def test_open_no_close
     json = %{{"a":[1,2,3]}}
     doc = Oj::Doc.open(json)

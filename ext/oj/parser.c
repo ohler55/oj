@@ -1640,7 +1640,7 @@ static VALUE parser_file(VALUE self, VALUE filename) {
 
     TypedData_Get_Struct(self, struct _ojParser, &oj_parser_type, p);
 
-    path = StringValuePtr(filename);
+    path = StringValueCStr(filename);
 
     parser_reset(p);
     p->start(p);
