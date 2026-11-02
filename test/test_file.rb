@@ -39,6 +39,27 @@ class FileJuice < Minitest::Test
     end
   end
 
+  class ReplacesDefaults
+    def initialize(raises)
+      @raises = raises
+    end
+
+    def to_json(*)
+      replace_defaults
+      '1'
+    end
+
+    def write(str)
+      replace_defaults
+      str.size
+    end
+
+    def replace_defaults
+      Oj.default_options = { create_id: nil }
+      raise IOError.new('replaced the defaults') if @raises
+    end
+  end
+
   class Orange < Jam
 
     def as_json
@@ -326,6 +347,22 @@ class FileJuice < Minitest::Test
       assert_raises(ArgumentError) { Oj.to_file(File.join(dir, 'raised.json'), data, opts) }
     end
     assert_raises(ArgumentError) { Oj.to_stream(StringIO.new, data, opts) }
+  end
+
+  def test_write_with_the_default_options_replaced
+    opts = { mode: :compat, use_to_json: true }
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'replaced.json')
+      Oj.default_options = { create_id: 'replaced' }
+      assert_raises(IOError) { Oj.to_file(path, [ReplacesDefaults.new(true)], opts) }
+      Oj.default_options = { create_id: 'replaced' }
+      Oj.to_file(path, [ReplacesDefaults.new(false)], opts)
+      assert_equal('[1]', File.read(path))
+    end
+    Oj.default_options = { create_id: 'replaced' }
+    assert_raises(IOError) { Oj.to_stream(ReplacesDefaults.new(true), [1], opts) }
+    Oj.default_options = { create_id: 'replaced' }
+    Oj.to_stream(ReplacesDefaults.new(false), [1], opts)
   end
 
   def dump_and_load(obj, trace=false)

@@ -1387,12 +1387,7 @@ void oj_options_take_ownership(Options copts) {
     }
 }
 
-// Free the option buffers of an options struct that owns all of them, i.e. one
-// that oj_options_take_ownership() was called on. Unlike oj_free_call_options()
-// this never looks at the defaults, so it is safe to call from a GC free
-// function, where the defaults may have been replaced since the object was
-// created.
-void oj_options_release(Options copts) {
+static void release_option_buffers(Options copts) {
     if (NULL != copts->create_id) {
         OJ_R_FREE((char *)copts->create_id);
         copts->create_id     = NULL;
@@ -1410,6 +1405,15 @@ void oj_options_release(Options copts) {
         OJ_R_FREE((void *)copts->dump_opts.except);
         copts->dump_opts.except = NULL;
     }
+}
+
+// Free the option buffers of an options struct that owns all of them, i.e. one
+// that oj_options_take_ownership() was called on. Unlike oj_free_call_options()
+// this never looks at the defaults, so it is safe to call from a GC free
+// function, where the defaults may have been replaced since the object was
+// created.
+void oj_options_release(Options copts) {
+    release_option_buffers(copts);
     // The str_rx chain is detached from the defaults when the owner is created
     // so the chain, if there is one, was built for this options struct alone.
     oj_rxclass_cleanup(&copts->str_rx);
@@ -1820,18 +1824,36 @@ static VALUE to_json(int argc, VALUE *argv, VALUE self) {
     return oj_dump_obj_to_str(*argv, &copts, &out, argc - 1, argv + 1);
 }
 
-static VALUE options_ensure(VALUE copts) {
-    oj_free_call_options((Options)copts);
+struct write_call_arg {
+    Options copts;
+    int     argc;
+    VALUE  *argv;
+    bool    owned;
+};
 
+static void write_call_options(struct write_call_arg *arg) {
+    if (3 == arg->argc) {
+        oj_parse_options(arg->argv[2], arg->copts);
+    }
+    oj_options_take_ownership(arg->copts);
+    arg->owned = true;
+}
+
+static VALUE write_call_ensure(VALUE a) {
+    struct write_call_arg *arg = (struct write_call_arg *)a;
+
+    if (arg->owned) {
+        release_option_buffers(arg->copts);
+    } else {
+        oj_free_call_options(arg->copts);
+    }
     return Qnil;
 }
 
 static VALUE to_file_body(VALUE a) {
-    struct dump_arg *arg = (struct dump_arg *)a;
+    struct write_call_arg *arg = (struct write_call_arg *)a;
 
-    if (3 == arg->argc) {
-        oj_parse_options(arg->argv[2], arg->copts);
-    }
+    write_call_options(arg);
     oj_write_obj_to_file(arg->argv[1], StringValueCStr(*arg->argv), arg->copts);
 
     return Qnil;
@@ -1848,20 +1870,18 @@ static VALUE to_file_body(VALUE a) {
  *   - *:circular* [_Boolean_] allow circular references, default: false
  */
 static VALUE to_file(int argc, VALUE *argv, VALUE self) {
-    struct _options copts = oj_default_options;
-    struct dump_arg arg   = {NULL, &copts, argc, argv};
+    struct _options       copts = oj_default_options;
+    struct write_call_arg arg   = {&copts, argc, argv, false};
 
     StringValueCStr(*argv);
 
-    return rb_ensure(to_file_body, (VALUE)&arg, options_ensure, (VALUE)&copts);
+    return rb_ensure(to_file_body, (VALUE)&arg, write_call_ensure, (VALUE)&arg);
 }
 
 static VALUE to_stream_body(VALUE a) {
-    struct dump_arg *arg = (struct dump_arg *)a;
+    struct write_call_arg *arg = (struct write_call_arg *)a;
 
-    if (3 == arg->argc) {
-        oj_parse_options(arg->argv[2], arg->copts);
-    }
+    write_call_options(arg);
     oj_write_obj_to_stream(arg->argv[1], *arg->argv, arg->copts);
 
     return Qnil;
@@ -1878,10 +1898,10 @@ static VALUE to_stream_body(VALUE a) {
  *   - *:circular* [_Boolean_] allow circular references, default: false
  */
 static VALUE to_stream(int argc, VALUE *argv, VALUE self) {
-    struct _options copts = oj_default_options;
-    struct dump_arg arg   = {NULL, &copts, argc, argv};
+    struct _options       copts = oj_default_options;
+    struct write_call_arg arg   = {&copts, argc, argv, false};
 
-    return rb_ensure(to_stream_body, (VALUE)&arg, options_ensure, (VALUE)&copts);
+    return rb_ensure(to_stream_body, (VALUE)&arg, write_call_ensure, (VALUE)&arg);
 }
 
 /* Document-method: register_odd
