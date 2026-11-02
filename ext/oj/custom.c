@@ -566,7 +566,7 @@ static int dump_attr_cb(ID key, VALUE value, VALUE ov) {
     } else if (Yes == out->opts->ignore_under && '@' == *attr && '_' == attr[1]) {
         return ST_CONTINUE;
     }
-    if (0 == strcmp("bt", attr) || 0 == strcmp("mesg", attr)) {
+    if (0 == strcmp("bt", attr) || 0 == strcmp("mesg", attr) || 0 == strcmp("bt_locations", attr)) {
         return ST_CONTINUE;
     }
     assure_size(out, size);
@@ -818,6 +818,18 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
             oj_dump_custom_val(v, d3, out, true);
             *out->cur++ = ',';
         }
+        if (2 == cnt && rb_obj_is_kind_of(obj, rb_cRange)) {
+            VALUE beg;
+            VALUE end;
+            int   excl;
+
+            rb_range_values(obj, &beg, &end, &excl);
+            assure_size(out, size + 7);
+            fill_indent(out, d3);
+            APPEND_CHARS(out->cur, "\"excl\":", 7);
+            oj_dump_custom_val(excl ? Qtrue : Qfalse, d3, out, true);
+            *out->cur++ = ',';
+        }
         out->cur--;
         *out->cur++ = '}';
         *out->cur   = '\0';
@@ -906,6 +918,9 @@ static void hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, c
     if (Qundef == kval->key_val && Yes == pi->options.create_ok && NULL != pi->options.create_id &&
         *pi->options.create_id == *key && (size_t)pi->options.create_id_len == klen &&
         0 == strncmp(pi->options.create_id, key, klen)) {
+        if (oj_is_backtrace_name(str, len)) {
+            return;
+        }
         parent->clas = oj_name2class(pi, str, len, false, rb_eArgError);
         if (2 == klen && '^' == *key && 'o' == key[1]) {
             if (Qundef != parent->clas) {
