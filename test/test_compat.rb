@@ -592,6 +592,23 @@ class CompatJuice < Minitest::Test
     assert_equal(expected, obj)
   end
 
+  def test_json_object_create_cache_unresolved_class
+    json = %{{"json_class":"CompatJuice::DefinedLater","x":true}}
+
+    2.times do
+      assert_raises(ArgumentError) { Oj.compat_load(json, :class_cache => true, :create_additions => true) }
+    end
+    later = Class.new do
+      def self.json_create(_h)
+        new
+      end
+    end
+    CompatJuice.const_set(:DefinedLater, later)
+    assert_equal(CompatJuice::DefinedLater, Oj.compat_load(json, :class_cache => true, :create_additions => true).class)
+  ensure
+    CompatJuice.send(:remove_const, :DefinedLater) if CompatJuice.const_defined?(:DefinedLater, false)
+  end
+
   def test_json_object_create_id_other
     expected = Jeez.new(true, 58)
     json = Oj.to_json(expected)
