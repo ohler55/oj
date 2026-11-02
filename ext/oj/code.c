@@ -72,12 +72,19 @@ VALUE oj_code_class(Code c) {
     return c->clas;
 }
 
+inline static bool code_is(Code c, VALUE clas) {
+    if (Qnil != c->clas && Qundef != c->clas) {
+        return clas == c->clas;
+    }
+    return clas == oj_code_class(c);
+}
+
 bool oj_code_dump(Code codes, VALUE obj, int depth, Out out) {
     VALUE clas = rb_obj_class(obj);
     Code  c    = codes;
 
     for (; NULL != c->name; c++) {
-        if (c->active && clas == oj_code_class(c)) {
+        if (c->active && code_is(c, clas)) {
             c->encode(obj, depth, out);
             return true;
         }
@@ -90,7 +97,7 @@ oj_code_load(Code codes, VALUE clas, VALUE args) {
     Code c = codes;
 
     for (; NULL != c->name; c++) {
-        if (clas == oj_code_class(c)) {
+        if (code_is(c, clas)) {
             if (NULL == c->decode) {
                 break;
             }
@@ -104,7 +111,7 @@ void oj_code_set_active(Code codes, VALUE clas, bool active) {
     Code c = codes;
 
     for (; NULL != c->name; c++) {
-        if (Qnil == clas || clas == oj_code_class(c)) {
+        if (Qnil == clas || code_is(c, clas)) {
             c->active = active;
             if (Qnil != clas) {
                 break;
@@ -117,7 +124,7 @@ bool oj_code_has(Code codes, VALUE clas, bool encode) {
     Code c = codes;
 
     for (; NULL != c->name; c++) {
-        if (clas == oj_code_class(c)) {
+        if (code_is(c, clas)) {
             if (encode) {
                 return c->active && NULL != c->encode;
             } else {
