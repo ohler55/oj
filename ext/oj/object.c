@@ -215,7 +215,7 @@ static int hat_cstr(ParseInfo pi, Val parent, Val kval, const char *str, size_t 
         {          // name2class sets an error if the class is not found or created
             VALUE clas;
 
-            if (17 == len && 0 == strncmp("Thread::Backtrace", str, 17)) {
+            if (oj_is_backtrace_name(str, len)) {
                 break;
             }
             clas = oj_name2class(pi, str, len, Yes == pi->options.auto_define, rb_eArgError);
