@@ -1799,7 +1799,6 @@ static VALUE dump(int argc, VALUE *argv, VALUE self) {
 static VALUE to_json(int argc, VALUE *argv, VALUE self) {
     struct _out     out;
     struct _options copts = oj_default_options;
-    VALUE           rstr;
 
     if (1 > argc) {
         rb_raise(rb_eArgError, "wrong number of arguments (0 for 1).");
@@ -1818,16 +1817,24 @@ static VALUE to_json(int argc, VALUE *argv, VALUE self) {
     out.omit_null_byte = copts.dump_opts.omit_null_byte;
     // For obj.to_json or generate nan is not allowed but if called from dump
     // it is.
-    oj_dump_obj_to_json_using_params(*argv, &copts, &out, argc - 1, argv + 1);
+    return oj_dump_obj_to_str(*argv, &copts, &out, argc - 1, argv + 1);
+}
 
-    if (0 == out.buf) {
-        rb_raise(rb_eNoMemError, "Not enough memory.");
+static VALUE options_ensure(VALUE copts) {
+    oj_free_call_options((Options)copts);
+
+    return Qnil;
+}
+
+static VALUE to_file_body(VALUE a) {
+    struct dump_arg *arg = (struct dump_arg *)a;
+
+    if (3 == arg->argc) {
+        oj_parse_options(arg->argv[2], arg->copts);
     }
-    rstr = rb_utf8_str_new_cstr(out.buf);
+    oj_write_obj_to_file(arg->argv[1], StringValueCStr(*arg->argv), arg->copts);
 
-    oj_out_free(&out);
-
-    return rstr;
+    return Qnil;
 }
 
 /* Document-method: to_file
@@ -1842,13 +1849,20 @@ static VALUE to_json(int argc, VALUE *argv, VALUE self) {
  */
 static VALUE to_file(int argc, VALUE *argv, VALUE self) {
     struct _options copts = oj_default_options;
+    struct dump_arg arg   = {NULL, &copts, argc, argv};
 
     StringValueCStr(*argv);
-    if (3 == argc) {
-        oj_parse_options(argv[2], &copts);
+
+    return rb_ensure(to_file_body, (VALUE)&arg, options_ensure, (VALUE)&copts);
+}
+
+static VALUE to_stream_body(VALUE a) {
+    struct dump_arg *arg = (struct dump_arg *)a;
+
+    if (3 == arg->argc) {
+        oj_parse_options(arg->argv[2], arg->copts);
     }
-    oj_write_obj_to_file(argv[1], StringValueCStr(*argv), &copts);
-    oj_free_call_options(&copts);
+    oj_write_obj_to_stream(arg->argv[1], *arg->argv, arg->copts);
 
     return Qnil;
 }
@@ -1865,14 +1879,9 @@ static VALUE to_file(int argc, VALUE *argv, VALUE self) {
  */
 static VALUE to_stream(int argc, VALUE *argv, VALUE self) {
     struct _options copts = oj_default_options;
+    struct dump_arg arg   = {NULL, &copts, argc, argv};
 
-    if (3 == argc) {
-        oj_parse_options(argv[2], &copts);
-    }
-    oj_write_obj_to_stream(argv[1], *argv, &copts);
-    oj_free_call_options(&copts);
-
-    return Qnil;
+    return rb_ensure(to_stream_body, (VALUE)&arg, options_ensure, (VALUE)&copts);
 }
 
 /* Document-method: register_odd

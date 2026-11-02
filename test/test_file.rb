@@ -33,6 +33,12 @@ class FileJuice < Minitest::Test
     end
   end # Jeez
 
+  class RaisesInToJson
+    def to_json(*)
+      raise ArgumentError.new('raised in to_json')
+    end
+  end
+
   class Orange < Jam
 
     def as_json
@@ -311,6 +317,15 @@ class FileJuice < Minitest::Test
       assert_raises(ArgumentError) { Oj.to_file(out + "\0.txt", [1], ignore: [String]) }
       refute_path_exists(out)
     end
+  end
+
+  def test_write_raising_in_to_json
+    data = ['x' * 5000, RaisesInToJson.new]
+    opts = { mode: :compat, use_to_json: true, create_id: 'raised' }
+    Dir.mktmpdir do |dir|
+      assert_raises(ArgumentError) { Oj.to_file(File.join(dir, 'raised.json'), data, opts) }
+    end
+    assert_raises(ArgumentError) { Oj.to_stream(StringIO.new, data, opts) }
   end
 
   def dump_and_load(obj, trace=false)

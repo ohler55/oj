@@ -831,28 +831,61 @@ void oj_dump_obj_to_json_using_params(VALUE obj, Options copts, Out out, int arg
     *out->cur = '\0';
     if (Yes == copts->circular) {
         oj_cache8_delete(out->circ_cache);
+        out->circ_cache = NULL;
     }
 }
 
-void oj_write_obj_to_file(VALUE obj, const char *path, Options copts) {
-    struct _out out;
-    size_t      size;
-    FILE       *f;
-    int         ok;
+struct dump_str_arg {
+    VALUE   obj;
+    Options copts;
+    Out     out;
+    int     argc;
+    VALUE  *argv;
+};
 
-    oj_out_init(&out);
+static VALUE dump_str_body(VALUE a) {
+    struct dump_str_arg *arg = (struct dump_str_arg *)a;
 
-    out.omit_nil = copts->dump_opts.omit_nil;
-    oj_dump_obj_to_json(obj, copts, &out);
-    size = out.cur - out.buf;
-    if (0 == (f = fopen(path, "w"))) {
-        oj_out_free(&out);
+    oj_dump_obj_to_json_using_params(arg->obj, arg->copts, arg->out, arg->argc, arg->argv);
+    if (0 == arg->out->buf) {
+        rb_raise(rb_eNoMemError, "Not enough memory.");
+    }
+    return rb_utf8_str_new_cstr(arg->out->buf);
+}
+
+static VALUE out_free_ensure(VALUE out) {
+    oj_out_free((Out)out);
+
+    return Qnil;
+}
+
+VALUE oj_dump_obj_to_str(VALUE obj, Options copts, Out out, int argc, VALUE *argv) {
+    struct dump_str_arg arg = {obj, copts, out, argc, argv};
+
+    return rb_ensure(dump_str_body, (VALUE)&arg, out_free_ensure, (VALUE)out);
+}
+
+struct write_arg {
+    VALUE       obj;
+    VALUE       stream;
+    const char *path;
+    Options     copts;
+    Out         out;
+};
+
+static VALUE write_file_body(VALUE a) {
+    struct write_arg *arg = (struct write_arg *)a;
+    Out               out = arg->out;
+    size_t            size;
+    FILE             *f;
+    int               ok;
+
+    oj_dump_obj_to_json(arg->obj, arg->copts, out);
+    size = out->cur - out->buf;
+    if (0 == (f = fopen(arg->path, "w"))) {
         rb_raise(rb_eIOError, "%s", strerror(errno));
     }
-    ok = (size == fwrite(out.buf, 1, size, f));
-
-    oj_out_free(&out);
-
+    ok = (size == fwrite(out->buf, 1, size, f));
     if (!ok) {
         int err = ferror(f);
         fclose(f);
@@ -860,6 +893,18 @@ void oj_write_obj_to_file(VALUE obj, const char *path, Options copts) {
         rb_raise(rb_eIOError, "Write failed. [%d:%s]", err, strerror(err));
     }
     fclose(f);
+
+    return Qnil;
+}
+
+void oj_write_obj_to_file(VALUE obj, const char *path, Options copts) {
+    struct _out      out;
+    struct write_arg arg = {obj, Qnil, path, copts, &out};
+
+    oj_out_init(&out);
+
+    out.omit_nil = copts->dump_opts.omit_nil;
+    rb_ensure(write_file_body, (VALUE)&arg, out_free_ensure, (VALUE)&out);
 }
 
 #if !IS_WINDOWS
@@ -879,22 +924,21 @@ static void write_ready(int fd) {
 }
 #endif
 
-void oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
-    struct _out out;
-    ssize_t     size;
-    VALUE       clas = rb_obj_class(stream);
+static VALUE write_stream_body(VALUE a) {
+    struct write_arg *arg    = (struct write_arg *)a;
+    Out               out    = arg->out;
+    VALUE             stream = arg->stream;
+    ssize_t           size;
+    VALUE             clas = rb_obj_class(stream);
 #if !IS_WINDOWS
     int   fd;
     VALUE s;
 #endif
 
-    oj_out_init(&out);
-
-    out.omit_nil = copts->dump_opts.omit_nil;
-    oj_dump_obj_to_json(obj, copts, &out);
-    size = out.cur - out.buf;
+    oj_dump_obj_to_json(arg->obj, arg->copts, out);
+    size = out->cur - out->buf;
     if (oj_stringio_class == clas) {
-        rb_funcall(stream, oj_write_id, 1, rb_str_new(out.buf, size));
+        rb_funcall(stream, oj_write_id, 1, rb_str_new(out->buf, size));
 #if !IS_WINDOWS
     } else if (rb_respond_to(stream, oj_fileno_id) && Qnil != (s = rb_funcall(stream, oj_fileno_id, 0)) &&
                0 != (fd = FIX2INT(s))) {
@@ -902,7 +946,7 @@ void oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
         ssize_t total = 0;
 
         while (true) {
-            if (0 > (cnt = write(fd, out.buf + total, size - total))) {
+            if (0 > (cnt = write(fd, out->buf + total, size - total))) {
                 if (EAGAIN != errno) {
                     rb_raise(rb_eIOError, "write failed. %d %s.", errno, strerror(errno));
                     break;
@@ -917,12 +961,21 @@ void oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
         }
 #endif
     } else if (rb_respond_to(stream, oj_write_id)) {
-        rb_funcall(stream, oj_write_id, 1, rb_str_new(out.buf, size));
+        rb_funcall(stream, oj_write_id, 1, rb_str_new(out->buf, size));
     } else {
-        oj_out_free(&out);
         rb_raise(rb_eArgError, "to_stream() expected an IO Object.");
     }
-    oj_out_free(&out);
+    return Qnil;
+}
+
+void oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
+    struct _out      out;
+    struct write_arg arg = {obj, stream, NULL, copts, &out};
+
+    oj_out_init(&out);
+
+    out.omit_nil = copts->dump_opts.omit_nil;
+    rb_ensure(write_stream_body, (VALUE)&arg, out_free_ensure, (VALUE)&out);
 }
 
 void oj_dump_str(VALUE obj, int depth, Out out, bool as_ok) {
@@ -1464,11 +1517,16 @@ void oj_out_init(Out out) {
     out->end            = out->buf + sizeof(out->stack_buffer) - BUFFER_EXTRA;
     out->allocated      = false;
     out->key_filter_off = false;
+    out->circ_cache     = NULL;
 }
 
 void oj_out_free(Out out) {
     if (out->allocated) {
         OJ_R_FREE(out->buf);  // TBD
+    }
+    if (NULL != out->circ_cache) {
+        oj_cache8_delete(out->circ_cache);
+        out->circ_cache = NULL;
     }
 }
 
