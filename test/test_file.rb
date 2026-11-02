@@ -4,6 +4,7 @@
 $LOAD_PATH << __dir__
 
 require 'helper'
+require 'tmpdir'
 
 class FileJuice < Minitest::Test
   class Jam
@@ -296,6 +297,19 @@ class FileJuice < Minitest::Test
 
         assert_raises(EncodingError, json) { Oj::Parser.new(:usual).file(f.path) }
       end
+    end
+  end
+
+  def test_path_with_nul
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'nul.json')
+      File.write(path, '[1]')
+      assert_raises(ArgumentError) { Oj.load_file(path + "\0.txt") }
+      assert_raises(ArgumentError) { Oj::Parser.new(:usual).file(path + "\0.txt") }
+
+      out = File.join(dir, 'out.json')
+      assert_raises(ArgumentError) { Oj.to_file(out + "\0.txt", [1], ignore: [String]) }
+      refute_path_exists(out)
     end
   end
 

@@ -1181,7 +1181,7 @@ static VALUE doc_open_file(VALUE clas, VALUE filename) {
     volatile VALUE obj;
     int            given = rb_block_given_p();
 
-    path = StringValuePtr(filename);
+    path = StringValueCStr(filename);
     // Open in binary mode. On Windows a text mode read translates CRLF into LF
     // so fewer bytes are read than the file size reported by ftell().
     if (0 == (f = fopen(path, "rb"))) {
@@ -1649,8 +1649,7 @@ static VALUE doc_dump(int argc, VALUE *argv, VALUE self) {
             StringValue(*argv);
         }
         if (2 <= argc) {
-            StringValue(argv[1]);
-            filename = RSTRING_PTR(argv[1]);
+            filename = StringValueCStr(argv[1]);
         }
         if (Qnil != *argv) {
             path = RSTRING_PTR(*argv);
