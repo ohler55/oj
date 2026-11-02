@@ -226,20 +226,23 @@ static VALUE intern_new_class(VALUE a) {
     InternArgs args   = (InternArgs)a;
     KeyVal     bucket = args->bucket;
     VALUE      clas   = resolve_classpath(args->pi, args->key, args->len, args->auto_define, args->error_class);
-    char      *key;
 
     if (Qundef == clas) {
         return clas;
     }
-    key = oj_strndup(args->key, args->len);
     if (NULL != bucket->key) {  // not the top slot
-        KeyVal b = OJ_R_ALLOC(struct _keyVal);
+        KeyVal b   = (KeyVal)OJ_R_ALLOC_N(char, sizeof(struct _keyVal) + args->len + 1);
+        char  *key = (char *)(b + 1);
 
-        b->next      = NULL;
-        bucket->next = b;
-        bucket       = b;
+        memcpy(key, args->key, args->len);
+        key[args->len] = '\0';
+        b->next        = NULL;
+        b->key         = key;
+        bucket->next   = b;
+        bucket         = b;
+    } else {
+        bucket->key = oj_strndup(args->key, args->len);
     }
-    bucket->key = key;
     bucket->len = args->len;
     bucket->val = clas;
 
