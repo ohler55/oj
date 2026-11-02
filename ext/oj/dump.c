@@ -984,7 +984,7 @@ void oj_write_obj_to_stream(VALUE obj, VALUE stream, Options copts) {
 void oj_dump_str(VALUE obj, int depth, Out out, bool as_ok) {
     int idx = RB_ENCODING_GET(obj);
 
-    if (oj_utf8_encoding_index != idx) {
+    if (oj_utf8_encoding_index != idx && !rb_enc_str_asciionly_p(obj)) {
         rb_encoding *enc = rb_enc_from_index(idx);
         obj              = rb_str_conv_enc(obj, enc, oj_utf8_encoding);
     }

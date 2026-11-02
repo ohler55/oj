@@ -270,6 +270,24 @@ class CompatJuice < Minitest::Test
     Oj.default_options = opts
   end
 
+  def test_dump_ascii_only_non_utf8_string
+    %w[ASCII-8BIT US-ASCII Shift_JIS ISO-8859-1].each do |enc|
+      s = String.new('a"b', encoding: enc)
+      assert_equal(%{["a\\"b",{"a\\"b":1}]}, Oj.dump([s, { s => 1 }], mode: :compat))
+    end
+    assert_equal(%{["é"]}, Oj.dump(['é'.encode('ISO-8859-1')], mode: :compat))
+    assert_equal(%{["ab"]}, Oj.dump(['ab'.encode('UTF-16LE')], mode: :compat))
+  end
+
+  def test_dump_ascii_only_non_utf8_string_allocations
+    skip 'GC.stat does not count allocations' unless 'ruby' == RUBY_ENGINE
+
+    a = Array.new(1000) { String.new('abc', encoding: 'ASCII-8BIT') }
+    before = GC.stat(:total_allocated_objects)
+    Oj.dump(a, mode: :compat)
+    assert_operator(GC.stat(:total_allocated_objects) - before, :<, 100)
+  end
+
   def test_unicode
     # hits the 3 normal ranges and one extended surrogate pair
     json = %{"\\u019f\\u05e9\\u3074\\ud834\\udd1e"}
