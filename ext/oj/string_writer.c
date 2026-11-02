@@ -169,6 +169,11 @@ void oj_str_writer_push_value(StrWriter sw, VALUE val, const char *key) {
             *out->cur++ = ':';
         }
     }
+    if (NULL != out->circ_cache) {
+        oj_cache8_delete(out->circ_cache);
+        out->circ_cache = NULL;
+    }
+    out->circ_cnt = 0;
     switch (out->opts->mode) {
     case StrictMode: oj_dump_strict_val(val, sw->depth, out); break;
     case NullMode: oj_dump_null_val(val, sw->depth, out); break;
@@ -177,6 +182,10 @@ void oj_str_writer_push_value(StrWriter sw, VALUE val, const char *key) {
     case RailsMode: oj_dump_rails_val(val, sw->depth, out); break;
     case CustomMode: oj_dump_custom_val(val, sw->depth, out, true); break;
     default: oj_dump_custom_val(val, sw->depth, out, true); break;
+    }
+    if (NULL != out->circ_cache) {
+        oj_cache8_delete(out->circ_cache);
+        out->circ_cache = NULL;
     }
 }
 
@@ -242,6 +251,10 @@ static void string_writer_free(void *ptr) {
     }
     sw = (StrWriter)ptr;
 
+    if (NULL != sw->out.circ_cache) {
+        oj_cache8_delete(sw->out.circ_cache);
+        sw->out.circ_cache = NULL;
+    }
     oj_out_free(&sw->out);
     oj_options_release(&sw->opts);
 
