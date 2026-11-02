@@ -81,6 +81,28 @@ class OstructTest < Minitest::Test
     assert_equal('["plain",{"json_class":"OpenStruct","t":{"a":1}}] [{"json_class":"OpenStruct","t":{"a":1}}]', out)
   end
 
+  def test_add_to_json_after_gc_compaction
+    unless defined?(GC.verify_compaction_references) == 'method' &&
+           Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('3.2.0') &&
+           RbConfig::CONFIG['host_os'] !~ /(mingw|mswin)/
+      skip 'GC compaction is not supported here'
+    end
+
+    out = run_ruby(<<~RUBY)
+      require 'oj'
+      require 'ostruct'
+      o = OpenStruct.new(a: 1)
+      before = Thread.new do
+        Oj.add_to_json(OpenStruct)
+        [Oj.dump(o, mode: :compat), Oj.dump(o, mode: :rails)]
+      end.value
+      GC.verify_compaction_references(expand_heap: true, toward: :empty)
+      print before.inspect, ' ', [Oj.dump(o, mode: :compat), Oj.dump(o, mode: :rails)].inspect
+    RUBY
+    json = '{"json_class":"OpenStruct","t":{"a":1}}'
+    assert_equal("#{[json, json].inspect} #{[json, json].inspect}", out)
+  end
+
   def test_generic_object_requires_ostruct
     out = run_ruby(<<~RUBY)
       require 'oj'

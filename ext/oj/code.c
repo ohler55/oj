@@ -66,6 +66,9 @@ VALUE oj_code_class(Code c) {
     } else {
         c->clas = Qundef;
     }
+    if (Qnil != c->clas && Qundef != c->clas) {
+        rb_gc_register_address(&c->clas);
+    }
     return c->clas;
 }
 
