@@ -113,6 +113,12 @@ class ObjectJuice < Minitest::Test
   class RangeSub < Range
   end
 
+  class RangeFromZero < Range
+    def initialize(last)
+      super(0, last)
+    end
+  end
+
   DataSub = Data.define(:a, :b) if defined?(Data) && Data.respond_to?(:define)
 
   class Strung < String
@@ -756,10 +762,19 @@ class ObjectJuice < Minitest::Test
 
   def test_json_struct_range_subclass
     skip 'TruffleRuby does not dump a Range subclass as a Struct' if 'truffleruby' == RUBY_ENGINE
-    range = RangeSub.new(1, 7)
+    [false, true].each do |exclude_end|
+      range = RangeSub.new(1, 7, exclude_end)
+      obj   = Oj.load(Oj.dump(range, :mode => :object), :mode => :object)
+      assert_instance_of(RangeSub, obj)
+      assert_equal(range, obj)
+    end
+    range = RangeFromZero.new(7)
     obj   = Oj.load(Oj.dump(range, :mode => :object), :mode => :object)
-    assert_instance_of(RangeSub, obj)
+    assert_instance_of(RangeFromZero, obj)
     assert_equal(range, obj)
+
+    obj = Oj.load(Oj.dump(Class.new(Range).new(1, 7, true), :mode => :object), :mode => :object)
+    assert_equal([1, 7, true], obj.to_a)
   end
 
   def test_json_struct_data
@@ -1019,6 +1034,23 @@ class ObjectJuice < Minitest::Test
     assert_equal(err.backtrace, e2['~bt'])
     e2 = Oj.load(json, :mode => :object)
     assert_equal(e, e2)
+  end
+
+  def test_exception_backtrace_locations
+    err = nil
+    begin
+      raise StandardError.new('A Message')
+    rescue StandardError => e
+      err = e
+    end
+    json = Oj.dump(err, mode: :object)
+    refute_includes(json, 'bt_locations')
+
+    json = json.sub('"^o":"StandardError",', '"^o":"StandardError","~bt_locations":{"^o":"Thread::Backtrace"},')
+    assert_includes(json, 'Thread::Backtrace')
+    e2 = Oj.load(json, mode: :object)
+    assert_equal(err, e2)
+    assert_nil(e2.backtrace_locations)
   end
 
   def test_range_object

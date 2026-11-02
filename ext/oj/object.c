@@ -213,8 +213,12 @@ static int hat_cstr(ParseInfo pi, Val parent, Val kval, const char *str, size_t 
         switch (key[1]) {
         case 'o':  // object
         {          // name2class sets an error if the class is not found or created
-            VALUE clas = oj_name2class(pi, str, len, Yes == pi->options.auto_define, rb_eArgError);
+            VALUE clas;
 
+            if (17 == len && 0 == strncmp("Thread::Backtrace", str, 17)) {
+                break;
+            }
+            clas = oj_name2class(pi, str, len, Yes == pi->options.auto_define, rb_eArgError);
             if (Qundef != clas) {
                 parent->val = rb_obj_alloc(clas);
             }
@@ -346,6 +350,16 @@ static int hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, vol
             }
             if (sc == rb_cRange) {
                 parent->val = rb_class_new_instance((int)(len - 1), RARRAY_CONST_PTR(value) + 1, rb_cRange);
+            } else if (Qtrue == rb_class_inherited_p(sc, rb_cRange)) {
+                volatile VALUE args = rb_ary_new_from_values((long)len, RARRAY_CONST_PTR(value));
+                volatile VALUE init = rb_funcall(rb_cRange,
+                                                 rb_intern("instance_method"),
+                                                 1,
+                                                 ID2SYM(rb_intern("initialize")));
+
+                parent->val = rb_obj_alloc(sc);
+                rb_ary_store(args, 0, parent->val);
+                rb_apply(init, rb_intern("bind_call"), args);
             } else {
                 // Create a properly initialized struct instance without calling the initialize method.
                 parent->val = rb_obj_alloc(sc);
@@ -397,7 +411,8 @@ void oj_set_obj_ivar(Val parent, Val kval, VALUE value) {
         parent->val = rb_funcall(parent->val, rb_intern("exception"), 1, value);
     } else if (kval->klen == 3 && strncmp("~bt", kval->key, 3) == 0 && rb_obj_is_kind_of(parent->val, rb_eException)) {
         rb_funcall(parent->val, rb_intern("set_backtrace"), 1, value);
-    } else {
+    } else if (kval->klen != 13 || strncmp("~bt_locations", kval->key, 13) != 0 ||
+               !rb_obj_is_kind_of(parent->val, rb_eException)) {
         rb_ivar_set(parent->val, oj_attr_intern(kval->key, kval->klen), value);
     }
 }
