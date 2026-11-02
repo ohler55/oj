@@ -587,6 +587,9 @@ long oj_check_circular(VALUE obj, Out out) {
     slot_t *slot;
 
     if (Yes == out->opts->circular) {
+        if (NULL == out->circ_cache) {
+            oj_cache8_new(&out->circ_cache);
+        }
         if (0 == (id = oj_cache8_get(out->circ_cache, obj, &slot))) {
             out->circ_cnt++;
             id    = out->circ_cnt;

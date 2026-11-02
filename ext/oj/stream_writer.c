@@ -16,6 +16,9 @@ static void stream_writer_free(void *ptr) {
         return;
     }
     sw = (StreamWriter)ptr;
+    if (NULL != sw->sw.out.circ_cache) {
+        oj_cache8_delete(sw->sw.out.circ_cache);
+    }
     oj_options_release(&sw->sw.opts);
     OJ_R_FREE(sw->sw.out.buf);
     OJ_R_FREE(sw->sw.types);

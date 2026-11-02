@@ -18,6 +18,17 @@ class OjWriter < Minitest::Test
     end
   end # Jeez
 
+  class PushesAgain
+    def initialize(writer)
+      @writer = writer
+    end
+
+    def to_json(*)
+      @writer.push_value([9])
+      '"again"'
+    end
+  end
+
   def setup
     @default_options = Oj.default_options
   end
@@ -124,6 +135,42 @@ class OjWriter < Minitest::Test
   ]
 ]
 |, w.to_s)
+  end
+
+  def test_string_writer_circular
+    a = [1, 2]
+    h = {'x' => a, 'y' => a}
+    w = Oj::StringWriter.new(:mode => :object, :circular => true, :indent => 0)
+    w.push_array()
+    w.push_value(h)
+    w.push_value(h)
+    w.pop()
+    json = Oj.dump(h, :mode => :object, :circular => true, :indent => 0)
+    assert_equal("[#{json},#{json}]", w.to_s.strip)
+    loaded = Oj.load(w.to_s, :mode => :object, :circular => true)
+    loaded.each { |e| assert_same(e['x'], e['y']) }
+  end
+
+  def test_writer_circular_after_raise
+    a = [1, 2]
+    w = Oj::StringWriter.new(:mode => :compat, :circular => true, :indent => 0)
+    w.push_array()
+    err = assert_raises(StandardError) { w.push_value({'x' => a, 'y' => a}) }
+    assert_equal('JSON::NestingError', err.class.name)
+    w.push_value([3])
+    w.pop()
+    assert_match(/\[3\]\]\n\z/, w.to_s)
+
+    s = Oj::StreamWriter.new(StringIO.new, :mode => :compat, :circular => true)
+    assert_raises(StandardError) { s.push_value({'x' => a, 'y' => a}) }
+  end
+
+  def test_string_writer_circular_push_while_pushing
+    w = Oj::StringWriter.new(:mode => :compat, :circular => true, :indent => 0, :use_to_json => true)
+    w.push_array()
+    w.push_value({'a' => PushesAgain.new(w), 'b' => [1, 2], 'c' => {'d' => 3}})
+    w.pop()
+    assert_includes(w.to_s, '"c":{"d":3}')
   end
 
   def test_string_writer_block
@@ -300,6 +347,20 @@ class OjWriter < Minitest::Test
     w = Oj::StreamWriter.new(output, :mode => :compat, :indent => 0, :only => ['a'])
     w.push_value({'a' => 1, 'b' => 2})
     assert_equal(%|{"a":1}|, output.string())
+  end
+
+  def test_stream_writer_circular
+    a = [1, 2]
+    h = {'x' => a, 'y' => a}
+    output = StringIO.open('', 'w+')
+    w = Oj::StreamWriter.new(output, :mode => :strict, :circular => true, :indent => 0)
+    w.push_array()
+    w.push_value(h)
+    w.push_value(h)
+    w.pop()
+    w.flush()
+    json = Oj.dump(h, :mode => :strict, :circular => true, :indent => 0)
+    assert_equal("[#{json},#{json}]", output.string.strip)
   end
 
   def test_stream_writer_create_id
