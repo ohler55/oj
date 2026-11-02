@@ -33,7 +33,6 @@ have_func('getrlimit', 'sys/resource.h')
 have_func('rb_enc_interned_str')
 have_func('rb_hash_new_capa', 'ruby.h')
 have_func('rb_ext_ractor_safe', 'ruby.h')
-have_func('rb_hash_start', 'ruby.h')
 
 dflags['OJ_DEBUG'] = true unless ENV['OJ_DEBUG'].nil?
 

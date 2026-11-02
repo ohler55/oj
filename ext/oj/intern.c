@@ -17,9 +17,6 @@
 #define HASH_SLOT_CNT ((uint64_t)256)
 #define HASH_MASK (HASH_SLOT_CNT - 1)
 
-// almost the Murmur hash algorithm
-#define M 0x5bd1e995
-
 typedef struct _keyVal {
     struct _keyVal *next;
     const char     *key;
@@ -155,40 +152,6 @@ ID oj_attr_intern(const char *key, size_t len) {
     return cache_intern(c, key, len);
 }
 
-static uint64_t hash_calc(const uint8_t *key, size_t len) {
-    const uint8_t *end     = key + len;
-    const uint8_t *endless = key + (len & 0xFFFFFFFC);
-    uint64_t       h       = (uint64_t)len ^ oj_hash_seed;
-    uint64_t       k;
-
-    while (key < endless) {
-        k = (uint64_t)*key++;
-        k |= (uint64_t)*key++ << 8;
-        k |= (uint64_t)*key++ << 16;
-        k |= (uint64_t)*key++ << 24;
-
-        k *= M;
-        k ^= k >> 24;
-        h *= M;
-        h ^= k * M;
-    }
-    if (1 < end - key) {
-        uint16_t k16 = (uint16_t)*key++;
-
-        k16 |= (uint16_t)*key++ << 8;
-        h ^= k16 << 8;
-    }
-    if (key < end) {
-        h ^= *key;
-    }
-    h *= M;
-    h ^= h >> 13;
-    h *= M;
-    h ^= h >> 15;
-
-    return h;
-}
-
 static VALUE resolve_classname(VALUE mod, const char *classname, int auto_define) {
     VALUE clas;
     ID    ci = rb_intern(classname);
@@ -292,7 +255,7 @@ static KeyVal find_class(KeyVal bucket, const char *key, size_t len, VALUE *clas
 }
 
 VALUE oj_class_intern(const char *key, size_t len, bool safe, ParseInfo pi, int auto_define, VALUE error_class) {
-    uint64_t           h    = hash_calc((const uint8_t *)key, len) & HASH_MASK;
+    uint64_t           h    = oj_hash_calc((const uint8_t *)key, len) & HASH_MASK;
     struct _internArgs args = {NULL, key, len, pi, auto_define, error_class};
     VALUE              clas = Qundef;
 

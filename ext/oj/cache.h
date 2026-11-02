@@ -10,7 +10,7 @@
 
 #define CACHE_MAX_KEY 35
 
-extern uint64_t oj_hash_seed;
+extern uint64_t oj_hash_calc(const uint8_t *key, size_t len);
 
 extern void oj_hash_seed_init(void);
 
