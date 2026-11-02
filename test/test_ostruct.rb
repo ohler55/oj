@@ -39,10 +39,24 @@ class OstructTest < Minitest::Test
       opts = { mode: :custom, create_additions: true, create_id: '^o' }
       Oj.load(Oj.dump(Object.new, opts), opts)
       require 'ostruct'
-      json = Oj.dump(OpenStruct.new(a: 1), opts)
+      os = OpenStruct.new(a: 1)
+      os.instance_variable_set(:@b, 2)
+      json = Oj.dump(os, opts)
       print json, ' ', Oj.load(json, opts).a
     RUBY
     assert_equal('{"^o":"OpenStruct","table":{"a":1}} 1', out)
+  end
+
+  def test_openstruct_loaded_before_first_load
+    out = run_ruby(<<~RUBY)
+      require 'oj'
+      opts = { mode: :custom, create_additions: true, create_id: '^o' }
+      Oj.load(Oj.dump(Object.new, opts), opts)
+      require 'ostruct'
+      os = Oj.load('{"^o":"OpenStruct","table":{"a":1},"b":2}', opts)
+      print os.class, ' ', os.a, ' ', os.instance_variable_get(:@b).inspect
+    RUBY
+    assert_equal('OpenStruct 1 nil', out)
   end
 
   def test_openstruct_loaded_after_first_rails_encode
