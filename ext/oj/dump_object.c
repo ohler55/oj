@@ -351,7 +351,7 @@ static int dump_attr_cb(ID key, VALUE value, VALUE ov) {
     } else if (Yes == out->opts->ignore_under && '@' == *attr && '_' == attr[1]) {
         return ST_CONTINUE;
     }
-    if (0 == strcmp("bt", attr) || 0 == strcmp("mesg", attr)) {
+    if (0 == strcmp("bt", attr) || 0 == strcmp("mesg", attr) || 0 == strcmp("bt_locations", attr)) {
         return ST_CONTINUE;
     }
     assure_size(out, size);
@@ -612,6 +612,10 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
             APPEND_CHARS(out->cur, name, len);
             *out->cur++ = '"';
         }
+        if (2 == cnt && rb_obj_is_kind_of(obj, rb_cRange)) {
+            assure_size(out, 8);
+            APPEND_CHARS(out->cur, ",\"excl\"", 7);
+        }
         *out->cur++ = ']';
     } else {
         fill_indent(out, d3);
@@ -643,6 +647,17 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
             assure_size(out, size);
             fill_indent(out, d3);
             oj_dump_obj_val(v, d3, out);
+            *out->cur++ = ',';
+        }
+        if (2 == cnt && rb_obj_is_kind_of(obj, rb_cRange)) {
+            VALUE beg;
+            VALUE end;
+            int   excl;
+
+            rb_range_values(obj, &beg, &end, &excl);
+            assure_size(out, size);
+            fill_indent(out, d3);
+            oj_dump_obj_val(excl ? Qtrue : Qfalse, d3, out);
             *out->cur++ = ',';
         }
     }
