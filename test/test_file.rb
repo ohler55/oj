@@ -308,7 +308,7 @@ class FileJuice < Minitest::Test
       assert_raises(ArgumentError) { Oj::Parser.new(:usual).file(path + "\0.txt") }
 
       out = File.join(dir, 'out.json')
-      assert_raises(ArgumentError) { Oj.to_file(out + "\0.txt", [1]) }
+      assert_raises(ArgumentError) { Oj.to_file(out + "\0.txt", [1], ignore: [String]) }
       refute_path_exists(out)
     end
   end

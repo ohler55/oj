@@ -1843,6 +1843,7 @@ static VALUE to_json(int argc, VALUE *argv, VALUE self) {
 static VALUE to_file(int argc, VALUE *argv, VALUE self) {
     struct _options copts = oj_default_options;
 
+    StringValueCStr(*argv);
     if (3 == argc) {
         oj_parse_options(argv[2], &copts);
     }
