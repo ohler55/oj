@@ -244,6 +244,18 @@ class WabJuice < Minitest::Test
     dump_and_load(u, false)
   end
 
+  def test_uuid_and_uri_after_compaction
+    skip 'GC compaction is not supported here' unless GC.respond_to?(:compact) && RbConfig::CONFIG['host_os'] !~ /(mingw|mswin)/
+
+    uuid = ::WAB::UUID.new('123e4567-e89b-12d3-a456-426655440000')
+    uri  = URI('http://opo.technology/sample')
+    dump_and_load(uuid, false)
+    dump_and_load(uri, false)
+    GC.compact
+    dump_and_load(uuid, false)
+    dump_and_load(uri, false)
+  end
+
   def test_class
     assert_raises() { Oj.dump(WabJuice, mode: :wab) }
   end

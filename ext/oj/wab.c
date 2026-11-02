@@ -40,6 +40,7 @@ static VALUE resolve_wab_uuid_class(void) {
         volatile VALUE wab_module;
 
         wab_uuid_clas = Qnil;
+        rb_gc_register_address(&wab_uuid_clas);
         if (rb_const_defined_at(rb_cObject, rb_intern("WAB"))) {
             wab_module = rb_const_get_at(rb_cObject, rb_intern("WAB"));
             if (rb_const_defined_at(wab_module, rb_intern("UUID"))) {
@@ -53,6 +54,7 @@ static VALUE resolve_wab_uuid_class(void) {
 static VALUE resolve_uri_class(void) {
     if (Qundef == uri_clas) {
         uri_clas = Qnil;
+        rb_gc_register_address(&uri_clas);
         if (rb_const_defined_at(rb_cObject, rb_intern("URI"))) {
             uri_clas = rb_const_get_at(rb_cObject, rb_intern("URI"));
         }
@@ -65,6 +67,7 @@ static VALUE resolve_uri_http_class(void) {
         volatile VALUE uri_module;
 
         uri_http_clas = Qnil;
+        rb_gc_register_address(&uri_http_clas);
         if (rb_const_defined_at(rb_cObject, rb_intern("URI"))) {
             uri_module = rb_const_get_at(rb_cObject, rb_intern("URI"));
             if (rb_const_defined_at(uri_module, rb_intern("HTTP"))) {
