@@ -19,6 +19,9 @@ class CustomJuice < Minitest::Test
   module TestModule
   end
 
+  class RangeSub < Range
+  end
+
   class Rex
     attr_accessor :s
 
@@ -649,6 +652,33 @@ class CustomJuice < Minitest::Test
 
     json = Oj.dump(StandardError.new('boom'), :mode => :custom, :create_additions => true)
     assert_equal(%({"json_class":"StandardError","~mesg":"boom","~bt":null}), json)
+  end
+
+  def test_exception_backtrace_locations
+    err = nil
+    begin
+      raise StandardError.new('boom')
+    rescue StandardError => e
+      err = e
+    end
+    refute_includes(Oj.dump(err, :mode => :custom), 'bt_locations')
+
+    opts = {:mode => :custom, :create_id => '^o', :create_additions => true}
+    json = Oj.dump(err, opts)
+    refute_includes(json, 'bt_locations')
+
+    json = json.sub('"^o":"StandardError",', '"^o":"StandardError","~bt_locations":{"^o":"Thread::Backtrace"},')
+    assert_includes(json, 'Thread::Backtrace')
+    loaded = Oj.load(json, opts)
+    assert_equal(err, loaded)
+    assert_nil(loaded.backtrace_locations)
+  end
+
+  def test_range_subclass_exclude_end
+    skip 'TruffleRuby does not dump a Range subclass as a Struct' if 'truffleruby' == RUBY_ENGINE
+
+    assert_equal(%({"begin":1,"end":7,"excl":true}), Oj.dump(RangeSub.new(1, 7, true), :mode => :custom))
+    assert_equal(%({"begin":1,"end":7,"excl":false}), Oj.dump(RangeSub.new(1, 7), :mode => :custom))
   end
 
   def test_nested_arrays_with_string_indent
