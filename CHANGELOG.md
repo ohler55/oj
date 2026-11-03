@@ -1,8 +1,57 @@
 # CHANGELOG
 
-## 3.17.8 - unreleased
+## 3.17.8 - 2026-11-03
 
-- Fixed issue #988 by no longer requiring `ostruct` when Oj is loaded, and dropping it as a runtime dependency. Like the json gem, `JSON::GenericObject` is now autoloaded and requires `ostruct` on first use, raising a `LoadError` that says so if it is not installed. OpenStruct is still dumped and loaded as before when the application has loaded it. `Oj.mimic_JSON` only adds `OpenStruct.json_create` and `OpenStruct#as_json` if OpenStruct is defined at the time it is called.
+### Fixed
+
+- Fixed issue #988 by no longer requiring `ostruct` when Oj is loaded, autoloading `JSON::GenericObject` instead. (#1113)
+- Always include `cpuid.h` and fix the cache typedef for older compilers. (#1112)
+- Keep the sign of `-0.0` when dumping in compat and rails modes. (#1115)
+- Fixed big negative integers and big decimals in `Oj::Parser.usual`. (#1116)
+- Reject a value after a number and whitespace in `Oj::Parser`. (#1117)
+- Combine an escaped surrogate pair in `Oj::Parser`. (#1118)
+- Reject an object close after a colon in `Oj::Parser`. (#1119)
+- Accept an exponent right after a zero integer part in `Oj::Parser`. (#1121)
+- Raise for an incomplete top-level number in `Oj::Parser`. (#1122)
+- Fixed memory and handle leaks in `Oj.load` with recent winpthreads on Windows. (#1125)
+- Fixed writer state after an excess pop. (#1126)
+- Fixed memory corruption when `^u` names a class that is not a Struct. (#1127)
+- Fixed cached keys and strings containing NUL returning a different value. (#1129)
+- Fixed a segmentation fault on a `create_id` class path through a non-module constant. (#1130)
+- Fixed a segmentation fault with the `Oj::Parser` class cache after GC compaction. (#1131)
+- Fixed a use-after-free of converted non-UTF-8 input in `Oj.load`. (#1132)
+- Fixed a use-after-free of converted non-UTF-8 strings in `Oj.dump`. (#1133)
+- Fixed a segmentation fault when `Oj::Parser#parse` is given a non-String. (#1134)
+- Fixed a segmentation fault when `Oj.safe_load` is given a null StringIO. (#1135)
+- Fixed a segmentation fault and memory leak in `Oj.saj_parse` with IO input. (#1136)
+- Fixed a segmentation fault when `to_json` returns a non-String in custom mode. (#1137)
+- Fixed a segmentation fault when an exception message is not a String in compat mode. (#1138)
+- Fixed a segmentation fault when `raw_json` returns a non-String. (#1139)
+- Fixed a use-after-free of keys in the `Oj::Parser` saj delegate. (#1140)
+- Fixed wrong keys and `IndexError` for `Oj::Parser` saj handlers with only some callbacks. (#1141)
+- Fixed a buffer overflow when dumping nested arrays with a String indent. (#1142)
+- Fixed a segmentation fault when `array_class` is not an Array in compat and custom mode. (#1143)
+- Fixed a double free when closing an `Oj::Doc` inside the open block. (#1144)
+- Fixed buffer leaks and unchecked file sizes when reading special files. (#1145)
+- Fixed reading freed memory when `Oj.load` parses an object through `to_s`. (#1146)
+- Fixed reading a freed buffer when a `StringWriter` is pushed into itself. (#1147)
+- Fixed a segmentation fault and use-after-free when using a closed `Oj::Doc`. (#1148)
+- Fixed reading and writing a different file when a path contains a NUL byte. (#1149)
+- Fixed buffer leaks when a dump to a String, file, or stream raises. (#1152)
+- Fixed unknown class names filling the class cache and loading as a Hash. (#1153)
+- Fixed object mode ranges and exceptions on Ruby 4.1. (#1154)
+- Fixed a segmentation fault after `Oj::Doc#move` fails on a path with `..`. (#1155)
+- Fixed a segmentation fault in wab mode after GC compaction. (#1156)
+- Fixed OpenStruct dumps and loads changing after GC compaction. (#1157)
+- Fixed a segmentation fault when pushing to a writer with `circular: true`. (#1158)
+- Fixed exception loading and Range subclass dumps in custom mode on Ruby 4.1. (#1159)
+
+### Performance
+
+- Speed up parsing of object keys that collide in the key cache by using SipHash. (#1150)
+- Speed up dumping ASCII-only strings that are not UTF-8. (#1160)
+- Speed up dumping objects in object and custom modes. (#1161)
+- Speed up dumping plain objects in custom mode. (#1162)
 
 ## 3.17.7 - 2026-09-29
 
