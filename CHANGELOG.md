@@ -13,6 +13,7 @@
 - Reject an object close after a colon in `Oj::Parser`. (#1119)
 - Accept an exponent right after a zero integer part in `Oj::Parser`. (#1121)
 - Raise for an incomplete top-level number in `Oj::Parser`. (#1122)
+- Reject unescaped control characters in strict and compat mode strings. (#1123)
 - Fixed memory and handle leaks in `Oj.load` with recent winpthreads on Windows. (#1125)
 - Fixed writer state after an excess pop. (#1126)
 - Fixed memory corruption when `^u` names a class that is not a Struct. (#1127)
