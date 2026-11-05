@@ -630,7 +630,7 @@ class Juice < Minitest::Test
     skip 'needs fork' unless Process.respond_to?(:fork)
 
     IO.pipe do |r, w|
-      if fork
+      if (pid = fork)
         r.close
         # w.nonblock = false
         a = []
@@ -639,6 +639,7 @@ class Juice < Minitest::Test
         end
         Oj.to_stream(w, a, indent: 2)
         w.close
+        Process.wait(pid)
       else
         w.close
         sleep(0.1) # to force a busy
@@ -646,6 +647,38 @@ class Juice < Minitest::Test
         r.each_line { cnt += 1 }
         r.close
         Process.exit(0)
+      end
+    end
+  end
+
+  def test_io_stream_full_pipe
+    skip 'needs fork' unless Process.respond_to?(:fork)
+
+    obj = { 'a' => 'h' * 100_000 }
+    IO.pipe do |r, w|
+      IO.pipe do |echo_r, echo_w|
+        filled = 0
+        [4096, 1].each do |size|
+          while (cnt = w.write_nonblock('x' * size, exception: false)).is_a?(Integer)
+            filled += cnt
+          end
+        end
+        pid = fork do
+          w.close
+          echo_r.close
+          sleep(0.2)
+          echo_w.write(r.read)
+          echo_w.close
+          Process.exit(0)
+        end
+        echo_w.close
+        Oj.to_stream(w, obj, mode: :strict)
+        w.close
+        out = echo_r.read
+        Process.wait(pid)
+        expected = ('x' * filled) + Oj.dump(obj, mode: :strict)
+        assert_equal(expected.bytesize, out.bytesize)
+        assert_equal(expected, out)
       end
     end
   end

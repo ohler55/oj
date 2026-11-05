@@ -954,6 +954,7 @@ static VALUE write_stream_body(VALUE a) {
                     rb_raise(rb_eIOError, "write failed. %d %s.", errno, strerror(errno));
                     break;
                 }
+                cnt = 0;
             }
             total += cnt;
             if (size <= total) {
