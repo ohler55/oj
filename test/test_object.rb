@@ -119,6 +119,15 @@ class ObjectJuice < Minitest::Test
     end
   end
 
+  class Nest
+    def initialize(v)
+      @v = v
+    end
+  end
+
+  class NestStruct < Struct.new(:v)
+  end
+
   DataSub = Data.define(:a, :b) if defined?(Data) && Data.respond_to?(:define)
 
   class Strung < String
@@ -1385,6 +1394,18 @@ class ObjectJuice < Minitest::Test
       pair = [pair, 1]
       [deep, pair].each do |obj|
         assert_equal(obj, Oj.load(Oj.dump(obj, mode: :object, indent: "\t" * 8), mode: :strict))
+      end
+    end
+  end
+
+  def test_deeply_nested_objects_and_structs
+    [Nest, NestStruct].each do |c|
+      prefix, suffix = Oj.dump(c.new('@'), mode: :object, indent: 0).split('"@"')
+      (0..2000).step(5) do |n|
+        obj = [1] * n
+        110.times { obj = c.new(obj) }
+        expected = (prefix * 110) + Oj.dump([1] * n, mode: :object, indent: 0) + (suffix * 110)
+        assert_equal(expected, Oj.dump(obj, mode: :object, indent: 0), "#{c} #{n}")
       end
     end
   end

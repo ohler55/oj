@@ -731,6 +731,7 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
         return;
     }
     if (rb_cRange == clas) {
+        assure_size(out, 1);
         *out->cur++ = '"';
         oj_dump_compat_val(rb_funcall(obj, oj_begin_id, 0), 0, out, false);
         assure_size(out, 3);
@@ -739,6 +740,7 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
             *out->cur++ = '.';
         }
         oj_dump_compat_val(rb_funcall(obj, oj_end_id, 0), 0, out, false);
+        assure_size(out, 1);
         *out->cur++ = '"';
 
         return;
