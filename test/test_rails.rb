@@ -359,6 +359,35 @@ class RailsJuice < Minitest::Test
     Oj.default_options = orig
   end
 
+  def test_deeply_nested_optimized_objects_and_structs
+    lib = File.expand_path('../lib', __dir__)
+    ext = File.expand_path('../ext', __dir__)
+    out, err, status = Open3.capture3(RbConfig.ruby, '-I', ext, '-I', lib, '-e', <<~RUBY)
+      require 'oj'
+      module ActiveRecord
+        class Base
+        end
+      end
+      class Wrap
+        def initialize(v)
+          @v = v
+        end
+      end
+      Member = Struct.new(:v)
+      [Wrap, Member].each do |c|
+        Oj::Rails.optimize(c)
+        obj = [1] * 1200
+        300.times { obj = c.new(obj) }
+        puts Oj.dump(obj, mode: :rails)
+        puts Oj.dump(obj, mode: :rails, indent: -1)
+      end
+    RUBY
+
+    assert_predicate(status, :success?, err)
+    nested = ('{"v":' * 300) + "[#{(['1'] * 1200).join(',')}]" + ('}' * 300)
+    assert_equal("#{nested}\n" * 4, out)
+  end
+
   def test_nested_arrays_with_string_indent
     deep = 1
     pair = 1
