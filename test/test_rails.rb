@@ -4,6 +4,7 @@
 $LOAD_PATH << __dir__
 
 require 'helper'
+require 'open3'
 
 # Stand-ins for what ActiveRecord's as_json returns. as_json has already
 # resolved the Rails :only/:except selection at the attribute level, so these
@@ -370,4 +371,21 @@ class RailsJuice < Minitest::Test
     end
   end
 
+  def test_optimized_struct_with_a_long_member_name
+    lib = File.expand_path('../lib', __dir__)
+    ext = File.expand_path('../ext', __dir__)
+    out, err, status = Open3.capture3(RbConfig.ruby, '-I', ext, '-I', lib, '-e', <<~RUBY)
+      require 'oj'
+      module ActiveRecord
+        class Base
+        end
+      end
+      Member = Struct.new(:#{'m' * 5000})
+      Oj::Rails.optimize(Member)
+      print Oj.dump(Member.new(1), mode: :rails)
+    RUBY
+
+    assert_predicate(status, :success?, err)
+    assert_equal(%({"#{'m' * 5000}":1}), out)
+  end
 end

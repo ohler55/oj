@@ -192,7 +192,7 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
 
         name = RSTRING_PTR(s);
         len  = RSTRING_LEN(s);
-        assure_size(out, size + sep_len + 6);
+        assure_size(out, size + sep_len + len + 6);
         if (0 < i) {
             *out->cur++ = ',';
         }
