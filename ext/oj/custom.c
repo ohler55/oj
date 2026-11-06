@@ -666,6 +666,7 @@ static void dump_obj_attrs(VALUE obj, VALUE clas, slot_t id, int depth, Out out)
     out->depth = depth;
 
     fill_indent(out, depth);
+    assure_size(out, 2);
     *out->cur++ = '}';
     *out->cur   = '\0';
 }
@@ -831,6 +832,7 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
             *out->cur++ = ',';
         }
         out->cur--;
+        assure_size(out, 2);
         *out->cur++ = '}';
         *out->cur   = '\0';
     }

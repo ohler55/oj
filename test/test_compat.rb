@@ -859,6 +859,17 @@ class CompatJuice < Minitest::Test
     assert_equal('back', Oj.default_options[:create_id])
   end
 
+  def test_deeply_nested_ranges
+    [->(r) { Range.new(nil, r) }, ->(r) { Range.new(r, nil) }].each do |wrap|
+      r = 1..2
+      200.times { r = wrap.call(r) }
+      json = Oj.dump(r, mode: :compat)
+      (0..4000).step(5) do |k|
+        assert_equal(%(["#{'x' * k}",#{json}]), Oj.dump(['x' * k, r], mode: :compat), k.to_s)
+      end
+    end
+  end
+
   def dump_and_load(obj, trace=false)
     json = Oj.dump(obj)
     puts json if trace
