@@ -309,8 +309,6 @@ static VALUE str_writer_new(int argc, VALUE *argv, VALUE self) {
         oj_parse_options(argv[0], &sw->opts);
     }
     oj_options_take_ownership(&sw->opts);
-    sw->out.argc   = argc - 1;
-    sw->out.argv   = argv + 1;
     sw->out.indent = sw->opts.indent;
 
     return TypedData_Wrap_Struct(oj_string_writer_class, &oj_string_writer_type, sw);
