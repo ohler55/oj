@@ -29,6 +29,15 @@ class OjWriter < Minitest::Test
     end
   end
 
+  class RecordsToJsonArgs
+    attr_reader :args
+
+    def to_json(*args)
+      @args = args
+      '"r"'
+    end
+  end
+
   def setup
     @default_options = Oj.default_options
   end
@@ -171,6 +180,17 @@ class OjWriter < Minitest::Test
     w.push_value({'a' => PushesAgain.new(w), 'b' => [1, 2], 'c' => {'d' => 3}})
     w.pop()
     assert_includes(w.to_s, '"c":{"d":3}')
+  end
+
+  def test_string_writer_new_without_args_to_json
+    [:compat, :custom].each do |mode|
+      Oj.default_options = {:mode => mode, :use_to_json => true, :indent => 0}
+      w = Oj::StringWriter.new()
+      r = RecordsToJsonArgs.new
+      w.push_value(r)
+      assert_equal(%|"r"|, w.to_s, mode.inspect)
+      assert_equal([], r.args, mode.inspect)
+    end
   end
 
   def test_string_writer_block
