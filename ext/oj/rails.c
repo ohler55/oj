@@ -158,6 +158,7 @@ static void dump_obj_attrs(VALUE obj, int depth, Out out, bool as_ok) {
     }
     out->depth = depth;
     fill_indent(out, depth);
+    assure_size(out, 2);
     *out->cur++ = '}';
     *out->cur   = '\0';
 }
@@ -215,6 +216,7 @@ static void dump_struct(VALUE obj, int depth, Out out, bool as_ok) {
         dump_rails_val(v, d3, out, true);
     }
     fill_indent(out, depth);
+    assure_size(out, 2);
     *out->cur++ = '}';
     *out->cur   = '\0';
 }
