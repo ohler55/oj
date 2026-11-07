@@ -16,14 +16,6 @@
 # is tracked separately as a real bug.
 
 {
-   oj: process-lifetime string intern cache (lockless_intern, cache.c)
-   Memcheck:Leak
-   match-leak-kinds: definite,indirect
-   ...
-   fun:lockless_intern
-}
-
-{
    oj: process-lifetime string intern cache (locking_intern, cache.c)
    Memcheck:Leak
    match-leak-kinds: definite,indirect
