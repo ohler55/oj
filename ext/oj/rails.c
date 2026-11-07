@@ -1048,7 +1048,7 @@ static VALUE encode(VALUE obj, ROptTable ropts, Options opts, int argc, VALUE *a
     rb_protect(protect_dump, (VALUE)&oo, &line);
 
     if (0 == line) {
-        if (0 < out.indent) {
+        if (0 < out.indent && out.buf < out.cur) {
             switch (*(out.cur - 1)) {
             case ']':
             case '}': assure_size(&out, 2); *out.cur++ = '\n';

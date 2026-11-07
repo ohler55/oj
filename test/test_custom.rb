@@ -403,6 +403,17 @@ class CustomJuice < Minitest::Test
     assert_equal(%|[]|, json)
   end
 
+  def test_empty_output_with_indent
+    raw = Object.new
+    raw.define_singleton_method(:raw_json) { |*| '' }
+    [:custom, :compat, :rails].each do |mode|
+      assert_equal('', Oj.dump(raw, mode: mode, use_raw_json: true, indent: 2), mode)
+    end
+    obj = Object.new
+    obj.define_singleton_method(:to_json) { |*| '' }
+    assert_equal('', Oj.dump(obj, mode: :compat, use_to_json: true, indent: 2))
+  end
+
   def test_as_raw_json_stringwriter
     obj = Oj::StringWriter.new(:indent => 0)
     obj.push_array()

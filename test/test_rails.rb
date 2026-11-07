@@ -114,6 +114,12 @@ class RailsJuice < Minitest::Test
     end
   end
 
+  def test_encoder_empty_output_with_indent
+    raw = Object.new
+    raw.define_singleton_method(:raw_json) { |*| '' }
+    assert_equal('', Oj::Rails::Encoder.new(indent: 2, use_raw_json: true).encode(raw))
+  end
+
   # An as_json that writes into the options hash it was given must not change
   # what the encoder hands the next one. ActiveSupport 8.1 keeps a single
   # option-less encoder for the life of the process, so without a copy one such

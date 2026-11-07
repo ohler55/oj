@@ -824,7 +824,7 @@ void oj_dump_obj_to_json_using_params(VALUE obj, Options copts, Out out, int arg
     case WabMode: oj_dump_wab_val(obj, 0, out); break;
     default: oj_dump_custom_val(obj, 0, out, true); break;
     }
-    if (0 < out->indent) {
+    if (0 < out->indent && out->buf < out->cur) {
         switch (*(out->cur - 1)) {
         case ']':
         case '}': assure_size(out, 1); *out->cur++ = '\n';
