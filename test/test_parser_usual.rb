@@ -486,4 +486,13 @@ class UsualTest < Minitest::Test
       assert_equal(["a\u0000#{suffix}"], p.parse(%(["a\\u0000#{suffix}"])))
     end
   end
+
+  def test_cached_keys_reused_after_gc
+    p = Oj::Parser.new(:usual)
+    %w[k n].each do |prefix|
+      json = '{' + (1..300).map { |i| %("#{prefix}#{i}":#{i}) }.join(',') + '}'
+      assert_equal((1..300).to_h { |i| ["#{prefix}#{i}", i] }, p.parse(json))
+      6.times { GC.start }
+    end
+  end
 end

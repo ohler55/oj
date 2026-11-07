@@ -270,11 +270,6 @@ Cache cache_create(size_t size, VALUE (*form)(const char *str, size_t len), bool
     if (shift < MIN_SHIFT) {
         shift = MIN_SHIFT;
     }
-#if HAVE_PTHREAD_MUTEX_INIT
-    pthread_mutex_init(&c->mutex, NULL);
-#else
-    c->mutex = rb_mutex_new();
-#endif
     c->size  = 1 << shift;
     c->mask  = c->size - 1;
     c->slots = OJ_CALLOC(c->size, sizeof(Slot));
@@ -282,6 +277,11 @@ Cache cache_create(size_t size, VALUE (*form)(const char *str, size_t len), bool
     c->xrate = 1;  // low
     c->mark  = mark;
     if (locking) {
+#if HAVE_PTHREAD_MUTEX_INIT
+        pthread_mutex_init(&c->mutex, NULL);
+#else
+        c->mutex = rb_mutex_new();
+#endif
         c->intern = locking_intern;
     } else {
         c->intern = lockless_intern;
@@ -297,6 +297,12 @@ void cache_free(void *data) {
     Cache    c = (Cache)data;
     uint64_t i;
 
+    for (Slot s = c->reuse; NULL != s;) {
+        Slot next = s->next;
+
+        OJ_FREE(s);
+        s = next;
+    }
     for (i = 0; i < c->size; i++) {
         Slot next;
         Slot s;
