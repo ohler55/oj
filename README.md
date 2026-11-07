@@ -4,6 +4,7 @@
 ![Gem](https://img.shields.io/gem/v/oj.svg)
 ![Gem](https://img.shields.io/gem/dt/oj.svg)
 [![TideLift](https://tidelift.com/badges/github/ohler55/oj)](https://tidelift.com/subscription/pkg/rubygems-oj?utm_source=rubygems-oj&utm_medium=referral&utm_campaign=readme)
+[![Duel](https://raw.githubusercontent.com/ohler55/oj/duel/badge/badge.svg)](https://github.com/sferik/duel-ruby)
 
 A *fast* JSON parser and Object marshaller as a Ruby gem.
 
