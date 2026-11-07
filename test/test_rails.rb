@@ -105,6 +105,12 @@ class RailsJuice < Minitest::Test
     end
   end
 
+  def test_encoder_negative_indent
+    h = 'x' * 1220
+    490.times { h = { 'v' => h } }
+    assert_equal(Oj::Rails::Encoder.new(indent: 0).encode(h), Oj::Rails::Encoder.new(indent: -1).encode(h))
+  end
+
   # A :match_string option builds a chain of compiled regexps in the encoder
   # that the encoder must free when it is collected.
   def test_encoder_match_string

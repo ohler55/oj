@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <ruby.h>
 
+#include "dump.h"
 #include "encode.h"
 #include "mem.h"
 
@@ -134,7 +135,7 @@ static VALUE stream_writer_new(int argc, VALUE *argv, VALUE self) {
         sw->flush_limit = 0;
     }
     oj_options_take_ownership(&sw->sw.opts);
-    sw->sw.out.indent = sw->sw.opts.indent;
+    sw->sw.out.indent = out_indent(&sw->sw.opts);
     sw->stream        = stream;
     sw->type          = type;
     sw->fd            = fd;

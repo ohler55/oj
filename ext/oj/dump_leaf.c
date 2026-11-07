@@ -133,7 +133,7 @@ void oj_dump_leaf_to_json(Leaf leaf, Options copts, Out out) {
     out->circ_cnt = 0;
     out->opts     = copts;
     out->hash_cnt = 0;
-    out->indent   = copts->indent;
+    out->indent   = out_indent(copts);
     dump_leaf(leaf, 0, out);
 }
 

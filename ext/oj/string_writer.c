@@ -72,7 +72,7 @@ void oj_str_writer_init(StrWriter sw, int buf_size) {
     sw->out.circ_cnt   = 0;
     sw->out.hash_cnt   = 0;
     sw->out.opts       = &sw->opts;
-    sw->out.indent     = sw->opts.indent;
+    sw->out.indent     = out_indent(&sw->opts);
     sw->out.depth      = 0;
     sw->out.argc       = 0;
     sw->out.argv       = NULL;
@@ -232,7 +232,7 @@ void oj_str_writer_pop(StrWriter sw) {
     case ArrayNew:
     case ArrayType: *sw->out.cur++ = ']'; break;
     }
-    if (0 == sw->depth && 0 <= sw->out.indent) {
+    if (0 == sw->depth && 0 <= sw->opts.indent) {
         *sw->out.cur++ = '\n';
     }
 }
@@ -309,7 +309,7 @@ static VALUE str_writer_new(int argc, VALUE *argv, VALUE self) {
         oj_parse_options(argv[0], &sw->opts);
     }
     oj_options_take_ownership(&sw->opts);
-    sw->out.indent = sw->opts.indent;
+    sw->out.indent = out_indent(&sw->opts);
 
     return TypedData_Wrap_Struct(oj_string_writer_class, &oj_string_writer_type, sw);
 }

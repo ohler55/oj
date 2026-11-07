@@ -603,6 +603,19 @@ class Juice < Minitest::Test
     assert(false, '*** expected an exception')
   end
 
+  def test_negative_indent_deep_nest_dump
+    obj = 'x' * 1220
+    sym = obj
+    490.times do
+      obj = { 'v' => obj }
+      sym = { v: sym }
+    end
+    [:strict, :null, :compat, :rails, :custom, :object].each do |mode|
+      assert_equal(Oj.dump(obj, mode: mode, indent: 0), Oj.dump(obj, mode: mode, indent: -1), mode)
+    end
+    assert_equal(Oj.dump(sym, mode: :wab, indent: 0), Oj.dump(sym, mode: :wab, indent: -1))
+  end
+
   # Stream IO
   def test_io_string
     src = { 'x' => true, 'y' => 58, 'z' => [1, 2, 3]}

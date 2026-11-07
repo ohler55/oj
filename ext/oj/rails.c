@@ -1037,7 +1037,7 @@ static VALUE encode(VALUE obj, ROptTable ropts, Options opts, int argc, VALUE *a
     out.circ_cnt = 0;
     out.opts     = &copts;
     out.hash_cnt = 0;
-    out.indent   = copts.indent;
+    out.indent   = out_indent(&copts);
     out.argc     = argc;
     out.argv     = argv;
     out.ropts    = ropts;
