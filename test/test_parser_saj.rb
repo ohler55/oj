@@ -367,15 +367,12 @@ class ParserSajTest < Minitest::Test
 
       def hash_start(key)
         super
-        case key
-        when 'a'
-          begin
-            parser.parse('{"b":{}}')
-          rescue IndexError => e
-            @calls << [:rescued, e.class]
-          end
-        when 'b'
-          parser.handler = self
+        return unless 'a' == key
+
+        [-> { parser.parse('{"b":{}}') }, -> { parser.handler = self }].each do |call|
+          call.call
+        rescue RuntimeError => e
+          @calls << [:rescued, e.message]
         end
       end
     end
@@ -383,9 +380,11 @@ class ParserSajTest < Minitest::Test
     p = Oj::Parser.new(:saj)
     handler.parser = p
     p.handler = handler
-    assert_raises(IndexError) { p.parse('{"a":{"c":{}}}') }
-    assert_includes(handler.calls, [:rescued, IndexError])
-    assert_equal([[:hash_end, 'c']], handler.calls.select { |c| :hash_end == c[0] })
+    p.parse('{"a":{"c":{}}}')
+    assert_equal([[:rescued, "can't parse with an Oj::Parser that is in use"],
+                  [:rescued, "can't change Oj::Parser options while it is in use"]],
+                 handler.calls.select { |c| :rescued == c[0] })
+    assert_equal([[:hash_end, 'c'], [:hash_end, 'a'], [:hash_end, nil]], handler.calls.select { |c| :hash_end == c[0] })
   end
 
   def test_big_value_file

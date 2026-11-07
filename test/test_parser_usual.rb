@@ -4,6 +4,7 @@
 $LOAD_PATH << __dir__
 
 require 'helper'
+require 'tempfile'
 
 class UsualTest < Minitest::Test
 
@@ -299,6 +300,12 @@ class UsualTest < Minitest::Test
     assert_equal([{'a'=>1}, {'b'=>{'x'=>2}},{'c'=>3}], out)
   end
 
+  def test_load_invalid
+    p = Oj::Parser.new(:usual)
+    assert_raises(EncodingError) { p.load(StringIO.new('[1,]')) }
+    assert_equal([1], p.load(StringIO.new('[1]')))
+  end
+
   def test_omit_null
     p = Oj::Parser.new(:usual)
     p.omit_null = true
@@ -360,6 +367,17 @@ class UsualTest < Minitest::Test
     end
   end
 
+  class CallsBack
+    class << self
+      attr_accessor :callback
+    end
+
+    def self.json_create(_arg)
+      callback&.call
+      new
+    end
+  end
+
   def test_create_id
     p = Oj::Parser.new(:usual)
     p.create_id = '^'
@@ -382,6 +400,94 @@ class UsualTest < Minitest::Test
     p.create_id = 'class'
     doc = p.parse('{"a":true,"class":"UsualTest::MyClass","b":false}')
     assert_equal('UsualTest::MyClass{a: true b: false}', doc.to_s)
+  end
+
+  def test_option_change_while_parsing
+    p = Oj::Parser.new(:usual, create_id: '^', symbol_keys: true)
+    json = '{"^":"UsualTest::CallsBack","a":1}'
+    [
+      -> { p.symbol_keys = false },
+      -> { p.public_send("symbol_keys=\0x", false) },
+      -> { p.just_one = true },
+    ].each do |change|
+      CallsBack.callback = change
+      e = assert_raises(RuntimeError) { p.parse(json) }
+      assert_equal("can't change Oj::Parser options while it is in use", e.message)
+    end
+    CallsBack.callback = nil
+    assert_instance_of(CallsBack, p.parse(json))
+    p.symbol_keys = false
+    refute(p.symbol_keys)
+  ensure
+    CallsBack.callback = nil
+  end
+
+  def test_parse_while_parsing
+    p = Oj::Parser.new(:usual, create_id: '^')
+    json = '{"^":"UsualTest::CallsBack","a":1}'
+    Tempfile.create(['usual', '.json']) do |f|
+      f.write(json)
+      f.close
+      parses = [-> { p.parse(json) }, -> { p.load(StringIO.new(json)) }, -> { p.file(f.path) }]
+      parses.each do |outer|
+        parses.each do |inner|
+          CallsBack.callback = inner
+          e = assert_raises(RuntimeError) { outer.call }
+          assert_equal("can't parse with an Oj::Parser that is in use", e.message)
+        end
+      end
+      CallsBack.callback = nil
+      parses.each { |parse| assert_instance_of(CallsBack, parse.call) }
+    end
+  ensure
+    CallsBack.callback = nil
+  end
+
+  def test_busy_while_converting_the_input
+    p = Oj::Parser.new(:usual)
+    json = Object.new
+    def json.to_str
+      Fiber.yield
+      '[1]'
+    end
+    f = Fiber.new { p.parse(json) }
+    f.resume
+    e = assert_raises(RuntimeError) { p.parse('[2]') }
+    assert_equal("can't parse with an Oj::Parser that is in use", e.message)
+    assert_equal([1], f.resume)
+    assert_equal([2], p.parse('[2]'))
+  end
+
+  def test_busy_while_setting_an_option
+    p = Oj::Parser.new(:usual)
+    capacity = Object.new
+    def capacity.to_int
+      Fiber.yield
+      5000
+    end
+    f = Fiber.new { p.capacity = capacity }
+    f.resume
+    e = assert_raises(RuntimeError) { p.parse('[2]') }
+    assert_equal("can't parse with an Oj::Parser that is in use", e.message)
+    f.resume
+    assert_equal(5000, p.capacity)
+    assert_equal([2], p.parse('[2]'))
+  end
+
+  def test_usable_after_a_conversion_raises
+    p = Oj::Parser.new(:usual)
+    bad = Object.new
+    def bad.to_str
+      raise ArgumentError
+    end
+
+    def bad.to_int
+      raise ArgumentError
+    end
+    assert_raises(ArgumentError) { p.parse(bad) }
+    assert_raises(ArgumentError) { p.file(bad) }
+    assert_raises(ArgumentError) { p.capacity = bad }
+    assert_equal([2], p.parse('[2]'))
   end
 
   # The delegate keeps its own copy of create_id, and setting it again replaced

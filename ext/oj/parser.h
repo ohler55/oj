@@ -88,6 +88,7 @@ typedef struct _ojParser {
     uint32_t ucode;
     ojType   type;  // valType
     bool     just_one;
+    bool     busy;
 } *ojParser;
 
 // Create a new parser without setting the delegate. The parser is

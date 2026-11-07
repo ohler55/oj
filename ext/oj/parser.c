@@ -1410,6 +1410,40 @@ void oj_parser_set_option(ojParser p, VALUE ropts) {
     rb_hash_foreach(ropts, opt_cb, (VALUE)p);
 }
 
+static const char parse_busy_msg[]  = "can't parse with an Oj::Parser that is in use";
+static const char option_busy_msg[] = "can't change Oj::Parser options while it is in use";
+
+static void raise_if_busy(ojParser p, const char *msg) {
+    if (p->busy) {
+        rb_raise(rb_eRuntimeError, "%s", msg);
+    }
+}
+
+static VALUE release(VALUE x) {
+    ((ojParser)x)->busy = false;
+
+    return Qnil;
+}
+
+static VALUE run_busy(ojParser p, const char *msg, VALUE (*body)(VALUE), VALUE arg) {
+    raise_if_busy(p, msg);
+    p->busy = true;
+
+    return rb_ensure(body, arg, release, (VALUE)p);
+}
+
+struct _optionArg {
+    ojParser    p;
+    const char *key;
+    VALUE       value;
+};
+
+static VALUE option_body(VALUE x) {
+    struct _optionArg *a = (struct _optionArg *)x;
+
+    return a->p->option(a->p, a->key, a->value);
+}
+
 /* Document-method: method_missing(value)
  * call-seq: method_missing(value)
  *
@@ -1452,6 +1486,7 @@ static VALUE parser_missing(int argc, VALUE *argv, VALUE self) {
     const char    *key  = NULL;
     volatile VALUE rkey = *argv;
     volatile VALUE rv   = Qnil;
+    size_t         len;
 
     TypedData_Get_Struct(self, struct _ojParser, &oj_parser_type, p);
 
@@ -1468,6 +1503,12 @@ static VALUE parser_missing(int argc, VALUE *argv, VALUE self) {
     }
     if (1 < argc) {
         rv = argv[1];
+    }
+    len = strlen(key);
+    if (0 < len && '=' == key[len - 1]) {
+        struct _optionArg a = {p, key, rv};
+
+        return run_busy(p, option_busy_msg, option_body, (VALUE)&a);
     }
     return p->option(p, key, rv);
 }
@@ -1517,6 +1558,26 @@ static void validate_document_end(ojParser p) {
     validate_number_is_complete(p);
     validate_non_primitives_are_complete(p);
 }
+struct _parseArg {
+    ojParser p;
+    VALUE    json;
+};
+
+static VALUE parse_body(VALUE x) {
+    struct _parseArg *a = (struct _parseArg *)x;
+    ojParser          p = a->p;
+
+    StringValue(a->json);
+    if (!OBJ_FROZEN(a->json)) {
+        rb_str_freeze(a->json);
+    }
+    parser_reset(p);
+    p->start(p);
+    parse(p, (const byte *)RSTRING_PTR(a->json), (size_t)RSTRING_LEN(a->json), false);
+    validate_document_end(p);
+
+    return p->result(p);
+}
 
 /* Document-method: parse(json)
  * call-seq: parse(json)
@@ -1526,24 +1587,17 @@ static void validate_document_end(ojParser p) {
  * Returns the result according to the delegate of the parser.
  */
 static VALUE parser_parse(VALUE self, VALUE json) {
-    ojParser    p;
-    const byte *ptr;
-
-    StringValue(json);
-    if (!OBJ_FROZEN(json)) {
-        rb_str_freeze(json);
-    }
-    ptr = (const byte *)RSTRING_PTR(json);
+    ojParser         p;
+    struct _parseArg a;
+    VALUE            rv;
 
     TypedData_Get_Struct(self, struct _ojParser, &oj_parser_type, p);
+    a.p    = p;
+    a.json = json;
+    rv     = run_busy(p, parse_busy_msg, parse_body, (VALUE)&a);
+    RB_GC_GUARD(a.json);
 
-    parser_reset(p);
-    p->start(p);
-    parse(p, ptr, (size_t)RSTRING_LEN(json), false);
-    RB_GC_GUARD(json);
-    validate_document_end(p);
-
-    return p->result(p);
+    return rv;
 }
 
 static VALUE load_rescue(VALUE self, VALUE x) {
@@ -1572,6 +1626,22 @@ static VALUE load(VALUE self) {
     }
     return Qtrue;
 }
+struct _loadArg {
+    ojParser p;
+    VALUE    self;
+    VALUE    reader;
+};
+
+static VALUE load_body(VALUE x) {
+    struct _loadArg *a = (struct _loadArg *)x;
+    ojParser         p = a->p;
+
+    parser_reset(p);
+    p->reader = a->reader;
+    rb_rescue2(load, a->self, load_rescue, Qnil, rb_eEOFError, (VALUE)0);
+
+    return p->result(p);
+}
 
 /* Document-method: load(reader)
  * call-seq: load(reader)
@@ -1581,19 +1651,20 @@ static VALUE load(VALUE self) {
  * Returns the result according to the delegate of the parser.
  */
 static VALUE parser_load(VALUE self, VALUE reader) {
-    ojParser p;
+    ojParser        p;
+    struct _loadArg a;
 
     TypedData_Get_Struct(self, struct _ojParser, &oj_parser_type, p);
+    a.p      = p;
+    a.self   = self;
+    a.reader = reader;
 
-    parser_reset(p);
-    p->reader = reader;
-    rb_rescue2(load, self, load_rescue, Qnil, rb_eEOFError, 0);
-
-    return p->result(p);
+    return run_busy(p, parse_busy_msg, load_body, (VALUE)&a);
 }
 
 struct _fileParse {
     ojParser    p;
+    VALUE       filename;
     const char *path;
     int         fd;
 };
@@ -1625,6 +1696,31 @@ static VALUE file_close(VALUE x) {
     return Qnil;
 }
 
+static VALUE file_body(VALUE x) {
+    struct _fileParse *fp = (struct _fileParse *)x;
+    ojParser           p  = fp->p;
+
+    fp->path = StringValueCStr(fp->filename);
+    parser_reset(p);
+    p->start(p);
+
+    if (0 > (fp->fd = open(fp->path, O_RDONLY))) {
+        rb_raise(rb_eIOError, "error opening %s", fp->path);
+    }
+#if USE_THREAD_LIMIT
+    struct stat info;
+    // st_size will be 0 if not a file
+    if (0 == fstat(fp->fd, &info) && USE_THREAD_LIMIT < info.st_size) {
+        // Use threaded version.
+        // TBD only if has pthreads
+        // TBD parse_large(p, fd);
+        close(fp->fd);
+        return p->result(p);
+    }
+#endif
+    return rb_ensure(file_parse, x, file_close, x);
+}
+
 /* Document-method: file(filename)
  * call-seq: file(filename)
  *
@@ -1635,35 +1731,15 @@ static VALUE file_close(VALUE x) {
 static VALUE parser_file(VALUE self, VALUE filename) {
     struct _fileParse fp;
     ojParser          p;
-    const char       *path;
-    int               fd;
+    VALUE             rv;
 
     TypedData_Get_Struct(self, struct _ojParser, &oj_parser_type, p);
+    fp.p        = p;
+    fp.filename = filename;
+    rv          = run_busy(p, parse_busy_msg, file_body, (VALUE)&fp);
+    RB_GC_GUARD(fp.filename);
 
-    path = StringValueCStr(filename);
-
-    parser_reset(p);
-    p->start(p);
-
-    if (0 > (fd = open(path, O_RDONLY))) {
-        rb_raise(rb_eIOError, "error opening %s", path);
-    }
-#if USE_THREAD_LIMIT
-    struct stat info;
-    // st_size will be 0 if not a file
-    if (0 == fstat(fd, &info) && USE_THREAD_LIMIT < info.st_size) {
-        // Use threaded version.
-        // TBD only if has pthreads
-        // TBD parse_large(p, fd);
-        close(fd);
-        return p->result(p);
-    }
-#endif
-    fp.p    = p;
-    fp.path = path;
-    fp.fd   = fd;
-
-    return rb_ensure(file_parse, (VALUE)&fp, file_close, (VALUE)&fp);
+    return rv;
 }
 
 /* Document-method: just_one
@@ -1691,6 +1767,7 @@ static VALUE parser_just_one_set(VALUE self, VALUE v) {
     ojParser p;
 
     TypedData_Get_Struct(self, struct _ojParser, &oj_parser_type, p);
+    raise_if_busy(p, option_busy_msg);
 
     p->just_one = (Qtrue == v);
 
