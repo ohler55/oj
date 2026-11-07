@@ -1638,7 +1638,7 @@ static VALUE load_body(VALUE x) {
 
     parser_reset(p);
     p->reader = a->reader;
-    rb_rescue2(load, a->self, load_rescue, Qnil, rb_eEOFError, 0);
+    rb_rescue2(load, a->self, load_rescue, Qnil, rb_eEOFError, (VALUE)0);
 
     return p->result(p);
 }

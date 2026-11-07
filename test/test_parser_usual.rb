@@ -292,6 +292,12 @@ class UsualTest < Minitest::Test
     assert_equal([{'a'=>1}, {'b'=>{'x'=>2}},{'c'=>3}], out)
   end
 
+  def test_load_invalid
+    p = Oj::Parser.new(:usual)
+    assert_raises(EncodingError) { p.load(StringIO.new('[1,]')) }
+    assert_equal([1], p.load(StringIO.new('[1]')))
+  end
+
   def test_omit_null
     p = Oj::Parser.new(:usual)
     p.omit_null = true
