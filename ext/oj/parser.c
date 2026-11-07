@@ -1605,30 +1605,44 @@ static VALUE load_rescue(VALUE self, VALUE x) {
     return Qfalse;
 }
 
-static VALUE load(VALUE self) {
-    ojParser       p;
-    volatile VALUE rbuf = rb_str_new2("");
+struct _readArg {
+    VALUE reader;
+    VALUE buf;
+    bool  started;
+};
 
-    TypedData_Get_Struct(self, struct _ojParser, &oj_parser_type, p);
+static VALUE read_partial(VALUE x) {
+    struct _readArg *a = (struct _readArg *)x;
+
+    if (a->started && Qtrue == rb_funcall(a->reader, oj_eofq_id, 0)) {
+        return Qfalse;
+    }
+    a->started = true;
+    rb_funcall(a->reader, oj_readpartial_id, 2, INT2NUM(16385), a->buf);
+
+    return Qtrue;
+}
+
+static void load(ojParser p) {
+    volatile VALUE  rbuf = rb_str_new2("");
+    struct _readArg a;
+
+    a.reader  = p->reader;
+    a.buf     = rbuf;
+    a.started = false;
 
     p->start(p);
-    while (true) {
-        rb_funcall(p->reader, oj_readpartial_id, 2, INT2NUM(16385), rbuf);
+    while (Qtrue == rb_rescue2(read_partial, (VALUE)&a, load_rescue, Qnil, rb_eEOFError, (VALUE)0)) {
         if (0 < RSTRING_LEN(rbuf)) {
             parse(p, (byte *)StringValuePtr(rbuf), (size_t)RSTRING_LEN(rbuf), true);
         }
-        if (Qtrue == rb_funcall(p->reader, oj_eofq_id, 0)) {
-            if (0 < p->depth) {
-                parse_error(p, "parse error, not closed");
-            }
-            break;
-        }
     }
-    return Qtrue;
+    if (0 < p->depth) {
+        parse_error(p, "parse error, not closed");
+    }
 }
 struct _loadArg {
     ojParser p;
-    VALUE    self;
     VALUE    reader;
 };
 
@@ -1638,7 +1652,7 @@ static VALUE load_body(VALUE x) {
 
     parser_reset(p);
     p->reader = a->reader;
-    rb_rescue2(load, a->self, load_rescue, Qnil, rb_eEOFError, (VALUE)0);
+    load(p);
 
     return p->result(p);
 }
@@ -1656,7 +1670,6 @@ static VALUE parser_load(VALUE self, VALUE reader) {
 
     TypedData_Get_Struct(self, struct _ojParser, &oj_parser_type, p);
     a.p      = p;
-    a.self   = self;
     a.reader = reader;
 
     return run_busy(p, parse_busy_msg, load_body, (VALUE)&a);
