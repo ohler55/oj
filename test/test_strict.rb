@@ -370,6 +370,7 @@ class StrictJuice < Minitest::Test
   end
 
   def test_symbol_keys_invalid_utf8
+    skip 'TruffleRuby aborts when a Symbol is made from a broken String' if 'truffleruby' == RUBY_ENGINE
     assert_raises(EncodingError) { Oj.load(%({"\xFFab":1}).b, mode: :strict, symbol_keys: true) }
   end
 
