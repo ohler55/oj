@@ -1065,8 +1065,10 @@ static VALUE opt_symbol_keys_set(ojParser p, VALUE value) {
     Usual d = (Usual)p->ctx;
 
     if (Qtrue == value) {
-        d->sym_cache = cache_create(0, form_sym, true, false);
-        cache_set_expunge_rate(d->sym_cache, d->cache_xrate);
+        if (NULL == d->sym_cache) {
+            d->sym_cache = cache_create(0, form_sym, true, false);
+            cache_set_expunge_rate(d->sym_cache, d->cache_xrate);
+        }
         d->key_cache = d->sym_cache;
         if (!d->cache_keys) {
             d->get_key = sym_key;

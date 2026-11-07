@@ -226,6 +226,14 @@ class UsualTest < Minitest::Test
     assert_equal({a: true, b: false}, doc)
   end
 
+  def test_symbol_keys_set_again
+    p = Oj::Parser.new(:usual)
+    3.times do
+      p.symbol_keys = true
+      assert_equal({a: true}, p.parse('{"a": true}'))
+    end
+  end
+
   def test_strings
     p = Oj::Parser.new(:usual)
     doc = p.parse('{"ぴ": "", "ぴ ": "x", "c": "ぴーたー", "d": " ぴーたー "}')
