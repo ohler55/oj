@@ -369,6 +369,10 @@ class StrictJuice < Minitest::Test
     assert_equal({ :x => true, :y => 58, :z => [1, 2, 3]}, obj)
   end
 
+  def test_symbol_keys_invalid_utf8
+    assert_raises(EncodingError) { Oj.load(%({"\xFFab":1}).b, mode: :strict, symbol_keys: true) }
+  end
+
   def test_symbol_keys_safe
     json = %{{
   "x":true,

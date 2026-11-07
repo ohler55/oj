@@ -1073,6 +1073,10 @@ class ObjectJuice < Minitest::Test
     assert_equal([1, 2, 3], %i[@bt @mesg @bt_locations].map { |name| loaded.instance_variable_get(name) })
   end
 
+  def test_invalid_utf8_attribute_name
+    assert_raises(EncodingError) { Oj.load(%({"^o":"Object","\xFFab":1}).b, mode: :object) }
+  end
+
   def test_range_object
     Oj.default_options = { :mode => :object }
     json = Oj.dump(1..7, :mode => :object, :indent => 0)
