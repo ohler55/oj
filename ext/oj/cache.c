@@ -228,24 +228,23 @@ static VALUE locking_intern(Cache c, const char *key, size_t len) {
     old_size = c->size;
     // The creation of a new value may trigger a GC which be a problem if the
     // cache is locked so make sure it is unlocked for the key value creation.
-    if (NULL != (b = c->reuse)) {
+    CACHE_UNLOCK(c);
+    rkey = c->form(key, len);
+
+    // Lock again to add the new entry.
+    CACHE_LOCK(c);
+    if (NULL == (b = c->reuse)) {
+        b = OJ_CALLOC(1, sizeof(struct _slot));
+    } else {
         c->reuse = b->next;
         c->rcnt--;
     }
-    CACHE_UNLOCK(c);
-    if (NULL == b) {
-        b = OJ_CALLOC(1, sizeof(struct _slot));
-    }
-    rkey    = c->form(key, len);
     b->hash = h;
     memcpy(b->key, key, len);
     b->klen     = (uint8_t)len;
     b->key[len] = '\0';
     b->val      = rkey;
     b->use_cnt  = 16;
-
-    // Lock again to add the new entry.
-    CACHE_LOCK(c);
     if (old_size != c->size) {
         h      = oj_hash_calc((const uint8_t *)key, len);
         bucket = (Slot *)c->slots + (h & c->mask);
