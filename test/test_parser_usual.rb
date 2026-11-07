@@ -339,6 +339,34 @@ class UsualTest < Minitest::Test
     assert_equal(MyHash, doc.class)
   end
 
+  def test_long_keys_freed_after_a_failed_parse
+    key = 'k' * 40
+    raising = Class.new(Hash) do
+      def []=(*)
+        raise ArgumentError
+      end
+    end
+    p = Oj::Parser.new(:usual, hash_class: raising)
+    assert_raises(ArgumentError) { p.parse(%({"#{key}":1,"#{key}2":2})) }
+    p = Oj::Parser.new(:usual)
+    assert_raises(EncodingError) { p.parse(%({"#{key}":1,)) }
+    assert_equal({ key => 1 }, p.parse(%({"#{key}":1})))
+    p = Oj::Parser.new(:usual, create_id: '^')
+    json = %({"^":"UsualTest::CallsBack","#{key}":1})
+    assert_instance_of(CallsBack, p.parse(json))
+    CallsBack.callback = -> { raise ArgumentError }
+    assert_raises(ArgumentError) { p.parse(json) }
+  ensure
+    CallsBack.callback = nil
+  end
+
+  def test_long_symbol_keys_freed_after_a_failed_parse
+    skip 'TruffleRuby aborts when a Symbol is made from a broken String' if 'truffleruby' == RUBY_ENGINE
+    key = 'k' * 40
+    p = Oj::Parser.new(:usual, symbol_keys: true)
+    assert_raises(EncodingError) { p.parse(%({"#{key}":1,"#{key}\\ud800":2})) }
+  end
+
   def test_empty
     p = Oj::Parser.new(:usual)
     p.raise_on_empty = false
