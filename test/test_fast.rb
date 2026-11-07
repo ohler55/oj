@@ -644,6 +644,14 @@ class DocTest < Minitest::Test
     end
   end
 
+  def test_dump_negative_indent
+    json = ('[' * 1000) + %("#{'x' * 2200}") + (']' * 1000)
+    Oj.default_options = { indent: -1 }
+    Oj::Doc.open(json) do |doc|
+      assert_equal(json, doc.dump)
+    end
+  end
+
   def test_each_leaf
     results = Oj::Doc.open('[1,[2,3]]') do |doc|
       h = {}

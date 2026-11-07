@@ -297,6 +297,40 @@ class OjWriter < Minitest::Test
     assert_equal("[1]\n", output.string)
   end
 
+  def test_string_writer_negative_indent
+    w = Oj::StringWriter.new(indent: -1)
+    w.push_object
+    w.push_value(1, 'a')
+    w.pop
+    assert_equal('{"a":1}', w.to_s)
+
+    w = Oj::StringWriter.new(indent: -1)
+    900.times { w.push_array }
+    w.push_value('x' * 3000)
+    w.pop_all
+    assert_equal(('[' * 900) + %("#{'x' * 3000}") + (']' * 900), w.to_s)
+  end
+
+  def test_stream_writer_negative_indent
+    output = StringIO.new
+    w = Oj::StreamWriter.new(output, indent: -1)
+    2.times do
+      w.push_object
+      w.push_value(1, 'a')
+      w.pop
+    end
+    w.flush
+    assert_equal('{"a":1}{"a":1}', output.string)
+
+    output = StringIO.new
+    w = Oj::StreamWriter.new(output, indent: -1, buffer_size: 1024)
+    900.times { w.push_array }
+    w.push_value(1)
+    w.pop_all
+    w.flush
+    assert_equal(('[' * 900) + '1' + (']' * 900), output.string)
+  end
+
   def test_string_writer_obj_no_key
     w = Oj::StringWriter.new(:indent => 0)
     w.push_object()

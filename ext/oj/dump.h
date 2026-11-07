@@ -79,6 +79,10 @@ inline static size_t indent_len(Out out, int depth, size_t nl_size) {
     return depth * out->indent + 1;
 }
 
+inline static int out_indent(Options copts) {
+    return 0 > copts->indent ? 0 : copts->indent;
+}
+
 inline static void fill_indent(Out out, int cnt) {
     if (0 < out->indent) {
         cnt *= out->indent;

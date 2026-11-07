@@ -395,6 +395,19 @@ class CustomJuice < Minitest::Test
     end
   end
 
+  def test_raw_json_negative_indent
+    [:custom, :compat, :rails].each do |mode|
+      indent = nil
+      obj = Object.new
+      obj.define_singleton_method(:raw_json) do |_depth, i|
+        indent = i
+        '{}'
+      end
+      assert_equal('[{}]', Oj.dump([obj], mode: mode, use_raw_json: true, indent: -1), mode)
+      assert_equal(-1, indent, mode)
+    end
+  end
+
   def test_raw_json_stringwriter
     obj = Oj::StringWriter.new(:indent => 0)
     obj.push_array()
