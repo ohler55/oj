@@ -135,6 +135,18 @@ class CustomJuice < Minitest::Test
     end
   end
 
+  class OddCompact
+    def compacted
+      GC.verify_compaction_references(expand_heap: true, toward: :empty)
+      1
+    end
+
+    define_method('c' * 298) do
+      GC.verify_compaction_references(expand_heap: true, toward: :empty)
+      2
+    end
+  end
+
   def setup
     @default_options = Oj.default_options
     Oj.default_options = { :mode => :custom }
@@ -393,6 +405,18 @@ class CustomJuice < Minitest::Test
       obj.define_singleton_method(:raw_json) { |*| str_like }
       assert_equal('[{"a":1}]', Oj.dump([obj], mode: mode, use_raw_json: true), mode)
     end
+  end
+
+  def test_odd_attribute_name_after_compaction
+    unless defined?(GC.verify_compaction_references) == 'method' &&
+           Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('3.2.0') &&
+           RbConfig::CONFIG['host_os'] !~ /(mingw|mswin)/
+      skip 'GC compaction is not supported here'
+    end
+
+    dotted = "itself.#{'c' * 298}"
+    Oj.register_odd(OddCompact, OddCompact, :new, :compacted, dotted.to_sym)
+    assert_equal(%({"compacted":1,"#{dotted}":2}), Oj.dump(OddCompact.new, mode: :custom))
   end
 
   def test_raw_json_negative_indent

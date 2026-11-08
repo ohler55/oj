@@ -411,7 +411,7 @@ static void dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
         } else {
             const char *s    = RSTRING_PTR(v);
             size_t      len  = RSTRING_LEN(v);
-            const char *name = rb_id2name(*odd->attrs);
+            const char *name = *odd->attr_names;
             size_t      nlen = strlen(name);
 
             size = len + d2 * out->indent + nlen + 10;
@@ -429,7 +429,7 @@ static void dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
             size_t nlen;
 
             assure_size(out, size);
-            name = rb_id2name(*idp);
+            name = odd->attr_names[idp - odd->attrs];
             nlen = strlen(name);
             if (0 != *fp) {
                 v = (*fp)(obj);
