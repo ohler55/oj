@@ -255,6 +255,20 @@ class ObjectJuice < Minitest::Test
 
   end # Oddball
 
+  class OddCompact
+
+    def compacted
+      verify_gc_compaction
+      1
+    end
+
+    define_method('c' * 298) do
+      verify_gc_compaction
+      2
+    end
+
+  end # OddCompact
+
   def setup
     @default_options = Oj.default_options
   end
@@ -1380,6 +1394,12 @@ class ObjectJuice < Minitest::Test
       end
     end
     assert_equal(Rational(3, 1), Oj.load(%({"^O":"Rational","numerator":3,"denominator":1}), :mode => :object))
+  end
+
+  def test_odd_attribute_name_after_compaction
+    dotted = "itself.#{'c' * 298}"
+    Oj.register_odd(OddCompact, OddCompact, :new, :compacted, dotted.to_sym)
+    assert_equal(%|{"^O":"ObjectJuice::OddCompact","compacted":1,"#{dotted}":2}|, Oj.dump(OddCompact.new, :mode => :object))
   end
 
   def test_auto_string
