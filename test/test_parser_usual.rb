@@ -306,6 +306,29 @@ class UsualTest < Minitest::Test
     assert_equal([1], p.load(StringIO.new('[1]')))
   end
 
+  def test_load_keeps_eof_error_from_a_callback
+    p = Oj::Parser.new(:usual, create_id: '^')
+    CallsBack.callback = -> { raise EOFError }
+    assert_raises(EOFError) { p.load(StringIO.new('[{"^":"UsualTest::CallsBack"},2]')) }
+    assert_equal([1], p.load(StringIO.new('[1]')))
+  ensure
+    CallsBack.callback = nil
+  end
+
+  def test_load_from_a_reader_without_eof
+    reader_for = lambda do |json, eof|
+      io = StringIO.new(json)
+      reader = Object.new
+      reader.define_singleton_method(:readpartial) { |n, buf| io.readpartial(n, buf) }
+      reader.define_singleton_method(:eof?, &eof)
+      reader
+    end
+    p = Oj::Parser.new(:usual)
+    assert_equal({ 'a' => 1 }, p.load(reader_for.call('{"a":1}', -> { false })))
+    assert_raises(EncodingError) { p.load(reader_for.call('[1,2', -> { false })) }
+    assert_equal([1], p.load(reader_for.call('[1]', -> { raise EOFError })))
+  end
+
   def test_omit_null
     p = Oj::Parser.new(:usual)
     p.omit_null = true
