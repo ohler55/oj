@@ -204,6 +204,7 @@ static VALUE mimic_dump(int argc, VALUE *argv, VALUE self) {
     VALUE           rstr;
     VALUE           active_hack[1];
 
+    rb_check_arity(argc, 1, UNLIMITED_ARGUMENTS);
     copts.str_rx.head = NULL;
     copts.str_rx.tail = NULL;
 

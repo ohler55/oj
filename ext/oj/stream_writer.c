@@ -90,15 +90,18 @@ static VALUE buffer_size_sym = Qundef;
  * - *options* [_Hash_] formatting options
  */
 static VALUE stream_writer_new(int argc, VALUE *argv, VALUE self) {
-    StreamWriterType type   = STREAM_IO;
-    int              fd     = 0;
-    VALUE            stream = argv[0];
-    VALUE            clas   = rb_obj_class(stream);
+    StreamWriterType type = STREAM_IO;
+    int              fd   = 0;
+    VALUE            stream;
+    VALUE            clas;
     StreamWriter     sw;
 #if !IS_WINDOWS
     VALUE s;
 #endif
 
+    rb_check_arity(argc, 1, UNLIMITED_ARGUMENTS);
+    stream = argv[0];
+    clas   = rb_obj_class(stream);
     if (oj_stringio_class == clas) {
         type = STRING_IO;
 #if !IS_WINDOWS

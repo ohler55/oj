@@ -387,6 +387,18 @@ class FileJuice < Minitest::Test
     end
   end
 
+  def test_to_stream_without_an_object
+    assert_raises(ArgumentError) { Oj.to_stream(StringIO.new) }
+  end
+
+  def test_to_file_without_an_object
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'missing.json')
+      assert_raises(ArgumentError) { Oj.to_file(path) }
+      refute_path_exists(path)
+    end
+  end
+
   def test_write_with_the_default_options_replaced_while_parsing
     raises = true
     Range.alias_method(:oj_test_begin, :begin)
