@@ -1898,6 +1898,7 @@ static VALUE to_file(int argc, VALUE *argv, VALUE self) {
     struct _options       copts;
     struct write_call_arg arg = {&copts, argc, argv};
 
+    rb_check_arity(argc, 2, UNLIMITED_ARGUMENTS);
     StringValueCStr(*argv);
     copts = oj_default_options;
     option_buffers_get(&copts, &arg.base);
@@ -1928,6 +1929,7 @@ static VALUE to_stream(int argc, VALUE *argv, VALUE self) {
     struct _options       copts = oj_default_options;
     struct write_call_arg arg   = {&copts, argc, argv};
 
+    rb_check_arity(argc, 2, UNLIMITED_ARGUMENTS);
     option_buffers_get(&copts, &arg.base);
 
     return rb_ensure(to_stream_body, (VALUE)&arg, write_call_ensure, (VALUE)&arg);
@@ -1986,7 +1988,7 @@ static VALUE register_odd(int argc, VALUE *argv, VALUE self) {
  *   serialized to generate the raw JSON.
  */
 static VALUE register_odd_raw(int argc, VALUE *argv, VALUE self) {
-    if (3 > argc) {
+    if (4 > argc) {
         rb_raise(rb_eArgError, "incorrect number of arguments.");
     }
     switch (rb_type(*argv)) {

@@ -13,6 +13,7 @@ require 'stringio'
 require 'date'
 require 'bigdecimal'
 require 'weakref'
+require 'open3'
 require 'oj'
 
 class CompatJuice < Minitest::Test
@@ -868,6 +869,22 @@ class CompatJuice < Minitest::Test
         assert_equal(%(["#{'x' * k}",#{json}]), Oj.dump(['x' * k, r], mode: :compat), k.to_s)
       end
     end
+  end
+
+  def test_mimic_dump_without_an_object
+    lib = File.expand_path('../lib', __dir__)
+    ext = File.expand_path('../ext', __dir__)
+    out, err, status = Open3.capture3(RbConfig.ruby, '-I', ext, '-I', lib, '-e', <<~RUBY)
+      require 'oj'
+      Oj.mimic_JSON
+      begin
+        JSON.dump
+      rescue ArgumentError
+        print 'ArgumentError'
+      end
+    RUBY
+    assert_predicate(status, :success?, err)
+    assert_equal('ArgumentError', out)
   end
 
   def dump_and_load(obj, trace=false)

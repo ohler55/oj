@@ -1354,6 +1354,12 @@ class ObjectJuice < Minitest::Test
     assert_equal({'a' => 1}, h)
   end
 
+  def test_odd_raw_without_a_dump_method
+    clas = Class.new
+    e = assert_raises(ArgumentError) { Oj.register_odd_raw(clas, clas, :new) }
+    assert_equal('incorrect number of arguments.', e.message)
+  end
+
   def test_odd_mod
     Oj.register_odd(Ichi::Ni, Ichi::Ni, :direct, :dump)
     json = Oj.dump(Ichi::Ni::San::Shi.new({'a' => 1}), :mode => :object)

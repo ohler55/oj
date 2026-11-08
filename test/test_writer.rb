@@ -396,6 +396,11 @@ class OjWriter < Minitest::Test
     assert_equal(%|{"b":1}|, w.to_s)
   end
 
+  def test_stream_writer_without_a_stream
+    e = assert_raises(ArgumentError) { Oj::StreamWriter.new }
+    assert_match(/wrong number of arguments/, e.message)
+  end
+
   def test_stream_writer_only
     output = StringIO.open('', 'w+')
     w = Oj::StreamWriter.new(output, :mode => :compat, :indent => 0, :only => ['a'])
