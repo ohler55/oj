@@ -1077,6 +1077,15 @@ class ObjectJuice < Minitest::Test
     assert_raises(EncodingError) { Oj.load(%({"^o":"Object","\xFFab":1}).b, mode: :object) }
   end
 
+  def test_long_attribute_names
+    [300, 2000].each do |len|
+      name = 'a' * len
+      assert_equal(1, Oj.load(%({"^o":"Object","#{name}":1}), mode: :object).instance_variable_get(:"@#{name}"))
+      assert_raises(EncodingError) { Oj.load(%({"^o":"Object","\xFF#{name}":1}).b, mode: :object) }
+      assert_raises(EncodingError) { Oj.load(%({"^o":"Object","~\xFF#{name}":1}).b, mode: :object) }
+    end
+  end
+
   def test_range_object
     Oj.default_options = { :mode => :object }
     json = Oj.dump(1..7, :mode => :object, :indent => 0)
