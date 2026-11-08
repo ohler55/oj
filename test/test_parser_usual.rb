@@ -572,6 +572,15 @@ class UsualTest < Minitest::Test
     assert_equal(Auto, doc.class)
   end
 
+  def test_long_attribute_names
+    p = Oj::Parser.new(:usual, create_id: '^')
+    [300, 2000].each do |len|
+      name = 'a' * len
+      assert_equal(1, p.parse(%({"^":"Object","#{name}":1})).instance_variable_get(:"@#{name}"))
+      assert_raises(EncodingError) { p.parse(%({"^":"Object","\\ud800#{name}":1})) }
+    end
+  end
+
   def test_class_cache
     p = Oj::Parser.new(:usual)
     p.create_id = '^'

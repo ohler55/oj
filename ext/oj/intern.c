@@ -59,7 +59,8 @@ static VALUE form_attr(const char *str, size_t len) {
     char buf[256];
 
     if (sizeof(buf) - 2 <= len) {
-        char *b = OJ_R_ALLOC_N(char, len + 2);
+        VALUE v;
+        char *b = ALLOCV_N(char, v, len + 2);
         ID    id;
 
         if ('~' == *str) {
@@ -72,7 +73,7 @@ static VALUE form_attr(const char *str, size_t len) {
             b[len + 1] = '\0';
         }
         id = rb_intern3(b, len + 1, oj_utf8_encoding);
-        OJ_R_FREE(b);
+        ALLOCV_END(v);
         return id;
     }
     if ('~' == *str) {
