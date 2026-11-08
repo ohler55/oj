@@ -281,6 +281,17 @@ static void open_array_key(ojParser p) {
     push2(p, Qundef);
 }
 
+static void pop_keys(Usual d, long ki) {
+    Key kp = d->khead + ki;
+
+    for (; kp < d->ktail; kp++) {
+        if (sizeof(kp->buf) <= (size_t)kp->len) {
+            OJ_R_FREE(kp->key);
+        }
+    }
+    d->ktail = d->khead + ki;
+}
+
 static void close_object(ojParser p) {
     VALUE *vp;
     Usual  d = (Usual)p->ctx;
@@ -294,12 +305,9 @@ static void close_object(ojParser p) {
 
     for (vp = head; kp < d->ktail; kp++, vp += 2) {
         *vp = d->get_key(p, kp);
-        if (sizeof(kp->buf) <= (size_t)kp->len) {
-            OJ_R_FREE(kp->key);
-        }
     }
     rb_hash_bulk_insert(d->vtail - head, head, obj);
-    d->ktail = d->khead + c->ki;
+    pop_keys(d, c->ki);
 
     d->vtail = head;
     head--;
@@ -323,11 +331,8 @@ static void close_object_class(ojParser p) {
 
     for (vp = head; kp < d->ktail; kp++, vp += 2) {
         rb_funcall(obj, hset_id, 2, d->get_key(p, kp), *(vp + 1));
-        if (sizeof(kp->buf) <= (size_t)kp->len) {
-            OJ_R_FREE(kp->key);
-        }
     }
-    d->ktail = d->khead + c->ki;
+    pop_keys(d, c->ki);
     d->vtail = head;
     head--;
     *head = obj;
@@ -350,18 +355,12 @@ static void close_object_create(ojParser p) {
             obj = rb_hash_new();
             for (vp = head; kp < d->ktail; kp++, vp += 2) {
                 *vp = d->get_key(p, kp);
-                if (sizeof(kp->buf) <= (size_t)kp->len) {
-                    OJ_R_FREE(kp->key);
-                }
             }
             rb_hash_bulk_insert(d->vtail - head, head, obj);
         } else {
             obj = rb_class_new_instance(0, NULL, d->hash_class);
             for (vp = head; kp < d->ktail; kp++, vp += 2) {
                 rb_funcall(obj, hset_id, 2, d->get_key(p, kp), *(vp + 1));
-                if (sizeof(kp->buf) <= (size_t)kp->len) {
-                    OJ_R_FREE(kp->key);
-                }
             }
         }
     } else {
@@ -373,9 +372,6 @@ static void close_object_create(ojParser p) {
 
             for (vp = head; kp < d->ktail; kp++, vp += 2) {
                 *vp = d->get_key(p, kp);
-                if (sizeof(kp->buf) <= (size_t)kp->len) {
-                    OJ_R_FREE(kp->key);
-                }
             }
             rb_hash_bulk_insert(d->vtail - head, head, arg);
             obj = rb_funcall(clas, oj_json_create_id, 1, arg);
@@ -383,13 +379,10 @@ static void close_object_create(ojParser p) {
             obj = rb_class_new_instance(0, NULL, clas);
             for (vp = head; kp < d->ktail; kp++, vp += 2) {
                 rb_ivar_set(obj, get_attr_id(p, kp), *(vp + 1));
-                if (sizeof(kp->buf) <= (size_t)kp->len) {
-                    OJ_R_FREE(kp->key);
-                }
             }
         }
     }
-    d->ktail = d->khead + c->ki;
+    pop_keys(d, c->ki);
     d->vtail = head;
     head--;
     *head = obj;
@@ -612,7 +605,7 @@ static void start(ojParser p) {
 
     d->vtail = d->vhead;
     d->ctail = d->chead;
-    d->ktail = d->khead;
+    pop_keys(d, 0);
 }
 
 static void dfree(ojParser p) {
@@ -632,6 +625,7 @@ static void dfree(ojParser p) {
     }
     OJ_R_FREE(d->vhead);
     OJ_R_FREE(d->chead);
+    pop_keys(d, 0);
     OJ_R_FREE(d->khead);
     OJ_R_FREE(d->create_id);
     OJ_R_FREE(p->ctx);
