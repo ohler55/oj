@@ -213,7 +213,13 @@ void oj_reg_odd(VALUE clas, VALUE create_object, VALUE create_method, int mcnt, 
     ID          *ap;
     AttrGetFunc *fp;
 
-    odd       = odd_create();
+    for (int i = 0; i < mcnt; i++) {
+        if (T_STRING != rb_type(members[i]) && T_SYMBOL != rb_type(members[i])) {
+            rb_raise(rb_eArgError, "registered member identifiers must be Strings or Symbols.");
+        }
+    }
+    odd = OJ_R_ALLOC(struct _odd);
+    memset(odd, 0, sizeof(struct _odd));
     odd->clas = clas;
     rb_gc_register_mark_object(odd->clas);
     if (NULL == (odd->classname = OJ_STRDUP(rb_class2name(clas)))) {
@@ -228,22 +234,20 @@ void oj_reg_odd(VALUE clas, VALUE create_object, VALUE create_method, int mcnt, 
     odd->raw       = raw;
     for (ap = odd->attrs, np = odd->attr_names, fp = odd->attrFuncs; 0 < mcnt; mcnt--, ap++, np++, members++, fp++) {
         *fp = 0;
-        switch (rb_type(*members)) {
-        case T_STRING:
+        if (T_STRING == rb_type(*members)) {
             if (NULL == (*np = OJ_STRDUP(RSTRING_PTR(*members)))) {
                 rb_raise(rb_eNoMemError, "for attribute name.");
             }
-            break;
-        case T_SYMBOL:
+        } else {
             // The symbol can move and invalidate the name so make a copy.
             if (NULL == (*np = OJ_STRDUP(rb_id2name(SYM2ID(*members))))) {
                 rb_raise(rb_eNoMemError, "for attribute name.");
             }
-            break;
-        default: rb_raise(rb_eArgError, "registered member identifiers must be Strings or Symbols."); break;
         }
         *ap = rb_intern(*np);
     }
-    *np = 0;
-    *ap = 0;
+    *np       = 0;
+    *ap       = 0;
+    odd->next = odds;
+    odds      = odd;
 }
