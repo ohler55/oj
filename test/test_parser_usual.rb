@@ -171,6 +171,19 @@ class UsualTest < Minitest::Test
     }
   end
 
+  def test_fraction_digits_past_the_limit
+    skip 'too slow under valgrind' if ENV['RUBY_MEMCHECK_RUNNING']
+    skip 'needs over 2GB on TruffleRuby' unless 'ruby' == RUBY_ENGINE
+
+    zeros = '0' * 16_384
+    parts = ['[0.', *([zeros] * 131_072), '12345678901234567890]']
+    reader = Object.new
+    reader.define_singleton_method(:eof?) { parts.empty? }
+    reader.define_singleton_method(:readpartial) { |_size, buf| buf.replace(parts.shift) }
+    e = assert_raises(EncodingError) { Oj::Parser.new(:usual).load(reader) }
+    assert_match(/too many fraction digits/, e.message)
+  end
+
   # The exponent is an int16_t, and it used to be narrowed before it was
   # compared against MAX_EXP, so a wrapped value passed the bound and the
   # digits after the wrap chose the result.

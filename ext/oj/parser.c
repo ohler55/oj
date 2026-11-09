@@ -570,6 +570,10 @@ static void big_change(ojParser p) {
         int shift = p->num.shift;
         int end   = sizeof(buf) - 1;
 
+        if (INT_MAX < p->num.shift) {
+            parse_error(p, "too many fraction digits");
+        }
+
         len = end;
         do {
             buf[--len] = '0' + (i % 10);
