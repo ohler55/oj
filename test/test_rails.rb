@@ -429,4 +429,34 @@ class RailsJuice < Minitest::Test
     assert_predicate(status, :success?, err)
     assert_equal(%({"#{'m' * 5000}":1}), out)
   end
+
+  def test_optimize_after_compaction
+    unless defined?(GC.verify_compaction_references) == 'method' &&
+           Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('3.2.0') &&
+           RbConfig::CONFIG['host_os'] !~ /(mingw|mswin)/
+      skip 'GC compaction is not supported here'
+    end
+
+    lib = File.expand_path('../lib', __dir__)
+    ext = File.expand_path('../ext', __dir__)
+    out, err, status = Open3.capture3(RbConfig.ruby, '-I', ext, '-I', lib, '-e', <<~RUBY)
+      require 'oj'
+      module ActiveRecord
+        class Base
+          def initialize
+            @attributes = {'a' => 1}
+          end
+        end
+      end
+      class First < ActiveRecord::Base; end
+      class Second < ActiveRecord::Base; end
+      Oj::Rails.optimize(First)
+      GC.verify_compaction_references(expand_heap: true, toward: :empty)
+      Oj::Rails.optimize(Second)
+      print Oj::Rails.encode(Second.new)
+    RUBY
+
+    assert_predicate(status, :success?, err)
+    assert_equal('{"a":1}', out)
+  end
 end
