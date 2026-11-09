@@ -212,44 +212,6 @@ static VALUE resolve_classpath(ParseInfo pi, const char *name, size_t len, int a
     return clas;
 }
 
-typedef struct _internArgs {
-    KeyVal      bucket;  // last bucket in the chain for the key's slot
-    const char *key;
-    size_t      len;
-    ParseInfo   pi;
-    int         auto_define;
-    VALUE       error_class;
-} *InternArgs;
-
-// Resolves the class and only then adds it to the cache so a raise while
-// resolving does not leave a key cached with no value.
-static VALUE intern_new_class(VALUE a) {
-    InternArgs args   = (InternArgs)a;
-    KeyVal     bucket = args->bucket;
-    VALUE      clas   = resolve_classpath(args->pi, args->key, args->len, args->auto_define, args->error_class);
-
-    if (Qundef == clas) {
-        return clas;
-    }
-    if (NULL != bucket->key) {  // not the top slot
-        KeyVal b   = (KeyVal)OJ_R_ALLOC_N(char, sizeof(struct _keyVal) + args->len + 1);
-        char  *key = (char *)(b + 1);
-
-        memcpy(key, args->key, args->len);
-        key[args->len] = '\0';
-        b->next        = NULL;
-        b->key         = key;
-        bucket->next   = b;
-        bucket         = b;
-    } else {
-        bucket->key = oj_strndup(args->key, args->len);
-    }
-    bucket->len = args->len;
-    bucket->val = clas;
-
-    return clas;
-}
-
 static KeyVal find_class(KeyVal bucket, const char *key, size_t len, VALUE *clas) {
     if (NULL != bucket->key) {  // not the top slot
         for (KeyVal b = bucket; 0 != b; b = b->next) {
@@ -263,39 +225,71 @@ static KeyVal find_class(KeyVal bucket, const char *key, size_t len, VALUE *clas
     return bucket;
 }
 
-VALUE oj_class_intern(const char *key, size_t len, bool safe, ParseInfo pi, int auto_define, VALUE error_class) {
-    uint64_t           h    = oj_hash_calc((const uint8_t *)key, len) & HASH_MASK;
-    struct _internArgs args = {NULL, key, len, pi, auto_define, error_class};
-    VALUE              clas = Qundef;
-
+static void class_hash_lock(bool safe) {
     if (safe) {
-        int state = 0;
-
 #if HAVE_PTHREAD_MUTEX_INIT
         pthread_mutex_lock(&class_hash.mutex);
 #else
         rb_mutex_lock(class_hash.mutex);
 #endif
-        // Resolving calls into Ruby and allocating, either of which can
-        // raise and unwind past the unlock, so the work is protected and any
-        // exception rethrown after the mutex is released.
-        if (NULL != (args.bucket = find_class(class_hash.slots + h, key, len, &clas))) {
-            clas = rb_protect(intern_new_class, (VALUE)&args, &state);
-        }
+    }
+}
+
+static void class_hash_unlock(bool safe) {
+    if (safe) {
 #if HAVE_PTHREAD_MUTEX_INIT
         pthread_mutex_unlock(&class_hash.mutex);
 #else
         rb_mutex_unlock(class_hash.mutex);
 #endif
-        if (0 != state) {
-            rb_jump_tag(state);
-        }
-    } else if (NULL != (args.bucket = find_class(class_hash.slots + h, key, len, &clas))) {
-        clas = intern_new_class((VALUE)&args);
     }
-    if (NULL != args.bucket && Qundef != clas) {  // newly added to the cache
-        rb_gc_register_mark_object(clas);
+}
+
+// Resolving a class calls into Ruby, where an autoload can load a class with
+// Oj or let another thread run, so the lock is only held to search the cache
+// and to add an entry. Nothing that can raise is called while it is held.
+VALUE oj_class_intern(const char *key, size_t len, bool safe, ParseInfo pi, int auto_define, VALUE error_class) {
+    KeyVal slot  = class_hash.slots + (oj_hash_calc((const uint8_t *)key, len) & HASH_MASK);
+    VALUE  clas  = Qundef;
+    VALUE  found = Qundef;
+    KeyVal bucket;
+    KeyVal b;
+    char  *k;
+
+    class_hash_lock(safe);
+    bucket = find_class(slot, key, len, &clas);
+    class_hash_unlock(safe);
+    if (NULL == bucket) {
+        return clas;
     }
+    if (Qundef == (clas = resolve_classpath(pi, key, len, auto_define, error_class))) {
+        return clas;
+    }
+    k = oj_strndup(key, len);
+    b = OJ_R_ALLOC(struct _keyVal);
+
+    class_hash_lock(safe);
+    if (NULL == (bucket = find_class(slot, key, len, &found))) {
+        class_hash_unlock(safe);
+        OJ_R_FREE(b);
+        OJ_R_FREE(k);
+        return found;
+    }
+    if (NULL != bucket->key) {  // not the top slot
+        bucket->next = b;
+        bucket       = b;
+        b            = NULL;
+    }
+    bucket->next = NULL;
+    bucket->key  = k;
+    bucket->len  = len;
+    bucket->val  = clas;
+    class_hash_unlock(safe);
+    if (NULL != b) {
+        OJ_R_FREE(b);
+    }
+    rb_gc_register_mark_object(clas);
+
     return clas;
 }
 
