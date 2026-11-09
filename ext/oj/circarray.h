@@ -18,5 +18,6 @@ extern CircArray oj_circ_array_new(void);
 extern void      oj_circ_array_free(CircArray ca);
 extern void      oj_circ_array_set(CircArray ca, VALUE obj, unsigned long id);
 extern VALUE     oj_circ_array_get(CircArray ca, unsigned long id);
+extern void      oj_circ_array_mark(CircArray ca);
 
 #endif /* OJ_CIRCARRAY_H */

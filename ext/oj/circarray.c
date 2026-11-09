@@ -66,3 +66,11 @@ oj_circ_array_get(CircArray ca, unsigned long id) {
     }
     return obj;
 }
+
+void oj_circ_array_mark(CircArray ca) {
+    unsigned long i;
+
+    for (i = 0; i < ca->cnt; i++) {
+        rb_gc_mark(ca->objs[i]);
+    }
+}

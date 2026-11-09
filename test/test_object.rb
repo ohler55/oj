@@ -1218,6 +1218,22 @@ class ObjectJuice < Minitest::Test
     assert_equal(obj2.x.__id__, obj2.__id__)
   end
 
+  def test_circular_reference_to_a_replaced_value
+    replaced = (1..10).map { |i| %|"a":{"^o":"ObjectJuice::Jam","^i":#{i},"y":"first"}| }.join(',')
+    pad = Array.new(200) { |i| %|{"^o":"ObjectJuice::Jam","y":#{i}}| }.join(',')
+    refs = (1..10).map { |i| %|"^r#{i}"| }.join(',')
+    json = %|{#{replaced},"a":0,"pad":[#{pad}],"b":[#{refs}]}|
+    [json, StringIO.new(json)].each do |input|
+      GC.stress = true
+      begin
+        obj = Oj.load(input, :mode => :object, :circular => true)
+      ensure
+        GC.stress = false
+      end
+      assert_equal(['first'] * 10, obj['b'].map(&:y))
+    end
+  end
+
   def test_circular
     h = { 'a' => 7 }
     obj = Jeez.new(h, 58)

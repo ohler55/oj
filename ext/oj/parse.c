@@ -1307,7 +1307,7 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
     // freed. We protect against this by wrapping the value stack in a ruby
     // data object and poviding a mark function for ruby objects on the
     // value stack (while it is in scope).
-    wrapped_stack = oj_stack_init(&pi->stack);
+    wrapped_stack = oj_stack_init(&pi->stack, pi->circ_array);
     rb_protect(protect_parse, (VALUE)pi, &line);
     // Only when nothing is on the stack was the input actually empty. A
     // deferred hash (built at its closing brace from buffered pairs) leaves
