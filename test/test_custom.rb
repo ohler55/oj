@@ -147,6 +147,14 @@ class CustomJuice < Minitest::Test
     end
   end
 
+  class OddPath
+    attr_reader :x
+
+    def initialize(x)
+      @x = x
+    end
+  end
+
   def setup
     @default_options = Oj.default_options
     Oj.default_options = { :mode => :custom }
@@ -417,6 +425,17 @@ class CustomJuice < Minitest::Test
     dotted = "itself.#{'c' * 298}"
     Oj.register_odd(OddCompact, OddCompact, :new, :compacted, dotted.to_sym)
     assert_equal(%({"compacted":1,"#{dotted}":2}), Oj.dump(OddCompact.new, mode: :custom))
+  end
+
+  def test_odd_long_dotted_attribute
+    name = 'a' * 300
+    Oj.register_odd(OddPath, OddPath, :new, :"x.#{name}")
+    inner = Object.new
+    inner.define_singleton_method(name) { 1 }
+    assert_equal(%|{"x.#{name}":1}|, Oj.dump(OddPath.new(inner), mode: :custom))
+    broken = Object.new
+    broken.define_singleton_method(name) { raise ArgumentError }
+    assert_raises(ArgumentError) { Oj.dump(OddPath.new(broken), mode: :custom) }
   end
 
   def test_raw_json_negative_indent
