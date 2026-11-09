@@ -156,6 +156,26 @@ class Juice < Minitest::Test
     assert_equal([:quux, :buux], Oj.default_options[:only])
   end
 
+  def test_default_options_after_compaction
+    Oj.default_options = {
+      mode: :compat,
+      create_additions: true,
+      hash_class: Class.new(Hash),
+      array_class: Class.new(Array),
+      ignore: [Class.new],
+      match_string: {Regexp.new('^z') => Class.new.tap { |c| c.define_singleton_method(:json_create, &:upcase) }}
+    }
+    verify_gc_compaction
+
+    obj = Oj.load('{"a":["zzz"]}')
+    assert_equal(Oj.default_options[:hash_class], obj.class)
+    assert_equal(Oj.default_options[:array_class], obj['a'].class)
+    assert_equal('ZZZ', obj['a'][0])
+    assert_equal('{}', Oj.dump({'x' => Oj.default_options[:ignore][0].new}, mode: :custom))
+  ensure
+    Oj.default_options = {match_string: {}}
+  end
+
   def test_nil
     dump_and_load(nil, false)
   end

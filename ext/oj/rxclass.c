@@ -158,3 +158,12 @@ void oj_rxclass_keep(RxClass rc, VALUE keep) {
         }
     }
 }
+
+void oj_rxclass_mark(RxClass rc) {
+    RxC rxc;
+
+    for (rxc = rc->head; NULL != rxc; rxc = rxc->next) {
+        rb_gc_mark(rxc->rrx);
+        rb_gc_mark(rxc->clas);
+    }
+}

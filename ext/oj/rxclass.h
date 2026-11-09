@@ -23,5 +23,6 @@ extern VALUE oj_rxclass_match(RxClass rc, const char *str, size_t len);
 extern void  oj_rxclass_copy(RxClass src, RxClass dest);
 extern void  oj_rxclass_rappend(RxClass rc, VALUE rx, VALUE clas);
 extern void  oj_rxclass_keep(RxClass rc, VALUE keep);
+extern void  oj_rxclass_mark(RxClass rc);
 
 #endif /* OJ_RXCLASS_H */
