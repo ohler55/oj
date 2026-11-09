@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 
+#include "circarray.h"
 #include "mem.h"
 #include "odd.h"
 #include "ruby.h"
@@ -55,9 +56,11 @@ typedef struct _valStack {
     Val    head;  // current stack
     Val    end;   // stack end
     Val    tail;  // pointer to one past last element name on stack
+
+    CircArray circ_array;
 } *ValStack;
 
-extern VALUE oj_stack_init(ValStack stack);
+extern VALUE oj_stack_init(ValStack stack, CircArray circ_array);
 
 inline static int stack_empty(ValStack stack) {
     return (stack->head == stack->tail);

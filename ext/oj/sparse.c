@@ -866,7 +866,7 @@ oj_pi_sparse(int argc, VALUE *argv, ParseInfo pi, int fd) {
     // freed. We protect against this by wrapping the value stack in a ruby
     // data object and providing a mark function for ruby objects on the
     // value stack (while it is in scope).
-    wrapped_stack = oj_stack_init(&pi->stack);
+    wrapped_stack = oj_stack_init(&pi->stack, pi->circ_array);
     rb_protect(protect_parse, (VALUE)pi, &line);
     if (Qundef == pi->stack.head->val && !empty_ok(&pi->options)) {
         oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "Empty input");

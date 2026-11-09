@@ -20,6 +20,9 @@ static void stack_mark(void *ptr) {
             rb_gc_mark(stack->pairs[i]);
         }
     }
+    if (NULL != stack->circ_array) {
+        oj_circ_array_mark(stack->circ_array);
+    }
     for (v = stack->head; v < stack->tail; v++) {
         if (Qnil != v->val && Qundef != v->val) {
             rb_gc_mark(v->val);
@@ -52,13 +55,14 @@ static const rb_data_type_t oj_stack_type = {
 };
 
 VALUE
-oj_stack_init(ValStack stack) {
+oj_stack_init(ValStack stack, CircArray circ_array) {
     stack->head            = stack->base;
     stack->end             = stack->base + sizeof(stack->base) / sizeof(struct _val);
     stack->tail            = stack->head;
     stack->pairs           = stack->pbase;
     stack->pcnt            = 0;
     stack->pend            = sizeof(stack->pbase) / sizeof(VALUE);
+    stack->circ_array      = circ_array;
     stack->head->val       = Qundef;
     stack->head->key       = NULL;
     stack->head->key_val   = Qundef;
