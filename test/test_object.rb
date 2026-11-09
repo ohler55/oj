@@ -269,6 +269,16 @@ class ObjectJuice < Minitest::Test
 
   end # OddCompact
 
+  class OddPath
+
+    attr_reader :x
+
+    def initialize(x)
+      @x = x
+    end
+
+  end # OddPath
+
   def setup
     @default_options = Oj.default_options
   end
@@ -1406,6 +1416,17 @@ class ObjectJuice < Minitest::Test
     dotted = "itself.#{'c' * 298}"
     Oj.register_odd(OddCompact, OddCompact, :new, :compacted, dotted.to_sym)
     assert_equal(%|{"^O":"ObjectJuice::OddCompact","compacted":1,"#{dotted}":2}|, Oj.dump(OddCompact.new, :mode => :object))
+  end
+
+  def test_odd_long_dotted_attribute
+    name = 'a' * 300
+    Oj.register_odd(OddPath, OddPath, :new, :"x.#{name}")
+    inner = Object.new
+    inner.define_singleton_method(name) { 1 }
+    assert_equal(%|{"^O":"ObjectJuice::OddPath","x.#{name}":1}|, Oj.dump(OddPath.new(inner), :mode => :object))
+    broken = Object.new
+    broken.define_singleton_method(name) { raise ArgumentError }
+    assert_raises(ArgumentError) { Oj.dump(OddPath.new(broken), :mode => :object) }
   end
 
   def test_auto_string

@@ -436,32 +436,18 @@ static void dump_odd(VALUE obj, Odd odd, VALUE clas, int depth, Out out) {
             } else if (0 == strchr(name, '.')) {
                 v = rb_funcall(obj, *idp, 0);
             } else {
-                char  nbuf[256];
-                char *n2 = nbuf;
-                char *n;
-                char *end;
-                ID    i;
+                const char *n = name;
+                const char *end;
+                ID          i;
 
-                if (sizeof(nbuf) <= nlen) {
-                    if (NULL == (n2 = OJ_STRDUP(name))) {
-                        rb_raise(rb_eNoMemError, "for attribute name.");
-                    }
-                } else {
-                    strcpy(n2, name);
-                }
-                n = n2;
                 v = obj;
                 while (0 != (end = strchr(n, '.'))) {
-                    *end = '\0';
-                    i    = rb_intern(n);
-                    v    = rb_funcall(v, i, 0);
-                    n    = end + 1;
+                    i = rb_intern2(n, end - n);
+                    v = rb_funcall(v, i, 0);
+                    n = end + 1;
                 }
                 i = rb_intern(n);
                 v = rb_funcall(v, i, 0);
-                if (nbuf != n2) {
-                    OJ_FREE(n2);
-                }
             }
             fill_indent(out, d2);
             oj_dump_cstr(name, nlen, 0, 0, out);
