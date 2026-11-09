@@ -608,15 +608,28 @@ static VALUE get_def_opts(VALUE self) {
  *   - *:trace* [_Boolean_] turn trace on or off.
  *   - *:safe* [_Boolean_] turn safe mimic on or off.
  */
-static ID oj_default_options_keeper_id = 0;
+static ID    oj_default_options_keeper_id = 0;
+static VALUE default_options_marker       = Qnil;
 
-// The default options are a plain C global so the Ruby objects in them, the
-// classes of the hash_class, array_class, and ignore options and the regexps
-// and the classes of the match_string option, can not be reached by the GC and
-// are collected while the defaults still refer to them. Holding them in an
-// array the GC does know about keeps them alive. The array is rebuilt whenever
-// the defaults change and replaces the previous one so that only the objects
-// the defaults are currently using are held.
+static void mark_default_options(void *ptr) {
+    oj_options_mark((Options)ptr);
+    oj_rxclass_mark(&((Options)ptr)->str_rx);
+}
+
+static const rb_data_type_t default_options_type = {
+    "Oj/default_options",
+    {
+        mark_default_options,
+        NULL,
+        NULL,
+    },
+    0,
+    0,
+};
+
+// The mark function of default_options_marker keeps the Ruby objects in the
+// default options alive. Engines that do not call mark functions need them in
+// an array the GC knows about, rebuilt each time the defaults change.
 static void keep_default_options(void) {
     VALUE keep = rb_ary_new();
 
@@ -2368,6 +2381,9 @@ void Init_oj(void) {
 #endif
     Oj = rb_define_module("Oj");
     rb_gc_register_address(&Oj);
+
+    default_options_marker = TypedData_Wrap_Struct(0, &default_options_type, &oj_default_options);
+    rb_gc_register_address(&default_options_marker);
 
     oj_cstack_class = rb_define_class_under(Oj, "CStack", rb_cObject);
     rb_gc_register_address(&oj_cstack_class);
