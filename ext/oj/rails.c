@@ -1287,6 +1287,7 @@ oj_optimize_rails(VALUE self) {
 void oj_mimic_rails_init(void) {
     VALUE rails = rb_define_module_under(Oj, "Rails");
 
+    rb_gc_register_address(&activerecord_base);
     rb_define_module_function(rails, "encode", rails_encode, -1);
 
     encoder_class = rb_define_class_under(rails, "Encoder", rb_cObject);
