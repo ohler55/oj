@@ -279,6 +279,16 @@ class ObjectJuice < Minitest::Test
 
   end # OddPath
 
+  class OddFailedReg
+
+    attr_reader :a
+
+    def initialize(a)
+      @a = a
+    end
+
+  end # OddFailedReg
+
   def setup
     @default_options = Oj.default_options
   end
@@ -1427,6 +1437,15 @@ class ObjectJuice < Minitest::Test
     broken = Object.new
     broken.define_singleton_method(name) { raise ArgumentError }
     assert_raises(ArgumentError) { Oj.dump(OddPath.new(broken), :mode => :object) }
+  end
+
+  def test_odd_failed_register_keeps_the_earlier_one
+    Oj.register_odd(OddFailedReg, OddFailedReg, :new, :a)
+    json = %|{"^O":"ObjectJuice::OddFailedReg","a":1}|
+    assert_raises(ArgumentError) { Oj.register_odd_raw(OddFailedReg, OddFailedReg, :new, 1) }
+    assert_equal(json, Oj.dump(OddFailedReg.new(1), :mode => :object))
+    assert_raises(ArgumentError) { Oj.register_odd(OddFailedReg, OddFailedReg, :new, :a, 1) }
+    assert_equal(1, Oj.load(json, :mode => :object).a)
   end
 
   def test_auto_string
