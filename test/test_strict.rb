@@ -29,6 +29,20 @@ class StrictJuice < Minitest::Test
     end
   end
 
+  class Pairs
+    def initialize
+      @pairs = []
+    end
+
+    def []=(key, value)
+      @pairs << [key, value]
+    end
+
+    def to_a
+      @pairs.map { |k, v| [k, v.is_a?(Pairs) ? v.to_a : v] }
+    end
+  end
+
   def setup
     @default_options = Oj.default_options
     # in strict mode other options other than the number formats are not used.
@@ -556,6 +570,18 @@ class StrictJuice < Minitest::Test
         assert_equal(obj, Oj.load(Oj.dump(obj, mode: :strict, indent: "\t" * 8), mode: :strict))
       end
     end
+  end
+
+  def test_hash_class_not_a_hash
+    json = '{"a":1,"b":"x","c":{"d":true}}'
+    expect = [['a', 1], ['b', 'x'], ['c', [['d', true]]]]
+    assert_equal(expect, Oj.load(json, mode: :strict, hash_class: Pairs).to_a)
+    assert_equal(expect, Oj.load(json, mode: :null, hash_class: Pairs).to_a)
+    assert_equal(expect, Oj.load(StringIO.new(json), mode: :strict, hash_class: Pairs).to_a)
+    assert_raises(NoMethodError) { Oj.load(json, mode: :strict, hash_class: Class.new) }
+
+    Oj.default_options = { hash_class: Pairs }
+    assert_equal(expect, Oj.safe_load(json).to_a)
   end
 
   def dump_and_load(obj, trace=false)

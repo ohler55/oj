@@ -117,6 +117,15 @@ static inline void oj_compat_array_append(VALUE a, VALUE value) {
     }
 }
 
+// A :hash_class that is not a Hash has no RHash to write into.
+static inline void oj_hash_aset(VALUE h, VALUE key, VALUE value) {
+    if (T_HASH == rb_type(h)) {
+        rb_hash_aset(h, key, value);
+    } else {
+        rb_funcall(h, rb_intern("[]="), 2, key, value);
+    }
+}
+
 static inline bool empty_ok(Options options) {
     switch (options->mode) {
     case ObjectMode:

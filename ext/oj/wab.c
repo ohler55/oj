@@ -480,7 +480,7 @@ static VALUE start_hash(ParseInfo pi) {
 static void hash_set_cstr(ParseInfo pi, Val parent, const char *str, size_t len, const char *orig) {
     volatile VALUE rval = cstr_to_rstr(pi, str, len);
 
-    rb_hash_aset(stack_peek(&pi->stack)->val, calc_hash_key(pi, parent), rval);
+    oj_hash_aset(stack_peek(&pi->stack)->val, calc_hash_key(pi, parent), rval);
     TRACE_PARSE_CALL(pi->options.trace, "set_string", pi, rval);
 }
 
@@ -491,12 +491,12 @@ static void hash_set_num(ParseInfo pi, Val parent, NumInfo ni) {
         oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "not a number or other value");
     }
     rval = oj_num_as_value(ni);
-    rb_hash_aset(stack_peek(&pi->stack)->val, calc_hash_key(pi, parent), rval);
+    oj_hash_aset(stack_peek(&pi->stack)->val, calc_hash_key(pi, parent), rval);
     TRACE_PARSE_CALL(pi->options.trace, "set_number", pi, rval);
 }
 
 static void hash_set_value(ParseInfo pi, Val parent, VALUE value) {
-    rb_hash_aset(stack_peek(&pi->stack)->val, calc_hash_key(pi, parent), value);
+    oj_hash_aset(stack_peek(&pi->stack)->val, calc_hash_key(pi, parent), value);
     TRACE_PARSE_CALL(pi->options.trace, "set_value", pi, value);
 }
 
