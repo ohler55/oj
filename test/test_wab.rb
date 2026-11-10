@@ -40,6 +40,20 @@ class WabJuice < Minitest::Test
   module TestModule
   end
 
+  class Pairs
+    def initialize
+      @pairs = []
+    end
+
+    def []=(key, value)
+      @pairs << [key, value]
+    end
+
+    def to_a
+      @pairs.map { |k, v| [k, v.is_a?(Pairs) ? v.to_a : v] }
+    end
+  end
+
   def test_nil
     dump_and_load(nil, false)
   end
@@ -318,6 +332,12 @@ class WabJuice < Minitest::Test
     Oj.load(json, :mode => :wab) { |x| results << x }
 
     assert_equal([{ x: 1 }, { y: 2 }], results)
+  end
+
+  def test_hash_class_not_a_hash
+    json = '{"a":1,"b":"x","c":{"d":true}}'
+    assert_equal([[:a, 1], [:b, 'x'], [:c, [[:d, true]]]], Oj.load(json, mode: :wab, hash_class: Pairs).to_a)
+    assert_raises(NoMethodError) { Oj.load(json, mode: :wab, hash_class: Class.new) }
   end
 
   def dump_and_load(obj, trace=false)

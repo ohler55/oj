@@ -117,7 +117,7 @@ static void hash_set_cstr(ParseInfo pi, Val parent, const char *str, size_t len,
         stack_pair_push(&pi->stack, oj_calc_hash_key(pi, parent), rstr);
         parent->pcnt += 2;
     } else {
-        rb_hash_aset(stack_peek(&pi->stack)->val, oj_calc_hash_key(pi, parent), rstr);
+        oj_hash_aset(stack_peek(&pi->stack)->val, oj_calc_hash_key(pi, parent), rstr);
     }
     TRACE_PARSE_CALL(pi->options.trace, "set_string", pi, rstr);
 }
@@ -133,7 +133,7 @@ static void hash_set_num(ParseInfo pi, Val parent, NumInfo ni) {
         stack_pair_push(&pi->stack, oj_calc_hash_key(pi, parent), v);
         parent->pcnt += 2;
     } else {
-        rb_hash_aset(stack_peek(&pi->stack)->val, oj_calc_hash_key(pi, parent), v);
+        oj_hash_aset(stack_peek(&pi->stack)->val, oj_calc_hash_key(pi, parent), v);
     }
     TRACE_PARSE_CALL(pi->options.trace, "set_number", pi, v);
 }
@@ -143,7 +143,7 @@ static void hash_set_value(ParseInfo pi, Val parent, VALUE value) {
         stack_pair_push(&pi->stack, oj_calc_hash_key(pi, parent), value);
         parent->pcnt += 2;
     } else {
-        rb_hash_aset(stack_peek(&pi->stack)->val, oj_calc_hash_key(pi, parent), value);
+        oj_hash_aset(stack_peek(&pi->stack)->val, oj_calc_hash_key(pi, parent), value);
     }
     TRACE_PARSE_CALL(pi->options.trace, "set_value", pi, value);
 }
