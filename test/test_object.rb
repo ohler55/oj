@@ -909,6 +909,48 @@ class ObjectJuice < Minitest::Test
     end
   end
 
+  def test_class_cache_is_not_locked_while_resolving
+    Dir.mktmpdir do |dir|
+      nested = File.join(dir, 'nested.rb')
+      File.write(nested, <<~RUBY)
+        class Inner; end
+        Oj.load('{"^o":"Inner"}', mode: :object, class_cache: true)
+        class Nested; end
+        Oj.load('{"^o":"Nested"}', mode: :object, class_cache: true)
+      RUBY
+      slow = File.join(dir, 'slow.rb')
+      File.write(slow, <<~RUBY)
+        $loading = true
+        sleep 0.1 until $loaded
+        class Slow; end
+      RUBY
+      script = <<~RUBY
+        require 'oj'
+        class Other; end
+        autoload :Nested, #{nested.inspect}
+        autoload :Slow, #{slow.inspect}
+        print Oj.load('{"^o":"Nested"}', mode: :object, class_cache: true).class
+        thread = Thread.new { Oj.load('{"^o":"Slow"}', mode: :object, class_cache: true).class }
+        sleep 0.01 until $loading || !thread.alive?
+        print Oj.load('{"^o":"Other"}', mode: :object, class_cache: true).class
+        $loaded = true
+        print thread.value
+      RUBY
+      lib = [File.expand_path('../ext', __dir__), File.expand_path('../lib', __dir__)]
+      cmd = [RbConfig.ruby, *lib.flat_map { |d| ['-I', d] }, '-e', script]
+      err = File.join(dir, 'stderr')
+      IO.popen(cmd, err: err) do |io|
+        out = nil
+        reader = Thread.new { out = io.read }
+        unless reader.join(60)
+          Process.kill(:KILL, io.pid)
+          flunk("class cache mutex was held while a class was resolved\n#{File.read(err)}")
+        end
+        assert_equal('NestedOtherSlow', out, File.read(err))
+      end
+    end
+  end
+
   # oj_set_error_at() reserved three bytes for the " (after " it then wrote
   # eight of, so a class name long enough to put the formatted message in that
   # window wrote past the end of its 256 byte buffer.
