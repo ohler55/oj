@@ -1151,6 +1151,7 @@ class ObjectJuice < Minitest::Test
 
   def test_invalid_utf8_attribute_name
     assert_raises(EncodingError) { Oj.load(%({"^o":"Object","\xFFab":1}).b, mode: :object) }
+    assert_raises(EncodingError) { Oj.load(%({"^o":"Object","\xFFab":"\\n#{'a' * 2000}"}).b, mode: :object) }
   end
 
   def test_long_attribute_names
