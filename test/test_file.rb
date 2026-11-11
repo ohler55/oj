@@ -338,6 +338,19 @@ class FileJuice < Minitest::Test
     end
   end
 
+  # A key of 32 bytes or more read from a file is copied to the heap until its
+  # value is set.
+  def test_load_file_parse_error_after_a_long_key
+    ['', ']'].each do |rest|
+      Tempfile.create('file_test_long_key.json') do |f|
+        f.write(%({"#{'k' * 100}":#{rest}))
+        f.close
+
+        assert_raises(Oj::ParseError) { Oj.load_file(f.path, mode: :strict) }
+      end
+    end
+  end
+
   def test_path_with_nul
     Dir.mktmpdir do |dir|
       path = File.join(dir, 'nul.json')

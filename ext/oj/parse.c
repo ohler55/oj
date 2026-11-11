@@ -12,6 +12,7 @@
 
 #include "buf.h"
 #include "encode.h"
+#include "intern.h"
 #include "mem.h"
 #include "oj.h"
 #include "rxclass.h"
@@ -79,9 +80,10 @@ static void add_value(ParseInfo pi, VALUE rval) {
             break;
         case NEXT_HASH_VALUE:
             pi->hash_set_value(pi, parent, rval);
-            if (0 != parent->key && 0 < parent->klen && (parent->key < pi->json || pi->cur < parent->key)) {
+            if (parent->kalloc) {
                 OJ_R_FREE((char *)parent->key);
-                parent->key = 0;
+                parent->key    = 0;
+                parent->kalloc = 0;
             }
             parent->next = NEXT_HASH_COMMA;
             break;
@@ -521,22 +523,23 @@ static void read_escaped_str(ParseInfo pi, const char *start) {
         case NEXT_HASH_NEW:
         case NEXT_HASH_KEY:
             if (Qundef == (parent->key_val = pi->hash_key(pi, buf->head, buf_len(buf)))) {
-                parent->klen = buf_len(buf);
-                parent->key  = OJ_MALLOC(parent->klen + 1);
-                memcpy((char *)parent->key, buf->head, parent->klen);
-                *(char *)(parent->key + parent->klen) = '\0';
+                parent->klen   = buf_len(buf);
+                parent->key    = oj_strndup(buf->head, parent->klen);
+                parent->kalloc = 1;
             } else {
-                parent->key  = "";
-                parent->klen = 0;
+                parent->key    = "";
+                parent->klen   = 0;
+                parent->kalloc = 0;
             }
             parent->k1   = *start;
             parent->next = NEXT_HASH_COLON;
             break;
         case NEXT_HASH_VALUE:
             pi->hash_set_cstr(pi, parent, buf->head, buf_len(buf), start);
-            if (0 != parent->key && 0 < parent->klen && (parent->key < pi->json || pi->cur < parent->key)) {
+            if (parent->kalloc) {
                 OJ_R_FREE((char *)parent->key);
-                parent->key = 0;
+                parent->key    = 0;
+                parent->kalloc = 0;
             }
             parent->next = NEXT_HASH_COMMA;
             break;
@@ -598,20 +601,23 @@ static void read_str(ParseInfo pi) {
         case NEXT_HASH_NEW:
         case NEXT_HASH_KEY:
             if (Qundef == (parent->key_val = pi->hash_key(pi, str, pi->cur - str))) {
-                parent->key  = str;
-                parent->klen = pi->cur - str;
+                parent->key    = str;
+                parent->klen   = pi->cur - str;
+                parent->kalloc = 0;
             } else {
-                parent->key  = "";
-                parent->klen = 0;
+                parent->key    = "";
+                parent->klen   = 0;
+                parent->kalloc = 0;
             }
             parent->k1   = *str;
             parent->next = NEXT_HASH_COLON;
             break;
         case NEXT_HASH_VALUE:
             pi->hash_set_cstr(pi, parent, str, pi->cur - str, str);
-            if (0 != parent->key && 0 < parent->klen && (parent->key < pi->json || pi->cur < parent->key)) {
+            if (parent->kalloc) {
                 OJ_R_FREE((char *)parent->key);
-                parent->key = 0;
+                parent->key    = 0;
+                parent->kalloc = 0;
             }
             parent->next = NEXT_HASH_COMMA;
             break;
@@ -792,9 +798,10 @@ static void read_num(ParseInfo pi) {
             break;
         case NEXT_HASH_VALUE:
             pi->hash_set_num(pi, parent, &ni);
-            if (0 != parent->key && 0 < parent->klen && (parent->key < pi->json || pi->cur < parent->key)) {
+            if (parent->kalloc) {
                 OJ_R_FREE((char *)parent->key);
-                parent->key = 0;
+                parent->key    = 0;
+                parent->kalloc = 0;
             }
             parent->next = NEXT_HASH_COMMA;
             break;
@@ -817,8 +824,9 @@ static void array_start(ParseInfo pi) {
 }
 
 static void array_end(ParseInfo pi) {
-    Val array = stack_pop(&pi->stack);
+    Val array = stack_peek(&pi->stack);
 
+    // A mismatched close leaves the entry on the stack for stack_cleanup().
     if (0 == array) {
         oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "unexpected array close");
     } else if (NEXT_ARRAY_COMMA != array->next && NEXT_ARRAY_NEW != array->next) {
@@ -829,6 +837,7 @@ static void array_end(ParseInfo pi) {
                         "expected %s, not an array close",
                         oj_stack_next_string(array->next));
     } else {
+        stack_pop(&pi->stack);
         pi->end_array(pi);
         add_value(pi, array->val);
     }
