@@ -43,6 +43,26 @@ class StrictJuice < Minitest::Test
     end
   end
 
+  class RaisingPairs
+    def []=(_key, _value)
+      raise ArgumentError, 'rejected'
+    end
+  end
+
+  class OneReadIO
+    def initialize(data)
+      @data = data
+    end
+
+    def read(_size)
+      raise IOError, 'closed' if @data.nil?
+
+      data = @data
+      @data = nil
+      data
+    end
+  end
+
   def setup
     @default_options = Oj.default_options
     # in strict mode other options other than the number formats are not used.
@@ -582,6 +602,14 @@ class StrictJuice < Minitest::Test
 
     Oj.default_options = { hash_class: Pairs }
     assert_equal(expect, Oj.safe_load(json).to_a)
+  end
+
+  # An escaped string over 1 KiB is unescaped in a heap buffer.
+  def test_raise_after_long_escaped_string
+    json = %({"k":"\\n#{'a' * 2000}"})
+    assert_raises(ArgumentError) { Oj.load(json, mode: :strict, hash_class: RaisingPairs) }
+    assert_raises(ArgumentError) { Oj.load(OneReadIO.new(json), mode: :strict, hash_class: RaisingPairs) }
+    assert_raises(IOError) { Oj.load(OneReadIO.new(json[0, 1500]), mode: :strict) }
   end
 
   def dump_and_load(obj, trace=false)

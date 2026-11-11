@@ -418,21 +418,20 @@ static const char *find_control_char(const char *s, const char *end) {
 
 // entered at /
 static void read_escaped_str(ParseInfo pi, const char *start) {
-    struct _buf buf;
+    Buf         buf = pi->esc_buf;
     const char *s;
     size_t      cnt = pi->cur - start;
     uint32_t    code;
     Val         parent = stack_peek(&pi->stack);
 
-    buf_init(&buf);
-    buf_append_string(&buf, start, cnt);
+    buf_reset(buf);
+    buf_append_string(buf, start, cnt);
 
     for (s = pi->cur; '"' != *s;) {
         const char *scanned = scan_func(s, pi->end);
         if (scanned >= pi->end || '\0' == *scanned) {
             // if (scanned >= pi->end) {
             oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "quoted string not terminated");
-            buf_cleanup(&buf);
             return;
         }
         if (reject_control_chars(pi)) {
@@ -441,33 +440,30 @@ static void read_escaped_str(ParseInfo pi, const char *start) {
             if (NULL != ctrl) {
                 pi->cur = ctrl;
                 oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "invalid control character in string");
-                buf_cleanup(&buf);
                 return;
             }
         }
-        buf_append_string(&buf, s, (size_t)(scanned - s));
+        buf_append_string(buf, s, (size_t)(scanned - s));
         s = scanned;
 
         if ('\\' == *s) {
             s++;
             if (pi->end <= s) {
                 oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "quoted string not terminated");
-                buf_cleanup(&buf);
                 return;
             }
             switch (*s) {
-            case 'n': buf_append(&buf, '\n'); break;
-            case 'r': buf_append(&buf, '\r'); break;
-            case 't': buf_append(&buf, '\t'); break;
-            case 'f': buf_append(&buf, '\f'); break;
-            case 'b': buf_append(&buf, '\b'); break;
-            case '"': buf_append(&buf, '"'); break;
-            case '/': buf_append(&buf, '/'); break;
-            case '\\': buf_append(&buf, '\\'); break;
+            case 'n': buf_append(buf, '\n'); break;
+            case 'r': buf_append(buf, '\r'); break;
+            case 't': buf_append(buf, '\t'); break;
+            case 'f': buf_append(buf, '\f'); break;
+            case 'b': buf_append(buf, '\b'); break;
+            case '"': buf_append(buf, '"'); break;
+            case '/': buf_append(buf, '/'); break;
+            case '\\': buf_append(buf, '\\'); break;
             case 'u':
                 s++;
                 if (0 == (code = read_hex(pi, s)) && err_has(&pi->err)) {
-                    buf_cleanup(&buf);
                     return;
                 }
                 s += 3;
@@ -479,26 +475,23 @@ static void read_escaped_str(ParseInfo pi, const char *start) {
                     if ('\\' != *s || 'u' != *(s + 1)) {
                         if (Yes == pi->options.allow_invalid) {
                             s--;
-                            unicode_to_chars(pi, &buf, code);
+                            unicode_to_chars(pi, buf, code);
                             break;
                         }
                         pi->cur = s;
                         oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "invalid escaped character");
-                        buf_cleanup(&buf);
                         return;
                     }
                     s += 2;
                     if (0 == (c2 = read_hex(pi, s)) && err_has(&pi->err)) {
-                        buf_cleanup(&buf);
                         return;
                     }
                     s += 3;
                     c2   = (c2 - 0x0000DC00) & 0x000003FF;
                     code = ((c1 << 10) | c2) + 0x00010000;
                 }
-                unicode_to_chars(pi, &buf, code);
+                unicode_to_chars(pi, buf, code);
                 if (err_has(&pi->err)) {
-                    buf_cleanup(&buf);
                     return;
                 }
                 break;
@@ -506,32 +499,31 @@ static void read_escaped_str(ParseInfo pi, const char *start) {
                 // The json gem claims this is not an error despite the
                 // ECMA-404 indicating it is not valid.
                 if (CompatMode == pi->options.mode) {
-                    buf_append(&buf, *s);
+                    buf_append(buf, *s);
                     break;
                 }
                 pi->cur = s;
                 oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "invalid escaped character");
-                buf_cleanup(&buf);
                 return;
             }
             s++;
         }
     }
     if (0 == parent) {
-        pi->add_cstr(pi, buf.head, buf_len(&buf), start);
+        pi->add_cstr(pi, buf->head, buf_len(buf), start);
     } else {
         switch (parent->next) {
         case NEXT_ARRAY_NEW:
         case NEXT_ARRAY_ELEMENT:
-            pi->array_append_cstr(pi, buf.head, buf_len(&buf), start);
+            pi->array_append_cstr(pi, buf->head, buf_len(buf), start);
             parent->next = NEXT_ARRAY_COMMA;
             break;
         case NEXT_HASH_NEW:
         case NEXT_HASH_KEY:
-            if (Qundef == (parent->key_val = pi->hash_key(pi, buf.head, buf_len(&buf)))) {
-                parent->klen = buf_len(&buf);
+            if (Qundef == (parent->key_val = pi->hash_key(pi, buf->head, buf_len(buf)))) {
+                parent->klen = buf_len(buf);
                 parent->key  = OJ_MALLOC(parent->klen + 1);
-                memcpy((char *)parent->key, buf.head, parent->klen);
+                memcpy((char *)parent->key, buf->head, parent->klen);
                 *(char *)(parent->key + parent->klen) = '\0';
             } else {
                 parent->key  = "";
@@ -541,7 +533,7 @@ static void read_escaped_str(ParseInfo pi, const char *start) {
             parent->next = NEXT_HASH_COLON;
             break;
         case NEXT_HASH_VALUE:
-            pi->hash_set_cstr(pi, parent, buf.head, buf_len(&buf), start);
+            pi->hash_set_cstr(pi, parent, buf->head, buf_len(buf), start);
             if (0 != parent->key && 0 < parent->klen && (parent->key < pi->json || pi->cur < parent->key)) {
                 OJ_R_FREE((char *)parent->key);
                 parent->key = 0;
@@ -563,7 +555,8 @@ static void read_escaped_str(ParseInfo pi, const char *start) {
         }
     }
     pi->cur = s + 1;
-    buf_cleanup(&buf);
+    buf_cleanup(buf);
+    buf_init(buf);
 }
 
 static void read_str(ParseInfo pi) {
@@ -1208,12 +1201,13 @@ static void oj_pi_set_input_str(ParseInfo pi, VALUE *inputp) {
 
 VALUE
 oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yieldOk) {
-    char *buf = 0;
-    VALUE input;
-    VALUE wrapped_stack;
-    VALUE result    = Qnil;
-    int   line      = 0;
-    int   free_json = 0;
+    char       *buf = 0;
+    VALUE       input;
+    VALUE       wrapped_stack;
+    VALUE       result    = Qnil;
+    int         line      = 0;
+    int         free_json = 0;
+    struct _buf esc_buf;
 
     if (argc < 1) {
         rb_raise(rb_eArgError, "Wrong number of arguments to parse.");
@@ -1308,6 +1302,8 @@ oj_pi_parse(int argc, VALUE *argv, ParseInfo pi, char *json, size_t len, int yie
     // data object and poviding a mark function for ruby objects on the
     // value stack (while it is in scope).
     wrapped_stack = oj_stack_init(&pi->stack, pi->circ_array);
+    buf_init(&esc_buf);
+    pi->esc_buf = &esc_buf;
     rb_protect(protect_parse, (VALUE)pi, &line);
     // Only when nothing is on the stack was the input actually empty. A
     // deferred hash (built at its closing brace from buffered pairs) leaves
@@ -1364,6 +1360,7 @@ CLEANUP:
     } else if (free_json) {
         OJ_R_FREE(json);
     }
+    buf_cleanup(&esc_buf);
     stack_cleanup(&pi->stack);
     // The parsers match against pi->options.str_rx. A :match_string option
     // builds a chain of its own for this call, which has to be freed. Without

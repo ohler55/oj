@@ -202,34 +202,32 @@ static void unicode_to_chars(ParseInfo pi, Buf buf, uint32_t code) {
 
 // entered at backslash
 static void read_escaped_str(ParseInfo pi) {
-    struct _buf buf;
-    char        c;
-    uint32_t    code;
-    Val         parent = stack_peek(&pi->stack);
+    Buf      buf = pi->esc_buf;
+    char     c;
+    uint32_t code;
+    Val      parent = stack_peek(&pi->stack);
 
-    buf_init(&buf);
+    buf_reset(buf);
     if (pi->rd.str < pi->rd.tail) {
-        buf_append_string(&buf, pi->rd.str, pi->rd.tail - pi->rd.str);
+        buf_append_string(buf, pi->rd.str, pi->rd.tail - pi->rd.str);
     }
     while ('\"' != (c = reader_get(&pi->rd))) {
         if ('\0' == c) {
             oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "quoted string not terminated");
-            buf_cleanup(&buf);
             return;
         } else if ('\\' == c) {
             c = reader_get(&pi->rd);
             switch (c) {
-            case 'n': buf_append(&buf, '\n'); break;
-            case 'r': buf_append(&buf, '\r'); break;
-            case 't': buf_append(&buf, '\t'); break;
-            case 'f': buf_append(&buf, '\f'); break;
-            case 'b': buf_append(&buf, '\b'); break;
-            case '"': buf_append(&buf, '"'); break;
-            case '/': buf_append(&buf, '/'); break;
-            case '\\': buf_append(&buf, '\\'); break;
+            case 'n': buf_append(buf, '\n'); break;
+            case 'r': buf_append(buf, '\r'); break;
+            case 't': buf_append(buf, '\t'); break;
+            case 'f': buf_append(buf, '\f'); break;
+            case 'b': buf_append(buf, '\b'); break;
+            case '"': buf_append(buf, '"'); break;
+            case '/': buf_append(buf, '/'); break;
+            case '\\': buf_append(buf, '\\'); break;
             case 'u':
                 if (0 == (code = read_hex(pi)) && err_has(&pi->err)) {
-                    buf_cleanup(&buf);
                     return;
                 }
                 if (0x0000D800 <= code && code <= 0x0000DFFF) {
@@ -241,25 +239,22 @@ static void read_escaped_str(ParseInfo pi) {
                     ch2 = reader_get(&pi->rd);
                     if ('\\' != c || 'u' != ch2) {
                         if (Yes == pi->options.allow_invalid) {
-                            unicode_to_chars(pi, &buf, code);
+                            unicode_to_chars(pi, buf, code);
                             reader_backup(&pi->rd);
                             reader_backup(&pi->rd);
                             break;
                         }
                         oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "invalid escaped character");
-                        buf_cleanup(&buf);
                         return;
                     }
                     if (0 == (c2 = read_hex(pi)) && err_has(&pi->err)) {
-                        buf_cleanup(&buf);
                         return;
                     }
                     c2   = (c2 - 0x0000DC00) & 0x000003FF;
                     code = ((c1 << 10) | c2) + 0x00010000;
                 }
-                unicode_to_chars(pi, &buf, code);
+                unicode_to_chars(pi, buf, code);
                 if (err_has(&pi->err)) {
-                    buf_cleanup(&buf);
                     return;
                 }
                 break;
@@ -267,35 +262,33 @@ static void read_escaped_str(ParseInfo pi) {
                 // The json gem claims this is not an error despite the
                 // ECMA-404 indicating it is not valid.
                 if (CompatMode == pi->options.mode) {
-                    buf_append(&buf, c);
+                    buf_append(buf, c);
                     break;
                 }
                 oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "invalid escaped character");
-                buf_cleanup(&buf);
                 return;
             }
         } else if ((unsigned char)c < 0x20 && (StrictMode == pi->options.mode || CompatMode == pi->options.mode)) {
             oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "invalid control character in string");
-            buf_cleanup(&buf);
             return;
         } else {
-            buf_append(&buf, c);
+            buf_append(buf, c);
         }
     }
     if (0 == parent) {
-        pi->add_cstr(pi, buf.head, buf_len(&buf), pi->rd.str);
+        pi->add_cstr(pi, buf->head, buf_len(buf), pi->rd.str);
     } else {
         switch (parent->next) {
         case NEXT_ARRAY_NEW:
         case NEXT_ARRAY_ELEMENT:
-            pi->array_append_cstr(pi, buf.head, buf_len(&buf), pi->rd.str);
+            pi->array_append_cstr(pi, buf->head, buf_len(buf), pi->rd.str);
             parent->next = NEXT_ARRAY_COMMA;
             break;
         case NEXT_HASH_NEW:
         case NEXT_HASH_KEY:
-            if (Qundef == (parent->key_val = pi->hash_key(pi, buf.head, buf_len(&buf)))) {
-                parent->klen   = buf_len(&buf);
-                parent->key    = oj_strndup(buf.head, parent->klen);
+            if (Qundef == (parent->key_val = pi->hash_key(pi, buf->head, buf_len(buf)))) {
+                parent->klen   = buf_len(buf);
+                parent->key    = oj_strndup(buf->head, parent->klen);
                 parent->kalloc = 1;
             } else {
                 parent->key    = "";
@@ -306,7 +299,7 @@ static void read_escaped_str(ParseInfo pi) {
             parent->next = NEXT_HASH_COLON;
             break;
         case NEXT_HASH_VALUE:
-            pi->hash_set_cstr(pi, parent, buf.head, buf_len(&buf), pi->rd.str);
+            pi->hash_set_cstr(pi, parent, buf->head, buf_len(buf), pi->rd.str);
             if (parent->kalloc) {
                 OJ_R_FREE((char *)parent->key);
             }
@@ -328,7 +321,8 @@ static void read_escaped_str(ParseInfo pi) {
             break;
         }
     }
-    buf_cleanup(&buf);
+    buf_cleanup(buf);
+    buf_init(buf);
 }
 
 static void read_str(ParseInfo pi) {
@@ -824,6 +818,7 @@ oj_pi_sparse(int argc, VALUE *argv, ParseInfo pi, int fd) {
     volatile VALUE wrapped_stack;
     VALUE          result = Qnil;
     int            line   = 0;
+    struct _buf    esc_buf;
 
     if (argc < 1) {
         rb_raise(rb_eArgError, "Wrong number of arguments to parse.");
@@ -867,6 +862,8 @@ oj_pi_sparse(int argc, VALUE *argv, ParseInfo pi, int fd) {
     // data object and providing a mark function for ruby objects on the
     // value stack (while it is in scope).
     wrapped_stack = oj_stack_init(&pi->stack, pi->circ_array);
+    buf_init(&esc_buf);
+    pi->esc_buf = &esc_buf;
     rb_protect(protect_parse, (VALUE)pi, &line);
     if (Qundef == pi->stack.head->val && !empty_ok(&pi->options)) {
         oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "Empty input");
@@ -914,6 +911,7 @@ CLEANUP:
         oj_circ_array_free(pi->circ_array);
     }
     reader_cleanup(&pi->rd);
+    buf_cleanup(&esc_buf);
     stack_cleanup(&pi->stack);
     // A :match_string option builds a chain of regexps for this call that has to
     // be freed. Without the option the member aliases the chain owned by the

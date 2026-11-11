@@ -71,6 +71,10 @@ typedef struct _parseInfo {
     void (*add_value)(struct _parseInfo *pi, VALUE val);
     VALUE err_class;
     bool  has_callbacks;
+    // read_escaped_str() frees the heap part after each string, before a
+    // document block can suspend the fiber indefinitely. If an error or an
+    // exception cuts a string short, oj_pi_parse() or oj_pi_sparse() frees it.
+    struct _buf *esc_buf;
 } *ParseInfo;
 
 extern void  oj_parse2(ParseInfo pi);
