@@ -413,6 +413,21 @@ class CompatJuice < Minitest::Test
     assert_match(/quoted string not terminated/, err.message)
   end
 
+  # A key with an escape is copied to the heap until its value is set.
+  def test_parse_error_after_an_escaped_key
+    ['', ']'].each do |rest|
+      assert_raises(EncodingError) { Oj.load(%({"\\n#{'k' * 100}":#{rest}), mode: :compat) }
+    end
+  end
+
+  # The create_id value is copied to the heap until the object is closed.
+  def test_parse_error_after_the_create_id
+    ['', ']'].each do |rest|
+      json = %({"json_class":"#{'C' * 100}"#{rest})
+      assert_raises(EncodingError) { Oj.load(json, mode: :compat, create_additions: true) }
+    end
+  end
+
   def test_hash_escaping
     json = Oj.to_json({'<>' => '<>'}, mode: :compat)
     assert_equal('{"<>":"<>"}', json)

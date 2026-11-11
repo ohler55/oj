@@ -69,12 +69,22 @@ inline static int stack_empty(ValStack stack) {
 inline static void stack_cleanup(ValStack stack) {
     Val v;
 
-    // end_hash() frees the args of a completed odd class. Anything still here
-    // belongs to a parse that was abandoned part way through.
+    // Setting a value frees its key copy. The end_hash() callbacks free the odd
+    // class args and the create_id class name. Any copies or args still on the
+    // stack need cleanup if parsing stops early.
     for (v = stack->head; v < stack->tail; v++) {
         if (NULL != v->odd_args) {
             oj_odd_free(v->odd_args);
             v->odd_args = NULL;
+        }
+        if (v->kalloc) {
+            OJ_R_FREE((char *)v->key);
+            v->key    = NULL;
+            v->kalloc = 0;
+        }
+        if (NULL != v->classname) {
+            OJ_R_FREE((char *)v->classname);
+            v->classname = NULL;
         }
     }
     if (stack->base != stack->head) {
