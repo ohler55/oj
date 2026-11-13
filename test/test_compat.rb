@@ -428,6 +428,13 @@ class CompatJuice < Minitest::Test
     end
   end
 
+  # The second create_id frees the class name copied for the first. Without
+  # that, valgrind reports the copy as lost.
+  def test_json_object_duplicate_create_id
+    json = %({"json_class":"#{'C' * 100}","json_class":"CompatJuice::Jeez","x":true,"y":58})
+    assert_equal(Jeez.new(true, 58), Oj.load(json, mode: :compat, create_additions: true))
+  end
+
   def test_hash_escaping
     json = Oj.to_json({'<>' => '<>'}, mode: :compat)
     assert_equal('{"<>":"<>"}', json)
