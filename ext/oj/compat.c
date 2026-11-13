@@ -20,6 +20,10 @@ static void hash_set_cstr(ParseInfo pi, Val kval, const char *str, size_t len, c
     if (Qundef == kval->key_val && Yes == pi->options.create_ok && NULL != pi->options.create_id &&
         *pi->options.create_id == *key && (size_t)pi->options.create_id_len == klen &&
         0 == strncmp(pi->options.create_id, key, klen)) {
+        if (NULL != parent->classname) {
+            OJ_R_FREE((char *)parent->classname);
+            parent->classname = NULL;
+        }
         parent->classname = oj_strndup(str, len);
         parent->clen      = len;
     } else {
