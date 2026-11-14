@@ -76,7 +76,7 @@ static void  skip_comment(ParseInfo pi);
 
 static VALUE protect_open_proc(VALUE x);
 static VALUE parse_json(VALUE clas, char *json, bool given);
-static void  each_leaf(Doc doc, VALUE self);
+static void  each_leaf(Doc doc, VALUE self, Leaf *stack, size_t depth);
 static int   move_step(Doc doc, const char *path, int loc);
 static Leaf  get_doc_leaf(Doc doc, const char *path);
 static Leaf  get_leaf(Leaf *stack, Leaf *lp, const char *path);
@@ -982,28 +982,36 @@ static Leaf get_leaf(Leaf *stack, Leaf *lp, const char *path) {
     return leaf;
 }
 
-static void each_leaf(Doc doc, VALUE self) {
-    if (COL_VAL == (*doc->where)->value_type) {
-        if (0 != (*doc->where)->elements) {
-            Leaf first = (*doc->where)->elements->next;
+static void each_leaf(Doc doc, VALUE self, Leaf *stack, size_t depth) {
+    Leaf leaf = stack[depth];
+
+    if (COL_VAL == leaf->value_type) {
+        if (0 != leaf->elements) {
+            Leaf first = leaf->elements->next;
             Leaf e     = first;
 
-            doc->where++;
-            if (MAX_STACK <= doc->where - doc->where_path) {
-                doc->where--;
+            if (MAX_STACK <= depth + 1) {
                 rb_raise(rb_const_get_at(Oj, rb_intern("DepthError")), "Path too deep. Limit is %d levels.", MAX_STACK);
             }
             do {
-                *doc->where = e;
-                each_leaf(doc, self);
+                stack[depth + 1]           = e;
+                doc->where_path[depth + 1] = e;
+                each_leaf(doc, self, stack, depth + 1);
                 e = e->next;
             } while (e != first);
-            doc->where--;
         }
     } else {
+        Leaf *where = doc->where_path + depth;
+
+        doc->where = where;
         rb_yield(self);
         if (NULL == DATA_PTR(self)) {
             rb_raise(rb_eIOError, "Document closed.");
+        }
+        // The block can move the doc, so the walk keeps its own path to put
+        // back.
+        if (doc->where != where || *where != leaf) {
+            memcpy(doc->where_path, stack, sizeof(Leaf) * (depth + 1));
         }
     }
 }
@@ -1448,6 +1456,7 @@ static VALUE doc_exists(VALUE self, VALUE str) {
 static VALUE doc_each_leaf(int argc, VALUE *argv, VALUE self) {
     if (rb_block_given_p()) {
         Leaf        save_path[MAX_STACK];
+        Leaf        stack[MAX_STACK];
         Doc         doc;
         const char *path = 0;
         size_t      wlen;
@@ -1469,16 +1478,19 @@ static VALUE doc_each_leaf(int argc, VALUE *argv, VALUE self) {
                 if (0 < wlen) {
                     memcpy(doc->where_path, save_path, sizeof(Leaf) * (wlen + 1));
                 }
+                doc->where = doc->where_path + wlen;
                 return Qnil;
             }
         }
         if (NULL == doc->where || NULL == *doc->where) {
             return Qnil;
         }
-        each_leaf(doc, self);
+        memcpy(stack, doc->where_path, sizeof(Leaf) * (doc->where - doc->where_path + 1));
+        each_leaf(doc, self, stack, doc->where - doc->where_path);
         if (0 < wlen) {
             memcpy(doc->where_path, save_path, sizeof(Leaf) * (wlen + 1));
         }
+        doc->where = doc->where_path + wlen;
     }
     return Qnil;
 }
