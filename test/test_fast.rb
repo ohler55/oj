@@ -670,6 +670,34 @@ class DocTest < Minitest::Test
     assert_equal({'/a/x' => 2, '/b/y' => 4}, results)
   end
 
+  def test_each_leaf_block_moves_the_doc
+    json = '{"a":{"b":1,"c":2},"x":3,"d":[[[[[4]]]]]}'
+    expected = [['/a/b', 1], ['/a/c', 2], ['/x', 3], ['/d/1/1/1/1/1', 4]]
+    [->(d) { d.home }, ->(d) { d.move('/x') }, ->(d) { d.move('..') }].each do |move|
+      leaves = Oj::Doc.open(json) do |doc|
+        seen = []
+        doc.each_leaf do |d|
+          seen << [d.where?, d.fetch]
+          move.call(d)
+        end
+        seen
+      end
+      assert_equal(expected, leaves)
+    end
+  end
+
+  def test_each_leaf_path_keeps_where
+    Oj::Doc.open('{"a":{"b":1,"c":2},"x":3}') do |doc|
+      doc.each_leaf('/a') {}
+      assert_equal('/', doc.where?)
+      doc.move('/a/b')
+      doc.each_leaf('/x') {}
+      assert_equal('/a/b', doc.where?)
+      doc.each_leaf('/a/z') {}
+      assert_equal('/a/b', doc.where?)
+    end
+  end
+
   def test_doc_empty
     result = Oj::Doc.open('') { |doc| doc.each_child {} }
     assert_nil(result)
