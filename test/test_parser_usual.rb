@@ -347,6 +347,8 @@ class UsualTest < Minitest::Test
     p.omit_null = true
     doc = p.parse('{"a":true,"b":null}')
     assert_equal({'a'=>true}, doc)
+    doc = p.parse('{"a":"x","é":null,"éb":null}')
+    assert_equal({'a'=>'x'}, doc)
 
     p.omit_null = false
     doc = p.parse('{"a":true,"b":null}')
@@ -373,6 +375,20 @@ class UsualTest < Minitest::Test
     assert_equal(MyHash, p.hash_class)
     doc = p.parse('{"a":true}')
     assert_equal(MyHash, doc.class)
+  end
+
+  def test_hash_class_set_once_per_key
+    recording = Class.new(Hash) do
+      attr_reader :calls
+
+      def []=(key, value)
+        (@calls ||= []) << [key, value]
+        super
+      end
+    end
+    p = Oj::Parser.new(:usual, hash_class: recording)
+    doc = p.parse(%{{"x":"a","café":1,"éa":2,"k\\n":3}})
+    assert_equal([['x', 'a'], ['café', 1], ['éa', 2], ["k\n", 3]], doc.calls)
   end
 
   def test_long_keys_freed_after_a_failed_parse
@@ -464,6 +480,12 @@ class UsualTest < Minitest::Test
     p.create_id = 'class'
     doc = p.parse('{"a":true,"class":"UsualTest::MyClass","b":false}')
     assert_equal('UsualTest::MyClass{a: true b: false}', doc.to_s)
+  end
+
+  def test_escaped_create_id_without_a_class_name
+    p = Oj::Parser.new(:usual, create_id: '^')
+    doc = p.parse(%{{"a":"UsualTest::MyClass","\\u005e":null}})
+    assert_equal({ 'a' => 'UsualTest::MyClass', '^' => nil }, doc)
   end
 
   def test_option_change_while_parsing

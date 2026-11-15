@@ -223,6 +223,37 @@ class ParserSajTest < Minitest::Test
                   [:hash_end, nil]], handler.calls)
   end
 
+  def test_hash_keys_with_escapes_or_non_ascii
+    handler = AllSaj.new()
+    json = %{{"x":"a","café":1,"éa":2,"k\\n":3,"\\u00e9b":4}}
+    p = Oj::Parser.new(:saj)
+    p.handler = handler
+    p.parse(json)
+    assert_equal([[:hash_start, nil],
+                  [:add_value, 'a', 'x'],
+                  [:add_value, 1, 'café'],
+                  [:add_value, 2, 'éa'],
+                  [:add_value, 3, "k\n"],
+                  [:add_value, 4, 'éb'],
+                  [:hash_end, nil]], handler.calls)
+  end
+
+  def test_hash_key_split_across_reads
+    [['{"x":"prev","ke', 'y":1}'], ['{"x":"prev","key', '":1}']].each do |parts|
+      reader = Object.new
+      reader.define_singleton_method(:eof?) { parts.empty? }
+      reader.define_singleton_method(:readpartial) { |_size, buf| buf.replace(parts.shift) }
+      handler = AllSaj.new()
+      p = Oj::Parser.new(:saj)
+      p.handler = handler
+      p.load(reader)
+      assert_equal([[:hash_start, nil],
+                    [:add_value, 'prev', 'x'],
+                    [:add_value, 1, 'key'],
+                    [:hash_end, nil]], handler.calls)
+    end
+  end
+
   def test_full
     handler = AllSaj.new()
     Oj.saj_parse(handler, $json)

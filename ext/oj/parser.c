@@ -1005,8 +1005,10 @@ static void parse(ojParser p, const byte *json, size_t len, bool more) {
                 buf_append_string(&p->buf, (const char *)start, b - start);
             }
             if ('"' == *b) {
-                p->cur = b - json;
-                p->funcs[p->stack[p->depth]].add_str(p);
+                if (':' != p->next_map[256]) {
+                    p->cur = b - json;
+                    p->funcs[p->stack[p->depth]].add_str(p);
+                }
                 p->map = p->next_map;
                 break;
             }
@@ -1014,8 +1016,10 @@ static void parse(ojParser p, const byte *json, size_t len, bool more) {
             break;
         case STR_SLASH: p->map = esc_map; break;
         case STR_QUOTE:
-            p->cur = b - json;
-            p->funcs[p->stack[p->depth]].add_str(p);
+            if (':' != p->next_map[256]) {
+                p->cur = b - json;
+                p->funcs[p->stack[p->depth]].add_str(p);
+            }
             p->map = p->next_map;
             break;
         case ESC_U:

@@ -39,6 +39,14 @@ class ParserSafeTest < Minitest::Test
     assert_equal(result, { 'foo' => 1, 'bar' => 2 })
   end
 
+  def test_json_object_with_escaped_or_non_ascii_keys
+    parser = Oj::Parser.safe(max_hash_size: 2)
+    assert_equal({ 'a' => 'x', 'é' => 2 }, parser.parse('{"a":"x","é":2}'))
+
+    parser = Oj::Parser.safe(max_total_elements: 5)
+    assert_equal({ 'a' => 'x', 'b' => 2 }, parser.parse(%{{"a":"x","\\u0062":2}}))
+  end
+
   def test_json_object_with_too_many_members
     parser = Oj::Parser.safe(max_hash_size: 2)
 
