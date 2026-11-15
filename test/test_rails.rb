@@ -59,6 +59,18 @@ class OjOptionMutatingProbe
   end
 end
 
+class OjDefaultExceptProbe
+  def initialize(hidden)
+    @hidden = hidden
+  end
+
+  def as_json(options = nil)
+    options ||= {}
+    options[:except] ||= [@hidden]
+    {'name' => 'n', @hidden => 'h'}.reject { |k, _| options[:except].include?(k) }
+  end
+end
+
 class RailsJuice < Minitest::Test
 
   def test_bigdecimal_dump
@@ -149,6 +161,26 @@ class RailsJuice < Minitest::Test
     encoder.encode(OjOptionMutatingProbe.new)
     assert_equal({only: ['foo', 'bar', 'n', 'opts']}, opts)
     assert_equal('{"n":1,"opts":"only"}', encoder.encode(OjOptsProbe.new(1)))
+  end
+
+  def test_as_json_cannot_write_into_the_options_of_its_siblings
+    draft = OjDefaultExceptProbe.new('draft')
+    secret = OjDefaultExceptProbe.new('secret')
+
+    [Oj::Rails::Encoder.new, Oj::Rails::Encoder.new(only: ['name', 'a', 'b'])].each do |encoder|
+      assert_equal('[{"name":"n"},{"name":"n"}]', encoder.encode([draft, secret]))
+      assert_equal('{"a":{"name":"n"},"b":{"name":"n"}}', encoder.encode({'a' => draft, 'b' => secret}))
+      assert_equal('[[{"name":"n"}],{"b":{"name":"n"}}]', encoder.encode([[draft], {'b' => secret}]))
+    end
+    assert_equal('[{"name":"n"},{"name":"n"}]', Oj.dump([draft, secret], mode: :rails))
+  end
+
+  def test_as_json_cannot_write_into_the_options_given_to_rails_encode
+    opts = {status: 200}
+
+    assert_equal('[{"name":"n"}]', Oj::Rails.encode([OjDefaultExceptProbe.new('draft')], opts))
+    assert_equal({status: 200}, opts)
+    assert_equal('{"name":"n"}', Oj::Rails.encode(OjDefaultExceptProbe.new('secret'), opts))
   end
 
   # #1020: to_json(only:) on a record with include_root_in_json wraps each row
