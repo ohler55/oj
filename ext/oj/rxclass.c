@@ -23,10 +23,17 @@ typedef struct _rxC {
     char  src[256];
 } *RxC;
 
-void oj_rxclass_init(RxClass rc) {
+// Returns the array that keeps the regexps made on Windows, nil elsewhere.
+VALUE oj_rxclass_init(RxClass rc) {
     *rc->err = '\0';
     rc->head = NULL;
     rc->tail = NULL;
+#if IS_WINDOWS
+    rc->rrxs = rb_ary_new();
+    return rc->rrxs;
+#else
+    return Qnil;
+#endif
 }
 
 void oj_rxclass_cleanup(RxClass rc) {
@@ -38,8 +45,8 @@ void oj_rxclass_cleanup(RxClass rc) {
         if (Qnil == rxc->rrx) {
             regfree(&rxc->rx);
         }
-        OJ_R_FREE(rxc);
 #endif
+        OJ_R_FREE(rxc);
     }
 }
 
@@ -77,6 +84,7 @@ int oj_rxclass_append(RxClass rc, const char *expr, VALUE clas) {
 
 #if IS_WINDOWS
     rxc->rrx = rb_funcall(rb_cRegexp, rb_intern("new"), 1, rb_str_new2(expr));
+    rb_ary_push(rc->rrxs, rxc->rrx);
 #else
     rxc->rrx = Qnil;
     if (0 != (err = regcomp(&rxc->rx, expr, flags))) {
@@ -162,6 +170,9 @@ void oj_rxclass_keep(RxClass rc, VALUE keep) {
 void oj_rxclass_mark(RxClass rc) {
     RxC rxc;
 
+#if IS_WINDOWS
+    rb_gc_mark(rc->rrxs);
+#endif
     for (rxc = rc->head; NULL != rxc; rxc = rxc->next) {
         rb_gc_mark(rxc->rrx);
         rb_gc_mark(rxc->clas);

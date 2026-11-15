@@ -909,6 +909,31 @@ class CompatJuice < Minitest::Test
     assert_equal('ArgumentError', out)
   end
 
+  # On Windows a String key of :match_string becomes a regexp that only oj
+  # refers to, also while a writer parses its options. GC.stress in a new
+  # process reuses the slot of a collected regexp at once, unlike a large heap.
+  def test_match_string_with_string_key_survives_gc
+    lib = File.expand_path('../lib', __dir__)
+    ext = File.expand_path('../ext', __dir__)
+    out, err, status = Open3.capture3(RbConfig.ruby, '-I', ext, '-I', lib, '-e', <<~RUBY)
+      require 'oj'
+      class Rex
+        def self.json_create(s)
+          'rex:' + s
+        end
+      end
+      GC.stress = true
+      Oj::StringWriter.new(match_string: {'^a' => Rex, /^b/ => Rex, '^c' => Rex})
+      objs = Array.new(10) do
+        Oj.load('["zzz","aaa","zzz","aaa"]', mode: :compat, create_additions: true, match_string: {'^z' => Rex})
+      end
+      GC.stress = false
+      print objs.uniq.inspect
+    RUBY
+    assert_predicate(status, :success?, err)
+    assert_equal('[["rex:zzz", "aaa", "rex:zzz", "aaa"]]', out)
+  end
+
   def dump_and_load(obj, trace=false)
     json = Oj.dump(obj)
     puts json if trace
