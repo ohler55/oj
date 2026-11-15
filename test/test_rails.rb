@@ -491,4 +491,24 @@ class RailsJuice < Minitest::Test
     assert_predicate(status, :success?, err)
     assert_equal('{"a":1}', out)
   end
+
+  def test_encoder_without_options_survives_gc_during_new
+    lib = File.expand_path('../lib', __dir__)
+    ext = File.expand_path('../ext', __dir__)
+    out, err, status = Open3.capture3(RbConfig.ruby, '-I', ext, '-I', lib, '-e', <<~RUBY)
+      require 'oj'
+      GC.stress = true
+      encoders = [Oj::Rails::Encoder.new, Oj::Rails::Encoder.new(nil)]
+      GC.stress = false
+      GC.start
+      probe = Object.new
+      def probe.as_json(options = nil)
+        options
+      end
+      print encoders.map { |e| e.encode(probe) }.join(',')
+    RUBY
+
+    assert_predicate(status, :success?, err)
+    assert_equal('{},{}', out)
+  end
 end

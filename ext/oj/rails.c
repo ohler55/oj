@@ -765,6 +765,8 @@ static const rb_data_type_t oj_encoder_type = {
  */
 static VALUE encoder_new(int argc, VALUE *argv, VALUE self) {
     Encoder e = OJ_R_ALLOC(struct _encoder);
+    VALUE   arg;
+    VALUE   encoder;
 
     e->ropts.len   = 0;
     e->ropts.alen  = 0;
@@ -772,10 +774,11 @@ static VALUE encoder_new(int argc, VALUE *argv, VALUE self) {
     e->own_ropts   = false;
 
     if (1 <= argc && Qnil != *argv) {
-        e->arg = *argv;
+        arg = *argv;
     } else {
-        e->arg = rb_hash_new();
+        arg = rb_hash_new();
     }
+    e->arg = arg;
     // An encoder given no options of its own reads oj_default_options at encode
     // time rather than copying it here. ActiveSupport keeps such an encoder for
     // the life of the process, so a copy taken now would freeze every later
@@ -803,8 +806,12 @@ static VALUE encoder_new(int argc, VALUE *argv, VALUE self) {
         // recognized key, and ownership is not taken until after that check.
         memset(&e->opts, 0, sizeof(e->opts));
     }
+    encoder = TypedData_Wrap_Struct(encoder_class, &oj_encoder_type, e);
+    // encoder_mark() cannot reach e->arg until e is wrapped, so a GC during
+    // the wrap would collect the hash made above.
+    RB_GC_GUARD(arg);
 
-    return TypedData_Wrap_Struct(encoder_class, &oj_encoder_type, e);
+    return encoder;
 }
 
 static VALUE resolve_classpath(const char *name) {
