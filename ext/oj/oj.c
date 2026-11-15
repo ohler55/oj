@@ -1468,14 +1468,16 @@ static int match_string_cb(VALUE key, VALUE value, VALUE rx) {
 
 void oj_parse_opt_match_string(RxClass rc, VALUE ropts) {
     VALUE v;
+    VALUE keep;
 
     if (Qnil != (v = rb_hash_lookup(ropts, match_string_sym))) {
         rb_check_type(v, T_HASH);
         // Zero out rc. Pattern are not appended but override.
-        rc->head = NULL;
-        rc->tail = NULL;
-        *rc->err = '\0';
+        keep = oj_rxclass_init(rc);
         rb_hash_foreach(v, match_string_cb, (VALUE)rc);
+        // The GC does not see the options of a writer or an encoder, so the
+        // regexps made on Windows are kept alive here while the chain is built.
+        RB_GC_GUARD(keep);
     }
 }
 
