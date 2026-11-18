@@ -1219,8 +1219,8 @@ static VALUE doc_open_file(VALUE clas, VALUE filename) {
     return obj;
 }
 
-static int esc_strlen(const char *s) {
-    int cnt = 0;
+static size_t esc_strlen(const char *s) {
+    size_t cnt = 0;
 
     for (; '\0' != *s; s++, cnt++) {
         if ('/' == *s) {
@@ -1258,6 +1258,7 @@ static VALUE doc_where(VALUE self) {
         Leaf  *lp;
         Leaf   leaf;
         size_t size = 3;  // leading / and terminating \0
+        VALUE  rpath;
         char  *path;
         char  *p;
 
@@ -1269,8 +1270,10 @@ static VALUE doc_where(VALUE self) {
                 size += ((*lp)->index < 100) ? 3 : 11;
             }
         }
-        path = ALLOCA_N(char, size);
-        p    = path;
+        // The keys come from the JSON, so the path can be larger than the stack.
+        rpath = rb_str_new(NULL, size);
+        path  = RSTRING_PTR(rpath);
+        p     = path;
         for (lp = doc->where_path; lp <= doc->where; lp++) {
             leaf = *lp;
             if (T_HASH == leaf->parent_type) {
@@ -1281,8 +1284,9 @@ static VALUE doc_where(VALUE self) {
             *p++ = '/';
         }
         *--p = '\0';
+        rb_str_set_len(rpath, p - path);
 
-        return rb_str_new(path, p - path);
+        return rpath;
     }
 }
 

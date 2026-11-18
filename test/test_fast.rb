@@ -231,6 +231,20 @@ class DocTest < Minitest::Test
     end
   end
 
+  # The path is as long as the keys, so it can be larger than the machine stack
+  # of a thread.
+  def test_where_with_a_long_key_in_a_thread
+    key = 'k/' * (2 * 1024 * 1024)
+    escaped = key.gsub('/', '\/')
+    path = Thread.new {
+      Oj::Doc.open(%|{"a":{"#{key}":1}}|) do |doc|
+        doc.move("/a/#{escaped}")
+        doc.where
+      end
+    }.value
+    assert_equal("/a/#{escaped}", path)
+  end
+
   def test_move_slash
     Oj::Doc.open(%|{"top":{"a/b":3}}|) do |doc|
       doc.move('top/a\/b')
