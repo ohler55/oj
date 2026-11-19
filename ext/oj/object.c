@@ -312,6 +312,18 @@ static int hat_num(ParseInfo pi, Val parent, Val kval, NumInfo ni) {
     return 0;
 }
 
+// oj escapes the ^ of a pair it writes for a String key, so a key from such a
+// pair gets the same :symbol_keys treatment as a key written as is.
+static void hash_set_pair(ParseInfo pi, VALUE hash, VALUE pair, bool escaped) {
+    VALUE key = RARRAY_AREF(pair, 0);
+    VALUE val = RARRAY_AREF(pair, 1);
+
+    if (escaped && Yes == pi->options.sym_key && T_STRING == rb_type(key)) {
+        key = rb_str_intern(key);
+    }
+    rb_hash_aset(hash, key, val);
+}
+
 static int hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, volatile VALUE value) {
     if (T_ARRAY == rb_type(value)) {
         size_t len = RARRAY_LEN(value);
@@ -390,15 +402,12 @@ static int hat_value(ParseInfo pi, Val parent, const char *key, size_t klen, vol
             }
             return 1;
         } else if (3 <= klen && '#' == key[1]) {
-            volatile const VALUE *a;
-
             if (2 != len) {
                 oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "invalid hash pair");
                 return 1;
             }
             parent->val = rb_hash_new();
-            a           = RARRAY_CONST_PTR(value);
-            rb_hash_aset(parent->val, *a, a[1]);
+            hash_set_pair(pi, parent->val, value, '^' != parent->k1);
 
             return 1;
         }
@@ -580,14 +589,13 @@ WHICH_TYPE:
             }
         } else {
             if (3 <= klen && '^' == *key && '#' == key[1] && T_ARRAY == rb_type(value)) {
-                long                  len = RARRAY_LEN(value);
-                volatile const VALUE *a   = RARRAY_CONST_PTR(value);
+                long len = RARRAY_LEN(value);
 
                 if (2 != len) {
                     oj_set_error_at(pi, oj_parse_error_class, __FILE__, __LINE__, "invalid hash pair");
                     return;
                 }
-                rb_hash_aset(parent->val, *a, a[1]);
+                hash_set_pair(pi, parent->val, value, '^' != kval->k1);
             } else {
                 rb_hash_aset(parent->val, calc_hash_key(pi, kval, parent->k1), value);
             }
