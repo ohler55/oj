@@ -44,10 +44,10 @@ in a JSON document. The formatting follows these rules.
    the Exception class. An example is `{"^o":"StandardError","~mesg":"A
    Message","~bt":[".\/tests.rb:345:in 'test_exception'"]}`.
 
- * If a Hash entry has a key that is not a String or Symbol then the entry is
-   encoded with a key of the form `"^#n"` where n is a hex number. The value
-   is an Array where the first element is the key in the Hash and the second
-   is the value. An example is `{"^#3":[2,5]}`.
+ * If a Hash entry has a key that is not a String or Symbol, or a String key that would be read as one of the `'^'` keys above (`'^'` and one of `oOmsctiu`, or any key that starts with `'^#'`), then the entry is encoded with a key of the form `"^#n"` where n is a hex number.
+   For a String key the `'^'` of the `"^#n"` key is written as `'\u005e'`, which tells it apart from the pairs that older versions wrote.
+   The value is an Array where the first element is the key in the Hash and the second is the value.
+   An example is `{"^#3":[2,5]}`.
 
  * A `"^i"` JSON entry in either an Object or Array is the ID of the Ruby
    Object being encoded. It is used when the :circular flag is set. It can

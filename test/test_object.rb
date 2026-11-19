@@ -429,6 +429,53 @@ class ObjectJuice < Minitest::Test
     assert_equal({"a\nb" => true, "c\td" => false}, obj)
   end
 
+  # Hash keys that look like the ^ keys object mode writes for classes, times,
+  # structs and non-String keys must come back as keys.
+  def test_hash_keys_starting_with_caret
+    hashes = [
+      {'^o' => 'Gem::Version', 'version' => '1.0'},
+      {'^u' => ['Process::Tms', 1, 2, 3, 4]},
+      {'a' => 1, '^#1' => [2, 3]},
+      {'^#1' => [3, 4], 7 => 'v'},
+      {'a' => {'^o' => 'Gem::Version', 'version' => '1.0'}},
+      {'^i1' => 1, '^r1' => 2},
+      {Class.new(String).new('^o') => 'Gem::Version'},
+    ]
+    ('!'..'~').each do |c|
+      ['File', 1.5, [1, 2]].each { |v| hashes << {"^#{c}" => v, 'k' => 1} }
+    end
+    symbolize = ->(o) { o.is_a?(Hash) ? o.to_h { |k, v| [k.is_a?(String) ? k.to_sym : k, symbolize.(v)] } : o }
+    hashes.each do |h|
+      [false, true].each do |circular|
+        opts = {:mode => :object, :circular => circular}
+        json = Oj.dump(h, opts)
+        assert_equal(h, Oj.load(json, opts), json)
+        assert_equal(h, Oj.load(StringIO.new(json), opts), json)
+        assert_equal(symbolize.(h), Oj.load(json, opts.merge(:symbol_keys => true)), json)
+      end
+      json = Oj.dump(h, :mode => :object, :indent => 2)
+      assert_equal(h, Oj.load(json, :mode => :object), json)
+    end
+    # The ^ key is the first one written when the entry before it is omitted.
+    json = Oj.dump({'x' => nil, '^o' => 'Gem::Version'}, :mode => :object, :omit_nil => true)
+    assert_equal({'^o' => 'Gem::Version'}, Oj.load(json, :mode => :object), json)
+    # Only the String keys oj writes in pairs for a leading ^ are symbolized.
+    json = Oj.dump({BigDecimal('1') => 2}, :mode => :object, :bigdecimal_as_decimal => false)
+    assert_equal({'0.1e1' => 2}, Oj.load(json, :mode => :object, :symbol_keys => true), json)
+    # The NUL bytes omit_null_byte drops must not turn a key into one of oj's.
+    [{"^\0o" => 'Gem::Version'}, {'a' => 1, "^\0#1" => [3, 4]}].each do |h|
+      json = Oj.dump(h, :mode => :object, :omit_null_byte => true)
+      assert_equal(h.transform_keys { |k| k.delete("\0") }, Oj.load(json, :mode => :object), json)
+    end
+    # Keys that load does not take for one of oj's are written as they are, and a
+    # pair name never repeats a key that is written as is.
+    json = Oj.dump({'^x' => 1, '^ss' => 'str', '^s' => 'str', '^#1' => 2}, :mode => :object)
+    assert_equal('{"^x":1,"^ss":"str","\\u005e#1":["^s","str"],"\\u005e#2":["^#1",2]}', json)
+    # The keys of pairs that older versions wrote are not symbolized.
+    h = Oj.load('{"^#1":["^o",1],":^o":2}', :mode => :object, :symbol_keys => true)
+    assert_equal({'^o' => 1, :'^o' => 2}, h)
+  end
+
   # A path segment that resolved to something other than a class or module was
   # passed to rb_const_defined_at() as the scope for the next segment, which
   # reads whatever it is given as an RClass.

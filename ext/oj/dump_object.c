@@ -210,6 +210,33 @@ static void dump_sym(VALUE obj, int depth, Out out, bool as_ok) {
     oj_dump_cstr(RSTRING_PTR(s), RSTRING_LEN(s), 1, 0, out);
 }
 
+// Load can take a key of ^ and one of these letters, or any key that starts
+// with ^#, for one of the keys oj writes (see hat_cstr, hat_num and hat_value
+// in object.c), so such a key is written as a pair.
+static bool caret_key_needs_pair(Out out, VALUE key) {
+    const char *s   = RSTRING_PTR(key);
+    const char *end = s + RSTRING_LEN(key);
+    char        c[3];
+    int         n = 0;
+
+    if ('^' != *s && '\0' != *s) {
+        return false;
+    }
+    // The key as written, without the NUL bytes that omit_null_byte drops.
+    for (; s < end && n < 3; s++) {
+        if ('\0' != *s || !out->opts->dump_opts.omit_null_byte) {
+            c[n++] = *s;
+        }
+    }
+    if (n < 2 || '^' != *c) {
+        return false;
+    }
+    if (2 == n) {
+        return NULL != memchr("oOmsctiu", c[1], 8);
+    }
+    return '#' == c[1];
+}
+
 static int hash_cb(VALUE key, VALUE value, VALUE ov) {
     Out  out   = (Out)ov;
     int  depth = out->depth;
@@ -229,27 +256,36 @@ static int hash_cb(VALUE key, VALUE value, VALUE ov) {
     assure_size(out, size);
     fill_indent(out, depth);
     switch (rb_type(key)) {
-    case T_STRING:
-        dump_str_class(key, Qundef, depth, out);
-        *out->cur++ = ':';
-        oj_dump_obj_val(value, depth, out);
-        break;
-
     case T_SYMBOL:
         dump_sym(key, 0, out, false);
         *out->cur++ = ':';
         oj_dump_obj_val(value, depth, out);
         break;
 
+    case T_STRING:
+        if (!caret_key_needs_pair(out, key)) {
+            dump_str_class(key, Qundef, depth, out);
+            *out->cur++ = ':';
+            oj_dump_obj_val(value, depth, out);
+            break;
+        }
+        // fall through
     default: {
         int     d2 = depth + 1;
         long    s2 = size + out->indent + 1;
         int     i;
         int     started = 0;
         uint8_t b;
+        bool    str_key = T_STRING == rb_type(key);
 
-        assure_size(out, s2 + 15);
-        APPEND_CHARS(out->cur, "\"^#", 3);
+        assure_size(out, s2 + 20);
+        // The ^ of a pair for a String key is escaped so that load can tell it
+        // from the pairs older versions wrote and treat the key as a String key.
+        if (str_key) {
+            APPEND_CHARS(out->cur, "\"\\u005e#", 8);
+        } else {
+            APPEND_CHARS(out->cur, "\"^#", 3);
+        }
         out->hash_cnt++;
         for (i = 28; 0 <= i; i -= 4) {
             b = (uint8_t)((out->hash_cnt >> i) & 0x0000000F);
@@ -262,7 +298,11 @@ static int hash_cb(VALUE key, VALUE value, VALUE ov) {
         }
         APPEND_CHARS(out->cur, "\":[", 3);
         fill_indent(out, d2);
-        oj_dump_obj_val(key, d2, out);
+        if (str_key) {
+            dump_str_class(key, Qundef, d2, out);
+        } else {
+            oj_dump_obj_val(key, d2, out);
+        }
         assure_size(out, s2);
         *out->cur++ = ',';
         fill_indent(out, d2);
