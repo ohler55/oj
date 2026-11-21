@@ -778,6 +778,27 @@ class DocTest < Minitest::Test
     end
   end
 
+  # The GC marks an open Doc on the stack of whichever Thread or Fiber is
+  # running, which is much smaller than the stack of the main thread. Nesting
+  # that could not be marked there must be refused when the Doc is parsed.
+  def test_too_deeply_nested
+    depth = 25_000
+    arrays = ('[' * depth) + (']' * depth)
+    hashes = %|#{'{"a":' * depth}1#{'}' * depth}|
+    [arrays, hashes].each do |json|
+      assert_raises(SystemStackError) { Oj::Doc.open(json) { |doc| doc.size } }
+    end
+  end
+
+  def test_nested_gc_in_fiber_and_thread
+    depth = 100
+    Oj::Doc.open(('[' * depth) + (']' * depth)) do |doc|
+      Fiber.new { GC.start }.resume
+      Thread.new { GC.start }.join
+      assert_equal(depth, doc.size)
+    end
+  end
+
   def test_comment
     json = %{{
   "x"/*one*/:/*two*/true,//three

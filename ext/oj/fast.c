@@ -2,9 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for
 // license details.
 
-#if !IS_WINDOWS
-#include <sys/resource.h>  // for getrlimit() on linux
-#endif
 #include <errno.h>
 #include <math.h>
 #include <stdio.h>
@@ -797,6 +794,39 @@ static const rb_data_type_t oj_doc_type = {
     0,
 };
 
+// The GC marks a doc on the stack of whichever Thread or Fiber is running at
+// the time and not on the stack the doc was parsed on. The stack a parse may
+// use is therefore a part of the smallest of those stacks, the machine stack
+// of a Fiber unless the sizes were changed, so that a doc that can be parsed
+// can also be marked. It is set in oj_init_doc().
+static size_t parse_stack_limit = 0;
+
+static size_t smallest_stack_size(void) {
+    // the Ruby default for a Fiber, 256K or 512K
+    size_t size   = 64 * 1024 * sizeof(VALUE);
+    VALUE  params = Qnil;
+
+    if (rb_const_defined_at(rb_cObject, rb_intern("RubyVM"))) {
+        VALUE vm = rb_const_get_at(rb_cObject, rb_intern("RubyVM"));
+
+        if (T_CLASS == rb_type(vm) && rb_const_defined_at(vm, rb_intern("DEFAULT_PARAMS"))) {
+            params = rb_const_get_at(vm, rb_intern("DEFAULT_PARAMS"));
+        }
+    }
+    if (T_HASH == rb_type(params)) {
+        VALUE fiber  = rb_hash_aref(params, ID2SYM(rb_intern("fiber_machine_stack_size")));
+        VALUE thread = rb_hash_aref(params, ID2SYM(rb_intern("thread_machine_stack_size")));
+
+        if (FIXNUM_P(fiber) && 0 < FIX2LONG(fiber)) {
+            size = (size_t)FIX2LONG(fiber);
+        }
+        if (FIXNUM_P(thread) && 0 < FIX2LONG(thread) && (size_t)FIX2LONG(thread) < size) {
+            size = (size_t)FIX2LONG(thread);
+        }
+    }
+    return size;
+}
+
 static VALUE parse_json(VALUE clas, char *json, bool given) {
     struct _parseInfo pi;
     volatile VALUE    result = Qnil;
@@ -815,21 +845,9 @@ static VALUE parse_json(VALUE clas, char *json, bool given) {
     pi.s = pi.str;
     doc_init(doc);
     pi.doc = doc;
-#if IS_WINDOWS || !defined(HAVE_GETRLIMIT)
-    // assume a 1M stack and give half to ruby
-    pi.stack_min = (void *)((char *)&pi - (512L * 1024L));
-#else
-    {
-        struct rlimit lim;
+    // the stack grows down, let no more than parse_stack_limit of it be used
+    pi.stack_min = (void *)((char *)&pi - parse_stack_limit);
 
-        if (0 == getrlimit(RLIMIT_STACK, &lim) && RLIM_INFINITY != lim.rlim_cur) {
-            // let 3/4ths of the stack be used only
-            pi.stack_min = (void *)((char *)&lim - (lim.rlim_cur / 4 * 3));
-        } else {
-            pi.stack_min = 0;  // indicates not to check stack limit
-        }
-    }
-#endif
     doc->json = json;
     self      = TypedData_Wrap_Struct(clas, &oj_doc_type, doc);
     doc->self = self;
@@ -1803,4 +1821,7 @@ void oj_init_doc(void) {
 
     rb_define_method(oj_doc_class, "clone", doc_not_implemented, 0);
     rb_define_method(oj_doc_class, "dup", doc_not_implemented, 0);
+
+    // let a quarter of the smallest stack be used only
+    parse_stack_limit = smallest_stack_size() / 4;
 }
