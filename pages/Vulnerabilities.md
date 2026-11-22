@@ -4,10 +4,10 @@ Exploits can only be initiated against applications hence all
 vulnerabilities start with an attack vector from an application. Oj is
 a library and is only reachable by calls from an application. Does
 that mean an application is solely responsible for exposing a
-vulnerability; no but it does put a great deal of the blame on an
+vulnerability? No, but it does put a great deal of the blame on an
 application for any exploit vector. A library can be considered
-responsible for a vulnerability if bug is exploitable through the
-normal and expected use of it's APIs.
+responsible for a vulnerability if a bug is exploitable through the
+normal and expected use of its APIs.
 
 ## Normal and Expected Use
 
