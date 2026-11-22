@@ -87,7 +87,7 @@ attacks.
 
 An application that attempts to generate :object mode JSON could end
 up with invalid encoding. That could potentially be exploitable
-depending on the where the cutom generated encoding is on an attach
+depending on where the custom generated encoding is on an attack
 vector.
 
 ## Summary
