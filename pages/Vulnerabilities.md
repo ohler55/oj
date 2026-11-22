@@ -70,7 +70,7 @@ cause an error.
 If it isn't clear what constitutes unusual use of the Oj APIs, some
 examples are listed.
 
-### Memory Overruns
+### Memory Exhaustion
 
 Expecting to parse large JSON documents without allocating enough
 memory in a fiber or application container could cause out of memory
