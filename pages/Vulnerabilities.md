@@ -67,8 +67,8 @@ cause an error.
 
 ## Unusual Use
 
-If it's isn't clear what constitutes unusual use of the Oj APIs, some
-exmaple are listed.
+If it isn't clear what constitutes unusual use of the Oj APIs, some
+examples are listed.
 
 ### Memory Overruns
 
