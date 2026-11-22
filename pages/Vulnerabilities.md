@@ -92,6 +92,6 @@ vector.
 
 ## Summary
 
-It all boils down to use Oj as intended and barring a new bug all
-vulterabilities will be from the application. The same can be said for
-virtually and library.
+It all boils down to using Oj as intended and barring a new bug all
+vulnerabilities will be from the application. The same can be said for
+virtually any library.
