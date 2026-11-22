@@ -1476,7 +1476,7 @@ void oj_parse_opt_match_string(RxClass rc, VALUE ropts) {
         keep = oj_rxclass_init(rc);
         rb_hash_foreach(v, match_string_cb, (VALUE)rc);
         // The GC does not see the options of a writer or an encoder, so the
-        // regexps made on Windows are kept alive here while the chain is built.
+        // object that keeps the chain is kept alive here while the chain is built.
         RB_GC_GUARD(keep);
     }
 }
