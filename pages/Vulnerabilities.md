@@ -80,7 +80,7 @@ memory. It is not specific to Oj parsers.
 ### Exposing Oj APIs to the Public
 
 An application that accepts any JSON document is prone to any number
-of exploits varying from huge document submition to slow read or DDos
+of exploits varying from huge document submission to slow read or DDoS
 attacks.
 
 ### Writing Invalid :object Mode JSON
