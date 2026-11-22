@@ -934,6 +934,51 @@ class CompatJuice < Minitest::Test
     assert_equal('[["rex:zzz", "aaa", "rex:zzz", "aaa"]]', out)
   end
 
+  class CompactCreate
+    def self.json_create(_h)
+      GC.verify_compaction_references(expand_heap: true, toward: :empty)
+      new
+    end
+  end
+
+  class CompactRex
+    def self.json_create(s)
+      'rex:' + s
+    end
+  end
+
+  class CompactReader
+    def initialize(json)
+      @io = StringIO.new(json)
+    end
+
+    def read(*args)
+      @io.read(*args)
+    end
+  end
+
+  def test_match_string_after_compaction
+    unless defined?(GC.verify_compaction_references) == 'method' &&
+           Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('3.2.0') &&
+           RbConfig::CONFIG['host_os'] !~ /(mingw|mswin)/
+      skip 'GC compaction is not supported here'
+    end
+
+    json = %|[{"json_class":"#{CompactCreate}"},"zz","a"]|
+    [:compat, :custom].each do |mode|
+      [:string, :io].each do |kind|
+        input = -> { :io == kind ? CompactReader.new(json) : json }
+        # The match_string hashes are made in each call. When they were made
+        # before the loop, the class was not moved here.
+        obj = Oj.load(input.call, mode: mode, create_additions: true, match_string: {'^z' => CompactRex})
+        assert_instance_of(CompactCreate, obj[0])
+        assert_equal(['rex:zz', 'a'], obj[1..], "#{mode} #{kind} String key")
+        obj = Oj.load(input.call, mode: mode, create_additions: true, match_string: {/^z/ => CompactRex})
+        assert_equal(['rex:zz', 'a'], obj[1..], "#{mode} #{kind} Regexp key")
+      end
+    end
+  end
+
   def dump_and_load(obj, trace=false)
     json = Oj.dump(obj)
     puts json if trace

@@ -14,19 +14,16 @@ typedef struct _rxClass {
     struct _rxC *head;
     struct _rxC *tail;
     char         err[128];
-#if IS_WINDOWS
-    // The chain is malloced, so the regexps made from String keys are kept in
-    // this array. The GC sees it through options on the stack or by marking the
-    // defaults. Writers and encoders never match, so theirs is not kept.
-    VALUE rrxs;
-#endif
+    // The chain is malloced, so this object keeps its classes and regexps from
+    // being moved or collected. The GC sees it through options on the stack or
+    // by marking the defaults. Writers and encoders never match, so theirs is not kept.
+    VALUE keep;
 } *RxClass;
 
 extern VALUE oj_rxclass_init(RxClass rc);
 extern void  oj_rxclass_cleanup(RxClass rc);
 extern int   oj_rxclass_append(RxClass rc, const char *expr, VALUE clas);
 extern VALUE oj_rxclass_match(RxClass rc, const char *str, size_t len);
-extern void  oj_rxclass_copy(RxClass src, RxClass dest);
 extern void  oj_rxclass_rappend(RxClass rc, VALUE rx, VALUE clas);
 extern void  oj_rxclass_keep(RxClass rc, VALUE keep);
 extern void  oj_rxclass_mark(RxClass rc);
