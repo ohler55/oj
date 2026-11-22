@@ -19,9 +19,9 @@ a firewall in the private portion of the network.
 Of course a developer could build an application that accepted any
 JSON over a publicly exposed endpoint and then proceed to parse that
 JSON document. Such an application opens the door for any number of
-exploits no matter which JSON parser is used. To name a few posible
+exploits no matter which JSON parser is used. A few possible
 exploits for the ill advised application are exceeding available
-memory, DDOS attacks, and depending on how the parsed data is used
+memory, DDoS attacks, and depending on how the parsed data is used
 more severe issues. So for developers reading this, don't do this.
 
 ### Parsers
