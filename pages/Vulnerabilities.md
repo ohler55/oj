@@ -44,7 +44,7 @@ handling of parsed data to the application, which puts the onus back on the
 application to not create a vulnerability.
 
 The `Oj::Doc` allows a JSON document to be navigated with Ruby object
-postponed until needed. Any potential vulnerabilities in `Oj::Doc`
+creation postponed until needed. Any potential vulnerabilities in `Oj::Doc`
 would be due to trying to parse unfiltered JSON passed directly to the
 methods.
 
