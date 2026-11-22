@@ -40,7 +40,7 @@ generated with a :object mode dump. Attempting to generate the JSON
 manually could potentially lead to issues.
 
 The callback parsers `Oj.sc_parse` and `Oj.saj_parse` leave the
-handling of parsed data to the application puts the onus back on the
+handling of parsed data to the application, which puts the onus back on the
 application to not create a vulnerability.
 
 The `Oj::Doc` allows a JSON document to be navigated with Ruby object
