@@ -106,6 +106,6 @@ See [{file:CHANGELOG.md}](CHANGELOG.md) and [{file:RELEASE_NOTES.md}](RELEASE_NO
 
 Private vulnerability reporting has been enabled. Before reporting
 what you think is a vulnerability please read
-[{file:Vulnerabilities.md}](pages/Vulnerabilities.md) and remember Oj
-is a library and not an application. Developers please read as well to
-better understand how to safely use the Oj library.
+[{file:Security.md}](pages/Security.md) and remember Oj is a library
+and not an application. Developers please read as well to better
+understand how to safely use the Oj library.
