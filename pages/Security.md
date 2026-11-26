@@ -2,7 +2,7 @@
 
 Two settings in Oj are useful for parsing but do expose a
 vulnerability if used from an untrusted source. Symbolized keys can
-cause memory to be filled with previous versions of ruby. The same is
+cause memory to be filled, since with some options those Symbols are never garbage collected. The same is
 true for auto defining classes; memory will also be exhausted if too
 many classes are automatically defined. Auto defining is a useful
 feature during development and from trusted sources but it allows too
