@@ -84,5 +84,4 @@ the developer also allowed for creation of objects with the
 contributor to a vulnerability although the fix might simply be to
 warn against writing such an application.
 
-Please see the [security policy](https://github.com/ohler55/oj/security/policy) for
-reporting.
+Please see the [{file:Security.md}](Security.md) for reporting.
