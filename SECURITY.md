@@ -11,9 +11,9 @@ currently being supported with security updates.
 
 ## Reporting a Vulnerability
 
-First read the [{file:Security.md}](pages/Security.md) to understand
+First read [pages/Security.md](pages/Security.md) to understand
 what is the usual usage of Oj and to understand what constitutes a
-security vulnerability and what is consider a bug.
+security vulnerability and what is considered a bug.
 
 Report a vulnerability by first creating a private vulnerability
 report. Please include a description of an exploit vector in the
