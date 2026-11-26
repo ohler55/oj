@@ -31,8 +31,8 @@ changed. That mode takes the class of an Object from the document, so
 the document decides which of the classes already loaded in the
 process is allocated and what its instance variables are. Classes are
 looked up and not created unless `:auto_define` is turned
-on. `Oj.load` :object mode is intented for storage of object or for
-transmitting between trusted application. Parsing JSON not generated
+on. `Oj.load` :object mode is intended for storing objects or for
+transmitting them between trusted applications. Parsing JSON not generated
 by Oj in :object mode should never be attempted.
 
 For a document from an untrusted source, set the parser mode to not
