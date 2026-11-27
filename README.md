@@ -101,3 +101,11 @@ See [{file:CHANGELOG.md}](CHANGELOG.md) and [{file:RELEASE_NOTES.md}](RELEASE_NO
 + Report a bug
 + Suggest an idea
 + Code is now formatted with the clang-format tool with the configuration file in the root of the repo.
+
+#### Vulnerabilities
+
+Private vulnerability reporting has been enabled. Before reporting
+what you think is a vulnerability please read
+[{file:Security.md}](pages/Security.md) and remember Oj is a library
+and not an application. Developers please read as well to better
+understand how to safely use the Oj library.
