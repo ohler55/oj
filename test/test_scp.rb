@@ -40,6 +40,13 @@ class ScpTest < Minitest::Test
     assert_equal([[:add_value, nil]], handler.calls)
   end
 
+  # sc_parse reads its options twice, so a :match_string chain is built twice.
+  def test_match_string
+    handler = AllHandler.new()
+    Oj.sc_parse(handler, '"zzz"', :match_string => {'^z' => String})
+    assert_equal([[:add_value, 'zzz']], handler.calls)
+  end
+
   def test_true
     handler = AllHandler.new()
     json = %{true}

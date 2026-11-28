@@ -501,8 +501,8 @@ class OjWriter < Minitest::Test
     assert_equal(%|[1]|, output.string())
   end
 
-  # A :match_string option builds a chain of compiled regexps in the writer that
-  # the writer must free when it is collected. The writers are not kept alive
+  # A :match_string option builds a chain of compiled regexps that the writer
+  # lets go of and that is freed when collected. The writers are not kept alive
   # here so that a leak checker sees the chain as lost.
 
   def test_string_writer_match_string

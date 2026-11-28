@@ -35,4 +35,11 @@ class MimicLeak < Minitest::Test
   def test_dump_raising_in_write
     assert_raises(IOError) { JSON.dump(['x' * 5000], RaisesInWrite.new) }
   end
+
+  # The options are rejected after the :match_string chain has been built.
+  def test_parse_rejecting_options_after_match_string
+    assert_raises(ArgumentError) do
+      JSON.parse('{}', create_additions: true, symbolize_names: true, match_string: {'^z' => String})
+    end
+  end
 end

@@ -684,6 +684,27 @@ class CustomJuice < Minitest::Test
     assert_equal(Rex, obj.class)
   end
 
+  # The chain is built before the call knows it is not needed, and building it
+  # can raise part way through. The String keys are compiled with malloc.
+
+  def test_match_string_dump
+    assert_equal('[1]', Oj.dump([1], :match_string => {'^z' => Rex}))
+  end
+
+  def test_match_string_to_stream
+    io = StringIO.new
+    Oj.to_stream(io, [1], :match_string => {'^z' => Rex})
+    assert_equal('[1]', io.string.strip)
+  end
+
+  def test_match_string_nil_input
+    assert_nil(Oj.load(nil, :nilnil => true, :match_string => {'^z' => Rex}))
+  end
+
+  def test_match_string_value_not_a_class
+    assert_raises(ArgumentError) { Oj.load('"zzz"', :match_string => {'^z' => Rex, '^a' => 1}) }
+  end
+
   # The regexps of a call are its own but the ones the defaults hold are only
   # aliased by a call, so a call must not free them.
   def test_match_string_leaves_default

@@ -630,11 +630,13 @@ static const rb_data_type_t default_options_type = {
 // The mark function of default_options_marker keeps the Ruby objects in the
 // default options alive. Engines that do not call mark functions need them in
 // an array the GC knows about, rebuilt each time the defaults change.
-static void keep_default_options(void) {
+static VALUE keep_default_options(VALUE ignore) {
     VALUE keep = rb_ary_new();
 
     if (0 == oj_default_options_keeper_id) {
-        oj_default_options_keeper_id = rb_intern("@default_options_keeper");
+        // Without the @ Ruby code can not reach the array, which holds the
+        // hidden keep object of a :match_string chain.
+        oj_default_options_keeper_id = rb_intern("default_options_keeper");
     }
     if (Qnil != oj_default_options.hash_class) {
         rb_ary_push(keep, oj_default_options.hash_class);
@@ -653,20 +655,30 @@ static void keep_default_options(void) {
     // An instance variable of the Oj module is a reference the GC can follow on
     // every engine, unlike a C global.
     rb_ivar_set(Oj, oj_default_options_keeper_id, keep);
+
+    return Qnil;
+}
+
+static VALUE parse_default_options(VALUE opts) {
+    oj_parse_options(opts, &oj_default_options);
+
+    return Qnil;
 }
 
 static VALUE set_def_opts(VALUE self, VALUE opts) {
     Check_Type(opts, T_HASH);
     // A :match_string option replaces the regexps instead of adding to them so
-    // the ones the defaults are holding have to be freed here, the only place
-    // that owns them. A per call options struct only aliases them.
+    // the ones the defaults are holding are freed here. A per call options
+    // struct only aliases them.
     if (Qnil != rb_hash_lookup(opts, match_string_sym)) {
         oj_rxclass_cleanup(&oj_default_options.str_rx);
         oj_default_options.str_rx.head = NULL;
         oj_default_options.str_rx.tail = NULL;
     }
-    oj_parse_options(opts, &oj_default_options);
-    keep_default_options();
+    // Keep what was parsed even if the parse raises. Without that, TruffleRuby,
+    // which does not call mark functions, frees a :match_string chain built
+    // before the raise along with its keep object while the defaults use it.
+    rb_ensure(parse_default_options, opts, keep_default_options, Qnil);
 
     return Qnil;
 }
@@ -1377,6 +1389,11 @@ static char *dup_option_str(const char *str, size_t len) {
 // the call that creates such an object and after oj_parse_options(), then free
 // the buffers with oj_options_release() when the object is collected.
 void oj_options_take_ownership(Options copts) {
+    // An owner only dumps, so it lets go of a :match_string chain, either the
+    // one of the defaults or one built for it, which its keep object frees.
+    copts->str_rx.head = NULL;
+    copts->str_rx.tail = NULL;
+    copts->str_rx.keep = Qnil;
     if (NULL != copts->create_id && oj_default_options.create_id == copts->create_id) {
         copts->create_id = dup_option_str(copts->create_id, copts->create_id_len);
     }
@@ -1423,9 +1440,8 @@ void oj_options_release(Options copts) {
         OJ_R_FREE((void *)copts->dump_opts.except);
         copts->dump_opts.except = NULL;
     }
-    // The str_rx chain is detached from the defaults when the owner is created
-    // so the chain, if there is one, was built for this options struct alone.
-    oj_rxclass_cleanup(&copts->str_rx);
+    // oj_options_take_ownership() let go of the str_rx chain, which its keep
+    // object frees.
 }
 
 // Mark the Ruby objects held by an owned options struct. A long lived object

@@ -23,10 +23,31 @@ typedef struct _rxC {
     char  src[256];
 } *RxC;
 
+// The keep object owns the chain and frees it when it is collected, so a chain
+// left behind by an exception or an early return is not leaked.
+typedef struct _rxKeep {
+    VALUE ary;
+    RxC   head;
+} *RxKeep;
+
+static void free_chain(RxC rxc) {
+    RxC next;
+
+    for (; NULL != rxc; rxc = next) {
+        next = rxc->next;
+#if !IS_WINDOWS
+        if (Qnil == rxc->rrx) {
+            regfree(&rxc->rx);
+        }
+#endif
+        OJ_R_FREE(rxc);
+    }
+}
+
 // The GC can not update the VALUEs in the malloced chain, so the ones it holds
 // are also kept in an array and marked here, which pins them.
 static void keep_mark(void *ptr) {
-    VALUE ary = (VALUE)ptr;
+    VALUE ary = ((RxKeep)ptr)->ary;
     long  i;
 
     rb_gc_mark(ary);
@@ -35,47 +56,66 @@ static void keep_mark(void *ptr) {
     }
 }
 
+static void keep_free(void *ptr) {
+    free_chain(((RxKeep)ptr)->head);
+    xfree(ptr);
+}
+
 static const rb_data_type_t keep_type = {
     "Oj/rxclass_keep",
     {
         keep_mark,
-        NULL,
+        keep_free,
         NULL,
     },
     0,
     0,
 };
 
+static RxKeep keep_of(RxClass rc) {
+    return (RxKeep)RTYPEDDATA_DATA(rc->keep);
+}
+
 static void keep_value(RxClass rc, VALUE v) {
-    rb_ary_push((VALUE)RTYPEDDATA_DATA(rc->keep), v);
+    rb_ary_push(keep_of(rc)->ary, v);
 }
 
 // Returns the object that keeps the classes and regexps of the chain.
 VALUE oj_rxclass_init(RxClass rc) {
-    VALUE ary = rb_obj_hide(rb_ary_new());
+    VALUE  ary = rb_obj_hide(rb_ary_new());
+    RxKeep k;
 
     *rc->err = '\0';
     rc->head = NULL;
     rc->tail = NULL;
-    rc->keep = TypedData_Wrap_Struct(0, &keep_type, (void *)ary);
+    rc->keep = TypedData_Make_Struct(0, struct _rxKeep, &keep_type, k);
+    k->ary   = ary;
     RB_GC_GUARD(ary);
 
     return rc->keep;
 }
 
+// Frees the chain now if rc points at the chain its keep object owns. Callers
+// must not pass a copy of the defaults that aliases their chain. A copy that
+// is detached from it still has their keep object, so it frees nothing.
 void oj_rxclass_cleanup(RxClass rc) {
-    RxC rxc;
-
-    while (NULL != (rxc = rc->head)) {
-        rc->head = rc->head->next;
-#if !IS_WINDOWS
-        if (Qnil == rxc->rrx) {
-            regfree(&rxc->rx);
-        }
-#endif
-        OJ_R_FREE(rxc);
+    if (RTEST(rc->keep) && NULL != rc->head && keep_of(rc)->head == rc->head) {
+        free_chain(rc->head);
+        keep_of(rc)->head = NULL;
     }
+    rc->head = NULL;
+    rc->tail = NULL;
     rc->keep = Qnil;
+}
+
+static void link_node(RxClass rc, RxC rxc) {
+    if (NULL == rc->tail) {
+        rc->head          = rxc;
+        keep_of(rc)->head = rxc;
+    } else {
+        rc->tail->next = rxc;
+    }
+    rc->tail = rxc;
 }
 
 void oj_rxclass_rappend(RxClass rc, VALUE rx, VALUE clas) {
@@ -87,12 +127,7 @@ void oj_rxclass_rappend(RxClass rc, VALUE rx, VALUE clas) {
     memset(rxc, 0, sizeof(struct _rxC));
     rxc->rrx  = rx;
     rxc->clas = clas;
-    if (NULL == rc->tail) {
-        rc->head = rxc;
-    } else {
-        rc->tail->next = rxc;
-    }
-    rc->tail = rxc;
+    link_node(rc, rxc);
 }
 
 // Attempt to compile the expression. If it fails populate the error code..
@@ -125,16 +160,11 @@ int oj_rxclass_append(RxClass rc, const char *expr, VALUE clas) {
         regerror(err, &rxc->rx, rc->err, sizeof(rc->err));
         OJ_FREE(rxc);
         // No node holds the class pushed above, so drop it.
-        rb_ary_pop((VALUE)RTYPEDDATA_DATA(rc->keep));
+        rb_ary_pop(keep_of(rc)->ary);
         return err;
     }
 #endif
-    if (NULL == rc->tail) {
-        rc->head = rxc;
-    } else {
-        rc->tail->next = rxc;
-    }
-    rc->tail = rxc;
+    link_node(rc, rxc);
 
     return 0;
 }
@@ -171,10 +201,14 @@ oj_rxclass_match(RxClass rc, const char *str, size_t len) {
 
 // Add the Ruby objects in the chain to an array. The regexps and the classes
 // can be referenced from nowhere else, as with a default match_string option,
-// and are collected unless something holds onto them.
+// and are collected unless something holds onto them. The keep object is added
+// too, since collecting it frees the chain.
 void oj_rxclass_keep(RxClass rc, VALUE keep) {
     RxC rxc;
 
+    if (RTEST(rc->keep)) {
+        rb_ary_push(keep, rc->keep);
+    }
     for (rxc = rc->head; NULL != rxc; rxc = rxc->next) {
         if (Qnil != rxc->rrx) {
             rb_ary_push(keep, rxc->rrx);
