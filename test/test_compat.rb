@@ -204,6 +204,21 @@ class CompatJuice < Minitest::Test
     assert_equal(Rex, obj.class, 'the regexp of the match_string option of the defaults was collected')
   end
 
+  # The array that keeps the defaults alive also holds an object with no class.
+  # Ruby code that walks the heap must not find it, so the array is hidden too.
+  def test_default_options_keep_is_hidden
+    lib = File.expand_path('../lib', __dir__)
+    ext = File.expand_path('../ext', __dir__)
+    out, err, status = Open3.capture3(RbConfig.ruby, '-I', ext, '-I', lib, '-e', <<~RUBY)
+      require 'oj'
+      Oj.default_options = {match_string: {'^z' => String}}
+      ObjectSpace.each_object(Array) { |a| a.each(&:class) }
+      print 'ok'
+    RUBY
+    assert_predicate(status, :success?, err)
+    assert_equal('ok', out)
+  end
+
   def test_nil
     dump_and_load(nil, false)
   end

@@ -631,11 +631,11 @@ static const rb_data_type_t default_options_type = {
 // default options alive. Engines that do not call mark functions need them in
 // an array the GC knows about, rebuilt each time the defaults change.
 static VALUE keep_default_options(VALUE ignore) {
-    VALUE keep = rb_ary_new();
+    // On CRuby the array is hidden and named without the @ so that Ruby code can
+    // not reach the keep object of a :match_string chain in it, which has no class.
+    VALUE keep = rb_obj_hide(rb_ary_new());
 
     if (0 == oj_default_options_keeper_id) {
-        // Without the @ Ruby code can not reach the array, which holds the
-        // hidden keep object of a :match_string chain.
         oj_default_options_keeper_id = rb_intern("default_options_keeper");
     }
     if (Qnil != oj_default_options.hash_class) {
