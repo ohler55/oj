@@ -791,13 +791,8 @@ static VALUE encoder_new(int argc, VALUE *argv, VALUE self) {
     // built with {escape: false}, a key Oj has never had.
     e->own_opts = T_HASH == rb_type(e->arg) && 0 < RHASH_SIZE(e->arg);
     if (e->own_opts) {
-        e->opts = oj_default_options;
-        // Detach from the match_string regexps owned by the defaults before the
-        // options are parsed so that a :match_string option builds a chain of
-        // its own that is freed with the encoder.
-        e->opts.str_rx.head = NULL;
-        e->opts.str_rx.tail = NULL;
-        e->own_opts         = oj_parse_options_consumed(e->arg, &e->opts);
+        e->opts     = oj_default_options;
+        e->own_opts = oj_parse_options_consumed(e->arg, &e->opts);
     }
     if (e->own_opts) {
         oj_options_take_ownership(&e->opts);

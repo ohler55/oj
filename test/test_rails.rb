@@ -123,8 +123,8 @@ class RailsJuice < Minitest::Test
     assert_equal(Oj::Rails::Encoder.new(indent: 0).encode(h), Oj::Rails::Encoder.new(indent: -1).encode(h))
   end
 
-  # A :match_string option builds a chain of compiled regexps in the encoder
-  # that the encoder must free when it is collected.
+  # A :match_string option builds a chain of compiled regexps that the encoder
+  # lets go of and that is freed when collected.
   def test_encoder_match_string
     3.times do
       json = Oj::Rails::Encoder.new(match_string: {/^x/ => String}).encode({id: 1})

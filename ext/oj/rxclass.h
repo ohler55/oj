@@ -15,8 +15,9 @@ typedef struct _rxClass {
     struct _rxC *tail;
     char         err[128];
     // The chain is malloced, so this object keeps its classes and regexps from
-    // being moved or collected. The GC sees it through options on the stack or
-    // by marking the defaults. Writers and encoders never match, so theirs is not kept.
+    // being moved or collected, and frees the chain when it is collected. The GC
+    // sees it through options on the stack or by marking the defaults. Writers and
+    // encoders never match, so they let go of theirs.
     VALUE keep;
 } *RxClass;
 
