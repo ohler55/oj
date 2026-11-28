@@ -124,7 +124,7 @@ static int dump_attr_cb(ID key, VALUE value, VALUE ov) {
     if (NULL == attr) {
         attr = "";
     }
-    if (0 == strcmp("bt", attr) || 0 == strcmp("mesg", attr)) {
+    if ('@' != *attr && (0 == strcmp("bt", attr) || 0 == strcmp("mesg", attr))) {
         return ST_CONTINUE;
     }
     assure_size(out, size);

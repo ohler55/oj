@@ -432,6 +432,31 @@ class RailsJuice < Minitest::Test
     assert_equal("#{nested}\n" * 4, out)
   end
 
+  # @bt and @mesg are plain instance variables, not the internal ones of an
+  # exception that the dump skips, so they are written.
+  def test_optimized_ivars_named_like_exception_internals
+    lib = File.expand_path('../lib', __dir__)
+    ext = File.expand_path('../ext', __dir__)
+    out, err, status = Open3.capture3(RbConfig.ruby, '-I', ext, '-I', lib, '-e', <<~RUBY)
+      require 'oj'
+      module ActiveRecord
+        class Base
+        end
+      end
+      class Internals
+        def initialize
+          @bt = 1
+          @mesg = 2
+        end
+      end
+      Oj::Rails.optimize(Internals)
+      print Oj.dump(Internals.new, mode: :rails)
+    RUBY
+
+    assert_predicate(status, :success?, err)
+    assert_equal('{"bt":1,"mesg":2}', out)
+  end
+
   def test_nested_arrays_with_string_indent
     deep = 1
     pair = 1
